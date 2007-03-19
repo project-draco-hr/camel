@@ -1,0 +1,20 @@
+{
+  if (path.startsWith(QUEUE_PREFIX)) {
+    template.setPubSubDomain(false);
+    path=path.substring(QUEUE_PREFIX.length());
+  }
+ else   if (path.startsWith(TOPIC_PREFIX)) {
+    template.setPubSubDomain(false);
+    path=path.substring(TOPIC_PREFIX.length());
+  }
+  final String subject=convertPathToActualDestination(path);
+  template.setDefaultDestinationName(subject);
+  Destination destination=(Destination)template.execute(new SessionCallback(){
+    public Object doInJms(    Session session) throws JMSException {
+      return template.getDestinationResolver().resolveDestinationName(session,subject,template.isPubSubDomain());
+    }
+  }
+);
+  AbstractMessageListenerContainer listenerContainer=createMessageListenerContainer(template);
+  return new JmsEndpoint(uri,container,destination,template,listenerContainer);
+}
