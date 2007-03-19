@@ -1,0 +1,15 @@
+{
+  RouteBuilder builder=new RouteBuilder(){
+    public void configure(){
+      from("seda://a").to("seda://b");
+    }
+  }
+;
+  List<DestinationBuilder> destinationBuilders=builder.getRoutes();
+  assertEquals("Number or destinationBuilders created",1,destinationBuilders.size());
+  DestinationBuilder destinationBuilder=destinationBuilders.get(0);
+  Processor processor=destinationBuilder.createProcessor();
+  assertTrue("Processor should be a SendProcessor but was: " + processor + " with type: "+ processor.getClass().getName(),processor instanceof SendProcessor);
+  SendProcessor sendProcessor=(SendProcessor)processor;
+  assertEquals("Endpoint URI","seda://b",sendProcessor.getDestination().getEndpointUri());
+}
