@@ -1,0 +1,23 @@
+{
+  RouteBuilder<Exchange> builder=new RouteBuilder<Exchange>(){
+    public void configure(){
+      from("seda:a").to("seda:tap","seda:b");
+    }
+  }
+;
+  Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
+  System.out.println("Created map: " + routeMap);
+  Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
+  assertEquals("Number routes created",1,routes.size());
+  for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
+    Endpoint<Exchange> key=route.getKey();
+    assertEquals("From endpoint","seda:a",key.getEndpointUri());
+    Processor processor=route.getValue();
+    assertTrue("Processor should be a CompositeProcessor but was: " + processor + " with type: "+ processor.getClass().getName(),processor instanceof CompositeProcessor);
+    CompositeProcessor<Exchange> compositeProcessor=(CompositeProcessor<Exchange>)processor;
+    List<Processor<Exchange>> processors=new ArrayList<Processor<Exchange>>(compositeProcessor.getProcessors());
+    assertEquals("Should have 2 processors",2,processors.size());
+    assertSendTo(processors.get(0),"seda:tap");
+    assertSendTo(processors.get(1),"seda:b");
+  }
+}
