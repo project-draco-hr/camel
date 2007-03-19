@@ -1,23 +1,21 @@
 {
-  RouteBuilder builder=new RouteBuilder(){
+  RouteBuilder<Exchange> builder=new RouteBuilder<Exchange>(){
     public void configure(){
       from("seda://a").filter(headerEquals("foo","bar")).to("seda://b");
     }
   }
 ;
-  Map<Endpoint<Exchange>,List<Processor<Exchange>>> routeMap=builder.getRouteMap();
-  Set<Map.Entry<Endpoint<Exchange>,List<Processor<Exchange>>>> routes=routeMap.entrySet();
+  Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
+  System.out.println("Created map: " + routeMap);
+  Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
   assertEquals("Number routes created",1,routes.size());
-  for (  Map.Entry<Endpoint<Exchange>,List<Processor<Exchange>>> route : routes) {
+  for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
     Endpoint<Exchange> key=route.getKey();
     assertEquals("From endpoint","seda://a",key.getEndpointUri());
-    List<Processor<Exchange>> processors=route.getValue();
-    assertEquals("Number of processors",1,processors.size());
-    Processor processor=processors.get(0);
+    Processor processor=route.getValue();
     assertTrue("Processor should be a FilterProcessor but was: " + processor + " with type: "+ processor.getClass().getName(),processor instanceof FilterProcessor);
     FilterProcessor filterProcessor=(FilterProcessor)processor;
     SendProcessor sendProcessor=(SendProcessor)filterProcessor.getProcessor();
     assertEquals("Endpoint URI","seda://b",sendProcessor.getDestination().getEndpointUri());
   }
-  System.out.println("Created map: " + routeMap);
 }
