@@ -1,7 +1,7 @@
 {
   RouteBuilder<Exchange> builder=new RouteBuilder<Exchange>(){
     public void configure(){
-      from("seda://a").filter(headerEquals("foo","bar")).to("seda://b");
+      from("seda:a").filter(headerEquals("foo","bar")).to("seda:b");
     }
   }
 ;
@@ -11,11 +11,11 @@
   assertEquals("Number routes created",1,routes.size());
   for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
     Endpoint<Exchange> key=route.getKey();
-    assertEquals("From endpoint","seda://a",key.getEndpointUri());
+    assertEquals("From endpoint","seda:a",key.getEndpointUri());
     Processor processor=route.getValue();
     assertTrue("Processor should be a FilterProcessor but was: " + processor + " with type: "+ processor.getClass().getName(),processor instanceof FilterProcessor);
     FilterProcessor filterProcessor=(FilterProcessor)processor;
     SendProcessor sendProcessor=(SendProcessor)filterProcessor.getProcessor();
-    assertEquals("Endpoint URI","seda://b",sendProcessor.getDestination().getEndpointUri());
+    assertEquals("Endpoint URI","seda:b",sendProcessor.getDestination().getEndpointUri());
   }
 }

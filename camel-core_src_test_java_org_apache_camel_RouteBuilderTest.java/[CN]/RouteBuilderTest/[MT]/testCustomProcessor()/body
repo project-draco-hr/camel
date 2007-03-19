@@ -1,17 +1,22 @@
 {
+  final Processor<Exchange> myProcessor=new Processor<Exchange>(){
+    public void onExchange(    Exchange exchange){
+      System.out.println("Called with exchange: " + exchange);
+    }
+  }
+;
   RouteBuilder<Exchange> builder=new RouteBuilder<Exchange>(){
     public void configure(){
-      from("seda://a").process(myProcessor);
+      from("seda:a").process(myProcessor);
     }
   }
 ;
   Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
-  System.out.println("Created map: " + routeMap);
   Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
   assertEquals("Number routes created",1,routes.size());
   for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
     Endpoint<Exchange> key=route.getKey();
-    assertEquals("From endpoint","seda://a",key.getEndpointUri());
+    assertEquals("From endpoint","seda:a",key.getEndpointUri());
     Processor processor=route.getValue();
     assertEquals("Should be called with my processor",myProcessor,processor);
   }
