@@ -1,6 +1,6 @@
 {
+  final CountDownLatch latch=new CountDownLatch(1);
   CamelContainer container=new CamelContainer();
-  System.out.println("Created container: " + container);
   JmsTemplate template=new JmsTemplate(new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false"));
   template.setSessionAcknowledgeMode(Session.AUTO_ACKNOWLEDGE);
   template.setSessionTransacted(false);
@@ -11,6 +11,7 @@
       from("jms:activemq:test.b").process(new Processor<JmsExchange>(){
         public void onExchange(        JmsExchange exchange){
           System.out.println("Received exchange: " + exchange.getRequest());
+          latch.countDown();
         }
       }
 );
@@ -21,5 +22,6 @@
   JmsExchange exchange2=endpoint.createExchange();
   exchange2.setHeader("cheese",123);
   endpoint.send(exchange2);
-  Thread.sleep(3000);
+  boolean received=latch.await(5,TimeUnit.SECONDS);
+  assertTrue("Did not recieve the message!",received);
 }
