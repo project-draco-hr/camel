@@ -1,0 +1,25 @@
+{
+  final CountDownLatch latch=new CountDownLatch(1);
+  CamelContainer container=new CamelContainer();
+  container.routes(new RouteBuilder(){
+    public void configure(){
+      from("queue:test.a").to("queue:test.b");
+      from("queue:test.b").process(new Processor<StringExchange>(){
+        public void onExchange(        StringExchange exchange){
+          System.out.println("Received exchange: " + exchange.getRequest());
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  container.activateEndpoints();
+  Endpoint<StringExchange> endpoint=container.endpoint("queue:test.a");
+  StringExchange exchange=new StringExchange();
+  exchange.setHeader("cheese",123);
+  endpoint.send(exchange);
+  boolean received=latch.await(5,TimeUnit.SECONDS);
+  assertTrue("Did not recieve the message!",received);
+  container.deactivateEndpoints();
+}
