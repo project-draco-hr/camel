@@ -1,7 +1,7 @@
 {
   final CountDownLatch latch=new CountDownLatch(1);
-  CamelContext container=new CamelContext();
-  container.routes(new RouteBuilder(){
+  CamelContext container=new DefaultCamelContext<Exchange>();
+  container.setRoutes(new RouteBuilder(){
     public void configure(){
       from("queue:test.a").to("queue:test.b");
       from("queue:test.b").process(new Processor<Exchange>(){
@@ -15,7 +15,7 @@
   }
 );
   container.activateEndpoints();
-  Endpoint<Exchange> endpoint=container.endpoint("queue:test.a");
+  Endpoint<Exchange> endpoint=container.resolveEndpoint("queue:test.a");
   Exchange exchange=endpoint.createExchange();
   exchange.getIn().getHeaders().setHeader("cheese",123);
   endpoint.onExchange(exchange);

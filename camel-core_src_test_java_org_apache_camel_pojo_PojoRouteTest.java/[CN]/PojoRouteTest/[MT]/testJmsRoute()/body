@@ -1,5 +1,5 @@
 {
-  CamelContext container=new CamelContext();
+  CamelContext container=new DefaultCamelContext<Exchange>();
   PojoComponent component=new PojoComponent();
   component.registerPojo("hello",new SayService("Hello!"));
   component.registerPojo("bye",new SayService("Good Bye!"));
@@ -12,19 +12,19 @@
     }
   }
 ;
-  container.routes(new RouteBuilder(){
+  container.setRoutes(new RouteBuilder(){
     public void configure(){
       from("pojo:default:hello").intercept(tracingInterceptor).target().to("pojo:default:bye");
     }
   }
 );
   container.activateEndpoints();
-  PojoEndpoint endpoint=(PojoEndpoint)container.endpoint("pojo:default:hello");
+  PojoEndpoint endpoint=(PojoEndpoint)container.resolveEndpoint("pojo:default:hello");
   ISay proxy=(ISay)endpoint.createInboundProxy(new Class[]{ISay.class});
   String rc=proxy.say();
   assertEquals("Good Bye!",rc);
   try {
-    endpoint=(PojoEndpoint)container.endpoint("pojo:default:bye");
+    endpoint=(PojoEndpoint)container.resolveEndpoint("pojo:default:bye");
     proxy=(ISay)endpoint.createInboundProxy(new Class[]{ISay.class});
     rc=proxy.say();
     assertEquals("Hello!",rc);

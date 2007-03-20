@@ -1,9 +1,9 @@
 {
   final CountDownLatch latch=new CountDownLatch(1);
-  CamelContext container=new CamelContext();
+  CamelContext container=new DefaultCamelContext<Exchange>();
   ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
   container.addComponent("activemq",jmsComponentClientAcknowledge(connectionFactory));
-  container.routes(new RouteBuilder(){
+  container.setRoutes(new RouteBuilder(){
     public void configure(){
       from("jms:activemq:test.a").to("jms:activemq:test.b");
       from("jms:activemq:test.b").process(new Processor<JmsExchange>(){
@@ -17,7 +17,7 @@
   }
 );
   container.activateEndpoints();
-  Endpoint<JmsExchange> endpoint=container.endpoint("jms:activemq:test.a");
+  Endpoint<JmsExchange> endpoint=container.resolveEndpoint("jms:activemq:test.a");
   JmsExchange exchange2=endpoint.createExchange();
   exchange2.getIn().getHeaders().setHeader("cheese",123);
   endpoint.onExchange(exchange2);
