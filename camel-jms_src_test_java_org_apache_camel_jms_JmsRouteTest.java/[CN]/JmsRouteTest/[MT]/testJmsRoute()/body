@@ -1,10 +1,8 @@
 {
   final CountDownLatch latch=new CountDownLatch(1);
   CamelContainer container=new CamelContainer();
-  JmsTemplate template=new JmsTemplate(new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false"));
-  template.setSessionAcknowledgeMode(Session.AUTO_ACKNOWLEDGE);
-  template.setSessionTransacted(false);
-  container.addComponent("activemq",jmsComponent(template));
+  ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+  container.addComponent("activemq",jmsComponentClientAcknowledge(connectionFactory));
   container.routes(new RouteBuilder(){
     public void configure(){
       from("jms:activemq:test.a").to("jms:activemq:test.b");
