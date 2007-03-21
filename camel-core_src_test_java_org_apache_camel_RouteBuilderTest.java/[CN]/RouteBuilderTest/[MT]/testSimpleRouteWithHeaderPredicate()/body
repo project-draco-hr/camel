@@ -7,10 +7,10 @@
   for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
     Endpoint<Exchange> key=route.getKey();
     assertEquals("From endpoint","queue:a",key.getEndpointUri());
-    Processor processor=route.getValue();
+    Processor processor=getProcessorWithoutErrorHandler(route);
     assertTrue("Processor should be a FilterProcessor but was: " + processor + " with type: "+ processor.getClass().getName(),processor instanceof FilterProcessor);
     FilterProcessor filterProcessor=(FilterProcessor)processor;
-    SendProcessor sendProcessor=(SendProcessor)filterProcessor.getProcessor();
+    SendProcessor sendProcessor=(SendProcessor)unwrapErrorHandler(filterProcessor.getProcessor());
     assertEquals("Endpoint URI","queue:b",sendProcessor.getDestination().getEndpointUri());
   }
 }
