@@ -1,0 +1,18 @@
+{
+  String actionName=element.getLocalName();
+  ArrayList<MethodInfo> methods=findFluentMethodsWithName(currentBuilder,element.getLocalName());
+  if (methods.isEmpty()) {
+    throw new IllegalRouteException(actionName,previousElement == null ? null : previousElement.getLocalName());
+  }
+  Collections.sort(methods,new Comparator<MethodInfo>(){
+    public int compare(    MethodInfo m1,    MethodInfo m2){
+      return m1.method.getParameterTypes().length - m2.method.getParameterTypes().length;
+    }
+  }
+);
+  HashMap<String,Object> attributes=getAttributes(element);
+  MethodInfo match=findBestMethod(methods,attributes);
+  if (match == null)   throw new IllegalRouteException(actionName,previousElement == null ? null : previousElement.getLocalName());
+  actions.add(new RouteBuilderAction(match,attributes));
+  return match.method.getReturnType();
+}
