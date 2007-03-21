@@ -1,0 +1,19 @@
+{
+  RouteBuilder<Exchange> builder1=new RouteBuilder<Exchange>(){
+    public void configure(){
+      errorHandler(loggingErrorHandler("FOO.BAR"));
+      from("queue:a").to("queue:b");
+    }
+  }
+;
+  RouteBuilder<Exchange> builder=builder1;
+  Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
+  Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
+  assertEquals("Number routes created",1,routes.size());
+  for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
+    Endpoint<Exchange> key=route.getKey();
+    assertEquals("From endpoint","queue:a",key.getEndpointUri());
+    Processor processor=route.getValue();
+    LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
+  }
+}

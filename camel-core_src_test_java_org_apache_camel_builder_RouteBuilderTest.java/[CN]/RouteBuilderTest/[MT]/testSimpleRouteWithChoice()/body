@@ -1,0 +1,20 @@
+{
+  RouteBuilder<Exchange> builder=buildSimpleRouteWithChoice();
+  Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
+  System.out.println("Created map: " + routeMap);
+  Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
+  assertEquals("Number routes created",1,routes.size());
+  for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
+    Endpoint<Exchange> key=route.getKey();
+    assertEquals("From endpoint","queue:a",key.getEndpointUri());
+    Processor processor=getProcessorWithoutErrorHandler(route);
+    ChoiceProcessor<Exchange> choiceProcessor=assertIsInstanceOf(ChoiceProcessor.class,processor);
+    List<FilterProcessor<Exchange>> filters=choiceProcessor.getFilters();
+    assertEquals("Should be two when clauses",2,filters.size());
+    FilterProcessor<Exchange> filter1=filters.get(0);
+    assertSendTo(filter1.getProcessor(),"queue:b");
+    FilterProcessor<Exchange> filter2=filters.get(1);
+    assertSendTo(filter2.getProcessor(),"queue:c");
+    assertSendTo(choiceProcessor.getOtherwise(),"queue:d");
+  }
+}

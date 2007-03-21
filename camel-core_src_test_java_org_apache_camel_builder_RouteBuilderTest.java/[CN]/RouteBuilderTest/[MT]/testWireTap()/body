@@ -1,0 +1,17 @@
+{
+  RouteBuilder<Exchange> builder=buildWireTap();
+  Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
+  System.out.println("Created map: " + routeMap);
+  Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
+  assertEquals("Number routes created",1,routes.size());
+  for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
+    Endpoint<Exchange> key=route.getKey();
+    assertEquals("From endpoint","queue:a",key.getEndpointUri());
+    Processor processor=getProcessorWithoutErrorHandler(route);
+    MulticastProcessor<Exchange> multicastProcessor=assertIsInstanceOf(MulticastProcessor.class,processor);
+    List<Endpoint<Exchange>> endpoints=new ArrayList<Endpoint<Exchange>>(multicastProcessor.getEndpoints());
+    assertEquals("Should have 2 endpoints",2,endpoints.size());
+    assertEndpointUri(endpoints.get(0),"queue:tap");
+    assertEndpointUri(endpoints.get(1),"queue:b");
+  }
+}
