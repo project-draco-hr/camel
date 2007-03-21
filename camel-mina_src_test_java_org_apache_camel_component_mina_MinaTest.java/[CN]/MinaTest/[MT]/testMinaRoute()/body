@@ -1,0 +1,24 @@
+{
+  final CountDownLatch latch=new CountDownLatch(1);
+  CamelContext container=new DefaultCamelContext<Exchange>();
+  container.setRoutes(new RouteBuilder(){
+    public void configure(){
+      from("mina:vm:8080").process(new Processor<MinaExchange>(){
+        public void onExchange(        MinaExchange exchange){
+          System.out.println("Received exchange: " + exchange.getIn());
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  container.activateEndpoints();
+  Endpoint<MinaExchange> endpoint=container.resolveEndpoint("mina:vm:8080");
+  MinaExchange exchange2=endpoint.createExchange();
+  exchange2.getIn().getHeaders().setHeader("cheese",123);
+  endpoint.onExchange(exchange2);
+  boolean received=latch.await(5,TimeUnit.SECONDS);
+  assertTrue("Did not recieve the message!",received);
+  container.deactivateEndpoints();
+}
