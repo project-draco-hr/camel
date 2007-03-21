@@ -1,0 +1,20 @@
+{
+  int redeliveryCounter=0;
+  long redeliveryDelay=0;
+  do {
+    if (redeliveryCounter++ > 0) {
+      redeliveryDelay=redeliveryPolicy.getRedeliveryDelay(redeliveryDelay);
+      sleep(redeliveryDelay);
+      appendRedeliveryHeaders(exchange,redeliveryCounter);
+    }
+    try {
+      output.onExchange(exchange);
+      return;
+    }
+ catch (    RuntimeException e) {
+      log.error("On delivery attempt: " + redeliveryCounter + " caught: "+ e,e);
+    }
+  }
+ while (redeliveryPolicy.shouldRedeliver(redeliveryCounter));
+  deadLetter.onExchange(exchange);
+}

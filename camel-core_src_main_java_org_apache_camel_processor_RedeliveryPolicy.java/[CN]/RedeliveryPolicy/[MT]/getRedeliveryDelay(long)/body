@@ -1,0 +1,20 @@
+{
+  long redeliveryDelay;
+  if (previousDelay == 0) {
+    redeliveryDelay=initialRedeliveryDelay;
+  }
+ else   if (useExponentialBackOff && backOffMultiplier > 1) {
+    redeliveryDelay=Math.round(backOffMultiplier * previousDelay);
+  }
+ else {
+    redeliveryDelay=previousDelay;
+  }
+  if (useCollisionAvoidance) {
+    if (randomNumberGenerator == null) {
+      initRandomNumberGenerator();
+    }
+    double variance=(randomNumberGenerator.nextBoolean() ? collisionAvoidanceFactor : -collisionAvoidanceFactor) * randomNumberGenerator.nextDouble();
+    redeliveryDelay+=redeliveryDelay * variance;
+  }
+  return redeliveryDelay;
+}
