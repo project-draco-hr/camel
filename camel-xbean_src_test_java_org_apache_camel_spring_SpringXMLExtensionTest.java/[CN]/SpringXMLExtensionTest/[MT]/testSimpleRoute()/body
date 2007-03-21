@@ -1,4 +1,15 @@
 {
   RouteBuilder builder=(RouteBuilder)ctx.getBean("testSimpleRoute");
   assertNotNull(builder);
+  Map<Endpoint<Exchange>,Processor<Exchange>> routeMap=builder.getRouteMap();
+  Set<Map.Entry<Endpoint<Exchange>,Processor<Exchange>>> routes=routeMap.entrySet();
+  assertEquals("Number routes created",1,routes.size());
+  for (  Map.Entry<Endpoint<Exchange>,Processor<Exchange>> route : routes) {
+    Endpoint<Exchange> key=route.getKey();
+    assertEquals("From endpoint","queue:a",key.getEndpointUri());
+    Processor processor=getProcessorWithoutErrorHandler(route);
+    assertTrue("Processor should be a SendProcessor but was: " + processor + " with type: "+ processor.getClass().getName(),processor instanceof SendProcessor);
+    SendProcessor sendProcessor=(SendProcessor)processor;
+    assertEquals("Endpoint URI","queue:b",sendProcessor.getDestination().getEndpointUri());
+  }
 }

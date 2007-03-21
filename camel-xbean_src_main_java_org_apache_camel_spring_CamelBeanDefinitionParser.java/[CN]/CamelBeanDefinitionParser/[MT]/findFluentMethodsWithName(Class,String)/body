@@ -1,0 +1,30 @@
+{
+  ArrayList<MethodInfo> rc=new ArrayList<MethodInfo>();
+  Method[] methods=clazz.getMethods();
+  for (int i=0; i < methods.length; i++) {
+    Method method=methods[i];
+    if (name.equals(method.getName())) {
+      if (!method.isAnnotationPresent(Fluent.class)) {
+        List<Annotation> l=Arrays.asList(method.getAnnotations());
+        System.out.println(l);
+        continue;
+      }
+      LinkedHashMap<String,Class> map=new LinkedHashMap<String,Class>();
+      Class<?>[] parameters=method.getParameterTypes();
+      for (int j=0; j < parameters.length; j++) {
+        Class<?> parameter=parameters[j];
+        FluentArg annotation=getParameterAnnotation(FluentArg.class,method,j);
+        if (annotation != null) {
+          map.put(annotation.value(),parameter);
+        }
+ else {
+          break;
+        }
+      }
+      if (parameters.length == map.size()) {
+        rc.add(new MethodInfo(method,map));
+      }
+    }
+  }
+  return rc;
+}
