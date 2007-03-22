@@ -1,0 +1,21 @@
+{
+  ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+  container.addComponent("activemq",jmsComponentClientAcknowledge(connectionFactory));
+  container.setRoutes(new RouteBuilder(){
+    public void configure(){
+      from("jms:activemq:test.a").to("jms:activemq:test.b");
+      from("jms:activemq:test.b").process(new Processor<JmsExchange>(){
+        public void onExchange(        JmsExchange e){
+          System.out.println("Received exchange: " + e.getIn());
+          receivedExchange=e;
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  endpoint=container.resolveEndpoint("jms:activemq:test.a");
+  assertNotNull("No endpoint found!",endpoint);
+  container.activateEndpoints();
+}
