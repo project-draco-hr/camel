@@ -1,17 +1,6 @@
 {
   PurchaseOrder expectedBody=new PurchaseOrder("Beer",10);
-  JmsExchange exchange=endpoint.createExchange();
-  JmsMessage in=exchange.getIn();
-  in.setBody(expectedBody);
-  in.setHeader("cheese",123);
-  endpoint.onExchange(exchange);
-  boolean received=latch.await(5,TimeUnit.SECONDS);
-  assertTrue("Did not recieve the message!",received);
-  assertNotNull(receivedExchange);
-  Object body=receivedExchange.getIn().getBody();
-  log.debug("Received body: " + body);
+  sendExchange(expectedBody);
+  Object body=assertReceivedValidExchange(ObjectMessage.class);
   assertEquals("body",expectedBody,body);
-  Message jmsMessage=receivedExchange.getIn().getJmsMessage();
-  assertTrue("Received a JMS TextMessage: " + jmsMessage,jmsMessage instanceof ObjectMessage);
-  log.debug("Received JMS message: " + jmsMessage);
 }
