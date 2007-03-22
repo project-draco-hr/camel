@@ -1,6 +1,13 @@
 {
   if (clazz.isArray() || elements.size() > 1) {
-    throw new IllegalStateException("We don't support injecting array values.");
+    Object array=Array.newInstance(clazz.getComponentType(),elements.size());
+    for (int i=0; i < elements.size(); i++) {
+      ArrayList<Element> e=new ArrayList<Element>(1);
+      e.add(elements.get(i));
+      Object value=convertTo(e,clazz.getComponentType());
+      Array.set(array,i,value);
+    }
+    return array;
   }
  else {
     Element element=elements.get(0);
@@ -8,14 +15,20 @@
     if (StringUtils.hasText(ref)) {
       return new RuntimeBeanReference(ref);
     }
-    ArrayList<BuilderAction> actions=new ArrayList<BuilderAction>();
-    Class type=parseBuilderElement(element,RouteBuilder.class,actions);
-    BuilderStatement statement=new BuilderStatement();
-    statement.setReturnType(type);
-    statement.setActions(actions);
-    if (!clazz.isAssignableFrom(statement.getReturnType())) {
-      throw new IllegalStateException("Builder does not produce object of expected type: " + clazz.getName());
+    if (hasChildElements(element)) {
+      ArrayList<BuilderAction> actions=new ArrayList<BuilderAction>();
+      Class type=parseBuilderElement(element,RouteBuilder.class,actions);
+      BuilderStatement statement=new BuilderStatement();
+      statement.setReturnType(type);
+      statement.setActions(actions);
+      if (!clazz.isAssignableFrom(statement.getReturnType())) {
+        throw new IllegalStateException("Builder does not produce object of expected type: " + clazz.getName());
+      }
+      return statement;
     }
-    return statement;
+ else {
+      SimpleTypeConverter converter=new SimpleTypeConverter();
+      return converter.convertIfNecessary(element.getTextContent(),clazz);
+    }
   }
 }
