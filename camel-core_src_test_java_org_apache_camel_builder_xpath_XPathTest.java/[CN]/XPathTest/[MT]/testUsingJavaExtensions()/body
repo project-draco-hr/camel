@@ -1,0 +1,16 @@
+{
+  Object instance=null;
+  try {
+    instance=Class.forName("org.apache.xalan.extensions.XPathFunctionResolverImpl").newInstance();
+  }
+ catch (  Throwable e) {
+    log.info("Could not find Xalan on the classpath so ignoring this test case: " + e);
+  }
+  if (instance instanceof XPathFunctionResolver) {
+    XPathFunctionResolver functionResolver=(XPathFunctionResolver)instance;
+    XPathBuilder builder=XPathBuilder.xpath("java:" + getClass().getName() + ".func(string(/header/value))").namespace("java","http://xml.apache.org/xalan/java").functionResolver(functionResolver);
+    String xml="<header><value>12</value></header>";
+    Object value=assertExpression(builder.createExpression(),"modified12",xml);
+    log.debug("Evaluated xpath: " + builder.getText() + " on XML: "+ xml+ " result: "+ value);
+  }
+}
