@@ -1,0 +1,29 @@
+{
+  jbiContainer.setEmbedded(true);
+  CamelJbiComponent component=new CamelJbiComponent();
+  ActivationSpec activationSpec=new ActivationSpec();
+  activationSpec.setComponentName("camel");
+  activationSpec.setService(new QName("camel"));
+  activationSpec.setComponent(component);
+  activationSpec.setEndpoint("camelEndpoint");
+  activationSpec.setId("camel");
+  jbiContainer.activateComponent(component,activationSpec);
+  camelContext.addComponent("jbi",component);
+  camelContext.setRoutes(new RouteBuilder(){
+    public void configure(){
+      from("jbi:service:test.a").to("jbi:service:test.b");
+      from("jbi:service:test.b").process(new Processor<Exchange>(){
+        public void onExchange(        Exchange e){
+          System.out.println("Received exchange: " + e.getIn());
+          receivedExchange=e;
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  endpoint=camelContext.resolveEndpoint("jbi:service:test.a");
+  assertNotNull("No endpoint found!",endpoint);
+  camelContext.activateEndpoints();
+}
