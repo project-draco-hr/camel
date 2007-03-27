@@ -12,25 +12,12 @@
     }
   }
 ;
-  container.setRoutes(new RouteBuilder(){
+  container.addRoutes(new RouteBuilder(){
     public void configure(){
       from("pojo:default:hello").intercept(tracingInterceptor).target().to("pojo:default:bye");
     }
   }
 );
   container.activateEndpoints();
-  PojoEndpoint endpoint=(PojoEndpoint)container.resolveEndpoint("pojo:default:hello");
-  ISay proxy=(ISay)endpoint.createInboundProxy(new Class[]{ISay.class});
-  String rc=proxy.say();
-  assertEquals("Good Bye!",rc);
-  try {
-    endpoint=(PojoEndpoint)container.resolveEndpoint("pojo:default:bye");
-    proxy=(ISay)endpoint.createInboundProxy(new Class[]{ISay.class});
-    rc=proxy.say();
-    assertEquals("Hello!",rc);
-    fail("Should have thrown an exception as we are using an inactive endpoint");
-  }
- catch (  IllegalStateException expected) {
-  }
   container.deactivateEndpoints();
 }

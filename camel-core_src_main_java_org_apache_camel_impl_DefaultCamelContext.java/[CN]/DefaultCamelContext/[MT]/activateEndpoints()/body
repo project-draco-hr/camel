@@ -1,5 +1,15 @@
 {
   for (  Route<Exchange> route : routes) {
-    route.getEndpoint().activate(route.getProcessor());
+    Processor<Exchange> processor=route.getProcessor();
+    Consumer<Exchange> consumer=route.getEndpoint().createConsumer(processor);
+    if (consumer != null) {
+      consumer.start();
+      servicesToClose.add(consumer);
+    }
+    if (processor instanceof Service) {
+      Service service=(Service)processor;
+      service.start();
+      servicesToClose.add(service);
+    }
   }
 }
