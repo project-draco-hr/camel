@@ -1,0 +1,14 @@
+{
+  if (!isStarted()) {
+    throw new IllegalStateException("The endpoint is not active: " + getEndpoint().getEndpointUri());
+  }
+  PojoInvocation invocation=new PojoInvocation(proxy,method,args);
+  PojoExchange exchange=getEndpoint().createExchange();
+  exchange.setInvocation(invocation);
+  getProcessor().onExchange(exchange);
+  Throwable fault=exchange.getException();
+  if (fault != null) {
+    throw new InvocationTargetException(fault);
+  }
+  return exchange.getOut().getBody();
+}

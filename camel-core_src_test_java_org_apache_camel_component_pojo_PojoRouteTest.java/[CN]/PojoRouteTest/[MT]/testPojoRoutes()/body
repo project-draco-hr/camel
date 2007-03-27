@@ -1,8 +1,7 @@
 {
   CamelContext container=new DefaultCamelContext();
   PojoComponent component=new PojoComponent();
-  component.registerPojo("hello",new SayService("Hello!"));
-  component.registerPojo("bye",new SayService("Good Bye!"));
+  component.addService("bye",new SayService("Good Bye!"));
   container.addComponent("default",component);
   final AtomicInteger hitCount=new AtomicInteger();
   final InterceptorProcessor<PojoExchange> tracingInterceptor=new InterceptorProcessor<PojoExchange>(){
@@ -19,5 +18,10 @@
   }
 );
   container.activateEndpoints();
+  PojoConsumer consumer=component.getConsumer("hello");
+  ISay proxy=consumer.createProxy(ISay.class);
+  String rc=proxy.say();
+  assertEquals("Good Bye!",rc);
+  assertEquals(1,hitCount.get());
   container.deactivateEndpoints();
 }
