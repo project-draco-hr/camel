@@ -1,0 +1,23 @@
+{
+  CamelContext container=new DefaultCamelContext();
+  final AtomicInteger hitCount=new AtomicInteger();
+  PojoComponent component=new PojoComponent();
+  component.addService("bar",new Runnable(){
+    public void run(){
+      System.out.println("hit");
+      hitCount.incrementAndGet();
+    }
+  }
+);
+  container.addComponent("default",component);
+  container.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("timer:foo?fixedRate=true&delay=0&period=500").to("pojo:default:bar");
+    }
+  }
+);
+  container.activateEndpoints();
+  Thread.sleep(1000 * 2);
+  assertTrue("",hitCount.get() >= 3);
+  container.deactivateEndpoints();
+}

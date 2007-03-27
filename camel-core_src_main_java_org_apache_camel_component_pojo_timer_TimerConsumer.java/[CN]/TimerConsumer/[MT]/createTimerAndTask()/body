@@ -1,0 +1,37 @@
+{
+  final Runnable proxy=createProxy();
+  TimerTask task=new TimerTask(){
+    @Override public void run(){
+      proxy.run();
+    }
+  }
+;
+  Timer result=new Timer(endpoint.getTimerName(),endpoint.isDaemon());
+  if (endpoint.isFixedRate()) {
+    if (endpoint.getTime() != null) {
+      result.scheduleAtFixedRate(task,endpoint.getTime(),endpoint.getPeriod());
+    }
+ else {
+      result.scheduleAtFixedRate(task,endpoint.getDelay(),endpoint.getPeriod());
+    }
+  }
+ else {
+    if (endpoint.getTime() != null) {
+      if (endpoint.getPeriod() >= 0) {
+        result.schedule(task,endpoint.getTime(),endpoint.getPeriod());
+      }
+ else {
+        result.schedule(task,endpoint.getTime());
+      }
+    }
+ else {
+      if (endpoint.getPeriod() >= 0) {
+        result.schedule(task,endpoint.getDelay(),endpoint.getPeriod());
+      }
+ else {
+        result.schedule(task,endpoint.getDelay());
+      }
+    }
+  }
+  return result;
+}
