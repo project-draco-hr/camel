@@ -1,0 +1,30 @@
+{
+  final CountDownLatch receivedCountDown=new CountDownLatch(1);
+  ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+  container.addComponent("activemq",jmsComponentClientAcknowledge(connectionFactory));
+  PojoComponent component=new PojoComponent();
+  component.addService("listener",new MessageListener(){
+    public void onMessage(    Message msg){
+      System.out.println("Received: " + msg);
+      receivedCountDown.countDown();
+    }
+  }
+);
+  container.addComponent("default",component);
+  container.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("jms:activemq:test").to("pojo:default:listener");
+    }
+  }
+);
+  container.activateEndpoints();
+  JmsEndpoint endpoint=(JmsEndpoint)container.resolveEndpoint("jms:activemq:test");
+  Producer<JmsExchange> producer=endpoint.createProducer();
+  JmsExchange exchange=producer.createExchange();
+  JmsMessage in=exchange.getIn();
+  in.setBody("Hello");
+  in.setHeader("cheese",123);
+  producer.onExchange(exchange);
+  assertTrue("The message ware received by the Pojo",receivedCountDown.await(5,TimeUnit.SECONDS));
+  container.deactivateEndpoints();
+}
