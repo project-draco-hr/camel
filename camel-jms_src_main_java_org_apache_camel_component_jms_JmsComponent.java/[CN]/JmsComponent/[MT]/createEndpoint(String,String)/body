@@ -10,5 +10,13 @@
     path=path.substring(TOPIC_PREFIX.length());
   }
   final String subject=convertPathToActualDestination(path);
-  return new JmsEndpoint(uri,getContext(),subject,pubSubDomain,getConfiguration().copy());
+  JmsEndpoint endpoint=new JmsEndpoint(uri,getContext(),subject,pubSubDomain,getConfiguration().copy());
+  URI u=new URI(uri);
+  Map options=URISupport.parseParamters(u);
+  String selector=(String)options.remove("selector");
+  if (selector != null) {
+    endpoint.setSelector(selector);
+  }
+  IntrospectionSupport.setProperties(endpoint.getConfiguration(),options);
+  return endpoint;
 }
