@@ -1,0 +1,41 @@
+{
+  if (visitedClasses.contains(type)) {
+    return;
+  }
+  visitedClasses.add(type);
+  Method[] methods=type.getDeclaredMethods();
+  for (  Method method : methods) {
+    Converter annotation=method.getAnnotation(Converter.class);
+    if (annotation != null) {
+      Class<?>[] parameterTypes=method.getParameterTypes();
+      if (parameterTypes == null || parameterTypes.length != 1) {
+        log.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method should have one parameter");
+      }
+ else {
+        int modifiers=method.getModifiers();
+        if (isAbstract(modifiers) || !isPublic(modifiers)) {
+          log.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method is not a public and concrete method");
+        }
+ else {
+          Class toType=method.getReturnType();
+          if (toType.equals(Void.class)) {
+            log.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method returns a void method");
+          }
+ else {
+            Class fromType=parameterTypes[0];
+            if (isStatic(modifiers)) {
+              registry.addTypeConverter(fromType,toType,new StaticMethodTypeConverter(method));
+            }
+ else {
+              registry.addTypeConverter(fromType,toType,new InstanceMethodTypeConverter(registry,type,method));
+            }
+          }
+        }
+      }
+    }
+  }
+  Class superclass=type.getSuperclass();
+  if (superclass != null && !superclass.equals(Object.class)) {
+    loadConverterMethods(registry,superclass);
+  }
+}
