@@ -1,0 +1,20 @@
+{
+  try {
+    log.info("Received message: " + message + " with content types: "+ message.getContentFormats());
+    Conduit backChannel=message.getDestination().getBackChannel(message,null,null);
+    message.remove(LocalConduit.DIRECT_DISPATCH);
+    TypeConverter converter=camelContext.getTypeConverter();
+    String request=converter.convertTo(String.class,message.getContent(InputStream.class));
+    log.info("Request body: " + request);
+    org.apache.cxf.message.Exchange exchange=message.getExchange();
+    MessageImpl reply=new MessageImpl();
+    InputStream payload=converter.convertTo(InputStream.class,"<reply>true</reply>");
+    reply.setContent(InputStream.class,payload);
+    exchange.setOutMessage(reply);
+    backChannel.send(reply);
+  }
+ catch (  Exception e) {
+    log.error("Caught: " + e,e);
+    fail("Caught: " + e);
+  }
+}

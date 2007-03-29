@@ -1,0 +1,24 @@
+{
+  try {
+    LocalTransportFactory factory=endpoint.getLocalTransportFactory();
+    EndpointInfo endpointInfo=endpoint.getEndpointInfo();
+    LocalDestination d=(LocalDestination)factory.getDestination(endpointInfo);
+    Conduit conduit=factory.getConduit(endpointInfo);
+    ResultFuture future=new ResultFuture();
+    conduit.setMessageObserver(future);
+    CxfBinding binding=endpoint.getBinding();
+    MessageImpl m=binding.createCxfMessage(exchange);
+    ExchangeImpl e=new ExchangeImpl();
+    e.setInMessage(m);
+    m.put(LocalConduit.DIRECT_DISPATCH,Boolean.TRUE);
+    m.setDestination(d);
+    conduit.send(m);
+    if (endpoint.isInOut()) {
+      Message response=future.getResponse();
+      binding.storeCxfResponse(exchange,response);
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeCamelException(e);
+  }
+}
