@@ -1,0 +1,33 @@
+{
+  XMPPConnection connection;
+  if (port > 0) {
+    connection=new XMPPConnection(host,port);
+  }
+ else {
+    connection=new XMPPConnection(host);
+  }
+  if (login && !connection.isAuthenticated()) {
+    if (user != null) {
+      log.info("Logging in to XMPP as user: " + user + " on connection: "+ connection);
+      if (password == null) {
+        log.warn("No password configured for user: " + user);
+      }
+      if (createAccount) {
+        AccountManager accountManager=new AccountManager(connection);
+        accountManager.createAccount(user,password);
+      }
+      if (resource != null) {
+        connection.login(user,password,resource);
+      }
+ else {
+        connection.login(user,password);
+      }
+    }
+ else {
+      log.info("Logging in anonymously to XMPP on connection: " + connection);
+      connection.loginAnonymously();
+    }
+    connection.sendPacket(new Presence(Presence.Type.AVAILABLE));
+  }
+  return connection;
+}
