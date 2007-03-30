@@ -8,10 +8,16 @@
     log.info("Request body: " + request);
     org.apache.cxf.message.Exchange exchange=message.getExchange();
     MessageImpl reply=new MessageImpl();
+    reply.put("foo","bar");
+    assertEquals("foo header","bar",reply.get("foo"));
+    reply.put("replyHeader",message.get("requestHeader") + "2");
+    Set<Map.Entry<String,Object>> entries=reply.entrySet();
+    assertEquals("entrySet.size()",2,entries.size());
     InputStream payload=converter.convertTo(InputStream.class,"<reply>true</reply>");
     reply.setContent(InputStream.class,payload);
     exchange.setOutMessage(reply);
-    backChannel.send(reply);
+    log.info("sending reply: " + reply);
+    backChannel.send(message);
   }
  catch (  Exception e) {
     log.error("Caught: " + e,e);

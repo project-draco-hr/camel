@@ -1,19 +1,25 @@
 {
-  CxfEndpoint endpoint=(CxfEndpoint)camelContext.resolveEndpoint("cxf:http://localhost/test");
-  assertNotNull(endpoint);
-  LocalTransportFactory factory=endpoint.getLocalTransportFactory();
   EndpointInfo ei=new EndpointInfo(null,"http://schemas.xmlsoap.org/soap/http");
   AddressType a=new AddressType();
   a.setLocation("http://localhost/test");
   ei.addExtensor(a);
-  LocalDestination d=(LocalDestination)factory.getDestination(ei);
-  d.setMessageObserver(new EchoObserver());
-  Exchange exchange=client.send("cxf:http://localhost/test",new Processor<Exchange>(){
+  Bus bus=CXFBusFactory.getDefaultBus();
+  DestinationFactoryManager dfm=bus.getExtension(DestinationFactoryManager.class);
+  DestinationFactory factory=dfm.getDestinationFactory(LocalTransportFactory.TRANSPORT_ID);
+  Destination destination=factory.getDestination(ei);
+  destination.setMessageObserver(new EchoObserver());
+  CxfExchange exchange=(CxfExchange)client.send("cxf:http://localhost/test",new Processor<Exchange>(){
     public void onExchange(    Exchange exchange){
+      exchange.getIn().setHeader("requestHeader","foo");
       exchange.getIn().setBody("<hello>world</hello>");
     }
   }
 );
   org.apache.camel.Message out=exchange.getOut();
-  log.info("Received output message: " + out);
+  Message cxfOutMessage=exchange.getOutMessage();
+  log.info("Received output message: " + out + " and CXF out: "+ cxfOutMessage);
+  assertEquals("replyHeader on CXF","foo2",cxfOutMessage.get("replyHeader"));
+  assertEquals("replyHeader on Camel","foo2",out.getHeader("replyHeader"));
+  String output=out.getBody(String.class);
+  log.info("Received output text: " + output);
 }
