@@ -1,0 +1,25 @@
+{
+  if (isXmppServerPresent()) {
+    String uriPrefx=getUriPrefix();
+    final String uri1=uriPrefx + "a";
+    final String uri2=uriPrefx + "b";
+    log.info("Using URI " + uri1 + " and "+ uri2);
+    container.addRoutes(new RouteBuilder(){
+      public void configure(){
+        from(uri1).to(uri2);
+        from(uri2).process(new Processor<XmppExchange>(){
+          public void onExchange(          XmppExchange e){
+            log.info("Received exchange: " + e);
+            receivedExchange=e;
+            latch.countDown();
+          }
+        }
+);
+      }
+    }
+);
+    endpoint=container.resolveEndpoint(uri1);
+    assertNotNull("No endpoint found!",endpoint);
+  }
+  container.activateEndpoints();
+}
