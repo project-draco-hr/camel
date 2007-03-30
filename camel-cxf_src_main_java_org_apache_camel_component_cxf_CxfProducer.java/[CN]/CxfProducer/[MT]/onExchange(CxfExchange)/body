@@ -6,11 +6,13 @@
     e.setInMessage(m);
     m.put(LocalConduit.DIRECT_DISPATCH,Boolean.TRUE);
     m.setDestination(destination);
-    conduit.send(m);
-    if (endpoint.isInOut()) {
-      Message response=future.getResponse();
-      response=e.getOutMessage();
-      binding.storeCxfResponse(exchange,response);
+synchronized (conduit) {
+      conduit.send(m);
+      if (endpoint.isInOut()) {
+        Message response=future.getResponse();
+        response=e.getOutMessage();
+        binding.storeCxfResponse(exchange,response);
+      }
     }
   }
  catch (  IOException e) {
