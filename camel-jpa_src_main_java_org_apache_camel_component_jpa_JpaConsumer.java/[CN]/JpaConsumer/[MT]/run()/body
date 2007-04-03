@@ -1,28 +1,27 @@
 {
   log.debug("Starting to poll for new database entities to process");
-  transaction=entityManager.getTransaction();
-  transaction.begin();
   try {
-    Query query=getQueryFactory().createQuery(this);
-    configureParameters(query);
-    List results=query.getResultList();
-    for (    Object result : results) {
-      if (log.isDebugEnabled()) {
-        log.debug("Processing new entity: " + result);
-      }
-      if (lockEntity(result)) {
-        Exchange exchange=createExchange(result);
-        getProcessor().onExchange(exchange);
-        getDeleteHandler().deleteObject(this,result);
+    template.execute(new JpaCallback(){
+      public Object doInJpa(      EntityManager entityManager) throws PersistenceException {
+        Query query=getQueryFactory().createQuery(entityManager);
+        configureParameters(query);
+        List results=query.getResultList();
+        for (        Object result : results) {
+          if (log.isDebugEnabled()) {
+            log.debug("Processing new entity: " + result);
+          }
+          if (lockEntity(result,entityManager)) {
+            Exchange exchange=createExchange(result);
+            getProcessor().onExchange(exchange);
+            getDeleteHandler().deleteObject(entityManager,result);
+          }
+        }
+        return null;
       }
     }
-    transaction.commit();
-    transaction=null;
+);
   }
  catch (  RuntimeException e) {
     log.warn("Caught: " + e,e);
-    if (transaction != null) {
-      transaction.rollback();
-    }
   }
 }

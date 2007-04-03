@@ -1,23 +1,23 @@
 {
-  transaction=entityManager.getTransaction();
-  transaction.begin();
-  entityManager.createQuery("delete from " + entityName).executeUpdate();
-  List results=entityManager.createQuery(queryText).getResultList();
+  transactionStrategy.execute(new JpaCallback(){
+    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+      entityManager.createQuery("delete from " + entityName).executeUpdate();
+      return null;
+    }
+  }
+);
+  List results=template.find(queryText);
   assertEquals("Should have no results: " + results,0,results.size());
-  transaction.commit();
   client.send(endpoint,new Processor<Exchange>(){
     public void onExchange(    Exchange exchange){
       exchange.getIn().setBody(new SendEmail("foo@bar.com"));
     }
   }
 );
-  transaction.begin();
-  results=entityManager.createQuery(queryText).getResultList();
+  results=template.find(queryText);
   assertEquals("Should have no results: " + results,1,results.size());
   SendEmail mail=(SendEmail)results.get(0);
   assertEquals("address property","foo@bar.com",mail.getAddress());
-  transaction.commit();
-  transaction=null;
   consumer=endpoint.createConsumer(new Processor<Exchange>(){
     public void onExchange(    Exchange e){
       log.info("Received exchange: " + e.getIn());

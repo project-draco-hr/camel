@@ -1,19 +1,16 @@
 {
-  Object values=expression.evaluate(exchange);
+  final Object values=expression.evaluate(exchange);
   if (values != null) {
-    EntityTransaction transaction=entityManager.getTransaction();
-    transaction.begin();
-    try {
-      Iterator iter=ObjectConverter.iterator(values);
-      while (iter.hasNext()) {
-        Object value=iter.next();
-        entityManager.persist(value);
+    template.execute(new JpaCallback(){
+      public Object doInJpa(      EntityManager entityManager) throws PersistenceException {
+        Iterator iter=ObjectConverter.iterator(values);
+        while (iter.hasNext()) {
+          Object value=iter.next();
+          entityManager.persist(value);
+        }
+        return null;
       }
-      transaction.commit();
     }
- catch (    RuntimeException e) {
-      transaction.rollback();
-      throw e;
-    }
+);
   }
 }
