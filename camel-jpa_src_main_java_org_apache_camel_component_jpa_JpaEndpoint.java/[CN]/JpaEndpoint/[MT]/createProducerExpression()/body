@@ -1,0 +1,22 @@
+{
+  final Class<?> type=getEntityType();
+  if (type == null) {
+    return ExpressionBuilder.bodyExpression();
+  }
+ else {
+    return new Expression<Exchange>(){
+      public Object evaluate(      Exchange exchange){
+        Object answer=exchange.getIn().getBody(type);
+        if (answer == null) {
+          Object defaultValue=exchange.getIn().getBody();
+          if (defaultValue != null) {
+            throw new NoTypeConversionAvailableException(defaultValue,type);
+          }
+          answer=exchange.getContext().getInjector().newInstance(type);
+        }
+        return answer;
+      }
+    }
+;
+  }
+}
