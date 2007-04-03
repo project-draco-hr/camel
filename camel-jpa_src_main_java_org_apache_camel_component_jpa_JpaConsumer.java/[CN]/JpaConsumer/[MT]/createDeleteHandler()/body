@@ -1,4 +1,20 @@
 {
+  Class<?> entityType=getEndpoint().getEntityType();
+  if (entityType != null) {
+    List<Method> methods=ObjectHelper.findMethodsWithAnnotation(entityType,Consumed.class);
+    if (methods.size() > 1) {
+      throw new IllegalArgumentException("Only one method can be annotated with the @Consumed annotation but found: " + methods);
+    }
+ else     if (methods.size() == 1) {
+      final Method method=methods.get(0);
+      return new DeleteHandler<Object>(){
+        public void deleteObject(        EntityManager entityManager,        Object entityBean){
+          ObjectHelper.invokeMethod(method,entityBean);
+        }
+      }
+;
+    }
+  }
   return new DeleteHandler<Object>(){
     public void deleteObject(    EntityManager entityManager,    Object entityBean){
       entityManager.remove(entityBean);

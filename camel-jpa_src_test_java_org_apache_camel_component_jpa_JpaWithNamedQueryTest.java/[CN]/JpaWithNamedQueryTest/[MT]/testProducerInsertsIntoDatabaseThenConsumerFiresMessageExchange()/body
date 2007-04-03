@@ -35,4 +35,24 @@
   MultiSteps result=receivedExchange.getIn().getBody(MultiSteps.class);
   assertNotNull("Received a POJO",result);
   assertEquals("address property","foo@bar.com",result.getAddress());
+  Thread.sleep(1000);
+  transactionStrategy.execute(new JpaCallback(){
+    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+      List<MultiSteps> rows=entityManager.createQuery("select x from MultiSteps x").getResultList();
+      assertEquals("Number of entities: " + rows,2,rows.size());
+      int counter=1;
+      for (      MultiSteps row : rows) {
+        log.info("entity: " + counter++ + " = "+ row);
+        if (row.getAddress().equals("foo@bar.com")) {
+          log.info("Found updated row: " + row);
+          assertEquals("Updated row step for: " + row,2,row.getStep());
+        }
+ else {
+          assertEquals("dummy row step for: " + row,4,row.getStep());
+        }
+      }
+      return null;
+    }
+  }
+);
 }
