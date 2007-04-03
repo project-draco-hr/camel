@@ -10,9 +10,11 @@
       if (log.isDebugEnabled()) {
         log.debug("Processing new entity: " + result);
       }
-      Exchange exchange=createExchange(result);
-      getProcessor().onExchange(exchange);
-      getDeleteHandler().deleteObject(this,result);
+      if (lockEntity(result)) {
+        Exchange exchange=createExchange(result);
+        getProcessor().onExchange(exchange);
+        getDeleteHandler().deleteObject(this,result);
+      }
     }
     transaction.commit();
     transaction=null;
