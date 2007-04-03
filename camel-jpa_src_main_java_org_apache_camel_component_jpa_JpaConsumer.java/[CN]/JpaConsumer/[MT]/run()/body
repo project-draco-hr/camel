@@ -1,10 +1,26 @@
 {
-  Query query=queryFactory.createQuery(this);
-  configureParameters(query);
-  List results=query.getResultList();
-  for (  Object result : results) {
-    Exchange exchange=createExchange(result);
-    getProcessor().onExchange(exchange);
-    deleteHandler.deleteObject(this,result);
+  log.debug("Starting to poll for new database entities to process");
+  transaction=entityManager.getTransaction();
+  transaction.begin();
+  try {
+    Query query=getQueryFactory().createQuery(this);
+    configureParameters(query);
+    List results=query.getResultList();
+    for (    Object result : results) {
+      if (log.isDebugEnabled()) {
+        log.debug("Processing new entity: " + result);
+      }
+      Exchange exchange=createExchange(result);
+      getProcessor().onExchange(exchange);
+      getDeleteHandler().deleteObject(this,result);
+    }
+    transaction.commit();
+    transaction=null;
+  }
+ catch (  RuntimeException e) {
+    log.warn("Caught: " + e,e);
+    if (transaction != null) {
+      transaction.rollback();
+    }
   }
 }
