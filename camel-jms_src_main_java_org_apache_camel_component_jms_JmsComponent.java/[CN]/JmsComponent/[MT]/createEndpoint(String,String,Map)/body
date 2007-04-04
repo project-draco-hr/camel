@@ -1,0 +1,19 @@
+{
+  boolean pubSubDomain=false;
+  if (remaining.startsWith(QUEUE_PREFIX)) {
+    pubSubDomain=false;
+    remaining=removeStartingCharacters(remaining.substring(QUEUE_PREFIX.length()),'/');
+  }
+ else   if (remaining.startsWith(TOPIC_PREFIX)) {
+    pubSubDomain=true;
+    remaining=removeStartingCharacters(remaining.substring(TOPIC_PREFIX.length()),'/');
+  }
+  final String subject=convertPathToActualDestination(remaining);
+  JmsEndpoint endpoint=new JmsEndpoint(uri,this,subject,pubSubDomain,getConfiguration().copy());
+  String selector=(String)parameters.remove("selector");
+  if (selector != null) {
+    endpoint.setSelector(selector);
+  }
+  IntrospectionSupport.setProperties(endpoint.getConfiguration(),parameters);
+  return endpoint;
+}

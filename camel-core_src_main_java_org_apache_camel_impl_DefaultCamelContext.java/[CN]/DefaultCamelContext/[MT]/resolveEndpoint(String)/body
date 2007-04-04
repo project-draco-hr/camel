@@ -4,10 +4,27 @@ synchronized (endpoints) {
     answer=endpoints.get(uri);
     if (answer == null) {
       try {
-        for (        EndpointResolver resolver : resolvers) {
-          answer=resolver.resolveEndpoint(this,uri);
-          if (answer != null) {
-            break;
+synchronized (components) {
+          Collection<Component> componentSet=components.values();
+          for (          Component component : componentSet) {
+            answer=component.createEndpoint(uri);
+            if (answer != null) {
+              break;
+            }
+          }
+        }
+        if (answer == null) {
+          Component component=componentResolver.resolveComponent(uri,this);
+          if (component != null) {
+            answer=component.createEndpoint(uri);
+          }
+        }
+        if (answer == null) {
+          for (          EndpointResolver resolver : resolvers) {
+            answer=resolver.resolveEndpoint(this,uri);
+            if (answer != null) {
+              break;
+            }
           }
         }
         if (answer == null) {

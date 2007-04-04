@@ -1,0 +1,24 @@
+{
+  ObjectHelper.notNull(getCamelContext(),"camelContext");
+  String remaining=matchesPrefixes(uri);
+  if (remaining == null) {
+    return null;
+  }
+  if (remaining.startsWith(":")) {
+    remaining=remaining.substring(1);
+  }
+  URI u=new URI(uri);
+  String path=u.getHost();
+  if (path == null) {
+    path=u.getSchemeSpecificPart();
+  }
+  Map parameters=URISupport.parseParamters(u);
+  Endpoint<E> endpoint=createEndpoint(uri,path,parameters);
+  if (endpoint == null) {
+    return null;
+  }
+  if (parameters != null) {
+    IntrospectionSupport.setProperties(endpoint,parameters);
+  }
+  return endpoint;
+}
