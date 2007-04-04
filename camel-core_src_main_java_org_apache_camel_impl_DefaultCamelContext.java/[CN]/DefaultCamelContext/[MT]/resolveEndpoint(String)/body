@@ -4,21 +4,24 @@ synchronized (endpoints) {
     answer=endpoints.get(uri);
     if (answer == null) {
       try {
+        String splitURI[]=ObjectHelper.splitOnCharacter(uri,":",2);
+        if (splitURI[1] == null) {
+          throw new IllegalArgumentException("Invalid URI, it did not contain a scheme: " + uri);
+        }
+        String scheme=splitURI[0];
+        Component component=null;
 synchronized (components) {
-          Collection<Component> componentSet=components.values();
-          for (          Component component : componentSet) {
-            answer=component.resolveEndpoint(uri);
-            if (answer != null) {
-              break;
+          component=components.get(scheme);
+          if (component == null) {
+            component=getComponentResolver().resolveComponent(uri,this);
+            addComponent(scheme,component);
+            if (isStarted()) {
+              ServiceHelper.startServices(component);
             }
           }
         }
-        if (answer == null) {
-          Component component=getComponentResolver().resolveComponent(uri,this);
-          if (component != null) {
-            ServiceHelper.startServices(component);
-            answer=component.resolveEndpoint(uri);
-          }
+        if (component != null) {
+          answer=component.resolveEndpoint(uri);
         }
         if (answer != null) {
           ServiceHelper.startServices(answer);
