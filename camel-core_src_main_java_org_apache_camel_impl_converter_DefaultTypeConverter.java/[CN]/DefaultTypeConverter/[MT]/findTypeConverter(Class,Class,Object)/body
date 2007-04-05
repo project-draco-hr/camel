@@ -1,10 +1,4 @@
 {
-  for (Class toSuperClass=toType.getSuperclass(); toSuperClass != null && !toSuperClass.equals(Object.class); toSuperClass=toSuperClass.getSuperclass()) {
-    TypeConverter converter=getTypeConverter(toSuperClass,fromType);
-    if (converter != null) {
-      return converter;
-    }
-  }
   for (  Class type : toType.getInterfaces()) {
     TypeConverter converter=getTypeConverter(type,fromType);
     if (converter != null) {
@@ -26,6 +20,16 @@
       TypeConverter converter=getTypeConverter(toType,type);
       if (converter != null) {
         return converter;
+      }
+    }
+  }
+  Set<Map.Entry<TypeMapping,TypeConverter>> entries=typeMappings.entrySet();
+  for (  Map.Entry<TypeMapping,TypeConverter> entry : entries) {
+    TypeMapping key=entry.getKey();
+    Class aToType=key.getToType();
+    if (toType.isAssignableFrom(aToType)) {
+      if (fromType.isAssignableFrom(key.getFromType())) {
+        return entry.getValue();
       }
     }
   }
