@@ -1,0 +1,17 @@
+{
+  final Processor<Exchange> processor=new Processor<Exchange>(){
+    public void process(    Exchange e){
+      Message in=e.getIn();
+      String body=in.getBody(String.class);
+      log.debug("Received body: " + body + " on exchange: "+ e);
+      receivedBodies.add(body);
+      latch.countDown();
+    }
+  }
+;
+  final String endpointUri="queue:test.a";
+  container.addRoutes(createRouteBuilder(endpointUri,processor));
+  endpoint=container.resolveEndpoint(endpointUri);
+  assertNotNull("No endpoint found for URI: " + endpointUri,endpoint);
+  container.start();
+}
