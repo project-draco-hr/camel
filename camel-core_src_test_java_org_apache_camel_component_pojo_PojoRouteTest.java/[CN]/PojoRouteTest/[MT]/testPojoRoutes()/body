@@ -1,27 +1,18 @@
 {
-  CamelContext container=new DefaultCamelContext();
+  CamelContext camelContext=new DefaultCamelContext();
   PojoComponent component=new PojoComponent();
+  camelContext.addComponent("pojo",component);
   component.addService("bye",new SayService("Good Bye!"));
-  container.addComponent("default",component);
-  final AtomicInteger hitCount=new AtomicInteger();
-  final DelegateProcess<PojoExchange> tracingInterceptor=new DelegateProcess<PojoExchange>(){
-    @Override public void process(    PojoExchange exchange){
-      super.process(exchange);
-      hitCount.incrementAndGet();
-    }
-  }
-;
-  container.addRoutes(new RouteBuilder(){
+  camelContext.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("pojo:hello").intercept(tracingInterceptor).to("pojo:bye");
+      from("pojo:hello").to("pojo:bye");
     }
   }
 );
-  container.start();
+  camelContext.start();
   PojoConsumer consumer=component.getConsumer("hello");
   ISay proxy=consumer.createProxy(ISay.class);
   String rc=proxy.say();
   assertEquals("Good Bye!",rc);
-  assertEquals(1,hitCount.get());
-  container.stop();
+  camelContext.stop();
 }
