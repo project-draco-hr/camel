@@ -1,18 +1,9 @@
 {
   context=createContext();
-  final Processor<Exchange> processor=new Processor<Exchange>(){
-    public void process(    Exchange e){
-      Message in=e.getIn();
-      String body=in.getBody(String.class);
-      log.debug("Received body: " + body + " on exchange: "+ e);
-      receivedBodies.add(body);
-      latch.countDown();
-    }
-  }
-;
-  final String endpointUri="queue:test.a";
-  context.addRoutes(createRouteBuilder(endpointUri,processor));
-  endpoint=context.resolveEndpoint(endpointUri);
-  assertNotNull("No endpoint found for URI: " + endpointUri,endpoint);
+  String fromUri="queue:test.a";
+  String toUri="mock:result";
+  context.addRoutes(createRouteBuilder(fromUri,toUri));
+  startEndpoint=resolveMandatoryEndpoint(context,fromUri);
+  resultEndpoint=(MockEndpoint)resolveMandatoryEndpoint(context,toUri);
   context.start();
 }
