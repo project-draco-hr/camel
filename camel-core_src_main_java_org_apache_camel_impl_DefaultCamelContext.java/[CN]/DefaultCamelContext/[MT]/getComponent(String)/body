@@ -1,5 +1,18 @@
 {
 synchronized (components) {
-    return components.get(componentName);
+    Component component=components.get(name);
+    if (component == null && autoCreateComponents) {
+      try {
+        component=getComponentResolver().resolveComponent(name,this);
+        addComponent(name,component);
+        if (isStarted()) {
+          ServiceHelper.startServices(component);
+        }
+      }
+ catch (      Exception e) {
+        throw new RuntimeCamelException("Could not auto create component: " + name,e);
+      }
+    }
+    return component;
   }
 }
