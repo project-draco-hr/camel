@@ -1,0 +1,21 @@
+{
+  final TransactionTemplate transactionTemplate=getTemplate();
+  if (transactionTemplate == null) {
+    log.warn("No TransactionTemplate available so transactions will not be enabled!");
+    return processor;
+  }
+  return new Processor<E>(){
+    public void process(    final E exchange){
+      transactionTemplate.execute(new TransactionCallbackWithoutResult(){
+        protected void doInTransactionWithoutResult(        TransactionStatus status){
+          processor.process(exchange);
+        }
+      }
+);
+    }
+    @Override public String toString(){
+      return "SpringTransaction[" + processor + "]";
+    }
+  }
+;
+}
