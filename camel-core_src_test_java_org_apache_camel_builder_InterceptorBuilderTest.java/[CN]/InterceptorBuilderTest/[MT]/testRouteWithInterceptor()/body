@@ -1,0 +1,39 @@
+{
+  CamelContext container=new DefaultCamelContext();
+  final ArrayList<String> order=new ArrayList<String>();
+  final InterceptorProcessor<Exchange> interceptor1=new InterceptorProcessor<Exchange>(){
+    @Override public void process(    Exchange exchange){
+      order.add("START:1");
+      super.process(exchange);
+      order.add("END:1");
+    }
+  }
+;
+  final InterceptorProcessor<Exchange> interceptor2=new InterceptorProcessor<Exchange>(){
+    @Override public void process(    Exchange exchange){
+      order.add("START:2");
+      super.process(exchange);
+      order.add("END:2");
+    }
+  }
+;
+  RouteBuilder<Exchange> builder=new RouteBuilder<Exchange>(){
+    public void configure(){
+      from("direct:a").intercept().add(interceptor1).add(interceptor2).target().to("direct:d");
+    }
+  }
+;
+  container.addRoutes(builder);
+  container.start();
+  Endpoint<Exchange> endpoint=container.resolveEndpoint("direct:a");
+  Exchange exchange=endpoint.createExchange();
+  Producer<Exchange> producer=endpoint.createProducer();
+  producer.process(exchange);
+  ArrayList<String> expected=new ArrayList<String>();
+  expected.add("START:1");
+  expected.add("START:2");
+  expected.add("END:2");
+  expected.add("END:1");
+  System.out.println("Interceptor invocation order:" + order);
+  assertEquals(expected,order);
+}
