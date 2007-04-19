@@ -1,0 +1,37 @@
+{
+  Class currentBuilder=builder;
+  NodeList childElements=element.getChildNodes();
+  Element previousElement=null;
+  for (int i=0; i < childElements.getLength(); ++i) {
+    Node node=childElements.item(i);
+    if (node.getNodeType() == Node.ELEMENT_NODE) {
+      currentBuilder=parseAction(currentBuilder,actions,(Element)node,previousElement);
+      previousElement=(Element)node;
+      BuilderAction action=actions.get(actions.size() - 1);
+      if (action.getMethodInfo().methodAnnotation.nestedActions()) {
+        currentBuilder=parseBuilderElement((Element)node,currentBuilder,actions);
+      }
+ else {
+        if (hasChildElements(node)) {
+          throw new IllegalArgumentException("The element " + node.getLocalName() + " should not have any child elements.");
+        }
+      }
+    }
+  }
+  if (currentBuilder != null) {
+    Method[] methods=currentBuilder.getMethods();
+    for (int i=0; i < methods.length; i++) {
+      Method method=methods[i];
+      Fluent annotation=method.getAnnotation(Fluent.class);
+      if (annotation != null && annotation.callOnElementEnd()) {
+        if (method.getParameterTypes().length > 0) {
+          throw new RuntimeException("Only methods with no parameters can annotated with @Fluent(callOnElementEnd=true): " + method);
+        }
+        MethodInfo methodInfo=new MethodInfo(method,annotation,new LinkedHashMap<String,Class>(),new LinkedHashMap<String,FluentArg>());
+        actions.add(new BuilderAction(methodInfo,new HashMap<String,Object>()));
+        currentBuilder=method.getReturnType();
+      }
+    }
+  }
+  return currentBuilder;
+}
