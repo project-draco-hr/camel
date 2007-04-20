@@ -1,0 +1,22 @@
+{
+  final Processor<Exchange> processor=new Processor<Exchange>(){
+    public void process(    Exchange exchange){
+      Integer number=exchange.getIn().getBody(Integer.class);
+      if (number == null) {
+        number=0;
+      }
+      number=number + 1;
+      exchange.getOut().setBody(number);
+    }
+  }
+;
+  return new RouteBuilder<Exchange>(){
+    public void configure(){
+      from("direct:a").pipeline("direct:x","direct:y","direct:z","mock:result");
+      from("direct:x").process(processor);
+      from("direct:y").process(processor);
+      from("direct:z").process(processor);
+    }
+  }
+;
+}
