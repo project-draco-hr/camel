@@ -1,0 +1,21 @@
+{
+  final Processor<Exchange> processor=new Processor<Exchange>(){
+    public void process(    Exchange exchange){
+      Integer counter=exchange.getProperty(DeadLetterChannel.REDELIVERY_COUNTER,Integer.class);
+      int attempt=(counter == null) ? 1 : counter + 1;
+      if (attempt < failUntilAttempt) {
+        throw new RuntimeException("Failed to process due to attempt: " + attempt + " being less than: "+ failUntilAttempt);
+      }
+ else {
+        client.send("mock:success",exchange);
+      }
+    }
+  }
+;
+  return new RouteBuilder<Exchange>(){
+    public void configure(){
+      from("direct:start").errorHandler(deadLetterChannel("mock:failed").maximumRedeliveries(2).initialRedeliveryDelay(1)).process(processor);
+    }
+  }
+;
+}

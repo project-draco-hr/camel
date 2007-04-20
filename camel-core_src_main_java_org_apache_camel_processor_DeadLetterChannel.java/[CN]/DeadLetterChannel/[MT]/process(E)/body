@@ -2,10 +2,9 @@
   int redeliveryCounter=0;
   long redeliveryDelay=0;
   do {
-    if (redeliveryCounter++ > 0) {
+    if (redeliveryCounter > 0) {
       redeliveryDelay=redeliveryPolicy.getRedeliveryDelay(redeliveryDelay);
       sleep(redeliveryDelay);
-      appendRedeliveryHeaders(exchange,redeliveryCounter);
     }
     try {
       output.process(exchange);
@@ -14,6 +13,7 @@
  catch (    RuntimeException e) {
       log.error("On delivery attempt: " + redeliveryCounter + " caught: "+ e,e);
     }
+    redeliveryCounter=incrementRedeliveryCounter(exchange);
   }
  while (redeliveryPolicy.shouldRedeliver(redeliveryCounter));
   deadLetter.process(exchange);
