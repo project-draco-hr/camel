@@ -1,0 +1,19 @@
+{
+  ByteBuffer payload=exchange.getIn().getBody(ByteBuffer.class);
+  File file=null;
+  if (endpoint.getFile() != null && endpoint.getFile().isDirectory()) {
+    file=new File(endpoint.getFile(),exchange.getFile().getName());
+  }
+ else {
+    file=exchange.getFile();
+  }
+  try {
+    FileChannel fc=new RandomAccessFile(file,"rw").getChannel();
+    fc.position(fc.size());
+    fc.write(payload);
+    fc.close();
+  }
+ catch (  Throwable e) {
+    log.error("Failed to write to File: " + file,e);
+  }
+}
