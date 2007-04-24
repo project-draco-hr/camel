@@ -1,0 +1,21 @@
+{
+  return new SpringRouteBuilder<Exchange>(){
+    public void configure(){
+      Policy requried=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_REQUIRED"));
+      Policy notsupported=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_NOT_SUPPORTED"));
+      Policy requirenew=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_REQUIRES_NEW"));
+      DelegateProcessor rollback=new DelegateProcessor(){
+        @Override public void process(        Object exchange){
+          processNext(exchange);
+          throw new RuntimeException("rollback");
+        }
+      }
+;
+      from("activemq:queue:mock.a").trace().to("mock:a");
+      transactionPolicy("PROPAGATION_REQUIRED");
+      from("activemq:queue:a").trace().to("activemq:queue:mock.a");
+      from("activemq:queue:b").inheritErrorHandler(false).trace().intercept(rollback).to("activemq:queue:mock.a","mock:b");
+    }
+  }
+;
+}
