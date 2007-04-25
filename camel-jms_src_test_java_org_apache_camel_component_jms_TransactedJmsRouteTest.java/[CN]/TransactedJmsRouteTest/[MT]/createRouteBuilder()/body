@@ -4,17 +4,45 @@
       Policy requried=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_REQUIRED"));
       Policy notsupported=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_NOT_SUPPORTED"));
       Policy requirenew=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_REQUIRES_NEW"));
-      DelegateProcessor rollback=new DelegateProcessor(){
-        @Override public void process(        Object exchange){
-          processNext(exchange);
-          throw new RuntimeException("rollback");
+      Policy rollback=new Policy(){
+        public Processor wrap(        Processor processor){
+          return new DelegateProcessor(processor){
+            @Override public void process(            Object exchange){
+              processNext(exchange);
+              throw new RuntimeException("rollback");
+            }
+            @Override public String toString(){
+              return "rollback(" + next + ")";
+            }
+          }
+;
         }
       }
 ;
+      Policy catchRollback=new Policy(){
+        public Processor wrap(        Processor processor){
+          return new DelegateProcessor(processor){
+            @Override public void process(            Object exchange){
+              try {
+                processNext(exchange);
+              }
+ catch (              Throwable e) {
+              }
+            }
+            @Override public String toString(){
+              return "catchRollback(" + next + ")";
+            }
+          }
+;
+        }
+      }
+;
+      inheritErrorHandler(false);
       from("activemq:queue:mock.a").trace().to("mock:a");
-      transactionPolicy("PROPAGATION_REQUIRED");
-      from("activemq:queue:a").trace().to("activemq:queue:mock.a");
-      from("activemq:queue:b").inheritErrorHandler(false).trace().intercept(rollback).to("activemq:queue:mock.a","mock:b");
+      from("activemq:queue:a").to("activemq:queue:mock.a");
+      from("activemq:queue:b").policy(rollback).to("activemq:queue:mock.a","mock:b");
+      from("activemq:queue:c").policy(catchRollback).policy(requirenew).policy(rollback).to("activemq:queue:mock.a","mock:b");
+      from("activemq:queue:d").policy(catchRollback).policy(notsupported).policy(rollback).to("activemq:queue:mock.a");
     }
   }
 ;

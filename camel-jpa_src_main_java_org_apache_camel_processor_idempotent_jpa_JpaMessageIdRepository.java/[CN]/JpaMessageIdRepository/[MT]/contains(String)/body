@@ -1,14 +1,20 @@
 {
-  List list=template.find(QUERY_STRING,processorName,messageId);
-  if (list.isEmpty()) {
-    MessageProcessed processed=new MessageProcessed();
-    processed.setProcessorName(processorName);
-    processed.setMessageId(messageId);
-    template.persist(processed);
-    template.flush();
-    return false;
-  }
+  Boolean rc=(Boolean)transactionTemplate.execute(new TransactionCallback(){
+    public Object doInTransaction(    TransactionStatus arg0){
+      List list=jpaTemplate.find(QUERY_STRING,processorName,messageId);
+      if (list.isEmpty()) {
+        MessageProcessed processed=new MessageProcessed();
+        processed.setProcessorName(processorName);
+        processed.setMessageId(messageId);
+        jpaTemplate.persist(processed);
+        jpaTemplate.flush();
+        return Boolean.FALSE;
+      }
  else {
-    return true;
+        return Boolean.TRUE;
+      }
+    }
   }
+);
+  return rc.booleanValue();
 }
