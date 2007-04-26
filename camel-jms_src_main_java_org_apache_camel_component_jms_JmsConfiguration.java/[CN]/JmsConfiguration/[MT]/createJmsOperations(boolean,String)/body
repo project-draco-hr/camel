@@ -1,5 +1,5 @@
 {
-  JmsTemplate template=useVersion102 ? new JmsTemplate102(getProducerConnectionFactory(),pubSubDomain) : new JmsTemplate(getProducerConnectionFactory());
+  JmsTemplate template=useVersion102 ? new JmsTemplate102(getConnectionFactory(),pubSubDomain) : new JmsTemplate(getConnectionFactory());
   template.setPubSubDomain(pubSubDomain);
   template.setDefaultDestinationName(destination);
   template.setExplicitQosEnabled(explicitQosEnabled);
@@ -19,10 +19,12 @@
   if (timeToLive >= 0) {
     template.setTimeToLive(timeToLive);
   }
-  boolean transacted=TRANSACTED.equals(producerAcknowledgementMode);
   template.setSessionTransacted(transacted);
-  if (!transacted) {
-    template.setSessionAcknowledgeModeName(producerAcknowledgementMode);
+  if (acknowledgementMode >= 0) {
+    template.setSessionAcknowledgeMode(acknowledgementMode);
+  }
+ else   if (acknowledgementModeName != null) {
+    template.setSessionAcknowledgeModeName(acknowledgementModeName);
   }
   return template;
 }

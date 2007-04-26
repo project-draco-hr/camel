@@ -1,5 +1,5 @@
 {
-  return new SpringRouteBuilder<Exchange>(){
+  return new SpringRouteBuilder(){
     public void configure(){
       Policy requried=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_REQUIRED"));
       Policy notsupported=new SpringTransactionPolicy(bean(TransactionTemplate.class,"PROPAGATION_NOT_SUPPORTED"));
@@ -43,6 +43,16 @@
       from("activemq:queue:b").policy(rollback).to("activemq:queue:mock.a","mock:b");
       from("activemq:queue:c").policy(catchRollback).policy(requirenew).policy(rollback).to("activemq:queue:mock.a","mock:b");
       from("activemq:queue:d").policy(catchRollback).policy(notsupported).policy(rollback).to("activemq:queue:mock.a");
+      JmsEndpoint endpoint=(JmsEndpoint)endpoint("activemq:queue:e");
+      endpoint.getConfiguration().setTransacted(false);
+      endpoint.getConfiguration().setAcknowledgementMode(Session.AUTO_ACKNOWLEDGE);
+      from(endpoint).policy(requried).policy(rollback).to("activemq:queue:mock.a","mock:b");
+      JmsEndpoint endpoint1=(JmsEndpoint)endpoint("activemq:topic:f");
+      endpoint1.getConfiguration().setTransacted(true);
+      from(endpoint1).policy(requried).policy(rollback).to("activemq:queue:mock.a","mock:b");
+      JmsEndpoint endpoint2=(JmsEndpoint)endpoint("activemq:topic:f");
+      endpoint1.getConfiguration().setTransacted(false);
+      from(endpoint2).policy(requried).policy(rollback).to("activemq:queue:mock.c","mock:d");
     }
   }
 ;

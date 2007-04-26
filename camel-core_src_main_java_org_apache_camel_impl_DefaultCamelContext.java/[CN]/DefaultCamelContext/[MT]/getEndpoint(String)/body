@@ -2,6 +2,26 @@
   Endpoint answer;
 synchronized (endpoints) {
     answer=endpoints.get(uri);
+    if (answer == null) {
+      try {
+        String splitURI[]=ObjectHelper.splitOnCharacter(uri,":",2);
+        if (splitURI[1] == null) {
+          throw new IllegalArgumentException("Invalid URI, it did not contain a scheme: " + uri);
+        }
+        String scheme=splitURI[0];
+        Component component=getComponent(scheme);
+        if (component != null) {
+          answer=component.resolveEndpoint(uri);
+        }
+        if (answer != null) {
+          startServices(answer);
+          endpoints.put(uri,answer);
+        }
+      }
+ catch (      Exception e) {
+        throw new ResolveEndpointFailedException(uri,e);
+      }
+    }
   }
   return answer;
 }
