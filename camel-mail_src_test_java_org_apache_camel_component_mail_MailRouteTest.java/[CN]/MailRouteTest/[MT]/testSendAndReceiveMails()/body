@@ -1,4 +1,6 @@
 {
+  resultEndpoint=(MockEndpoint)resolveMandatoryEndpoint("mock:result");
+  resultEndpoint.expectedMessageCount(1);
   client.send("smtp://james@localhost",new Processor<Exchange>(){
     public void process(    Exchange exchange){
       exchange.getIn().setBody("hello world!");
@@ -6,4 +8,6 @@
   }
 );
   assertMailboxReceivedMessages("james@localhost");
+  resultEndpoint.assertIsSatisfied(5000);
+  assertMailboxReceivedMessages("copy@localhost");
 }

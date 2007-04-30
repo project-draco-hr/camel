@@ -1,4 +1,13 @@
 {
   JavaMailConnection connection=configuration.createJavaMailConnection(this);
-  return createConsumer(processor,connection.createTransport());
+  String protocol=getConfiguration().getProtocol();
+  if (protocol.equals("smtp")) {
+    protocol="pop3";
+  }
+  String folderName=getConfiguration().getFolderName();
+  Folder folder=connection.getFolder(protocol,folderName);
+  if (folder == null) {
+    throw new IllegalArgumentException("No folder for protocol: " + protocol + " and name: "+ folderName);
+  }
+  return createConsumer(processor,folder);
 }
