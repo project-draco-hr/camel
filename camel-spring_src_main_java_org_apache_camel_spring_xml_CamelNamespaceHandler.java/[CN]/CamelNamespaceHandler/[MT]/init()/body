@@ -1,3 +1,22 @@
 {
-  registerBeanDefinitionParser("routeBuilder",new CamelBeanDefinitionParser());
+  registerBeanDefinitionParser("routes",camelBeanDefinitionParser);
+  registerBeanDefinitionParser("routeBuilder",camelBeanDefinitionParser);
+  registerBeanDefinitionParser("camelContext",new AbstractSimpleBeanDefinitionParser(){
+    protected Class getBeanClass(    Element element){
+      return CamelContextFactoryBean.class;
+    }
+    @Override protected boolean isEligibleAttribute(    String attributeName){
+      return super.isEligibleAttribute(attributeName) && !attributeName.equals("xmlns");
+    }
+    @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
+      super.doParse(element,parserContext,builder);
+      NodeList list=element.getElementsByTagName("routes");
+      for (int size=list.getLength(), i=0; i < size; i++) {
+        Element node=(Element)list.item(i);
+        BeanDefinition definition=camelBeanDefinitionParser.parseInternal(node,parserContext);
+        builder.addPropertyValue("routeBuilder",definition);
+      }
+    }
+  }
+);
 }
