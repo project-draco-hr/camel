@@ -1,17 +1,16 @@
 {
   CamelContext camelContext=new DefaultCamelContext();
-  PojoComponent component=new PojoComponent();
-  camelContext.addComponent("pojo",component);
+  PojoComponent component=(PojoComponent)camelContext.getComponent("pojo");
   component.addService("bye",new SayService("Good Bye!"));
   camelContext.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("pojo:hello").to("pojo:bye");
+      from("direct:hello").to("pojo:bye");
     }
   }
 );
   camelContext.start();
-  PojoConsumer consumer=component.getConsumer("hello");
-  ISay proxy=consumer.createProxy(ISay.class);
+  Endpoint endpoint=camelContext.getEndpoint("direct:hello");
+  ISay proxy=PojoComponent.createProxy(endpoint,ISay.class);
   String rc=proxy.say();
   assertEquals("Good Bye!",rc);
   camelContext.stop();

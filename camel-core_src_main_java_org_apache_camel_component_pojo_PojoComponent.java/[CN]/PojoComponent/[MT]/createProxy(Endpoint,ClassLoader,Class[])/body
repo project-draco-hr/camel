@@ -1,0 +1,17 @@
+{
+  final Producer producer=endpoint.createProducer();
+  return Proxy.newProxyInstance(cl,interfaces,new InvocationHandler(){
+    public Object invoke(    Object proxy,    Method method,    Object[] args) throws Throwable {
+      PojoInvocation invocation=new PojoInvocation(proxy,method,args);
+      PojoExchange exchange=new PojoExchange(endpoint.getContext());
+      exchange.setInvocation(invocation);
+      producer.process(exchange);
+      Throwable fault=exchange.getException();
+      if (fault != null) {
+        throw new InvocationTargetException(fault);
+      }
+      return exchange.getOut().getBody();
+    }
+  }
+);
+}
