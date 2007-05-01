@@ -1,0 +1,21 @@
+{
+  Class[] interfaces=new Class[endpoint.getRemoteInterfaces().size()];
+  endpoint.getRemoteInterfaces().toArray(interfaces);
+  proxy=(Remote)Proxy.newProxyInstance(endpoint.getClassLoader(),interfaces,this);
+  stub=UnicastRemoteObject.exportObject(proxy,endpoint.getPort());
+  try {
+    Registry registry=endpoint.getRegistry();
+    String name=endpoint.getName();
+    registry.bind(name,stub);
+  }
+ catch (  Exception e) {
+    try {
+      UnicastRemoteObject.unexportObject(stub,true);
+    }
+ catch (    Throwable e1) {
+    }
+    stub=null;
+    throw e;
+  }
+  super.doStart();
+}

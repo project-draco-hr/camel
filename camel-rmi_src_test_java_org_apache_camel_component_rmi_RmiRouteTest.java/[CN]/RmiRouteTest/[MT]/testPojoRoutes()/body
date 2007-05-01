@@ -1,0 +1,25 @@
+{
+  if (classPathHasSpaces()) {
+    return;
+  }
+  LocateRegistry.createRegistry(1099);
+  CamelContext camelContext=new DefaultCamelContext();
+  PojoComponent component=new PojoComponent();
+  camelContext.addComponent("pojo",component);
+  component.addService("bye",new SayService("Good Bye!"));
+  camelContext.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("pojo:hello").to("rmi://localhost:1099/bye");
+      RmiEndpoint bye=(RmiEndpoint)endpoint("rmi://localhost:1099/bye");
+      bye.setRemoteInterfaces(ISay.class);
+      from(bye).to("pojo:bye");
+    }
+  }
+);
+  camelContext.start();
+  PojoConsumer consumer=component.getConsumer("hello");
+  ISay proxy=consumer.createProxy(ISay.class);
+  String rc=proxy.say();
+  assertEquals("Good Bye!",rc);
+  camelContext.stop();
+}
