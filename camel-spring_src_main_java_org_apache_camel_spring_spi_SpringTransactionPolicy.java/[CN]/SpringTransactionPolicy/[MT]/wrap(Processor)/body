@@ -1,0 +1,45 @@
+{
+  final TransactionTemplate transactionTemplate=getTemplate();
+  if (transactionTemplate == null) {
+    log.warn("No TransactionTemplate available so transactions will not be enabled!");
+    return processor;
+  }
+  return new DelegateProcessor(processor){
+    public void process(    final Exchange exchange){
+      transactionTemplate.execute(new TransactionCallbackWithoutResult(){
+        protected void doInTransactionWithoutResult(        TransactionStatus status){
+          try {
+            processNext(exchange);
+          }
+ catch (          Exception e) {
+            throw new RuntimeCamelException(e);
+          }
+        }
+      }
+);
+    }
+    @Override public String toString(){
+      return "SpringTransactionPolicy:" + propagationBehaviorToString(transactionTemplate.getPropagationBehavior()) + "["+ getNext()+ "]";
+    }
+    private String propagationBehaviorToString(    int propagationBehavior){
+switch (propagationBehavior) {
+case TransactionDefinition.PROPAGATION_MANDATORY:
+        return "PROPAGATION_MANDATORY";
+case TransactionDefinition.PROPAGATION_NESTED:
+      return "PROPAGATION_NESTED";
+case TransactionDefinition.PROPAGATION_NEVER:
+    return "PROPAGATION_NEVER";
+case TransactionDefinition.PROPAGATION_NOT_SUPPORTED:
+  return "PROPAGATION_NOT_SUPPORTED";
+case TransactionDefinition.PROPAGATION_REQUIRED:
+return "PROPAGATION_REQUIRED";
+case TransactionDefinition.PROPAGATION_REQUIRES_NEW:
+return "PROPAGATION_REQUIRES_NEW";
+case TransactionDefinition.PROPAGATION_SUPPORTS:
+return "PROPAGATION_SUPPORTS";
+}
+return "UNKOWN";
+}
+}
+;
+}

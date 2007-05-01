@@ -1,0 +1,13 @@
+{
+  Object value=correlationExpression.evaluate(exchange);
+  Object key=getStickyKey(value);
+  Processor processor;
+synchronized (stickyMap) {
+    processor=stickyMap.get(key);
+    if (processor == null) {
+      processor=loadBalancer.chooseProcessor(processors,exchange);
+      stickyMap.put(key,processor);
+    }
+  }
+  return processor;
+}
