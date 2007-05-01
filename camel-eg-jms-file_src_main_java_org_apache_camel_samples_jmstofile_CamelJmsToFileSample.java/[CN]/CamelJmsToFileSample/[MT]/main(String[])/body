@@ -1,0 +1,15 @@
+{
+  CamelContext context=new DefaultCamelContext();
+  ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+  context.addComponent("jms",jmsComponentAutoAcknowledge(connectionFactory));
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("jms:queue:test.a").to("file://test");
+    }
+  }
+);
+  CamelClient client=new CamelClient(context);
+  context.start();
+  client.sendValue("activemq:queue:test.a","foo");
+  Thread.sleep(1000);
+}
