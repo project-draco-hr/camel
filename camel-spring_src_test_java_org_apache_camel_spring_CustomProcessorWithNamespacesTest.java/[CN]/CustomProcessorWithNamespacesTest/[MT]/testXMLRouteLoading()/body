@@ -1,0 +1,16 @@
+{
+  applicationContext=createApplicationContext();
+  SpringCamelContext context=(SpringCamelContext)applicationContext.getBean("camel");
+  assertValidContext(context);
+  CamelClient<Exchange> client=new CamelClient<Exchange>(context);
+  client.send("direct:start",new Processor<Exchange>(){
+    public void process(    Exchange exchange){
+      Message in=exchange.getIn();
+      in.setHeader("name","James");
+      in.setBody(body);
+    }
+  }
+);
+  List list=MyProcessor.getExchanges();
+  assertEquals("Should have received a single exchange: " + list,1,list.size());
+}
