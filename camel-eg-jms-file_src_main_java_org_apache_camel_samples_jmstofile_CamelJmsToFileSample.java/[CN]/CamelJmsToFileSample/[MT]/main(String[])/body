@@ -1,16 +1,24 @@
 {
   CamelContext context=new DefaultCamelContext();
   ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
-  context.addComponent("jms",jmsComponentAutoAcknowledge(connectionFactory));
+  context.addComponent("test-jms",jmsComponentAutoAcknowledge(connectionFactory));
   context.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("jms:queue:test.a").to("file://test");
+      from("test-jms:queue:test.queue").to("file://test");
+      from("file://test").process(new Processor(){
+        public void process(        Exchange e){
+          System.out.println("Received exchange: " + e.getIn());
+        }
+      }
+);
     }
   }
 );
   CamelClient client=new CamelClient(context);
   context.start();
-  client.sendBody("jms:queue:test.a","foo");
+  for (int i=0; i < 10; i++) {
+    client.sendBody("test-jms:queue:test.queue","Test Message: " + i);
+  }
   Thread.sleep(1000);
   context.stop();
 }
