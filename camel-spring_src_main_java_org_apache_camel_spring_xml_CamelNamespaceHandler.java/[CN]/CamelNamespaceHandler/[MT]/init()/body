@@ -1,20 +1,25 @@
 {
-  registerBeanDefinitionParser("routes",camelBeanDefinitionParser);
-  registerBeanDefinitionParser("routeBuilder",camelBeanDefinitionParser);
-  registerBeanDefinitionParser("camelContext",new AbstractSimpleBeanDefinitionParser(){
-    protected Class getBeanClass(    Element element){
-      return CamelContextFactoryBean.class;
-    }
-    @Override protected boolean isEligibleAttribute(    String attributeName){
-      return super.isEligibleAttribute(attributeName) && !attributeName.equals("xmlns");
-    }
+  registerBeanDefinitionParser("routes",routesParser);
+  registerBeanDefinitionParser("routeBuilder",routesParser);
+  registerBeanDefinitionParser("endpoint",endpointParser);
+  registerBeanDefinitionParser("camelContext",new BeanDefinitionParserSupport(CamelContextFactoryBean.class){
     @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
       super.doParse(element,parserContext,builder);
       NodeList list=element.getElementsByTagName("routes");
       for (int size=list.getLength(), i=0; i < size; i++) {
         Element node=(Element)list.item(i);
-        BeanDefinition definition=camelBeanDefinitionParser.parseInternal(node,parserContext);
+        BeanDefinition definition=routesParser.parseInternal(node,parserContext);
         builder.addPropertyValue("routeBuilder",definition);
+      }
+      list=element.getElementsByTagName("endpoint");
+      for (int size=list.getLength(), i=0; i < size; i++) {
+        Element node=(Element)list.item(i);
+        BeanDefinition definition=endpointParser.parse(node,parserContext);
+        String id=node.getAttribute("id");
+        if (id != null) {
+          definition.getPropertyValues().addPropertyValue("context",builder.getBeanDefinition());
+          parserContext.registerComponent(new BeanComponentDefinition(definition,id));
+        }
       }
     }
   }
