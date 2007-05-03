@@ -5,19 +5,28 @@
   registerBeanDefinitionParser("camelContext",new BeanDefinitionParserSupport(CamelContextFactoryBean.class){
     @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
       super.doParse(element,parserContext,builder);
-      NodeList list=element.getElementsByTagName("routes");
+      String contextId=element.getAttribute("id");
+      Element routes=element.getOwnerDocument().createElement("routes");
+      NodeList list=element.getChildNodes();
       for (int size=list.getLength(), i=0; i < size; i++) {
-        Element node=(Element)list.item(i);
-        BeanDefinition definition=routesParser.parseInternal(node,parserContext);
-        builder.addPropertyValue("routeBuilder",definition);
+        Node child=list.item(i);
+        if (child instanceof Element) {
+          element.removeChild(child);
+          routes.appendChild(child);
+        }
       }
-      list=element.getElementsByTagName("endpoint");
+      String routeId=contextId + ":routes";
+      routes.setAttribute("id",routeId);
+      BeanDefinition definition=routesParser.parse(routes,parserContext);
+      definition.getPropertyValues().addPropertyValue("context",new RuntimeBeanReference(contextId));
+      parserContext.registerComponent(new BeanComponentDefinition(definition,routeId));
+      list=routes.getElementsByTagName("endpoint");
       for (int size=list.getLength(), i=0; i < size; i++) {
         Element node=(Element)list.item(i);
-        BeanDefinition definition=endpointParser.parse(node,parserContext);
+        definition=endpointParser.parse(node,parserContext);
         String id=node.getAttribute("id");
-        if (id != null) {
-          definition.getPropertyValues().addPropertyValue("context",builder.getBeanDefinition());
+        if (isNotNullOrBlank(id)) {
+          definition.getPropertyValues().addPropertyValue("context",new RuntimeBeanReference(contextId));
           parserContext.registerComponent(new BeanComponentDefinition(definition,id));
         }
       }

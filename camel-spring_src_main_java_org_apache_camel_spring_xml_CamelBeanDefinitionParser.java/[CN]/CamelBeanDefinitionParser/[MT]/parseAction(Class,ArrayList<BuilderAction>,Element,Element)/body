@@ -15,6 +15,17 @@
   MethodInfo match=null;
   match=findMethodMatch(methods,attributeArguments.keySet(),elementArguments.keySet());
   if (match == null)   throw new IllegalActionException(actionName,previousElement == null ? null : previousElement.getLocalName());
+  Set<Map.Entry<String,Object>> attributeEntries=attributeArguments.entrySet();
+  for (  Map.Entry<String,Object> entry : attributeEntries) {
+    String name=entry.getKey();
+    FluentArg arg=match.parameterAnnotations.get(name);
+    if (arg != null && (arg.reference() || name.equals("ref"))) {
+      Object value=entry.getValue();
+      if (value instanceof String) {
+        entry.setValue(new RuntimeBeanReference(value.toString()));
+      }
+    }
+  }
   Set<String> parameterNames=new HashSet<String>(match.parameters.keySet());
   parameterNames.removeAll(attributeArguments.keySet());
   for (  String key : parameterNames) {
