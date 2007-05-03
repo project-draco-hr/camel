@@ -1,0 +1,45 @@
+{
+  String actionName=element.getLocalName();
+  ArrayList<MethodInfo> methods=findFluentMethodsWithName(currentBuilder,element.getLocalName());
+  if (methods.isEmpty()) {
+    throw new IllegalActionException(actionName,previousElement == null ? null : previousElement.getLocalName());
+  }
+  Collections.sort(methods,new Comparator<MethodInfo>(){
+    public int compare(    MethodInfo m1,    MethodInfo m2){
+      return m1.method.getParameterTypes().length - m2.method.getParameterTypes().length;
+    }
+  }
+);
+  HashMap<String,Object> attributeArguments=getArugmentsFromAttributes(element);
+  HashMap<String,ArrayList<Element>> elementArguments=getArgumentsFromElements(element);
+  MethodInfo match=null;
+  match=findMethodMatch(methods,attributeArguments.keySet(),elementArguments.keySet());
+  if (match == null)   throw new IllegalActionException(actionName,previousElement == null ? null : previousElement.getLocalName());
+  Set<Map.Entry<String,Object>> attributeEntries=attributeArguments.entrySet();
+  for (  Map.Entry<String,Object> entry : attributeEntries) {
+    String name=entry.getKey();
+    FluentArg arg=match.parameterAnnotations.get(name);
+    if (arg != null && (arg.reference() || name.equals("ref"))) {
+      Object value=entry.getValue();
+      if (value instanceof String) {
+        entry.setValue(new RuntimeBeanReference(value.toString()));
+      }
+    }
+  }
+  Set<String> parameterNames=new HashSet<String>(match.parameters.keySet());
+  parameterNames.removeAll(attributeArguments.keySet());
+  for (  String key : parameterNames) {
+    ArrayList<Element> elements=elementArguments.get(key);
+    if (elements == null) {
+      elements=getFirstChildElements(element);
+    }
+    Class clazz=match.parameters.get(key);
+    Object value=convertTo(parserContext,elements,clazz);
+    attributeArguments.put(key,value);
+    for (    Element el : elements) {
+      el.getParentNode().removeChild(el);
+    }
+  }
+  actions.add(new BuilderAction(match,attributeArguments));
+  return match.method.getReturnType();
+}

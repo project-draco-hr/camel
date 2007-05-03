@@ -1,8 +1,8 @@
 {
-  registerBeanDefinitionParser("routes",routesParser);
-  registerBeanDefinitionParser("routeBuilder",routesParser);
-  registerBeanDefinitionParser("endpoint",endpointParser);
-  registerBeanDefinitionParser("camelContext",new BeanDefinitionParserSupport(CamelContextFactoryBean.class){
+  registerParser("routes",routesParser);
+  registerParser("routeBuilder",routesParser);
+  registerParser("endpoint",endpointParser);
+  registerParser("camelContext",new BeanDefinitionParserSupport(CamelContextFactoryBean.class){
     @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
       super.doParse(element,parserContext,builder);
       String contextId=element.getAttribute("id");
@@ -30,6 +30,15 @@
           parserContext.registerComponent(new BeanComponentDefinition(definition,id));
         }
       }
+    }
+  }
+);
+  registerParser("xpath",new BeanDefinitionParserSupport(XPathBuilder.class){
+    @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
+      String xpath=DomUtils.getTextValue(element);
+      builder.addConstructorArg(xpath);
+      super.doParse(element,parserContext,builder);
+      builder.addPropertyValue("namespacesFromDom",element);
     }
   }
 );
