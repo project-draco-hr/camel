@@ -1,0 +1,19 @@
+{
+  Class[] parameterTypes=method.getParameterTypes();
+  Annotation[][] parameterAnnotations=method.getParameterAnnotations();
+  final Expression[] parameterExpressions=new Expression[parameterTypes.length];
+  for (int i=0; i < parameterTypes.length; i++) {
+    Class parameterType=parameterTypes[i];
+    Expression expression=createParameterUnmarshalExpression(clazz,method,parameterType,parameterAnnotations[i]);
+    if (expression == null) {
+      if (log.isDebugEnabled()) {
+        log.debug("No expression available for method: " + method.toString() + " parameter: "+ i+ " so ignoring method");
+      }
+      return;
+    }
+    parameterExpressions[i]=expression;
+  }
+  String opName=method.getName();
+  Expression parametersExpression=createMethodParametersExpression(parameterExpressions);
+  operations.put(opName,new MethodInfo(clazz,method,parametersExpression));
+}
