@@ -11,8 +11,17 @@
       for (int size=list.getLength(), i=0; i < size; i++) {
         Node child=list.item(i);
         if (child instanceof Element) {
-          element.removeChild(child);
-          routes.appendChild(child);
+          Element childElement=(Element)child;
+          if (child.getLocalName().equals("beanPostProcessor")) {
+            String beanPostProcessorId=contextId + ":beanPostProcessor";
+            childElement.setAttribute("id",beanPostProcessorId);
+            BeanDefinition definition=beanPostProcessorParser.parse(childElement,parserContext);
+            definition.getPropertyValues().addPropertyValue("camelContext",new RuntimeBeanReference(contextId));
+          }
+ else {
+            element.removeChild(child);
+            routes.appendChild(child);
+          }
         }
       }
       String routeId=contextId + ":routes";
