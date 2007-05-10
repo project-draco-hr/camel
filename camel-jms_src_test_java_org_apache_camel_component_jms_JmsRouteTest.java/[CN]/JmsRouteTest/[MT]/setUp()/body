@@ -1,27 +1,4 @@
 {
-  ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
-  container.addComponent("activemq",jmsComponentClientAcknowledge(connectionFactory));
-  container.addRoutes(new RouteBuilder(){
-    public void configure(){
-      from("activemq:queue:test.a").to("activemq:queue:test.b");
-      from("activemq:queue:test.b").process(new Processor(){
-        public void process(        Exchange e){
-          System.out.println("Received exchange: " + e.getIn());
-          receivedExchange=(JmsExchange)e;
-          latch.countDown();
-        }
-      }
-);
-      JmsEndpoint endpoint1=(JmsEndpoint)endpoint("activemq:topic:quote.IONA");
-      endpoint1.getConfiguration().setTransacted(true);
-      from(endpoint1).to("mock:transactedClient");
-      JmsEndpoint endpoint2=(JmsEndpoint)endpoint("activemq:topic:quote.IONA");
-      endpoint1.getConfiguration().setTransacted(true);
-      from(endpoint2).to("mock:nonTrasnactedClient");
-    }
-  }
-);
-  endpoint=container.getEndpoint("activemq:queue:test.a");
-  assertNotNull("No endpoint found!",endpoint);
-  container.start();
+  super.setUp();
+  resultEndpoint=(MockEndpoint)context.getEndpoint("mock:result");
 }
