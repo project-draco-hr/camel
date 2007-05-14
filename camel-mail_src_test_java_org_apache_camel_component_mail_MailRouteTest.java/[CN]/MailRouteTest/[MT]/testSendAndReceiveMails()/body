@@ -1,9 +1,14 @@
 {
   resultEndpoint=(MockEndpoint)resolveMandatoryEndpoint("mock:result");
   resultEndpoint.expectedBodiesReceived("hello world!");
-  template.sendBody("smtp://james@localhost","hello world!");
+  HashMap<String,Object> headers=new HashMap<String,Object>();
+  headers.put("reply-to","reply1@localhost");
+  template.sendBody("smtp://james@localhost","hello world!",headers);
   assertMailboxReceivedMessages("james@localhost");
   Thread.sleep(3000);
   resultEndpoint.assertIsSatisfied();
+  Exchange exchange=resultEndpoint.getReceivedExchanges().get(0);
+  String replyTo=(String)exchange.getIn().getHeader("reply-to");
+  assertEquals("reply1@localhost",replyTo);
   assertMailboxReceivedMessages("copy@localhost");
 }

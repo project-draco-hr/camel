@@ -5,7 +5,21 @@
     Object headerValue=entry.getValue();
     if (headerValue != null) {
       if (shouldOutputHeader(camelMessage,headerName,headerValue)) {
-        mimeMessage.setHeader(headerName,headerValue.toString());
+        String[] values=new String[]{};
+        Class stringArrayClazz=values.getClass();
+        if (headerValue.getClass() == stringArrayClazz) {
+          mimeMessage.removeHeader(headerName);
+          values=(String[])headerValue;
+          for (int i=0; i < values.length; i++) {
+            mimeMessage.addHeader(headerName,values[i]);
+          }
+        }
+ else         if (headerValue.getClass() == String.class) {
+          mimeMessage.setHeader(headerName,(String)headerValue);
+        }
+ else {
+          mimeMessage.setHeader(headerName,headerValue.toString());
+        }
       }
     }
   }
