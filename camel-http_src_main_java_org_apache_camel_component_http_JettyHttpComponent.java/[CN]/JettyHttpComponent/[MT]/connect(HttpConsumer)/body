@@ -1,0 +1,24 @@
+{
+  HttpEndpoint endpoint=(HttpEndpoint)consumer.getEndpoint();
+  String connectorKey=endpoint.getProtocol() + ":" + endpoint.getPort();
+synchronized (connectors) {
+    ConnectorRef connectorRef=connectors.get(connectorKey);
+    if (connectorRef == null) {
+      Connector connector;
+      if ("https".equals(endpoint.getProtocol())) {
+        connector=new SslSocketConnector();
+      }
+ else {
+        connector=new SelectChannelConnector();
+      }
+      connector.setPort(endpoint.getPort());
+      server.addConnector(connector);
+      connector.start();
+      connectorRef=new ConnectorRef(connector);
+    }
+ else {
+      connectorRef.increment();
+    }
+  }
+  super.connect(consumer);
+}

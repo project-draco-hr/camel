@@ -1,0 +1,15 @@
+{
+  super.disconnect(consumer);
+  HttpEndpoint endpoint=(HttpEndpoint)consumer.getEndpoint();
+  String connectorKey=endpoint.getProtocol() + ":" + endpoint.getPort();
+synchronized (connectors) {
+    ConnectorRef connectorRef=connectors.get(connectorKey);
+    if (connectorRef != null) {
+      if (connectorRef.decrement() == 0) {
+        server.removeConnector(connectorRef.connector);
+        connectorRef.connector.stop();
+        connectors.remove(connectorKey);
+      }
+    }
+  }
+}
