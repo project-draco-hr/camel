@@ -1,6 +1,15 @@
 {
   super.afterPropertiesSet();
   try {
+    if (endpoint == null) {
+      if (getServiceUrl() == null || camelContext == null) {
+        throw new IllegalArgumentException("If endpoint is not specified, the serviceUrl and camelContext must be specified.");
+      }
+      endpoint=camelContext.getEndpoint(getServiceUrl());
+      if (endpoint == null) {
+        throw new IllegalArgumentException("Could not resolve endpoint: " + getServiceUrl());
+      }
+    }
     this.serviceProxy=PojoComponent.createProxy(endpoint,getServiceInterface());
   }
  catch (  Exception e) {
