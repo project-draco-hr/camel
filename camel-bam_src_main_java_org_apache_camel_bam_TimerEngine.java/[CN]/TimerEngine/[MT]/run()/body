@@ -1,0 +1,20 @@
+{
+  while (!isStopped()) {
+    long nextPoll=System.currentTimeMillis() + windowMillis;
+    Date window=new Date(nextPoll);
+    List<TimerEvent> list=template.find("select x from " + TimerEvent.class.getName() + " where x.time < ?1 order by x.time",window);
+    for (    TimerEvent event : list) {
+      fireEvent(event);
+    }
+    long timeToSleep=nextPoll - System.currentTimeMillis();
+    if (timeToSleep > 0) {
+      log.debug("Sleeping for " + timeToSleep + " millis");
+      try {
+        Thread.sleep(timeToSleep);
+      }
+ catch (      InterruptedException e) {
+        log.debug("Caught: " + e,e);
+      }
+    }
+  }
+}
