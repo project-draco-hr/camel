@@ -1,0 +1,19 @@
+{
+  if (overdueAction == null && overdueProcessorFactory != null) {
+    overdueAction=overdueProcessorFactory.createProcessor();
+  }
+  if (overdueAction != null) {
+    Date now=new Date();
+    ProcessInstance instance=activityState.getProcess();
+    ActivityState secondState=second.getActivityState(instance);
+    Date overdue=secondState.getTimeOverdue();
+    if (now.compareTo(overdue) >= 0) {
+      Exchange exchange=createExchange();
+      exchange.getIn().setBody(activityState);
+      overdueAction.process(exchange);
+    }
+ else {
+      log.warn("Process has not actually expired; the time is: " + now + " but the overdue time is: "+ overdue);
+    }
+  }
+}

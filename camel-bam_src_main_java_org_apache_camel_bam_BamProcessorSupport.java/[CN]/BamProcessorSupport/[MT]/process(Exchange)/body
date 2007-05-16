@@ -1,6 +1,23 @@
 {
-  Object key=getCorrelationKey(exchange);
-  T entity=loadEntity(exchange,key);
-  log.info("Correlation key: " + key + " with entity: "+ entity);
-  processEntity(exchange,entity);
+  try {
+    Object entity=transactionTemplate.execute(new TransactionCallback(){
+      public Object doInTransaction(      TransactionStatus status){
+        try {
+          Object key=getCorrelationKey(exchange);
+          T entity=loadEntity(exchange,key);
+          log.info("Correlation key: " + key + " with entity: "+ entity);
+          processEntity(exchange,entity);
+          return entity;
+        }
+ catch (        Exception e) {
+          throw new RuntimeCamelException(e);
+        }
+      }
+    }
+);
+    log.info("After transaction process instance is: " + entity);
+  }
+ catch (  Throwable e) {
+    log.error("Caught: " + e,e);
+  }
 }

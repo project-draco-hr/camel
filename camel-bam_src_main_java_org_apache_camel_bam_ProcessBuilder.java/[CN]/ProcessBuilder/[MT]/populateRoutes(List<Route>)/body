@@ -1,9 +1,14 @@
 {
+  boolean first=true;
   for (  ActivityBuilder builder : activityBuilders) {
     Endpoint from=builder.getEndpoint();
     Processor processor=builder.createProcessor();
     if (processor == null) {
       throw new IllegalArgumentException("No processor created for ActivityBuilder: " + builder);
+    }
+    if (first) {
+      processor=new LifecycleProcessor(processor,new ActivityMonitorEngine(getJpaTemplate(),getTransactionTemplate(),getProcessRules()));
+      first=false;
     }
     routes.add(new Route(from,processor));
   }

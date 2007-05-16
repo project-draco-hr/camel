@@ -1,0 +1,32 @@
+{
+  log.info("Starting to poll for timeout events");
+  while (!isStopped()) {
+    try {
+      long now=System.currentTimeMillis();
+      long nextPoll=now + windowMillis;
+      final Date timeNow=new Date(now);
+      transactionTemplate.execute(new TransactionCallbackWithoutResult(){
+        protected void doInTransactionWithoutResult(        TransactionStatus status){
+          List<ActivityState> list=template.find("select x from " + ActivityState.class.getName() + " x where x.escalationLevel = ?1 and x.timeOverdue < ?2",escalateLevel,timeNow);
+          for (          ActivityState activityState : list) {
+            fireExpiredEvent(activityState);
+          }
+        }
+      }
+);
+      long timeToSleep=nextPoll - System.currentTimeMillis();
+      if (timeToSleep > 0) {
+        log.debug("Sleeping for " + timeToSleep + " millis");
+        try {
+          Thread.sleep(timeToSleep);
+        }
+ catch (        InterruptedException e) {
+          log.debug("Caught: " + e,e);
+        }
+      }
+    }
+ catch (    Exception e) {
+      log.error("Caught: " + e,e);
+    }
+  }
+}
