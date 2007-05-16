@@ -1,0 +1,20 @@
+{
+  ObjectName observedName=new ObjectName(observedObjectName);
+  if (name == null) {
+    String type=observedName.getKeyProperty("type");
+    type=type != null ? type : "UNKNOWN";
+    name=mbeanServer.getDefaultDomain() + ":type=CounterMonitor_" + type;
+  }
+  JMXConsumer result=new JMXConsumer(this,proc);
+  ourName=new ObjectName(name);
+  counterMonitor.setNotify(true);
+  counterMonitor.addObservedObject(observedName);
+  counterMonitor.setObservedAttribute(attributeName);
+  counterMonitor.setGranularityPeriod(granularityPeriod);
+  counterMonitor.setDifferenceMode(false);
+  counterMonitor.setInitThreshold(threshold);
+  counterMonitor.setOffset(offset);
+  mbeanServer.registerMBean(counterMonitor,ourName);
+  mbeanServer.addNotificationListener(ourName,result,null,new Object());
+  return result;
+}
