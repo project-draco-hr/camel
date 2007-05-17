@@ -2,16 +2,18 @@
   log.info("Trying to fire expiration of: " + activityState);
   template.execute(new JpaCallback(){
     public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
-      entityManager.lock(activityState,LockModeType.WRITE);
-      if (activityState.getEscalationLevel() == escalateLevel) {
-        try {
-          rules.processExpired(activityState);
-        }
- catch (        Exception e) {
-          log.error("Failed to process expiration of: " + activityState + ". Reason: "+ e,e);
-        }
-        activityState.setEscalationLevel(escalateLevel + 1);
+      if (isUseLocking()) {
+        log.info("Attempting to lock: " + activityState);
+        entityManager.lock(activityState,LockModeType.WRITE);
+        log.info("Grabbed lock: " + activityState);
       }
+      try {
+        rules.processExpired(activityState);
+      }
+ catch (      Exception e) {
+        log.error("Failed to process expiration of: " + activityState + ". Reason: "+ e,e);
+      }
+      activityState.setEscalationLevel(escalateLevel + 1);
       return null;
     }
   }

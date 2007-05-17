@@ -1,12 +1,7 @@
 {
   log.info("Processing entity! - attempting to get the current state for process: " + process);
-  ActivityState state=process.getActivityState(getActivity());
-  log.info("Found activity: " + state);
-  if (state == null) {
-    state=createActivityState(exchange,process);
-    state.setProcess(process);
-    log.info("Storing activity: " + state + " with process: "+ state.getProcess());
-  }
-  ProcessContext context=new ProcessContext(exchange,getActivity(),state);
-  state.processExchange(getActivity(),context);
+  ActivityRules rules=getActivityRules();
+  ActivityState state=process.getOrCreateActivityState(rules);
+  state.processExchange(rules,new ProcessContext(exchange,rules,state));
+  rules.getProcessRules().processExchange(exchange,process);
 }
