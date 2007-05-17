@@ -1,0 +1,16 @@
+{
+  resultEndpoint=(MockEndpoint)resolveMandatoryEndpoint("mock:result");
+  resultEndpoint.expectedMinimumMessageCount(1);
+  Properties properties=new Properties();
+  properties.put("mail.smtp.host","localhost");
+  Session session=Session.getDefaultInstance(properties,null);
+  MimeMessage message=new MimeMessage(session);
+  populateMimeMessageBody(message);
+  message.setRecipients(Message.RecipientType.TO,"james@localhost");
+  Transport.send(message);
+  resultEndpoint.assertIsSatisfied();
+  Exchange exchange=resultEndpoint.getReceivedExchanges().get(0);
+  log.info("Received: " + exchange.getIn().getBody());
+  String text=exchange.getIn().getBody(String.class);
+  assertEquals("body",body,text);
+}
