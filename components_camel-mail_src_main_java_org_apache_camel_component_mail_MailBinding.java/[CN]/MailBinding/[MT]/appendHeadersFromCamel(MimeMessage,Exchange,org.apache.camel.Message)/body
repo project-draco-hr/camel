@@ -1,0 +1,21 @@
+{
+  Set<Map.Entry<String,Object>> entries=camelMessage.getHeaders().entrySet();
+  for (  Map.Entry<String,Object> entry : entries) {
+    String headerName=entry.getKey();
+    Object headerValue=entry.getValue();
+    if (headerValue != null) {
+      if (shouldOutputHeader(camelMessage,headerName,headerValue)) {
+        if (ObjectConverter.isCollection(headerValue)) {
+          Iterator iter=ObjectConverter.iterator(headerValue);
+          while (iter.hasNext()) {
+            Object value=iter.next();
+            mimeMessage.addHeader(headerName,asString(exchange,value));
+          }
+        }
+ else {
+          mimeMessage.setHeader(headerName,asString(exchange,headerValue));
+        }
+      }
+    }
+  }
+}
