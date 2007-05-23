@@ -1,20 +1,37 @@
 {
+  QuartzEndpoint answer=new QuartzEndpoint(uri,this,getScheduler());
   URI u=new URI(uri);
   String name;
   String group="Camel";
   String path=u.getPath();
+  CronTrigger cronTrigger=null;
   if (path != null && path.length() > 1) {
     if (path.startsWith("/")) {
       path=path.substring(1);
     }
-    name=path;
+    int idx=path.indexOf('/');
+    if (idx > 0) {
+      cronTrigger=new CronTrigger();
+      name=path.substring(0,idx);
+      String cronExpression=path.substring(idx + 1);
+      cronExpression=cronExpression.replace('/',' ');
+      cronExpression=cronExpression.replace('$','?');
+      log.debug("Creating cron trigger: " + cronExpression);
+      cronTrigger.setCronExpression(cronExpression);
+      answer.setTrigger(cronTrigger);
+    }
+ else {
+      name=path;
+    }
     group=u.getHost();
   }
  else {
     name=u.getHost();
   }
-  QuartzEndpoint answer=new QuartzEndpoint(uri,this,getScheduler());
-  Trigger trigger=answer.getTrigger();
+  Trigger trigger=cronTrigger;
+  if (trigger == null) {
+    trigger=answer.getTrigger();
+  }
   trigger.setName(name);
   trigger.setGroup(group);
   Map triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
