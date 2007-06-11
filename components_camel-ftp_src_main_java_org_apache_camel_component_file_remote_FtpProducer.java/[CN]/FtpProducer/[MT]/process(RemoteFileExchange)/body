@@ -1,0 +1,24 @@
+{
+  final String fileName;
+  InputStream payload=exchange.getIn().getBody(InputStream.class);
+  final String endpointFile=endpoint.getConfiguration().getFile();
+  client.changeWorkingDirectory(endpointFile);
+  if (endpointFile == null) {
+    throw new NullPointerException("Null Endpoint File");
+  }
+ else {
+    if (endpoint.getConfiguration().isDirectory()) {
+      fileName=endpointFile + "/" + exchange.getIn().getMessageId();
+    }
+ else {
+      fileName=endpointFile;
+    }
+  }
+  buildDirectory(client,fileName.substring(0,fileName.lastIndexOf('/')));
+  final boolean success=client.storeFile(fileName,payload);
+  if (success) {
+  }
+ else {
+    throw new RuntimeCamelException("error sending file");
+  }
+}
