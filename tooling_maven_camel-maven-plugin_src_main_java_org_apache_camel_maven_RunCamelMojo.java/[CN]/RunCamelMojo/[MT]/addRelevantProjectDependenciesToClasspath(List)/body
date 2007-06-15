@@ -1,0 +1,27 @@
+{
+  if (this.includeProjectDependencies) {
+    try {
+      getLog().debug("Project Dependencies will be included.");
+      URL mainClasses=new File(project.getBuild().getOutputDirectory()).toURL();
+      getLog().debug("Adding to classpath : " + mainClasses);
+      path.add(mainClasses);
+      URL testClasses=new File(project.getBuild().getTestOutputDirectory()).toURL();
+      getLog().debug("Adding to classpath : " + testClasses);
+      path.add(testClasses);
+      Set dependencies=project.getArtifacts();
+      dependencies.addAll(getSystemScopeDependencies());
+      Iterator iter=dependencies.iterator();
+      while (iter.hasNext()) {
+        Artifact classPathElement=(Artifact)iter.next();
+        getLog().debug("Adding project dependency artifact: " + classPathElement.getArtifactId() + " to classpath");
+        path.add(classPathElement.getFile().toURL());
+      }
+    }
+ catch (    MalformedURLException e) {
+      throw new MojoExecutionException("Error during setting up classpath",e);
+    }
+  }
+ else {
+    getLog().debug("Project Dependencies will be excluded.");
+  }
+}

@@ -1,0 +1,64 @@
+{
+  if (killAfter != -1) {
+    getLog().warn("Warning: killAfter is now deprecated. Do you need it ? Please comment on MEXEC-6.");
+  }
+  if (null == arguments) {
+    arguments=new String[0];
+  }
+  if (getLog().isDebugEnabled()) {
+    StringBuffer msg=new StringBuffer("Invoking : ");
+    msg.append(mainClass);
+    msg.append(".main(");
+    for (int i=0; i < arguments.length; i++) {
+      if (i > 0) {
+        msg.append(", ");
+      }
+      msg.append(arguments[i]);
+    }
+    msg.append(")");
+    getLog().debug(msg);
+  }
+  IsolatedThreadGroup threadGroup=new IsolatedThreadGroup(mainClass);
+  Thread bootstrapThread=new Thread(threadGroup,new Runnable(){
+    public void run(){
+      try {
+        Method main=Thread.currentThread().getContextClassLoader().loadClass(mainClass).getMethod("main",new Class[]{String[].class});
+        if (!main.isAccessible()) {
+          getLog().debug("Setting accessibility to true in order to invoke main().");
+          main.setAccessible(true);
+        }
+        main.invoke(main,new Object[]{arguments});
+      }
+ catch (      Exception e) {
+        Thread.currentThread().getThreadGroup().uncaughtException(Thread.currentThread(),e);
+      }
+    }
+  }
+,mainClass + ".main()");
+  bootstrapThread.setContextClassLoader(getClassLoader());
+  setSystemProperties();
+  bootstrapThread.start();
+  joinNonDaemonThreads(threadGroup);
+  if (keepAlive) {
+    getLog().warn("Warning: keepAlive is now deprecated and obsolete. Do you need it? Please comment on MEXEC-6.");
+    waitFor(0);
+  }
+  if (cleanupDaemonThreads) {
+    terminateThreads(threadGroup);
+    try {
+      threadGroup.destroy();
+    }
+ catch (    IllegalThreadStateException e) {
+      getLog().warn("Couldn't destroy threadgroup " + threadGroup,e);
+    }
+  }
+  if (originalSystemProperties != null) {
+    System.setProperties(originalSystemProperties);
+  }
+synchronized (threadGroup) {
+    if (threadGroup.uncaughtException != null) {
+      throw new MojoExecutionException(null,threadGroup.uncaughtException);
+    }
+  }
+  registerSourceRoots();
+}
