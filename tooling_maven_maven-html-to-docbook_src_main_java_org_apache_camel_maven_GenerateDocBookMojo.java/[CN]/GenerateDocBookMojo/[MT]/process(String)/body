@@ -1,0 +1,35 @@
+{
+  Tidy tidy=new Tidy();
+  ByteArrayOutputStream out;
+  tidy.setXmlOut(true);
+  try {
+    out=new ByteArrayOutputStream();
+    URL u=new URL(baseURL + resource);
+    Document doc=tidy.parseDOM(new BufferedInputStream(u.openStream()),out);
+    out.close();
+    NodeList nodeList=doc.getElementsByTagName("div");
+    for (int i=0; i < nodeList.getLength(); ++i) {
+      Node node=nodeList.item(i);
+      NamedNodeMap nm=node.getAttributes();
+      Node attr=nm.getNamedItem("class");
+      if (attr != null && attr.getNodeValue().equalsIgnoreCase("wiki-content maincontent")) {
+        Element element=(Element)node;
+        element.setAttribute("chapterId",chapterId);
+        element.setAttribute("chapterTitle",chapterTitle);
+        element.setAttribute("baseURL",baseURL);
+        element.setAttribute("imageLocation",imageLocation);
+        DOMSource source=new DOMSource(node);
+        BufferedOutputStream output=new BufferedOutputStream(new FileOutputStream(outputPath + File.separator + removeExtension(resource)+ ".xml"));
+        StreamResult result=new StreamResult(output);
+        TransformerFactory tFactory=TransformerFactory.newInstance();
+        Transformer transformer=tFactory.newTransformer(new StreamSource(xslFile));
+        transformer.transform(source,result);
+        break;
+      }
+    }
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    System.out.println(this.toString() + e.toString());
+  }
+}
