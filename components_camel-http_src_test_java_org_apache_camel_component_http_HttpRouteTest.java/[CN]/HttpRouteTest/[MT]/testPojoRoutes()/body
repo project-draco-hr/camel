@@ -1,19 +1,15 @@
 {
-  CamelContext camelContext=new DefaultCamelContext();
-  JettyHttpComponent component=new JettyHttpComponent();
-  camelContext.addComponent("http",component);
-  camelContext.addRoutes(new RouteBuilder(){
-    public void configure(){
-      from("http://0.0.0.0:8080/test").to("mock:a");
-    }
-  }
-);
-  MockEndpoint mockA=(MockEndpoint)camelContext.getEndpoint("mock:a");
-  mockA.expectedMessageCount(1);
-  camelContext.start();
-  URL url=new URL("http://localhost:8080/test");
-  InputStream is=url.openConnection().getInputStream();
-  System.out.println("Content: " + is);
-  mockA.assertIsSatisfied();
-  camelContext.stop();
+  MockEndpoint mockEndpoint=resolveMandatoryEndpoint("mock:a",MockEndpoint.class);
+  mockEndpoint.expectedMessageCount(1);
+  invokeHttpEndpoint();
+  mockEndpoint.assertIsSatisfied();
+  List<Exchange> list=mockEndpoint.getReceivedExchanges();
+  Exchange exchange=list.get(0);
+  assertNotNull("exchange",exchange);
+  Message in=exchange.getIn();
+  assertNotNull("in",in);
+  String actualBody=in.getBody(String.class);
+  log.info("Headers: " + in.getHeaders());
+  log.info("Received body: " + actualBody);
+  assertEquals("Body",expectedBody,actualBody);
 }
