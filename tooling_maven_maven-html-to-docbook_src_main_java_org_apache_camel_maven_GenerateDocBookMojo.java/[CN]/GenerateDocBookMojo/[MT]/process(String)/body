@@ -1,6 +1,8 @@
 {
   Tidy tidy=new Tidy();
-  ByteArrayOutputStream out;
+  ByteArrayOutputStream out=null;
+  BufferedOutputStream output=null;
+  BufferedOutputStream wikiOutput=null;
   tidy.setXmlOut(true);
   try {
     out=new ByteArrayOutputStream();
@@ -19,10 +21,14 @@
         element.setAttribute("baseURL",baseURL);
         element.setAttribute("imageLocation","../images/");
         DOMSource source=new DOMSource(node);
-        BufferedOutputStream output=new BufferedOutputStream(new FileOutputStream(outputPath + File.separator + removeExtension(resource)+ ".xml"));
+        output=new BufferedOutputStream(new FileOutputStream(outputPath + File.separator + removeExtension(resource)+ ".xml"));
         StreamResult result=new StreamResult(output);
         TransformerFactory tFactory=TransformerFactory.newInstance();
         Transformer transformer=tFactory.newTransformer(new StreamSource(xslFile));
+        transformer.transform(source,result);
+        wikiOutput=new BufferedOutputStream(new FileOutputStream(wikiOutputPath + File.separator + removeExtension(resource)+ ".html"));
+        result=new StreamResult(wikiOutput);
+        transformer=tFactory.newTransformer();
         transformer.transform(source,result);
         break;
       }
@@ -30,5 +36,13 @@
   }
  catch (  Exception e) {
     e.printStackTrace();
+  }
+ finally {
+    try {
+      if (output != null)       output.close();
+    }
+ catch (    IOException e) {
+      e.printStackTrace();
+    }
   }
 }
