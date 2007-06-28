@@ -3,6 +3,7 @@
   ByteArrayOutputStream out=null;
   BufferedOutputStream output=null;
   BufferedOutputStream wikiOutput=null;
+  StreamSource streamSource=null;
   tidy.setXmlOut(true);
   try {
     out=new ByteArrayOutputStream();
@@ -24,7 +25,14 @@
         output=new BufferedOutputStream(new FileOutputStream(outputPath + File.separator + removeExtension(resource)+ ".xml"));
         StreamResult result=new StreamResult(output);
         TransformerFactory tFactory=TransformerFactory.newInstance();
-        Transformer transformer=tFactory.newTransformer(new StreamSource(xslFile));
+        if (xslFile != null && !xslFile.trim().equals("")) {
+          streamSource=new StreamSource(xslFile);
+        }
+ else {
+          InputStream xslStream=getClass().getResourceAsStream("/docbook.xsl");
+          streamSource=new StreamSource(xslStream);
+        }
+        Transformer transformer=tFactory.newTransformer(streamSource);
         transformer.transform(source,result);
         wikiOutput=new BufferedOutputStream(new FileOutputStream(wikiOutputPath + File.separator + removeExtension(resource)+ ".html"));
         result=new StreamResult(wikiOutput);
