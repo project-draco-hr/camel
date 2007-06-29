@@ -1,0 +1,36 @@
+{
+  String serviceUnitConfiguration=suName + "-src/camel-context.xml";
+  CamelJbiComponent component=new CamelJbiComponent();
+  container.activateComponent(component,"#ServiceMixComponent#");
+  URL url=getClass().getResource(serviceUnitConfiguration);
+  File path=new File(new URI(url.toString()));
+  path=path.getParentFile();
+  ServiceMixClient client=new DefaultServiceMixClient(container);
+  try {
+    for (int i=0; i < 2; i++) {
+      log.info("Loop counter: " + i);
+      component.getServiceUnitManager().deploy(suName,path.getAbsolutePath());
+      component.getServiceUnitManager().init(suName,path.getAbsolutePath());
+      component.getServiceUnitManager().start(suName);
+      MessageExchange exchange=createExchange(client);
+      configureExchange(client,exchange);
+      client.send(exchange);
+      component.getServiceUnitManager().stop(suName);
+      component.getServiceUnitManager().shutDown(suName);
+      component.getServiceUnitManager().undeploy(suName,path.getAbsolutePath());
+      exchange=createExchange(client);
+      try {
+        configureExchange(client,exchange);
+        client.send(exchange);
+        fail("Should have failed to send to a no longer deployed component");
+      }
+ catch (      Throwable e) {
+        log.debug("Caught expected exception as the component is undeployed: " + e,e);
+      }
+    }
+  }
+ catch (  Exception e) {
+    log.error("Caught: " + e,e);
+    throw e;
+  }
+}
