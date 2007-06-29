@@ -1,7 +1,7 @@
 {
   final CountDownLatch latch=new CountDownLatch(1);
-  CamelContext container=new DefaultCamelContext();
-  container.addRoutes(new RouteBuilder(){
+  CamelContext context=new DefaultCamelContext();
+  context.addRoutes(new RouteBuilder(){
     public void configure(){
       from("queue:test.a").to("queue:test.b");
       from("queue:test.b").process(new Processor(){
@@ -14,13 +14,13 @@
     }
   }
 );
-  container.start();
-  Endpoint<Exchange> endpoint=container.getComponent("queue").createEndpoint("queue:test.a");
+  context.start();
+  Endpoint<Exchange> endpoint=context.getEndpoint("queue:test.a");
   Exchange exchange=endpoint.createExchange();
   exchange.getIn().setHeader("cheese",123);
   Producer<Exchange> producer=endpoint.createProducer();
   producer.process(exchange);
   boolean received=latch.await(5,TimeUnit.SECONDS);
   assertTrue("Did not receive the message!",received);
-  container.stop();
+  context.stop();
 }
