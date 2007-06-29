@@ -1,27 +1,36 @@
 {
+  String serviceUnitConfiguration=suName + "-src/camel-context.xml";
   CamelJbiComponent component=new CamelJbiComponent();
   container.activateComponent(component,"#ServiceMixComponent#");
-  URL url=getClass().getResource("su1-src/camel-context.xml");
+  URL url=getClass().getResource(serviceUnitConfiguration);
   File path=new File(new URI(url.toString()));
   path=path.getParentFile();
   ServiceMixClient client=new DefaultServiceMixClient(container);
-  for (int i=0; i < 2; i++) {
-    component.getServiceUnitManager().deploy("su1",path.getAbsolutePath());
-    component.getServiceUnitManager().init("su1",path.getAbsolutePath());
-    component.getServiceUnitManager().start("su1");
-    InOut inout=client.createInOutExchange();
-    ServiceEndpoint endpoint=client.getContext().getEndpoint(CamelJbiEndpoint.SERVICE_NAME,"queue:a");
-    inout.setEndpoint(endpoint);
-    client.send(inout);
-    component.getServiceUnitManager().stop("su1");
-    component.getServiceUnitManager().shutDown("su1");
-    component.getServiceUnitManager().undeploy("su1",path.getAbsolutePath());
-    inout=client.createInOutExchange();
-    inout.setEndpoint(endpoint);
-    try {
-      client.send(inout);
+  try {
+    for (int i=0; i < 2; i++) {
+      log.info("Loop counter: " + i);
+      component.getServiceUnitManager().deploy(suName,path.getAbsolutePath());
+      component.getServiceUnitManager().init(suName,path.getAbsolutePath());
+      component.getServiceUnitManager().start(suName);
+      MessageExchange exchange=createExchange(client);
+      configureExchange(client,exchange);
+      client.send(exchange);
+      component.getServiceUnitManager().stop(suName);
+      component.getServiceUnitManager().shutDown(suName);
+      component.getServiceUnitManager().undeploy(suName,path.getAbsolutePath());
+      exchange=createExchange(client);
+      try {
+        configureExchange(client,exchange);
+        client.send(exchange);
+        fail("Should have failed to send to a no longer deployed component");
+      }
+ catch (      Throwable e) {
+        log.debug("Caught expected exception as the component is undeployed: " + e,e);
+      }
     }
- catch (    MessagingException e) {
-    }
+  }
+ catch (  Exception e) {
+    log.error("Caught: " + e,e);
+    throw e;
   }
 }

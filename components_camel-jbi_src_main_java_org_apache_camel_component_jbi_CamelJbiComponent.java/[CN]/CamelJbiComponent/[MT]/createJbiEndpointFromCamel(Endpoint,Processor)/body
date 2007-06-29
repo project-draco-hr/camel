@@ -1,17 +1,40 @@
 {
   CamelJbiEndpoint jbiEndpoint;
   String endpointUri=camelEndpoint.getEndpointUri();
-  if (endpointUri.startsWith("endpoint:")) {
-    String uri=endpointUri.substring("endpoint:".length());
-    String[] parts=new String[0];
-    try {
-      parts=URIResolver.split3(uri);
+  if (camelEndpoint instanceof JbiEndpoint) {
+    QName service=null;
+    String endpoint=null;
+    if (endpointUri.startsWith("name:")) {
+      endpoint=endpointUri.substring("endpoint:".length());
+      service=CamelJbiEndpoint.SERVICE_NAME;
     }
- catch (    IllegalArgumentException e) {
-      throw new IllegalArgumentException("Expected syntax endpoint:[serviceNamespace]:[serviceName]:[endpointName] but was given: " + endpointUri + ". Cause: "+ e,e);
+ else     if (endpointUri.startsWith("endpoint:")) {
+      String uri=endpointUri.substring("endpoint:".length());
+      String[] parts;
+      try {
+        parts=URIResolver.split3(uri);
+      }
+ catch (      IllegalArgumentException e) {
+        throw new IllegalArgumentException("Expected syntax jbi:endpoint:[serviceNamespace][sep][serviceName][sep][endpointName] where sep = '/' or ':' depending on the serviceNamespace, but was given: " + endpointUri + ". Cause: "+ e,e);
+      }
+      service=new QName(parts[0],parts[1]);
+      endpoint=parts[2];
     }
-    QName service=new QName(parts[0],parts[1]);
-    String endpoint=parts[2];
+ else     if (endpointUri.startsWith("service:")) {
+      String uri=endpointUri.substring("service:".length());
+      String[] parts;
+      try {
+        parts=URIResolver.split2(uri);
+      }
+ catch (      IllegalArgumentException e) {
+        throw new IllegalArgumentException("Expected syntax jbi:endpoint:[serviceNamespace][sep][serviceName] where sep = '/' or ':' depending on the serviceNamespace, but was given: " + endpointUri + ". Cause: "+ e,e);
+      }
+      service=new QName(parts[0],parts[1]);
+      endpoint=createEndpointName();
+    }
+ else {
+      throw new IllegalArgumentException("Expected syntax jbi:endpoint:[serviceNamespace][sep][serviceName][sep][endpointName] or  jbi:service:[serviceNamespace][sep][serviceName or jbi:name:[endpointName] but was given: " + endpointUri);
+    }
     jbiEndpoint=new CamelJbiEndpoint(getServiceUnit(),service,endpoint,camelEndpoint,getBinding(),processor);
   }
  else {
