@@ -1,8 +1,22 @@
 {
   if (file.exists() && file.lastModified() > lastPollTime) {
     if (isValidFile(file)) {
-      processFile(file);
-      deleteOrMoveFile(file);
+      FileStrategy strategy=endpoint.getFileStrategy();
+      FileExchange exchange=endpoint.createExchange(file);
+      try {
+        if (strategy.begin(endpoint,exchange,file)) {
+          getProcessor().process(exchange);
+          strategy.commit(endpoint,exchange,file);
+        }
+ else {
+          if (log.isDebugEnabled()) {
+            log.debug(endpoint + " cannot process file: " + file);
+          }
+        }
+      }
+ catch (      Throwable e) {
+        handleException(e);
+      }
     }
   }
 }
