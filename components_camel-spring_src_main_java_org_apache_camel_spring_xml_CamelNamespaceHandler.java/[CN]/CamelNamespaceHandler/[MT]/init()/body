@@ -6,6 +6,10 @@
     @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
       super.doParse(element,parserContext,builder);
       String contextId=element.getAttribute("id");
+      if (ObjectHelper.isNullOrBlank(contextId)) {
+        contextId="camelContext";
+        element.setAttribute("id",contextId);
+      }
       Element routes=element.getOwnerDocument().createElement("routes");
       NodeList list=element.getChildNodes();
       for (int size=list.getLength(), i=0; i < size; i++) {
@@ -34,7 +38,7 @@
         Element node=(Element)list.item(i);
         definition=endpointParser.parse(node,parserContext);
         String id=node.getAttribute("id");
-        if (isNotNullOrBlank(id)) {
+        if (isNotNullAndNonEmpty(id)) {
           definition.getPropertyValues().addPropertyValue("context",new RuntimeBeanReference(contextId));
           parserContext.registerComponent(new BeanComponentDefinition(definition,id));
         }
