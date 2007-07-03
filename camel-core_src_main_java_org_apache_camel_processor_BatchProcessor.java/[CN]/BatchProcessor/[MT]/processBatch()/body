@@ -1,0 +1,21 @@
+{
+  long start=System.currentTimeMillis();
+  long end=start + batchTimeout;
+  for (int i=0; i < batchSize; i++) {
+    long timeout=end - System.currentTimeMillis();
+    Exchange exchange=consumer.receive(timeout);
+    if (exchange == null) {
+      break;
+    }
+    collection.add(exchange);
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("Finsihed batch size: " + batchSize + " timeout: "+ batchTimeout+ " so sending set: "+ collection);
+  }
+  Iterator<Exchange> iter=collection.iterator();
+  while (iter.hasNext()) {
+    Exchange exchange=iter.next();
+    iter.remove();
+    processExchange(exchange);
+  }
+}
