@@ -1,16 +1,21 @@
 {
-  if (latch != null) {
-    latch.await(defaulResultWaitMillis,TimeUnit.MILLISECONDS);
-  }
- else   if (expectedCount == 0) {
-    if (timeoutForEmptyEndpoints > 0) {
-      log.debug("Sleeping for: " + timeoutForEmptyEndpoints + " millis to check there really are no messages received");
-      Thread.sleep(timeoutForEmptyEndpoints);
-    }
-  }
   if (expectedCount >= 0) {
-    int receivedCounter=getReceivedCounter();
-    assertEquals("Received message count",expectedCount,receivedCounter);
+    if (expectedCount != getReceivedCounter()) {
+      if (expectedCount == 0) {
+        if (timeoutForEmptyEndpoints > 0) {
+          log.debug("Sleeping for: " + timeoutForEmptyEndpoints + " millis to check there really are no messages received");
+          Thread.sleep(timeoutForEmptyEndpoints);
+        }
+      }
+ else {
+        if (latch == null) {
+          fail("Should have a latch!");
+        }
+        log.debug("Waiting on the latch for: " + defaulResultWaitMillis + " millis");
+        latch.await(defaulResultWaitMillis,TimeUnit.MILLISECONDS);
+      }
+    }
+    assertEquals("Received message count",expectedCount,getReceivedCounter());
   }
   if (expectedMinimumCount >= 0) {
     int receivedCounter=getReceivedCounter();
