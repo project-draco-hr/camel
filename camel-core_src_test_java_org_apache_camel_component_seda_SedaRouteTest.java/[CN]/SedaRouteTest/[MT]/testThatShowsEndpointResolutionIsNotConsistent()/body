@@ -1,0 +1,26 @@
+{
+  final CountDownLatch latch=new CountDownLatch(1);
+  CamelContext context=new DefaultCamelContext();
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("seda:test.a").to("seda:test.b");
+      from("seda:test.b").process(new Processor(){
+        public void process(        Exchange e){
+          log.debug("Received exchange: " + e.getIn());
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  context.start();
+  Endpoint<Exchange> endpoint=context.getEndpoint("seda:test.a");
+  Exchange exchange=endpoint.createExchange();
+  exchange.getIn().setHeader("cheese",123);
+  Producer<Exchange> producer=endpoint.createProducer();
+  producer.process(exchange);
+  boolean received=latch.await(5,TimeUnit.SECONDS);
+  assertTrue("Did not receive the message!",received);
+  context.stop();
+}

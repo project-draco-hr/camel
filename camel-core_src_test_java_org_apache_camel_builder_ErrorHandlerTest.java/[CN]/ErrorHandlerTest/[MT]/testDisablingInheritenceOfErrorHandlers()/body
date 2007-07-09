@@ -2,7 +2,7 @@
   RouteBuilder builder=new RouteBuilder(){
     public void configure(){
       inheritErrorHandler(false);
-      from("queue:a").errorHandler(loggingErrorHandler("FOO.BAR")).filter(body().isInstanceOf(String.class)).to("queue:b");
+      from("seda:a").errorHandler(loggingErrorHandler("FOO.BAR")).filter(body().isInstanceOf(String.class)).to("seda:b");
     }
   }
 ;
@@ -10,7 +10,7 @@
   assertEquals("Number routes created",1,routes.size());
   for (  Route<Exchange> route : routes) {
     Endpoint<Exchange> key=route.getEndpoint();
-    assertEquals("From endpoint","queue:a",key.getEndpointUri());
+    assertEquals("From endpoint","seda:a",key.getEndpointUri());
     EventDrivenConsumerRoute consumerRoute=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
     Processor processor=consumerRoute.getProcessor();
     LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
