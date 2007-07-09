@@ -1,0 +1,16 @@
+{
+  Destination destination=getMandatoryBean(Destination.class,"consumeFrom");
+  ConnectionFactory factory=getMandatoryBean(ConnectionFactory.class,"connectionFactory");
+  CamelTemplate template=getMandatoryBean(CamelTemplate.class,"camelTemplate");
+  Connection connection=factory.createConnection();
+  connection.start();
+  Session session=connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+  log.info("Consuming from: " + destination);
+  MessageConsumer consumer=session.createConsumer(destination);
+  template.sendBody("seda:consumer",expectedBody);
+  Message message=consumer.receive(5000);
+  assertNotNull("Should have received a message from destination: " + destination,message);
+  TextMessage textMessage=assertIsInstanceOf(TextMessage.class,message);
+  assertEquals("Message body",expectedBody,textMessage.getText());
+  log.info("Received message: " + message);
+}
