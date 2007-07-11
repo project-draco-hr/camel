@@ -1,0 +1,44 @@
+{
+  registerParser("endpoint",endpointParser);
+  registerParser("camelContext",new BeanDefinitionParser(CamelContextFactoryBean.class){
+    @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
+      super.doParse(element,parserContext,builder);
+      String contextId=element.getAttribute("id");
+      if (ObjectHelper.isNullOrBlank(contextId)) {
+        contextId="camelContext";
+        element.setAttribute("id",contextId);
+      }
+      Object value=parseUsingJaxb(element,parserContext);
+      if (value instanceof CamelContextFactoryBean) {
+        CamelContextFactoryBean factoryBean=(CamelContextFactoryBean)value;
+        builder.addPropertyValue("routes",factoryBean.getRoutes());
+        if (factoryBean.getPackages().length > 0) {
+          builder.addPropertyValue("packages",factoryBean.getPackages());
+        }
+      }
+      NodeList list=element.getChildNodes();
+      for (int size=list.getLength(), i=0; i < size; i++) {
+        Node child=list.item(i);
+        if (child instanceof Element) {
+          Element childElement=(Element)child;
+          if (child.getLocalName().equals("beanPostProcessor")) {
+            String beanPostProcessorId=contextId + ":beanPostProcessor";
+            childElement.setAttribute("id",beanPostProcessorId);
+            BeanDefinition definition=beanPostProcessorParser.parse(childElement,parserContext);
+            definition.getPropertyValues().addPropertyValue("camelContext",new RuntimeBeanReference(contextId));
+          }
+        }
+      }
+    }
+  }
+);
+  registerParser("xpath",new BeanDefinitionParser(XPathBuilder.class){
+    @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
+      String xpath=DomUtils.getTextValue(element);
+      builder.addConstructorArg(xpath);
+      super.doParse(element,parserContext,builder);
+      builder.addPropertyValue("namespacesFromDom",element);
+    }
+  }
+);
+}
