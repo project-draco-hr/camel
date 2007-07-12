@@ -1,0 +1,41 @@
+{
+  return new XPathFunctionResolver(){
+    public XPathFunction resolveFunction(    QName qName,    int argumentCount){
+      XPathFunction answer=null;
+      if (parent != null) {
+        answer=parent.resolveFunction(qName,argumentCount);
+      }
+      if (answer == null) {
+        if (isMatchingNamespaceOrEmptyNamespace(qName.getNamespaceURI(),IN_NAMESPACE) || isMatchingNamespaceOrEmptyNamespace(qName.getNamespaceURI(),DEFAULT_NAMESPACE)) {
+          String localPart=qName.getLocalPart();
+          if (localPart.equals("body") && argumentCount == 0) {
+            return getBodyFunction();
+          }
+          if (localPart.equals("header") && argumentCount == 1) {
+            return getHeaderFunction();
+          }
+        }
+        if (isMatchingNamespaceOrEmptyNamespace(qName.getNamespaceURI(),OUT_NAMESPACE)) {
+          String localPart=qName.getLocalPart();
+          if (localPart.equals("body") && argumentCount == 0) {
+            return getOutBodyFunction();
+          }
+          if (localPart.equals("header") && argumentCount == 1) {
+            return getOutHeaderFunction();
+          }
+        }
+        if (isMatchingNamespaceOrEmptyNamespace(qName.getNamespaceURI(),DEFAULT_NAMESPACE)) {
+          String localPart=qName.getLocalPart();
+          if (localPart.equals("out-body") && argumentCount == 0) {
+            return getOutBodyFunction();
+          }
+          if (localPart.equals("out-header") && argumentCount == 1) {
+            return getOutHeaderFunction();
+          }
+        }
+      }
+      return answer;
+    }
+  }
+;
+}
