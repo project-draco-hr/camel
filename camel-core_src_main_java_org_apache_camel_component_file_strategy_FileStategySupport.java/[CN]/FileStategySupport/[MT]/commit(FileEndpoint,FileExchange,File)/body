@@ -1,14 +1,12 @@
 {
   if (isLockFile()) {
-    Channel channel=exchange.getProperty("org.apache.camel.fileChannel",Channel.class);
-    if (channel != null) {
-      if (log.isDebugEnabled()) {
-        log.debug("Unlocking file: " + file);
-      }
-      channel.close();
+    Channel channel=ExchangeHelper.getMandatoryProperty(exchange,"org.apache.camel.fileChannel",Channel.class);
+    String lockfile=ExchangeHelper.getMandatoryProperty(exchange,"org.apache.camel.file.lock.name",String.class);
+    if (log.isDebugEnabled()) {
+      log.debug("Unlocking file: " + file);
     }
- else {
-      throw new Exception("No Channel available to close on exchange: " + exchange);
-    }
+    channel.close();
+    File lock=new File(lockfile);
+    lock.delete();
   }
 }

@@ -1,13 +1,15 @@
 {
   if (isLockFile()) {
+    String lockFileName=file.getAbsoluteFile() + ".lock";
     if (log.isDebugEnabled()) {
-      log.debug("Locking file: " + file);
+      log.debug("Locking the file: " + file + " using the lock file name: "+ lockFileName);
     }
-    FileChannel channel=new RandomAccessFile(file,"rw").getChannel();
+    FileChannel channel=new RandomAccessFile(lockFileName,"rw").getChannel();
     FileLock lock=channel.lock();
     if (lock != null) {
       exchange.setProperty("org.apache.camel.fileChannel",channel);
       exchange.setProperty("org.apache.camel.file.lock",lock);
+      exchange.setProperty("org.apache.camel.file.lock.name",lockFileName);
       return true;
     }
     return false;
