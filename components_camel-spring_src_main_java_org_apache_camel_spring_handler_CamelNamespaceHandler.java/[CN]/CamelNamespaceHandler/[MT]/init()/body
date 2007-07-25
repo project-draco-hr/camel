@@ -21,11 +21,20 @@
         Node child=list.item(i);
         if (child instanceof Element) {
           Element childElement=(Element)child;
-          if (child.getLocalName().equals("beanPostProcessor")) {
+          String localName=child.getLocalName();
+          if (localName.equals("beanPostProcessor")) {
             String beanPostProcessorId=contextId + ":beanPostProcessor";
             childElement.setAttribute("id",beanPostProcessorId);
             BeanDefinition definition=beanPostProcessorParser.parse(childElement,parserContext);
             definition.getPropertyValues().addPropertyValue("camelContext",new RuntimeBeanReference(contextId));
+          }
+ else           if (localName.equals("endpoint")) {
+            BeanDefinition definition=endpointParser.parse(childElement,parserContext);
+            String id=childElement.getAttribute("id");
+            if (isNotNullAndNonEmpty(id)) {
+              definition.getPropertyValues().addPropertyValue("context",new RuntimeBeanReference(contextId));
+              parserContext.registerComponent(new BeanComponentDefinition(definition,id));
+            }
           }
         }
       }
