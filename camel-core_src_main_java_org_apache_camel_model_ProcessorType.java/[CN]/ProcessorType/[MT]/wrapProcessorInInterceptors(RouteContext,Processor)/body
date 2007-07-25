@@ -1,0 +1,24 @@
+{
+  if (target == null) {
+    throw new RuntimeCamelException("target provided.");
+  }
+  DelegateProcessor first=null;
+  DelegateProcessor last=null;
+  List<InterceptorRef> interceptors=getInterceptors();
+  if (interceptors != null) {
+    for (    InterceptorRef interceptorRef : interceptors) {
+      DelegateProcessor p=interceptorRef.createInterceptor(routeContext);
+      if (first == null) {
+        first=p;
+      }
+      if (last != null) {
+        last.setProcessor(p);
+      }
+      last=p;
+    }
+  }
+  if (last != null) {
+    last.setProcessor(target);
+  }
+  return first == null ? target : first;
+}
