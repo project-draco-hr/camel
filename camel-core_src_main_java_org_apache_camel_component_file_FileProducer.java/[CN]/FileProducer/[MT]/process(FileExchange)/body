@@ -1,20 +1,15 @@
 {
-  String fileName=exchange.getIn().getMessageId();
   ByteBuffer payload=exchange.getIn().getBody(ByteBuffer.class);
   if (payload == null) {
     InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
     payload=ExchangeHelper.convertToMandatoryType(exchange,ByteBuffer.class,in);
   }
   payload.flip();
-  File file=null;
-  File endpointFile=endpoint.getFile();
-  if (endpointFile != null && endpointFile.isDirectory()) {
-    file=new File(endpointFile,fileName);
-  }
- else {
-    file=new File(fileName);
-  }
+  File file=createFileName(exchange);
   buildDirectory(file);
+  if (log.isDebugEnabled()) {
+    log.debug("Creating file: " + file);
+  }
   try {
     FileChannel fc=new RandomAccessFile(file,"rw").getChannel();
     fc.position(fc.size());
