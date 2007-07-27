@@ -1,6 +1,23 @@
 {
-  JAXBContext context=JAXBContext.newInstance(type);
+  JAXBContext context=createContext(type);
   Unmarshaller unmarshaller=context.createUnmarshaller();
+  if (parentTypeConverter != null) {
+    InputStream inputStream=parentTypeConverter.convertTo(InputStream.class,value);
+    if (inputStream != null) {
+      Object unmarshalled=unmarshaller.unmarshal(inputStream);
+      return type.cast(unmarshalled);
+    }
+    Reader reader=parentTypeConverter.convertTo(Reader.class,value);
+    if (reader != null) {
+      Object unmarshalled=unmarshaller.unmarshal(reader);
+      return type.cast(unmarshalled);
+    }
+    Source source=parentTypeConverter.convertTo(Source.class,value);
+    if (source != null) {
+      Object unmarshalled=unmarshaller.unmarshal(source);
+      return type.cast(unmarshalled);
+    }
+  }
   if (value instanceof String) {
     value=new StringReader((String)value);
   }
