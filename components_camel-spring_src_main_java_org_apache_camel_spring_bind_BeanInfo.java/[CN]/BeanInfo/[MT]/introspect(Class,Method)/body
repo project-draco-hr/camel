@@ -1,0 +1,35 @@
+{
+  Class[] parameterTypes=method.getParameterTypes();
+  Annotation[][] parametersAnnotations=method.getParameterAnnotations();
+  final Expression[] parameterExpressions=new Expression[parameterTypes.length];
+  List<ParameterInfo> parameters=new ArrayList<ParameterInfo>();
+  List<ParameterInfo> bodyParameters=new ArrayList<ParameterInfo>();
+  for (int i=0; i < parameterTypes.length; i++) {
+    Class parameterType=parameterTypes[i];
+    Annotation[] parameterAnnotations=parametersAnnotations[i];
+    Expression expression=createParameterUnmarshalExpression(clazz,method,parameterType,parameterAnnotations);
+    if (expression == null) {
+      if (parameterTypes.length == 1 && bodyParameters.isEmpty()) {
+        expression=ExpressionBuilder.bodyExpression(parameterType);
+      }
+ else {
+        if (log.isDebugEnabled()) {
+          log.debug("No expression available for method: " + method.toString() + " which already has a body so ignoring parameter: "+ i+ " so ignoring method");
+        }
+        return null;
+      }
+    }
+    ParameterInfo parameterInfo=new ParameterInfo(i,parameterType,parameterAnnotations,expression);
+    parameters.add(parameterInfo);
+    if (isPossibleBodyParameter(parameterAnnotations)) {
+      bodyParameters.add(parameterInfo);
+    }
+  }
+  String opName=method.getName();
+  MethodInfo methodInfo=new MethodInfo(clazz,method,parameters,bodyParameters);
+  operations.put(opName,methodInfo);
+  if (methodInfo.hasBodyParameter()) {
+    operationsWithBody.add(methodInfo);
+  }
+  return methodInfo;
+}
