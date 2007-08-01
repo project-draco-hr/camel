@@ -5,18 +5,20 @@ synchronized (endpoints) {
     if (answer == null) {
       try {
         String splitURI[]=ObjectHelper.splitOnCharacter(uri,":",2);
-        if (splitURI[1] == null) {
-          throw new IllegalArgumentException("Invalid URI, it did not contain a scheme: " + uri);
+        if (splitURI[1] != null) {
+          String scheme=splitURI[0];
+          Component component=getComponent(scheme);
+          if (component != null) {
+            answer=component.createEndpoint(uri);
+          }
         }
-        String scheme=splitURI[0];
-        Component component=getComponent(scheme);
-        if (component != null) {
-          answer=component.createEndpoint(uri);
-          if (answer != null && answer.isSingleton()) {
-            if (answer != null) {
-              startServices(answer);
-              endpoints.put(uri,answer);
-            }
+        if (answer == null) {
+          answer=createEndpoint(uri);
+        }
+        if (answer != null && answer.isSingleton()) {
+          if (answer != null) {
+            startServices(answer);
+            endpoints.put(uri,answer);
           }
         }
       }
