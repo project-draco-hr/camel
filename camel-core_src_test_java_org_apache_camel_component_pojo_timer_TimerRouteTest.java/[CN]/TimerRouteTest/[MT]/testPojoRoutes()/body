@@ -1,23 +1,22 @@
 {
-  CamelContext container=new DefaultCamelContext();
   final AtomicInteger hitCount=new AtomicInteger();
-  PojoComponent component=new PojoComponent();
-  component.addService("bar",new Runnable(){
+  JndiContext context=new JndiContext();
+  context.bind("bar",new Runnable(){
     public void run(){
       log.debug("hit");
       hitCount.incrementAndGet();
     }
   }
 );
-  container.addComponent("pojo",component);
-  container.addRoutes(new RouteBuilder(){
+  CamelContext camelContext=new DefaultCamelContext(context);
+  camelContext.addRoutes(new RouteBuilder(){
     public void configure(){
       from("timer://foo?fixedRate=true&delay=0&period=500").to("pojo:bar");
     }
   }
 );
-  container.start();
+  camelContext.start();
   Thread.sleep(1000 * 2);
   assertTrue("",hitCount.get() >= 3);
-  container.stop();
+  camelContext.stop();
 }
