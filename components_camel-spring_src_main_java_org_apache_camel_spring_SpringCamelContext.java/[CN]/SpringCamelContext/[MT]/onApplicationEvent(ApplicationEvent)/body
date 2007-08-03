@@ -1,8 +1,25 @@
 {
-  if (eventEndpoint != null) {
-    eventEndpoint.onApplicationEvent(event);
+  if (log.isDebugEnabled()) {
+    log.debug("Publishing event: " + event);
+  }
+  if (event instanceof ContextRefreshedEvent) {
+    try {
+      log.debug("Starting the CamelContext now that the ApplicationContext has started");
+      start();
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException(e);
+    }
+    if (eventEndpoint != null) {
+      eventEndpoint.onApplicationEvent(event);
+    }
   }
  else {
-    log.warn("No eventEndpoint enabled for event: " + event);
+    if (eventEndpoint != null) {
+      eventEndpoint.onApplicationEvent(event);
+    }
+ else {
+      log.warn("No eventEndpoint enabled for event: " + event);
+    }
   }
 }

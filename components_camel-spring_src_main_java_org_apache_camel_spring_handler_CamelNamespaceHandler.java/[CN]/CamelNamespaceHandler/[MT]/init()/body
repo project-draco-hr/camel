@@ -1,5 +1,7 @@
 {
   registerParser("endpoint",endpointParser);
+  registerParser("proxyFactory",proxyFactoryParser);
+  registerParser("serviceExporter",serviceExporterParser);
   registerParser("camelContext",new BeanDefinitionParser(CamelContextFactoryBean.class){
     @Override protected void doParse(    Element element,    ParserContext parserContext,    BeanDefinitionBuilder builder){
       super.doParse(element,parserContext,builder);
@@ -16,6 +18,7 @@
           builder.addPropertyValue("packages",factoryBean.getPackages());
         }
       }
+      boolean createdBeanPostProcessor=false;
       NodeList list=element.getChildNodes();
       for (int size=list.getLength(), i=0; i < size; i++) {
         Node child=list.item(i);
@@ -23,10 +26,8 @@
           Element childElement=(Element)child;
           String localName=child.getLocalName();
           if (localName.equals("beanPostProcessor")) {
-            String beanPostProcessorId=contextId + ":beanPostProcessor";
-            childElement.setAttribute("id",beanPostProcessorId);
-            BeanDefinition definition=beanPostProcessorParser.parse(childElement,parserContext);
-            definition.getPropertyValues().addPropertyValue("camelContext",new RuntimeBeanReference(contextId));
+            createBeanPostProcessor(parserContext,contextId,childElement);
+            createdBeanPostProcessor=true;
           }
  else           if (localName.equals("endpoint")) {
             BeanDefinition definition=endpointParser.parse(childElement,parserContext);
@@ -36,7 +37,26 @@
               parserContext.registerComponent(new BeanComponentDefinition(definition,id));
             }
           }
+ else           if (localName.equals("proxyFactory")) {
+            BeanDefinition definition=proxyFactoryParser.parse(childElement,parserContext);
+            String id=childElement.getAttribute("id");
+            if (isNotNullAndNonEmpty(id)) {
+              parserContext.registerComponent(new BeanComponentDefinition(definition,id));
+            }
+          }
+ else           if (localName.equals("serviceExporter")) {
+            BeanDefinition definition=serviceExporterParser.parse(childElement,parserContext);
+            String id=childElement.getAttribute("id");
+            if (isNotNullAndNonEmpty(id)) {
+              parserContext.registerComponent(new BeanComponentDefinition(definition,id));
+            }
+          }
         }
+      }
+      if (!createdBeanPostProcessor) {
+        Element childElement=element.getOwnerDocument().createElement("beanPostProcessor");
+        element.appendChild(childElement);
+        createBeanPostProcessor(parserContext,contextId,childElement);
       }
     }
   }
