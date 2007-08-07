@@ -1,0 +1,22 @@
+{
+  Jaxp11XMLReaderCreator xmlCreator=new Jaxp11XMLReaderCreator();
+  DefaultValidationErrorHandler errorHandler=new DefaultValidationErrorHandler();
+  PropertyMapBuilder mapBuilder=new PropertyMapBuilder();
+  mapBuilder.put(ValidateProperty.XML_READER_CREATOR,xmlCreator);
+  mapBuilder.put(ValidateProperty.ERROR_HANDLER,errorHandler);
+  PropertyMap propertyMap=mapBuilder.toPropertyMap();
+  Validator validator=getSchema().createValidator(propertyMap);
+  Message in=exchange.getIn();
+  SAXSource saxSource=in.getBody(SAXSource.class);
+  if (saxSource == null) {
+    Source source=ExchangeHelper.getMandatoryInBody(exchange,Source.class);
+    saxSource=ExchangeHelper.convertToMandatoryType(exchange,SAXSource.class,source);
+  }
+  InputSource bodyInput=saxSource.getInputSource();
+  XMLReader reader=xmlCreator.createXMLReader();
+  reader.setContentHandler(validator.getContentHandler());
+  reader.setDTDHandler(validator.getDTDHandler());
+  reader.setErrorHandler(errorHandler);
+  reader.parse(bodyInput);
+  errorHandler.handleErrors(exchange,schema);
+}
