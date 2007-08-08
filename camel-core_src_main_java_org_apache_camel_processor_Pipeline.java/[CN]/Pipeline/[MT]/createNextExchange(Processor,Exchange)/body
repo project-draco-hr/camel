@@ -1,8 +1,16 @@
 {
   Exchange answer=copyExchangeStrategy(previousExchange);
   Object output=previousExchange.getOut().getBody();
+  Message in=answer.getIn();
   if (output != null) {
-    answer.getIn().setBody(output);
+    in.setBody(output);
+  }
+ else {
+    Object previousInBody=previousExchange.getIn().getBody();
+    if (in.getBody() == null && previousInBody != null) {
+      LOG.warn("Bad exchange implementation; the copy() method did not copy across the in body: " + previousExchange + " of type: "+ previousExchange.getClass());
+      in.setBody(previousInBody);
+    }
   }
   return answer;
 }
