@@ -10,13 +10,23 @@
   if (LOG.isDebugEnabled()) {
     LOG.debug("Creating file: " + file);
   }
+  FileChannel fc=null;
   try {
-    FileChannel fc=new RandomAccessFile(file,"rw").getChannel();
-    fc.position(fc.size());
+    if (getEndpoint().isAppend()) {
+      fc=new RandomAccessFile(file,"rw").getChannel();
+      fc.position(fc.size());
+    }
+ else {
+      fc=new FileOutputStream(file).getChannel();
+    }
     fc.write(payload);
-    fc.close();
   }
  catch (  Throwable e) {
     LOG.error("Failed to write to File: " + file,e);
+  }
+ finally {
+    if (fc != null) {
+      fc.close();
+    }
   }
 }
