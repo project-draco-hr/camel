@@ -1,9 +1,11 @@
 {
   int redeliveryCounter=0;
   long redeliveryDelay=0;
+  RedeliveryPolicy currentRedeliveryPolicy=redeliveryPolicy;
+  Processor failureProcessor=deadLetter;
   do {
     if (redeliveryCounter > 0) {
-      redeliveryDelay=redeliveryPolicy.getRedeliveryDelay(redeliveryDelay);
+      redeliveryDelay=currentRedeliveryPolicy.getRedeliveryDelay(redeliveryDelay);
       sleep(redeliveryDelay);
     }
     try {
@@ -11,13 +13,18 @@
       return;
     }
  catch (    Throwable e) {
-      if (customProcessorForException(exchange,e)) {
-        return;
-      }
       logger.log("On delivery attempt: " + redeliveryCounter + " caught: "+ e,e);
+      redeliveryCounter=incrementRedeliveryCounter(exchange,e);
+      ExceptionType exceptionPolicy=getExceptionPolicy(exchange,e);
+      if (exceptionPolicy != null) {
+        currentRedeliveryPolicy=exceptionPolicy.createRedeliveryPolicy(currentRedeliveryPolicy);
+        Processor processor=exceptionPolicy.getErrorHandler();
+        if (processor != null) {
+          failureProcessor=processor;
+        }
+      }
     }
-    redeliveryCounter=incrementRedeliveryCounter(exchange);
   }
- while (redeliveryPolicy.shouldRedeliver(redeliveryCounter));
-  deadLetter.process(exchange);
+ while (currentRedeliveryPolicy.shouldRedeliver(redeliveryCounter));
+  failureProcessor.process(exchange);
 }
