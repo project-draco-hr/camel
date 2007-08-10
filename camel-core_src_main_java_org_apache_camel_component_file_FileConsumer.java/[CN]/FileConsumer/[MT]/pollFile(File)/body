@@ -1,25 +1,35 @@
 {
-  if (file.exists() && file.lastModified() > lastPollTime) {
-    if (isValidFile(file)) {
-      FileStrategy strategy=endpoint.getFileStrategy();
-      FileExchange exchange=endpoint.createExchange(file);
-      try {
+  if (!file.exists()) {
+    return;
+  }
+  if (isValidFile(file)) {
+    if (endpoint.isNoop()) {
+      long fileModified=file.lastModified();
+      if (fileModified <= lastPollTime) {
         if (LOG.isDebugEnabled()) {
-          LOG.debug("About to process file:  " + file + " using exchange: "+ exchange);
+          LOG.debug("Ignoring file: " + file + " as modified time: "+ fileModified+ " less than last poll time: "+ lastPollTime);
         }
-        if (strategy.begin(endpoint,exchange,file)) {
-          getProcessor().process(exchange);
-          strategy.commit(endpoint,exchange,file);
-        }
+        return;
+      }
+    }
+    FileProcessStrategy processStrategy=endpoint.getFileStrategy();
+    FileExchange exchange=endpoint.createExchange(file);
+    try {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("About to process file:  " + file + " using exchange: "+ exchange);
+      }
+      if (processStrategy.begin(endpoint,exchange,file)) {
+        getProcessor().process(exchange);
+        processStrategy.commit(endpoint,exchange,file);
+      }
  else {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug(endpoint + " cannot process file: " + file);
-          }
+        if (LOG.isDebugEnabled()) {
+          LOG.debug(endpoint + " cannot process file: " + file);
         }
       }
- catch (      Throwable e) {
-        handleException(e);
-      }
+    }
+ catch (    Throwable e) {
+      handleException(e);
     }
   }
 }

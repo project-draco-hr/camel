@@ -1,0 +1,19 @@
+{
+  if (isLockFile()) {
+    File newFile=lockFileRenamer.renameFile(file);
+    String lockFileName=newFile.getAbsolutePath();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Locking the file: " + file + " using the lock file name: "+ lockFileName);
+    }
+    FileChannel channel=new RandomAccessFile(lockFileName,"rw").getChannel();
+    FileLock lock=channel.lock();
+    if (lock != null) {
+      exchange.setProperty("org.apache.camel.fileChannel",channel);
+      exchange.setProperty("org.apache.camel.file.lock",lock);
+      exchange.setProperty("org.apache.camel.file.lock.name",lockFileName);
+      return true;
+    }
+    return false;
+  }
+  return true;
+}

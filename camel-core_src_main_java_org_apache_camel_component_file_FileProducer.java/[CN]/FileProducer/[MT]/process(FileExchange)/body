@@ -1,14 +1,9 @@
 {
-  ByteBuffer payload=exchange.getIn().getBody(ByteBuffer.class);
-  if (payload == null) {
-    InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-    payload=ExchangeHelper.convertToMandatoryType(exchange,ByteBuffer.class,in);
-  }
-  payload.flip();
+  InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
   File file=createFileName(exchange);
   buildDirectory(file);
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Creating file: " + file);
+    LOG.debug("About to write to: " + file + " from exchange: "+ exchange);
   }
   FileChannel fc=null;
   try {
@@ -19,14 +14,40 @@
  else {
       fc=new FileOutputStream(file).getChannel();
     }
-    fc.write(payload);
+    int size=getEndpoint().getBufferSize();
+    byte[] buffer=new byte[size];
+    ByteBuffer byteBuffer=ByteBuffer.wrap(buffer);
+    while (true) {
+      int count=in.read(buffer);
+      if (count <= 0) {
+        break;
+      }
+ else       if (count < size) {
+        byteBuffer=ByteBuffer.wrap(buffer,0,count);
+        fc.write(byteBuffer);
+        break;
+      }
+ else {
+        fc.write(byteBuffer);
+      }
+    }
   }
- catch (  Throwable e) {
-    LOG.error("Failed to write to File: " + file,e);
-  }
- finally {
+  finally {
+    if (in != null) {
+      try {
+        in.close();
+      }
+ catch (      IOException e) {
+        LOG.warn("Failed to close input: " + e,e);
+      }
+    }
     if (fc != null) {
-      fc.close();
+      try {
+        fc.close();
+      }
+ catch (      IOException e) {
+        LOG.warn("Failed to close output: " + e,e);
+      }
     }
   }
 }
