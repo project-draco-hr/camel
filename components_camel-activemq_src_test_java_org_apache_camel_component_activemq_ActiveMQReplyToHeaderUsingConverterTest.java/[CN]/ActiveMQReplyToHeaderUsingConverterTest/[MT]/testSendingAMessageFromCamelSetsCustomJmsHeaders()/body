@@ -1,0 +1,22 @@
+{
+  MockEndpoint resultEndpoint=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
+  resultEndpoint.expectedBodiesReceived(expectedBody);
+  AssertionClause firstMessage=resultEndpoint.message(0);
+  firstMessage.header("cheese").isEqualTo(123);
+  firstMessage.header("JMSCorrelationID").isEqualTo(correlationID);
+  firstMessage.header("JMSReplyTo").isEqualTo(ActiveMQConverter.toDestination(replyQueueName));
+  firstMessage.header("JMSType").isEqualTo(messageType);
+  Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put("cheese",123);
+  headers.put("JMSReplyTo",replyQueueName);
+  headers.put("JMSCorrelationID",correlationID);
+  headers.put("JMSType",messageType);
+  template.sendBodyAndHeaders("activemq:test.a",expectedBody,headers);
+  resultEndpoint.assertIsSatisfied();
+  List<Exchange> list=resultEndpoint.getReceivedExchanges();
+  Exchange exchange=list.get(0);
+  Object replyTo=exchange.getIn().getHeader("JMSReplyTo");
+  LOG.info("Reply to is: " + replyTo);
+  Destination destination=assertIsInstanceOf(Destination.class,replyTo);
+  assertEquals("ReplyTo",replyQueueName,destination.toString());
+}
