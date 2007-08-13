@@ -1,0 +1,21 @@
+{
+  final Processor processor=new Processor(){
+    public void process(    Exchange exchange){
+      if ("b".equals(exchange.getIn().getBody())) {
+        throw new NullPointerException("MyCustomException");
+      }
+ else {
+        throw new IllegalArgumentException("MyCustomException");
+      }
+    }
+  }
+;
+  return new RouteBuilder(){
+    public void configure(){
+      exception(IllegalArgumentException.class).maximumRedeliveries(2).to("mock:a");
+      exception(NullPointerException.class).to("mock:b");
+      from("direct:start").process(processor);
+    }
+  }
+;
+}
