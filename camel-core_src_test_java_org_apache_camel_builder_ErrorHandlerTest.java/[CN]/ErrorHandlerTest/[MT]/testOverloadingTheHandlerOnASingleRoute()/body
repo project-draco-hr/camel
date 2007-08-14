@@ -6,4 +6,25 @@
     }
   }
 ;
+  List<Route> list=getRouteList(builder);
+  assertEquals("Number routes created?" + list,2,list.size());
+  for (  Route route : list) {
+    Endpoint key=route.getEndpoint();
+    String endpointUri=key.getEndpointUri();
+    EventDrivenConsumerRoute consumerRoute=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
+    Processor processor=consumerRoute.getProcessor();
+    SendProcessor sendProcessor=null;
+    if (endpointUri.equals("seda:a")) {
+      LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
+      Processor outputProcessor=loggingProcessor.getOutput();
+      sendProcessor=assertIsInstanceOf(SendProcessor.class,outputProcessor);
+    }
+ else {
+      assertEquals("From endpoint","seda:b",endpointUri);
+      DeadLetterChannel deadLetterChannel=assertIsInstanceOf(DeadLetterChannel.class,processor);
+      Processor outputProcessor=deadLetterChannel.getOutput();
+      sendProcessor=assertIsInstanceOf(SendProcessor.class,outputProcessor);
+    }
+    log.debug("For " + endpointUri + " using: "+ sendProcessor);
+  }
 }
