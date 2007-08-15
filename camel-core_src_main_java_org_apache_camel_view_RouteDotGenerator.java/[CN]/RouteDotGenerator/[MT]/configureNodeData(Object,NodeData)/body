@@ -1,5 +1,12 @@
 {
-  if (node instanceof ToType) {
+  if (node instanceof FromType) {
+    FromType fromType=(FromType)node;
+    nodeData.label=fromType.getRef();
+    if (isNullOrBlank(nodeData.label)) {
+      nodeData.label=fromType.getUri();
+    }
+  }
+ else   if (node instanceof ToType) {
     ToType toType=(ToType)node;
     String ref=toType.getRef();
     if (isNullOrBlank(ref)) {
@@ -10,7 +17,8 @@
  else   if (node instanceof FilterType) {
     FilterType filterType=(FilterType)node;
     nodeData.image=imagePrefix + "MessageFilterIcon.gif";
-    nodeData.label=getLabel(filterType.getExpression());
+    nodeData.edgeLabel=getLabel(filterType.getExpression());
+    nodeData.nodeType="Message Filter";
   }
  else   if (node instanceof ChoiceType) {
     ChoiceType choiceType=(ChoiceType)node;
@@ -20,26 +28,48 @@
     for (    WhenType whenType : list) {
       buffer.append(getLabel(whenType.getExpression()));
     }
-    nodeData.label=buffer.toString();
+    nodeData.edgeLabel=buffer.toString();
+    nodeData.nodeType="Content Based Router";
   }
  else   if (node instanceof RecipientListType) {
     RecipientListType recipientListType=(RecipientListType)node;
     nodeData.image=imagePrefix + "RecipientListIcon.gif";
-    nodeData.label=getLabel(recipientListType.getExpression());
+    nodeData.edgeLabel=getLabel(recipientListType.getExpression());
+    nodeData.nodeType="Recipient List";
   }
  else   if (node instanceof SplitterType) {
     SplitterType splitterType=(SplitterType)node;
     nodeData.image=imagePrefix + "SplitterIcon.gif";
-    nodeData.label=getLabel(splitterType.getExpression());
+    nodeData.edgeLabel=getLabel(splitterType.getExpression());
+    nodeData.nodeType="Splitter";
   }
  else   if (node instanceof AggregatorType) {
     AggregatorType aggregatorType=(AggregatorType)node;
     nodeData.image=imagePrefix + "AggregatorIcon.gif";
-    nodeData.label=getLabel(aggregatorType.getExpression());
+    nodeData.edgeLabel=getLabel(aggregatorType.getExpression());
+    nodeData.nodeType="Aggregator";
   }
  else   if (node instanceof ResequencerType) {
     ResequencerType resequencerType=(ResequencerType)node;
     nodeData.image=imagePrefix + "ResequencerIcon.gif";
-    nodeData.label=getLabel(resequencerType.getExpressions());
+    nodeData.edgeLabel=getLabel(resequencerType.getExpressions());
+    nodeData.nodeType="Resequencer";
+  }
+  if (nodeData.label == null) {
+    if (isNotNullAndNonEmpty(nodeData.edgeLabel)) {
+      nodeData.label="";
+    }
+ else {
+      nodeData.label=node.toString();
+    }
+  }
+  if (isNullOrBlank(nodeData.tooltop)) {
+    if (isNotNullAndNonEmpty(nodeData.nodeType)) {
+      String description=isNotNullAndNonEmpty(nodeData.edgeLabel) ? nodeData.edgeLabel : nodeData.label;
+      nodeData.tooltop=nodeData.nodeType + ": " + description;
+    }
+ else {
+      nodeData.tooltop=nodeData.label;
+    }
   }
 }
