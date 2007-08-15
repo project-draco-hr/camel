@@ -1,0 +1,16 @@
+{
+  byte[] payload="Hello World".getBytes();
+  MockEndpoint resultEndpoint=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
+  resultEndpoint.expectedMessageCount(1);
+  AssertionClause firstMessageExpectations=resultEndpoint.message(0);
+  firstMessageExpectations.header("journal").isEqualTo("activemq.journal:test.a");
+  firstMessageExpectations.header("location").isNotNull();
+  firstMessageExpectations.body().isInstanceOf(ByteSequence.class);
+  template.sendBody("direct:test.a",payload);
+  resultEndpoint.assertIsSatisfied();
+  List<Exchange> list=resultEndpoint.getReceivedExchanges();
+  Exchange exchange=list.get(0);
+  ByteSequence body=(ByteSequence)exchange.getIn().getBody();
+  body.compact();
+  assertEquals("body",new String(payload),new String(body.data));
+}

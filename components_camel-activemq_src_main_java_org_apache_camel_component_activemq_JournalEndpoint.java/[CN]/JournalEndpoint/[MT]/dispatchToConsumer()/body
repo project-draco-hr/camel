@@ -1,0 +1,28 @@
+{
+  try {
+    DefaultConsumer<DefaultExchange> consumer;
+    while ((consumer=this.consumer.get()) != null) {
+      Location location=dataManager.getNextLocation(lastReadLocation);
+      if (location != null) {
+        ByteSequence read=dataManager.read(location);
+        DefaultExchange exchange=createExchange();
+        exchange.getIn().setBody(read);
+        exchange.getIn().setHeader("journal",getEndpointUri());
+        exchange.getIn().setHeader("location",location);
+        consumer.getProcessor().process(exchange);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Consumed record at: " + location);
+        }
+        dataManager.setMark(location,true);
+        lastReadLocation=location;
+      }
+ else {
+        LOG.debug("Sleeping due to no records being available.");
+        Thread.sleep(idleDelay);
+      }
+    }
+  }
+ catch (  Throwable e) {
+    e.printStackTrace();
+  }
+}
