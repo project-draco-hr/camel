@@ -1,4 +1,8 @@
 {
+  if (node instanceof ProcessorType) {
+    ProcessorType processorType=(ProcessorType)node;
+    data.edgeLabel=processorType.getLabel();
+  }
   if (node instanceof FromType) {
     FromType fromType=(FromType)node;
     data.label=fromType.getRef();
@@ -17,48 +21,46 @@
     data.url="http://activemq.apache.org/camel/message-endpoint.html";
   }
  else   if (node instanceof FilterType) {
-    FilterType filterType=(FilterType)node;
     data.image=imagePrefix + "MessageFilterIcon.gif";
-    data.edgeLabel=getLabel(filterType.getExpression());
     data.nodeType="Message Filter";
   }
  else   if (node instanceof ChoiceType) {
-    ChoiceType choiceType=(ChoiceType)node;
     data.image=imagePrefix + "ContentBasedRouterIcon.gif";
-    CollectionStringBuffer buffer=new CollectionStringBuffer();
-    List<WhenType> list=choiceType.getWhenClauses();
-    for (    WhenType whenType : list) {
-      buffer.append(getLabel(whenType.getExpression()));
-    }
-    data.edgeLabel=buffer.toString();
     data.nodeType="Content Based Router";
   }
  else   if (node instanceof RecipientListType) {
-    RecipientListType recipientListType=(RecipientListType)node;
     data.image=imagePrefix + "RecipientListIcon.gif";
-    data.edgeLabel=getLabel(recipientListType.getExpression());
     data.nodeType="Recipient List";
   }
  else   if (node instanceof SplitterType) {
-    SplitterType splitterType=(SplitterType)node;
     data.image=imagePrefix + "SplitterIcon.gif";
-    data.edgeLabel=getLabel(splitterType.getExpression());
     data.nodeType="Splitter";
   }
  else   if (node instanceof AggregatorType) {
-    AggregatorType aggregatorType=(AggregatorType)node;
     data.image=imagePrefix + "AggregatorIcon.gif";
-    data.edgeLabel=getLabel(aggregatorType.getExpression());
     data.nodeType="Aggregator";
   }
  else   if (node instanceof ResequencerType) {
-    ResequencerType resequencerType=(ResequencerType)node;
     data.image=imagePrefix + "ResequencerIcon.gif";
-    data.edgeLabel=getLabel(resequencerType.getExpressions());
     data.nodeType="Resequencer";
   }
+  if (isNullOrBlank(data.nodeType)) {
+    String name=node.getClass().getName();
+    int idx=name.lastIndexOf('.');
+    if (idx > 0) {
+      name=name.substring(idx + 1);
+    }
+    if (name.endsWith("Type")) {
+      name=name.substring(0,name.length() - 4);
+    }
+    data.nodeType=insertSpacesBetweenCamelCase(name);
+  }
   if (data.label == null) {
-    if (isNotNullAndNonEmpty(data.edgeLabel)) {
+    if (isNullOrBlank(data.image)) {
+      data.label=data.nodeType;
+      data.shape="box";
+    }
+ else     if (isNotNullAndNonEmpty(data.edgeLabel)) {
       data.label="";
     }
  else {
