@@ -1,0 +1,37 @@
+{
+  File outputDir=new File(workDir);
+  if (!outputDir.exists()) {
+    outputDir.mkdirs();
+  }
+  try {
+    String content=downloadContent();
+    storeHTMLFile(content);
+    getLog().info("Converting to PDF with prince...");
+    Commandline cl=new Commandline("prince");
+    Argument arg=new Argument();
+    arg.setValue(getHTMLFileName());
+    cl.addArg(arg);
+    arg=new Argument();
+    arg.setValue(getPDFFileName());
+    cl.addArg(arg);
+    StreamConsumer out=new StreamConsumer(){
+      public void consumeLine(      String line){
+        System.out.println("prince: " + line);
+      }
+    }
+;
+    int rc=CommandLineUtils.executeCommandLine(cl,out,out);
+    if (rc == 0) {
+      getLog().info("Stored: " + getPDFFileName());
+    }
+ else {
+      throw new MojoExecutionException("PDF Conversion failed rc=" + rc);
+    }
+  }
+ catch (  MojoExecutionException e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw new MojoExecutionException("Download of '" + page + "' failed: "+ e.getMessage(),e);
+  }
+}
