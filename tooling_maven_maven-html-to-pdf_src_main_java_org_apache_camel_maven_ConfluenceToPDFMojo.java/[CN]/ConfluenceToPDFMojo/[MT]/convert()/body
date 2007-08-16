@@ -1,0 +1,31 @@
+{
+  getLog().info("Converting to PDF with prince...");
+  Commandline cl=new Commandline("prince");
+  Argument arg;
+  if (princeArgs != null) {
+    for (int i=0; i < princeArgs.length; i++) {
+      arg=new Argument();
+      arg.setValue(princeArgs[i]);
+      cl.addArg(arg);
+    }
+  }
+  arg=new Argument();
+  arg.setValue(getHTMLFileName());
+  cl.addArg(arg);
+  arg=new Argument();
+  arg.setValue(getPDFFileName());
+  cl.addArg(arg);
+  StreamConsumer out=new StreamConsumer(){
+    public void consumeLine(    String line){
+      System.out.println("prince: " + line);
+    }
+  }
+;
+  int rc=CommandLineUtils.executeCommandLine(cl,out,out);
+  if (rc == 0) {
+    getLog().info("Stored: " + getPDFFileName());
+  }
+ else {
+    throw new MojoExecutionException("PDF Conversion failed rc=" + rc);
+  }
+}
