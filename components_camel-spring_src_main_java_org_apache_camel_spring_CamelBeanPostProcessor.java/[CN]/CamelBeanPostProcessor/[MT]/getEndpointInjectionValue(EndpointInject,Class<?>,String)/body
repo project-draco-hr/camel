@@ -5,15 +5,16 @@
       return endpoint;
     }
  else     if (type.isAssignableFrom(Producer.class)) {
-      try {
-        return endpoint.createProducer();
-      }
- catch (      Exception e) {
-        throw new RuntimeCamelException(e);
-      }
+      return createInjectionProducer(endpoint);
     }
  else     if (type.isAssignableFrom(CamelTemplate.class)) {
       return new CamelTemplate(getCamelContext(),endpoint);
+    }
+ else     if (type.isAssignableFrom(PollingConsumer.class)) {
+      return createInjectionPollingConsumer(endpoint);
+    }
+ else {
+      throw new IllegalArgumentException("Invalid type: " + type.getName() + " which cannot be injected via @EndpointInject for "+ endpoint);
     }
   }
   return null;
