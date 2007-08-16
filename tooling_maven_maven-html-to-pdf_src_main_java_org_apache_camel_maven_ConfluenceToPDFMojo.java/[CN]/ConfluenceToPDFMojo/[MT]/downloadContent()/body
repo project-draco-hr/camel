@@ -1,7 +1,24 @@
 {
   getLog().info("Downloading: " + page);
   URL url=new URL(page);
-  Document doc=new Tidy().parseDOM(new BufferedInputStream(url.openStream()),new ByteArrayOutputStream());
+  Tidy tidy=new Tidy();
+  ByteArrayOutputStream result=new ByteArrayOutputStream();
+  tidy.setErrout(new PrintWriter(result));
+  Document doc;
+  try {
+    doc=tidy.parseDOM(new BufferedInputStream(url.openStream()),new ByteArrayOutputStream());
+  }
+ catch (  Throwable e) {
+    if (errorOnDownloadFailure) {
+      getLog().debug(new String(result.toByteArray()),e);
+      throw new MojoExecutionException("Download or validation of '" + page + "' failed: "+ e);
+    }
+ else {
+      getLog().debug(new String(result.toByteArray()),e);
+      getLog().error("Download or validation of '" + page + "' failed: "+ e);
+      return null;
+    }
+  }
   NodeList nodeList=doc.getElementsByTagName("div");
   for (int i=0; i < nodeList.getLength(); ++i) {
     Node node=nodeList.item(i);
