@@ -21,7 +21,7 @@
     invocation=beanInfo.createInvocation(pojo,exchange);
   }
   if (invocation == null) {
-    throw new IllegalStateException("No method invocation could be created");
+    throw new IllegalStateException("No method invocation could be created, no maching method could be found on: " + pojo);
   }
   try {
     Object value=invocation.proceed();
@@ -29,7 +29,16 @@
       exchange.getIn().setBody(value);
     }
   }
- catch (  Exception e) {
+ catch (  InvocationTargetException e) {
+    Throwable cause=e.getTargetException();
+    if (cause instanceof Exception) {
+      throw (Exception)cause;
+    }
+ else {
+      throw e;
+    }
+  }
+catch (  Exception e) {
     throw e;
   }
 catch (  Throwable throwable) {
