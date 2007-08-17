@@ -3,7 +3,15 @@
     if (isMatched(ftpFile)) {
       final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
       client.retrieveFile(ftpFile.getName(),byteArrayOutputStream);
-      getProcessor().process(endpoint.createExchange(getFullFileName(ftpFile),byteArrayOutputStream));
+      RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(ftpFile),byteArrayOutputStream);
+      if (isSetNames()) {
+        String relativePath=getFullFileName(ftpFile).substring(endpoint.getConfiguration().getFile().length());
+        if (relativePath.startsWith("/")) {
+          relativePath=relativePath.substring(1);
+        }
+        exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
+      }
+      getProcessor().process(exchange);
     }
   }
 }

@@ -3,7 +3,15 @@
     if (isMatched(sftpFile)) {
       final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
       channel.get(sftpFile.getFilename(),byteArrayOutputStream);
-      getProcessor().process(endpoint.createExchange(getFullFileName(sftpFile),byteArrayOutputStream));
+      RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(sftpFile),byteArrayOutputStream);
+      if (isSetNames()) {
+        String relativePath=getFullFileName(sftpFile).substring(endpoint.getConfiguration().getFile().length());
+        if (relativePath.startsWith("/")) {
+          relativePath=relativePath.substring(1);
+        }
+        exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
+      }
+      getProcessor().process(exchange);
     }
   }
 }
