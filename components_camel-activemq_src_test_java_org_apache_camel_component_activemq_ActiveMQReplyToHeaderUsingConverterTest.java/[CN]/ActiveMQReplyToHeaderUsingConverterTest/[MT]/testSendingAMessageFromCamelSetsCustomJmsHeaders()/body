@@ -6,17 +6,24 @@
   firstMessage.header("JMSCorrelationID").isEqualTo(correlationID);
   firstMessage.header("JMSReplyTo").isEqualTo(ActiveMQConverter.toDestination(replyQueueName));
   firstMessage.header("JMSType").isEqualTo(messageType);
+  firstMessage.header("JMSXGroupID").isEqualTo(groupID);
   Map<String,Object> headers=new HashMap<String,Object>();
   headers.put("cheese",123);
   headers.put("JMSReplyTo",replyQueueName);
   headers.put("JMSCorrelationID",correlationID);
   headers.put("JMSType",messageType);
+  headers.put("JMSXGroupID",groupID);
   template.sendBodyAndHeaders("activemq:test.a",expectedBody,headers);
   resultEndpoint.assertIsSatisfied();
   List<Exchange> list=resultEndpoint.getReceivedExchanges();
   Exchange exchange=list.get(0);
-  Object replyTo=exchange.getIn().getHeader("JMSReplyTo");
+  Message in=exchange.getIn();
+  Object replyTo=in.getHeader("JMSReplyTo");
   LOG.info("Reply to is: " + replyTo);
   Destination destination=assertIsInstanceOf(Destination.class,replyTo);
   assertEquals("ReplyTo",replyQueueName,destination.toString());
+  assertMessageHeader(in,"cheese",123);
+  assertMessageHeader(in,"JMSCorrelationID",correlationID);
+  assertMessageHeader(in,"JMSType",messageType);
+  assertMessageHeader(in,"JMSXGroupID",groupID);
 }
