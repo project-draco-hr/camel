@@ -11,5 +11,19 @@
     Body content=(Body)annotation;
     return ExpressionBuilder.bodyExpression(parameterType);
   }
+ else {
+    LanguageAnnotation languageAnnotation=annotation.annotationType().getAnnotation(LanguageAnnotation.class);
+    if (languageAnnotation != null) {
+      Class<?> type=languageAnnotation.factory();
+      Object object=camelContext.getInjector().newInstance(type);
+      if (object instanceof InjectionExpressionFactory) {
+        InjectionExpressionFactory expressionFactory=(InjectionExpressionFactory)object;
+        return expressionFactory.createExpression(camelContext,annotation,languageAnnotation,parameterType);
+      }
+ else {
+        LOG.error("Ignoring bad annotation: " + languageAnnotation + "on method: "+ method+ " which declares a factory: "+ type.getName()+ " which does not implement "+ InjectionExpressionFactory.class.getName());
+      }
+    }
+  }
   return null;
 }
