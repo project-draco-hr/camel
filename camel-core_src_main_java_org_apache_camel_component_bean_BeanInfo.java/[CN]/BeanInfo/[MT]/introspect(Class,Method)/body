@@ -4,11 +4,14 @@
   final Expression[] parameterExpressions=new Expression[parameterTypes.length];
   List<ParameterInfo> parameters=new ArrayList<ParameterInfo>();
   List<ParameterInfo> bodyParameters=new ArrayList<ParameterInfo>();
+  boolean hasCustomAnnotation=false;
   for (int i=0; i < parameterTypes.length; i++) {
     Class parameterType=parameterTypes[i];
     Annotation[] parameterAnnotations=parametersAnnotations[i];
     Expression expression=createParameterUnmarshalExpression(clazz,method,parameterType,parameterAnnotations);
+    hasCustomAnnotation|=expression != null;
     if (expression == null) {
+      hasCustomAnnotation|=ObjectHelper.hasAnnotation(parameterAnnotations,Body.class);
       if (bodyParameters.isEmpty()) {
         expression=ExpressionBuilder.bodyExpression(parameterType);
       }
@@ -26,7 +29,7 @@
     }
   }
   String opName=method.getName();
-  MethodInfo methodInfo=new MethodInfo(clazz,method,parameters,bodyParameters);
+  MethodInfo methodInfo=new MethodInfo(clazz,method,parameters,bodyParameters,hasCustomAnnotation);
   operations.put(opName,methodInfo);
   if (methodInfo.hasBodyParameter()) {
     operationsWithBody.add(methodInfo);
