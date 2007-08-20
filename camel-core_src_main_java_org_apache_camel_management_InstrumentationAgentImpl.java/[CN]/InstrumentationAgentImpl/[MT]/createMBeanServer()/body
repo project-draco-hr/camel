@@ -1,0 +1,68 @@
+{
+  String hostName=DEFAULT_HOST;
+  boolean canAccessSystemProps=true;
+  try {
+    SecurityManager sm=System.getSecurityManager();
+    if (sm != null) {
+      sm.checkPropertiesAccess();
+    }
+  }
+ catch (  SecurityException se) {
+    canAccessSystemProps=false;
+  }
+  if (canAccessSystemProps) {
+    if (!jmxEnabled) {
+      jmxEnabled=null != System.getProperty(SYSTEM_PROPERTY_JMX);
+      if (!jmxEnabled) {
+        return;
+      }
+    }
+    if (jmxDomainName == null) {
+      jmxDomainName=System.getProperty(SYSTEM_PROPERTY_JMX + ".domain");
+      if (jmxDomainName == null || jmxDomainName.length() == 0) {
+        jmxDomainName=DEFAULT_DOMAIN;
+      }
+    }
+    if (jmxConnectorPort <= 0) {
+      String portKey=SYSTEM_PROPERTY_JMX + ".port";
+      String portValue=System.getProperty(portKey);
+      if (portValue != null && portValue.length() > 0) {
+        try {
+          jmxConnectorPort=Integer.parseInt(portValue);
+        }
+ catch (        NumberFormatException nfe) {
+          LOG.info("Invalid port number specified via System property [" + portKey + "="+ portValue+ "].  Using default: "+ DEFAULT_PORT);
+          jmxConnectorPort=DEFAULT_PORT;
+        }
+      }
+    }
+    try {
+      hostName=InetAddress.getLocalHost().getHostName();
+    }
+ catch (    UnknownHostException uhe) {
+      LOG.info("Cannot determine host name.  Using default: " + DEFAULT_PORT,uhe);
+      hostName=DEFAULT_HOST;
+    }
+  }
+ else {
+    jmxDomainName=jmxDomainName != null ? jmxDomainName : DEFAULT_DOMAIN;
+    jmxConnectorPort=jmxConnectorPort > 0 ? jmxConnectorPort : DEFAULT_PORT;
+    hostName=DEFAULT_HOST;
+  }
+  if (!jmxEnabled) {
+    return;
+  }
+  List servers=MBeanServerFactory.findMBeanServer(jmxDomainName);
+  if (servers.size() == 0) {
+    server=MBeanServerFactory.createMBeanServer(jmxDomainName);
+  }
+ else {
+    server=(MBeanServer)servers.get(0);
+  }
+  try {
+    createJmxConnector(hostName);
+  }
+ catch (  IOException ioe) {
+    LOG.warn("Could not create and start jmx connector.",ioe);
+  }
+}

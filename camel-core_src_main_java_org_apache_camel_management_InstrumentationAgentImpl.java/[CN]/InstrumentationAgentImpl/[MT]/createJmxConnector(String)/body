@@ -1,0 +1,26 @@
+{
+  if (jmxConnectorPort > 0) {
+    try {
+      LocateRegistry.createRegistry(jmxConnectorPort);
+    }
+ catch (    RemoteException ex) {
+      LocateRegistry.getRegistry(jmxConnectorPort);
+    }
+    JMXServiceURL url=new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":"+ jmxConnectorPort+ "/jmxrmi");
+    cs=JMXConnectorServerFactory.newJMXConnectorServer(url,null,server);
+    Thread connectorThread=new Thread(){
+      public void run(){
+        try {
+          cs.start();
+        }
+ catch (        IOException ioe) {
+          LOG.warn("Could not start jmx connector thread.",ioe);
+        }
+      }
+    }
+;
+    connectorThread.setName("JMX Connector Thread [" + url + "]");
+    connectorThread.start();
+    LOG.info("Jmx connector thread started on " + url);
+  }
+}
