@@ -1,0 +1,38 @@
+{
+  int payLoadSize=1024;
+  int concurrentProducers=50;
+  long delayBetweenSample=1000;
+  long perfTestDuration=1000 * 60;
+  StringBuffer t=new StringBuffer();
+  for (int i=0; i < payLoadSize; i++) {
+    t.append('a' + (i % 26));
+  }
+  final byte[] payload=t.toString().getBytes("UTF-8");
+  for (int i=0; i < concurrentProducers; i++) {
+    Thread thread=new Thread("Producer: " + i){
+      @Override public void run(){
+        while (running.get()) {
+          template.sendBody("direct:in",payload);
+          produceCounter.incrementAndGet();
+        }
+      }
+    }
+;
+    thread.start();
+  }
+  long produceTotal=0;
+  long consumeTotal=0;
+  long start=System.currentTimeMillis();
+  long end=start + perfTestDuration;
+  while (System.currentTimeMillis() < end) {
+    Thread.sleep(delayBetweenSample);
+    long totalTime=System.currentTimeMillis() - start;
+    long p=produceCounter.getAndSet(0);
+    long c=consumeCounter.getAndSet(0);
+    produceTotal+=p;
+    consumeTotal+=c;
+    System.out.println("Interval Produced " + stat(p,delayBetweenSample) + " m/s, Consumed "+ stat(c,delayBetweenSample)+ " m/s");
+    System.out.println("Total Produced " + stat(produceTotal,totalTime) + " m/s, Consumed "+ stat(consumeTotal,totalTime)+ " m/s");
+  }
+  running.set(false);
+}
