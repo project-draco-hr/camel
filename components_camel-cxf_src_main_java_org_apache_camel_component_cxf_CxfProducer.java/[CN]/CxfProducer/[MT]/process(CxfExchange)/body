@@ -2,20 +2,20 @@
   try {
     CxfBinding binding=endpoint.getBinding();
     MessageImpl m=binding.createCxfMessage(exchange);
-    ExchangeImpl e=new ExchangeImpl();
-    e.setInMessage(m);
-    m.put(LocalConduit.DIRECT_DISPATCH,Boolean.TRUE);
-    m.setDestination(destination);
-synchronized (conduit) {
-      conduit.prepare(m);
-      if (endpoint.isInOut()) {
-        Message response=future.getResponse();
-        response=e.getOutMessage();
-        binding.storeCxfResponse(exchange,response);
+    List paraments=m.getContent(List.class);
+    Message response=new MessageImpl();
+    if (paraments != null) {
+      String operation=(String)paraments.get(0);
+      Object[] args=new Object[paraments.size() - 1];
+      for (int i=0; i < paraments.size() - 1; i++) {
+        args[i]=paraments.get(i + 1);
       }
+      Object[] result=client.invoke(operation,args);
+      response.setContent(Object[].class,result);
+      binding.storeCxfResponse(exchange,response);
     }
   }
- catch (  IOException e) {
+ catch (  Exception e) {
     throw new RuntimeCamelException(e);
   }
 }

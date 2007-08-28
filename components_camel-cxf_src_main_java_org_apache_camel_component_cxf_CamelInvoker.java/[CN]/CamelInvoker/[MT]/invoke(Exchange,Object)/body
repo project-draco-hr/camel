@@ -1,0 +1,29 @@
+{
+  BindingOperationInfo bop=exchange.get(BindingOperationInfo.class);
+  MethodDispatcher md=(MethodDispatcher)exchange.get(Service.class).get(MethodDispatcher.class.getName());
+  Method m=md.getMethod(bop);
+  List<Object> params=null;
+  if (o instanceof List) {
+    params=CastUtils.cast((List<?>)o);
+  }
+ else   if (o != null) {
+    params=new MessageContentsList(o);
+  }
+  final List<Object> messageBody=new ArrayList<Object>(params.size() + 1);
+  messageBody.add(m.getName());
+  for (  Object obj : params) {
+    messageBody.add(obj);
+  }
+  CxfEndpoint endpoint=(CxfEndpoint)cxfConsumer.getEndpoint();
+  CxfExchange cxfExchange=endpoint.createExchange(exchange.getInMessage());
+  cxfExchange.getIn().setBody(messageBody);
+  try {
+    cxfConsumer.getProcessor().process(cxfExchange);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+  System.out.println(cxfExchange.getOut().getBody());
+  Object[] result=(Object[])cxfExchange.getOut().getBody();
+  return result;
+}
