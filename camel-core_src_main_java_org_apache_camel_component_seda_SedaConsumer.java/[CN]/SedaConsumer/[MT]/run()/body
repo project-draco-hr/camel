@@ -1,23 +1,32 @@
 {
   while (!isStopping()) {
-    E exchange;
+    final SedaEndpoint.Entry<E> entry;
     try {
-      exchange=endpoint.getQueue().poll(1000,TimeUnit.MILLISECONDS);
+      entry=endpoint.getQueue().poll(1000,TimeUnit.MILLISECONDS);
     }
  catch (    InterruptedException e) {
       break;
     }
-    if (exchange != null && !isStopping()) {
-      try {
-        processor.process(exchange);
+    if (entry != null && !isStopping()) {
+      processor.process(entry.getExchange(),new AsyncCallback(){
+        public void done(        boolean sync){
+          if (entry.getCallback() != null) {
+            entry.getCallback().done(false);
+          }
+ else {
+            Throwable e=entry.getExchange().getException();
+            if (e != null) {
+              if (e instanceof AlreadyStoppedException) {
+                LOG.debug("Ignoring failed message due to shutdown: " + e,e);
+              }
+ else {
+                LOG.error(e);
+              }
+            }
+          }
+        }
       }
- catch (      AlreadyStoppedException e) {
-        LOG.debug("Ignoring failed message due to shutdown: " + e,e);
-        break;
-      }
-catch (      Throwable e) {
-        LOG.error(e);
-      }
+);
     }
   }
 }

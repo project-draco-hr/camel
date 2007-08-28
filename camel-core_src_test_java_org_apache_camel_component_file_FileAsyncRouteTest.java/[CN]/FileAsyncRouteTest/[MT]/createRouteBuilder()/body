@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(uri).to("seda:a");
+      from("seda:a").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          file.set((File)exchange.getIn().getBody());
+          receivedLatch.countDown();
+          processingLatch.await();
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}

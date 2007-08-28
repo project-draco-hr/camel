@@ -1,0 +1,14 @@
+{
+  MockEndpoint result=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
+  result.expectedBodiesReceived(expectedBody);
+  result.setDefaulResultWaitMillis(5000);
+  template.sendBodyAndHeader(uri,expectedBody,"cheese",123);
+  assertTrue("Async processor received exchange",receivedLatch.await(5,TimeUnit.SECONDS));
+  File file=this.file.get();
+  Thread.sleep(1000);
+  assertTrue("File should exist",file.exists());
+  processingLatch.countDown();
+  Thread.sleep(1000);
+  assertFalse("File should not exist",file.exists());
+  result.assertIsSatisfied();
+}

@@ -1,0 +1,16 @@
+{
+  Iterator<Processor> processors=getProcessors().iterator();
+  Exchange nextExchange=exchange;
+  while (processors.hasNext()) {
+    AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
+    boolean sync=process(nextExchange,callback,processors,processor);
+    if (sync) {
+      nextExchange=createNextExchange(processor,exchange);
+    }
+ else {
+      return true;
+    }
+  }
+  callback.done(true);
+  return true;
+}

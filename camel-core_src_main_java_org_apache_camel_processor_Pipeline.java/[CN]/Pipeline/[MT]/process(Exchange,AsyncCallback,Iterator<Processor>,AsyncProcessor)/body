@@ -1,0 +1,20 @@
+{
+  return processor.process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      if (sync) {
+        return;
+      }
+      Exchange nextExchange=exchange;
+      while (processors.hasNext()) {
+        AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
+        nextExchange=createNextExchange(processor,exchange);
+        sync=process(nextExchange,callback,processors,processor);
+        if (!sync) {
+          return;
+        }
+      }
+      callback.done(true);
+    }
+  }
+);
+}
