@@ -1,6 +1,53 @@
 {
   ConnectionFactory factory=getTemplateConnectionFactory();
-  JmsTemplate template=useVersion102 ? new JmsTemplate102(factory,pubSubDomain) : new JmsTemplate(factory);
+  JmsTemplate template=useVersion102 ? new JmsTemplate102(factory,pubSubDomain){
+    /** 
+ * Override so we can support preserving the Qos settings that have
+ * been set on the message.
+ */
+    @Override protected void doSend(    MessageProducer producer,    Message message) throws JMSException {
+      if (preserveMessageQos) {
+        long ttl=message.getJMSExpiration();
+        if (ttl != 0) {
+          ttl=ttl - System.currentTimeMillis();
+          if (ttl <= 0) {
+            ttl=1;
+          }
+        }
+        if (isPubSubDomain()) {
+          ((TopicPublisher)producer).publish(message,message.getJMSDeliveryMode(),message.getJMSPriority(),ttl);
+        }
+ else {
+          ((QueueSender)producer).send(message,message.getJMSDeliveryMode(),message.getJMSPriority(),ttl);
+        }
+      }
+ else {
+        super.doSend(producer,message);
+      }
+    }
+  }
+ : new JmsTemplate(factory){
+    /** 
+ * Override so we can support preserving the Qos settings that have
+ * been set on the message.
+ */
+    @Override protected void doSend(    MessageProducer producer,    Message message) throws JMSException {
+      if (preserveMessageQos) {
+        long ttl=message.getJMSExpiration();
+        if (ttl != 0) {
+          ttl=ttl - System.currentTimeMillis();
+          if (ttl <= 0) {
+            ttl=1;
+          }
+        }
+        producer.send(message,message.getJMSDeliveryMode(),message.getJMSPriority(),ttl);
+      }
+ else {
+        super.doSend(producer,message);
+      }
+    }
+  }
+;
   template.setPubSubDomain(pubSubDomain);
   template.setDefaultDestinationName(destination);
   template.setExplicitQosEnabled(explicitQosEnabled);
