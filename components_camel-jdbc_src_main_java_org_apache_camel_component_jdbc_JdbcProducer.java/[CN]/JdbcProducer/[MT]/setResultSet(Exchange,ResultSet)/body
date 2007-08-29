@@ -1,0 +1,20 @@
+{
+  ResultSetMetaData meta=rs.getMetaData();
+  HashMap<String,Object> props=new HashMap<String,Object>();
+  IntrospectionSupport.getProperties(meta,props,"jdbc.");
+  exchange.getOut().setHeaders(props);
+  int count=meta.getColumnCount();
+  ArrayList<HashMap<String,Object>> data=new ArrayList<HashMap<String,Object>>();
+  int rowNumber=0;
+  while (rs.next() && rowNumber < readSize) {
+    HashMap<String,Object> row=new HashMap<String,Object>();
+    for (int i=0; i < count; i++) {
+      int columnNumber=i + 1;
+      String columnName=meta.getColumnName(columnNumber);
+      row.put(columnName,rs.getObject(columnName));
+    }
+    data.add(row);
+    rowNumber++;
+  }
+  exchange.getOut().setBody(data);
+}
