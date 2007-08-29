@@ -1,0 +1,23 @@
+{
+  DataSource ds=new TestDataSource(url,user,password);
+  JndiContext context=new JndiContext();
+  context.bind("testdb",ds);
+  CamelContext camelContext=new DefaultCamelContext(context);
+  camelContext.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("direct:hello").to("jdbc:testdb?readSize=100");
+    }
+  }
+);
+  camelContext.start();
+  Endpoint<Exchange> endpoint=camelContext.getEndpoint("direct:hello");
+  CamelTemplate<Exchange> template=new CamelTemplate<Exchange>(camelContext);
+  Exchange exchange=endpoint.createExchange();
+  exchange.getIn().setBody("select * from customer");
+  Exchange out=template.send(endpoint,exchange);
+  assertNotNull(out);
+  assertNotNull(out.getOut());
+  ArrayList<HashMap<String,Object>> data=out.getOut().getBody(ArrayList.class);
+  assertEquals(2,data.size());
+  camelContext.stop();
+}
