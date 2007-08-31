@@ -1,0 +1,37 @@
+{
+  ContentExchange jettyExchange=new CamelContentExchange(exchange,callback);
+  jettyExchange.setURL(address);
+  Message in=exchange.getIn();
+  InputStream is=in.getBody(InputStream.class);
+  if (is != null) {
+    jettyExchange.setMethod(HttpMethods.POST);
+    jettyExchange.setRequestContentSource(is);
+  }
+ else {
+    Buffer buffer=in.getBody(Buffer.class);
+    if (buffer != null) {
+      jettyExchange.setMethod(HttpMethods.POST);
+      jettyExchange.setRequestContent(buffer);
+    }
+ else {
+      jettyExchange.setMethod(HttpMethods.GET);
+    }
+  }
+  for (  String name : in.getHeaders().keySet()) {
+    String value=in.getHeader(name,String.class);
+    if ("Content-Type".equals(name)) {
+      jettyExchange.setRequestContentType(value);
+    }
+ else {
+      jettyExchange.addRequestHeader(name,value);
+    }
+  }
+  try {
+    httpClient.send(jettyExchange);
+  }
+ catch (  IOException e) {
+    exchange.setException(e);
+    return true;
+  }
+  return false;
+}
