@@ -3,43 +3,48 @@
     return;
   }
   visitedClasses.add(type);
-  Method[] methods=type.getDeclaredMethods();
-  CachingInjector injector=null;
-  for (  Method method : methods) {
-    Converter annotation=method.getAnnotation(Converter.class);
-    if (annotation != null) {
-      Class<?>[] parameterTypes=method.getParameterTypes();
-      if (parameterTypes == null || parameterTypes.length != 1) {
-        LOG.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method should have one parameter");
-      }
- else {
-        int modifiers=method.getModifiers();
-        if (isAbstract(modifiers) || !isPublic(modifiers)) {
-          LOG.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method is not a public and concrete method");
+  try {
+    Method[] methods=type.getDeclaredMethods();
+    CachingInjector injector=null;
+    for (    Method method : methods) {
+      Converter annotation=method.getAnnotation(Converter.class);
+      if (annotation != null) {
+        Class<?>[] parameterTypes=method.getParameterTypes();
+        if (parameterTypes == null || parameterTypes.length != 1) {
+          LOG.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method should have one parameter");
         }
  else {
-          Class toType=method.getReturnType();
-          if (toType.equals(Void.class)) {
-            LOG.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method returns a void method");
+          int modifiers=method.getModifiers();
+          if (isAbstract(modifiers) || !isPublic(modifiers)) {
+            LOG.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method is not a public and concrete method");
           }
  else {
-            Class fromType=parameterTypes[0];
-            if (isStatic(modifiers)) {
-              registry.addTypeConverter(toType,fromType,new StaticMethodTypeConverter(method));
+            Class toType=method.getReturnType();
+            if (toType.equals(Void.class)) {
+              LOG.warn("Ignoring bad converter on type: " + type.getName() + " method: "+ method+ " as a converter method returns a void method");
             }
  else {
-              if (injector == null) {
-                injector=new CachingInjector(registry,type);
+              Class fromType=parameterTypes[0];
+              if (isStatic(modifiers)) {
+                registry.addTypeConverter(toType,fromType,new StaticMethodTypeConverter(method));
               }
-              registry.addTypeConverter(toType,fromType,new InstanceMethodTypeConverter(injector,method));
+ else {
+                if (injector == null) {
+                  injector=new CachingInjector(registry,type);
+                }
+                registry.addTypeConverter(toType,fromType,new InstanceMethodTypeConverter(injector,method));
+              }
             }
           }
         }
       }
     }
+    Class superclass=type.getSuperclass();
+    if (superclass != null && !superclass.equals(Object.class)) {
+      loadConverterMethods(registry,superclass);
+    }
   }
-  Class superclass=type.getSuperclass();
-  if (superclass != null && !superclass.equals(Object.class)) {
-    loadConverterMethods(registry,superclass);
+ catch (  NoClassDefFoundError e) {
+    LOG.debug("Ignoring converter type: " + type.getName() + " as a dependent class could not be found: "+ e,e);
   }
 }
