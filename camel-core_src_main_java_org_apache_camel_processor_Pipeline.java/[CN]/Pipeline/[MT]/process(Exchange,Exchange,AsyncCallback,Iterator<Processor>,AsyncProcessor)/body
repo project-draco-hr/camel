@@ -7,12 +7,19 @@
       Exchange nextExchange=exchange;
       while (processors.hasNext()) {
         AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
+        if (nextExchange.isFailed()) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Mesage exchange has failed so breaking out of pipeline: " + nextExchange + " exception: "+ nextExchange.getException()+ " fault: "+ nextExchange.getFault(false));
+          }
+          break;
+        }
         nextExchange=createNextExchange(processor,exchange);
-        sync=process(nextExchange,callback,processors,processor);
+        sync=process(original,nextExchange,callback,processors,processor);
         if (!sync) {
           return;
         }
       }
+      ExchangeHelper.copyResults(original,nextExchange);
       callback.done(true);
     }
   }
