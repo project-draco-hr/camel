@@ -1,0 +1,19 @@
+{
+  final Processor exceptionThrower=new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("<exception/>");
+      throw new IllegalArgumentException("Exception thrown intentionally.");
+    }
+  }
+;
+  return new RouteBuilder(){
+    public void configure(){
+      if (getName().endsWith("WithHandler")) {
+        log.debug("Using exception handler");
+        exception(IllegalArgumentException.class).to("mock:exception");
+      }
+      from("direct:start").process(exceptionThrower).to("mock:result");
+    }
+  }
+;
+}
