@@ -1,11 +1,24 @@
 {
   try {
     String externalName=fqn.substring(0,fqn.indexOf('.')).replace('/','.');
-    ClassLoader loader=getClassLoader();
-    LOG.trace("Checking to see if class " + externalName + " matches criteria ["+ test+ "]");
-    Class type=loader.loadClass(externalName);
-    if (test.matches(type)) {
-      matches.add((Class<T>)type);
+    Set<ClassLoader> set=getClassLoaders();
+    boolean found=false;
+    for (    ClassLoader classLoader : set) {
+      LOG.trace("Checking to see if class " + externalName + " matches criteria ["+ test+ "]");
+      try {
+        Class type=classLoader.loadClass(externalName);
+        if (test.matches(type)) {
+          matches.add((Class<T>)type);
+        }
+        found=true;
+        break;
+      }
+ catch (      ClassNotFoundException e) {
+        LOG.debug("Could not find class '" + fqn + "' in class loader: "+ classLoader+ ". Reason: "+ e,e);
+      }
+    }
+    if (!found) {
+      LOG.warn("Could not find class '" + fqn + "' in any class loaders: "+ set);
     }
   }
  catch (  Throwable t) {
