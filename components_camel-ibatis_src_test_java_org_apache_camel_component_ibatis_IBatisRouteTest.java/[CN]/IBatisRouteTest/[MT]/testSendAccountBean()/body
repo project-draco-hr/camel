@@ -1,0 +1,20 @@
+{
+  MockEndpoint endpoint=getMockEndpoint("mock:results");
+  endpoint.expectedMessageCount(1);
+  Account account=new Account();
+  account.setId(123);
+  account.setFirstName("James");
+  account.setLastName("Strachan");
+  account.setEmailAddress("TryGuessing@gmail.com");
+  template.sendBody("direct:start",account);
+  assertMockEndpointsSatisifed();
+  List<Exchange> list=endpoint.getReceivedExchanges();
+  Exchange exchange=list.get(0);
+  List body=exchange.getIn().getBody(List.class);
+  assertNotNull("Should have returned a List!",body);
+  assertEquals("Wrong size: " + body,1,body.size());
+  Account actual=assertIsInstanceOf(Account.class,body.get(0));
+  assertEquals("Account.getFirstName()","James",actual.getFirstName());
+  assertEquals("Account.getLastName()","Strachan",actual.getLastName());
+  log.info("Found: " + actual);
+}
