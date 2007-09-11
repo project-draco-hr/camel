@@ -1,0 +1,27 @@
+{
+  List<Expression> results=new ArrayList<Expression>();
+  int pivot=0;
+  int size=expression.length();
+  while (pivot < size) {
+    int idx=expression.indexOf("${",pivot);
+    if (idx < 0) {
+      results.add(createConstantExpression(expression,pivot,size));
+      break;
+    }
+ else {
+      if (pivot < idx) {
+        results.add(createConstantExpression(expression,pivot,idx));
+      }
+      pivot=idx + 2;
+      int endIdx=expression.indexOf("}",pivot);
+      if (endIdx < 0) {
+        throw new IllegalArgumentException("Expecting } but found end of string for simple expression: " + expression);
+      }
+      String simpleText=expression.substring(pivot,endIdx);
+      Expression simpleExpression=createSimpleExpression(simpleText);
+      results.add(simpleExpression);
+      pivot=endIdx + 1;
+    }
+  }
+  return ExpressionBuilder.concatExpression(results,expression);
+}
