@@ -1,14 +1,10 @@
 {
+  MockEndpoint x=getMockEndpoint("mock:x");
+  MockEndpoint y=getMockEndpoint("mock:y");
+  MockEndpoint z=getMockEndpoint("mock:z");
   x.expectedBodiesReceived("answer");
   y.expectedBodiesReceived("answer");
   z.expectedBodiesReceived("answer");
-  template.send("direct:a",new Processor(){
-    public void process(    Exchange exchange){
-      Message in=exchange.getIn();
-      in.setBody("answer");
-      in.setHeader("recipientListHeader","mock:x,mock:y,mock:z");
-    }
-  }
-);
-  MockEndpoint.assertIsSatisfied(x,y,z);
+  template.sendBodyAndHeader("direct:a","answer","recipientListHeader","mock:x,mock:y,mock:z");
+  assertMockEndpointsSatisifed();
 }
