@@ -1,0 +1,25 @@
+{
+  if (eventDispatch == null) {
+    throw new IllegalArgumentException("Event dispatcher may not be null");
+  }
+  startWorkers(eventDispatch);
+  for (; ; ) {
+    int readyCount;
+    try {
+      readyCount=this.selector.select(getSelectTimeout());
+    }
+ catch (    InterruptedIOException ex) {
+      throw ex;
+    }
+catch (    IOException ex) {
+      throw new IOReactorException("Unexpected selector failure",ex);
+    }
+    if (this.closed) {
+      break;
+    }
+    if (readyCount > 0) {
+      processEvents(this.selector.selectedKeys());
+    }
+    verifyWorkers();
+  }
+}

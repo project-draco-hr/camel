@@ -1,0 +1,27 @@
+{
+  HttpContext context=conn.getContext();
+  ServerConnState connState=(ServerConnState)context.getAttribute(CONN_STATE);
+  ContentOutputBuffer buffer=connState.getOutbuffer();
+  this.httpProcessor.process(response,context);
+  if (!canResponseHaveBody(connState.getRequest(),response)) {
+    response.setEntity(null);
+  }
+  conn.submitResponse(response);
+  connState.setOutputState(ServerConnState.RESPONSE_SENT);
+  HttpEntity entity=response.getEntity();
+  if (entity != null) {
+    OutputStream outstream=new ContentOutputStream(buffer);
+    entity.writeTo(outstream);
+    outstream.flush();
+    outstream.close();
+  }
+ else {
+    connState.resetOutput();
+    if (!this.connStrategy.keepAlive(response,context)) {
+      conn.close();
+    }
+ else {
+      conn.requestInput();
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  super.doStart();
+  HttpParams params=getEndpoint().getParams();
+  ioReactor=new DefaultConnectingIOReactor(nbThreads,threadFactory,params);
+  BasicHttpProcessor httpproc=new BasicHttpProcessor();
+  httpproc.addInterceptor(new RequestContent());
+  httpproc.addInterceptor(new RequestTargetHost());
+  httpproc.addInterceptor(new RequestConnControl());
+  httpproc.addInterceptor(new RequestUserAgent());
+  httpproc.addInterceptor(new RequestExpectContinue());
+  BufferingHttpClientHandler handler=new BufferingHttpClientHandler(httpproc,new MyHttpRequestExecutionHandler(),new DefaultConnectionReuseStrategy(),params);
+  handler.setEventListener(new EventLogger());
+  final IOEventDispatch ioEventDispatch=new DefaultClientIOEventDispatch(handler,params);
+  runner=new Thread(new Runnable(){
+    public void run(){
+      try {
+        ioReactor.execute(ioEventDispatch);
+      }
+ catch (      InterruptedIOException ex) {
+        LOG.info("Interrupted");
+      }
+catch (      IOException e) {
+        LOG.warn("I/O error: " + e.getMessage());
+      }
+      LOG.debug("Shutdown");
+    }
+  }
+);
+  runner.start();
+}
