@@ -1,0 +1,20 @@
+{
+  ObjectHelper.notNull(context,"camelContext");
+  if (getMBeanServer() == null) {
+    createMBeanServer();
+  }
+  if (jmxDomainName == null) {
+    jmxDomainName=System.getProperty(SYSTEM_PROPERTY_JMX + ".domain");
+    if (jmxDomainName == null || jmxDomainName.length() == 0) {
+      jmxDomainName=DEFAULT_DOMAIN;
+    }
+  }
+  configureDomainName();
+  LOG.debug("Starting JMX agent on server: " + getMBeanServer());
+  if (context instanceof DefaultCamelContext) {
+    DefaultCamelContext dc=(DefaultCamelContext)context;
+    InstrumentationLifecycleStrategy ls=new InstrumentationLifecycleStrategy(this);
+    dc.setLifecycleStrategy(ls);
+    ls.onContextCreate(context);
+  }
+}
