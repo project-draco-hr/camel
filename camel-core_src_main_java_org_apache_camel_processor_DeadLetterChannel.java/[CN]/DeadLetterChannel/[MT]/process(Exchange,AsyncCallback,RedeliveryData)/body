@@ -15,6 +15,7 @@
       }
     }
     if (!data.currentRedeliveryPolicy.shouldRedeliver(data.redeliveryCounter)) {
+      setFailureHandled(exchange,true);
       AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
       return afp.process(exchange,callback);
     }
@@ -39,7 +40,8 @@
     if (!sync) {
       return false;
     }
-    if (exchange.getException() == null) {
+    if (exchange.getException() == null || isFailureHandled(exchange)) {
+      callback.done(true);
       return true;
     }
   }

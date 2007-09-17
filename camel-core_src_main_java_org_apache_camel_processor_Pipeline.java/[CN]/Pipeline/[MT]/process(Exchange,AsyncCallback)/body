@@ -2,19 +2,22 @@
   Iterator<Processor> processors=getProcessors().iterator();
   Exchange nextExchange=original;
   boolean first=true;
-  while (processors.hasNext()) {
-    AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
+  while (true) {
     if (nextExchange.isFailed()) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Mesage exchange has failed so breaking out of pipeline: " + nextExchange + " exception: "+ nextExchange.getException()+ " fault: "+ nextExchange.getFault(false));
       }
       break;
     }
+    if (!processors.hasNext()) {
+      break;
+    }
+    AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
     if (first) {
       first=false;
     }
  else {
-      nextExchange=createNextExchange(processor,original);
+      nextExchange=createNextExchange(processor,nextExchange);
     }
     boolean sync=process(original,nextExchange,callback,processors,processor);
     if (!sync) {
