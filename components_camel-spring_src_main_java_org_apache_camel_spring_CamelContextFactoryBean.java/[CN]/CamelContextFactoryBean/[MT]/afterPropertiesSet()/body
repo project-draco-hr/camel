@@ -1,5 +1,16 @@
 {
   getContext().addRouteDefinitions(routes);
+  if (instrumentationAgent == null && isJmxEnabled()) {
+    SpringInstrumentationAgent agent=new SpringInstrumentationAgent();
+    agent.setCamelContext(getContext());
+    String name=getMbeanServer();
+    if (name != null) {
+      MBeanServer mbeanServer=(MBeanServer)getApplicationContext().getBean(name,MBeanServer.class);
+      agent.setMBeanServer(mbeanServer);
+    }
+    instrumentationAgent=agent;
+    instrumentationAgent.start();
+  }
   LOG.debug("Found JAXB created routes: " + getRoutes());
   findRouteBuiders();
   installRoutes();
