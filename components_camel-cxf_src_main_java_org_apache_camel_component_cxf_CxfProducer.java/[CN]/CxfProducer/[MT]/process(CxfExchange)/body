@@ -1,18 +1,38 @@
 {
+  CxfBinding cxfBinding=endpoint.getBinding();
+  Message inMessage=cxfBinding.createCxfMessage(exchange);
   try {
-    CxfBinding binding=endpoint.getBinding();
-    MessageImpl m=binding.createCxfMessage(exchange);
-    List paraments=m.getContent(List.class);
-    Message response=new MessageImpl();
-    if (paraments != null) {
-      String operation=(String)paraments.get(0);
-      Object[] args=new Object[paraments.size() - 1];
-      for (int i=0; i < paraments.size() - 1; i++) {
-        args[i]=paraments.get(i + 1);
+    if (dataFormat.equals(DataFormat.POJO)) {
+      List paraments=inMessage.getContent(List.class);
+      String operation=inMessage.getContent(String.class);
+      Message response=new MessageImpl();
+      if (operation != null && paraments != null) {
+        Object[] result=client.invoke(operation,paraments.toArray());
+        response.setContent(Object[].class,result);
+        cxfBinding.storeCxfResponse(exchange,response);
       }
-      Object[] result=client.invoke(operation,args);
-      response.setContent(Object[].class,result);
-      binding.storeCxfResponse(exchange,response);
+    }
+ else {
+      org.apache.cxf.message.Exchange ex=exchange.getExchange();
+      InvokingContext invokingContext=ex.get(InvokingContext.class);
+      Object params=invokingContext.getRequestContent(inMessage);
+      CxfClient cxfClient=(CxfClient)client;
+      Object result=cxfClient.dispatch(params,null,ex);
+      System.out.println("the result object is " + result);
+      BindingOperationInfo boi=ex.get(BindingOperationInfo.class);
+      Message response=null;
+      System.out.println("the boi is " + boi);
+      if (boi == null) {
+        response=new MessageImpl();
+      }
+ else {
+        Endpoint ep=ex.get(Endpoint.class);
+        response=ep.getBinding().createMessage();
+      }
+      response.setExchange(ex);
+      ex.setOutMessage(response);
+      invokingContext.setResponseContent(response,result);
+      cxfBinding.storeCxfResponse(exchange,response);
     }
   }
  catch (  Exception e) {

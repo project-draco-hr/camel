@@ -1,15 +1,28 @@
 {
   super(endpoint,processor);
-  System.out.println(processor.toString());
   this.endpoint=endpoint;
-  ServerFactoryBean svrBean=new ServerFactoryBean();
-  Class serviceClass=Class.forName(endpoint.getServiceClass());
-  svrBean.setAddress(endpoint.getAddress());
-  svrBean.setServiceClass(serviceClass);
-  if (endpoint.isInvoker()) {
-    System.out.println("setup the invoker ");
-    svrBean.setInvoker(new CamelInvoker(this));
+  try {
+    Bus bus=BusFactory.getDefaultBus();
+    Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
+    ServerFactoryBean svrBean=CxfEndpointUtils.getServerFactoryBean(serviceClass);
+    svrBean.setAddress(endpoint.getAddress());
+    svrBean.setServiceClass(serviceClass);
+    if (endpoint.getWsdlURL() != null) {
+      svrBean.setWsdlURL(endpoint.getWsdlURL());
+    }
+    DataFormat dataFormat=CxfEndpointUtils.getDataFormat(endpoint);
+    if (dataFormat.equals(DataFormat.POJO)) {
+      svrBean.setInvoker(new CamelInvoker(this));
+    }
+    svrBean.setBus(bus);
+    svrBean.setStart(false);
+    server=svrBean.create();
+    if (!dataFormat.equals(DataFormat.POJO)) {
+      CxfMessageObserver observer=new CxfMessageObserver(this,server.getEndpoint(),bus,dataFormat);
+      ServerImpl serverImpl=(ServerImpl)server;
+      serverImpl.setMessageObserver(observer);
+    }
   }
-  svrBean.setStart(false);
-  server=svrBean.create();
+ catch (  Exception ex) {
+  }
 }
