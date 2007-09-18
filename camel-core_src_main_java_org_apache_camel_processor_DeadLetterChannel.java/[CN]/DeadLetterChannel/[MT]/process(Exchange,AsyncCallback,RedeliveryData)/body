@@ -1,5 +1,12 @@
 {
   while (true) {
+    if (isStopping() || isStopped()) {
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      callback.done(data.sync);
+      return data.sync;
+    }
     if (exchange.getException() != null) {
       Throwable e=exchange.getException();
       exchange.setException(null);
@@ -17,17 +24,24 @@
     if (!data.currentRedeliveryPolicy.shouldRedeliver(data.redeliveryCounter)) {
       setFailureHandled(exchange,true);
       AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
-      return afp.process(exchange,callback);
+      return afp.process(exchange,new AsyncCallback(){
+        public void done(        boolean sync){
+          callback.done(data.sync);
+        }
+      }
+);
     }
     if (data.redeliveryCounter > 0) {
       data.redeliveryDelay=data.currentRedeliveryPolicy.getRedeliveryDelay(data.redeliveryDelay);
       sleep(data.redeliveryDelay);
     }
+    exchange.setException(null);
     boolean sync=outputAsync.process(exchange,new AsyncCallback(){
       public void done(      boolean sync){
         if (sync) {
           return;
         }
+        data.sync=false;
         if (exchange.getException() != null) {
           process(exchange,callback,data);
         }

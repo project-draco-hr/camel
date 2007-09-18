@@ -3,12 +3,17 @@
   try {
     tryProcessor.process(exchange);
     e=exchange.getException();
+    if (e != null && DeadLetterChannel.isFailureHandled(exchange)) {
+      e=null;
+    }
   }
  catch (  Exception ex) {
     e=ex;
+    exchange.setException(e);
   }
   if (e != null) {
     try {
+      DeadLetterChannel.setFailureHandled(exchange,true);
       handleException(exchange,e);
     }
  catch (    Exception ex) {

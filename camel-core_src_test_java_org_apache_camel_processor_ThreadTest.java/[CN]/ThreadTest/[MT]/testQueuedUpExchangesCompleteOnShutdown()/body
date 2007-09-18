@@ -1,0 +1,26 @@
+{
+  int exchangeCount=10;
+  final CountDownLatch completedExchanges=new CountDownLatch(exchangeCount);
+  final Exchange exchanges[]=new Exchange[exchangeCount];
+  for (int i=0; i < exchangeCount; i++) {
+    final int index=i;
+    exchanges[i]=template.send("direct:a",new Processor(){
+      public void process(      Exchange exchange){
+        Message in=exchange.getIn();
+        in.setBody(1);
+      }
+    }
+,new AsyncCallback(){
+      public void done(      boolean doneSynchronously){
+        System.out.println("Completed: " + index + ", exception: "+ exchanges[index].getException());
+        completedExchanges.countDown();
+      }
+    }
+);
+  }
+  resultEndpoint.expectedMessageCount(0);
+  resultEndpoint.assertIsSatisfied();
+  releaseProcessingLatchIn(1000);
+  stopCamelContext();
+  assertTrue(completedExchanges.await(5,TimeUnit.SECONDS));
+}
