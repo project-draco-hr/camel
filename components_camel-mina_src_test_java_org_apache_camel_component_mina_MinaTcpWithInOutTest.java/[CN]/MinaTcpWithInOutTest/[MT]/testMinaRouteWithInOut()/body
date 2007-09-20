@@ -1,0 +1,15 @@
+{
+  Endpoint<Exchange> endpoint=container.getEndpoint("direct:x");
+  Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
+  Message message=exchange.getIn();
+  String hello="Hello!";
+  message.setBody(hello);
+  message.setHeader("cheese",123);
+  producer=endpoint.createProducer();
+  producer.start();
+  producer.process(exchange);
+  boolean received=latch.await(5,TimeUnit.SECONDS);
+  assertTrue("Did not receive the message!",received);
+  assertNotNull(receivedExchange.getOut());
+  assertEquals("!olleH",receivedExchange.getOut().getBody());
+}
