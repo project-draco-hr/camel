@@ -1,0 +1,29 @@
+{
+  ComponentEntry entry=components.get(name);
+  if (entry == null) {
+    return null;
+  }
+  if (entry.type == null) {
+    URL url=entry.bundle.getEntry(entry.path);
+    Properties properties=new Properties();
+    BufferedInputStream reader=null;
+    try {
+      reader=new BufferedInputStream(url.openStream());
+      properties.load(reader);
+    }
+  finally {
+      try {
+        reader.close();
+      }
+ catch (      Exception ignore) {
+      }
+    }
+    String classname=(String)properties.get("class");
+    ClassLoader loader=BundleDelegatingClassLoader.createBundleClassLoaderFor(entry.bundle);
+    entry.type=loader.loadClass(classname);
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Found component: " + name + " via type: "+ entry.type.getName());
+  }
+  return entry.type;
+}
