@@ -1,0 +1,27 @@
+{
+  Message out=exchange.getOut();
+  if (out != null) {
+    for (    String key : out.getHeaders().keySet()) {
+      String value=out.getHeader(key,String.class);
+      if (value != null) {
+        response.setHeader(key,value);
+      }
+    }
+    if (out.getBody() != null) {
+      InputStream is=out.getBody(InputStream.class);
+      if (is != null) {
+        ServletOutputStream os=response.getOutputStream();
+        int c;
+        while ((c=is.read()) >= 0) {
+          os.write(c);
+        }
+      }
+ else {
+        String data=out.getBody(String.class);
+        if (data != null) {
+          response.getWriter().print(data);
+        }
+      }
+    }
+  }
+}
