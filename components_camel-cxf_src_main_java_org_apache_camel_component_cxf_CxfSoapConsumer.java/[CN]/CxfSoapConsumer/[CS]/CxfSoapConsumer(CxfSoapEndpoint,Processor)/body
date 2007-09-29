@@ -1,0 +1,28 @@
+{
+  this.endpoint=endpoint;
+  Processor soapProcessor=new AsyncProcessorDecorator(processor,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      processSoapConsumerIn(exchange);
+    }
+  }
+,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      processSoapConsumerOut(exchange);
+    }
+  }
+);
+  this.consumer=endpoint.getInnerEndpoint().createConsumer(soapProcessor);
+  WSDLServiceFactory factory=new WSDLServiceFactory(getBus(),endpoint.getDefinition(),endpoint.getService());
+  Service cxfService=factory.create();
+  EndpointInfo ei=cxfService.getServiceInfos().iterator().next().getEndpoints().iterator().next();
+  ei.setAddress("local://" + ei.getService().getName().toString() + "/"+ ei.getName().getLocalPart());
+  ei.getBinding().setProperty(AbstractBindingFactory.DATABINDING_DISABLED,Boolean.TRUE);
+  cxfService.getInInterceptors().add(new ReadHeadersInterceptor(getBus()));
+  cxfService.getInInterceptors().add(new MustUnderstandInterceptor());
+  cxfService.getInInterceptors().add(new AttachmentInInterceptor());
+  cxfService.getInInterceptors().add(new StaxInInterceptor());
+  cxfService.getInInterceptors().add(new ReadHeadersInterceptor(getBus()));
+  ep=new EndpointImpl(getBus(),cxfService,ei);
+  chain=new ChainInitiationObserver(ep,getBus());
+  server=new ServerImpl(getBus(),ep,null,chain);
+}

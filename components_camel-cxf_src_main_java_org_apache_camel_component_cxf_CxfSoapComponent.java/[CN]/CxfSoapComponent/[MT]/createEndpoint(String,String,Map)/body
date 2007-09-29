@@ -1,5 +1,11 @@
 {
-  String name=uri.substring(uri.indexOf(':') + 1);
-  Endpoint endpoint=CamelContextHelper.getMandatoryEndpoint(getCamelContext(),name);
-  return new SoapEndpoint(endpoint);
+  Map soapProps=IntrospectionSupport.extractProperties(parameters,"soap.");
+  if (parameters.size() > 0) {
+    remaining+="?" + URISupport.createQueryString(parameters);
+  }
+  Endpoint endpoint=CamelContextHelper.getMandatoryEndpoint(getCamelContext(),remaining);
+  CxfSoapEndpoint soapEndpoint=new CxfSoapEndpoint(endpoint);
+  setProperties(soapEndpoint,soapProps);
+  soapEndpoint.init();
+  return soapEndpoint;
 }
