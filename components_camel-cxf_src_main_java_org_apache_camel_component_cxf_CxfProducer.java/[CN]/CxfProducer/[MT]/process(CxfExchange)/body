@@ -7,9 +7,15 @@
       String operation=inMessage.getContent(String.class);
       Message response=new MessageImpl();
       if (operation != null && paraments != null) {
-        Object[] result=client.invoke(operation,paraments.toArray());
-        response.setContent(Object[].class,result);
-        cxfBinding.storeCxfResponse(exchange,response);
+        try {
+          Object[] result=client.invoke(operation,paraments.toArray());
+          response.setContent(Object[].class,result);
+          cxfBinding.storeCxfResponse(exchange,response);
+        }
+ catch (        Exception ex) {
+          response.setContent(Exception.class,ex);
+          cxfBinding.storeCxfFault(exchange,response);
+        }
       }
     }
  else {
@@ -18,7 +24,6 @@
       Object params=invokingContext.getRequestContent(inMessage);
       CxfClient cxfClient=(CxfClient)client;
       Object result=cxfClient.dispatch(params,null,ex);
-      System.out.println("the result object is " + result);
       BindingOperationInfo boi=ex.get(BindingOperationInfo.class);
       Message response=null;
       System.out.println("the boi is " + boi);

@@ -1,4 +1,14 @@
 {
-  ClientFactoryBean cfb=new CxfClientFactoryBean();
+  CxfClientFactoryBean cfb=new CxfClientFactoryBean();
+  if (null != endpoint.getServiceClass()) {
+    try {
+      Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
+      boolean jsr181Enabled=CxfEndpointUtils.hasWebServiceAnnotation(serviceClass);
+      cfb.setJSR181Enabled(jsr181Enabled);
+    }
+ catch (    ClassNotFoundException e) {
+      throw new CamelException(e);
+    }
+  }
   return createClientFormClientFactoryBean(cfb);
 }

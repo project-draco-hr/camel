@@ -1,0 +1,28 @@
+{
+  CamelContext context=new DefaultCamelContext();
+  JmsBroker broker=new JmsBroker();
+  Server server=new Server();
+  try {
+    broker.start();
+    server.start();
+    context.addRoutes(new RouteBuilder(){
+      public void configure(){
+        from(ROUTER_ENDPOINT_URI).to(SERVICE_ENDPOINT_URI);
+      }
+    }
+);
+    context.start();
+    Client client=new Client(ROUTER_ADDRESS + "?wsdl");
+    client.invock();
+    Thread.sleep(1000);
+    context.stop();
+  }
+ catch (  Exception ex) {
+    ex.printStackTrace();
+  }
+ finally {
+    server.stop();
+    broker.stop();
+    System.exit(0);
+  }
+}
