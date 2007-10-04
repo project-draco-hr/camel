@@ -1,9 +1,16 @@
 {
-  return processor.process(exchange,new AsyncCallback(){
-    public void done(    boolean sync){
-      callback.done(sync);
-      exchange.getUnitOfWork().done(exchange);
+  if (exchange.getUnitOfWork() == null) {
+    exchange.setUnitOfWork(new DefaultUnitOfWork());
+    return processor.process(exchange,new AsyncCallback(){
+      public void done(      boolean sync){
+        callback.done(sync);
+        exchange.getUnitOfWork().done(exchange);
+        exchange.setUnitOfWork(null);
+      }
     }
-  }
 );
+  }
+ else {
+    return processor.process(exchange,callback);
+  }
 }
