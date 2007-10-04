@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:async").thread(1).to("direct:foo");
+      from("direct:foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          log.info("Received: " + exchange);
+          String name=getName();
+          if (name.equals("testFail")) {
+            log.info("Failing test!");
+            exchange.getFault(true).setBody("testFail() should always fail with a fault!");
+          }
+ else           if (name.equals("testException")) {
+            log.info("Throwing exception!");
+            throw new Exception("Failing test!");
+          }
+        }
+      }
+);
+    }
+  }
+;
+}
