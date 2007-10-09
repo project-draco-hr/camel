@@ -3,18 +3,33 @@
   this.endpoint=endpoint;
   try {
     Bus bus=BusFactory.getDefaultBus();
-    Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
-    ServerFactoryBean svrBean=CxfEndpointUtils.getServerFactoryBean(serviceClass);
-    svrBean.setAddress(endpoint.getAddress());
-    svrBean.setServiceClass(serviceClass);
-    if (endpoint.getServiceName() != null) {
-      svrBean.getServiceFactory().setServiceName(CxfEndpointUtils.getServiceName(endpoint));
+    ServerFactoryBean svrBean=null;
+    if (endpoint.isSpringContextEndpoint()) {
+      CxfEndpointBean endpointBean=endpoint.getCxfEndpointBean();
+      svrBean=CxfEndpointUtils.getServerFactoryBean(endpointBean.getServiceClass());
+      endpoint.configure(svrBean);
+      CxfEndpointBean cxfEndpointBean=endpoint.getCxfEndpointBean();
+      if (cxfEndpointBean.getServiceName() != null) {
+        svrBean.getServiceFactory().setServiceName(cxfEndpointBean.getServiceName());
+      }
+      if (cxfEndpointBean.getEndpointName() != null) {
+        svrBean.getServiceFactory().setEndpointName(cxfEndpointBean.getEndpointName());
+      }
     }
-    if (endpoint.getPortName() != null) {
-      svrBean.getServiceFactory().setEndpointName(CxfEndpointUtils.getPortName(endpoint));
-    }
-    if (endpoint.getWsdlURL() != null) {
-      svrBean.setWsdlURL(endpoint.getWsdlURL());
+ else {
+      Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
+      svrBean=CxfEndpointUtils.getServerFactoryBean(serviceClass);
+      svrBean.setAddress(endpoint.getAddress());
+      svrBean.setServiceClass(serviceClass);
+      if (endpoint.getServiceName() != null) {
+        svrBean.getServiceFactory().setServiceName(CxfEndpointUtils.getServiceName(endpoint));
+      }
+      if (endpoint.getPortName() != null) {
+        svrBean.getServiceFactory().setEndpointName(CxfEndpointUtils.getPortName(endpoint));
+      }
+      if (endpoint.getWsdlURL() != null) {
+        svrBean.setWsdlURL(endpoint.getWsdlURL());
+      }
     }
     DataFormat dataFormat=CxfEndpointUtils.getDataFormat(endpoint);
     if (dataFormat.equals(DataFormat.POJO)) {

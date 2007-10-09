@@ -2,4 +2,15 @@
   super(uri,component);
   this.component=component;
   this.address=address;
+  if (address.startsWith(CxfConstants.SPRING_CONTEXT_ENDPOINT)) {
+    isSpringContextEndpoint=true;
+    beanId=address.substring(CxfConstants.SPRING_CONTEXT_ENDPOINT.length());
+    if (beanId.startsWith("//")) {
+      beanId=beanId.substring(2);
+    }
+    SpringCamelContext context=(SpringCamelContext)this.getContext();
+    configurer=new ConfigurerImpl(context.getApplicationContext());
+    cxfEndpointBean=(CxfEndpointBean)context.getApplicationContext().getBean(beanId);
+    assert(cxfEndpointBean != null);
+  }
 }
