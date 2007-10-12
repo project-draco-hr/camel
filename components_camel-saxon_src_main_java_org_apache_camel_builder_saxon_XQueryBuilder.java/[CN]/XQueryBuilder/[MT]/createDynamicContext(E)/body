@@ -1,12 +1,24 @@
 {
   Configuration config=getConfiguration();
   DynamicQueryContext dynamicQueryContext=new DynamicQueryContext(config);
-  Source source=exchange.getIn().getBody(Source.class);
+  Message in=exchange.getIn();
+  Source source=in.getBody(Source.class);
   if (source == null) {
-    source=converter.toSource(converter.createDocument());
+    Item item=in.getBody(Item.class);
+    if (item != null) {
+      dynamicQueryContext.setContextItem(item);
+    }
+ else {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("No body available on exchange so using an empty document: " + exchange);
+        source=converter.toSource(converter.createDocument());
+      }
+    }
   }
-  DocumentInfo doc=getStaticQueryContext().buildDocument(source);
-  dynamicQueryContext.setContextItem(doc);
+  if (source != null) {
+    DocumentInfo doc=getStaticQueryContext().buildDocument(source);
+    dynamicQueryContext.setContextItem(doc);
+  }
   configureQuery(dynamicQueryContext,exchange);
   return dynamicQueryContext;
 }
