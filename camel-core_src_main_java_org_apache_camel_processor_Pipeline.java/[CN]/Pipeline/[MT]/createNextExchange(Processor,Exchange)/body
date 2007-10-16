@@ -1,21 +1,13 @@
 {
-  Exchange answer=copyExchangeStrategy(previousExchange);
+  Exchange answer=previousExchange.newInstance();
+  answer.getProperties().putAll(previousExchange.getProperties());
   Message previousOut=previousExchange.getOut(false);
-  Object output=previousOut != null ? previousOut.getBody() : null;
   Message in=answer.getIn();
-  if (output != null) {
-    in.setBody(output);
-    Set<Map.Entry<String,Object>> entries=previousOut.getHeaders().entrySet();
-    for (    Map.Entry<String,Object> entry : entries) {
-      in.setHeader(entry.getKey(),entry.getValue());
-    }
+  if (previousOut != null && previousOut.getBody() != null) {
+    in.copyFrom(previousOut);
   }
  else {
-    Object previousInBody=previousExchange.getIn().getBody();
-    if (in.getBody() == null && previousInBody != null) {
-      LOG.warn("Bad exchange implementation; the copy() method did not copy across the in body: " + previousExchange + " of type: "+ previousExchange.getClass());
-      in.setBody(previousInBody);
-    }
+    in.copyFrom(previousExchange.getIn());
   }
   return answer;
 }
