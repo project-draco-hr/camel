@@ -1,0 +1,23 @@
+{
+  try {
+    String correlationID=message.getJMSCorrelationID();
+    if (correlationID == null) {
+      LOG.warn("Ignoring message with no correlationID! " + message);
+      return;
+    }
+    Object handler=requestMap.get(correlationID);
+    if (handler == null) {
+      LOG.warn("Response received for unknown correlationID: " + correlationID + " request: "+ message);
+    }
+ else     if (handler instanceof ReplyHandler) {
+      ReplyHandler replyHandler=(ReplyHandler)handler;
+      boolean complete=replyHandler.handle(message);
+      if (complete) {
+        requestMap.remove(correlationID);
+      }
+    }
+  }
+ catch (  JMSException e) {
+    throw new FailedToProcessResponse(message,e);
+  }
+}

@@ -3,11 +3,16 @@
     if (LOG.isDebugEnabled()) {
       LOG.debug(endpoint + " receiving JMS message: " + message);
     }
-    JmsExchange exchange=createExchange(message);
+    Destination replyDestination=getReplyToDestination(message);
+    final JmsExchange exchange=createExchange(message,replyDestination);
     if (eagerLoadingOfProperties) {
       exchange.getIn().getHeaders();
     }
     processor.process(exchange);
+    final JmsMessage out=exchange.getOut(false);
+    if (out != null && !disableReplyTo) {
+      sendReply(replyDestination,message,exchange,out);
+    }
   }
  catch (  Exception e) {
     throw new RuntimeCamelException(e);
