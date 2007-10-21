@@ -1,3 +1,18 @@
 {
   LOG.info("processSoapProviderIn: " + exchange);
+  org.apache.cxf.endpoint.Endpoint cxfEndpoint=client.getEndpoint();
+  org.apache.cxf.message.Exchange cxfExchange=new ExchangeImpl();
+  cxfExchange.put(org.apache.cxf.endpoint.Endpoint.class,cxfEndpoint);
+  cxfExchange.put(Bus.class,getBus());
+  cxfExchange.setConduit(new NullConduit());
+  exchange.setProperty("CxfExchange",cxfExchange);
+  CxfSoapBinding binding=endpoint.getCxfSoapBinding();
+  org.apache.cxf.message.Message outMessage=binding.getCxfOutMessage(exchange,true);
+  outMessage.put(Message.REQUESTOR_ROLE,Boolean.TRUE);
+  outMessage.put(Message.INBOUND_MESSAGE,Boolean.FALSE);
+  InterceptorChain chain=OutgoingChainInterceptor.getOutInterceptorChain(cxfExchange);
+  outMessage.setInterceptorChain(chain);
+  chain.doIntercept(outMessage);
+  CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+  exchange.getOut().setBody(outputStream.getInputStream());
 }

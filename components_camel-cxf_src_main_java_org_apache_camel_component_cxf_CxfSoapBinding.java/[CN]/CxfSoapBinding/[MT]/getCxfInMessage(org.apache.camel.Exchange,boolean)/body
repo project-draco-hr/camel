@@ -1,0 +1,25 @@
+{
+  MessageImpl answer=new MessageImpl();
+  org.apache.cxf.message.Exchange cxfExchange=exchange.getProperty("CxfExchange",org.apache.cxf.message.Exchange.class);
+  org.apache.camel.Message message=null;
+  if (isClient) {
+    message=exchange.getOut();
+  }
+ else {
+    message=exchange.getIn();
+  }
+  if (cxfExchange == null) {
+    cxfExchange=new ExchangeImpl();
+    exchange.setProperty("CxfExchange",cxfExchange);
+  }
+  Object body=message.getBody(InputStream.class);
+  if (body == null) {
+    body=message.getBody();
+  }
+  if (body instanceof InputStream) {
+    answer.setContent(InputStream.class,body);
+  }
+  answer.setExchange(cxfExchange);
+  cxfExchange.setInMessage(answer);
+  return answer;
+}

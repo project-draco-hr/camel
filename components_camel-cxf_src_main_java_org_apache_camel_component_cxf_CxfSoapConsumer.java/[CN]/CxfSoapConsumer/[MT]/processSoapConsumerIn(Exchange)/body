@@ -1,3 +1,12 @@
 {
   LOG.info("processSoapConsumerIn: " + exchange);
+  CxfSoapBinding binding=endpoint.getCxfSoapBinding();
+  org.apache.cxf.message.Message inMessage=binding.getCxfInMessage(exchange,false);
+  org.apache.cxf.message.Exchange cxfExchange=inMessage.getExchange();
+  cxfExchange.put(org.apache.cxf.endpoint.Endpoint.class,server.getEndpoint());
+  cxfExchange.put(Bus.class,getBus());
+  cxfExchange.setConduit(new NullConduit());
+  inMessageObserver.onMessage(inMessage);
+  exchange.getIn().setBody(inMessage.getContent(Source.class));
+  exchange.getIn().setHeaders(inMessage);
 }

@@ -1,3 +1,11 @@
 {
   LOG.info("processSoapConsumerOut: " + exchange);
+  CxfSoapBinding binding=endpoint.getCxfSoapBinding();
+  org.apache.cxf.message.Message outMessage=binding.getCxfOutMessage(exchange,false);
+  org.apache.cxf.message.Exchange cxfExchange=outMessage.getExchange();
+  InterceptorChain chain=OutgoingChainInterceptor.getOutInterceptorChain(cxfExchange);
+  outMessage.setInterceptorChain(chain);
+  chain.doIntercept(outMessage);
+  CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+  exchange.getOut().setBody(outputStream.getInputStream());
 }

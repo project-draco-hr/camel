@@ -12,17 +12,16 @@
   }
 );
   this.consumer=endpoint.getInnerEndpoint().createConsumer(soapProcessor);
-  WSDLServiceFactory factory=new WSDLServiceFactory(getBus(),endpoint.getDefinition(),endpoint.getService());
-  Service cxfService=factory.create();
-  EndpointInfo ei=cxfService.getServiceInfos().iterator().next().getEndpoints().iterator().next();
-  ei.setAddress("local://" + ei.getService().getName().toString() + "/"+ ei.getName().getLocalPart());
-  ei.getBinding().setProperty(AbstractBindingFactory.DATABINDING_DISABLED,Boolean.TRUE);
-  cxfService.getInInterceptors().add(new ReadHeadersInterceptor(getBus()));
-  cxfService.getInInterceptors().add(new MustUnderstandInterceptor());
-  cxfService.getInInterceptors().add(new AttachmentInInterceptor());
-  cxfService.getInInterceptors().add(new StaxInInterceptor());
-  cxfService.getInInterceptors().add(new ReadHeadersInterceptor(getBus()));
-  ep=new EndpointImpl(getBus(),cxfService,ei);
-  chain=new ChainInitiationObserver(ep,getBus());
-  server=new ServerImpl(getBus(),ep,null,chain);
+  Class sei=CxfEndpointUtils.getSEIClass(endpoint.getServiceClass());
+  ServerFactoryBean sfb=CxfEndpointUtils.getServerFactoryBean(sei);
+  sfb.setWsdlURL(endpoint.getWsdl().getURL().toString());
+  if (endpoint.getServiceName() != null) {
+    sfb.setServiceName(endpoint.getServiceName());
+  }
+  if (endpoint.getEndpointName() != null) {
+    sfb.setEndpointName(endpoint.getEndpointName());
+  }
+  sfb.setDestinationFactory(new NullDestinationFactory());
+  sfb.setStart(false);
+  server=sfb.create();
 }
