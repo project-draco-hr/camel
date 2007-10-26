@@ -1,9 +1,11 @@
 {
   for (  CatchProcessor catchClause : catchClauses) {
     if (catchClause.catches(e)) {
-      exchange.setException(e);
+      Exchange localExchange=exchange.copy();
+      localExchange.getIn().setHeader("caught.exception",e);
+      localExchange.setException(null);
       try {
-        catchClause.process(exchange);
+        catchClause.process(localExchange);
       }
  catch (      Exception e1) {
         LOG.warn("Caught exception inside catch clause: " + e1,e1);
