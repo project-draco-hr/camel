@@ -10,10 +10,14 @@
     Annotation[] parameterAnnotations=parametersAnnotations[i];
     Expression expression=createParameterUnmarshalExpression(clazz,method,parameterType,parameterAnnotations);
     hasCustomAnnotation|=expression != null;
+    ParameterInfo parameterInfo=new ParameterInfo(i,parameterType,parameterAnnotations,expression);
+    parameters.add(parameterInfo);
     if (expression == null) {
       hasCustomAnnotation|=ObjectHelper.hasAnnotation(parameterAnnotations,Body.class);
       if (bodyParameters.isEmpty()) {
         expression=ExpressionBuilder.bodyExpression(parameterType);
+        parameterInfo.setExpression(expression);
+        bodyParameters.add(parameterInfo);
       }
  else {
         if (LOG.isDebugEnabled()) {
@@ -22,17 +26,15 @@
         return null;
       }
     }
-    ParameterInfo parameterInfo=new ParameterInfo(i,parameterType,parameterAnnotations,expression);
-    parameters.add(parameterInfo);
-    if (isPossibleBodyParameter(parameterAnnotations)) {
-      bodyParameters.add(parameterInfo);
-    }
   }
   String opName=method.getName();
   MethodInfo methodInfo=new MethodInfo(clazz,method,parameters,bodyParameters,hasCustomAnnotation);
   operations.put(opName,methodInfo);
   if (methodInfo.hasBodyParameter()) {
     operationsWithBody.add(methodInfo);
+  }
+  if (methodInfo.isHasCustomAnnotation() && !methodInfo.hasBodyParameter()) {
+    operationsWithCustomAnnotation.add(methodInfo);
   }
   return methodInfo;
 }
