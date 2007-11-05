@@ -1,10 +1,17 @@
 {
   Object value=expression.evaluate(exchange);
+  Integer size=CollectionHelper.size(value);
   Iterator iter=ObjectConverter.iterator(value);
+  int counter=0;
   while (iter.hasNext()) {
     Object part=iter.next();
     Exchange newExchange=exchange.copy();
-    newExchange.getIn().setBody(part);
+    Message in=newExchange.getIn();
+    in.setBody(part);
+    if (size != null) {
+      in.setHeader(SPLIT_SIZE,size);
+    }
+    in.setHeader(SPLIT_COUNTER,counter++);
     processor.process(newExchange);
   }
 }

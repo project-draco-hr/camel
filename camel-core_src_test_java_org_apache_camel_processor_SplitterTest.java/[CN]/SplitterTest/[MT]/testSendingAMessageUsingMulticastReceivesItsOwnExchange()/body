@@ -1,4 +1,5 @@
 {
+  MockEndpoint resultEndpoint=getMockEndpoint("mock:result");
   resultEndpoint.expectedBodiesReceived("James","Guillaume","Hiram","Rob");
   template.send("direct:a",new Processor(){
     public void process(    Exchange exchange){
@@ -8,5 +9,12 @@
     }
   }
 );
-  resultEndpoint.assertIsSatisfied();
+  assertMockEndpointsSatisifed();
+  List<Exchange> list=resultEndpoint.getReceivedExchanges();
+  for (int i=0; i < 4; i++) {
+    Exchange exchange=list.get(i);
+    Message in=exchange.getIn();
+    assertMessageHeader(in,Splitter.SPLIT_COUNTER,i);
+    assertMessageHeader(in,Splitter.SPLIT_SIZE,4);
+  }
 }
