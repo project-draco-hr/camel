@@ -1,11 +1,18 @@
 {
   Endpoint from=routeContext.getEndpoint();
   final Processor processor=routeContext.createProcessor(this);
-  final Aggregator service=new Aggregator(from,processor,getExpression().createExpression(routeContext),aggregationStrategy);
-  if (batchSize != 0) {
+  AggregationStrategy strategy=getAggregationStrategy();
+  if (strategy == null && strategyRef != null) {
+    strategy=routeContext.lookup(strategyRef,AggregationStrategy.class);
+  }
+  if (strategy == null) {
+    strategy=new UseLatestAggregationStrategy();
+  }
+  final Aggregator service=new Aggregator(from,processor,getExpression().createExpression(routeContext),strategy);
+  if (batchSize != null) {
     service.setBatchSize(batchSize);
   }
-  if (batchSize != 0) {
+  if (batchSize != null) {
     service.setBatchTimeout(batchTimeout);
   }
   Route route=new Route<Exchange>(from,service){
