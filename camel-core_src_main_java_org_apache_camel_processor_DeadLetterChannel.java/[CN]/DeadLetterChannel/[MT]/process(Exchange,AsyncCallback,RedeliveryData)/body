@@ -24,12 +24,15 @@
     if (!data.currentRedeliveryPolicy.shouldRedeliver(data.redeliveryCounter)) {
       setFailureHandled(exchange,true);
       AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
-      return afp.process(exchange,new AsyncCallback(){
+      boolean sync=afp.process(exchange,new AsyncCallback(){
         public void done(        boolean sync){
+          restoreExceptionOnExchange(exchange);
           callback.done(data.sync);
         }
       }
 );
+      restoreExceptionOnExchange(exchange);
+      return sync;
     }
     if (data.redeliveryCounter > 0) {
       data.redeliveryDelay=data.currentRedeliveryPolicy.getRedeliveryDelay(data.redeliveryDelay);
