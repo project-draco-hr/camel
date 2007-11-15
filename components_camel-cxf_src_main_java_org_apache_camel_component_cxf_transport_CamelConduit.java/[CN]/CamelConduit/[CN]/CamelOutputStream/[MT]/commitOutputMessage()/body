@@ -1,34 +1,14 @@
 {
-  base.template.send(targetCamelEndpointUri,new Processor(){
-    public void process(    org.apache.camel.Exchange reply){
-      Object request=null;
-      if (isTextPayload()) {
-        request=currentStream.toString();
-      }
- else {
-        request=((ByteArrayOutputStream)currentStream).toByteArray();
-      }
-      getLogger().log(Level.FINE,"Conduit Request is :[" + request + "]");
-      String replyTo=base.getReplyDestination();
-      base.marshal(request,replyTo,reply);
-      base.setMessageProperties(outMessage,reply);
-      String correlationID=null;
-      if (!isOneWay) {
-        String id=null;
-        if (id != null) {
-          if (correlationID != null) {
-            String error="User cannot set CamelCorrelationID when " + "making a request/reply invocation using " + "a static replyTo Queue.";
-          }
-          correlationID=id;
-        }
-      }
-      if (correlationID != null) {
-        reply.getIn().setHeader(CamelConstants.CAMEL_CORRELATION_ID,correlationID);
-      }
- else {
-      }
-      getLogger().log(Level.FINE,"template sending request: ",reply.getIn());
+  org.apache.camel.Exchange exchange=getCamelTemplate().send(targetCamelEndpointUri,new Processor(){
+    public void process(    org.apache.camel.Exchange ex) throws IOException {
+      CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+      ex.getIn().setHeaders(outMessage);
+      ex.getIn().setBody(outputStream.getInputStream());
+      getLogger().log(Level.FINE,"template sending request: ",ex.getIn());
     }
   }
 );
+  if (!isOneWay) {
+    handleResponse(exchange);
+  }
 }

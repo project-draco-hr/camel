@@ -1,11 +1,11 @@
 {
-  final String replyToUri=getReplyToDestination(inMessage);
-  base.template.send(replyToUri,new Processor(){
-    public void process(    Exchange reply){
-      base.marshal(currentStream.toString(),replyToUri,reply);
-      setReplyCorrelationID(inMessage,reply);
-      base.setMessageProperties(inMessage,reply);
-      getLogger().log(Level.FINE,"just server sending reply: ",reply);
+  String targetCamelEndpointUri=(String)outMessage.get(CamelConstants.CAMEL_TARGET_ENDPOINT_URI);
+  getCamelTemplate().send(targetCamelEndpointUri,new Processor(){
+    public void process(    org.apache.camel.Exchange ex) throws IOException {
+      CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+      ex.getIn().setHeaders(outMessage);
+      ex.getIn().setBody(outputStream.getInputStream());
+      getLogger().log(Level.FINE,"template sending request: ",ex.getIn());
     }
   }
 );
