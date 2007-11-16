@@ -1,0 +1,15 @@
+{
+  MockEndpoint endpointAfter=getMockEndpoint("mock:After");
+  MockEndpoint endpointBefore=getMockEndpoint("mock:Before");
+  endpointBefore.expectedBodiesReceived("header:hello");
+  endpointAfter.expectedBodiesReceived("header:hello");
+  template.send("seda:xslttest",new Processor(){
+    public void process(    Exchange exchange){
+      Message in=exchange.getIn();
+      in.setBody("dummy");
+    }
+  }
+);
+  endpointBefore.assertIsSatisfied();
+  endpointAfter.assertIsSatisfied();
+}
