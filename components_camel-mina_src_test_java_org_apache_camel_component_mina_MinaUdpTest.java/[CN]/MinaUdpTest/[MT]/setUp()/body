@@ -1,0 +1,29 @@
+{
+  super.setUp();
+  if (consume) {
+    final DatagramSocket socket=new DatagramSocket(port);
+    readerThread=new Thread(){
+      public void run(){
+        try {
+          byte[] buffer=new byte[1024];
+          DatagramPacket incoming=new DatagramPacket(buffer,buffer.length);
+          System.out.println("starting to receive udp packets");
+          while (true) {
+            socket.receive(incoming);
+            byte[] data=incoming.getData();
+            System.out.println("Got data! " + data.length);
+            ObjectInputStream in=new ObjectInputStream(new ByteArrayInputStream(data));
+            Object value=in.readObject();
+            System.out.println("Value: " + value);
+          }
+        }
+ catch (        Throwable ex) {
+          System.err.println(ex);
+          ex.printStackTrace();
+        }
+      }
+    }
+;
+    readerThread.start();
+  }
+}

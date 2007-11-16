@@ -1,0 +1,33 @@
+{
+  ProtocolCodecFactory codecFactory=getCodecFactory(parameters);
+  if (codecFactory == null) {
+    codecFactory=new ProtocolCodecFactory(){
+      public ProtocolEncoder getEncoder() throws Exception {
+        return new ProtocolEncoder(){
+          public void encode(          IoSession session,          Object message,          ProtocolEncoderOutput out) throws Exception {
+            ByteBuffer buf=toByteBuffer(message);
+            buf.flip();
+            out.write(buf);
+          }
+          public void dispose(          IoSession session) throws Exception {
+          }
+        }
+;
+      }
+      public ProtocolDecoder getDecoder() throws Exception {
+        return new ProtocolDecoder(){
+          public void decode(          IoSession session,          ByteBuffer in,          ProtocolDecoderOutput out) throws Exception {
+            out.write(in);
+          }
+          public void finishDecode(          IoSession session,          ProtocolDecoderOutput out) throws Exception {
+          }
+          public void dispose(          IoSession session) throws Exception {
+          }
+        }
+;
+      }
+    }
+;
+  }
+  addCodecFactory(config,new TextLineCodecFactory());
+}
