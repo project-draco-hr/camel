@@ -3,6 +3,11 @@
     Processor processor=Pipeline.newInstance(eventDrivenProcessors);
     final AsyncProcessor asyncProcessor=AsyncProcessorTypeConverter.convert(processor);
     Processor unitOfWorkProcessor=new UnitOfWorkProcessor(asyncProcessor);
-    routes.add(new EventDrivenConsumerRoute(getEndpoint(),unitOfWorkProcessor));
+    Route edcr=new EventDrivenConsumerRoute(getEndpoint(),unitOfWorkProcessor);
+    edcr.getProperties().put(Route.PARENT_PROPERTY,Integer.toHexString(route.hashCode()));
+    if (route.getGroup() != null) {
+      edcr.getProperties().put(Route.GROUP_PROPERTY,route.getGroup());
+    }
+    routes.add(edcr);
   }
 }
