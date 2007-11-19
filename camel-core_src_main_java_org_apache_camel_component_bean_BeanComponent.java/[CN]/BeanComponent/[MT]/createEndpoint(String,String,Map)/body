@@ -1,6 +1,12 @@
 {
-  Object bean=getBean(remaining);
-  BeanProcessor processor=new BeanProcessor(bean,getCamelContext(),getParameterMappingStrategy());
+  RegistryBean holder=new RegistryBean(getCamelContext(),remaining);
+  BeanProcessor processor;
+  if (ObjectConverter.toBool(parameters.remove("cache"))) {
+    processor=new BeanProcessor(holder.createCacheHolder());
+  }
+ else {
+    processor=new BeanProcessor(holder);
+  }
   setProperties(processor,parameters);
   return createEndpoint(uri,processor);
 }

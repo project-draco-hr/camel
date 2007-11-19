@@ -2,6 +2,10 @@
   if (LOG.isDebugEnabled()) {
     LOG.debug(">>>> invoking method for: " + exchange);
   }
+  Object bean=beanHolder.getBean();
+  exchange.setProperty("CamelBean",bean);
+  Processor processor=getProcessor();
+  BeanInfo beanInfo=beanHolder.getBeanInfo();
   if (processor != null) {
     processor.process(exchange);
     return;
@@ -9,12 +13,12 @@
   Message in=exchange.getIn();
   BeanInvocation beanInvoke=in.getBody(BeanInvocation.class);
   if (beanInvoke != null) {
-    beanInvoke.invoke(pojo,exchange);
+    beanInvoke.invoke(bean,exchange);
     return;
   }
   MethodInvocation invocation;
   if (methodObject != null) {
-    invocation=beanInfo.createInvocation(methodObject,pojo,exchange);
+    invocation=beanInfo.createInvocation(methodObject,bean,exchange);
   }
  else {
     if (ObjectHelper.isNotNullAndNonEmpty(method)) {
@@ -22,10 +26,10 @@
         in.setHeader(METHOD_NAME,method);
       }
     }
-    invocation=beanInfo.createInvocation(pojo,exchange);
+    invocation=beanInfo.createInvocation(bean,exchange);
   }
   if (invocation == null) {
-    throw new IllegalStateException("No method invocation could be created, no maching method could be found on: " + pojo);
+    throw new IllegalStateException("No method invocation could be created, no maching method could be found on: " + bean);
   }
   try {
     Object value=invocation.proceed();
