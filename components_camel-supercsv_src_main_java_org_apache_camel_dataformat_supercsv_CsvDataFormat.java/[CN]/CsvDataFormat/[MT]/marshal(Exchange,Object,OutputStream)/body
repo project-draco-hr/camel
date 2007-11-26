@@ -1,0 +1,24 @@
+{
+  OutputStreamWriter out=new OutputStreamWriter(outputStream);
+  if (object instanceof Map) {
+    ICsvMapWriter writer=new CsvMapWriter(out,preference);
+    Map<String,? extends Object> map=(Map<String,? extends Object>)object;
+    Set<String> keys=map.keySet();
+    String[] headers=new String[keys.size()];
+    keys.toArray(headers);
+    writer.writeHeader(headers);
+    writer.write(map,headers);
+  }
+ else   if (object != null) {
+    ICsvBeanWriter writer=new CsvBeanWriter(out,preference);
+    PropertyDescriptor[] properties=BeanUtils.getPropertyDescriptors(object.getClass());
+    int size=properties.length;
+    String[] headers=new String[size];
+    for (int i=0; i < size; i++) {
+      headers[i]=properties[i].getName();
+    }
+    writer.writeHeader(headers);
+    writer.write(object,headers);
+  }
+  out.close();
+}
