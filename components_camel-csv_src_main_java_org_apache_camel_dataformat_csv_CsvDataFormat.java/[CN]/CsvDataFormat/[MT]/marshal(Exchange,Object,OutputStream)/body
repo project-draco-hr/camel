@@ -1,17 +1,21 @@
 {
-  OutputStreamWriter out=new OutputStreamWriter(outputStream);
   Map map=ExchangeHelper.convertToMandatoryType(exchange,Map.class,object);
-  CSVConfig conf=createConfig();
-  Set set=map.keySet();
-  for (  Object value : set) {
-    if (value != null) {
-      String text=value.toString();
-      CSVField field=new CSVField(text);
-      conf.addField(field);
+  OutputStreamWriter out=new OutputStreamWriter(outputStream);
+  try {
+    CSVConfig conf=createConfig();
+    Set set=map.keySet();
+    for (    Object value : set) {
+      if (value != null) {
+        String text=value.toString();
+        CSVField field=new CSVField(text);
+        conf.addField(field);
+      }
     }
+    CSVWriter writer=new CSVWriter(conf);
+    writer.setWriter(out);
+    writer.writeRecord(map);
   }
-  CSVWriter writer=new CSVWriter(conf);
-  writer.setWriter(out);
-  writer.writeRecord(map);
-  out.close();
+  finally {
+    out.close();
+  }
 }
