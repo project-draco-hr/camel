@@ -4,6 +4,17 @@
     LOG.debug(this + " using schema resource: " + resource);
   }
   XsltBuilder xslt=newInstance(XsltBuilder.class);
+  XmlConverter converter=null;
+  String converterName=(String)parameters.remove("converter");
+  if (converterName != null) {
+    converter=mandatoryLookup(converterName,XmlConverter.class);
+  }
+  if (converter == null) {
+    converter=getXmlConverter();
+  }
+  if (converter != null) {
+    xslt.setConverter(converter);
+  }
   xslt.setTransformerInputStream(resource.getInputStream());
   configureXslt(xslt,uri,remaining,parameters);
   return new ProcessorEndpoint(uri,this,xslt);
