@@ -1,0 +1,17 @@
+{
+  super(endpointUri,component);
+  try {
+    URI uri=new URI(endpointUri);
+    if (uri.getUserInfo() != null && uri.getAuthority() != null) {
+      this.credentials=new SimpleCredentials(uri.getUserInfo(),uri.getAuthority().toCharArray());
+    }
+    this.repository=(Repository)component.getCamelContext().getRegistry().lookup(uri.getHost());
+    if (repository == null) {
+      throw new RuntimeCamelException("No JCR repository defined under '" + uri.getHost() + "'");
+    }
+    this.base=uri.getPath().replaceAll("^/","");
+  }
+ catch (  URISyntaxException e) {
+    throw new IllegalArgumentException("Invalid URI: " + endpointUri,e);
+  }
+}

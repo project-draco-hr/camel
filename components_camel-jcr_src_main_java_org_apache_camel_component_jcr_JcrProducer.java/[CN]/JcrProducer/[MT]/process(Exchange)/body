@@ -1,0 +1,20 @@
+{
+  Session session=openSession();
+  try {
+    Node base=getBaseNode(session);
+    Node node=base.addNode(getNodeName(exchange));
+    TypeConverter converter=exchange.getContext().getTypeConverter();
+    for (    String key : exchange.getProperties().keySet()) {
+      Value value=converter.convertTo(Value.class,exchange.getProperty(key));
+      node.setProperty(key,value);
+    }
+    node.addMixin("mix:referenceable");
+    session.save();
+    exchange.getOut().setBody(node.getUUID());
+  }
+  finally {
+    if (session != null && session.isLive()) {
+      session.logout();
+    }
+  }
+}
