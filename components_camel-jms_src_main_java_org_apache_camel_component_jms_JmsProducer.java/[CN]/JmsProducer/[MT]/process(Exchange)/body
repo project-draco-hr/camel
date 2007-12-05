@@ -14,6 +14,8 @@
       correlationId=getUuidGenerator().generateId();
       in.setHeader("JMSCorrelationID",correlationId);
     }
+    long requestTimeout=endpoint.getRequestTimeout();
+    FutureTask future=requestor.getReceiveFuture(correlationId,requestTimeout);
     getInOutTemplate().send(endpoint.getDestination(),new MessageCreator(){
       public Message createMessage(      Session session) throws JMSException {
         Message message=endpoint.getBinding().makeJmsMessage(exchange,in,session);
@@ -25,8 +27,6 @@
       }
     }
 );
-    long requestTimeout=endpoint.getRequestTimeout();
-    FutureTask future=requestor.getReceiveFuture(correlationId,requestTimeout);
     try {
       Message message;
       if (requestTimeout < 0) {
