@@ -1,0 +1,34 @@
+{
+  if (body instanceof Node) {
+    try {
+      body=xmlConverter.toString((Node)body);
+    }
+ catch (    TransformerException e) {
+      JMSException jmsException=new JMSException(e.getMessage());
+      jmsException.setLinkedException(e);
+      throw jmsException;
+    }
+  }
+  if (body instanceof byte[]) {
+    BytesMessage result=session.createBytesMessage();
+    result.writeBytes((byte[])body);
+    return result;
+  }
+  if (body instanceof Map) {
+    MapMessage result=session.createMapMessage();
+    Map<?,?> map=(Map<?,?>)body;
+    try {
+      populateMapMessage(result,map,context);
+      return result;
+    }
+ catch (    JMSException e) {
+    }
+  }
+  if (body instanceof String) {
+    return session.createTextMessage((String)body);
+  }
+  if (body instanceof Serializable) {
+    return session.createObjectMessage((Serializable)body);
+  }
+  return session.createMessage();
+}
