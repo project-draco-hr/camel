@@ -1,22 +1,22 @@
 {
   inMessage=null;
-  setupServiceInfo("http://cxf.apache.org/hello_world_camel","/wsdl/camel_test.wsdl","HelloWorldService","HelloWorldPort");
-  CamelConduit conduit=setupCamelConduit(true,false);
+  EndpointInfo conduitEpInfo=new EndpointInfo();
+  conduitEpInfo.setAddress("camel://direct:Producer");
+  CamelConduit conduit=setupCamelConduit(conduitEpInfo,true,false);
   final Message outMessage=new MessageImpl();
-  setupMessageHeader(outMessage);
-  final CamelDestination destination=setupCamelDestination(true);
+  endpointInfo.setAddress("camel://direct:EndpointA");
+  final CamelDestination destination=setupCamelDestination(endpointInfo,true);
   MessageObserver observer=new MessageObserver(){
     public void onMessage(    Message m){
       Exchange exchange=new ExchangeImpl();
       exchange.setInMessage(m);
       m.setExchange(exchange);
-      verifyReceivedMessage(m);
-      verifyHeaders(m,outMessage);
+      verifyReceivedMessage(m,"HelloWorld");
       Conduit backConduit;
       try {
         backConduit=destination.getBackChannel(m,null,null);
         Message replyMessage=new MessageImpl();
-        sendoutMessage(backConduit,replyMessage,true);
+        sendoutMessage(backConduit,replyMessage,true,"HelloWorld Response");
       }
  catch (      Exception e) {
         e.printStackTrace();
@@ -25,9 +25,7 @@
   }
 ;
   destination.setMessageObserver(observer);
-  sendoutMessage(conduit,outMessage,false);
-  waitForReceiveInMessage();
-  verifyReceivedMessage(inMessage);
-  Thread.sleep(1000);
+  sendoutMessage(conduit,outMessage,false,"HelloWorld");
+  verifyReceivedMessage(inMessage,"HelloWorld Response");
   destination.shutdown();
 }

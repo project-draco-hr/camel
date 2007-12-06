@@ -1,22 +1,21 @@
 {
   destMessage=null;
   inMessage=null;
-  setupServiceInfo("http://cxf.apache.org/hello_world_camel","/wsdl/camel_test.wsdl","HWStaticReplyQBinMsgService","HWStaticReplyQBinMsgPort");
-  CamelConduit conduit=setupCamelConduit(true,false);
+  EndpointInfo conduitEpInfo=new EndpointInfo();
+  conduitEpInfo.setAddress("camel://direct:Producer");
+  CamelConduit conduit=setupCamelConduit(conduitEpInfo,true,false);
   Message outMessage=new MessageImpl();
-  setupMessageHeader(outMessage);
   CamelDestination destination=null;
   try {
-    destination=setupCamelDestination(true);
+    endpointInfo.setAddress("camel://direct:EndpointA");
+    destination=setupCamelDestination(endpointInfo,true);
   }
  catch (  IOException e) {
     assertFalse("The CamelDestination activate should not through exception ",false);
     e.printStackTrace();
   }
-  sendoutMessage(conduit,outMessage,true);
-  waitForReceiveDestMessage();
+  sendoutMessage(conduit,outMessage,true,"HelloWorld");
   assertTrue("The destiantion should have got the message ",destMessage != null);
-  verifyReceivedMessage(destMessage);
-  verifyHeaders(destMessage,outMessage);
+  verifyReceivedMessage(destMessage,"HelloWorld");
   destination.shutdown();
 }

@@ -1,12 +1,7 @@
 {
-  String targetCamelEndpointUri=(String)outMessage.get(CamelConstants.CAMEL_TARGET_ENDPOINT_URI);
-  getCamelTemplate().send(targetCamelEndpointUri,new Processor(){
-    public void process(    org.apache.camel.Exchange ex) throws IOException {
-      CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
-      ex.getIn().setHeaders(outMessage);
-      ex.getIn().setBody(outputStream.getInputStream());
-      getLogger().log(Level.FINE,"template sending request: ",ex.getIn());
-    }
-  }
-);
+  Exchange camelExchange=(Exchange)outMessage.get(CxfConstants.CAMEL_EXCHANGE);
+  camelExchange.getOut().setHeaders(outMessage);
+  CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+  camelExchange.getOut().setBody(outputStream.getInputStream());
+  getLogger().log(Level.FINE,"send the response message: " + outputStream);
 }
