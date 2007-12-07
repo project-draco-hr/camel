@@ -1,12 +1,25 @@
 {
-  final String fileName=endpoint.getConfiguration().getFile();
-  if (endpoint.getConfiguration().isDirectory()) {
-    pollDirectory(fileName);
-  }
+  connectIfNecessary();
+  try {
+    final String fileName=endpoint.getConfiguration().getFile();
+    if (endpoint.getConfiguration().isDirectory()) {
+      pollDirectory(fileName);
+    }
  else {
-    channel.cd(fileName.substring(0,fileName.lastIndexOf('/')));
-    final ChannelSftp.LsEntry file=(ChannelSftp.LsEntry)channel.ls(fileName.substring(fileName.lastIndexOf('/') + 1)).get(0);
-    pollFile(file);
+      channel.cd(fileName.substring(0,fileName.lastIndexOf('/')));
+      final ChannelSftp.LsEntry file=(ChannelSftp.LsEntry)channel.ls(fileName.substring(fileName.lastIndexOf('/') + 1)).get(0);
+      pollFile(file);
+    }
+    lastPollTime=System.currentTimeMillis();
   }
-  lastPollTime=System.currentTimeMillis();
+ catch (  JSchException e) {
+    LOG.warn("Disconnecting due to exception: " + e.toString());
+    disconnect();
+    throw e;
+  }
+catch (  SftpException e) {
+    LOG.warn("Caught SftpException:" + e.toString());
+    LOG.warn("Doing nothing for now, need to determine an appropriate action");
+    throw e;
+  }
 }

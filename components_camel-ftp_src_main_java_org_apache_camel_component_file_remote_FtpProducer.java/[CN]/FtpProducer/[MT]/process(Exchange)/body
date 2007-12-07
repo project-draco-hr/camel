@@ -1,3 +1,17 @@
 {
-  process(endpoint.createExchange(exchange));
+  connectIfNecessary();
+  try {
+    process(endpoint.createExchange(exchange));
+  }
+ catch (  FTPConnectionClosedException e) {
+    LOG.warn("Disconnecting due to exception: " + e.toString());
+    disconnect();
+    throw e;
+  }
+catch (  RuntimeCamelException e) {
+    LOG.warn("Caught RuntimeCamelException: " + e.toString());
+    LOG.warn("Hoping an explicit disconnect/reconnect will solve the problem");
+    disconnect();
+    throw e;
+  }
 }

@@ -1,12 +1,26 @@
 {
-  final String fileName=endpoint.getConfiguration().getFile();
-  if (endpoint.getConfiguration().isDirectory()) {
-    pollDirectory(fileName);
-  }
+  connectIfNecessary();
+  try {
+    final String fileName=endpoint.getConfiguration().getFile();
+    if (endpoint.getConfiguration().isDirectory()) {
+      pollDirectory(fileName);
+    }
  else {
-    client.changeWorkingDirectory(fileName.substring(0,fileName.lastIndexOf('/')));
-    final FTPFile[] files=client.listFiles(fileName.substring(fileName.lastIndexOf('/') + 1));
-    pollFile(files[0]);
+      client.changeWorkingDirectory(fileName.substring(0,fileName.lastIndexOf('/')));
+      final FTPFile[] files=client.listFiles(fileName.substring(fileName.lastIndexOf('/') + 1));
+      pollFile(files[0]);
+    }
+    lastPollTime=System.currentTimeMillis();
   }
-  lastPollTime=System.currentTimeMillis();
+ catch (  FTPConnectionClosedException e) {
+    LOG.warn("Disconnecting due to exception: " + e.toString());
+    disconnect();
+    throw e;
+  }
+catch (  RuntimeCamelException e) {
+    LOG.warn("Caught RuntimeCamelException: " + e.toString());
+    LOG.warn("Hoping an explicit disconnect/reconnect will solve the problem");
+    disconnect();
+    throw e;
+  }
 }

@@ -1,13 +1,13 @@
 {
   InputStream payload=exchange.getIn().getBody(InputStream.class);
-  final String endpointFile=endpoint.getConfiguration().getFile();
-  channel.cd(endpointFile);
   String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
-  buildDirectory(channel,fileName.substring(0,fileName.lastIndexOf('/')));
-  try {
-    channel.put(payload,fileName);
+  int lastPathIndex=fileName.lastIndexOf('/');
+  if (lastPathIndex != -1) {
+    boolean success=buildDirectory(channel,fileName.substring(0,lastPathIndex));
+    if (!success) {
+      LOG.warn("Couldn't buildDirectory: " + fileName.substring(0,lastPathIndex) + " (either permissions deny it, or it already exists)");
+    }
   }
- catch (  SftpException e) {
-    throw new RuntimeCamelException("error sending file",e);
-  }
+  channel.put(payload,fileName);
+  LOG.info("Sent: " + fileName + " to "+ endpoint.getConfiguration());
 }
