@@ -1,0 +1,23 @@
+{
+  QName testEndpointQNameA=new QName("http://activemq.apache.org/camel-test","portA");
+  QName testEndpointQNameB=new QName("http://activemq.apache.org/camel-test","portB");
+  SpringBusFactory bf=new SpringBusFactory();
+  BusFactory.setDefaultBus(null);
+  Bus bus=bf.createBus("/org/apache/camel/component/cxf/transport/CamelConduit.xml");
+  BusFactory.setDefaultBus(bus);
+  endpointInfo.setAddress("camel://direct:EndpointA");
+  endpointInfo.setName(testEndpointQNameA);
+  CamelConduit conduit=new CamelConduit(null,bus,endpointInfo);
+  CamelContext context=conduit.getCamelContext();
+  assertNotNull("the camel context which get from camel conduit is not null",context);
+  assertEquals("get the wrong camel context",context.getName(),"conduit_context");
+  assertEquals(context.getRoutes().get(0).getEndpoint().getEndpointUri(),"direct:EndpointA");
+  endpointInfo.setAddress("camel://direct:EndpointC");
+  endpointInfo.setName(testEndpointQNameB);
+  conduit=new CamelConduit(null,bus,endpointInfo);
+  context=conduit.getCamelContext();
+  assertNotNull("the camel context which get from camel conduit is not null",context);
+  assertEquals("get the wrong camel context",context.getName(),"context");
+  assertEquals(context.getRoutes().get(0).getEndpoint().getEndpointUri(),"direct:EndpointC");
+  bus.shutdown(false);
+}
