@@ -20,6 +20,7 @@
   Message message=prepareMessage(exchange,requestContext,param,invokingContext);
   PhaseInterceptorChain chain=setupOutChain(requestContext,message,invokingContext);
   prepareConduitSelector(message);
+  modifyChain(chain,null);
   chain.doIntercept(message);
   Exception ex=message.getContent(Exception.class);
   if (ex != null) {
@@ -29,6 +30,9 @@
     throw ex;
   }
   if (!exchange.isOneWay()) {
+synchronized (exchange) {
+      waitResponse(exchange);
+    }
     ex=getException(exchange);
     if (ex != null) {
       if (LOG.isLoggable(Level.FINE)) {
