@@ -1,0 +1,17 @@
+{
+  MockEndpoint resultEndpoint=getMockEndpoint("mock:result");
+  resultEndpoint.expectedBodiesReceived("James","Guillaume","Hiram","Rob","Roman");
+  Exchange result=template.send("direct:a",new Processor(){
+    public void process(    Exchange exchange){
+      Message in=exchange.getIn();
+      in.setBody("James,Guillaume,Hiram,Rob,Roman");
+      in.setHeader("foo","bar");
+    }
+  }
+);
+  assertMockEndpointsSatisifed();
+  Message out=result.getOut();
+  assertEquals("Roman",out.getBody());
+  assertMessageHeader(out,"foo","bar");
+  assertMessageHeader(out,Splitter.SPLIT_COUNTER,4);
+}
