@@ -1,14 +1,28 @@
 {
   super.doStart();
-  InputStreamHandler sh=new StdInHandler(this);
-  try {
-    if (parameters.get("prompt") != null) {
-      pass(parameters.get("prompt"));
-    }
-    sh.consume();
+  if ("in".equals(uri)) {
+    inputStream=System.in;
   }
- catch (  ConsumingException e) {
-    log.error(e);
+ else   if ("file".equals(uri)) {
+    inputStream=resolveStreamFromFile();
+  }
+ else   if ("url".equals(uri)) {
+    inputStream=resolveStreamFromUrl();
+  }
+  BufferedReader br=new BufferedReader(new InputStreamReader(inputStream));
+  String line=null;
+  try {
+    while ((line=br.readLine()) != null) {
+      consume(line);
+    }
+    br.close();
+  }
+ catch (  IOException e) {
     e.printStackTrace();
+    throw new StreamComponentException(e);
+  }
+catch (  Exception e) {
+    e.printStackTrace();
+    throw new StreamComponentException(e);
   }
 }
