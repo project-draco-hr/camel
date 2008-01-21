@@ -1,13 +1,19 @@
 {
   String uri=getEndpoint().getEndpointUri();
   HttpEntity entity=createEntity(exchange);
+  HttpRequest req;
   if (entity == null) {
-    BasicHttpRequest req=new BasicHttpRequest("GET",getEndpoint().getPath());
-    return req;
+    req=new BasicHttpRequest("GET",getEndpoint().getPath());
   }
  else {
-    BasicHttpEntityEnclosingRequest req=new BasicHttpEntityEnclosingRequest("POST",getEndpoint().getPath());
-    req.setEntity(entity);
-    return req;
+    req=new BasicHttpEntityEnclosingRequest("POST",getEndpoint().getPath());
+    ((BasicHttpEntityEnclosingRequest)req).setEntity(entity);
   }
+  for (  String headerName : exchange.getIn().getHeaders().keySet()) {
+    String headerValue=exchange.getIn().getHeader(headerName,String.class);
+    if (shouldHeaderBePropagated(headerName,headerValue)) {
+      req.addHeader(headerName,headerValue);
+    }
+  }
+  return req;
 }
