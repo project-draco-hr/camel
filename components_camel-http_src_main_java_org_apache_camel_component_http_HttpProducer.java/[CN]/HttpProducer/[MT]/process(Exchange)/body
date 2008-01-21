@@ -1,5 +1,11 @@
 {
   HttpMethod method=createMethod(exchange);
+  for (  String headerName : exchange.getIn().getHeaders().keySet()) {
+    String headerValue=exchange.getIn().getHeader(headerName,String.class);
+    if (shouldHeaderBePropagated(headerName,headerValue)) {
+      method.addRequestHeader(headerName,headerValue);
+    }
+  }
   int responseCode=httpClient.executeMethod(method);
   InputStream in=method.getResponseBodyAsStream();
   Message out=exchange.getOut(true);
@@ -10,5 +16,5 @@
     String value=header.getValue();
     out.setHeader(name,value);
   }
-  out.setHeader("http.responseCode",responseCode);
+  out.setHeader(HTTP_RESPONSE_CODE,responseCode);
 }
