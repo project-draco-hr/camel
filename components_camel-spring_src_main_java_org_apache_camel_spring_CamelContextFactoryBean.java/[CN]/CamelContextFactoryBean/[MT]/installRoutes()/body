@@ -1,8 +1,10 @@
 {
-  Map builders=getApplicationContext().getBeansOfType(RouteBuilder.class,true,true);
-  if (builders != null) {
-    for (    Object builder : builders.values()) {
-      getContext().addRoutes((RouteBuilder)builder);
+  if (autowireRouteBuilders != null && autowireRouteBuilders.booleanValue()) {
+    Map builders=getApplicationContext().getBeansOfType(RouteBuilder.class,true,true);
+    if (builders != null) {
+      for (      Object builder : builders.values()) {
+        getContext().addRoutes((RouteBuilder)builder);
+      }
     }
   }
   for (  RouteBuilder routeBuilder : additionalBuilders) {
@@ -10,5 +12,12 @@
   }
   if (routeBuilder != null) {
     getContext().addRoutes(routeBuilder);
+  }
+  System.out.println(">>> CamelContext: " + getId() + " "+ " routeBuilderRefs "+ builderRefs);
+  if (builderRefs != null) {
+    for (    RouteBuilderRef builderRef : builderRefs) {
+      RouteBuilder builder=builderRef.createRouteBuilder(getContext());
+      getContext().addRoutes(builder);
+    }
   }
 }
