@@ -1,16 +1,16 @@
 {
-  BindingOperationInfo bop=exchange.get(BindingOperationInfo.class);
-  MethodDispatcher md=(MethodDispatcher)exchange.get(Service.class).get(MethodDispatcher.class.getName());
-  Method m=md.getMethod(bop);
-  List<Object> params=new ArrayList<Object>();
+  CxfEndpoint endpoint=(CxfEndpoint)cxfConsumer.getEndpoint();
+  Object params=null;
   if (o instanceof List) {
     params=CastUtils.cast((List<?>)o);
   }
  else   if (o != null) {
     params=new MessageContentsList(o);
   }
-  CxfEndpoint endpoint=(CxfEndpoint)cxfConsumer.getEndpoint();
   CxfExchange cxfExchange=endpoint.createExchange(exchange.getInMessage());
+  BindingOperationInfo bop=exchange.get(BindingOperationInfo.class);
+  MethodDispatcher md=(MethodDispatcher)exchange.get(Service.class).get(MethodDispatcher.class.getName());
+  Method m=md.getMethod(bop);
   if (bop.getOperationInfo().isOneWay()) {
     cxfExchange.setPattern(ExchangePattern.InOnly);
   }
@@ -25,16 +25,13 @@
  catch (  Exception ex) {
     throw new Fault(ex);
   }
-  Object result;
+  Object result=null;
   if (cxfExchange.isFailed()) {
     Exception ex=(Exception)cxfExchange.getFault().getBody();
     throw new Fault(ex);
   }
  else {
     result=cxfExchange.getOut().getBody();
-    if (result instanceof Object[]) {
-      return (Object[])result;
-    }
   }
   return result;
 }

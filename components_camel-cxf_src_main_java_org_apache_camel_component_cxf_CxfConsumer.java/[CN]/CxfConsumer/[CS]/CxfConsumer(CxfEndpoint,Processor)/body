@@ -1,12 +1,14 @@
 {
   super(endpoint,processor);
   this.endpoint=endpoint;
+  boolean isWebServiceProvider=false;
   try {
     Bus bus=BusFactory.getDefaultBus();
     ServerFactoryBean svrBean=null;
     if (endpoint.isSpringContextEndpoint()) {
       CxfEndpointBean endpointBean=endpoint.getCxfEndpointBean();
       svrBean=CxfEndpointUtils.getServerFactoryBean(endpointBean.getServiceClass());
+      isWebServiceProvider=CxfEndpointUtils.hasAnnotation(endpointBean.getServiceClass(),WebServiceProvider.class);
       endpoint.configure(svrBean);
       CxfEndpointBean cxfEndpointBean=endpoint.getCxfEndpointBean();
       if (cxfEndpointBean.getServiceName() != null) {
@@ -19,6 +21,7 @@
  else {
       Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
       svrBean=CxfEndpointUtils.getServerFactoryBean(serviceClass);
+      isWebServiceProvider=CxfEndpointUtils.hasAnnotation(serviceClass,WebServiceProvider.class);
       svrBean.setAddress(endpoint.getAddress());
       svrBean.setServiceClass(serviceClass);
       if (endpoint.getServiceName() != null) {
@@ -32,13 +35,13 @@
       }
     }
     DataFormat dataFormat=CxfEndpointUtils.getDataFormat(endpoint);
-    if (dataFormat.equals(DataFormat.POJO)) {
+    if (dataFormat.equals(DataFormat.POJO) || isWebServiceProvider) {
       svrBean.setInvoker(new CamelInvoker(this));
     }
     svrBean.setBus(bus);
     svrBean.setStart(false);
     server=svrBean.create();
-    if (!dataFormat.equals(DataFormat.POJO)) {
+    if (!dataFormat.equals(DataFormat.POJO) && !isWebServiceProvider) {
       CxfMessageObserver observer=new CxfMessageObserver(this,server.getEndpoint(),bus,dataFormat);
       ServerImpl serverImpl=(ServerImpl)server;
       serverImpl.setMessageObserver(observer);
