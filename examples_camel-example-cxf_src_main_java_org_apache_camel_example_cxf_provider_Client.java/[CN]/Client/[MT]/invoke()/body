@@ -1,0 +1,27 @@
+{
+  QName serviceName=new QName("http://apache.org/hello_world_soap_http","SOAPService");
+  QName portName=new QName("http://apache.org/hello_world_soap_http","SoapOverHttpRouter");
+  Service service=Service.create(serviceName);
+  service.addPort(portName,SOAPBinding.SOAP11HTTP_BINDING,endpointAddress);
+  Dispatch<SOAPMessage> dispatch=service.createDispatch(portName,SOAPMessage.class,Service.Mode.MESSAGE);
+  BindingProvider bp=(BindingProvider)dispatch;
+  MessageFactory factory=((SOAPBinding)bp.getBinding()).getMessageFactory();
+  SOAPMessage request=factory.createMessage();
+  SOAPBody body=request.getSOAPBody();
+  QName payloadName=new QName("http://apache.org/hello_world_soap_http/types","greetMe","ns1");
+  SOAPBodyElement payload=body.addBodyElement(payloadName);
+  SOAPElement message=payload.addChildElement("requestType");
+  message.addTextNode("Hello Camel!!");
+  SOAPMessage reply=null;
+  try {
+    reply=dispatch.invoke(request);
+  }
+ catch (  WebServiceException wse) {
+    wse.printStackTrace();
+  }
+  body=reply.getSOAPBody();
+  QName responseName=new QName("http://apache.org/hello_world_soap_http/types","greetMeResponse");
+  SOAPElement bodyElement=(SOAPElement)body.getChildElements(responseName).next();
+  String responseMessageText=bodyElement.getTextContent();
+  System.out.println(responseMessageText);
+}
