@@ -1,0 +1,17 @@
+{
+  SimpleRouteBuilder builder=new SimpleRouteBuilder();
+  builder.setFromUri("file://src/test/data?noop=true");
+  builder.setBeanClass("org.apache.camel.spring.example.MyProcessor");
+  builder.setToUri("mock:results");
+  Main main=new Main();
+  main.addRouteBuilder(builder);
+  main.start();
+  SpringCamelContext camelContext=main.getCamelContext();
+  assertNotNull(camelContext);
+  MockEndpoint endpoint=camelContext.getEndpoint("mock:results",MockEndpoint.class);
+  endpoint.expectedMessageCount(2);
+  endpoint.assertIsSatisfied();
+  List<Exchange> list=endpoint.getReceivedExchanges();
+  LOG.debug("Received: " + list);
+  main.stop();
+}
