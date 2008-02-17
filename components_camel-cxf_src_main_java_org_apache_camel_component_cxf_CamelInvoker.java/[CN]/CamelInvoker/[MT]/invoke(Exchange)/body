@@ -1,0 +1,18 @@
+{
+  Message inMessage=exchange.getInMessage();
+  CxfEndpoint endpoint=(CxfEndpoint)cxfConsumer.getEndpoint();
+  CxfExchange cxfExchange=endpoint.createExchange(inMessage);
+  try {
+    cxfConsumer.getProcessor().process(cxfExchange);
+  }
+ catch (  Exception ex) {
+    throw new Fault(ex);
+  }
+  copybackExchange(cxfExchange,exchange);
+  Message outMessage=exchange.getOutMessage();
+  outMessage.put(Message.INBOUND_MESSAGE,Boolean.FALSE);
+  BindingOperationInfo boi=exchange.get(BindingOperationInfo.class);
+  if (boi != null) {
+    exchange.put(BindingMessageInfo.class,boi.getOutput());
+  }
+}

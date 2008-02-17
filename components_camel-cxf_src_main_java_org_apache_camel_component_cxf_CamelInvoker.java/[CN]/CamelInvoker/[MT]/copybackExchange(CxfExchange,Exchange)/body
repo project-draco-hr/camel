@@ -1,25 +1,25 @@
 {
+  final Endpoint endpoint=exchange.get(Endpoint.class);
   Message outMessage=null;
   if (result.isFailed()) {
     CxfMessage fault=result.getFault();
     outMessage=exchange.getInFaultMessage();
     if (outMessage == null) {
-      outMessage=new MessageImpl();
+      outMessage=endpoint.getBinding().createMessage();
+      outMessage.setExchange(exchange);
       exchange.setInFaultMessage(outMessage);
     }
     Exception ex=(Exception)fault.getBody();
     outMessage.setContent(Exception.class,ex);
   }
  else {
-    if (LOG.isLoggable(Level.FINEST)) {
-      LOG.finest("Payload is a response.");
-    }
     outMessage=result.getOutMessage();
-    if (outMessage == null) {
-      Endpoint ep=exchange.get(Endpoint.class);
-      outMessage=ep.getBinding().createMessage();
-      exchange.setOutMessage(outMessage);
+    if (LOG.isLoggable(Level.FINEST)) {
+      LOG.finest("Get the response outMessage " + outMessage);
     }
+    if (outMessage == null) {
+      outMessage=endpoint.getBinding().createMessage();
+    }
+    exchange.setOutMessage(outMessage);
   }
-  return outMessage;
 }
