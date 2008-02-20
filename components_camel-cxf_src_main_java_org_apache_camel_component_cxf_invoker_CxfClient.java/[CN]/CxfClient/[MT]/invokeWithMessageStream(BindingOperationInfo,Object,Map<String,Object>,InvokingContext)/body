@@ -7,18 +7,14 @@
     responseContext=(Map<String,Object>)context.get(RESPONSE_CONTEXT);
   }
   Exchange exchange=new ExchangeImpl();
-  exchange.put(MessageObserver.class,this);
+  setExchangeProperties(exchange,getEndpoint(),bi);
   exchange.put(InvokingContext.class,invokingContext);
-  exchange.put(Bus.class,bus);
-  exchange.put(Endpoint.class,getEndpoint());
-  exchange.put(BindingInfo.class,getEndpoint().getEndpointInfo().getBinding());
   if (bi != null) {
-    exchange.put(BindingOperationInfo.class,bi);
     exchange.put(BindingMessageInfo.class,bi.getInput());
     exchange.setOneWay(bi.getOperationInfo().isOneWay());
   }
   Message message=prepareMessage(exchange,requestContext,param,invokingContext);
-  PhaseInterceptorChain chain=setupInterceptorChain(endpoint);
+  PhaseInterceptorChain chain=setupInterceptorChain(getEndpoint());
   message.setInterceptorChain(chain);
   modifyChain(chain,requestContext);
   chain.setFaultObserver(outFaultObserver);
