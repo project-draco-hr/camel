@@ -5,14 +5,22 @@
       exchange=endpoint.getQueue().poll(1000,TimeUnit.MILLISECONDS);
     }
  catch (    InterruptedException e) {
-      break;
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Interupted: " + e,e);
+      }
+      continue;
     }
     if (exchange != null && isRunAllowed()) {
-      processor.process(exchange,new AsyncCallback(){
-        public void done(        boolean sync){
+      try {
+        processor.process(exchange,new AsyncCallback(){
+          public void done(          boolean sync){
+          }
         }
-      }
 );
+      }
+ catch (      Exception e) {
+        LOG.error("Seda queue caught: " + e,e);
+      }
     }
   }
 }
