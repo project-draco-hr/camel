@@ -4,8 +4,23 @@
   }
   IoHandler handler=new IoHandlerAdapter(){
     @Override public void messageReceived(    IoSession session,    Object object) throws Exception {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Received body: " + object);
+      }
       MinaExchange exchange=endpoint.createExchange(session,object);
       getProcessor().process(exchange);
+      if (ExchangeHelper.isOutCapable(exchange)) {
+        Object body=exchange.getOut().getBody();
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Writing body: " + body);
+        }
+        session.write(body);
+      }
+ else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Can not write body since this exchange is not out capable: " + exchange);
+        }
+      }
     }
   }
 ;
