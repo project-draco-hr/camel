@@ -3,14 +3,19 @@
   long end=start + batchTimeout;
   for (int i=0; !isBatchCompleted(i); i++) {
     long timeout=end - System.currentTimeMillis();
+    if (timeout < 0L) {
+      LOG.debug("batch timeout expired at batch index:" + i);
+      break;
+    }
     Exchange exchange=consumer.receive(timeout);
     if (exchange == null) {
+      LOG.debug("receive with timeout: " + timeout + " expired at batch index:"+ i);
       break;
     }
     collection.add(exchange);
   }
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Finsihed batch size: " + batchSize + " timeout: "+ batchTimeout+ " so sending set: "+ collection);
+    LOG.debug("Finished batch size: " + batchSize + " timeout: "+ batchTimeout+ " so sending set: "+ collection);
   }
   Iterator<Exchange> iter=collection.iterator();
   while (iter.hasNext()) {
