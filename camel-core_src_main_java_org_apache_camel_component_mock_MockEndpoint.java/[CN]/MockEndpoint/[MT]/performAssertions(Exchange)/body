@@ -1,0 +1,20 @@
+{
+  Message in=exchange.getIn();
+  Object actualBody=in.getBody();
+  if (expectedBodyValues != null) {
+    int index=actualBodyValues.size();
+    if (expectedBodyValues.size() > index) {
+      Object expectedBody=expectedBodyValues.get(index);
+      if (expectedBody != null) {
+        actualBody=in.getBody(expectedBody.getClass());
+      }
+      actualBodyValues.add(actualBody);
+    }
+  }
+  LOG.debug(getEndpointUri() + " >>>> " + (++counter)+ " : "+ exchange+ " with body: "+ actualBody);
+  receivedExchanges.add(exchange);
+  Processor processor=processors.get(getReceivedCounter()) != null ? processors.get(getReceivedCounter()) : defaultProcessor;
+  if (processor != null) {
+    processor.process(exchange);
+  }
+}
