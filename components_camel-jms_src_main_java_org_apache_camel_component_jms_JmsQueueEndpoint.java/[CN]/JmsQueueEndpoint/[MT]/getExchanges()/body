@@ -1,0 +1,18 @@
+{
+  String queue=getDestination();
+  JmsOperations template=getConfiguration().createInOnlyTemplate(false,queue);
+  final List<Exchange> answer=new ArrayList<Exchange>();
+  template.browse(queue,new BrowserCallback(){
+    public Object doInJms(    Session session,    QueueBrowser browser) throws JMSException {
+      Enumeration iter=browser.getEnumeration();
+      while (iter.hasMoreElements()) {
+        Message message=(Message)iter.nextElement();
+        JmsExchange exchange=createExchange(message);
+        answer.add(exchange);
+      }
+      return answer;
+    }
+  }
+);
+  return answer;
+}
