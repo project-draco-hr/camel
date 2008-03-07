@@ -1,24 +1,29 @@
 {
   Endpoint from=routeContext.getEndpoint();
   final Processor processor=routeContext.createProcessor(this);
-  AggregationStrategy strategy=getAggregationStrategy();
-  if (strategy == null && strategyRef != null) {
-    strategy=routeContext.lookup(strategyRef,AggregationStrategy.class);
-  }
-  if (strategy == null) {
-    strategy=new UseLatestAggregationStrategy();
-  }
-  Expression aggregateExpression=getExpression().createExpression(routeContext);
-  Predicate predicate=null;
-  if (completedPredicate != null) {
-    predicate=completedPredicate.createPredicate(routeContext);
-  }
   final Aggregator service;
-  if (predicate != null) {
-    service=new Aggregator(from,processor,aggregateExpression,strategy,predicate);
+  if (aggregationCollection != null) {
+    service=new Aggregator(from,processor,aggregationCollection);
   }
  else {
-    service=new Aggregator(from,processor,aggregateExpression,strategy);
+    AggregationStrategy strategy=getAggregationStrategy();
+    if (strategy == null && strategyRef != null) {
+      strategy=routeContext.lookup(strategyRef,AggregationStrategy.class);
+    }
+    if (strategy == null) {
+      strategy=new UseLatestAggregationStrategy();
+    }
+    Expression aggregateExpression=getExpression().createExpression(routeContext);
+    Predicate predicate=null;
+    if (completedPredicate != null) {
+      predicate=completedPredicate.createPredicate(routeContext);
+    }
+    if (predicate != null) {
+      service=new Aggregator(from,processor,aggregateExpression,strategy,predicate);
+    }
+ else {
+      service=new Aggregator(from,processor,aggregateExpression,strategy);
+    }
   }
   if (batchSize != null) {
     service.setBatchSize(batchSize);
