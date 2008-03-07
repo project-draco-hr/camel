@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from(startEndpointUri).to("jms:queue:test.b");
+      from("jms:queue:test.b").aggregator(header("cheese"),new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          try {
+            Thread.sleep(2 * BatchProcessor.DEFAULT_BATCH_TIMEOUT);
+          }
+ catch (          InterruptedException e) {
+            LOG.error("aggregration delay sleep inturrepted",e);
+            fail("aggregration delay sleep inturrepted");
+          }
+          return newExchange;
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
