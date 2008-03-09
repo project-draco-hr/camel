@@ -18,15 +18,20 @@
       getProcessor().process(exchange);
       if (ExchangeHelper.isOutCapable(exchange)) {
         Object body=exchange.getOut().getBody();
-        if (body != null) {
+        boolean failed=exchange.isFailed();
+        if (failed) {
+          LOG.warn("Can not write body since the exchange is failed, closing session: " + exchange);
+          session.close();
+        }
+ else         if (body == null) {
+          LOG.warn("Can not write body since its null, closing session: " + exchange);
+          session.close();
+        }
+ else {
           if (LOG.isDebugEnabled()) {
             LOG.debug("Writing body: " + body);
           }
           session.write(body);
-        }
- else {
-          LOG.warn("Can not write body since its null, closing session");
-          session.close();
         }
       }
  else {

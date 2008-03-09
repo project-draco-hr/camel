@@ -18,11 +18,11 @@
       WriteFuture future=session.write(body);
       future.join();
       if (!future.isWritten()) {
-        throw new CamelException("Timed out waiting for response: " + exchange);
+        throw new ExchangeTimedOutException(exchange,MAX_WAIT_RESPONSE);
       }
       latch.await(MAX_WAIT_RESPONSE,TimeUnit.MILLISECONDS);
       if (latch.getCount() == 1) {
-        throw new CamelException("No response from server within " + MAX_WAIT_RESPONSE + " millisecs");
+        throw new ExchangeTimedOutException(exchange,MAX_WAIT_RESPONSE);
       }
       ResponseHandler handler=(ResponseHandler)session.getHandler();
       if (handler.getCause() != null) {
