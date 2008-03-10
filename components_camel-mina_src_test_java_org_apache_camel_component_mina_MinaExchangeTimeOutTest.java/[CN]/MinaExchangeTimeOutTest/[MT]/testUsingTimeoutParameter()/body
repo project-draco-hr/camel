@@ -1,12 +1,15 @@
 {
-  LOG.info("Sending a message to Camel that takes 35 sec to reply, so be patient");
-  Endpoint endpoint=this.context.getEndpoint("mina:tcp://localhost:" + PORT + "?textline=true&sync=true&timeout=40000");
+  Endpoint endpoint=this.context.getEndpoint("mina:tcp://localhost:" + PORT + "?textline=true&sync=true&timeout=2000");
   Producer producer=endpoint.createProducer();
   producer.start();
   Exchange exchange=producer.createExchange();
   exchange.getIn().setBody("Hello World");
-  producer.process(exchange);
-  String out=exchange.getOut().getBody(String.class);
-  assertEquals("Okay I will be faster in the future",out);
+  try {
+    producer.process(exchange);
+    fail("Should have thrown an ExchangeTimedOutException wrapped in a RuntimeCamelException");
+  }
+ catch (  Exception e) {
+    assertTrue("Should have thrown an ExchangeTimedOutException",e instanceof ExchangeTimedOutException);
+  }
   producer.stop();
 }
