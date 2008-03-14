@@ -4,7 +4,12 @@
       from(ROUTER_ENDPOINT_URI).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           Message message=exchange.getFault();
-          message.setBody(new CamelException(EXCEPTION_MESSAGE));
+          SoapFault fault=new SoapFault(EXCEPTION_MESSAGE,SoapFault.FAULT_CODE_CLIENT);
+          Element detail=fault.getOrCreateDetail();
+          Document doc=detail.getOwnerDocument();
+          Text tn=doc.createTextNode(DETAIL_TEXT);
+          detail.appendChild(tn);
+          message.setBody(fault);
         }
       }
 );
