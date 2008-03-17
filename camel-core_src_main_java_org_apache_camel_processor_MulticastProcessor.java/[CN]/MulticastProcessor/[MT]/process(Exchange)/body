@@ -1,14 +1,43 @@
 {
   Exchange result=null;
-  for (  Processor producer : processors) {
-    Exchange copy=copyExchangeStrategy(producer,exchange);
-    producer.process(copy);
-    if (aggregationStrategy != null) {
-      if (result == null) {
-        result=copy;
+  if (isParallelProcessing) {
+    Exchange[] exchanges=new Exchange[processors.size()];
+    final CountDownLatch completedExchanges=new CountDownLatch(exchanges.length);
+    int i=0;
+    for (    Processor producer : processors) {
+      exchanges[i]=copyExchangeStrategy(producer,exchange);
+      ProcessCall call=new ProcessCall(exchanges[i],producer,new AsyncCallback(){
+        public void done(        boolean doneSynchronously){
+          completedExchanges.countDown();
+        }
       }
+);
+      executor.execute(call);
+      i++;
+    }
+    completedExchanges.await();
+    if (aggregationStrategy != null) {
+      for (      Exchange resultExchange : exchanges) {
+        if (result == null) {
+          result=resultExchange;
+        }
  else {
-        result=aggregationStrategy.aggregate(result,copy);
+          result=aggregationStrategy.aggregate(result,resultExchange);
+        }
+      }
+    }
+  }
+ else {
+    for (    Processor producer : processors) {
+      Exchange copy=copyExchangeStrategy(producer,exchange);
+      producer.process(copy);
+      if (aggregationStrategy != null) {
+        if (result == null) {
+          result=copy;
+        }
+ else {
+          result=aggregationStrategy.aggregate(result,copy);
+        }
       }
     }
   }
