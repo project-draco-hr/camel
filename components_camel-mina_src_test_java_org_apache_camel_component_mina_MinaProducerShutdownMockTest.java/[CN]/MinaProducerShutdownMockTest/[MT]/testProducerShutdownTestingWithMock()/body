@@ -1,0 +1,19 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello World");
+  SocketConnector mockConnector=createMock(SocketConnector.class);
+  mockConnector.setWorkerTimeout(0);
+  replay(mockConnector);
+  Endpoint endpoint=context.getEndpoint(uri);
+  Exchange exchange=endpoint.createExchange();
+  Producer producer=endpoint.createProducer();
+  producer.start();
+  exchange.getIn().setBody("Hello World");
+  producer.process(exchange);
+  Field field=producer.getClass().getDeclaredField("connector");
+  field.setAccessible(true);
+  field.set(producer,mockConnector);
+  producer.stop();
+  verify(mockConnector);
+  assertMockEndpointsSatisifed();
+}

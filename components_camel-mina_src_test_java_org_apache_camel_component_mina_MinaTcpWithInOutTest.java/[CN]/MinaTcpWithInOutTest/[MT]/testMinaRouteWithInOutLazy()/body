@@ -2,28 +2,23 @@
   container=new DefaultCamelContext();
   latch=new CountDownLatch(1);
   uri="mina:tcp://localhost:6321?textline=true&lazySessionCreation=true";
-  Producer<Exchange> producer;
   container.addRoutes(createRouteBuilder());
   container.start();
-  ReverserServer server;
-  server=new ReverserServer();
+  ReverserServer server=new ReverserServer();
   server.start();
-  Endpoint<Exchange> endpoint=container.getEndpoint("direct:x");
+  Endpoint endpoint=container.getEndpoint("direct:x");
   Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
   Message message=exchange.getIn();
-  String hello="Hello!";
-  message.setBody(hello);
+  message.setBody("Hello!");
   message.setHeader("cheese",123);
-  producer=endpoint.createProducer();
+  Producer producer=endpoint.createProducer();
   producer.start();
   producer.process(exchange);
   boolean received=latch.await(5,TimeUnit.SECONDS);
   assertTrue("Did not receive the message!",received);
   assertNotNull(receivedExchange.getIn());
   assertEquals("!olleH",receivedExchange.getIn().getBody());
-  if (producer != null) {
-    producer.stop();
-  }
+  producer.stop();
   container.stop();
   server.stop();
 }

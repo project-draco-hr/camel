@@ -7,36 +7,29 @@
   }
   Object body=MinaPayloadHelper.getIn(endpoint,exchange);
   if (body == null) {
-    LOG.warn("No payload for exchange: " + exchange);
+    LOG.warn("No payload to send for exchange: " + exchange);
+    return;
   }
- else {
-    if (ExchangeHelper.isOutCapable(exchange)) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Writing body: " + body);
-      }
-      latch=new CountDownLatch(1);
-      WriteFuture future=session.write(body);
-      future.join();
-      if (!future.isWritten()) {
-        throw new ExchangeTimedOutException(exchange,timeout);
-      }
-      latch.await(timeout,TimeUnit.MILLISECONDS);
-      if (latch.getCount() == 1) {
-        throw new ExchangeTimedOutException(exchange,timeout);
-      }
-      ResponseHandler handler=(ResponseHandler)session.getHandler();
-      if (handler.getCause() != null) {
-        throw new CamelException("Response Handler had an exception",handler.getCause());
-      }
- else {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Handler message: " + handler.getMessage());
-        }
-        MinaPayloadHelper.setOut(exchange,handler.getMessage());
-      }
+  sync=ExchangeHelper.isOutCapable(exchange);
+  if (sync) {
+    latch=new CountDownLatch(1);
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Writing body: " + body);
+  }
+  MinaHelper.writeBody(session,body,exchange);
+  if (sync) {
+    LOG.debug("Waiting for response");
+    latch.await(timeout,TimeUnit.MILLISECONDS);
+    if (latch.getCount() == 1) {
+      throw new ExchangeTimedOutException(exchange,timeout);
+    }
+    ResponseHandler handler=(ResponseHandler)session.getHandler();
+    if (handler.getCause() != null) {
+      throw new CamelException("Response Handler had an exception",handler.getCause());
     }
  else {
-      session.write(body);
+      MinaPayloadHelper.setOut(exchange,handler.getMessage());
     }
   }
 }

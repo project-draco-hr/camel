@@ -2,19 +2,24 @@
   IoAcceptor acceptor=new SocketAcceptor();
   SocketAddress address=new InetSocketAddress(connectUri.getHost(),connectUri.getPort());
   IoConnector connector=new SocketConnector();
-  SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
-  configureSocketCodecFactory(connectorConfig,parameters);
-  connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
-  SocketAcceptorConfig acceptorConfig=new SocketAcceptorConfig();
-  configureSocketCodecFactory(acceptorConfig,parameters);
-  acceptorConfig.setReuseAddress(true);
-  acceptorConfig.setDisconnectOnUnbind(true);
-  acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   boolean lazySessionCreation=ObjectConverter.toBool(parameters.get("lazySessionCreation"));
   long timeout=getTimeoutParameter(parameters);
   boolean transferExchange=ObjectConverter.toBool(parameters.get("transferExchange"));
-  MinaEndpoint endpoint=new MinaEndpoint(uri,this,address,acceptor,acceptorConfig,connector,connectorConfig,lazySessionCreation,timeout,transferExchange);
   boolean sync=ObjectConverter.toBool(parameters.get("sync"));
+  boolean minaLogger=ObjectConverter.toBool(parameters.get("minaLogger"));
+  SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
+  configureSocketCodecFactory("MinaProducer",connectorConfig,parameters);
+  if (minaLogger) {
+    connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  SocketAcceptorConfig acceptorConfig=new SocketAcceptorConfig();
+  configureSocketCodecFactory("MinaConsumer",acceptorConfig,parameters);
+  acceptorConfig.setReuseAddress(true);
+  acceptorConfig.setDisconnectOnUnbind(true);
+  if (minaLogger) {
+    acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  MinaEndpoint endpoint=new MinaEndpoint(uri,this,address,acceptor,acceptorConfig,connector,connectorConfig,lazySessionCreation,timeout,transferExchange);
   if (sync) {
     endpoint.setExchangePattern(ExchangePattern.InOut);
   }

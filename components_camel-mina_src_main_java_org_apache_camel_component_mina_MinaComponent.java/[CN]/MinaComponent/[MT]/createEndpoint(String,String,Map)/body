@@ -1,16 +1,19 @@
 {
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating MinaEndpoint from uri: " + uri);
+  }
   URI u=new URI(remaining);
   String protocol=u.getScheme();
-  if (protocol.equals("tcp")) {
-    return createSocketEndpoint(uri,u,parameters);
+  if (protocol != null) {
+    if (protocol.equals("tcp")) {
+      return createSocketEndpoint(uri,u,parameters);
+    }
+ else     if (protocol.equals("udp") || protocol.equals("mcast") || protocol.equals("multicast")) {
+      return createDatagramEndpoint(uri,u,parameters);
+    }
+ else     if (protocol.equals("vm")) {
+      return createVmEndpoint(uri,u);
+    }
   }
- else   if (protocol.equals("udp") || protocol.equals("mcast") || protocol.equals("multicast")) {
-    return createDatagramEndpoint(uri,u,parameters);
-  }
- else   if (protocol.equals("vm")) {
-    return createVmEndpoint(uri,u);
-  }
- else {
-    throw new IllegalArgumentException("Unrecognised MINA protocol: " + protocol + " for uri: "+ uri);
-  }
+  throw new IllegalArgumentException("Unrecognised MINA protocol: " + protocol + " for uri: "+ uri);
 }
