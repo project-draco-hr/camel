@@ -28,12 +28,24 @@
     }
 );
     try {
-      Message message;
-      if (requestTimeout < 0) {
-        message=(Message)future.get();
-      }
+      Message message=null;
+      try {
+        if (requestTimeout < 0) {
+          message=(Message)future.get();
+        }
  else {
-        message=(Message)future.get(requestTimeout,TimeUnit.MILLISECONDS);
+          message=(Message)future.get(requestTimeout,TimeUnit.MILLISECONDS);
+        }
+      }
+ catch (      InterruptedException e) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Future interupted: " + e,e);
+        }
+      }
+catch (      TimeoutException e) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Future timed out: " + e,e);
+        }
       }
       if (message != null) {
         exchange.setOut(new JmsMessage(message,endpoint.getBinding()));
