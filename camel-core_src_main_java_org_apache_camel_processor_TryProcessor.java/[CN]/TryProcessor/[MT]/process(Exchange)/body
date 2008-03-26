@@ -7,25 +7,26 @@
       e=null;
     }
   }
- catch (  Exception ex) {
+ catch (  Throwable ex) {
     e=ex;
     exchange.setException(e);
   }
-  if (e != null) {
-    try {
+  Exception unexpected=null;
+  try {
+    if (e != null) {
+      LOG.info("Caught exception while processing exchange.",e);
       handleException(exchange,e);
     }
- catch (    Exception ex) {
-      throw ex;
-    }
-catch (    Throwable ex) {
-      throw new RuntimeCamelException(ex);
-    }
- finally {
-      processFinally(exchange);
-    }
-  }
- else {
     processFinally(exchange);
+  }
+ catch (  Exception ex) {
+    unexpected=ex;
+  }
+catch (  Throwable ex) {
+    unexpected=new RuntimeCamelException(ex);
+  }
+  if (unexpected != null) {
+    LOG.warn("Caught exception inside catch clause.",unexpected);
+    throw unexpected;
   }
 }
