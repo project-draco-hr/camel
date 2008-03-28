@@ -1,9 +1,20 @@
 {
-  camelContext=SpringCamelContext.springCamelContext(applicationContext);
-  if (ObjectHelper.isNotNullAndNonEmpty(dotOutputDir)) {
-    RouteDotGenerator generator=new RouteDotGenerator(dotOutputDir);
-    LOG.info("Generating DOT file for routes: " + dotOutputDir + " for: "+ camelContext);
-    generator.drawRoutes(camelContext);
+  Map<String,SpringCamelContext> map=applicationContext.getBeansOfType(SpringCamelContext.class);
+  Set<Map.Entry<String,SpringCamelContext>> entries=map.entrySet();
+  int size=entries.size();
+  for (  Map.Entry<String,SpringCamelContext> entry : entries) {
+    String name=entry.getKey();
+    SpringCamelContext camelContext=entry.getValue();
+    camelContexts.add(camelContext);
+    String outputDir=dotOutputDir;
+    if (ObjectHelper.isNotNullAndNonEmpty(outputDir)) {
+      if (size > 1) {
+        outputDir+="/" + name;
+      }
+      RouteDotGenerator generator=new RouteDotGenerator(outputDir);
+      LOG.info("Generating DOT file for routes: " + outputDir + " for: "+ camelContext+ " with name: "+ name);
+      generator.drawRoutes(camelContext);
+    }
+    postProcesCamelContext(camelContext);
   }
-  postProcesCamelContext(camelContext);
 }
