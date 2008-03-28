@@ -1,13 +1,19 @@
 {
-  T entity=findEntityByCorrelationKey(key);
-  if (entity == null) {
-    entity=createEntity(exchange,key);
-    setKeyProperty(entity,key);
-    ProcessDefinition definition=ProcessDefinition.getRefreshedProcessDefinition(template,getActivityRules().getProcessRules().getProcessDefinition());
-    setProcessDefinitionProperty(entity,definition);
-    template.persist(entity);
-    LOG.debug("About to flush on entity: " + entity + " with key: "+ key);
-    template.flush();
+  lock.lock();
+  try {
+    T entity=findEntityByCorrelationKey(key);
+    if (entity == null) {
+      entity=createEntity(exchange,key);
+      setKeyProperty(entity,key);
+      ProcessDefinition definition=ProcessDefinition.getRefreshedProcessDefinition(template,getActivityRules().getProcessRules().getProcessDefinition());
+      setProcessDefinitionProperty(entity,definition);
+      template.persist(entity);
+      LOG.debug("About to flush on entity: " + entity + " with key: "+ key);
+      template.flush();
+    }
+    return entity;
   }
-  return entity;
+  finally {
+    lock.unlock();
+  }
 }

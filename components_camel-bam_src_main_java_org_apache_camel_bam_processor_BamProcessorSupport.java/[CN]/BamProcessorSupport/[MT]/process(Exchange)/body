@@ -1,40 +1,19 @@
 {
-  Object entity=null;
-  for (int i=0; entity == null && i < maximumRetries; i++) {
-    if (i > 0) {
-      LOG.info("Retry attempt due to duplicate row: " + i);
-    }
-    entity=transactionTemplate.execute(new TransactionCallback(){
-      public Object doInTransaction(      TransactionStatus status){
-        try {
-          Object key=getCorrelationKey(exchange);
-          T entity=loadEntity(exchange,key);
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Correlation key: " + key + " with entity: "+ entity);
-          }
-          processEntity(exchange,entity);
-          return entity;
+  Object entity=transactionTemplate.execute(new TransactionCallback(){
+    public Object doInTransaction(    TransactionStatus status){
+      try {
+        Object key=getCorrelationKey(exchange);
+        T entity=loadEntity(exchange,key);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Correlation key: " + key + " with entity: "+ entity);
         }
- catch (        JpaSystemException e) {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Likely exception is due to duplicate row in concurrent setting: " + e,e);
-          }
-          LOG.info("Attempt to insert duplicate row due to concurrency issue, so retrying: " + e);
-          return retryDueToDuplicate(status);
-        }
-catch (        DataIntegrityViolationException e) {
-          Throwable throwable=e.getCause();
-          if (throwable instanceof EntityExistsException) {
-            LOG.info("Attempt to insert duplicate row due to concurrency issue, so retrying: " + throwable);
-            return retryDueToDuplicate(status);
-          }
-          return onError(status,throwable);
-        }
-catch (        Throwable e) {
-          return onError(status,e);
-        }
+        processEntity(exchange,entity);
+        return entity;
+      }
+ catch (      Exception e) {
+        return onError(status,e);
       }
     }
-);
   }
+);
 }
