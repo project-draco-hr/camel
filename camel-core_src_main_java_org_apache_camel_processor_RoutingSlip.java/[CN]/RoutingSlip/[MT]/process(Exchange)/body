@@ -1,0 +1,15 @@
+{
+  Message message=exchange.getIn();
+  String[] recipients=recipients(message);
+  Exchange current=exchange;
+  for (  String nextRecipient : recipients) {
+    Endpoint<Exchange> endpoint=resolveEndpoint(exchange,nextRecipient);
+    Producer<Exchange> producer=producerCache.getProducer(endpoint);
+    Exchange ex=endpoint.createExchange(ExchangePattern.InOut);
+    updateRoutingSlip(current);
+    copyOutToIn(ex,current);
+    producer.process(ex);
+    current=ex;
+  }
+  ExchangeHelper.copyResults(exchange,current);
+}
