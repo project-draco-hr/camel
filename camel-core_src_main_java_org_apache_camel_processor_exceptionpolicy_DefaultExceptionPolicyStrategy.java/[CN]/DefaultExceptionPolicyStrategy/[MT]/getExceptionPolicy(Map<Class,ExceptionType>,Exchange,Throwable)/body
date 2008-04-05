@@ -1,0 +1,22 @@
+{
+  int targetLevel=getInheritanceLevel(exception.getClass());
+  ExceptionType candidate=null;
+  int candidateDiff=Integer.MAX_VALUE;
+  Set<Map.Entry<Class,ExceptionType>> entries=exceptionPolicices.entrySet();
+  for (  Map.Entry<Class,ExceptionType> entry : entries) {
+    Class clazz=entry.getKey();
+    ExceptionType type=entry.getValue();
+    if (clazz.isInstance(exception)) {
+      int level=getInheritanceLevel(clazz);
+      int diff=targetLevel - level;
+      if (diff < candidateDiff) {
+        candidate=type;
+        candidateDiff=diff;
+      }
+    }
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Using " + candidate + " as the exception policy");
+  }
+  return candidate;
+}

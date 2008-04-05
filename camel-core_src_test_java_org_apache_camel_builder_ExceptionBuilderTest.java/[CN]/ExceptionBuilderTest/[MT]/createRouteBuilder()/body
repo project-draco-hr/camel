@@ -1,0 +1,34 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      exception(NullPointerException.class).maximumRedeliveries(1).setHeader(MESSAGE_INFO,"Damm a NPE").to(errorQueue);
+      exception(IOException.class).initialRedeliveryDelay(5000L).maximumRedeliveries(3).backOffMultiplier(1.0).useExponentialBackOff().setHeader(MESSAGE_INFO,"Damm somekind of IO exception").to(errorQueue);
+      exception(Exception.class).initialRedeliveryDelay(1000L).maximumRedeliveries(2).setHeader(MESSAGE_INFO,"Damm just exception").to(errorQueue);
+      exception(MyBaseBusinessException.class).initialRedeliveryDelay(1000L).maximumRedeliveries(3).setHeader(MESSAGE_INFO,"Damm my business is not going to well").to(businessErrorQueue);
+      exception(GeneralSecurityException.class).exception(KeyException.class).maximumRedeliveries(1).setHeader(MESSAGE_INFO,"Damm some security error").to(securityErrorQueue);
+      from("direct:a").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String s=exchange.getIn().getBody(String.class);
+          if ("Hello NPE".equals(s)) {
+            throw new NullPointerException();
+          }
+ else           if ("Hello IO".equals(s)) {
+            throw new ConnectException("Forced for testing - can not connect to remote server");
+          }
+ else           if ("Hello Exception".equals(s)) {
+            throw new CamelExchangeException("Forced for testing",exchange);
+          }
+ else           if ("Hello business".equals(s)) {
+            throw new MyBusinessException();
+          }
+ else           if ("I am not allowed to do this".equals(s)) {
+            throw new KeyManagementException();
+          }
+          exchange.getOut().setBody("Hello World");
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
