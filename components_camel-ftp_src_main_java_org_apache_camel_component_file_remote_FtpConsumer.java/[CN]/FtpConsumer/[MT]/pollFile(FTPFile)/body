@@ -1,13 +1,16 @@
 {
   if (ftpFile.getTimestamp().getTimeInMillis() > lastPollTime) {
     if (isMatched(ftpFile)) {
+      String fullFileName=getFullFileName(ftpFile);
       final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
       client.retrieveFile(ftpFile.getName(),byteArrayOutputStream);
-      RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(ftpFile),byteArrayOutputStream);
+      RemoteFileExchange exchange=endpoint.createExchange(fullFileName,byteArrayOutputStream);
       if (isSetNames()) {
-        String relativePath=getFullFileName(ftpFile).substring(endpoint.getConfiguration().getFile().length());
-        if (relativePath.startsWith("/")) {
-          relativePath=relativePath.substring(1);
+        String ftpBasePath=endpoint.getConfiguration().getFile();
+        String relativePath=fullFileName.substring(ftpBasePath.length() + 1);
+        relativePath=relativePath.replaceFirst("/","");
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Setting exchange filename to " + relativePath);
         }
         exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
       }
