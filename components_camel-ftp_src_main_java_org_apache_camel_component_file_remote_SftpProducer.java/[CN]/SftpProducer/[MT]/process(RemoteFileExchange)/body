@@ -4,16 +4,17 @@
     String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
     int lastPathIndex=fileName.lastIndexOf('/');
     if (lastPathIndex != -1) {
-      boolean success=buildDirectory(channel,fileName.substring(0,lastPathIndex));
+      String directory=fileName.substring(0,lastPathIndex);
+      boolean success=buildDirectory(channel,directory);
       if (!success) {
-        LOG.warn("Couldn't buildDirectory: " + fileName.substring(0,lastPathIndex) + " (either permissions deny it, or it already exists)");
+        LOG.warn("Couldn't build directory: " + directory + " (either permissions deny it, or it already exists)");
       }
     }
     channel.put(payload,fileName);
     LOG.info("Sent: " + fileName + " to "+ endpoint.getConfiguration());
   }
   finally {
-    if (null != payload) {
+    if (payload != null) {
       payload.close();
     }
   }
