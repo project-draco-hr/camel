@@ -1,0 +1,20 @@
+{
+  super(endpoint,processor);
+  this.endpoint=endpoint;
+  context=(SpringCamelContext)endpoint.getContext();
+  channelRegistry=(ChannelRegistry)context.getApplicationContext().getBean(MessageBusParser.MESSAGE_BUS_BEAN_NAME);
+  inputChannelName=endpoint.getDefaultChannel();
+  if (ObjectHelper.isNullOrBlank(inputChannelName)) {
+    inputChannelName=endpoint.getInputChannel();
+  }
+  if (!ObjectHelper.isNullOrBlank(inputChannelName)) {
+    inputChannel=(MessageChannel)channelRegistry.lookupChannel(inputChannelName);
+    ObjectHelper.notNull(inputChannel,"The inputChannel with the name [" + inputChannelName + "]");
+  }
+ else {
+    throw new RuntimeCamelException("Can't find the right inputChannelName");
+  }
+  if (endpoint.isInOut()) {
+    endpoint.setExchangePattern(ExchangePattern.InOut);
+  }
+}
