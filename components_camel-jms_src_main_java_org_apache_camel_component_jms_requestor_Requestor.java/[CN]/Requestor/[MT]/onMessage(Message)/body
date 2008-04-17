@@ -6,15 +6,15 @@
       return;
     }
     Object handler=requestMap.get(correlationID);
-    if (handler == null) {
-      LOG.warn("Response received for unknown correlationID: " + correlationID + " request: "+ message);
-    }
- else     if (handler instanceof ReplyHandler) {
+    if (handler != null && handler instanceof ReplyHandler) {
       ReplyHandler replyHandler=(ReplyHandler)handler;
       boolean complete=replyHandler.handle(message);
       if (complete) {
         requestMap.remove(correlationID);
       }
+    }
+ else {
+      DeferredRequestReplyMap.processDeferredRequests(this,deferredRequestMap,deferredReplyMap,correlationID,getMaxRequestTimeout(),message);
     }
   }
  catch (  JMSException e) {

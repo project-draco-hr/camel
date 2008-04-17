@@ -1,7 +1,7 @@
 {
   final org.apache.camel.Message in=exchange.getIn();
   if (exchange.getPattern().isOutCapable()) {
-    Requestor requestor;
+    final Requestor requestor;
     try {
       requestor=endpoint.getRequestor();
     }
@@ -9,32 +9,37 @@
       throw new RuntimeExchangeException(e,exchange);
     }
     final Destination replyTo=requestor.getReplyTo();
+    final boolean msgIdAsCorrId=endpoint.getConfiguration().isUseMessageIDAsCorrelationID();
     String correlationId=in.getHeader("JMSCorrelationID",String.class);
-    if (correlationId == null) {
-      correlationId=getUuidGenerator().generateId();
-      in.setHeader("JMSCorrelationID",correlationId);
+    if (correlationId == null && !msgIdAsCorrId) {
+      in.setHeader("JMSCorrelationID",getUuidGenerator().generateId());
     }
-    long requestTimeout=endpoint.getRequestTimeout();
-    FutureTask future=requestor.getReceiveFuture(correlationId,requestTimeout);
-    getInOutTemplate().send(endpoint.getDestination(),new MessageCreator(){
+    final Out<FutureTask> futureHolder=new Out<FutureTask>();
+    final DeferredMessageSentCallback callback=(msgIdAsCorrId) ? deferredRequestReplyMap.createDeferredMessageSentCallback() : null;
+    final CamelJmsTemplate template=(CamelJmsTemplate)getInOutTemplate();
+    template.send(endpoint.getDestination(),new MessageCreator(){
       public Message createMessage(      Session session) throws JMSException {
         Message message=endpoint.getBinding().makeJmsMessage(exchange,in,session);
         message.setJMSReplyTo(replyTo);
+        FutureTask future=null;
+        future=(!msgIdAsCorrId) ? requestor.getReceiveFuture(message.getJMSCorrelationID(),endpoint.getRequestTimeout()) : requestor.getReceiveFuture(callback);
+        futureHolder.set(future);
         if (LOG.isDebugEnabled()) {
           LOG.debug(endpoint + " sending JMS message: " + message);
         }
         return message;
       }
     }
-);
+,callback);
+    long requestTimeout=endpoint.getRequestTimeout();
     try {
       Message message=null;
       try {
         if (requestTimeout < 0) {
-          message=(Message)future.get();
+          message=(Message)futureHolder.get().get();
         }
  else {
-          message=(Message)future.get(requestTimeout,TimeUnit.MILLISECONDS);
+          message=(Message)futureHolder.get().get(requestTimeout,TimeUnit.MILLISECONDS);
         }
       }
  catch (      InterruptedException e) {
@@ -49,6 +54,10 @@ catch (      TimeoutException e) {
       }
       if (message != null) {
         exchange.setOut(new JmsMessage(message,endpoint.getBinding()));
+        if (correlationId != null) {
+          message.setJMSCorrelationID(correlationId);
+          exchange.getOut(false).setHeader("JMSCorrelationID",correlationId);
+        }
       }
  else {
         exchange.setException(new ExchangeTimedOutException(exchange,requestTimeout));
