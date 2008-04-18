@@ -1,0 +1,55 @@
+{
+  if (inited.compareAndSet(false,true)) {
+    ContextBuilder contextBuilderMessageID=new ContextBuilder(){
+      public CamelContext buildContext(      CamelContext context) throws Exception {
+        ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+        JmsComponent jmsComponent=jmsComponentClientAcknowledge(connectionFactory);
+        jmsComponent.setUseMessageIDAsCorrelationID(true);
+        jmsComponent.setConcurrentConsumers(maxServerTasks);
+        context.addComponent(componentName,jmsComponent);
+        return context;
+      }
+    }
+;
+    ContextBuilder contextBuilderCorrelationID=new ContextBuilder(){
+      public CamelContext buildContext(      CamelContext context) throws Exception {
+        ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+        JmsComponent jmsComponent=jmsComponentClientAcknowledge(connectionFactory);
+        jmsComponent.setUseMessageIDAsCorrelationID(false);
+        jmsComponent.setConcurrentConsumers(maxServerTasks);
+        context.addComponent(componentName,jmsComponent);
+        return context;
+      }
+    }
+;
+    ContextBuilder contextBuilderCorrelationIDDiffComp=new ContextBuilder(){
+      public CamelContext buildContext(      CamelContext context) throws Exception {
+        ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost?broker.persistent=false");
+        JmsComponent jmsComponent=jmsComponentClientAcknowledge(connectionFactory);
+        jmsComponent.setUseMessageIDAsCorrelationID(false);
+        jmsComponent.setConcurrentConsumers(maxServerTasks);
+        context.addComponent(componentName,jmsComponent);
+        jmsComponent=jmsComponentClientAcknowledge(connectionFactory);
+        jmsComponent.setUseMessageIDAsCorrelationID(false);
+        jmsComponent.setConcurrentConsumers(maxServerTasks);
+        context.addComponent(componentName1,jmsComponent);
+        return context;
+      }
+    }
+;
+    contextBuilders.put("testUseMessageIDAsCorrelationID",contextBuilderMessageID);
+    contextBuilders.put("testUseCorrelationID",contextBuilderCorrelationID);
+    contextBuilders.put("testUseMessageIDAsCorrelationIDMultiNode",contextBuilderMessageID);
+    contextBuilders.put("testUseCorrelationIDMultiNode",contextBuilderCorrelationID);
+    contextBuilders.put("testUseCorrelationIDMultiNodeDiffComponents",contextBuilderCorrelationIDDiffComp);
+    contextBuilders.put("testUseMessageIDAsCorrelationIDTimeout",contextBuilderMessageID);
+    contextBuilders.put("testUseCorrelationIDTimeout",contextBuilderMessageID);
+    routeBuilders.put("testUseMessageIDAsCorrelationID",new SingleNodeRouteBuilder());
+    routeBuilders.put("testUseCorrelationID",new SingleNodeRouteBuilder());
+    routeBuilders.put("testUseMessageIDAsCorrelationIDMultiNode",new MultiNodeRouteBuilder());
+    routeBuilders.put("testUseCorrelationIDMultiNode",new MultiNodeRouteBuilder());
+    routeBuilders.put("testUseCorrelationIDMultiNodeDiffComponents",new MultiNodeDiffCompRouteBuilder());
+    routeBuilders.put("testUseMessageIDAsCorrelationIDTimeout",new SingleNodeDeadEndRouteBuilder());
+    routeBuilders.put("testUseCorrelationIDTimeout",new SingleNodeDeadEndRouteBuilder());
+  }
+}
