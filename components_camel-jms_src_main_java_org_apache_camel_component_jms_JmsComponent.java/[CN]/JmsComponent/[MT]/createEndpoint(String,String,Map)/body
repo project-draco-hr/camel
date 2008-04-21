@@ -1,5 +1,6 @@
 {
   boolean pubSubDomain=false;
+  boolean tempDestination=false;
   if (remaining.startsWith(QUEUE_PREFIX)) {
     pubSubDomain=false;
     remaining=removeStartingCharacters(remaining.substring(QUEUE_PREFIX.length()),'/');
@@ -8,15 +9,35 @@
     pubSubDomain=true;
     remaining=removeStartingCharacters(remaining.substring(TOPIC_PREFIX.length()),'/');
   }
+ else   if (remaining.startsWith(TEMP_QUEUE_PREFIX)) {
+    pubSubDomain=false;
+    tempDestination=true;
+    remaining=removeStartingCharacters(remaining.substring(TEMP_QUEUE_PREFIX.length()),'/');
+  }
+ else   if (remaining.startsWith(TEMP_TOPIC_PREFIX)) {
+    pubSubDomain=true;
+    tempDestination=true;
+    remaining=removeStartingCharacters(remaining.substring(TEMP_TOPIC_PREFIX.length()),'/');
+  }
   final String subject=convertPathToActualDestination(remaining,parameters);
   JmsConfiguration newConfiguration=getConfiguration().copy();
   JmsEndpoint endpoint;
   QueueBrowseStrategy strategy=getQueueBrowseStrategy();
-  if (pubSubDomain || strategy == null) {
-    endpoint=new JmsEndpoint(uri,this,subject,pubSubDomain,newConfiguration);
+  if (pubSubDomain) {
+    if (tempDestination) {
+      endpoint=new JmsTemporaryTopicEndpoint(uri,this,subject,newConfiguration);
+    }
+ else {
+      endpoint=new JmsEndpoint(uri,this,subject,pubSubDomain,newConfiguration);
+    }
   }
  else {
-    endpoint=new JmsQueueEndpoint(uri,this,subject,newConfiguration,strategy);
+    if (tempDestination) {
+      endpoint=new JmsTemporaryQueueEndpoint(uri,this,subject,newConfiguration,strategy);
+    }
+ else {
+      endpoint=new JmsQueueEndpoint(uri,this,subject,newConfiguration,strategy);
+    }
   }
   String selector=(String)parameters.remove("selector");
   if (selector != null) {
