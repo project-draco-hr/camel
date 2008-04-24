@@ -9,7 +9,12 @@
       String from=endpoint.getConfiguration().getFrom();
       mimeMessage.setFrom(new InternetAddress(from));
     }
-    mimeMessage.setText(exchange.getIn().getBody(String.class));
+    if (exchange.getIn().getAttachments() != null && exchange.getIn().getAttachments().size() > 0) {
+      appendAttachmentsFromCamel(mimeMessage,exchange,exchange.getIn());
+    }
+ else {
+      mimeMessage.setText(exchange.getIn().getBody(String.class));
+    }
   }
  catch (  Exception e) {
     throw new RuntimeMailException("Failed to populate body due to: " + e + ". Exchange: "+ exchange,e);

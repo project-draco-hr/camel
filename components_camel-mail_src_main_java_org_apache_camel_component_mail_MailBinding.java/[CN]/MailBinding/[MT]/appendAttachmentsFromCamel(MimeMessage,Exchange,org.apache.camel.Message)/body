@@ -1,0 +1,23 @@
+{
+  MimeMultipart multipart=new MimeMultipart();
+  multipart.setSubType("mixed");
+  MimeBodyPart textBodyPart=new MimeBodyPart();
+  textBodyPart.setContent(exchange.getIn().getBody(String.class),"text/plain");
+  multipart.addBodyPart(textBodyPart);
+  BodyPart messageBodyPart=null;
+  Set<Map.Entry<String,DataHandler>> entries=camelMessage.getAttachments().entrySet();
+  for (  Map.Entry<String,DataHandler> entry : entries) {
+    String attName=entry.getKey();
+    DataHandler attValue=entry.getValue();
+    if (attValue != null) {
+      if (shouldOutputAttachment(camelMessage,attName,attValue)) {
+        messageBodyPart=new MimeBodyPart();
+        messageBodyPart.setDataHandler(attValue);
+        messageBodyPart.setFileName(attName);
+        messageBodyPart.setDisposition(Part.ATTACHMENT);
+        multipart.addBodyPart(messageBodyPart);
+      }
+    }
+  }
+  mimeMessage.setContent(multipart);
+}
