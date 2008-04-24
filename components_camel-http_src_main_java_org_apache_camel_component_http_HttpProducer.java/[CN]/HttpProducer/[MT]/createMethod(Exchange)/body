@@ -1,14 +1,14 @@
 {
   String uri=((HttpEndpoint)getEndpoint()).getHttpUri().toString();
   RequestEntity requestEntity=createRequestEntity(exchange);
-  if (requestEntity == null) {
-    GetMethod method=new GetMethod(uri);
-    if (exchange.getIn().getHeader(QUERY) != null) {
-      method.setQueryString(exchange.getIn().getHeader(QUERY,String.class));
-    }
-    return method;
+  Object m=exchange.getIn().getHeader(HTTP_METHOD);
+  HttpMethods ms=m instanceof HttpMethods ? (HttpMethods)m : HttpMethods.valueOf(m == null ? requestEntity == null ? "GET" : "POST" : m.toString());
+  HttpMethod method=ms.createMethod(uri);
+  if (exchange.getIn().getHeader(QUERY) != null) {
+    method.setQueryString(exchange.getIn().getHeader(QUERY,String.class));
   }
-  PostMethod method=new PostMethod(uri);
-  method.setRequestEntity(requestEntity);
+  if (ms.isEntityEnclosing()) {
+    ((EntityEnclosingMethod)method).setRequestEntity(requestEntity);
+  }
   return method;
 }

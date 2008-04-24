@@ -1,11 +1,15 @@
 {
+  HttpExchange exchange=endpoint.createExchange();
+  HttpMethod method=createMethod();
   try {
-    HttpExchange exchange=endpoint.createExchange();
-    HttpMethod method=createMethod();
     int responseCode=httpClient.executeMethod(method);
-    byte[] responseBody=method.getResponseBody();
+    LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
+    InputStream is=method.getResponseBodyAsStream();
+    IOUtils.copy(is,bos);
+    bos.flush();
+    is.close();
     Message message=exchange.getIn();
-    message.setBody(responseBody);
+    message.setBody(bos.createInputStream());
     Header[] headers=method.getResponseHeaders();
     for (    Header header : headers) {
       String name=header.getName();
@@ -17,5 +21,8 @@
   }
  catch (  IOException e) {
     throw new RuntimeCamelException(e);
+  }
+ finally {
+    method.releaseConnection();
   }
 }

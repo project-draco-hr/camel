@@ -1,17 +1,20 @@
 {
   Message in=exchange.getIn();
+  if (in.getBody() == null) {
+    return null;
+  }
   RequestEntity entity=in.getBody(RequestEntity.class);
   if (entity == null) {
-    byte[] data=in.getBody(byte[].class);
-    if (data == null) {
-      return null;
-    }
+    String data=in.getBody(String.class);
     String contentType=in.getHeader("Content-Type",String.class);
-    if (contentType != null) {
-      return new ByteArrayRequestEntity(data,contentType);
+    try {
+      if (contentType != null) {
+        return new StringRequestEntity(data,contentType,null);
+      }
+      return new StringRequestEntity(data,null,null);
     }
- else {
-      return new ByteArrayRequestEntity(data);
+ catch (    UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
     }
   }
   return entity;

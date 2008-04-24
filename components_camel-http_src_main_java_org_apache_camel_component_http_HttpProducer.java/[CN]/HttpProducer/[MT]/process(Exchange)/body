@@ -1,21 +1,32 @@
 {
   HttpMethod method=createMethod(exchange);
+  Message in=exchange.getIn();
   HttpBinding binding=((HttpEndpoint)getEndpoint()).getBinding();
-  for (  String headerName : exchange.getIn().getHeaders().keySet()) {
-    String headerValue=exchange.getIn().getHeader(headerName,String.class);
+  for (  String headerName : in.getHeaders().keySet()) {
+    String headerValue=in.getHeader(headerName,String.class);
     if (binding.shouldHeaderBePropagated(headerName,headerValue)) {
       method.addRequestHeader(headerName,headerValue);
     }
   }
-  int responseCode=httpClient.executeMethod(method);
-  InputStream in=method.getResponseBodyAsStream();
   Message out=exchange.getOut(true);
-  out.setBody(in);
+  try {
+    int responseCode=httpClient.executeMethod(method);
+    out.setHeaders(in.getHeaders());
+    out.setHeader(HTTP_RESPONSE_CODE,responseCode);
+    LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
+    InputStream is=method.getResponseBodyAsStream();
+    IOUtils.copy(is,bos);
+    bos.flush();
+    is.close();
+    out.setBody(bos.createInputStream());
+  }
+  finally {
+    method.releaseConnection();
+  }
   Header[] headers=method.getResponseHeaders();
   for (  Header header : headers) {
     String name=header.getName();
     String value=header.getValue();
     out.setHeader(name,value);
   }
-  out.setHeader(HTTP_RESPONSE_CODE,responseCode);
 }
