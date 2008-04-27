@@ -1,13 +1,25 @@
 {
   ensureFolderIsOpen();
-  int count=folder.getMessageCount();
-  if (count > 0) {
-    Message[] messages=folder.getMessages();
-    MessageCountEvent event=new MessageCountEvent(folder,MessageCountEvent.ADDED,true,messages);
-    messagesAdded(event);
+  try {
+    int count=folder.getMessageCount();
+    if (count > 0) {
+      Message[] messages;
+      if (endpoint.getConfiguration().isProcessOnlyUnseenMessages()) {
+        messages=folder.search(new FlagTerm(new Flags(Flags.Flag.SEEN),false));
+      }
+ else {
+        messages=folder.getMessages();
+      }
+      MessageCountEvent event=new MessageCountEvent(folder,MessageCountEvent.ADDED,true,messages);
+      messagesAdded(event);
+    }
+ else     if (count == -1) {
+      throw new MessagingException("Folder: " + folder.getFullName() + " is closed");
+    }
   }
- else   if (count == -1) {
-    throw new MessagingException("Folder: " + folder.getFullName() + " is closed");
+  finally {
+    if (folder.isOpen()) {
+      folder.close(true);
+    }
   }
-  folder.close(true);
 }
