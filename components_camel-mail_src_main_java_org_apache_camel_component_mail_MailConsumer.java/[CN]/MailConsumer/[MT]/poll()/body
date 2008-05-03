@@ -1,5 +1,10 @@
 {
-  ensureFolderIsOpen();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Polling mailfolder " + folder.getFullName() + " at host "+ endpoint.getConfiguration().getHost());
+  }
+  if (!folder.isOpen()) {
+    folder.open(Folder.READ_WRITE);
+  }
   try {
     int count=folder.getMessageCount();
     if (count > 0) {
@@ -10,8 +15,7 @@
  else {
         messages=folder.getMessages();
       }
-      MessageCountEvent event=new MessageCountEvent(folder,MessageCountEvent.ADDED,true,messages);
-      messagesAdded(event);
+      processMessages(messages);
     }
  else     if (count == -1) {
       throw new MessagingException("Folder: " + folder.getFullName() + " is closed");
