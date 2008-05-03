@@ -1,31 +1,26 @@
 {
-  try {
-    appendHeadersFromCamel(mimeMessage,exchange,exchange.getIn());
-    Map<Message.RecipientType,String> recipients=endpoint.getConfiguration().getRecipients();
-    if (recipients.containsKey(Message.RecipientType.TO)) {
-      mimeMessage.setRecipients(Message.RecipientType.TO,recipients.get(Message.RecipientType.TO));
-    }
-    if (recipients.containsKey(Message.RecipientType.CC)) {
-      mimeMessage.setRecipients(Message.RecipientType.CC,recipients.get(Message.RecipientType.CC));
-    }
-    if (recipients.containsKey(Message.RecipientType.BCC)) {
-      mimeMessage.setRecipients(Message.RecipientType.BCC,recipients.get(Message.RecipientType.BCC));
-    }
-    if (mimeMessage.getAllRecipients() == null) {
-      throw new IllegalArgumentException("The mail message does not have any recipients set.");
-    }
-    if (empty(mimeMessage.getFrom())) {
-      String from=endpoint.getConfiguration().getFrom();
-      mimeMessage.setFrom(new InternetAddress(from));
-    }
-    if (exchange.getIn().getAttachments() != null && exchange.getIn().getAttachments().size() > 0) {
-      appendAttachmentsFromCamel(mimeMessage,exchange,exchange.getIn());
-    }
- else {
-      mimeMessage.setText(exchange.getIn().getBody(String.class));
-    }
+  appendHeadersFromCamel(mimeMessage,exchange,exchange.getIn());
+  Map<Message.RecipientType,String> recipients=endpoint.getConfiguration().getRecipients();
+  if (recipients.containsKey(Message.RecipientType.TO)) {
+    mimeMessage.setRecipients(Message.RecipientType.TO,recipients.get(Message.RecipientType.TO));
   }
- catch (  Exception e) {
-    throw new RuntimeMailException("Failed to populate body due to: " + e.getMessage() + ". Exchange: "+ exchange,e);
+  if (recipients.containsKey(Message.RecipientType.CC)) {
+    mimeMessage.setRecipients(Message.RecipientType.CC,recipients.get(Message.RecipientType.CC));
+  }
+  if (recipients.containsKey(Message.RecipientType.BCC)) {
+    mimeMessage.setRecipients(Message.RecipientType.BCC,recipients.get(Message.RecipientType.BCC));
+  }
+  if (mimeMessage.getAllRecipients() == null) {
+    throw new IllegalArgumentException("The mail message does not have any recipients set.");
+  }
+  if (empty(mimeMessage.getFrom())) {
+    String from=endpoint.getConfiguration().getFrom();
+    mimeMessage.setFrom(new InternetAddress(from));
+  }
+  if (exchange.getIn().hasAttachments()) {
+    appendAttachmentsFromCamel(mimeMessage,exchange,exchange.getIn());
+  }
+ else {
+    mimeMessage.setText(exchange.getIn().getBody(String.class));
   }
 }

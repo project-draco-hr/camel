@@ -4,16 +4,14 @@
   MimeBodyPart textBodyPart=new MimeBodyPart();
   textBodyPart.setContent(exchange.getIn().getBody(String.class),"text/plain");
   multipart.addBodyPart(textBodyPart);
-  BodyPart messageBodyPart;
-  Set<Map.Entry<String,DataHandler>> entries=camelMessage.getAttachments().entrySet();
-  for (  Map.Entry<String,DataHandler> entry : entries) {
-    String attName=entry.getKey();
-    DataHandler attValue=entry.getValue();
-    if (attValue != null) {
-      if (shouldOutputAttachment(camelMessage,attName,attValue)) {
-        messageBodyPart=new MimeBodyPart();
-        messageBodyPart.setDataHandler(attValue);
-        messageBodyPart.setFileName(attName);
+  for (  Map.Entry<String,DataHandler> entry : camelMessage.getAttachments().entrySet()) {
+    String attachmentFilename=entry.getKey();
+    DataHandler handler=entry.getValue();
+    if (handler != null) {
+      if (shouldOutputAttachment(camelMessage,attachmentFilename,handler)) {
+        BodyPart messageBodyPart=new MimeBodyPart();
+        messageBodyPart.setDataHandler(handler);
+        messageBodyPart.setFileName(attachmentFilename);
         messageBodyPart.setDisposition(Part.ATTACHMENT);
         multipart.addBodyPart(messageBodyPart);
       }
