@@ -1,0 +1,25 @@
+{
+  JmsComponent c=(JmsComponent)context.getComponent("activemq");
+  JmsComponent c1=(JmsComponent)context.getComponent("activemq-1");
+  context.addRoutes(new SpringRouteBuilder(){
+    @Override public void configure() throws Exception {
+      Policy required=bean(SpringTransactionPolicy.class,"PROPAGATION_REQUIRED_POLICY");
+      from("activemq:queue:foo?replyTo=queue:foo.reply").policy(required).process(new ConditionalExceptionProcessor()).to("activemq-1:queue:bar?replyTo=queue:bar.reply");
+      from("activemq-1:queue:bar").process(new Processor(){
+        public void process(        Exchange e){
+          String request=e.getIn().getBody(String.class);
+          Message out=e.getOut(true);
+          String selectorValue=e.getIn().getHeader("camelProvider",String.class);
+          if (selectorValue != null) {
+            out.setHeader("camelProvider",selectorValue);
+          }
+          out.setBody("Re: " + request);
+        }
+      }
+);
+    }
+  }
+);
+  Object reply=template.requestBody("activemq:queue:foo","blah");
+  assertTrue("Received unexpeced reply",reply.equals("Re: blah"));
+}

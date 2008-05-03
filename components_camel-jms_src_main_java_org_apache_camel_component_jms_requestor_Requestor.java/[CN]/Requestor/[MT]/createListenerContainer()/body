@@ -3,8 +3,16 @@
   answer.setDestinationName("temporary");
   answer.setDestinationResolver(new DestinationResolver(){
     public Destination resolveDestinationName(    Session session,    String destinationName,    boolean pubSubDomain) throws JMSException {
-      TemporaryQueue queue=session.createTemporaryQueue();
-      replyTo=queue;
+      TemporaryQueue queue=null;
+synchronized (getOutterInstance()) {
+        try {
+          queue=session.createTemporaryQueue();
+          setReplyTo(queue);
+        }
+  finally {
+          getOutterInstance().notifyAll();
+        }
+      }
       return queue;
     }
   }
