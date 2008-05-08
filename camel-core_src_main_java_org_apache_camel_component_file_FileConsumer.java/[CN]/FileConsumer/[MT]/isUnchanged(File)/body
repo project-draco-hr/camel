@@ -12,6 +12,10 @@
       modifiedDuration=System.currentTimeMillis() - file.lastModified();
       lastModifiedCheck=modifiedDuration >= getUnchangedDelay();
     }
+    long fileModified=file.lastModified();
+    Long previousModified=noopMap.get(file);
+    noopMap.put(file,fileModified);
+    boolean modifiedChanged=previousModified == null || fileModified > previousModified;
     boolean sizeCheck=true;
     long sizeDifference=0;
     if (isUnchangedSize()) {
@@ -19,7 +23,7 @@
       sizeDifference=file.length() - prevFileSize;
       sizeCheck=sizeDifference == 0;
     }
-    boolean answer=lastModifiedCheck && sizeCheck;
+    boolean answer=lastModifiedCheck && sizeCheck && !modifiedChanged;
     if (LOG.isDebugEnabled()) {
       LOG.debug("file:" + file + " isUnchanged:"+ answer+ " "+ "sizeCheck:"+ sizeCheck+ "("+ sizeDifference+ ") "+ "lastModifiedCheck:"+ lastModifiedCheck+ "("+ modifiedDuration+ ")");
     }
