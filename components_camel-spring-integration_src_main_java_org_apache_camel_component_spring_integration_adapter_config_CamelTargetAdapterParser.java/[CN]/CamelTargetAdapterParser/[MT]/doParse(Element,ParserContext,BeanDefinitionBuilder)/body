@@ -1,0 +1,18 @@
+{
+  BeanDefinitionBuilder adapterDefBuilder=BeanDefinitionBuilder.rootBeanDefinition(CamelTargetAdapter.class);
+  String requestChannel=element.getAttribute("requestChannel");
+  String replyChannel=element.getAttribute("replyChannel");
+  if (!StringUtils.hasText(requestChannel)) {
+    throw new ConfigurationException("The 'requestChannel' attribute is required.");
+  }
+  parseAttributes(element,parserContext,adapterDefBuilder);
+  parseCamelContext(element,parserContext,adapterDefBuilder);
+  String adapterBeanName=parserContext.getReaderContext().generateBeanName(adapterDefBuilder.getBeanDefinition());
+  parserContext.registerBeanComponent(new BeanComponentDefinition(adapterDefBuilder.getBeanDefinition(),adapterBeanName));
+  builder.addConstructorArgReference(adapterBeanName);
+  Subscription subscription=new Subscription(requestChannel);
+  builder.addPropertyValue("subscription",subscription);
+  if (StringUtils.hasText(replyChannel)) {
+    builder.addPropertyValue("outputChannelName",replyChannel);
+  }
+}

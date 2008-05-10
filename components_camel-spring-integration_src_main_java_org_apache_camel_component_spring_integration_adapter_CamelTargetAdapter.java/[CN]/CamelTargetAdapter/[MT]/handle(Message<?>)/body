@@ -1,0 +1,17 @@
+{
+  ExchangePattern pattern;
+  if (isExpectReply()) {
+    pattern=ExchangePattern.InOut;
+  }
+ else {
+    pattern=ExchangePattern.InOnly;
+  }
+  Exchange inExchange=new SpringIntegrationExchange(getCamelContext(),pattern);
+  SpringIntegrationBinding.storeToCamelMessage(request,inExchange.getIn());
+  Exchange outExchange=getCamelTemplate().send(getCamelEndpointUri(),inExchange);
+  Message response=null;
+  if (isExpectReply()) {
+    response=SpringIntegrationBinding.storeToSpringIntegrationMessage(outExchange.getOut());
+  }
+  return response;
+}
