@@ -9,7 +9,11 @@
   if (idx > 0) {
     path=path.substring(0,idx);
   }
-  Map parameters=URISupport.parseParamters(u);
+  Map parameters=URISupport.parseParameters(u);
+  validateURI(uri,path,parameters);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating endpoint uri=[" + uri + "], path=["+ path+ "], parameters=["+ parameters+ "]");
+  }
   Endpoint<E> endpoint=createEndpoint(uri,path,parameters);
   if (endpoint == null) {
     return null;
@@ -18,6 +22,9 @@
     endpoint.configureProperties(parameters);
     if (useIntrospectionOnEndpoint()) {
       setProperties(endpoint,parameters);
+    }
+    if (parameters.size() > 0) {
+      throw new ResolveEndpointFailedException(uri,"There are " + parameters.size() + " parameters that couldn't be set on the endpoint."+ " Check the uri if the parameters are spelt correctly and that they are properties of the endpoint."+ " Unknown parameters=["+ parameters+ "]");
     }
   }
   return endpoint;
