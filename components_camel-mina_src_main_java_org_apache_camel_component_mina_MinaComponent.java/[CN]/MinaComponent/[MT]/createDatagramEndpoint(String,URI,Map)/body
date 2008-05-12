@@ -2,25 +2,26 @@
   IoAcceptor acceptor=new DatagramAcceptor();
   SocketAddress address=new InetSocketAddress(connectUri.getHost(),connectUri.getPort());
   IoConnector connector=new DatagramConnector();
-  boolean lazySessionCreation=ObjectConverter.toBool(parameters.get("lazySessionCreation"));
-  long timeout=getTimeoutParameter(parameters);
+  boolean lazySessionCreation=getAndRemoveParameter(parameters,"lazySessionCreation",Boolean.class,false);
+  long timeout=getAndRemoveParameter(parameters,"timeout",Long.class,0L);
   boolean transferExchange=false;
-  boolean sync=ObjectConverter.toBool(parameters.get("sync"));
-  boolean minaLogger=ObjectConverter.toBool(parameters.get("minaLogger"));
+  boolean sync=getAndRemoveParameter(parameters,"sync",Boolean.class,false);
+  boolean minaLogger=getAndRemoveParameter(parameters,"minaLogger",Boolean.class,false);
+  String encoding=getAndRemoveParameter(parameters,"encoding",String.class);
+  String codec=getAndRemoveParameter(parameters,"codec",String.class);
   DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
-  configureDataGramCodecFactory("MinaProducer",connectorConfig,parameters);
+  configureDataGramCodecFactory("MinaProducer",connectorConfig,encoding,codec);
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
   long connectTimeout=timeout > 0 ? timeout : DEFAULT_CONNECT_TIMEOUT;
   connectorConfig.setConnectTimeout((int)(connectTimeout / 1000));
   DatagramAcceptorConfig acceptorConfig=new DatagramAcceptorConfig();
-  configureDataGramCodecFactory("MinaConsumer",acceptorConfig,parameters);
+  configureDataGramCodecFactory("MinaConsumer",acceptorConfig,encoding,codec);
   acceptorConfig.setDisconnectOnUnbind(true);
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
-  removeKnownParameters(parameters);
   MinaEndpoint endpoint=new MinaEndpoint(uri,this,address,acceptor,acceptorConfig,connector,connectorConfig,lazySessionCreation,timeout,transferExchange);
   if (sync) {
     endpoint.setExchangePattern(ExchangePattern.InOut);
