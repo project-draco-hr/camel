@@ -46,12 +46,17 @@
   if (!jmxEnabled) {
     return;
   }
-  List servers=MBeanServerFactory.findMBeanServer(jmxDomainName);
-  if (servers.size() == 0) {
-    server=MBeanServerFactory.createMBeanServer(jmxDomainName);
+  if (Boolean.getBoolean(SYSTEM_PROPERTY_JMX_USE_PLATFORM_MBS)) {
+    server=ManagementFactory.getPlatformMBeanServer();
   }
  else {
-    server=(MBeanServer)servers.get(0);
+    List servers=MBeanServerFactory.findMBeanServer(jmxDomainName);
+    if (servers.size() == 0) {
+      server=MBeanServerFactory.createMBeanServer(jmxDomainName);
+    }
+ else {
+      server=(MBeanServer)servers.get(0);
+    }
   }
   try {
     createJmxConnector(hostName);
