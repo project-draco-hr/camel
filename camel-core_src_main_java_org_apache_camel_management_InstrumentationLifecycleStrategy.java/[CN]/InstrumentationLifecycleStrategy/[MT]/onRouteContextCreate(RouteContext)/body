@@ -1,10 +1,30 @@
 {
-  PerformanceCounter mc=new PerformanceCounter();
-  routeContext.getRoute().intercept(new InstrumentationProcessor(mc));
-  try {
-    agent.register(mc,getNamingStrategy().getObjectName(routeContext.getCamelContext(),mc,routeContext));
+  Map<ProcessorType,PerformanceCounter> counterMap=new HashMap<ProcessorType,PerformanceCounter>();
+  RouteType route=routeContext.getRoute();
+  for (  ProcessorType processor : route.getOutputs()) {
+    PerformanceCounter pc=new PerformanceCounter();
+    try {
+      agent.register(pc,getNamingStrategy().getObjectName(routeContext,processor));
+    }
+ catch (    JMException e) {
+      LOG.warn("Could not register Counter MBean",e);
+    }
+    counterMap.put(processor,pc);
   }
- catch (  JMException e) {
-    LOG.warn("Could not register Counter MBean",e);
+  routeContext.setInterceptStrategy(new InstrumentationInterceptStrategy(counterMap));
+  RouteType routeType=routeContext.getRoute();
+  if (routeType.getInputs() != null && !routeType.getInputs().isEmpty()) {
+    if (routeType.getInputs().size() > 1) {
+      LOG.warn("Add InstrumentationProcessor to first input only.");
+    }
+    Endpoint endpoint=routeType.getInputs().get(0).getEndpoint();
+    ProcessorType<?>[] outputs=routeType.getOutputs().toArray(new ProcessorType<?>[0]);
+    routeType.clearOutput();
+    InstrumentationProcessor processor=new InstrumentationProcessor();
+    routeType.intercept(processor);
+    for (    ProcessorType<?> output : outputs) {
+      routeType.addOutput(output);
+    }
+    interceptorMap.put(endpoint,processor);
   }
 }
