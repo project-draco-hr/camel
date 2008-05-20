@@ -2,9 +2,17 @@
   if (target == null) {
     throw new RuntimeCamelException("target provided.");
   }
-  InterceptStrategy strategy=routeContext.getInterceptStrategy();
-  if (strategy != null) {
-    target=strategy.wrapProcessorInInterceptors(this,target);
+  List<InterceptStrategy> strategies=new ArrayList<InterceptStrategy>();
+  CamelContext camelContext=routeContext.getCamelContext();
+  if (camelContext instanceof DefaultCamelContext) {
+    DefaultCamelContext defaultCamelContext=(DefaultCamelContext)camelContext;
+    strategies.addAll(defaultCamelContext.getInterceptStrategies());
+  }
+  strategies.addAll(routeContext.getInterceptStrategies());
+  for (  InterceptStrategy strategy : strategies) {
+    if (strategy != null) {
+      target=strategy.wrapProcessorInInterceptors(this,target);
+    }
   }
   List<InterceptorType> list=routeContext.getRoute().getInterceptors();
   if (interceptors != null) {
