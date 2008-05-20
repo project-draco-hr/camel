@@ -4,9 +4,22 @@
   }
   InterceptStrategy strategy=routeContext.getInterceptStrategy();
   if (strategy != null) {
-    return strategy.wrapProcessorInInterceptors(this,target);
+    target=strategy.wrapProcessorInInterceptors(this,target);
   }
- else {
-    return target;
+  List<InterceptorType> list=routeContext.getRoute().getInterceptors();
+  if (interceptors != null) {
+    list.addAll(interceptors);
   }
+  Collections.reverse(list);
+  Set<Processor> interceptors=new HashSet<Processor>();
+  interceptors.add(target);
+  for (  InterceptorType interceptorType : list) {
+    DelegateProcessor interceptor=interceptorType.createInterceptor(routeContext);
+    if (!interceptors.contains(interceptor)) {
+      interceptors.add(interceptor);
+      interceptor.setProcessor(target);
+      target=interceptor;
+    }
+  }
+  return target;
 }
