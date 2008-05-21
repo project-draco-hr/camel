@@ -1,0 +1,16 @@
+{
+  main=new Main();
+  main.enableDebugging();
+  main.setApplicationContextUri("org/apache/camel/spring/debug/applicationContext.xml");
+  main.start();
+  debugger=main.getDebugger();
+  assertNotNull("should have a debugger!",debugger);
+  DebugInterceptor f1=assertHasInterceptor("f1");
+  DebugInterceptor o1=assertHasInterceptor("o1");
+  DebugInterceptor o2=assertHasInterceptor("o2");
+  CamelTemplate template=main.getCamelTemplate();
+  template.sendBody("direct:a",expectedBody);
+  List<Exchange> o1Messages=o1.getExchanges();
+  assertEquals("Expected messages at o1",1,o1Messages.size());
+  LOG.info("o1 received message: " + o1Messages.get(0));
+}
