@@ -1,0 +1,20 @@
+{
+  QName operationQName=null;
+  if (operationNameSpace == null) {
+    operationQName=new QName(client.getEndpoint().getService().getName().getNamespaceURI(),operationName);
+  }
+ else {
+    operationQName=new QName(operationNameSpace,operationName);
+  }
+  BindingOperationInfo op=client.getEndpoint().getEndpointInfo().getBinding().getOperation(operationQName);
+  if (op == null) {
+    throw new RuntimeCamelException("No operation found in the CXF client, the operation is " + operationQName);
+  }
+  if (!endpoint.isWrapped()) {
+    if (op.isUnwrappedCapable()) {
+      op=op.getUnwrappedOperation();
+    }
+  }
+  Object[] result=client.invoke(op,parameters.toArray(),context);
+  return result;
+}
