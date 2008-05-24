@@ -1,15 +1,8 @@
 {
   String uri=path + key;
-  ClassLoader classLoader=Thread.currentThread().getContextClassLoader();
-  if (classLoader == null) {
-    classLoader=getClass().getClassLoader();
-  }
-  InputStream in=classLoader.getResourceAsStream(uri);
+  InputStream in=ObjectHelper.loadResourceAsStream(uri);
   if (in == null) {
-    in=FactoryFinder.class.getClassLoader().getResourceAsStream(uri);
-    if (in == null) {
-      throw new NoFactoryAvailableException(uri);
-    }
+    throw new NoFactoryAvailableException(uri);
   }
   BufferedInputStream reader=null;
   try {
@@ -19,10 +12,7 @@
     return properties;
   }
   finally {
-    try {
-      reader.close();
-    }
- catch (    Exception ignore) {
-    }
+    ObjectHelper.close(reader,key,null);
+    ObjectHelper.close(in,key,null);
   }
 }
