@@ -3,22 +3,19 @@
   if (size == 0) {
     LOG.warn("No getConsumers() available on " + this + " for "+ exchange);
   }
- else {
-    if (size > 1) {
-      try {
-        for (        DefaultConsumer<E> consumer : endpoint.getConsumers()) {
-          consumer.getProcessor().process(exchange);
-        }
-      }
- catch (      Throwable error) {
-        exchange.setException(error);
+ else   if (size == 1) {
+    DefaultConsumer<E> consumer=endpoint.getConsumers().get(0);
+    AsyncProcessor processor=AsyncProcessorTypeConverter.convert(consumer.getProcessor());
+    return processor.process(exchange,callback);
+  }
+ else   if (size > 1) {
+    try {
+      for (      DefaultConsumer<E> consumer : endpoint.getConsumers()) {
+        consumer.getProcessor().process(exchange);
       }
     }
- else {
-      for (      DefaultConsumer<E> consumer : endpoint.getConsumers()) {
-        AsyncProcessor processor=AsyncProcessorTypeConverter.convert(consumer.getProcessor());
-        return processor.process(exchange,callback);
-      }
+ catch (    Throwable error) {
+      exchange.setException(error);
     }
   }
   callback.done(true);
