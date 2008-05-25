@@ -21,15 +21,15 @@
     if (processStrategy.begin(endpoint,exchange,file)) {
       getAsyncProcessor().process(exchange,new AsyncCallback(){
         public void done(        boolean sync){
-          if (exchange.getException() == null) {
-            try {
-              processStrategy.commit(endpoint,exchange,file);
-            }
- catch (            Exception e) {
-              handleException(e);
-            }
+          boolean failed=exchange.isFailed();
+          boolean handled=DeadLetterChannel.isFailureHandled(exchange);
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Done processing file: " + file + ". Status is: "+ (failed ? "failed: " + failed + ", handled by failure processor: "+ handled : "OK"));
           }
- else {
+          if (!failed || handled) {
+            processStrategyCommit(processStrategy,exchange,file,handled);
+          }
+ else           if (failed && !handled) {
             handleException(exchange.getException());
           }
           filesBeingProcessed.remove(file);

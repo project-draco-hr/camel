@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2));
+      exception(ValidationException.class).to("mock:invalid");
+      from("file:target/messages/input/?delete=true").process(new MyValidatorProcessor()).to("mock:valid");
+    }
+  }
+;
+}
