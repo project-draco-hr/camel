@@ -1,0 +1,17 @@
+{
+  deleteDirectory("target/done");
+  deleteDirectory("target/reports");
+  File file=new File("target/done");
+  file.mkdirs();
+  FileWriter fw=new FileWriter("./target/done/london.txt");
+  fw.write("I was there once in London");
+  fw.flush();
+  fw.close();
+  MockEndpoint mock=getMockEndpoint("mock:report");
+  mock.expectedBodiesReceived("Hello London");
+  template.sendBodyAndHeader("file:target/reports","Hello London",FileComponent.HEADER_FILE_NAME,"london.txt");
+  mock.assertIsSatisfied();
+  Thread.sleep(500);
+  String content=IOConverter.toString(new File("./target/done/london.txt"));
+  assertEquals("The file should have been renamed replacing any existing files","Hello London",content);
+}
