@@ -1,0 +1,33 @@
+{
+  String stub="";
+  boolean canAccessSystemProps=true;
+  try {
+    SecurityManager sm=System.getSecurityManager();
+    if (sm != null) {
+      sm.checkPropertiesAccess();
+    }
+  }
+ catch (  SecurityException se) {
+    canAccessSystemProps=false;
+  }
+  if (canAccessSystemProps) {
+    try {
+      hostName=InetAddress.getLocalHost().getHostName();
+      ServerSocket ss=new ServerSocket(0);
+      stub="/" + ss.getLocalPort() + "-"+ System.currentTimeMillis()+ "/";
+      Thread.sleep(100);
+      ss.close();
+    }
+ catch (    Exception ioe) {
+      LOG.warn("Could not generate unique stub",ioe);
+    }
+  }
+ else {
+    hostName="localhost";
+    stub="-1-" + System.currentTimeMillis() + "-";
+  }
+  UNIQUE_STUB=stub;
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("UuidGenerator initialized with stub genereated: " + UNIQUE_STUB);
+  }
+}
