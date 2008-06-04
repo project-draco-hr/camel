@@ -1,7 +1,8 @@
 {
   return new RouteBuilder(){
     public void configure(){
-      from("direct:parallel").multicast(new BodyOutAggregatingStrategy(),true).to("direct:x","direct:y","direct:z");
+      ThreadPoolExecutor tpExecutor=new ThreadPoolExecutor(1,1,0,TimeUnit.MILLISECONDS,new ArrayBlockingQueue<Runnable>(10));
+      from("direct:parallel").multicast(new BodyOutAggregatingStrategy(),true).setThreadPoolExecutor(tpExecutor).to("direct:x","direct:y","direct:z");
       from("direct:sequential").multicast(new BodyOutAggregatingStrategy()).to("direct:x","direct:y","direct:z");
       from("direct:x").process(new AppendingProcessor("x")).to("direct:aggregater");
       from("direct:y").process(new AppendingProcessor("y")).to("direct:aggregater");
