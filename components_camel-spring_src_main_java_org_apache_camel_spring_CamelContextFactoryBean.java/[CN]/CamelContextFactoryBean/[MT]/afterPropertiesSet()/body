@@ -1,20 +1,11 @@
 {
-  Debugger debugger=null;
-  String[] names=getApplicationContext().getBeanNamesForType(Debugger.class,true,true);
-  if (names.length == 1) {
-    debugger=(Debugger)getApplicationContext().getBean(names[0],Debugger.class);
-  }
-  if (debugger == null) {
-    ApplicationContext parentContext=getApplicationContext().getParent();
-    if (parentContext != null) {
-      names=parentContext.getBeanNamesForType(Debugger.class,true,true);
-      if (names.length == 1) {
-        debugger=(Debugger)parentContext.getBean(names[0],Debugger.class);
-      }
-    }
-  }
+  Debugger debugger=getBeanForType(Debugger.class);
   if (debugger != null) {
     getContext().addInterceptStrategy(debugger);
+  }
+  LifecycleStrategy lifecycleStrategy=getBeanForType(LifecycleStrategy.class);
+  if (lifecycleStrategy != null) {
+    getContext().setLifecycleStrategy(lifecycleStrategy);
   }
   if (beanPostProcessor != null) {
     if (beanPostProcessor instanceof ApplicationContextAware) {
@@ -26,6 +17,9 @@
   }
   getContext().addRouteDefinitions(routes);
   if (instrumentationAgent == null && isJmxEnabled()) {
+    if (lifecycleStrategy != null) {
+      LOG.warn("lifecycleStrategy will be overriden by InstrumentationLifecycleStrategy");
+    }
     SpringInstrumentationAgent agent=new SpringInstrumentationAgent();
     if (camelJMXAgent != null) {
       agent.enableJmx(camelJMXAgent.getJmxDomainName(),camelJMXAgent.getConnectorPath(),camelJMXAgent.getConnectorPort());
