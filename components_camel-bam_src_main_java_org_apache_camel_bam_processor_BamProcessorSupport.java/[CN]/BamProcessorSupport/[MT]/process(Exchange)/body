@@ -1,19 +1,39 @@
 {
-  Object entity=transactionTemplate.execute(new TransactionCallback(){
-    public Object doInTransaction(    TransactionStatus status){
+  for (int i=1; i <= retryCount; i++) {
+    if (i > 1) {
+      LOG.info("Retrying attempt: " + i);
       try {
-        Object key=getCorrelationKey(exchange);
-        T entity=loadEntity(exchange,key);
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Correlation key: " + key + " with entity: "+ entity);
-        }
-        processEntity(exchange,entity);
-        return entity;
+        Thread.sleep(retryCount);
       }
- catch (      Exception e) {
-        return onError(status,e);
+ catch (      InterruptedException e) {
+        LOG.debug("Caught: " + e,e);
       }
     }
-  }
+    try {
+      transactionTemplate.execute(new TransactionCallback(){
+        public Object doInTransaction(        TransactionStatus status){
+          try {
+            Object key=getCorrelationKey(exchange);
+            T entity=loadEntity(exchange,key);
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Correlation key: " + key + " with entity: "+ entity);
+            }
+            processEntity(exchange,entity);
+            return entity;
+          }
+ catch (          Exception e) {
+            return onError(status,e);
+          }
+        }
+      }
 );
+      if (i > 1) {
+        LOG.info("Attempt " + i + " worked!");
+      }
+      return;
+    }
+ catch (    Exception e) {
+      LOG.warn("Failed to complete transaction: " + e,e);
+    }
+  }
 }
