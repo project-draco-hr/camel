@@ -1,4 +1,20 @@
 {
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Searching for: " + test + " in package: "+ packageName+ " using classloader: "+ loader);
+  }
+  try {
+    Method mth=loader.getClass().getMethod("getBundle",new Class[]{});
+    if (mth != null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Loading from osgi buindle using classloader: " + loader);
+      }
+      loadImplementationsInBundle(test,packageName,loader,mth);
+      return;
+    }
+  }
+ catch (  NoSuchMethodException e) {
+    LOG.trace("It's not an osgi bundle classloader");
+  }
   Enumeration<URL> urls;
   try {
     urls=loader.getResources(packageName);
@@ -8,8 +24,9 @@
     return;
   }
   while (urls.hasMoreElements()) {
+    URL url=null;
     try {
-      URL url=urls.nextElement();
+      url=urls.nextElement();
       String urlPath=url.getFile();
       urlPath=URLDecoder.decode(urlPath,"UTF-8");
       if (urlPath.startsWith("file:")) {
@@ -18,17 +35,25 @@
       if (urlPath.indexOf('!') > 0) {
         urlPath=urlPath.substring(0,urlPath.indexOf('!'));
       }
-      LOG.debug("Scanning for classes in [" + urlPath + "] matching criteria: "+ test);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Scanning for classes in [" + urlPath + "] matching criteria: "+ test);
+      }
       File file=new File(urlPath);
       if (file.isDirectory()) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Loading from directory: " + file);
+        }
         loadImplementationsInDirectory(test,packageName,file);
       }
  else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Loading from jar: " + file);
+        }
         loadImplementationsInJar(test,packageName,file);
       }
     }
  catch (    IOException ioe) {
-      LOG.warn("could not read entries",ioe);
+      LOG.warn("Could not read entries in url: " + url,ioe);
     }
   }
 }
