@@ -1,19 +1,8 @@
 {
-  try {
-    Bundle bundle=(Bundle)mth.invoke(loader);
-    Bundle[] bundles=bundle.getBundleContext().getBundles();
-    for (    Bundle bd : bundles) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Searching in bundle:" + bd);
-      }
-      Enumeration<URL> paths=(Enumeration<URL>)bd.findEntries("/" + packageName,"*.class",true);
-      while (paths != null && paths.hasMoreElements()) {
-        URL path=paths.nextElement();
-        addIfMatching(test,path.getPath().substring(1));
-      }
+  Set<String> urls=OsgiUtil.getImplementationsInBundle(test,packageName,loader,mth);
+  if (urls != null) {
+    for (    String url : urls) {
+      addIfMatching(test,url);
     }
-  }
- catch (  Exception e) {
-    LOG.error("Could not search osgi bundles for classes matching criteria: " + test + "due to an Exception: "+ e.getMessage());
   }
 }
