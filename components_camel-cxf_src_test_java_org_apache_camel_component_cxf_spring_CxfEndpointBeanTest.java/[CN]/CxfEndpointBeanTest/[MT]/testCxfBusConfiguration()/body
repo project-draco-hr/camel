@@ -1,0 +1,14 @@
+{
+  CamelContext camelContext=(CamelContext)ctx.getBean("camel");
+  ProducerTemplate template=camelContext.createProducerTemplate();
+  Exchange exchange=template.send("cxf:bean:routerEndpoint",new Processor(){
+    public void process(    final Exchange exchange){
+      final List<String> params=new ArrayList<String>();
+      params.add("hello");
+      exchange.getIn().setBody(params);
+      exchange.getIn().setHeader(CxfConstants.OPERATION_NAME,"echo");
+    }
+  }
+);
+  assertTrue("There should have a timeout exception",exchange.isFailed());
+}

@@ -1,21 +1,21 @@
 {
   super(endpoint,processor);
+  Bus bus=null;
   this.endpoint=endpoint;
   boolean isWebServiceProvider=false;
-  Bus bus=BusFactory.getDefaultBus();
+  if (endpoint.getApplicationContext() != null) {
+    SpringBusFactory bf=new SpringBusFactory(endpoint.getApplicationContext());
+    bus=bf.createBus();
+  }
+ else {
+    bus=BusFactory.getDefaultBus();
+  }
   ServerFactoryBean svrBean=null;
   if (endpoint.isSpringContextEndpoint()) {
     CxfEndpointBean endpointBean=endpoint.getCxfEndpointBean();
     svrBean=CxfEndpointUtils.getServerFactoryBean(endpointBean.getServiceClass());
     isWebServiceProvider=CxfEndpointUtils.hasAnnotation(endpointBean.getServiceClass(),WebServiceProvider.class);
     endpoint.configure(svrBean);
-    CxfEndpointBean cxfEndpointBean=endpoint.getCxfEndpointBean();
-    if (cxfEndpointBean.getServiceName() != null) {
-      svrBean.setServiceName(cxfEndpointBean.getServiceName());
-    }
-    if (cxfEndpointBean.getEndpointName() != null) {
-      svrBean.setEndpointName(cxfEndpointBean.getEndpointName());
-    }
   }
  else {
     Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());

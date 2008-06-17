@@ -1,17 +1,18 @@
 {
-  Bus bus=BusFactory.getDefaultBus();
+  Bus bus=null;
+  if (endpoint.getApplicationContext() != null) {
+    SpringBusFactory bf=new SpringBusFactory(endpoint.getApplicationContext());
+    bus=bf.createBus();
+  }
+ else {
+    bus=BusFactory.getDefaultBus();
+  }
   if (endpoint.isSpringContextEndpoint()) {
     CxfEndpointBean cxfEndpointBean=endpoint.getCxfEndpointBean();
     if (cfb == null) {
       cfb=CxfEndpointUtils.getClientFactoryBean(cxfEndpointBean.getServiceClass());
     }
     endpoint.configure(cfb);
-    if (cxfEndpointBean.getServiceName() != null) {
-      cfb.setServiceName(cxfEndpointBean.getServiceName());
-    }
-    if (cxfEndpointBean.getEndpointName() != null) {
-      cfb.setEndpointName(cxfEndpointBean.getEndpointName());
-    }
   }
  else {
     if (null != endpoint.getServiceClass()) {
