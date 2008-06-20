@@ -13,7 +13,14 @@
     EventDrivenConsumerRoute consumerRoute=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
     Processor processor=unwrap(consumerRoute.getProcessor());
     LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
-    FilterProcessor filterProcessor=assertIsInstanceOf(FilterProcessor.class,loggingProcessor.getOutput());
+    if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
+      processor=loggingProcessor.getOutput();
+    }
+ else {
+      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,loggingProcessor.getOutput());
+      processor=interceptor.getProcessor();
+    }
+    FilterProcessor filterProcessor=assertIsInstanceOf(FilterProcessor.class,processor);
     SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,filterProcessor.getProcessor());
     log.debug("Found sendProcessor: " + sendProcessor);
   }

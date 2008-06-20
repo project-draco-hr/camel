@@ -6,6 +6,10 @@
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
     Processor processor=getProcessorWithoutErrorHandler(route);
+    if (!Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
+      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,processor);
+      processor=interceptor.getProcessor();
+    }
     IdempotentConsumer idempotentConsumer=assertIsInstanceOf(IdempotentConsumer.class,processor);
     assertEquals("messageIdExpression","header(myMessageId)",idempotentConsumer.getMessageIdExpression().toString());
     assertIsInstanceOf(MemoryMessageIdRepository.class,idempotentConsumer.getMessageIdRepository());

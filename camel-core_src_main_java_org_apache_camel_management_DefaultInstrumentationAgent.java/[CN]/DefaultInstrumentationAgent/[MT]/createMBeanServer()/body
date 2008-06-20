@@ -11,53 +11,18 @@
     canAccessSystemProps=false;
   }
   if (canAccessSystemProps) {
-    if (!jmxEnabled) {
-      jmxEnabled=null != System.getProperty(SYSTEM_PROPERTY_JMX);
-      if (!jmxEnabled) {
-        return;
-      }
-    }
-    if (jmxConnectorPort <= 0) {
-      String portKey=SYSTEM_PROPERTY_JMX + ".port";
-      String portValue=System.getProperty(portKey);
-      if (portValue != null && portValue.length() > 0) {
-        try {
-          jmxConnectorPort=Integer.parseInt(portValue);
-        }
- catch (        NumberFormatException nfe) {
-          LOG.info("Invalid port number specified via System property [" + portKey + "="+ portValue+ "]. Using default: "+ DEFAULT_PORT);
-          jmxConnectorPort=DEFAULT_PORT;
-        }
-      }
-    }
     try {
       hostName=InetAddress.getLocalHost().getHostName();
     }
  catch (    UnknownHostException uhe) {
-      LOG.info("Cannot determine localhost name. Using default: " + DEFAULT_PORT,uhe);
+      LOG.info("Cannot determine localhost name. Using default: " + DEFAULT_REGISTRY_PORT,uhe);
       hostName=DEFAULT_HOST;
     }
   }
  else {
-    jmxDomainName=jmxDomainName != null ? jmxDomainName : DEFAULT_DOMAIN;
-    jmxConnectorPort=jmxConnectorPort > 0 ? jmxConnectorPort : DEFAULT_PORT;
     hostName=DEFAULT_HOST;
   }
-  if (!jmxEnabled) {
-    return;
-  }
-  if (Boolean.getBoolean(SYSTEM_PROPERTY_JMX_USE_PLATFORM_MBS) || usePlatformMBeanServer) {
-    server=ManagementFactory.getPlatformMBeanServer();
-  }
- else {
-    List servers=MBeanServerFactory.findMBeanServer(jmxDomainName);
-    if (servers.size() == 0) {
-      server=MBeanServerFactory.createMBeanServer(jmxDomainName);
-    }
- else {
-      server=(MBeanServer)servers.get(0);
-    }
-  }
+  server=findOrCreateMBeanServer();
   try {
     if (createConnector) {
       createJmxConnector(hostName);

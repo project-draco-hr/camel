@@ -20,31 +20,24 @@
     }
   }
   getContext().addRouteDefinitions(routes);
-  if (instrumentationAgent == null && isJmxEnabled()) {
-    if (lifecycleStrategy != null) {
-      LOG.warn("lifecycleStrategy will be overriden by InstrumentationLifecycleStrategy");
-    }
-    SpringInstrumentationAgent agent=new SpringInstrumentationAgent();
-    if (camelJMXAgent != null) {
-      agent.enableJmx(camelJMXAgent.getJmxDomainName(),camelJMXAgent.getConnectorPath(),camelJMXAgent.getConnectorPort());
-      if (camelJMXAgent.isCreateConnector() != null) {
-        agent.setCreateConnector(camelJMXAgent.isCreateConnector());
-      }
-      if (camelJMXAgent.isUsePlatformMBeanServer() != null) {
-        agent.setUsePlatformMBeanServer(camelJMXAgent.isUsePlatformMBeanServer());
-      }
+  if (camelJMXAgent != null) {
+    if (camelJMXAgent.isDisabled() != null && camelJMXAgent.isDisabled()) {
+      getContext().setLifecycleStrategy(new DefaultLifecycleStrategy());
     }
  else {
-      agent.enableJmx();
+      if (lifecycleStrategy != null) {
+        LOG.warn("lifecycleStrategy will be overriden by InstrumentationLifecycleStrategy");
+      }
+      DefaultInstrumentationAgent agent=new DefaultInstrumentationAgent();
+      agent.setConnectorPort(camelJMXAgent.getConnectorPort());
+      agent.setCreateConnector(camelJMXAgent.isCreateConnector());
+      agent.setMBeanObjectDomainName(camelJMXAgent.getMbeanObjectDomainName());
+      agent.setMBeanServerDefaultDomain(camelJMXAgent.getMbeanServerDefaultDomain());
+      agent.setRegistryPort(camelJMXAgent.getRegistryPort());
+      agent.setServiceUrlPath(camelJMXAgent.getServiceUrlPath());
+      agent.setUsePlatformMBeanServer(camelJMXAgent.isUsePlatformMBeanServer());
+      getContext().setLifecycleStrategy(new InstrumentationLifecycleStrategy(agent));
     }
-    agent.setCamelContext(getContext());
-    String name=getMbeanServer();
-    if (name != null) {
-      MBeanServer mbeanServer=(MBeanServer)getApplicationContext().getBean(name,MBeanServer.class);
-      agent.setMBeanServer(mbeanServer);
-    }
-    instrumentationAgent=agent;
-    instrumentationAgent.start();
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Found JAXB created routes: " + getRoutes());

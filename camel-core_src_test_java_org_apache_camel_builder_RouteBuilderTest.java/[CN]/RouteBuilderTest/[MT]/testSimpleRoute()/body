@@ -5,7 +5,14 @@
     Endpoint<Exchange> key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
     Processor processor=getProcessorWithoutErrorHandler(route);
-    SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,processor);
+    SendProcessor sendProcessor;
+    if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
+      sendProcessor=assertIsInstanceOf(SendProcessor.class,processor);
+    }
+ else {
+      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,processor);
+      sendProcessor=assertIsInstanceOf(SendProcessor.class,interceptor.getProcessor());
+    }
     assertEquals("Endpoint URI","seda:b",sendProcessor.getDestination().getEndpointUri());
   }
 }

@@ -1,0 +1,25 @@
+{
+  final long startTime=System.nanoTime();
+  if (processor instanceof AsyncProcessor) {
+    return ((AsyncProcessor)processor).process(exchange,new AsyncCallback(){
+      public void done(      boolean doneSynchronously){
+        if (counter != null) {
+          recordTime(exchange,(System.nanoTime() - startTime) / 1000000.0);
+        }
+        callback.done(doneSynchronously);
+      }
+    }
+);
+  }
+  try {
+    processor.process(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  if (counter != null) {
+    recordTime(exchange,(System.nanoTime() - startTime) / 1000000.0);
+  }
+  callback.done(true);
+  return true;
+}

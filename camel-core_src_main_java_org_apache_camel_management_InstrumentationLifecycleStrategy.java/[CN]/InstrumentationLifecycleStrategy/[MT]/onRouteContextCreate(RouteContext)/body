@@ -1,4 +1,7 @@
 {
+  if (!initialized) {
+    return;
+  }
   Map<ProcessorType,PerformanceCounter> counterMap=new HashMap<ProcessorType,PerformanceCounter>();
   RouteType route=routeContext.getRoute();
   for (  ProcessorType processor : route.getOutputs()) {
@@ -12,18 +15,29 @@
     counterMap.put(processor,pc);
   }
   routeContext.addInterceptStrategy(new InstrumentationInterceptStrategy(counterMap));
+  routeContext.setErrorHandlerWrappingStrategy(new InstrumentationErrorHandlerWrappingStrategy(counterMap));
   RouteType routeType=routeContext.getRoute();
   if (routeType.getInputs() != null && !routeType.getInputs().isEmpty()) {
     if (routeType.getInputs().size() > 1) {
       LOG.warn("Add InstrumentationProcessor to first input only.");
     }
     Endpoint endpoint=routeType.getInputs().get(0).getEndpoint();
-    ProcessorType<?>[] outputs=routeType.getOutputs().toArray(new ProcessorType<?>[0]);
+    List<ProcessorType<?>> exceptionHandlers=new ArrayList<ProcessorType<?>>();
+    List<ProcessorType<?>> outputs=new ArrayList<ProcessorType<?>>();
+    for (    ProcessorType<?> output : routeType.getOutputs()) {
+      if (output instanceof ExceptionType) {
+        exceptionHandlers.add(output);
+      }
+ else {
+        outputs.add(output);
+      }
+    }
     routeType.clearOutput();
+    routeType.getOutputs().addAll(exceptionHandlers);
     InstrumentationProcessor processor=new InstrumentationProcessor();
     routeType.intercept(processor);
-    for (    ProcessorType<?> output : outputs) {
-      routeType.addOutput(output);
+    for (    ProcessorType<?> processorType : outputs) {
+      routeType.addOutput(processorType);
     }
     interceptorMap.put(endpoint,processor);
   }

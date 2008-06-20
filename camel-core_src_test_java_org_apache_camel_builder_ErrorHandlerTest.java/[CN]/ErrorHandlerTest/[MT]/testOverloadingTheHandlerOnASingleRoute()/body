@@ -17,13 +17,25 @@
     if (endpointUri.equals("seda:a")) {
       LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
       Processor outputProcessor=loggingProcessor.getOutput();
-      sendProcessor=assertIsInstanceOf(SendProcessor.class,outputProcessor);
+      if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
+        sendProcessor=assertIsInstanceOf(SendProcessor.class,outputProcessor);
+      }
+ else {
+        InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,outputProcessor);
+        sendProcessor=assertIsInstanceOf(SendProcessor.class,interceptor.getProcessor());
+      }
     }
  else {
       assertEquals("From endpoint","seda:b",endpointUri);
       DeadLetterChannel deadLetterChannel=assertIsInstanceOf(DeadLetterChannel.class,processor);
       Processor outputProcessor=deadLetterChannel.getOutput();
-      sendProcessor=assertIsInstanceOf(SendProcessor.class,outputProcessor);
+      if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
+        sendProcessor=assertIsInstanceOf(SendProcessor.class,outputProcessor);
+      }
+ else {
+        InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,outputProcessor);
+        sendProcessor=assertIsInstanceOf(SendProcessor.class,interceptor.getProcessor());
+      }
     }
     log.debug("For " + endpointUri + " using: "+ sendProcessor);
   }

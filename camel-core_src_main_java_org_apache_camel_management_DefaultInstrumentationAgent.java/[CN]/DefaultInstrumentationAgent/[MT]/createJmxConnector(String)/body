@@ -1,29 +1,32 @@
 {
-  if (jmxConnectorPort > 0) {
-    try {
-      LocateRegistry.createRegistry(jmxConnectorPort);
+  try {
+    LocateRegistry.createRegistry(registryPort);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("created RMI regisry on port " + registryPort);
     }
- catch (    RemoteException ex) {
-      LocateRegistry.getRegistry(jmxConnectorPort);
-    }
-    if (jmxConnectorPath == null) {
-      jmxConnectorPath=DEFAULT_CONNECTOR_PATH;
-    }
-    JMXServiceURL url=new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":"+ jmxConnectorPort+ jmxConnectorPath);
-    cs=JMXConnectorServerFactory.newJMXConnectorServer(url,null,server);
-    Thread connectorThread=new Thread(){
-      public void run(){
-        try {
-          cs.start();
-        }
- catch (        IOException ioe) {
-          LOG.warn("Could not start jmx connector thread.",ioe);
-        }
+  }
+ catch (  RemoteException ex) {
+  }
+  JMXServiceURL url;
+  if (connectorPort > 0) {
+    url=new JMXServiceURL("service:jmx:rmi://" + host + ":"+ connectorPort+ "/jndi/rmi://"+ host+ ":"+ registryPort+ serviceUrlPath);
+  }
+ else {
+    url=new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":"+ registryPort+ serviceUrlPath);
+  }
+  cs=JMXConnectorServerFactory.newJMXConnectorServer(url,null,server);
+  Thread connectorThread=new Thread(){
+    public void run(){
+      try {
+        cs.start();
+      }
+ catch (      IOException ioe) {
+        LOG.warn("Could not start jmx connector thread.",ioe);
       }
     }
-;
-    connectorThread.setName("JMX Connector Thread [" + url + "]");
-    connectorThread.start();
-    LOG.info("JMX connector thread started on " + url);
   }
+;
+  connectorThread.setName("JMX Connector Thread [" + url + "]");
+  connectorThread.start();
+  LOG.info("JMX connector thread started on " + url);
 }
