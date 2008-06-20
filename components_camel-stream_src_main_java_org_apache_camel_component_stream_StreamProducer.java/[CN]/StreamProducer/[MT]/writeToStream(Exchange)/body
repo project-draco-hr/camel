@@ -1,22 +1,23 @@
 {
   Object body=exchange.getIn().getBody();
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Writing " + body + " to "+ outputStream);
-  }
   if (body instanceof String) {
-    LOG.debug("in text buffered mode");
-    BufferedWriter bw=new BufferedWriter(new OutputStreamWriter(outputStream));
-    try {
-      bw.write((String)body);
-      bw.write("\n");
-      bw.flush();
+    Charset charset=endpoint.getCharset();
+    Writer writer=new OutputStreamWriter(outputStream,charset);
+    BufferedWriter bw=new BufferedWriter(writer);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Writing as text: " + body + " to "+ outputStream+ " using encoding:"+ charset);
     }
-  finally {
-      bw.close();
+    bw.write((String)body);
+    bw.write("\n");
+    bw.flush();
+  }
+ else   if (body instanceof byte[]) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Writing as text: " + body + " to "+ outputStream);
     }
+    outputStream.write((byte[])body);
   }
  else {
-    LOG.debug("in binary stream mode");
-    outputStream.write((byte[])body);
+    throw new CamelExchangeException("The body is neither a String or byte array. " + "Can not write body to output stream",exchange);
   }
 }
