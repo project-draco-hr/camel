@@ -1,14 +1,22 @@
 {
   InterceptType answer=new InterceptType();
   answer.getOutputs().addAll(this.getOutputs());
-  proxifyProceed(this.getProceed(),answer.getProceed(),answer);
   if (answer.getOutputs().size() > 0) {
-    ProcessorType processor=answer;
-    processor=(ProcessorType)answer.getOutputs().get(0);
-    if (processor instanceof ChoiceType) {
-      ChoiceType choice=(ChoiceType)processor;
-      proxifyProceed(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1));
-      proxifyProceed(this.getProceed(),answer.getProceed(),choice.getOtherwise());
+    ChoiceType choice=null;
+    for (    ProcessorType processor : answer.getOutputs()) {
+      if (processor instanceof ChoiceType) {
+        choice=(ChoiceType)processor;
+        if (usePredicate.booleanValue() && stop.booleanValue()) {
+          WhenType when=choice.getWhenClauses().get(0);
+          when.getOutputs().remove(this.getProceed());
+        }
+        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1),usePredicate.booleanValue() && !stop.booleanValue());
+        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getOtherwise(),false);
+        break;
+      }
+    }
+    if (choice == null) {
+      addProceedProxy(this.getProceed(),answer.getProceed(),answer,!stop.booleanValue());
     }
   }
   return answer;
