@@ -1,7 +1,7 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      from(startEndpointUri).to("jms:queue:test.b");
+      from(timeOutEndpointUri).to("jms:queue:test.b");
       from("jms:queue:test.b").aggregator(header("cheese"),new AggregationStrategy(){
         public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
           try {
@@ -15,6 +15,23 @@
         }
       }
 ).to("mock:result");
+      from(multicastEndpointUri).to("jms:queue:point1","jms:queue:point2","jms:queue:point3");
+      from("jms:queue:point1").process(new MyProcessor()).to("jms:queue:reply");
+      from("jms:queue:point2").process(new MyProcessor()).to("jms:queue:reply");
+      from("jms:queue:point3").process(new MyProcessor()).to("jms:queue:reply");
+      from("jms:queue:reply").aggregator(header("cheese"),new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          LOG.info("try to aggregating the message ");
+          Integer old=(Integer)oldExchange.getProperty("aggregated");
+          if (old == null) {
+            old=1;
+          }
+          Exchange result=newExchange;
+          result.setProperty("aggregated",old + 1);
+          return result;
+        }
+      }
+).completedPredicate(header("aggregated").isEqualTo(3)).to("mock:reply");
     }
   }
 ;
