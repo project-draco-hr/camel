@@ -1,15 +1,43 @@
 {
-  LOG.info("transaction begin");
+  LOG.debug("Transaction begin");
   transactionTemplate.execute(new TransactionCallbackWithoutResult(){
     protected void doInTransactionWithoutResult(    TransactionStatus status){
+      RuntimeCamelException rce=null;
+      boolean activeTx=false;
       try {
+        activeTx=TransactionSynchronizationManager.isActualTransactionActive();
+        if (!activeTx) {
+          activeTx=status.isNewTransaction() && !status.isCompleted();
+          if (!activeTx) {
+            if (DefaultTransactionStatus.class.isAssignableFrom(status.getClass())) {
+              DefaultTransactionStatus defStatus=DefaultTransactionStatus.class.cast(status);
+              activeTx=defStatus.hasTransaction() && !status.isCompleted();
+            }
+          }
+        }
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Is actual transaction active: " + activeTx);
+        }
+        if (activeTx) {
+          TRANSACTED.set(exchange,Boolean.TRUE);
+        }
         processNext(exchange);
+        if (exchange.getException() != null) {
+          rce=new RuntimeCamelException(exchange.getException());
+        }
       }
  catch (      Exception e) {
-        throw new RuntimeCamelException(e);
+        rce=new RuntimeCamelException(e);
+      }
+      if (rce != null) {
+        if (activeTx) {
+          status.setRollbackOnly();
+          LOG.debug("Transaction rollback");
+        }
+        throw rce;
       }
     }
   }
 );
-  LOG.info("transaction commit");
+  LOG.debug("Transaction commit");
 }
