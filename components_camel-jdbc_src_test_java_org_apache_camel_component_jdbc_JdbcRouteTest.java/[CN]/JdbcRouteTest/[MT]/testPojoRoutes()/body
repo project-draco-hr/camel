@@ -1,24 +1,17 @@
 {
-  DataSource ds=new TestDataSource(url,user,password);
-  JndiContext context=new JndiContext();
-  context.bind("testdb",ds);
-  CamelContext camelContext=new DefaultCamelContext(context);
-  camelContext.addRoutes(new RouteBuilder(){
-    public void configure(){
-      from("direct:hello").to("jdbc:testdb?readSize=100");
-    }
-  }
-);
-  camelContext.start();
-  Endpoint<Exchange> endpoint=camelContext.getEndpoint("direct:hello");
-  ProducerTemplate<Exchange> template=camelContext.createProducerTemplate();
+  Endpoint endpoint=context.getEndpoint("direct:hello");
   Exchange exchange=endpoint.createExchange();
-  exchange.getIn().setBody("select * from customer");
+  exchange.getIn().setBody("select * from customer order by ID");
   Exchange out=template.send(endpoint,exchange);
   assertNotNull(out);
   assertNotNull(out.getOut());
   ArrayList<HashMap<String,Object>> data=out.getOut().getBody(ArrayList.class);
   assertNotNull("out body could not be converted to an ArrayList - was: " + out.getOut().getBody(),data);
   assertEquals(2,data.size());
-  camelContext.stop();
+  HashMap<String,Object> row=data.get(0);
+  assertEquals("cust1",row.get("ID"));
+  assertEquals("jstrachan",row.get("NAME"));
+  row=data.get(1);
+  assertEquals("cust2",row.get("ID"));
+  assertEquals("nsandhu",row.get("NAME"));
 }

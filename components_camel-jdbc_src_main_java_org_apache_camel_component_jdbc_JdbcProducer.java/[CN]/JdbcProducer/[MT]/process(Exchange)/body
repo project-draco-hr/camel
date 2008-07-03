@@ -2,13 +2,13 @@
   String sql=exchange.getIn().getBody(String.class);
   Connection conn=null;
   Statement stmt=null;
+  ResultSet rs=null;
   try {
     conn=source.getConnection();
     stmt=conn.createStatement();
     if (stmt.execute(sql)) {
-      ResultSet rs=stmt.getResultSet();
+      rs=stmt.getResultSet();
       setResultSet(exchange,rs);
-      rs.close();
     }
  else {
       int updateCount=stmt.getUpdateCount();
@@ -16,11 +16,19 @@
     }
   }
   finally {
-    if (stmt != null) {
-      stmt.close();
+    try {
+      if (rs != null) {
+        rs.close();
+      }
+      if (stmt != null) {
+        stmt.close();
+      }
+      if (conn != null) {
+        conn.close();
+      }
     }
-    if (conn != null) {
-      conn.close();
+ catch (    SQLException e) {
+      LOG.warn("Error closing JDBC resource: " + e,e);
     }
   }
 }
