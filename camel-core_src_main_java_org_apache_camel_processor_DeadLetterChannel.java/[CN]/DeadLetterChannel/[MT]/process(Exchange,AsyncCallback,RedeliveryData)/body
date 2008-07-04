@@ -7,7 +7,12 @@
       callback.done(data.sync);
       return data.sync;
     }
-    resetMaxDeliveryIfTransacted(exchange);
+    if (exchange.isTransacted() && exchange.getException() != null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Transacted Exchange, this DeadLetterChannel is bypassed: " + exchange);
+      }
+      return data.sync;
+    }
     if (exchange.getException() != null) {
       Throwable e=exchange.getException();
       exchange.setException(null);
