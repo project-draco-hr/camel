@@ -1,0 +1,24 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("activemq:testA").to("bean:dummyBean").to("activemq:a").to("activemq:b");
+      from("activemq:testB").to("activemq:a").to("bean:dummyBean").to("activemq:b");
+      from("activemq:testC").to("activemq:a").to("activemq:b").to("bean:dummyBean");
+      from("activemq:a").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          exchange.getOut().setBody(body + ",From A");
+        }
+      }
+);
+      from("activemq:b").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          exchange.getOut().setBody(body + ",From B");
+        }
+      }
+);
+    }
+  }
+;
+}
