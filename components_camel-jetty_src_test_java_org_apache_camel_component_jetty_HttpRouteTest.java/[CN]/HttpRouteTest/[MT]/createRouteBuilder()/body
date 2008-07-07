@@ -4,11 +4,18 @@
       from("jetty:http://localhost:8080/test").to("mock:a");
       Processor proc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
+          try {
+            HttpSession session=((HttpExchange)exchange).getRequest().getSession();
+            assertNotNull("we should get session here",session);
+          }
+ catch (          Exception e) {
+            exchange.getFault().setBody(e);
+          }
           exchange.getOut(true).setBody("<b>Hello World</b>");
         }
       }
 ;
-      from("jetty:http://localhost:8080/hello").process(proc);
+      from("jetty:http://localhost:8080/hello?sessionSupport=true").process(proc);
     }
   }
 ;

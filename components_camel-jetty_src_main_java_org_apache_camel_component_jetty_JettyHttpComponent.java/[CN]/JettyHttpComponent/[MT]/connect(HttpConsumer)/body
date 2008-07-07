@@ -1,5 +1,5 @@
 {
-  HttpEndpoint endpoint=(HttpEndpoint)consumer.getEndpoint();
+  JettyHttpEndpoint endpoint=(JettyHttpEndpoint)consumer.getEndpoint();
   String connectorKey=endpoint.getProtocol() + ":" + endpoint.getPort();
 synchronized (connectors) {
     ConnectorRef connectorRef=connectors.get(connectorKey);
@@ -13,12 +13,18 @@ synchronized (connectors) {
       }
       connector.setPort(endpoint.getPort());
       getServer().addConnector(connector);
+      if (endpoint.isSessionSupport()) {
+        enableSessionSupport();
+      }
       connector.start();
       connectorRef=new ConnectorRef(connector);
       connectors.put(connectorKey,connectorRef);
     }
  else {
       connectorRef.increment();
+      if (endpoint.isSessionSupport()) {
+        enableSessionSupport();
+      }
     }
   }
   camelServlet.connect(consumer);
