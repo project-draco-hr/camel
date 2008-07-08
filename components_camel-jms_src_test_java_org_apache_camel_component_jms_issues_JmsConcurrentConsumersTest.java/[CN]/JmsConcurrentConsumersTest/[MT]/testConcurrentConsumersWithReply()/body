@@ -1,0 +1,19 @@
+{
+  final CountDownLatch latch=new CountDownLatch(5);
+  ThreadPoolTaskExecutor executor=new ThreadPoolTaskExecutor();
+  executor.setCorePoolSize(5);
+  executor.afterPropertiesSet();
+  for (int i=0; i < 5; i++) {
+    final int count=i;
+    executor.execute(new Runnable(){
+      public void run(){
+        Object response=template.requestBody("activemq:a","World #" + count);
+        assertEquals("Bye World #" + count,response);
+        latch.countDown();
+      }
+    }
+);
+  }
+  latch.await(30000L,TimeUnit.MILLISECONDS);
+  assertEquals("Latch should be zero",0,latch.getCount());
+}
