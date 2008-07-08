@@ -18,6 +18,12 @@
   }
  else   if (shouldOutputHeader(in,headerName,headerValue)) {
     String key=encodeToSafeJmsHeaderName(headerName);
-    jmsMessage.setObjectProperty(key,headerValue);
+    Object value=getValidJMSHeaderValue(headerName,headerValue);
+    if (value != null) {
+      jmsMessage.setObjectProperty(key,headerValue);
+    }
+ else     if (LOG.isDebugEnabled()) {
+      LOG.debug("Ignoring non primitive header: " + headerName + " of class: "+ headerValue.getClass().getName()+ " with value: "+ headerValue);
+    }
   }
 }
