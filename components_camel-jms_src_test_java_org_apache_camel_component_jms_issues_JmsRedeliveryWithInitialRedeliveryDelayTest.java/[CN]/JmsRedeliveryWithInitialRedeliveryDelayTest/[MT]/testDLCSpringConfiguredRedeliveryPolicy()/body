@@ -1,0 +1,11 @@
+{
+  MockEndpoint dead=context.getEndpoint("mock:dead",MockEndpoint.class);
+  MockEndpoint result=context.getEndpoint("mock:result",MockEndpoint.class);
+  dead.expectedBodiesReceived("Hello World");
+  dead.message(0).header("org.apache.camel.Redelivered").isEqualTo(true);
+  dead.message(0).header("org.apache.camel.RedeliveryCounter").isEqualTo(4);
+  result.expectedMessageCount(0);
+  context.createProducerTemplate().sendBody("activemq:in","Hello World");
+  result.assertIsSatisfied();
+  dead.assertIsSatisfied();
+}
