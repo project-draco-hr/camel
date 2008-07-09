@@ -10,12 +10,14 @@
   org.apache.camel.Exchange exchange=getCamelTemplate().send(targetCamelEndpointUri,pattern,new Processor(){
     public void process(    org.apache.camel.Exchange ex) throws IOException {
       CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
-      ex.getIn().setHeaders(outMessage);
-      ex.getIn().setBody(outputStream.getInputStream());
+      Map<String,List<String>> protocolHeader=CastUtils.cast((Map<?,?>)outMessage.get(Message.PROTOCOL_HEADERS));
+      CxfSoapBinding.setProtocolHeader(ex.getIn().getHeaders(),protocolHeader);
+      ex.getIn().setBody(outputStream.getBytes());
       getLogger().log(Level.FINE,"template sending request: ",ex.getIn());
     }
   }
 );
+  exchange.setProperty(CxfConstants.CXF_EXCHANGE,outMessage.getExchange());
   if (!isOneWay) {
     handleResponse(exchange);
   }
