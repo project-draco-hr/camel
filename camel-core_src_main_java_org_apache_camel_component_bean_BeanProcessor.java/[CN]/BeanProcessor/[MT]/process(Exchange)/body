@@ -35,8 +35,19 @@
   }
   try {
     Object value=invocation.proceed();
-    if (value != null && exchange.getPattern().isOutCapable()) {
-      exchange.getOut().setBody(value);
+    if (value != null) {
+      if (exchange.getPattern().isOutCapable()) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Setting bean invocation value on OUT message: " + value);
+        }
+        exchange.getOut(true).setBody(value);
+      }
+ else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Setting bean invocation value on IN message: " + value);
+        }
+        exchange.getIn().setBody(value);
+      }
     }
   }
  catch (  InvocationTargetException e) {
