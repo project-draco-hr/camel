@@ -3,6 +3,7 @@
     LOG.trace("Searching for: " + test + " in package: "+ packageName+ " using classloader: "+ loader.getClass().getName());
   }
   if (loader.getClass().getName().endsWith("org.apache.felix.framework.searchpolicy.ContentClassLoader")) {
+    LOG.trace("This is not an URL classloader, skipping");
     return;
   }
   try {
@@ -38,8 +39,15 @@
       }
       String urlPath=url.getFile();
       urlPath=URLDecoder.decode(urlPath,"UTF-8");
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Decoded urlPath: " + urlPath);
+      }
       if (urlPath.startsWith("file:")) {
         urlPath=urlPath.substring(5);
+      }
+      if (urlPath.startsWith("bundle:")) {
+        LOG.trace("It's a virtual osgi bundle, skipping");
+        continue;
       }
       if (urlPath.indexOf('!') > 0) {
         urlPath=urlPath.substring(0,urlPath.indexOf('!'));
