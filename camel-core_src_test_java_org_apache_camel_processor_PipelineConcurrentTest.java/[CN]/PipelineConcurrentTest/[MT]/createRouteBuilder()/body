@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      errorHandler(noErrorHandler());
+      from("seda:in").thread(10).pipeline("direct:do","mock:result");
+      from("direct:do").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          exchange.getOut().setBody("Bye " + body);
+        }
+      }
+);
+    }
+  }
+;
+}
