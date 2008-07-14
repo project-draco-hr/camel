@@ -1,22 +1,29 @@
 {
-  int total=1;
+  int total=100;
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedMessageCount(total);
   ThreadPoolTaskExecutor executor=new ThreadPoolTaskExecutor();
   executor.setCorePoolSize(5);
   executor.afterPropertiesSet();
-  for (int i=0; i < 1; i++) {
+  for (int i=0; i < 5; i++) {
     final int threadCount=i;
     executor.execute(new Runnable(){
       public void run(){
         int start=threadCount * 20;
-        for (int i=0; i < 1; i++) {
-          template.sendBody("seda:in","<mail><subject>" + (start + i) + "</subject><body>Hello world!</body></mail>");
+        for (int i=0; i < 20; i++) {
+          try {
+            Thread.sleep(new Random().nextInt(10));
+          }
+ catch (          InterruptedException e) {
+          }
+          template.sendBody("direct:start","<mail><subject>Hey</subject><body>Hello world!</body></mail>");
         }
       }
     }
 );
   }
-  mock.assertIsSatisfied();
   mock.assertNoDuplicates(body());
+  mock.assertIsSatisfied();
+  System.out.println("The End");
+  System.out.println(mock.getExchanges().get(0).getIn().getBody());
 }
