@@ -1,9 +1,31 @@
 {
-  Resource resource=resolveMandatoryResource(remaining);
+  boolean fixed=false;
+  if (remaining.startsWith("fixed:")) {
+    fixed=true;
+    remaining=remaining.substring("fixed:".length());
+  }
+ else   if (remaining.startsWith("delim:")) {
+    remaining=remaining.substring("delim:".length());
+  }
+  Resource resource=null;
+  if (fixed) {
+    resource=resolveMandatoryResource(remaining);
+  }
+ else {
+    if (ObjectHelper.isNotNullAndNonEmpty(remaining)) {
+      resource=getResourceLoader().getResource(remaining);
+    }
+  }
   if (log.isDebugEnabled()) {
     log.debug(this + " using flatpack map resource: " + resource);
   }
-  FixedLengthEndpoint answer=new FixedLengthEndpoint(uri,resource);
+  FixedLengthEndpoint answer;
+  if (fixed) {
+    answer=new FixedLengthEndpoint(uri,resource);
+  }
+ else {
+    answer=new DelimitedEndpoint(uri,resource);
+  }
   answer.setCamelContext(getCamelContext());
   setProperties(answer,parameters);
   return answer;
