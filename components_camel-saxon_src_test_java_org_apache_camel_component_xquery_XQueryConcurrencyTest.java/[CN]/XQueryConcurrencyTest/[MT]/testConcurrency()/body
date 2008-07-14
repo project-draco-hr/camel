@@ -1,0 +1,26 @@
+{
+  int total=100;
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(total);
+  final CountDownLatch latch=new CountDownLatch(5);
+  ThreadPoolTaskExecutor executor=new ThreadPoolTaskExecutor();
+  executor.setCorePoolSize(5);
+  executor.afterPropertiesSet();
+  for (int i=0; i < 5; i++) {
+    final int threadCount=i;
+    executor.execute(new Runnable(){
+      public void run(){
+        int start=threadCount * 20;
+        for (int i=0; i < 20; i++) {
+          Object response=template.sendBody("seda:in","<person id='" + (start + i) + "'>James</person>");
+        }
+        latch.countDown();
+      }
+    }
+);
+  }
+  latch.await(10000L,TimeUnit.MILLISECONDS);
+  assertEquals("Latch should be zero",0,latch.getCount());
+  mock.assertIsSatisfied();
+  mock.assertNoDuplicates(body());
+}
