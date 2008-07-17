@@ -1,21 +1,28 @@
 {
-  ObjectInstance instance=null;
-  try {
-    instance=server.registerMBean(obj,name);
-  }
- catch (  InstanceAlreadyExistsException e) {
+  boolean exists=server.isRegistered(name);
+  if (exists) {
     if (forceRegistration) {
+      LOG.info("ForceRegistration enabled, unregistering existing MBean");
       server.unregisterMBean(name);
-      instance=server.registerMBean(obj,name);
     }
  else {
-      throw e;
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("MBean already registered with objectname: " + name);
+      }
     }
   }
-  if (instance != null) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Registered objectname " + instance.getObjectName());
+  ObjectInstance instance=null;
+  if (forceRegistration || !exists) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Registering MBean with objectname: " + name);
     }
-    mbeans.add(instance.getObjectName());
+    instance=server.registerMBean(obj,name);
+  }
+  if (instance != null) {
+    ObjectName registeredName=instance.getObjectName();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Registered MBean with objectname: " + registeredName);
+    }
+    mbeans.add(registeredName);
   }
 }
