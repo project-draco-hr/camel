@@ -1,7 +1,7 @@
 {
   RouteBuilder builder=new RouteBuilder(){
     public void configure(){
-      errorHandler(loggingErrorHandler("FOO.BAR"));
+      errorHandler(deadLetterChannel("seda:errors").maximumRedeliveries(2).useExponentialBackOff());
       from("seda:a").to("seda:b");
     }
   }
@@ -13,8 +13,10 @@
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
     EventDrivenConsumerRoute consumerRoute=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
     Processor processor=consumerRoute.getProcessor();
-    LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
-    SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,loggingProcessor.getOutput());
-    log.debug("Found sendProcessor: " + sendProcessor);
+    processor=unwrap(processor);
+    DeadLetterChannel deadLetterChannel=assertIsInstanceOf(DeadLetterChannel.class,processor);
+    RedeliveryPolicy redeliveryPolicy=deadLetterChannel.getRedeliveryPolicy();
+    assertEquals("getMaximumRedeliveries()",2,redeliveryPolicy.getMaximumRedeliveries());
+    assertEquals("isUseExponentialBackOff()",true,redeliveryPolicy.isUseExponentialBackOff());
   }
 }
