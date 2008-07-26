@@ -1,17 +1,26 @@
 {
-  if (sftpFile.getAttrs().getMTime() * 1000L > lastPollTime) {
-    if (isMatched(sftpFile)) {
-      final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
-      channel.get(sftpFile.getFilename(),byteArrayOutputStream);
-      RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(sftpFile),byteArrayOutputStream);
-      if (isSetNames()) {
-        String relativePath=getFullFileName(sftpFile).substring(endpoint.getConfiguration().getFile().length());
-        if (relativePath.startsWith("/")) {
-          relativePath=relativePath.substring(1);
-        }
-        exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
-      }
-      getProcessor().process(exchange);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Polling file: " + sftpFile);
+  }
+  long ts=sftpFile.getAttrs().getMTime() * 1000L;
+  if (ts > lastPollTime && isMatched(sftpFile)) {
+    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
+    if (exclusiveRead) {
+      acquireExclusiveRead(sftpFile);
     }
+    final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
+    channel.get(sftpFile.getFilename(),byteArrayOutputStream);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Retrieved file: " + sftpFile.getFilename() + " from: "+ remoteServer);
+    }
+    RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(sftpFile),byteArrayOutputStream);
+    if (isSetNames()) {
+      String relativePath=getFullFileName(sftpFile).substring(endpoint.getConfiguration().getFile().length());
+      if (relativePath.startsWith("/")) {
+        relativePath=relativePath.substring(1);
+      }
+      exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
+    }
+    getProcessor().process(exchange);
   }
 }

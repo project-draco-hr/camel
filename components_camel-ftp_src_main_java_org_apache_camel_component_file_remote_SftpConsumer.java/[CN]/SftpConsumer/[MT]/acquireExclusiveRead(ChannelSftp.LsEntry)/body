@@ -1,0 +1,28 @@
+{
+  LOG.trace("Acquiring exclusive read (avoid reading file that is in progress of being written)");
+  String originalName=sftpFile.getFilename();
+  String newName=originalName + ".camel";
+  boolean exclusive=false;
+  while (!exclusive) {
+    try {
+      channel.rename(originalName,newName);
+      exclusive=true;
+    }
+ catch (    SftpException e) {
+    }
+    if (exclusive) {
+      channel.rename(newName,originalName);
+    }
+ else {
+      LOG.trace("Exclusive read not granted. Sleeping for 1000 millis");
+      try {
+        Thread.sleep(1000);
+      }
+ catch (      InterruptedException e) {
+      }
+    }
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Acquired exclusive read to: " + originalName);
+  }
+}

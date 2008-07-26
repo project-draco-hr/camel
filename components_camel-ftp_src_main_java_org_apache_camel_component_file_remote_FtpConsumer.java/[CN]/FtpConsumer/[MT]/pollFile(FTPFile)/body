@@ -1,20 +1,29 @@
 {
-  if (ftpFile.getTimestamp().getTimeInMillis() > lastPollTime) {
-    if (isMatched(ftpFile)) {
-      String fullFileName=getFullFileName(ftpFile);
-      final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
-      client.retrieveFile(ftpFile.getName(),byteArrayOutputStream);
-      RemoteFileExchange exchange=endpoint.createExchange(fullFileName,byteArrayOutputStream);
-      if (isSetNames()) {
-        String ftpBasePath=endpoint.getConfiguration().getFile();
-        String relativePath=fullFileName.substring(ftpBasePath.length() + 1);
-        relativePath=relativePath.replaceFirst("/","");
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Setting exchange filename to " + relativePath);
-        }
-        exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
-      }
-      getProcessor().process(exchange);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Polling file: " + ftpFile);
+  }
+  long ts=ftpFile.getTimestamp().getTimeInMillis();
+  if (ts > lastPollTime && isMatched(ftpFile)) {
+    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
+    String fullFileName=getFullFileName(ftpFile);
+    if (exclusiveRead) {
+      acquireExclusiveRead(client,ftpFile);
     }
+    final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
+    client.retrieveFile(ftpFile.getName(),byteArrayOutputStream);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Retrieved file: " + ftpFile.getName() + " from: "+ remoteServer);
+    }
+    RemoteFileExchange exchange=endpoint.createExchange(fullFileName,byteArrayOutputStream);
+    if (isSetNames()) {
+      String ftpBasePath=endpoint.getConfiguration().getFile();
+      String relativePath=fullFileName.substring(ftpBasePath.length() + 1);
+      relativePath=relativePath.replaceFirst("/","");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Setting exchange filename to " + relativePath);
+      }
+      exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
+    }
+    getProcessor().process(exchange);
   }
 }
