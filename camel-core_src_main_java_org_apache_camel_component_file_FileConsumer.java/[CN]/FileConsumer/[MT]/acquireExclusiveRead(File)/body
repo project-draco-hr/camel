@@ -1,17 +1,13 @@
 {
   LOG.trace("Acquiring exclusive read (avoid reading file that is in progress of being written)");
-  String originalName=sftpFile.getFilename();
-  String newName=originalName + "..exclusiveRead";
+  String originalName=file.getAbsolutePath();
+  File newName=new File(originalName + ".exclusiveRead");
   boolean exclusive=false;
   while (!exclusive) {
-    try {
-      channel.rename(originalName,newName);
-      exclusive=true;
-    }
- catch (    SftpException e) {
-    }
+    exclusive=file.renameTo(newName);
     if (exclusive) {
-      channel.rename(newName,originalName);
+      LOG.trace("Got it renaming it back to original name");
+      newName.renameTo(file);
     }
  else {
       LOG.trace("Exclusive read not granted. Sleeping for 1000 millis");
@@ -23,6 +19,6 @@
     }
   }
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Acquired exclusive read to: " + originalName);
+    LOG.debug("Acquired exclusive read to: " + file);
   }
 }
