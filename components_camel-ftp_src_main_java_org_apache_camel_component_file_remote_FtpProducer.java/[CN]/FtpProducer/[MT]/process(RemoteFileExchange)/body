@@ -1,20 +1,22 @@
 {
   InputStream payload=exchange.getIn().getBody(InputStream.class);
   try {
+    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
     String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
     int lastPathIndex=fileName.lastIndexOf('/');
     if (lastPathIndex != -1) {
       String directory=fileName.substring(0,lastPathIndex);
       if (!buildDirectory(client,directory)) {
-        LOG.warn("Couldn't build directory: " + directory + " (either permissions deny it, or it already exists)");
+        LOG.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
       }
     }
-    final boolean success=client.storeFile(fileName,payload);
+    boolean success=client.storeFile(fileName,payload);
     if (!success) {
-      throw new RuntimeCamelException("Error sending file: " + fileName);
+      throw new RuntimeCamelException("Error sending file: " + fileName + " to: "+ remoteServer);
     }
-    RemoteFileConfiguration config=endpoint.getConfiguration();
-    LOG.info("Sent: " + fileName + " to "+ config.toString().substring(0,config.toString().indexOf(config.getFile())));
+    if (LOG.isInfoEnabled()) {
+      LOG.info("Sent: " + fileName + " to: "+ remoteServer);
+    }
   }
   finally {
     if (payload != null) {

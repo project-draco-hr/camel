@@ -1,17 +1,17 @@
 {
-  boolean atLeastOneSuccess=false;
-  final StringBuilder sb=new StringBuilder(dirName.length());
-  final String[] dirs=dirName.split("\\/");
-  for (  String dir : dirs) {
-    sb.append(dir).append('/');
-    String directory=sb.toString();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Trying to build directory: " + directory);
-    }
-    final boolean success=ftpClient.makeDirectory(directory);
-    if (!atLeastOneSuccess && success) {
-      atLeastOneSuccess=true;
+  String originalDirectory=ftpClient.printWorkingDirectory();
+  boolean success=false;
+  try {
+    success=ftpClient.changeWorkingDirectory(dirName);
+    if (!success) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Trying to build remote directory: " + dirName);
+      }
+      success=ftpClient.makeDirectory(dirName);
     }
   }
-  return atLeastOneSuccess;
+  finally {
+    ftpClient.changeWorkingDirectory(originalDirectory);
+  }
+  return success;
 }

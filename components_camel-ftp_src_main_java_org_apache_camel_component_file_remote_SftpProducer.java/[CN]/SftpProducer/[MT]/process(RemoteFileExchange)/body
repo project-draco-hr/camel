@@ -1,17 +1,20 @@
 {
   InputStream payload=exchange.getIn().getBody(InputStream.class);
   try {
+    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
     String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
     int lastPathIndex=fileName.lastIndexOf('/');
     if (lastPathIndex != -1) {
       String directory=fileName.substring(0,lastPathIndex);
       boolean success=buildDirectory(channel,directory);
       if (!success) {
-        LOG.warn("Couldn't build directory: " + directory + " (either permissions deny it, or it already exists)");
+        LOG.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
       }
     }
     channel.put(payload,fileName);
-    LOG.info("Sent: " + fileName + " to "+ endpoint.getConfiguration());
+    if (LOG.isInfoEnabled()) {
+      LOG.info("Sent: " + fileName + " to: "+ remoteServer);
+    }
   }
   finally {
     if (payload != null) {
