@@ -1,23 +1,25 @@
 {
-  LOG.trace("Acquiring exclusive read (avoid reading file that is in progress of being written)");
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Waiting for exclusive lock to file: " + ftpFile);
+  }
   String originalName=ftpFile.getName();
   String newName=originalName + ".camelExclusiveRead";
   boolean exclusive=false;
   while (!exclusive) {
     exclusive=client.rename(originalName,newName);
     if (exclusive) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Acquired exclusive lock to file: " + originalName);
+      }
       client.rename(newName,originalName);
     }
  else {
-      LOG.trace("Exclusive read not granted. Sleeping for 1000 millis");
+      LOG.trace("Exclusive lock not granted. Sleeping for 1000 millis.");
       try {
         Thread.sleep(1000);
       }
  catch (      InterruptedException e) {
       }
     }
-  }
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Acquired exclusive read to: " + originalName);
   }
 }

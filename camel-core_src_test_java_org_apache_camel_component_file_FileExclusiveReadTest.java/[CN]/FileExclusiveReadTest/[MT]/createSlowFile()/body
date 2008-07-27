@@ -3,17 +3,14 @@
   File file=new File("./target/exclusiveread/slowfile/hello.txt");
   FileOutputStream fos=new FileOutputStream(file);
   FileLock lock=fos.getChannel().lock();
-  byte[] buffer="Hello World".getBytes();
-  ByteBuffer bb=ByteBuffer.wrap(buffer);
-  for (int i=0; i < buffer.length; i++) {
+  fos.write("Hello World".getBytes());
+  for (int i=0; i < 3; i++) {
+    Thread.sleep(1000);
+    fos.write(("Line #" + i).getBytes());
     LOG.info("Appending to slowfile");
-    Thread.sleep(300);
   }
-  LOG.info("Writing to file");
-  fos.write(buffer);
-  LOG.info("Releasing lock");
+  fos.write("Bye World".getBytes());
   lock.release();
-  LOG.info("Closing file");
   fos.close();
   LOG.info("... done creating slowfile");
 }
