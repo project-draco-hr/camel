@@ -1,22 +1,14 @@
 {
-  LOG.trace("Acquiring exclusive read (avoid reading file that is in progress of being written)");
-  String originalName=file.getAbsolutePath();
-  File newName=new File(originalName + ".camelExclusiveRead");
-  boolean exclusive=false;
-  while (!exclusive) {
-    exclusive=file.renameTo(newName);
-    if (exclusive) {
-      LOG.trace("Got it renaming it back to original name");
-      newName.renameTo(file);
-    }
- else {
-      LOG.trace("Exclusive read not granted. Sleeping for 1000 millis.");
-      try {
-        Thread.sleep(1000);
-      }
- catch (      InterruptedException e) {
-      }
-    }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Acquiring exclusive read (avoid reading file that is in progress of being written) to " + file);
+  }
+  FileChannel channel=new RandomAccessFile(file,"rw").getChannel();
+  try {
+    FileLock lock=channel.lock();
+    lock.release();
+  }
+  finally {
+    ObjectHelper.close(channel,"FileConsumer during acquiring of exclusive read",LOG);
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Acquired exclusive read to: " + file);
