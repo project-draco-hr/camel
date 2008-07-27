@@ -1,7 +1,6 @@
 {
   InputStream payload=exchange.getIn().getBody(InputStream.class);
   try {
-    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
     String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
     int lastPathIndex=fileName.lastIndexOf('/');
     if (lastPathIndex != -1) {
@@ -12,11 +11,9 @@
     }
     boolean success=client.storeFile(fileName,payload);
     if (!success) {
-      throw new RuntimeCamelException("Error sending file: " + fileName + " to: "+ remoteServer);
+      throw new RuntimeCamelException("Error sending file: " + fileName + " to: "+ remoteServer());
     }
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Sent: " + fileName + " to: "+ remoteServer);
-    }
+    LOG.info("Sent: " + fileName + " to: "+ remoteServer());
   }
   finally {
     if (payload != null) {

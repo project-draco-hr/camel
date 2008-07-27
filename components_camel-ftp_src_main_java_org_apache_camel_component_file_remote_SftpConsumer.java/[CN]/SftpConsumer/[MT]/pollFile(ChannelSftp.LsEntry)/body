@@ -4,32 +4,34 @@
   }
   long ts=sftpFile.getAttrs().getMTime() * 1000L;
   if (ts > lastPollTime && isMatched(sftpFile)) {
-    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
+    String fullFileName=getFullFileName(sftpFile);
     if (exclusiveRead) {
       acquireExclusiveRead(sftpFile);
     }
     final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
     channel.get(sftpFile.getFilename(),byteArrayOutputStream);
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Retrieved file: " + sftpFile.getFilename() + " from: "+ remoteServer);
+      LOG.debug("Retrieved file: " + sftpFile.getFilename() + " from: "+ remoteServer());
     }
     RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(sftpFile),byteArrayOutputStream);
     if (isSetNames()) {
-      String relativePath=getFullFileName(sftpFile).substring(endpoint.getConfiguration().getFile().length());
-      if (relativePath.startsWith("/")) {
-        relativePath=relativePath.substring(1);
+      String ftpBasePath=endpoint.getConfiguration().getFile();
+      String relativePath=fullFileName.substring(ftpBasePath.length() + 1);
+      relativePath=relativePath.replaceFirst("/","");
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Setting exchange filename to " + relativePath);
       }
       exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
     }
     if (deleteFile) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Deleteing file: " + sftpFile.getFilename() + " from: "+ remoteServer);
+        LOG.debug("Deleteing file: " + sftpFile.getFilename() + " from: "+ remoteServer());
       }
       try {
         channel.rm(sftpFile.getFilename());
       }
  catch (      SftpException e) {
-        LOG.warn("Could not delete file: " + sftpFile.getFilename() + " from: "+ remoteServer);
+        LOG.warn("Could not delete file: " + sftpFile.getFilename() + " from: "+ remoteServer());
       }
     }
     getProcessor().process(exchange);

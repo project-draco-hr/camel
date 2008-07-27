@@ -1,17 +1,19 @@
 {
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing " + endpoint.getConfiguration());
+  }
   connectIfNecessary();
   try {
     process(endpoint.createExchange(exchange));
   }
- catch (  JSchException e) {
-    LOG.warn("Disconnecting due to exception: " + e.getMessage());
-    disconnect();
-    throw e;
-  }
-catch (  SftpException e) {
-    LOG.warn("Caught SftpException:" + e.getMessage(),e);
-    LOG.warn("Hoping an explicit disconnect/reconnect will solve the problem");
-    disconnect();
-    throw e;
+ catch (  Exception e) {
+    if (isStopping() || isStopped()) {
+      LOG.warn("Producer is stopping. Ignoring caught exception: " + e.getClass().getCanonicalName() + " message: "+ e.getMessage());
+    }
+ else {
+      LOG.warn("Exception occured during processing: " + e.getClass().getCanonicalName() + " message: "+ e.getMessage());
+      disconnect();
+      throw e;
+    }
   }
 }
