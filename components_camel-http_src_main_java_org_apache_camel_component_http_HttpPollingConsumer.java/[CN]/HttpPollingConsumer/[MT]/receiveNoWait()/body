@@ -11,10 +11,13 @@
     Message message=exchange.getIn();
     message.setBody(bos.createInputStream());
     Header[] headers=method.getResponseHeaders();
+    HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
     for (    Header header : headers) {
       String name=header.getName();
       String value=header.getValue();
-      message.setHeader(name,value);
+      if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value)) {
+        message.setHeader(name,value);
+      }
     }
     message.setHeader("http.responseCode",responseCode);
     return exchange;

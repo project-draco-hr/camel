@@ -17,13 +17,13 @@
       jettyExchange.setMethod(HttpMethods.GET);
     }
   }
-  HttpBinding binding=((HttpEndpoint)getEndpoint()).getBinding();
+  HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
   for (  String name : in.getHeaders().keySet()) {
     String value=in.getHeader(name,String.class);
     if ("Content-Type".equals(name)) {
       jettyExchange.setRequestContentType(value);
     }
- else     if (binding.shouldHeaderBePropagated(name,value)) {
+ else     if (strategy != null && !strategy.applyFilterToCamelHeaders(name,value)) {
       jettyExchange.addRequestHeader(name,value);
     }
   }

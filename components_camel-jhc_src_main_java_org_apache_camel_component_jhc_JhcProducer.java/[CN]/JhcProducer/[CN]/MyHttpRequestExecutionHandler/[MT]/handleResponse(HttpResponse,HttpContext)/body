@@ -5,9 +5,12 @@
   httpContext.setAttribute(RESPONSE_RECEIVED,Boolean.TRUE);
   Exchange e=(Exchange)httpContext.getAttribute(Exchange.class.getName());
   e.getOut().setBody(httpResponse.getEntity());
+  HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
   for (Iterator it=httpResponse.headerIterator(); it.hasNext(); ) {
     Header h=(Header)it.next();
-    e.getOut().setHeader(h.getName(),h.getValue());
+    if (strategy != null && !strategy.applyFilterToExternalHeaders(h.getName(),h.getValue())) {
+      e.getOut().setHeader(h.getName(),h.getValue());
+    }
   }
   e.getOut().setHeader(HTTP_RESPONSE_CODE,httpResponse.getStatusLine().getStatusCode());
   AsyncCallback callback=(AsyncCallback)e.removeProperty(AsyncCallback.class.getName());
