@@ -63,10 +63,21 @@
         loadImplementationsInDirectory(test,packageName,file);
       }
  else {
+        InputStream stream;
+        if (urlPath.startsWith("http:")) {
+          LOG.debug("The current jar is accessed via http");
+          URL urlStream=new URL(urlPath);
+          URLConnection con=urlStream.openConnection();
+          con.setUseCaches(false);
+          stream=con.getInputStream();
+        }
+ else {
+          stream=new FileInputStream(file);
+        }
         if (LOG.isDebugEnabled()) {
           LOG.debug("Loading from jar: " + file);
         }
-        loadImplementationsInJar(test,packageName,file);
+        loadImplementationsInJar(test,packageName,stream,urlPath);
       }
     }
  catch (    IOException ioe) {
