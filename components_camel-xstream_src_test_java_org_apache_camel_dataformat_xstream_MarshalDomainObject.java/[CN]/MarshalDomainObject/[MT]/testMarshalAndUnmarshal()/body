@@ -1,0 +1,14 @@
+{
+  PurchaseOrder order=new PurchaseOrder();
+  order.setName("Tiger");
+  order.setAmount(1);
+  order.setPrice(99.95);
+  MockEndpoint mock=getMockEndpoint("mock:reverse");
+  mock.expectedMessageCount(1);
+  mock.message(0).body().isInstanceOf(PurchaseOrder.class);
+  mock.message(0).body().equals(order);
+  Object result=(Object)template.sendBody("direct:marshal",order);
+  String body=context.getTypeConverter().convertTo(String.class,result);
+  template.sendBody("direct:reverse",body);
+  mock.assertIsSatisfied();
+}
