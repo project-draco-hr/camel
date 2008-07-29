@@ -1,0 +1,15 @@
+{
+  MockEndpoint error=this.resolveMandatoryEndpoint("mock:error",MockEndpoint.class);
+  error.expectedMessageCount(1);
+  MockEndpoint out=this.resolveMandatoryEndpoint("mock:out",MockEndpoint.class);
+  out.expectedMessageCount(0);
+  Exchange exchange=template.send("direct:start",ExchangePattern.InOnly,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("hello");
+    }
+  }
+);
+  Thread.sleep(2000);
+  error.assertIsSatisfied();
+  out.assertIsSatisfied();
+}
