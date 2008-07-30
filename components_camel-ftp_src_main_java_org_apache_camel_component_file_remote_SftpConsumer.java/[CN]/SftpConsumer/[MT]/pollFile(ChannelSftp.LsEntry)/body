@@ -5,8 +5,8 @@
   long ts=sftpFile.getAttrs().getMTime() * 1000L;
   if (ts > lastPollTime && isMatched(sftpFile)) {
     String fullFileName=getFullFileName(sftpFile);
-    if (exclusiveRead) {
-      acquireExclusiveRead(sftpFile);
+    if (exclusiveReadLock) {
+      acquireExclusiveReadLock(sftpFile);
     }
     final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
     channel.get(sftpFile.getFilename(),byteArrayOutputStream);
@@ -41,7 +41,7 @@
         if (lastPathIndex != -1) {
           String directory=toName.substring(0,lastPathIndex);
           if (!SftpUtils.buildDirectory(channel,directory)) {
-            LOG.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
+            LOG.warn("Can not build directory: " + directory + " (maybe because of denied permissions)");
           }
         }
       }
@@ -49,7 +49,7 @@
         channel.rename(fromName,toName);
       }
  catch (      SftpException e) {
-        LOG.warn("Could not move file: " + fromName + " to: "+ toName);
+        LOG.warn("Can not move file: " + fromName + " to: "+ toName);
       }
     }
     getProcessor().process(exchange);
