@@ -1,6 +1,6 @@
 {
-  if (LOG.isTraceEnabled()) {
-    LOG.trace("Polling file: " + sftpFile);
+  if (log.isTraceEnabled()) {
+    log.trace("Polling file: " + sftpFile);
   }
   long ts=sftpFile.getAttrs().getMTime() * 1000L;
   if (ts > lastPollTime && isMatched(sftpFile)) {
@@ -10,30 +10,30 @@
     }
     final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
     channel.get(sftpFile.getFilename(),byteArrayOutputStream);
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Retrieved file: " + sftpFile.getFilename() + " from: "+ remoteServer());
+    if (log.isDebugEnabled()) {
+      log.debug("Retrieved file: " + sftpFile.getFilename() + " from: "+ remoteServer());
     }
     RemoteFileExchange exchange=endpoint.createExchange(getFullFileName(sftpFile),byteArrayOutputStream);
     if (isSetNames()) {
       String ftpBasePath=endpoint.getConfiguration().getFile();
       String relativePath=fullFileName.substring(ftpBasePath.length() + 1);
       relativePath=relativePath.replaceFirst("/","");
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Setting exchange filename to " + relativePath);
+      if (log.isDebugEnabled()) {
+        log.debug("Setting exchange filename to " + relativePath);
       }
       exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,relativePath);
     }
     if (deleteFile) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Deleteing file: " + sftpFile.getFilename() + " from: "+ remoteServer());
+      if (log.isDebugEnabled()) {
+        log.debug("Deleteing file: " + sftpFile.getFilename() + " from: "+ remoteServer());
       }
       deleteFile(sftpFile.getFilename());
     }
  else     if (isMoveFile()) {
       String fromName=sftpFile.getFilename();
       String toName=getMoveFileName(fromName);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Moving file: " + fromName + " to: "+ toName);
+      if (log.isDebugEnabled()) {
+        log.debug("Moving file: " + fromName + " to: "+ toName);
       }
       boolean deleted=deleteFile(toName);
       if (!deleted) {
@@ -41,7 +41,7 @@
         if (lastPathIndex != -1) {
           String directory=toName.substring(0,lastPathIndex);
           if (!SftpUtils.buildDirectory(channel,directory)) {
-            LOG.warn("Can not build directory: " + directory + " (maybe because of denied permissions)");
+            log.warn("Can not build directory: " + directory + " (maybe because of denied permissions)");
           }
         }
       }
@@ -49,7 +49,7 @@
         channel.rename(fromName,toName);
       }
  catch (      SftpException e) {
-        LOG.warn("Can not move file: " + fromName + " to: "+ toName);
+        log.warn("Can not move file: " + fromName + " to: "+ toName);
       }
     }
     getProcessor().process(exchange);
