@@ -1,23 +1,22 @@
 {
   if (LOG.isTraceEnabled()) {
-    LOG.trace("Searching for: " + test + " in package: "+ packageName+ " using classloader: "+ loader.getClass().getName());
+    LOG.trace("Searching for: " + test + " in package: "+ packageName+ " using classloader: "+ loader.getClass().getName()+ " osgi bundle classloader: "+ osgi);
   }
-  if (loader.getClass().getName().endsWith("org.apache.felix.framework.searchpolicy.ContentClassLoader")) {
-    LOG.trace("This is not an URL classloader, skipping");
-    return;
-  }
-  try {
-    Method mth=loader.getClass().getMethod("getBundle",new Class[]{});
-    if (mth != null) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Loading from osgi buindle using classloader: " + loader);
+  if (osgi) {
+    try {
+      Method mth=loader.getClass().getMethod("getBundle",new Class[]{});
+      if (mth != null) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Loading from osgi buindle using classloader: " + loader);
+        }
+        loadImplementationsInBundle(test,packageName,loader,mth);
+        return;
       }
-      loadImplementationsInBundle(test,packageName,loader,mth);
+    }
+ catch (    NoSuchMethodException e) {
+      LOG.warn("It's not an osgi bundle classloader: " + loader);
       return;
     }
-  }
- catch (  NoSuchMethodException e) {
-    LOG.trace("It's not an osgi bundle classloader");
   }
   Enumeration<URL> urls;
   try {
