@@ -1,14 +1,28 @@
 {
+  if (strategy == null) {
+    return;
+  }
   Map<String,List<String>> cxfHeaders=CastUtils.cast((Map)message.get(Message.PROTOCOL_HEADERS));
   if (cxfHeaders != null) {
     for (    Map.Entry<String,List<String>> entry : cxfHeaders.entrySet()) {
-      if (strategy != null && !strategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue())) {
+      if (!strategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue())) {
         headers.put(entry.getKey(),entry.getValue().get(0));
       }
     }
   }
-  String contentType=(String)message.get(Message.CONTENT_TYPE);
-  if (contentType != null && strategy != null && !strategy.applyFilterToExternalHeaders(Message.CONTENT_TYPE,contentType)) {
-    headers.put(CamelTransportConstants.CONTENT_TYPE,contentType);
+  String key=Message.CONTENT_TYPE;
+  Object value=message.get(key);
+  if (value != null && !strategy.applyFilterToExternalHeaders(key,value)) {
+    headers.put(CamelTransportConstants.CONTENT_TYPE,value);
+  }
+  key=Client.REQUEST_CONTEXT;
+  value=message.get(key);
+  if (value != null && !strategy.applyFilterToExternalHeaders(key,value)) {
+    headers.put(key,value);
+  }
+  key=Client.RESPONSE_CONTEXT;
+  value=message.get(key);
+  if (value != null && !strategy.applyFilterToExternalHeaders(key,value)) {
+    headers.put(key,value);
   }
 }
