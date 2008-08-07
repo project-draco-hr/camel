@@ -1,12 +1,21 @@
 {
-  Message message=chat.createMessage();
-  message.setTo(participant);
-  message.setThread(exchange.getExchangeId());
-  endpoint.getBinding().populateXmppMessage(message,exchange);
-  if (LOG.isDebugEnabled()) {
-    LOG.debug(">>>> message: " + message.getBody());
-  }
+  String threadId=exchange.getExchangeId();
   try {
+    Chat chat=endpoint.getConnection().getChatManager().getThreadChat(threadId);
+    if (chat == null) {
+      chat=endpoint.getConnection().getChatManager().createChat(getParticipant(),threadId,new MessageListener(){
+        public void processMessage(        Chat chat,        Message message){
+        }
+      }
+);
+    }
+    Message message=new Message();
+    message.setTo(participant);
+    message.setThread(threadId);
+    endpoint.getBinding().populateXmppMessage(message,exchange);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(">>>> message: " + message.getBody());
+    }
     chat.sendMessage(message);
   }
  catch (  XMPPException e) {
