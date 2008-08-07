@@ -1,0 +1,36 @@
+{
+  return new ProtocolEncoder(){
+    public void encode(    IoSession session,    Object message,    ProtocolEncoderOutput out) throws Exception {
+      if (message == null) {
+        throw new IllegalArgumentException("Message to encode is null");
+      }
+      CharsetEncoder encoder=(CharsetEncoder)session.getAttribute(CHARSET_ENCODER);
+      if (encoder == null) {
+        encoder=charset.newEncoder();
+        session.setAttribute(CHARSET_ENCODER,encoder);
+      }
+      String body;
+      if (message instanceof byte[]) {
+        body=new String((byte[])message,encoder.charset().name());
+      }
+ else       if (message instanceof Message) {
+        body=HL7Converter.toString((Message)message);
+      }
+ else {
+        body=message.toString();
+      }
+      body=body.replace('\n','\r');
+      ByteBuffer bb=ByteBuffer.allocate(body.length() + 3).setAutoExpand(true);
+      bb.put(START_MARKER);
+      bb.putString(body,encoder);
+      bb.put(END_MARKER_1);
+      bb.put(END_MARKER_2);
+      bb.flip();
+      out.write(bb);
+    }
+    public void dispose(    IoSession session) throws Exception {
+      session.removeAttribute(CHARSET_ENCODER);
+    }
+  }
+;
+}

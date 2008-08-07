@@ -1,0 +1,44 @@
+{
+  return new ProtocolDecoder(){
+    public void decode(    IoSession session,    ByteBuffer in,    ProtocolDecoderOutput out) throws Exception {
+      int posEnd=0;
+      int posStart=0;
+      while (in.hasRemaining()) {
+        byte b=in.get();
+        if (b == START_MARKER) {
+          posStart=in.position();
+        }
+        if (b == END_MARKER_1) {
+          byte next=in.get();
+          if (next == END_MARKER_2) {
+            posEnd=in.position();
+            break;
+          }
+        }
+      }
+      in.rewind();
+      in.skip(posStart);
+      if (posEnd > 0) {
+        in.limit(posEnd);
+      }
+      try {
+        CharsetDecoder decoder=(CharsetDecoder)session.getAttribute(CHARSET_DECODER);
+        if (decoder == null) {
+          decoder=charset.newDecoder();
+          session.setAttribute(CHARSET_DECODER,decoder);
+        }
+        String body=in.getString(decoder);
+        out.write(body);
+      }
+  finally {
+        in.clear();
+      }
+    }
+    public void finishDecode(    IoSession session,    ProtocolDecoderOutput out) throws Exception {
+    }
+    public void dispose(    IoSession session) throws Exception {
+      session.removeAttribute(CHARSET_DECODER);
+    }
+  }
+;
+}

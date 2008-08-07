@@ -1,0 +1,12 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:unmarshal");
+  mock.expectedMessageCount(1);
+  mock.message(0).body().isInstanceOf(Message.class);
+  String body=createHL7AsString();
+  template.sendBody("direct:unmarshal",body);
+  assertMockEndpointsSatisifed();
+  Message msg=mock.getExchanges().get(0).getIn().getBody(Message.class);
+  assertEquals("2.4",msg.getVersion());
+  QRD qrd=(QRD)msg.get("QRD");
+  assertEquals("0101701234",qrd.getWhoSubjectFilter(0).getIDNumber().getValue());
+}
