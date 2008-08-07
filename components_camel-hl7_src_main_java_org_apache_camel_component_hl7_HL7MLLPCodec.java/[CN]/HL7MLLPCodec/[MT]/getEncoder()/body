@@ -10,14 +10,17 @@
         session.setAttribute(CHARSET_ENCODER,encoder);
       }
       String body;
-      if (message instanceof byte[]) {
-        body=new String((byte[])message,encoder.charset().name());
-      }
- else       if (message instanceof Message) {
+      if (message instanceof Message) {
         body=HL7Converter.toString((Message)message);
       }
+ else       if (message instanceof String) {
+        body=(String)message;
+      }
+ else       if (message instanceof byte[]) {
+        body=new String((byte[])message);
+      }
  else {
-        body=message.toString();
+        throw new IllegalArgumentException("The message to encode is not a supported type: " + message.getClass().getCanonicalName());
       }
       body=body.replace('\n','\r');
       ByteBuffer bb=ByteBuffer.allocate(body.length() + 3).setAutoExpand(true);
@@ -26,6 +29,9 @@
       bb.put(END_MARKER_1);
       bb.put(END_MARKER_2);
       bb.flip();
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Encoding HL7 from " + message.getClass().getCanonicalName() + " to byte stream");
+      }
       out.write(bb);
     }
     public void dispose(    IoSession session) throws Exception {
