@@ -1,40 +1,16 @@
 {
-  InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-  File file=createFileName(exchange.getIn());
-  buildDirectory(file);
+  boolean fileSource=exchange.getIn().getBody() instanceof File;
+  File target=createFileName(exchange.getIn());
+  buildDirectory(target);
   if (LOG.isDebugEnabled()) {
-    LOG.debug("About to write to: " + file + " from exchange: "+ exchange);
+    LOG.debug("About to write to: " + target + " from exchange: "+ exchange);
   }
-  FileChannel fc=null;
-  try {
-    if (getEndpoint().isAppend()) {
-      fc=new RandomAccessFile(file,"rw").getChannel();
-      fc.position(fc.size());
-    }
- else {
-      fc=new FileOutputStream(file).getChannel();
-    }
-    int size=getEndpoint().getBufferSize();
-    byte[] buffer=new byte[size];
-    ByteBuffer byteBuffer=ByteBuffer.wrap(buffer);
-    while (true) {
-      int count=in.read(buffer);
-      if (count <= 0) {
-        break;
-      }
- else       if (count < size) {
-        byteBuffer=ByteBuffer.wrap(buffer,0,count);
-        fc.write(byteBuffer);
-        break;
-      }
- else {
-        fc.write(byteBuffer);
-        byteBuffer.clear();
-      }
-    }
+  if (fileSource) {
+    File source=ExchangeHelper.getMandatoryInBody(exchange,File.class);
+    writeFileByFile(source,target);
   }
-  finally {
-    ObjectHelper.close(in,file.getName(),LOG);
-    ObjectHelper.close(fc,file.getName(),LOG);
+ else {
+    InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
+    writeFileByStream(in,target);
   }
 }
