@@ -1,11 +1,21 @@
 {
   BeanInvocation invocation=new BeanInvocation(method,args);
-  BeanExchange exchange=new BeanExchange(endpoint.getCamelContext(),ExchangePattern.InOut);
+  ExchangePattern pattern=ExchangePattern.InOut;
+  MethodInfo methodInfo=methodInfoCache.getMethodInfo(method);
+  if (methodInfo != null) {
+    pattern=methodInfo.getPattern();
+  }
+  BeanExchange exchange=new BeanExchange(endpoint.getCamelContext(),pattern);
   exchange.setInvocation(invocation);
   producer.process(exchange);
   Throwable fault=exchange.getException();
   if (fault != null) {
     throw new InvocationTargetException(fault);
   }
-  return exchange.getOut(true).getBody();
+  if (pattern.isOutCapable()) {
+    return exchange.getOut(true).getBody();
+  }
+ else {
+    return null;
+  }
 }
