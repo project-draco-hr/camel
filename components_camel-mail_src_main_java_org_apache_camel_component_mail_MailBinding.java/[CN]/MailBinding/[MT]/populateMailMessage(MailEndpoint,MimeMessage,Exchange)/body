@@ -1,21 +1,14 @@
 {
-  appendHeadersFromCamel(mimeMessage,exchange,exchange.getIn());
-  Map<Message.RecipientType,String> recipients=endpoint.getConfiguration().getRecipients();
-  if (recipients.containsKey(Message.RecipientType.TO)) {
-    mimeMessage.setRecipients(Message.RecipientType.TO,recipients.get(Message.RecipientType.TO));
+  if (hasRecipientHeaders(exchange.getIn())) {
+    setRecipientFromCamelMessage(mimeMessage,exchange,exchange.getIn());
   }
-  if (recipients.containsKey(Message.RecipientType.CC)) {
-    mimeMessage.setRecipients(Message.RecipientType.CC,recipients.get(Message.RecipientType.CC));
-  }
-  if (recipients.containsKey(Message.RecipientType.BCC)) {
-    mimeMessage.setRecipients(Message.RecipientType.BCC,recipients.get(Message.RecipientType.BCC));
-  }
-  if (mimeMessage.getRecipients(Message.RecipientType.TO) == null) {
-    mimeMessage.setRecipients(Message.RecipientType.TO,endpoint.getConfiguration().getDestination());
+ else {
+    setRecipientFromEndpointConfiguration(mimeMessage,endpoint);
   }
   if (mimeMessage.getAllRecipients() == null) {
     throw new IllegalArgumentException("The mail message does not have any recipients set.");
   }
+  appendHeadersFromCamelMessage(mimeMessage,exchange,exchange.getIn());
   if (empty(mimeMessage.getFrom())) {
     String from=endpoint.getConfiguration().getFrom();
     mimeMessage.setFrom(new InternetAddress(from));
