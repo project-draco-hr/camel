@@ -1,5 +1,5 @@
 {
-  Endpoint endpoint=getEndpointInjection(annotation.uri(),annotation.name(),injectionPointName);
+  Endpoint endpoint=getEndpointInjection(endpointUri,endpointRef,injectionPointName);
   if (endpoint != null) {
     if (type.isInstance(endpoint)) {
       return endpoint;
@@ -12,6 +12,14 @@
     }
  else     if (type.isAssignableFrom(PollingConsumer.class)) {
       return createInjectionPollingConsumer(endpoint);
+    }
+ else     if (type.isInterface()) {
+      try {
+        return ProxyHelper.createProxy(endpoint,type);
+      }
+ catch (      Exception e) {
+        throw new BeanInstantiationException(type,"Could not instantiate proxy of type " + type.getName() + " on endpoint "+ endpoint,e);
+      }
     }
  else {
       throw new IllegalArgumentException("Invalid type: " + type.getName() + " which cannot be injected via @EndpointInject for "+ endpoint);

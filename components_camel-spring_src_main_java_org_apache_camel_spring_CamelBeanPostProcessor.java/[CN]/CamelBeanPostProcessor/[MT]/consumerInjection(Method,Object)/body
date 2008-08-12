@@ -2,19 +2,11 @@
   MessageDriven annotation=method.getAnnotation(MessageDriven.class);
   if (annotation != null) {
     LOG.info("Creating a consumer for: " + annotation);
-    String injectionPointName=method.getName();
-    Endpoint endpoint=getEndpointInjection(annotation.uri(),annotation.name(),injectionPointName);
-    if (endpoint != null) {
-      try {
-        Processor processor=createConsumerProcessor(bean,method,endpoint);
-        LOG.info("Created processor: " + processor);
-        Consumer consumer=endpoint.createConsumer(processor);
-        startService(consumer);
-      }
- catch (      Exception e) {
-        LOG.warn(e);
-        throw new RuntimeCamelException(e);
-      }
-    }
+    subscribeMethod(method,bean,annotation.uri(),annotation.name());
+  }
+  Consume consume=method.getAnnotation(Consume.class);
+  if (consume != null) {
+    LOG.info("Creating a consumer for: " + consume);
+    subscribeMethod(method,bean,consume.uri(),consume.ref());
   }
 }
