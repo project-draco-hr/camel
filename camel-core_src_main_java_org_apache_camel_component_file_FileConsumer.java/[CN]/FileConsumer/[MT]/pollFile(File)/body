@@ -32,13 +32,22 @@
           if (LOG.isDebugEnabled()) {
             LOG.debug("Done processing file: " + file + ". Status is: "+ (failed ? "failed: " + failed + ", handled by failure processor: "+ handled : "processed OK"));
           }
-          if (!failed || handled) {
-            processStrategyCommit(processStrategy,exchange,file,handled);
+          boolean committed=false;
+          try {
+            if (!failed || handled) {
+              processStrategyCommit(processStrategy,exchange,file,handled);
+              committed=true;
+            }
+ else {
+              handleException(exchange.getException());
+            }
           }
- else           if (failed && !handled) {
-            handleException(exchange.getException());
+  finally {
+            if (!committed) {
+              processStrategyRollback(processStrategy,exchange,file);
+            }
+            filesBeingProcessed.remove(file);
           }
-          filesBeingProcessed.remove(file);
         }
       }
 );
