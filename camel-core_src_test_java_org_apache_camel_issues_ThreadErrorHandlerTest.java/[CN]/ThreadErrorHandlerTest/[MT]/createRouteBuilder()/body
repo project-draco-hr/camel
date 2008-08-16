@@ -1,0 +1,14 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:result").maximumRedeliveries(2));
+      from("direct:in").thread(2).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new Exception("Forced exception by unit test");
+        }
+      }
+);
+    }
+  }
+;
+}
