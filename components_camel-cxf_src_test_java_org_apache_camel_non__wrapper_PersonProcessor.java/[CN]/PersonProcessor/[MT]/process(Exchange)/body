@@ -1,0 +1,23 @@
+{
+  LOG.info("processing exchange in camel");
+  BindingOperationInfo boi=(BindingOperationInfo)exchange.getProperty(BindingOperationInfo.class.toString());
+  if (boi != null) {
+    LOG.info("boi.isUnwrapped" + boi.isUnwrapped());
+  }
+  MessageContentsList msgList=(MessageContentsList)exchange.getIn().getBody();
+  GetPerson person=(GetPerson)msgList.get(0);
+  String personId=person.getPersonId();
+  GetPersonResponse response=new GetPersonResponse();
+  if (personId == null || personId.length() == 0) {
+    LOG.info("person id 123, so throwing exception");
+    org.apache.camel.non_wrapper.types.UnknownPersonFault personFault=new org.apache.camel.non_wrapper.types.UnknownPersonFault();
+    personFault.setPersonId("");
+    org.apache.camel.non_wrapper.UnknownPersonFault fault=new org.apache.camel.non_wrapper.UnknownPersonFault("Get the null value of person name",personFault);
+    exchange.getFault().setBody(fault);
+  }
+  response.setPersonId(personId);
+  response.setName("Bonjour");
+  response.setSsn("123");
+  LOG.info("setting Bonjour as the response");
+  exchange.getOut().setBody(new Object[]{response});
+}
