@@ -1,0 +1,26 @@
+{
+  if (type.isInstance(value)) {
+    return type.cast(value);
+  }
+  checkLoaded();
+  TypeConverter converter=getOrFindTypeConverter(type,value);
+  if (converter != null) {
+    return converter.convertTo(type,exchange,value);
+  }
+  for (  TypeConverter fallback : fallbackConverters) {
+    T rc=fallback.convertTo(type,exchange,value);
+    if (rc != null) {
+      return rc;
+    }
+  }
+  if (boolean.class.isAssignableFrom(type)) {
+    return (T)Boolean.FALSE;
+  }
+  if (type.isPrimitive()) {
+    Class primitiveType=ObjectHelper.convertPrimitiveTypeToWrapperType(type);
+    if (primitiveType != type) {
+      return (T)convertTo(primitiveType,exchange,value);
+    }
+  }
+  return null;
+}
