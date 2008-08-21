@@ -1,18 +1,34 @@
 {
   try {
     Class clazz=target.getClass();
-    Method setter=findSetterMethod(typeConverter,clazz,name,value);
-    if (setter == null) {
+    Set<Method> setters=findSetterMethods(typeConverter,clazz,name,value);
+    if (setters.isEmpty()) {
       return false;
     }
-    if (value == null || value.getClass() == setter.getParameterTypes()[0]) {
-      setter.invoke(target,value);
+    Exception typeConvertionFailed=null;
+    for (    Method setter : setters) {
+      if (value == null || value.getClass() == setter.getParameterTypes()[0]) {
+        setter.invoke(target,value);
+        return true;
+      }
+ else {
+        try {
+          Object convertedValue=convert(typeConverter,setter.getParameterTypes()[0],value);
+          setter.invoke(target,convertedValue);
+          return true;
+        }
+ catch (        IllegalArgumentException e) {
+          typeConvertionFailed=e;
+          LOG.trace("Setter " + setter + " with parameter type "+ setter.getParameterTypes()[0]+ " could not be used for type conertions of "+ value);
+        }
+      }
+    }
+    if (typeConvertionFailed != null) {
+      throw new IllegalArgumentException("Could not find a suitable setter for property: " + name + " as there isn't a setter method with same type: "+ value.getClass().getCanonicalName()+ " nor type convertion possbile: "+ typeConvertionFailed.getMessage());
     }
  else {
-      Object convertedValue=convert(typeConverter,setter.getParameterTypes()[0],value);
-      setter.invoke(target,convertedValue);
+      return false;
     }
-    return true;
   }
  catch (  InvocationTargetException e) {
     Throwable throwable=e.getTargetException();
