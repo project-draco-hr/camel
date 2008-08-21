@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("file://target/filelanguage/report.txt?autoCreate=false" + "&expression=${id}.bak").to("mock:result");
+      from("file://target/filelanguage/report2.txt?autoCreate=false" + "&expression=backup-${id}-${file:name.noext}.bak").to("mock:result");
+      from("file://target/filelanguage/report3.txt?autoCreate=false" + "&expression=backup/${bean:myguidgenerator.guid}.txt").to("mock:result");
+      from("file://target/filelanguage/report4.txt?autoCreate=false" + "&expression=../backup/${file:name}.bak").to("mock:result");
+      FileEndpoint endpoint=new FileEndpoint();
+      endpoint.setCamelContext(context);
+      endpoint.setFile(new File("target/filelanguage/report5.txt"));
+      endpoint.setAutoCreate(false);
+      endpoint.setExpression(BeanLanguage.bean("myguidgenerator"));
+      from(endpoint).to("mock:result");
+    }
+  }
+;
+}

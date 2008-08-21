@@ -1,0 +1,29 @@
+{
+  boolean isDelete=params.get("delete") != null;
+  boolean isLock=params.get("lock") != null;
+  String moveNamePrefix=(String)params.get("moveNamePrefix");
+  String moveNamePostfix=(String)params.get("moveNamePostfix");
+  Expression expression=(Expression)params.get("expression");
+  if (params.containsKey("noop")) {
+    return new NoOpFileProcessStrategy(isLock);
+  }
+ else   if (moveNamePostfix != null || moveNamePrefix != null) {
+    if (isDelete) {
+      throw new IllegalArgumentException("You cannot set the deleteFiles property " + "and a moveFilenamePostfix or moveFilenamePrefix");
+    }
+    return new RenameFileProcessStrategy(isLock,moveNamePrefix,moveNamePostfix);
+  }
+ else   if (expression != null) {
+    FileLanguageRenamer renamer=new FileLanguageRenamer();
+    renamer.setExpression(expression);
+    RenameFileProcessStrategy strategy=new RenameFileProcessStrategy(isLock);
+    strategy.setRenamer(renamer);
+    return strategy;
+  }
+ else   if (isDelete) {
+    return new DeleteFileProcessStrategy(isLock);
+  }
+ else {
+    return new RenameFileProcessStrategy(isLock);
+  }
+}
