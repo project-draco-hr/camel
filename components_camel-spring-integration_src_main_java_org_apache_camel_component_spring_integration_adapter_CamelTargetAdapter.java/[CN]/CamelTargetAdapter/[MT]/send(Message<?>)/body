@@ -1,5 +1,6 @@
 {
   ExchangePattern pattern;
+  boolean result=false;
   if (isExpectReply()) {
     pattern=ExchangePattern.InOut;
   }
@@ -7,11 +8,15 @@
     pattern=ExchangePattern.InOnly;
   }
   Exchange inExchange=new SpringIntegrationExchange(getCamelContext(),pattern);
-  SpringIntegrationBinding.storeToCamelMessage(request,inExchange.getIn());
+  SpringIntegrationBinding.storeToCamelMessage(message,inExchange.getIn());
   Exchange outExchange=getCamelTemplate().send(getCamelEndpointUri(),inExchange);
+  if (outExchange.getFault() != null) {
+    result=true;
+  }
   Message response=null;
   if (isExpectReply()) {
     response=SpringIntegrationBinding.storeToSpringIntegrationMessage(outExchange.getOut());
+    result=replyChannel.send(response);
   }
-  return response;
+  return result;
 }
