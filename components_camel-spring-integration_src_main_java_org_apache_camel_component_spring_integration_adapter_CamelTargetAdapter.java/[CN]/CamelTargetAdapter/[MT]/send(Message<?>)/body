@@ -16,7 +16,13 @@
   Message response=null;
   if (isExpectReply()) {
     response=SpringIntegrationBinding.storeToSpringIntegrationMessage(outExchange.getOut());
-    result=replyChannel.send(response);
+    MessageChannel messageReplyChannel=(MessageChannel)message.getHeaders().get(MessageHeaders.RETURN_ADDRESS);
+    if (messageReplyChannel != null) {
+      result=messageReplyChannel.send(response);
+    }
+ else {
+      result=replyChannel.send(response);
+    }
   }
   return result;
 }
