@@ -2,7 +2,8 @@
   return new RouteBuilder(){
     public void configure(){
       from("direct:start").aggregator(header("cheese")).to("mock:result");
-      from("seda:header").setHeader("visited",constant(true)).aggregator(header("cheese")).to("mock:result");
+      from("seda:header").setHeader("visited",constant(true)).to("direct:temp");
+      from("direct:temp").aggregator(header("cheese")).to("mock:result");
       from("direct:predicate").aggregator(header("cheese"),new MyAggregationStrategy()).completedPredicate(header("aggregated").isEqualTo(5)).to("mock:result");
     }
   }
