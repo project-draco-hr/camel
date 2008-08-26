@@ -2,13 +2,9 @@
   IoAcceptor acceptor=new DatagramAcceptor();
   SocketAddress address=new InetSocketAddress(connectUri.getHost(),connectUri.getPort());
   IoConnector connector=new DatagramConnector();
-  boolean lazySessionCreation=getAndRemoveParameter(parameters,"lazySessionCreation",Boolean.class,false);
-  long timeout=getAndRemoveParameter(parameters,"timeout",Long.class,0L);
-  boolean transferExchange=false;
-  boolean sync=getAndRemoveParameter(parameters,"sync",Boolean.class,false);
-  boolean minaLogger=getAndRemoveParameter(parameters,"minaLogger",Boolean.class,false);
-  String encoding=getAndRemoveParameter(parameters,"encoding",String.class);
-  String codec=getAndRemoveParameter(parameters,"codec",String.class);
+  if (transferExchange) {
+    throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
+  }
   DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
   configureDataGramCodecFactory("MinaProducer",connectorConfig,encoding,codec);
   if (minaLogger) {
@@ -22,7 +18,7 @@
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
-  MinaEndpoint endpoint=new MinaEndpoint(uri,this,address,acceptor,acceptorConfig,connector,connectorConfig,lazySessionCreation,timeout,transferExchange);
+  MinaEndpoint endpoint=new MinaEndpoint(uri,this,address,acceptor,acceptorConfig,connector,connectorConfig,lazySessionCreation,timeout,transferExchange,sync);
   if (sync) {
     endpoint.setExchangePattern(ExchangePattern.InOut);
   }

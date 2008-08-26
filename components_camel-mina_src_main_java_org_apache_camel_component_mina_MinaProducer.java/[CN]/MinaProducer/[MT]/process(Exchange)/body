@@ -10,7 +10,6 @@
     LOG.warn("No payload to send for exchange: " + exchange);
     return;
   }
-  sync=ExchangeHelper.isOutCapable(exchange);
   if (sync) {
     latch=new CountDownLatch(1);
   }
@@ -29,7 +28,12 @@
       throw new CamelException("Response Handler had an exception",handler.getCause());
     }
  else {
-      MinaPayloadHelper.setOut(exchange,handler.getMessage());
+      if (ExchangeHelper.isOutCapable(exchange)) {
+        MinaPayloadHelper.setOut(exchange,handler.getMessage());
+      }
+ else {
+        MinaPayloadHelper.setIn(exchange,handler.getMessage());
+      }
     }
   }
 }
