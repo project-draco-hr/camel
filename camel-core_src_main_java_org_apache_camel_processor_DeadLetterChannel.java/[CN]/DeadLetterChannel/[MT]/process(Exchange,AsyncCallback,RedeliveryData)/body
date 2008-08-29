@@ -30,6 +30,7 @@
     if (!data.currentRedeliveryPolicy.shouldRedeliver(data.redeliveryCounter)) {
       setFailureHandled(exchange,true);
       decrementRedeliveryCounter(exchange);
+      cacheInMessageInputStream(exchange);
       AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
       boolean sync=afp.process(exchange,new AsyncCallback(){
         public void done(        boolean sync){
@@ -48,6 +49,7 @@
       }
       data.redeliveryDelay=data.currentRedeliveryPolicy.sleep(data.redeliveryDelay);
     }
+    cacheInMessageInputStream(exchange);
     boolean sync=outputAsync.process(exchange,new AsyncCallback(){
       public void done(      boolean sync){
         if (sync) {
