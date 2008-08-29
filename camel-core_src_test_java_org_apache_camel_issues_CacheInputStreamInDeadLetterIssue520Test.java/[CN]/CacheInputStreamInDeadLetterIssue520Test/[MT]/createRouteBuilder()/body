@@ -1,20 +1,21 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
+      streamCaching();
       errorHandler(deadLetterChannel("direct:errorHandler").maximumRedeliveries(3));
       from("direct:start").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           count++;
           String result=exchange.getIn().getBody(String.class);
-          assertEquals("Should read the inputstream out again",result,"Hello from Willem");
+          assertEquals("Should read the inputstream out again",result,"<hello>Willem</hello>");
           throw new Exception("Forced exception by unit test");
         }
       }
 );
-      from("direct:errorHandler").process(new Processor(){
+      from("direct:errorHandler").streamCaching().process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String result=exchange.getIn().getBody(String.class);
-          assertEquals("Should read the inputstream out again",result,"Hello from Willem");
+          assertEquals("Should read the inputstream out again",result,"<hello>Willem</hello>");
         }
       }
 ).to("mock:error");
