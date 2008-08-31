@@ -1,3 +1,29 @@
 {
-  throw new UnsupportedOperationException("marshal() not implemented yet!");
+  ObjectHelper.notNull(graph,"The object to marshal must be provided");
+  List<Map<String,Object>> data=(List<Map<String,Object>>)graph;
+  if (data.isEmpty()) {
+    LOG.warn("No data to marshal as the list is empty");
+    return;
+  }
+  Map<String,Object> firstRow=data.get(0);
+  Writer writer=createWriter(exchange,firstRow,stream);
+  try {
+    boolean first=true;
+    writer.printHeader();
+    for (    Map<String,Object> row : data) {
+      if (ignoreFirstRecord && first) {
+        first=false;
+        continue;
+      }
+      for (      String key : row.keySet()) {
+        writer.addRecordEntry(key,row.get(key));
+      }
+      writer.nextRecord();
+    }
+    writer.printFooter();
+  }
+  finally {
+    writer.flush();
+    writer.close();
+  }
 }
