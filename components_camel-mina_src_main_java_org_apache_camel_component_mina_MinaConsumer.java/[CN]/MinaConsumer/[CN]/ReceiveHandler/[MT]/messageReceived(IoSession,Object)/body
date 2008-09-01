@@ -15,6 +15,15 @@
  else {
       body=MinaPayloadHelper.getIn(endpoint,exchange);
     }
+    boolean failed=exchange.isFailed();
+    if (!endpoint.isTransferExchange() && failed) {
+      if (exchange.getException() != null) {
+        body=exchange.getException();
+      }
+ else {
+        body=exchange.getFault().getBody();
+      }
+    }
     if (body == null) {
       LOG.warn("Can not write body since its null, closing session: " + exchange);
       session.close();
