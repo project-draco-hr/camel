@@ -3,6 +3,9 @@
     LOG.debug("Received body: " + object);
   }
   MinaExchange exchange=endpoint.createExchange(session,object);
+  if (endpoint.getCharsetName() != null) {
+    exchange.setProperty(Exchange.CHARSET_NAME,endpoint.getCharsetName());
+  }
   getProcessor().process(exchange);
   if (sync) {
     Object body;
@@ -13,11 +16,7 @@
       body=MinaPayloadHelper.getIn(endpoint,exchange);
     }
     boolean failed=exchange.isFailed();
-    if (failed) {
-      LOG.warn("Can not write body since the exchange is failed, closing session: " + exchange);
-      session.close();
-    }
- else     if (body == null) {
+    if (body == null) {
       LOG.warn("Can not write body since its null, closing session: " + exchange);
       session.close();
     }
