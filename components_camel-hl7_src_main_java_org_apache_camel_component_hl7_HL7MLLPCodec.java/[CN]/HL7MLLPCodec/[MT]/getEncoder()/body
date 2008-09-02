@@ -4,6 +4,9 @@
       if (message == null) {
         throw new IllegalArgumentException("Message to encode is null");
       }
+ else       if (message instanceof Exception) {
+        throw (Exception)message;
+      }
       CharsetEncoder encoder=(CharsetEncoder)session.getAttribute(CHARSET_ENCODER);
       if (encoder == null) {
         encoder=charset.newEncoder();
@@ -22,12 +25,14 @@
  else {
         throw new IllegalArgumentException("The message to encode is not a supported type: " + message.getClass().getCanonicalName());
       }
-      body=body.replace('\n','\r');
+      if (convertLFtoCR) {
+        body=body.replace('\n','\r');
+      }
       ByteBuffer bb=ByteBuffer.allocate(body.length() + 3).setAutoExpand(true);
-      bb.put(START_MARKER);
+      bb.put((byte)startByte);
       bb.putString(body,encoder);
-      bb.put(END_MARKER_1);
-      bb.put(END_MARKER_2);
+      bb.put((byte)endByte1);
+      bb.put((byte)endByte2);
       bb.flip();
       if (LOG.isDebugEnabled()) {
         LOG.debug("Encoding HL7 from " + message.getClass().getCanonicalName() + " to byte stream");
