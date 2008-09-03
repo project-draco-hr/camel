@@ -23,6 +23,26 @@
       ((CamelBeanPostProcessor)beanPostProcessor).setCamelContext(getContext());
     }
   }
+  for (  RouteType route : routes) {
+    for (    InterceptType intercept : intercepts) {
+      List<ProcessorType<?>> outputs=new ArrayList<ProcessorType<?>>();
+      List<ProcessorType<?>> exceptionHandlers=new ArrayList<ProcessorType<?>>();
+      for (      ProcessorType output : route.getOutputs()) {
+        if (output instanceof ExceptionType) {
+          exceptionHandlers.add(output);
+        }
+ else {
+          outputs.add(output);
+        }
+      }
+      route.clearOutput();
+      route.getOutputs().addAll(exceptionHandlers);
+      InterceptType proxy=intercept.createProxy();
+      route.addOutput(proxy);
+      route.pushBlock(proxy.getProceed());
+      route.getOutputs().addAll(outputs);
+    }
+  }
   getContext().addRouteDefinitions(routes);
   if (!isJmxEnabled() || (camelJMXAgent != null && camelJMXAgent.isDisabled() != null && camelJMXAgent.isDisabled())) {
     LOG.debug("JMXAgent disabled");
