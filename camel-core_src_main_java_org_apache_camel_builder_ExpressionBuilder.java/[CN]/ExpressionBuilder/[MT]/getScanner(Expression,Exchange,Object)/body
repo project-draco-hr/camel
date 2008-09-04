@@ -1,0 +1,31 @@
+{
+  String charset=(String)exchange.getProperty(Exchange.CHARSET_NAME);
+  Scanner scanner=null;
+  if (value instanceof Readable) {
+    scanner=new Scanner((Readable)value);
+  }
+ else   if (value instanceof InputStream) {
+    scanner=charset == null ? new Scanner((InputStream)value) : new Scanner((InputStream)value,charset);
+  }
+ else   if (value instanceof File) {
+    try {
+      scanner=charset == null ? new Scanner((File)value) : new Scanner((File)value,charset);
+    }
+ catch (    FileNotFoundException e) {
+      throw new RuntimeCamelException(e);
+    }
+  }
+ else   if (value instanceof String) {
+    scanner=new Scanner((String)value);
+  }
+ else   if (value instanceof ReadableByteChannel) {
+    scanner=charset == null ? new Scanner((ReadableByteChannel)value) : new Scanner((ReadableByteChannel)value,charset);
+  }
+  if (scanner == null) {
+    String text=exchange.getContext().getTypeConverter().convertTo(String.class,exchange,value);
+    if (text != null) {
+      scanner=new Scanner(text);
+    }
+  }
+  return scanner;
+}
