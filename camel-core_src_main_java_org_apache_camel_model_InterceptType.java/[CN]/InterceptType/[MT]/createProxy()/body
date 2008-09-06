@@ -1,25 +1,26 @@
 {
   InterceptType answer=new InterceptType();
   answer.getOutputs().addAll(this.getOutputs());
+  answer.setStopIntercept(getStopIntercept());
   if (answer.getOutputs().size() > 0) {
     ChoiceType choice=null;
     for (    ProcessorType processor : answer.getOutputs()) {
       if (processor instanceof ChoiceType) {
         choice=(ChoiceType)processor;
-        if (usePredicate.booleanValue() && stop.booleanValue()) {
+        if (usePredicate.booleanValue() && getStopIntercept().booleanValue()) {
           WhenType when=choice.getWhenClauses().get(0);
           when.getOutputs().remove(this.getProceed());
         }
-        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1),usePredicate.booleanValue() && !stop.booleanValue());
-        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getOtherwise(),!stop.booleanValue());
-        if (stop.booleanValue()) {
+        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1),usePredicate.booleanValue() && !getStopIntercept().booleanValue());
+        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getOtherwise(),!getStopIntercept().booleanValue());
+        if (getStopIntercept().booleanValue()) {
           addProceedProxy(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1),usePredicate.booleanValue());
         }
         break;
       }
     }
     if (choice == null) {
-      addProceedProxy(this.getProceed(),answer.getProceed(),answer,!stop.booleanValue());
+      addProceedProxy(this.getProceed(),answer.getProceed(),answer,!getStopIntercept().booleanValue());
     }
   }
   return answer;
