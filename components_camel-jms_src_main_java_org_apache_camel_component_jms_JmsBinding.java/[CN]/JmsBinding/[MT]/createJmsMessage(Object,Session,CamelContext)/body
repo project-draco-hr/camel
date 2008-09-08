@@ -22,10 +22,17 @@
       return result;
     }
  catch (    JMSException e) {
+      LOG.warn("Can not populate MapMessage will fall back to ObjectMessage, cause by: " + e.getMessage());
     }
   }
   if (body instanceof String) {
     return session.createTextMessage((String)body);
+  }
+  if (body instanceof File || body instanceof Reader || body instanceof InputStream|| body instanceof ByteBuffer) {
+    BytesMessage result=session.createBytesMessage();
+    byte[] bytes=context.getTypeConverter().convertTo(byte[].class,body);
+    result.writeBytes(bytes);
+    return result;
   }
   if (body instanceof Serializable) {
     return session.createObjectMessage((Serializable)body);
