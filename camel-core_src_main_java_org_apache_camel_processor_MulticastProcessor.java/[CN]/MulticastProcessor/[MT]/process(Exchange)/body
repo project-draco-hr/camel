@@ -1,14 +1,15 @@
 {
   Exchange result=null;
-  List<ProcessorExchangePair> pairs=createProcessorExchangePairs(exchange);
+  Iterable<ProcessorExchangePair> pairs=createProcessorExchangePairs(exchange);
   if (isParallelProcessing) {
-    Exchange[] exchanges=new Exchange[pairs.size()];
-    final CountDownLatch completedExchanges=new CountDownLatch(pairs.size());
+    List<ProcessorExchangePair> allPairs=CollectionConverter.toList(pairs);
+    Exchange[] exchanges=new Exchange[allPairs.size()];
+    final CountDownLatch completedExchanges=new CountDownLatch(allPairs.size());
     int i=0;
     for (    ProcessorExchangePair pair : pairs) {
       Processor producer=pair.getProcessor();
       exchanges[i]=pair.getExchange();
-      updateNewExchange(exchanges[i],i,pairs);
+      updateNewExchange(exchanges[i],i,allPairs);
       ProcessCall call=new ProcessCall(exchanges[i],producer,new AsyncCallback(){
         public void done(        boolean doneSynchronously){
           completedExchanges.countDown();

@@ -1,20 +1,9 @@
 {
   Object value=expression.evaluate(exchange);
-  Integer collectionSize=CollectionHelper.size(value);
-  List<ProcessorExchangePair> result;
-  if (collectionSize != null) {
-    result=new ArrayList<ProcessorExchangePair>(collectionSize);
+  if (streaming) {
+    return createProcessorExchangePairsIterable(exchange,value);
   }
  else {
-    result=new ArrayList<ProcessorExchangePair>();
+    return createProcessorExchangePairsList(exchange,value);
   }
-  Iterator<Object> iter=ObjectHelper.createIterator(value);
-  while (iter.hasNext()) {
-    Object part=iter.next();
-    Exchange newExchange=exchange.copy();
-    Message in=newExchange.getIn();
-    in.setBody(part);
-    result.add(new ProcessorExchangePair(getProcessors().iterator().next(),newExchange));
-  }
-  return result;
 }
