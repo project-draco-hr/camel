@@ -1,11 +1,6 @@
 {
-  LOG.debug("Transaction begin");
-  final RedeliveryData redeliveryData=previousRollback.get();
   transactionTemplate.execute(new TransactionCallbackWithoutResult(){
     protected void doInTransactionWithoutResult(    TransactionStatus status){
-      if (redeliveryPolicy != null && redeliveryData.previousRollback) {
-        redeliveryData.redeliveryDelay=redeliveryPolicy.sleep(redeliveryData.redeliveryDelay);
-      }
       RuntimeCamelException rce=null;
       boolean activeTx=false;
       try {
@@ -19,8 +14,8 @@
             }
           }
         }
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Is actual transaction active: " + activeTx);
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Is actual transaction active: " + activeTx);
         }
         if (activeTx) {
           TRANSACTED.set(exchange,Boolean.TRUE);
@@ -34,17 +29,14 @@
         rce=new RuntimeCamelException(e);
       }
       if (rce != null) {
-        redeliveryData.previousRollback=true;
+        delayBeforeRedelivery();
         if (activeTx) {
           status.setRollbackOnly();
-          LOG.debug("Transaction rollback");
+          LOG.debug("Setting transaction to rollbackOnly due to exception being thrown: " + rce.getMessage());
         }
         throw rce;
       }
     }
   }
 );
-  redeliveryData.previousRollback=false;
-  redeliveryData.redeliveryDelay=0L;
-  LOG.debug("Transaction commit");
 }
