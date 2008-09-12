@@ -4,6 +4,12 @@
   mock.expectedMessageCount(1);
   mock.message(0).header("org.apache.camel.Redelivered").isEqualTo(Boolean.TRUE);
   mock.message(0).header("org.apache.camel.RedeliveryCounter").isEqualTo(2);
-  template.sendBody("direct:inBeforeThread","Hello World");
+  try {
+    template.sendBody("direct:inBeforeThread","Hello World");
+    fail("Should have thrown a RuntimeCamelException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertEquals("Forced exception by unit test",e.getCause().getMessage());
+  }
   mock.assertIsSatisfied();
 }

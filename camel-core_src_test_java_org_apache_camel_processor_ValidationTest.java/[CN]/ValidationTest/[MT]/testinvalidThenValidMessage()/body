@@ -1,12 +1,14 @@
 {
   validEndpoint.expectedMessageCount(2);
   invalidEndpoint.expectedMessageCount(1);
-  Object result;
-  result=template.sendBodyAndHeader("direct:start","<invalid/>","foo","notMatchedHeaderValue");
-  assertEquals("invalidResult",result);
-  result=template.sendBodyAndHeader("direct:start","<valid/>","foo","bar");
+  try {
+    template.sendBodyAndHeader("direct:start","<invalid/>","foo","notMatchedHeaderValue");
+  }
+ catch (  RuntimeCamelException e) {
+  }
+  Object result=template.sendBodyAndHeader("direct:start","<valid/>","foo","bar");
   assertEquals("validResult",result);
   result=template.sendBodyAndHeader("direct:start","<valid/>","foo","bar");
   assertEquals("validResult",result);
-  MockEndpoint.assertIsSatisfied(validEndpoint,invalidEndpoint);
+  assertMockEndpointsSatisfied();
 }

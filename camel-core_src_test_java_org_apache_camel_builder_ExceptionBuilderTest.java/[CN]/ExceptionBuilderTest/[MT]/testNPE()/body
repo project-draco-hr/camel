@@ -2,6 +2,12 @@
   MockEndpoint mock=getMockEndpoint(ERROR_QUEUE);
   mock.expectedMessageCount(1);
   mock.expectedHeaderReceived(MESSAGE_INFO,"Damm a NPE");
-  template.sendBody("direct:a","Hello NPE");
+  try {
+    template.sendBody("direct:a","Hello NPE");
+    fail("Should have thrown a NullPointerException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertTrue(e.getCause() instanceof NullPointerException);
+  }
   mock.assertIsSatisfied();
 }

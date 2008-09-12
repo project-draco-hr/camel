@@ -2,6 +2,12 @@
   MockEndpoint mock=getMockEndpoint(BUSINESS_ERROR_QUEUE);
   mock.expectedMessageCount(1);
   mock.expectedHeaderReceived(MESSAGE_INFO,"Damm my business is not going to well");
-  template.sendBody("direct:a","Hello business");
+  try {
+    template.sendBody("direct:a","Hello business");
+    fail("Should have thrown a MyBusinessException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertTrue(e.getCause() instanceof MyBusinessException);
+  }
   mock.assertIsSatisfied();
 }

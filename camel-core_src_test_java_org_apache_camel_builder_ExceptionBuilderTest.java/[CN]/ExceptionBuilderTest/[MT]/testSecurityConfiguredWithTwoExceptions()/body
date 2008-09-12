@@ -2,6 +2,12 @@
   MockEndpoint mock=getMockEndpoint(SECURITY_ERROR_QUEUE);
   mock.expectedMessageCount(1);
   mock.expectedHeaderReceived(MESSAGE_INFO,"Damm some security error");
-  template.sendBody("direct:a","I am not allowed to do this");
+  try {
+    template.sendBody("direct:a","I am not allowed to do this");
+    fail("Should have thrown a GeneralSecurityException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertTrue(e.getCause() instanceof GeneralSecurityException);
+  }
   mock.assertIsSatisfied();
 }

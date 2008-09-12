@@ -3,6 +3,13 @@
   inner.setName("James");
   MockEndpoint mock=getMockEndpoint("mock:outer");
   mock.expectedMessageCount(1);
-  template.sendBody("direct:start","Hello World");
-  assertMockEndpointsSatisifed();
+  try {
+    template.sendBody("direct:start","Hello World");
+    fail("Should have thrown a IllegalArgumentException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertTrue(e.getCause() instanceof IllegalArgumentException);
+    assertEquals("Forced exception by unit test",e.getCause().getMessage());
+  }
+  assertMockEndpointsSatisfied();
 }

@@ -1,6 +1,17 @@
 {
   Object answer=null;
   if (result != null) {
+    if (result.getException() != null) {
+      if (result.getException() instanceof RuntimeCamelException) {
+        throw (RuntimeCamelException)result.getException();
+      }
+ else {
+        throw new RuntimeCamelException(result.getException());
+      }
+    }
+    if (hasFaultMessage(result)) {
+      return result.getFault().getBody();
+    }
     boolean notOut=pattern != null && !pattern.isOutCapable();
     boolean hasOut=result.getOut(false) != null;
     if (hasOut && !notOut) {
