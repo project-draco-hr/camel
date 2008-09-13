@@ -2,11 +2,17 @@
   if (log.isTraceEnabled()) {
     log.trace("Processing " + endpoint.getConfiguration());
   }
-  connectIfNecessary();
   try {
+    connectIfNecessary();
+    if (!loggedIn) {
+      String message="Could not connect/login to " + endpoint.getConfiguration();
+      log.warn(message);
+      throw new FtpOperationFailedException(client.getReplyCode(),client.getReplyString(),message);
+    }
     process(endpoint.createExchange(exchange));
   }
  catch (  Exception e) {
+    loggedIn=false;
     if (isStopping() || isStopped()) {
       log.warn("Producer is stopping. Ignoring caught exception: " + e.getClass().getCanonicalName() + " message: "+ e.getMessage());
     }

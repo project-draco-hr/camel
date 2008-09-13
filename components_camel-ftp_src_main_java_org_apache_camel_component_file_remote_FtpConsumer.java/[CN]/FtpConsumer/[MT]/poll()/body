@@ -2,8 +2,13 @@
   if (log.isTraceEnabled()) {
     log.trace("Polling " + endpoint.getConfiguration());
   }
-  connectIfNecessary();
   try {
+    connectIfNecessary();
+    if (!loggedIn) {
+      String message="Could not connect/login to " + endpoint.getConfiguration();
+      log.warn(message);
+      throw new FtpOperationFailedException(client.getReplyCode(),client.getReplyString(),message);
+    }
     final String fileName=endpoint.getConfiguration().getFile();
     if (endpoint.getConfiguration().isDirectory()) {
       pollDirectory(fileName);
@@ -19,6 +24,7 @@
     lastPollTime=System.currentTimeMillis();
   }
  catch (  Exception e) {
+    loggedIn=false;
     if (isStopping() || isStopped()) {
       log.warn("Consumer is stopping. Ignoring caught exception: " + e.getClass().getCanonicalName() + " message: "+ e.getMessage());
     }
