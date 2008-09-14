@@ -10,16 +10,24 @@
       exchange.getIn().getHeaders();
     }
     processor.process(exchange);
-    final JmsMessage out=exchange.getOut(false);
-    if (exchange.getException() != null) {
-      rce=new RuntimeCamelException(exchange.getException());
+    JmsMessage body=null;
+    if (exchange.isFailed()) {
+      if (exchange.getException() != null) {
+        rce=wrapRuntimeCamelException(exchange.getException());
+      }
+ else       if (exchange.getFault().getBody() != null) {
+        body=exchange.getFault();
+      }
     }
-    if (rce == null && out != null && !disableReplyTo) {
-      sendReply(replyDestination,message,exchange,out);
+ else {
+      body=exchange.getOut(false);
+    }
+    if (rce == null && body != null && !disableReplyTo) {
+      sendReply(replyDestination,message,exchange,body);
     }
   }
  catch (  Exception e) {
-    rce=new RuntimeCamelException(e);
+    rce=wrapRuntimeCamelException(e);
   }
   if (rce != null) {
     LOG.warn(endpoint + " consumer caught an exception while processing " + "JMS message: "+ message,rce);
