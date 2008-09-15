@@ -1,0 +1,26 @@
+{
+  Thread up=new Thread(new Runnable(){
+    public void run(){
+      for (int i=0; i < COUNT; i++) {
+        latch.increment();
+        sleep();
+      }
+    }
+  }
+);
+  Thread down=new Thread(new Runnable(){
+    public void run(){
+      for (int i=0; i < COUNT; i++) {
+        latch.decrement();
+        latch.increment();
+        sleep();
+        latch.decrement();
+      }
+    }
+  }
+);
+  up.start();
+  down.start();
+  assertFalse("We can't be done in 100 ms",latch.await(100,TimeUnit.MILLISECONDS));
+  assertLatchDone();
+}
