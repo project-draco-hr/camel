@@ -1,5 +1,5 @@
 {
-  Exchange result=null;
+  final AtomicExchange result=new AtomicExchange();
   Iterable<ProcessorExchangePair> pairs=createProcessorExchangePairs(exchange);
   if (isParallelProcessing) {
     List<Exchange> exchanges=new LinkedList<Exchange>();
@@ -7,13 +7,16 @@
     int i=0;
     for (    ProcessorExchangePair pair : pairs) {
       Processor producer=pair.getProcessor();
-      Exchange subExchange=pair.getExchange();
+      final Exchange subExchange=pair.getExchange();
       updateNewExchange(subExchange,i,pairs);
       exchanges.add(subExchange);
       completedExchanges.increment();
       ProcessCall call=new ProcessCall(subExchange,producer,new AsyncCallback(){
         public void done(        boolean doneSynchronously){
           completedExchanges.decrement();
+          if (streaming && aggregationStrategy != null) {
+            doAggregate(result,subExchange);
+          }
         }
       }
 );
@@ -21,14 +24,9 @@
       i++;
     }
     completedExchanges.await();
-    if (aggregationStrategy != null) {
+    if (!streaming && aggregationStrategy != null) {
       for (      Exchange resultExchange : exchanges) {
-        if (result == null) {
-          result=resultExchange;
-        }
- else {
-          result=aggregationStrategy.aggregate(result,resultExchange);
-        }
+        doAggregate(result,resultExchange);
       }
     }
   }
@@ -39,18 +37,11 @@
       Exchange subExchange=pair.getExchange();
       updateNewExchange(subExchange,i,pairs);
       producer.process(subExchange);
-      if (aggregationStrategy != null) {
-        if (result == null) {
-          result=subExchange;
-        }
- else {
-          result=aggregationStrategy.aggregate(result,subExchange);
-        }
-      }
+      doAggregate(result,subExchange);
       i++;
     }
   }
-  if (result != null) {
-    ExchangeHelper.copyResults(exchange,result);
+  if (result.get() != null) {
+    ExchangeHelper.copyResults(exchange,result.get());
   }
 }

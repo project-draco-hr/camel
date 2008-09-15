@@ -1,7 +1,7 @@
 {
   MockEndpoint resultEndpoint=getMockEndpoint("mock:result");
-  resultEndpoint.expectedBodiesReceived("James","Guillaume","Hiram","Rob","Roman");
-  Exchange result=template.send("direct:seqential",new Processor(){
+  resultEndpoint.expectedMessageCount(5);
+  Exchange result=template.send("direct:parallel-streaming",new Processor(){
     public void process(    Exchange exchange){
       Message in=exchange.getIn();
       in.setBody("James,Guillaume,Hiram,Rob,Roman");
@@ -11,7 +11,7 @@
 );
   assertMockEndpointsSatisfied();
   Message out=result.getOut();
-  assertEquals("Roman",out.getBody());
   assertMessageHeader(out,"foo","bar");
-  assertMessageHeader(out,Splitter.SPLIT_COUNTER,4);
+  assertEquals((Integer)5,result.getProperty("aggregated",Integer.class));
+  System.out.println(result);
 }
