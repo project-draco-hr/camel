@@ -5,8 +5,15 @@
   if (log.isTraceEnabled()) {
     log.trace("Polling file: " + ftpFile);
   }
-  long ts=ftpFile.getTimestamp().getTimeInMillis();
-  if (ts > lastPollTime && isMatched(ftpFile)) {
+  boolean timestampMatched=true;
+  if (isTimestamp()) {
+    long ts=ftpFile.getTimestamp().getTimeInMillis();
+    timestampMatched=ts > lastPollTime;
+    if (log.isTraceEnabled()) {
+      log.trace("The file is to old + " + ftpFile + ". lastPollTime="+ lastPollTime+ " > fileTimestamp="+ ts);
+    }
+  }
+  if (timestampMatched && isMatched(ftpFile)) {
     String fullFileName=getFullFileName(ftpFile);
     if (exclusiveReadLock) {
       acquireExclusiveReadLock(client,ftpFile);

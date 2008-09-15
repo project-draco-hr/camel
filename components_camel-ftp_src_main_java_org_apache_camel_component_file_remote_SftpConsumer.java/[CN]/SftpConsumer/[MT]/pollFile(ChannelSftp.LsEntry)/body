@@ -2,8 +2,15 @@
   if (log.isTraceEnabled()) {
     log.trace("Polling file: " + sftpFile);
   }
-  long ts=sftpFile.getAttrs().getMTime() * 1000L;
-  if (ts > lastPollTime && isMatched(sftpFile)) {
+  boolean timestampMatched=true;
+  if (isTimestamp()) {
+    long ts=sftpFile.getAttrs().getMTime() * 1000L;
+    timestampMatched=ts > lastPollTime;
+    if (log.isTraceEnabled()) {
+      log.trace("The file is to old + " + sftpFile + ". lastPollTime="+ lastPollTime+ " > fileTimestamp="+ ts);
+    }
+  }
+  if (timestampMatched && isMatched(sftpFile)) {
     String fullFileName=getFullFileName(sftpFile);
     if (exclusiveReadLock) {
       acquireExclusiveReadLock(sftpFile);
