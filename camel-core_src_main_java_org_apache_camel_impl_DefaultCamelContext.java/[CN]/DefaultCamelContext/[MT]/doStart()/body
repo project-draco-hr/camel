@@ -1,19 +1,17 @@
 {
   if (getTrace()) {
-    boolean found=false;
-    final List<InterceptStrategy> list=getInterceptStrategies();
-    for (    InterceptStrategy strategy : list) {
-      if (strategy instanceof Tracer) {
-        found=true;
-      }
-    }
-    if (!found) {
+    if (Tracer.getTracer(this) == null) {
       Tracer tracer=new Tracer();
       TraceFormatter formatter=this.getRegistry().lookup("traceFormatter",TraceFormatter.class);
       if (formatter != null) {
         tracer.setFormatter(formatter);
       }
       addInterceptStrategy(tracer);
+    }
+  }
+  if (getDelay() > 0) {
+    if (Delayer.getDelayer(this) == null) {
+      addInterceptStrategy(new Delayer(getDelay()));
     }
   }
   lifecycleStrategy.onContextStart(this);
