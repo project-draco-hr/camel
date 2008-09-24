@@ -1,9 +1,14 @@
 {
   String text=ExchangeHelper.convertToType(exchange,String.class,expression.evaluate(exchange));
   Integer value=ExchangeHelper.convertToType(exchange,Integer.class,text);
-  int count=value != null ? value.intValue() : 0;
+  if (value == null) {
+    throw new RuntimeCamelException("Expression \"" + expression + "\" does not evaluate to an int.");
+  }
+  int count=value.intValue();
+  exchange.setProperty(PROP_ITER_COUNT,count);
   for (int i=0; i < count; i++) {
     LOG.debug("LoopProcessor: iteration #" + i);
+    exchange.setProperty(PROP_ITER_INDEX,i);
     super.process(exchange);
   }
 }
