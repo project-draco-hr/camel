@@ -1,18 +1,18 @@
 {
-  InputStream is=camelMessage.getBody(InputStream.class);
   CxfHeaderHelper.propagateCamelToCxf(strategy,camelMessage.getHeaders(),cxfMessage);
-  if (is != null) {
-    cxfMessage.setContent(InputStream.class,is);
+  try {
+    InputStream is=camelMessage.getBody(InputStream.class);
+    if (is != null) {
+      cxfMessage.setContent(InputStream.class,is);
+    }
   }
- else {
+ catch (  NoTypeConversionAvailableException ex) {
     Object result=camelMessage.getBody();
-    if (result != null) {
-      if (result instanceof InputStream) {
-        cxfMessage.setContent(InputStream.class,result);
-      }
+    if (result instanceof InputStream) {
+      cxfMessage.setContent(InputStream.class,result);
+    }
  else {
-        cxfMessage.setContent(result.getClass(),result);
-      }
+      cxfMessage.setContent(result.getClass(),result);
     }
   }
 }

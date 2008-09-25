@@ -2,22 +2,28 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("Converting " + (value == null ? "null" : value.getClass().getCanonicalName()) + " -> "+ type.getCanonicalName()+ " with value: "+ value);
   }
+  if (value == null) {
+    if (boolean.class.isAssignableFrom(type)) {
+      return (T)Boolean.FALSE;
+    }
+    return null;
+  }
   if (type.isInstance(value)) {
     return type.cast(value);
   }
   checkLoaded();
   TypeConverter converter=getOrFindTypeConverter(type,value);
   if (converter != null) {
-    return converter.convertTo(type,exchange,value);
+    T rc=converter.convertTo(type,exchange,value);
+    if (rc != null) {
+      return rc;
+    }
   }
   for (  TypeConverter fallback : fallbackConverters) {
     T rc=fallback.convertTo(type,exchange,value);
     if (rc != null) {
       return rc;
     }
-  }
-  if (boolean.class.isAssignableFrom(type)) {
-    return (T)Boolean.FALSE;
   }
   if (type.isPrimitive()) {
     Class primitiveType=ObjectHelper.convertPrimitiveTypeToWrapperType(type);
@@ -26,8 +32,8 @@
     }
   }
   boolean camelType=type.getCanonicalName().startsWith("org.apache.camel");
-  if (!camelType && value != null) {
+  if (!camelType) {
     LOG.warn("Could not find a type converter for converting " + value.getClass().getCanonicalName() + " -> "+ type.getCanonicalName()+ " with value: "+ value);
   }
-  return null;
+  throw new NoTypeConversionAvailableException(value,type);
 }

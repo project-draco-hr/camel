@@ -11,10 +11,14 @@
   if (in.getHeader(MULTI_PARAMETER_ARRAY) == null) {
     in.setHeader(MULTI_PARAMETER_ARRAY,isMultiParameterArray());
   }
-  BeanInvocation beanInvoke=in.getBody(BeanInvocation.class);
-  if (beanInvoke != null) {
-    beanInvoke.invoke(bean,exchange);
-    return;
+  try {
+    BeanInvocation beanInvoke=in.getBody(BeanInvocation.class);
+    if (beanInvoke != null) {
+      beanInvoke.invoke(bean,exchange);
+      return;
+    }
+  }
+ catch (  NoTypeConversionAvailableException ex) {
   }
   boolean isExplicitMethod=false;
   String prevMethod=null;
@@ -31,7 +35,7 @@
     invocation=beanInfo.createInvocation(bean,exchange);
   }
   if (invocation == null) {
-    throw new IllegalStateException("No method invocation could be created, " + "no maching method could be found on: " + bean);
+    throw new IllegalStateException("No method invocation could be created, no maching method could be found on: " + bean);
   }
   try {
     Object value=invocation.proceed();
