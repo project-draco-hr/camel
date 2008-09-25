@@ -2,14 +2,16 @@
   Configuration config=getConfiguration();
   DynamicQueryContext dynamicQueryContext=new DynamicQueryContext(config);
   Message in=exchange.getIn();
-  Item item=in.getBody(Item.class);
   Source source=null;
-  if (item != null) {
+  try {
+    Item item=in.getBody(Item.class);
     dynamicQueryContext.setContextItem(item);
   }
- else {
-    source=in.getBody(Source.class);
-    if (source == null) {
+ catch (  NoTypeConversionAvailableException e) {
+    try {
+      source=in.getBody(Source.class);
+    }
+ catch (    NoTypeConversionAvailableException e2) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("No body available on exchange so using an empty document: " + exchange);
       }
