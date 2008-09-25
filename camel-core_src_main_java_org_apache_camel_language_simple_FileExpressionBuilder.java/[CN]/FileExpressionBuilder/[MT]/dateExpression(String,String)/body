@@ -1,35 +1,15 @@
 {
   return new Expression<E>(){
     public Object evaluate(    E exchange){
-      Date date;
       if ("file".equals(command)) {
         if (exchange.getFile() == null) {
           return null;
         }
-        date=new Date(exchange.getFile().lastModified());
+        Date date=new Date(exchange.getFile().lastModified());
+        SimpleDateFormat df=new SimpleDateFormat(pattern);
+        return df.format(date);
       }
- else       if ("now".equals(command)) {
-        date=new Date();
-      }
- else       if (command.startsWith("header.") || command.startsWith("in.header.")) {
-        String key=command.substring(command.lastIndexOf(".") + 1);
-        date=exchange.getIn().getHeader(key,Date.class);
-        if (date == null) {
-          throw new IllegalArgumentException("Could not find java.util.Date object at " + command);
-        }
-      }
- else       if (command.startsWith("out.header.")) {
-        String key=command.substring(command.lastIndexOf(".") + 1);
-        date=exchange.getOut().getHeader(key,Date.class);
-        if (date == null) {
-          throw new IllegalArgumentException("Could not find java.util.Date object at " + command);
-        }
-      }
- else {
-        throw new IllegalArgumentException("Command not supported for dateExpression: " + command);
-      }
-      SimpleDateFormat df=new SimpleDateFormat(pattern);
-      return df.format(date);
+      return ExpressionBuilder.dateExpression(command,pattern).evaluate(exchange);
     }
     @Override public String toString(){
       return "date(" + command + ":"+ pattern+ ")";
