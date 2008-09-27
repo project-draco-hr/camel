@@ -1,17 +1,34 @@
 {
   String answer;
-  String endpointFileName=fileConfig.getFile();
-  String headerFileName=message.getHeader(FileComponent.HEADER_FILE_NAME,String.class);
+  String name=message.getHeader(FileComponent.HEADER_FILE_NAME,String.class);
+  Expression expression=endpoint.getConfiguration().getExpression();
+  if (name != null) {
+    if (name.indexOf("${") > -1) {
+      if (log.isDebugEnabled()) {
+        log.debug(FileComponent.HEADER_FILE_NAME + " contains a FileLanguage expression: " + name);
+      }
+      expression=FileLanguage.file(name);
+    }
+  }
+  if (expression != null) {
+    if (log.isDebugEnabled()) {
+      log.debug("Filename evaluated as expression: " + expression);
+    }
+    Object result=expression.evaluate(message.getExchange());
+    name=message.getExchange().getContext().getTypeConverter().convertTo(String.class,result);
+  }
+  String endpointFile=fileConfig.getFile();
   if (fileConfig.isDirectory()) {
     String baseDir="";
-    if (endpointFileName.length() > 0) {
-      baseDir=endpointFileName + (endpointFileName.endsWith("/") ? "" : "/");
+    if (endpointFile.length() > 0) {
+      baseDir=endpointFile + (endpointFile.endsWith("/") ? "" : "/");
     }
-    String fileName=(headerFileName != null) ? headerFileName : message.getMessageId();
+    String fileName=(name != null) ? name : endpoint.getGeneratedFileName(message);
     answer=baseDir + fileName;
   }
  else {
-    answer=endpointFileName;
+    answer=endpointFile;
   }
+  message.setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,answer);
   return answer;
 }
