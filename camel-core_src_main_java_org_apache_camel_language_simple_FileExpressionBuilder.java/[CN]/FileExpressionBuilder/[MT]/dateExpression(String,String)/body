@@ -2,12 +2,14 @@
   return new Expression<E>(){
     public Object evaluate(    E exchange){
       if ("file".equals(command)) {
-        if (exchange.getFile() == null) {
+        Date date=exchange.getIn().getHeader("CamelFileLastModified",Date.class);
+        if (date != null) {
+          SimpleDateFormat df=new SimpleDateFormat(pattern);
+          return df.format(date);
+        }
+ else {
           return null;
         }
-        Date date=new Date(exchange.getFile().lastModified());
-        SimpleDateFormat df=new SimpleDateFormat(pattern);
-        return df.format(date);
       }
       return ExpressionBuilder.dateExpression(command,pattern).evaluate(exchange);
     }
