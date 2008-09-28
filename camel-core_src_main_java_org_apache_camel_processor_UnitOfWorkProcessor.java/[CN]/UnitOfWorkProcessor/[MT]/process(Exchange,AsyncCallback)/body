@@ -1,10 +1,23 @@
 {
   if (exchange.getUnitOfWork() == null) {
-    exchange.setUnitOfWork(new DefaultUnitOfWork());
+    final DefaultUnitOfWork uow=new DefaultUnitOfWork();
+    exchange.setUnitOfWork(uow);
+    try {
+      uow.start();
+    }
+ catch (    Exception e) {
+      throw wrapRuntimeCamelException(e);
+    }
     return processor.process(exchange,new AsyncCallback(){
       public void done(      boolean sync){
         callback.done(sync);
         exchange.getUnitOfWork().done(exchange);
+        try {
+          uow.stop();
+        }
+ catch (        Exception e) {
+          throw wrapRuntimeCamelException(e);
+        }
         exchange.setUnitOfWork(null);
       }
     }
