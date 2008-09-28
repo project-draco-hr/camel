@@ -7,15 +7,11 @@
 );
   assertNotNull("exchange",exchange);
   assertTrue("The exchange should be failed",exchange.isFailed());
-  Message fault=exchange.getFault();
-  assertNotNull("fault",fault);
-  Map<String,Object> headers=fault.getHeaders();
-  log.debug("Headers: " + headers);
-  assertTrue("Should be more than one header but was: " + headers,headers.size() > 0);
-  int responseCode=fault.getHeader(HttpProducer.HTTP_RESPONSE_CODE,Integer.class);
-  assertTrue("The response code should not be 200",responseCode != 200);
-  String body=fault.getBody(String.class);
-  log.debug("Body: " + body);
-  assertNotNull("Should have a body!",body);
-  assertTrue("body should contain: " + expectedText,body.contains(expectedText));
+  HttpOperationFailedException exception=(HttpOperationFailedException)exchange.getException();
+  assertNotNull("exception",exception);
+  int statusCode=exception.getStatusCode();
+  assertTrue("The response code should not be 200",statusCode != 200);
+  String reason=exception.getStatusLine().getReasonPhrase();
+  assertNotNull("Should have a body!",reason);
+  assertTrue("body should contain: " + expectedText,reason.contains(expectedText));
 }
