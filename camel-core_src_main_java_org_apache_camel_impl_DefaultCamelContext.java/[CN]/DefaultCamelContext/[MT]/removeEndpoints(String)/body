@@ -1,0 +1,21 @@
+{
+  Collection<Endpoint> answer=new ArrayList<Endpoint>();
+synchronized (endpoints) {
+    Endpoint oldEndpoint=endpoints.remove(uri);
+    if (oldEndpoint != null) {
+      answer.add(oldEndpoint);
+      stopServices(oldEndpoint);
+    }
+ else {
+      for (      Map.Entry entry : endpoints.entrySet()) {
+        oldEndpoint=(Endpoint)entry.getValue();
+        if (!oldEndpoint.isSingleton() && uri.equals(oldEndpoint.getEndpointUri())) {
+          answer.add(oldEndpoint);
+          stopServices(oldEndpoint);
+          endpoints.remove(entry.getKey());
+        }
+      }
+    }
+  }
+  return answer;
+}
