@@ -1,14 +1,11 @@
 {
   Route<? extends Exchange> route=mbean.getRoute();
   Endpoint<? extends Exchange> ep=route.getEndpoint();
-  String ctxid=ep != null ? getContextId(ep.getCamelContext()) : VALUE_UNKNOWN;
-  String cid=getComponentId(ep);
-  String id=VALUE_UNKNOWN.equals(cid) ? getEndpointId(ep) : "[" + cid + "]"+ getEndpointId(ep);
+  String id=(String)route.getProperties().get(Route.ID_PROPERTY);
   StringBuffer buffer=new StringBuffer();
   buffer.append(domainName).append(":");
-  buffer.append(KEY_CONTEXT + "=").append(ctxid).append(",");
-  buffer.append(KEY_ROUTE + "=").append(id).append(",");
+  buffer.append(KEY_CONTEXT + "=").append(getContextId(ep.getCamelContext())).append(",");
   buffer.append(KEY_TYPE + "=" + TYPE_ROUTE+ ",");
-  buffer.append(KEY_NAME + "=").append(id);
+  buffer.append(KEY_NAME + "=").append(ObjectName.quote(id == null ? ("0x" + Integer.toHexString(route.hashCode())) : id));
   return createObjectName(buffer);
 }
