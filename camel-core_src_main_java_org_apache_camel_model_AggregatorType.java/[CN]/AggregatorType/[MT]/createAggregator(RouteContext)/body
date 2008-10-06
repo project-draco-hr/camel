@@ -3,16 +3,17 @@
   final Processor processor=routeContext.createProcessor(this);
   final Aggregator aggregator;
   if (aggregationCollection != null) {
+    if (aggregationCollection.getCorrelationExpression() == null) {
+      aggregationCollection.setCorrelationExpression(getExpression());
+    }
+    if (aggregationCollection.getAggregationStrategy() == null) {
+      AggregationStrategy strategy=createAggregationStrategy(routeContext);
+      aggregationCollection.setAggregationStrategy(strategy);
+    }
     aggregator=new Aggregator(from,processor,aggregationCollection);
   }
  else {
-    AggregationStrategy strategy=getAggregationStrategy();
-    if (strategy == null && strategyRef != null) {
-      strategy=routeContext.lookup(strategyRef,AggregationStrategy.class);
-    }
-    if (strategy == null) {
-      strategy=new UseLatestAggregationStrategy();
-    }
+    AggregationStrategy strategy=createAggregationStrategy(routeContext);
     Expression aggregateExpression=getExpression().createExpression(routeContext);
     Predicate predicate=null;
     if (completedPredicate != null) {
@@ -30,6 +31,9 @@
   }
   if (batchTimeout != null) {
     aggregator.setBatchTimeout(batchTimeout);
+  }
+  if (outBatchSize != null) {
+    aggregator.setOutBatchSize(outBatchSize);
   }
   return aggregator;
 }
