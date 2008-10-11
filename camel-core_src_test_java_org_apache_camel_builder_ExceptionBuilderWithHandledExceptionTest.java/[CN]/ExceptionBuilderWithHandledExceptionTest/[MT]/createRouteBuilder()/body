@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(NullPointerException.class).maximumRedeliveries(0).handled(true).setHeader(MESSAGE_INFO,constant("Handled exchange with NullPointerException")).to(ERROR_QUEUE);
+      onException(IOException.class).maximumRedeliveries(0).handled(header("foo").isEqualTo("bar")).setHeader(MESSAGE_INFO,constant("Handled exchange with IOException")).to(ERROR_QUEUE);
+      from("direct:a").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String s=exchange.getIn().getBody(String.class);
+          if ("Hello NPE".equals(s)) {
+            throw new NullPointerException();
+          }
+ else           if ("Hello IOE".equals(s)) {
+            throw new ConnectException("Forced for testing - can not connect to remote server");
+          }
+          exchange.getOut().setBody("Hello World");
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
