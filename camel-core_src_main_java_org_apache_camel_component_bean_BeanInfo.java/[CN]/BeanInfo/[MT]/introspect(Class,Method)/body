@@ -1,13 +1,25 @@
 {
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Introspecting class: " + clazz + ", method: "+ method);
+  }
   String opName=method.getName();
   MethodInfo methodInfo=createMethodInfo(clazz,method);
+  if (overridesExistingMethod(methodInfo)) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("This method is already overriden in a subclass, so its skipped: " + method);
+    }
+    return null;
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Adding operation: " + opName + " for method: "+ methodInfo);
+  }
   operations.put(opName,methodInfo);
+  methodMap.put(method,methodInfo);
   if (methodInfo.hasBodyParameter()) {
     operationsWithBody.add(methodInfo);
   }
   if (methodInfo.isHasCustomAnnotation() && !methodInfo.hasBodyParameter()) {
     operationsWithCustomAnnotation.add(methodInfo);
   }
-  methodMap.put(method,methodInfo);
   return methodInfo;
 }
