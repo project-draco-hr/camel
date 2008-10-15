@@ -1,0 +1,19 @@
+{
+  Map<String,CamelContext> answer=Maps.newHashMap();
+  if (injector != null) {
+    Set<Map.Entry<Key<?>,Binding<?>>> entries=injector.getBindings().entrySet();
+    for (    Map.Entry<Key<?>,Binding<?>> entry : entries) {
+      Key<?> key=entry.getKey();
+      Class<?> keyType=Injectors.getKeyType(key);
+      if (keyType != null && CamelContext.class.isAssignableFrom(keyType)) {
+        Binding<?> binding=entry.getValue();
+        Object value=binding.getProvider().get();
+        if (value != null) {
+          CamelContext castValue=CamelContext.class.cast(value);
+          answer.put(key.toString(),castValue);
+        }
+      }
+    }
+  }
+  return answer;
+}
