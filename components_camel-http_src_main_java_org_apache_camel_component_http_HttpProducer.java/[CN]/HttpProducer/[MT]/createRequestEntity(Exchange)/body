@@ -7,13 +7,19 @@
     return in.getBody(RequestEntity.class);
   }
  catch (  NoTypeConversionAvailableException ex) {
-    String data=in.getBody(String.class);
-    String contentType=in.getHeader("Content-Type",String.class);
     try {
-      return new StringRequestEntity(data,null,null);
+      String data=in.getBody(String.class);
+      if (data != null) {
+        String contentType=in.getHeader("Content-Type",String.class);
+        String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
+        return new StringRequestEntity(data,contentType,charset);
+      }
+ else {
+        return null;
+      }
     }
  catch (    UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeCamelException(e);
     }
   }
 }

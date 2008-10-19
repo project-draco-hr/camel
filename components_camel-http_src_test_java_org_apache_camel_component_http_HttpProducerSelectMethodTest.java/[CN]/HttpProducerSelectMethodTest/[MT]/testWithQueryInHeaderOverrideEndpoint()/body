@@ -1,0 +1,17 @@
+{
+  HttpComponent component=new HttpComponent();
+  component.setCamelContext(context);
+  HttpEndpoint endpoiont=(HttpEndpoint)component.createEndpoint("http://www.google.com?q=Donkey","",Collections.EMPTY_MAP);
+  MyHttpProducer producer=new MyHttpProducer(endpoiont,"GET","q=Camel");
+  HttpExchange exchange=producer.createExchange();
+  exchange.getIn().setBody("");
+  exchange.getIn().setHeader(HttpProducer.QUERY,"q=Camel");
+  try {
+    producer.process(exchange);
+    fail("Should have thrown HttpOperationFailedException");
+  }
+ catch (  HttpOperationFailedException e) {
+    assertEquals(500,e.getStatusCode());
+  }
+  producer.stop();
+}

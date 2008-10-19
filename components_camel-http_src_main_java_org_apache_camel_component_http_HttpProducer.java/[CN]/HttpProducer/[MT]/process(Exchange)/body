@@ -9,17 +9,18 @@
     }
   }
   try {
-    int responseCode=httpClient.executeMethod(method);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing http " + method.getName() + " method: "+ method.getURI().toString());
+    }
+    int responseCode=executeMethod(method);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Http responseCode: " + responseCode);
+    }
     if (responseCode >= 100 && responseCode < 300) {
       Message answer=exchange.getOut(true);
       answer.setHeaders(in.getHeaders());
       answer.setHeader(HTTP_RESPONSE_CODE,responseCode);
-      LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
-      InputStream is=method.getResponseBodyAsStream();
-      IOUtils.copy(is,bos);
-      bos.flush();
-      is.close();
-      answer.setBody(bos.createInputStream());
+      answer.setBody(extractResponseBody(method));
       Header[] headers=method.getResponseHeaders();
       for (      Header header : headers) {
         String name=header.getName();
