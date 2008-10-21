@@ -1,0 +1,31 @@
+{
+  Log log=getLog();
+  if (!useDot) {
+    log.info("DOT generation disabled");
+    return null;
+  }
+  if (this.executable == null || this.executable.length() == 0) {
+    log.warn("Parameter <executable/> was not set in the pom.xml.  Skipping conversion.");
+    return null;
+  }
+  String generatedFileName=removeFileExtension(file.getAbsolutePath()) + "." + format;
+  Commandline cl=new Commandline();
+  cl.setExecutable(executable);
+  cl.createArgument().setValue("-T" + format);
+  cl.createArgument().setValue("-o");
+  cl.createArgument().setValue(generatedFileName);
+  cl.createArgument().setValue(file.getAbsolutePath());
+  log.debug("executing: " + cl.toString());
+  CommandLineUtils.StringStreamConsumer stdout=new CommandLineUtils.StringStreamConsumer();
+  CommandLineUtils.StringStreamConsumer stderr=new CommandLineUtils.StringStreamConsumer();
+  int exitCode=CommandLineUtils.executeCommandLine(cl,stdout,stderr);
+  String output=stdout.getOutput();
+  if (output.length() > 0) {
+    log.debug(output);
+  }
+  String errOutput=stderr.getOutput();
+  if (errOutput.length() > 0) {
+    log.warn(errOutput);
+  }
+  return generatedFileName;
+}

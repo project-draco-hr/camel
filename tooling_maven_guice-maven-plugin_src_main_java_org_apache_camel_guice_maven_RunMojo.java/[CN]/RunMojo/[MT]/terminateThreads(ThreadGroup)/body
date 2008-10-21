@@ -1,0 +1,47 @@
+{
+  long startTime=System.currentTimeMillis();
+  Set uncooperativeThreads=new HashSet();
+  for (Collection threads=getActiveThreads(threadGroup); !threads.isEmpty(); threads=getActiveThreads(threadGroup), threads.removeAll(uncooperativeThreads)) {
+    for (Iterator iter=threads.iterator(); iter.hasNext(); ) {
+      Thread thread=(Thread)iter.next();
+      getLog().debug("interrupting thread " + thread);
+      thread.interrupt();
+    }
+    for (Iterator iter=threads.iterator(); iter.hasNext(); ) {
+      Thread thread=(Thread)iter.next();
+      if (!thread.isAlive()) {
+        continue;
+      }
+      if (daemonThreadJoinTimeout <= 0) {
+        joinThread(thread,0);
+        continue;
+      }
+      long timeout=daemonThreadJoinTimeout - (System.currentTimeMillis() - startTime);
+      if (timeout > 0) {
+        joinThread(thread,timeout);
+      }
+      if (!thread.isAlive()) {
+        continue;
+      }
+      uncooperativeThreads.add(thread);
+      if (stopUnresponsiveDaemonThreads) {
+        getLog().warn("thread " + thread + " will be Thread.stop()'ed");
+        thread.stop();
+      }
+ else {
+        getLog().warn("thread " + thread + " will linger despite being asked to die via interruption");
+      }
+    }
+  }
+  if (!uncooperativeThreads.isEmpty()) {
+    getLog().warn("NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to "+ " via interruption. This is not a problem with exec:java, it is a problem with the running code."+ " Although not serious, it should be remedied.");
+  }
+ else {
+    int activeCount=threadGroup.activeCount();
+    if (activeCount != 0) {
+      Thread[] threadsArray=new Thread[1];
+      threadGroup.enumerate(threadsArray);
+      getLog().debug("strange; " + activeCount + " thread(s) still active in the group "+ threadGroup+ " such as "+ threadsArray[0]);
+    }
+  }
+}
