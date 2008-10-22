@@ -1,0 +1,32 @@
+{
+  if (type.isAssignableFrom(ProducerTemplate.class)) {
+    Endpoint endpoint=getEndpointInjection(endpointUri,endpointRef,injectionPointName,false);
+    return new DefaultProducerTemplate(getCamelContext(),endpoint);
+  }
+ else {
+    Endpoint endpoint=getEndpointInjection(endpointUri,endpointRef,injectionPointName,true);
+    if (endpoint != null) {
+      if (type.isInstance(endpoint)) {
+        return endpoint;
+      }
+ else       if (type.isAssignableFrom(Producer.class)) {
+        return createInjectionProducer(endpoint);
+      }
+ else       if (type.isAssignableFrom(PollingConsumer.class)) {
+        return createInjectionPollingConsumer(endpoint);
+      }
+ else       if (type.isInterface()) {
+        try {
+          return ProxyHelper.createProxy(endpoint,type);
+        }
+ catch (        Exception e) {
+          throw createProxyInstantiationRuntimeException(type,endpoint,e);
+        }
+      }
+ else {
+        throw new IllegalArgumentException("Invalid type: " + type.getName() + " which cannot be injected via @EndpointInject for "+ endpoint);
+      }
+    }
+    return null;
+  }
+}
