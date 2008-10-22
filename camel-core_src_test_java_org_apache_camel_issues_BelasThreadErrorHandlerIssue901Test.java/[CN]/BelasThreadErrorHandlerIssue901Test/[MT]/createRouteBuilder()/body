@@ -2,7 +2,7 @@
   return new RouteBuilder(){
     public void configure() throws Exception {
       errorHandler(deadLetterChannel("mock:handled").maximumRedeliveries(redelivery));
-      from("seda:errorTest").process(new Processor(){
+      from("direct:errorTest").thread(5).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           callCounter1++;
           LOG.debug("Processor #1 Received A " + exchange.getIn().getBody());
@@ -20,7 +20,7 @@
         public void process(        Exchange exchange) throws Exception {
           callCounter3++;
           LOG.debug("Processor #3 Received A " + exchange.getIn().getBody());
-          throw new Exception("Forced exception by unit test");
+          throw new MyBelaException("Forced exception by unit test");
         }
       }
 );

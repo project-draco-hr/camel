@@ -1,4 +1,7 @@
 {
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+  }
   return processor.process(exchange,new AsyncCallback(){
     public void done(    boolean sync){
       if (sync) {
@@ -7,9 +10,10 @@
       Exchange nextExchange=exchange;
       while (processors.hasNext()) {
         AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
-        if (nextExchange.isFailed()) {
+        boolean exceptionHandled=hasExceptionBeenHandled(nextExchange);
+        if (nextExchange.isFailed() || exceptionHandled) {
           if (LOG.isDebugEnabled()) {
-            LOG.debug("Message exchange has failed so breaking out of pipeline: " + nextExchange + " exception: "+ nextExchange.getException()+ " fault: "+ nextExchange.getFault(false));
+            LOG.debug("Message exchange has failed so breaking out of pipeline: " + nextExchange + " exception: "+ nextExchange.getException()+ " fault: "+ nextExchange.getFault(false)+ (exceptionHandled ? " handled by the error handler" : ""));
           }
           break;
         }

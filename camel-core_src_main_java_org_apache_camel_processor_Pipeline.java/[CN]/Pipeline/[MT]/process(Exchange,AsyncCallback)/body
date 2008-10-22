@@ -3,10 +3,10 @@
   Exchange nextExchange=original;
   boolean first=true;
   while (true) {
-    boolean handledException=Boolean.TRUE.equals(nextExchange.getProperty(Exchange.EXCEPTION_HANDLED_PROPERTY));
-    if (nextExchange.isFailed() || handledException) {
+    boolean exceptionHandled=hasExceptionBeenHandled(nextExchange);
+    if (nextExchange.isFailed() || exceptionHandled) {
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Message exchange has failed so breaking out of pipeline: " + nextExchange + " exception: "+ nextExchange.getException()+ " fault: "+ nextExchange.getFault(false)+ (handledException ? " handled by the error handler" : ""));
+        LOG.debug("Message exchange has failed so breaking out of pipeline: " + nextExchange + " exception: "+ nextExchange.getException()+ " fault: "+ nextExchange.getFault(false)+ (exceptionHandled ? " handled by the error handler" : ""));
       }
       break;
     }
@@ -24,6 +24,9 @@
     if (!sync) {
       return false;
     }
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing compelete for exchangeId: " + original.getExchangeId() + " >>> "+ nextExchange);
   }
   ExchangeHelper.copyResults(original,nextExchange);
   callback.done(true);
