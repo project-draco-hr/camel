@@ -1,7 +1,17 @@
 {
   LOG.debug("Get the exchange to aggregate, older: " + oldExchange + " newer:"+ newExchange);
-  Double oldRate=oldExchange.getIn().getHeader(Constants.PROPERTY_RATE,Double.class);
-  Double newRate=newExchange.getIn().getHeader(Constants.PROPERTY_RATE,Double.class);
+  Message oldMessage=null;
+  Message newMessage=null;
+  if (aggregatingOutMessage) {
+    oldMessage=oldExchange.getOut(false);
+    newMessage=newExchange.getOut(false);
+  }
+ else {
+    oldMessage=oldExchange.getIn();
+    newMessage=newExchange.getIn();
+  }
+  Double oldRate=oldMessage.getHeader(Constants.PROPERTY_RATE,Double.class);
+  Double newRate=newMessage.getHeader(Constants.PROPERTY_RATE,Double.class);
   Exchange result=null;
   if (newRate >= oldRate) {
     result=oldExchange;
