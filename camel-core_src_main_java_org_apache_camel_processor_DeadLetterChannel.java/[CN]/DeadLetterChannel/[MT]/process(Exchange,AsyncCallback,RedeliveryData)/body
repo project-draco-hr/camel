@@ -16,8 +16,6 @@
     if (exchange.getException() != null) {
       Throwable e=exchange.getException();
       exchange.setProperty(EXCEPTION_CAUSE_PROPERTY,e);
-      logger.log("Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e,e);
-      data.redeliveryCounter=incrementRedeliveryCounter(exchange,e);
       ExceptionType exceptionPolicy=getExceptionPolicy(exchange,e);
       if (exceptionPolicy != null) {
         data.currentRedeliveryPolicy=exceptionPolicy.createRedeliveryPolicy(data.currentRedeliveryPolicy);
@@ -27,6 +25,8 @@
           data.failureProcessor=processor;
         }
       }
+      logFailedDelivery("Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e,data,e);
+      data.redeliveryCounter=incrementRedeliveryCounter(exchange,e);
     }
     if (!data.currentRedeliveryPolicy.shouldRedeliver(data.redeliveryCounter)) {
       setFailureHandled(exchange);
@@ -39,7 +39,7 @@
         }
       }
 );
-      logger.log("Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor);
+      logFailedDelivery("Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor,data,null);
       return sync;
     }
     if (data.redeliveryCounter > 0) {
