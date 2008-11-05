@@ -1,0 +1,39 @@
+{
+  SpringIntegrationExchange exchange=getEndpoint().createExchange();
+  exchange.setIn(new SpringIntegrationMessage(siInMessage));
+  try {
+    getProcessor().process(exchange);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException(e);
+  }
+  if (endpoint.isInOut()) {
+    Object returnAddress=siInMessage.getHeaders().getReplyChannel();
+    MessageChannel reply=null;
+    if (returnAddress != null) {
+      if (returnAddress instanceof String) {
+        reply=(MessageChannel)context.getApplicationContext().getBean((String)returnAddress);
+      }
+ else       if (returnAddress instanceof MessageChannel) {
+        reply=(MessageChannel)returnAddress;
+      }
+    }
+ else {
+      if (outputChannel != null) {
+        reply=outputChannel;
+      }
+ else {
+        if (ObjectHelper.isNullOrBlank(endpoint.getOutputChannel())) {
+          outputChannel=(MessageChannel)channelResolver.resolveChannelName(endpoint.getOutputChannel());
+          ObjectHelper.notNull(inputChannel,"The outputChannel with the name [" + endpoint.getOutputChannel() + "]");
+          reply=outputChannel;
+        }
+ else {
+          throw new RuntimeCamelException("Can't find the right outputChannelName");
+        }
+      }
+    }
+    org.springframework.integration.core.Message siOutMessage=SpringIntegrationBinding.storeToSpringIntegrationMessage(exchange.getOut());
+    reply.send(siOutMessage);
+  }
+}

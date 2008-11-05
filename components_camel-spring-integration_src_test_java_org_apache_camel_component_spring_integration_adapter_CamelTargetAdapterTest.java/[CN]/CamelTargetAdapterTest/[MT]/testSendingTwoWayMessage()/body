@@ -1,9 +1,13 @@
 {
   MessageChannel requestChannel=(MessageChannel)applicationContext.getBean("channelB");
   Message message=new StringMessage(MESSAGE_BODY);
+  DirectChannel responseChannel=(DirectChannel)applicationContext.getBean("channelC");
+  responseChannel.subscribe(new MessageHandler(){
+    public void handleMessage(    Message<?> message){
+      String result=(String)message.getPayload();
+      assertEquals("Get the wrong result",MESSAGE_BODY + " is processed",result);
+    }
+  }
+);
   requestChannel.send(message);
-  PollableChannel responseChannel=(PollableChannel)applicationContext.getBean("channelC");
-  Message responseMessage=responseChannel.receive();
-  String result=(String)responseMessage.getPayload();
-  assertEquals("Get the wrong result",MESSAGE_BODY + " is processed",result);
 }

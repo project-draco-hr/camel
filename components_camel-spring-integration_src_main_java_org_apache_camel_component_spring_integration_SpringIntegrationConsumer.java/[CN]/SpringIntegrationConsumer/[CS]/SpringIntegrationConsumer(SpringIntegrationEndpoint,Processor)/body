@@ -3,13 +3,13 @@
   this.endpoint=endpoint;
   context=(SpringCamelContext)endpoint.getCamelContext();
   if (context != null && endpoint.getMessageChannel() == null) {
-    channelRegistry=(ChannelRegistry)context.getApplicationContext().getBean(MessageBusParser.MESSAGE_BUS_BEAN_NAME);
+    channelResolver=new BeanFactoryChannelResolver(context.getApplicationContext());
     inputChannelName=endpoint.getDefaultChannel();
     if (ObjectHelper.isNullOrBlank(inputChannelName)) {
       inputChannelName=endpoint.getInputChannel();
     }
     if (!ObjectHelper.isNullOrBlank(inputChannelName)) {
-      inputChannel=(AbstractPollableChannel)channelRegistry.lookupChannel(inputChannelName);
+      inputChannel=(DirectChannel)channelResolver.resolveChannelName(inputChannelName);
       ObjectHelper.notNull(inputChannel,"The inputChannel with the name [" + inputChannelName + "]");
     }
  else {
@@ -18,7 +18,7 @@
   }
  else {
     if (endpoint.getMessageChannel() != null) {
-      inputChannel=(AbstractPollableChannel)endpoint.getMessageChannel();
+      inputChannel=(DirectChannel)endpoint.getMessageChannel();
     }
  else {
       throw new RuntimeCamelException("Can't find the right message channel, please check your configuration.");

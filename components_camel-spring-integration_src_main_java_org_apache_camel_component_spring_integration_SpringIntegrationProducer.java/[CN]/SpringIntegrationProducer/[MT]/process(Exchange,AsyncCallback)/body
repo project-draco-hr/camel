@@ -1,0 +1,19 @@
+{
+  Map<String,Object> headers=new HashMap<String,Object>();
+  if (exchange.getPattern().isOutCapable()) {
+    headers.put(MessageHeaders.REPLY_CHANNEL,inputChannel);
+    inputChannel.subscribe(new MessageHandler(){
+      public void handleMessage(      Message<?> message){
+        SpringIntegrationBinding.storeToCamelMessage(message,exchange.getOut());
+        callback.done(true);
+      }
+    }
+);
+  }
+  org.springframework.integration.core.Message siOutmessage=SpringIntegrationBinding.createSpringIntegrationMessage(exchange,headers);
+  outputChannel.send(siOutmessage);
+  if (!exchange.getPattern().isOutCapable()) {
+    callback.done(true);
+  }
+  return true;
+}

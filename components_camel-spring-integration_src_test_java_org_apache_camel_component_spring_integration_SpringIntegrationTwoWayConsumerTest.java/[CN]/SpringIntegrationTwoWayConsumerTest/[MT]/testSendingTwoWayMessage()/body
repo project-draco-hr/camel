@@ -1,11 +1,15 @@
 {
   MessageChannel requestChannel=(MessageChannel)applicationContext.getBean("requestChannel");
   Map<String,Object> maps=new HashMap<String,Object>();
-  maps.put(MessageHeaders.RETURN_ADDRESS,"responseChannel");
+  maps.put(MessageHeaders.REPLY_CHANNEL,"responseChannel");
   Message<String> message=new GenericMessage<String>(MESSAGE_BODY,maps);
+  DirectChannel responseChannel=(DirectChannel)applicationContext.getBean("responseChannel");
+  responseChannel.subscribe(new MessageHandler(){
+    public void handleMessage(    Message<?> message){
+      String result=(String)message.getPayload();
+      assertEquals("Get the wrong result",MESSAGE_BODY + " is processed",result);
+    }
+  }
+);
   requestChannel.send(message);
-  AbstractPollableChannel responseChannel=(AbstractPollableChannel)applicationContext.getBean("responseChannel");
-  Message responseMessage=responseChannel.receive();
-  String result=(String)responseMessage.getPayload();
-  assertEquals("Get the wrong result",MESSAGE_BODY + " is processed",result);
 }
