@@ -1,0 +1,19 @@
+{
+  if (name == null) {
+    return defaultStrategy;
+  }
+  IBatisProcessingStrategy strategy=getComponent().getCamelContext().getRegistry().lookup(name,IBatisProcessingStrategy.class);
+  if (strategy == null) {
+    try {
+      Class<?> clazz=ObjectHelper.loadClass(name);
+      if (clazz != null) {
+        strategy=ObjectHelper.newInstance(clazz,IBatisProcessingStrategy.class);
+      }
+    }
+ catch (    Exception e) {
+      logger.error("Failed to resolve/create processing strategy (" + name + ")",e);
+      throw e;
+    }
+  }
+  return strategy != null ? strategy : defaultStrategy;
+}

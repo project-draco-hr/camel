@@ -1,13 +1,16 @@
 {
+  SqlMapClient client=endpoint.getSqlMapClient();
   Object body=exchange.getIn().getBody();
   if (body == null) {
-    endpoint.query(exchange.getOut(true));
+    Message msg=exchange.getOut(true);
+    List list=client.queryForList(statement);
+    msg.setBody(list);
+    msg.setHeader("org.apache.camel.ibatis.queryName",statement);
   }
  else {
-    String operation=getOperationName(exchange);
     Iterator iter=ObjectHelper.createIterator(body);
     while (iter.hasNext()) {
-      endpoint.getSqlClient().insert(operation,iter.next());
+      client.insert(statement,iter.next());
     }
   }
 }

@@ -1,0 +1,21 @@
+{
+  final IBatisEndpoint endpoint=getEndpoint();
+  final Exchange exchange=endpoint.createExchange(ExchangePattern.InOnly);
+  Message msg=exchange.getIn();
+  msg.setBody(data);
+  msg.setHeader("org.apache.camel.ibatis.queryName",endpoint.getStatement());
+  logger.debug("Setting message");
+  getAsyncProcessor().process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      try {
+        if (onConsume != null) {
+          endpoint.getProcessingStrategy().commit(endpoint,exchange,data,onConsume);
+        }
+      }
+ catch (      Exception e) {
+        handleException(e);
+      }
+    }
+  }
+);
+}
