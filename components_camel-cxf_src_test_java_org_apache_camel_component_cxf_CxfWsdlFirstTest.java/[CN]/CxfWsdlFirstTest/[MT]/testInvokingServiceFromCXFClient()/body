@@ -1,6 +1,8 @@
 {
-  JaxwsTestHandler myHandler=getMandatoryBean(JaxwsTestHandler.class,"myJaxwsHandler");
-  myHandler.reset();
+  JaxwsTestHandler fromHandler=getMandatoryBean(JaxwsTestHandler.class,"fromEndpointJaxwsHandler");
+  fromHandler.reset();
+  JaxwsTestHandler toHandler=getMandatoryBean(JaxwsTestHandler.class,"toEndpointJaxwsHandler");
+  toHandler.reset();
   URL wsdlURL=getClass().getClassLoader().getResource("person.wsdl");
   PersonService ss=new PersonService(wsdlURL,new QName("http://camel.apache.org/wsdl-first","PersonService"));
   Person client=ss.getSoap();
@@ -25,6 +27,5 @@
  catch (  WebServiceException ex) {
     assertTrue("Should get the xml vaildate error!",ex.getMessage().indexOf("MyStringType") > 0);
   }
-  assertEquals(getExpectedJaxwsHandlerFaultCount(),myHandler.getFaultCount());
-  assertEquals(getExpectedJaxwsHandlerMessageCount(),myHandler.getMessageCount());
+  verifyJaxwsHandlers(fromHandler,toHandler);
 }
