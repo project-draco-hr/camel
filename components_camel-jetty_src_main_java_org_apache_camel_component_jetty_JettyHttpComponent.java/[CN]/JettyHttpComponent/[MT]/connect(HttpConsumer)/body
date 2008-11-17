@@ -1,6 +1,6 @@
 {
   JettyHttpEndpoint endpoint=(JettyHttpEndpoint)consumer.getEndpoint();
-  String connectorKey=endpoint.getProtocol() + ":" + endpoint.getPort();
+  String connectorKey=endpoint.getProtocol() + ":" + endpoint.getHttpUri().getHost()+ ":"+ endpoint.getPort();
 synchronized (connectors) {
     ConnectorRef connectorRef=connectors.get(connectorKey);
     if (connectorRef == null) {
@@ -12,20 +12,21 @@ synchronized (connectors) {
         connector=new SelectChannelConnector();
       }
       connector.setPort(endpoint.getPort());
-      getServer().addConnector(connector);
-      if (endpoint.isSessionSupport()) {
-        enableSessionSupport();
+      connector.setHost(endpoint.getHttpUri().getHost());
+      if ("localhost".equalsIgnoreCase(endpoint.getHttpUri().getHost())) {
+        LOGGER.warn("You use localhost interface! It means that no external connections will be available. Don't you want to use 0.0.0.0 instead (all network interfaces)?");
       }
+      getServer().addConnector(connector);
+      connectorRef=new ConnectorRef(connector,createServletForConnector(connector));
       connector.start();
-      connectorRef=new ConnectorRef(connector);
       connectors.put(connectorKey,connectorRef);
     }
  else {
       connectorRef.increment();
-      if (endpoint.isSessionSupport()) {
-        enableSessionSupport();
-      }
     }
+    if (endpoint.isSessionSupport()) {
+      enableSessionSupport();
+    }
+    connectorRef.servlet.connect(consumer);
   }
-  camelServlet.connect(consumer);
 }
