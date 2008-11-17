@@ -2,12 +2,13 @@
   Enumeration<NetworkInterface> interfaces=NetworkInterface.getNetworkInterfaces();
   while (interfaces.hasMoreElements()) {
     NetworkInterface interfaze=interfaces.nextElement();
-    if (!interfaze.isUp() || interfaze.isLoopback()) {
-      continue;
-    }
     Enumeration<InetAddress> addresses=interfaze.getInetAddresses();
     if (addresses.hasMoreElements()) {
-      remoteInterfaceAddress=addresses.nextElement().getHostAddress();
+      InetAddress nextAddress=addresses.nextElement();
+      if (nextAddress.isLoopbackAddress() || nextAddress.isReachable(2000)) {
+        break;
+      }
+      remoteInterfaceAddress=nextAddress.getHostAddress();
     }
   }
   ;

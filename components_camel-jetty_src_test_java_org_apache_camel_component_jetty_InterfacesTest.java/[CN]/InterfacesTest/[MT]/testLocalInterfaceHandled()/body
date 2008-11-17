@@ -1,13 +1,16 @@
 {
-  getMockEndpoint("mock:endpoint").expectedMessageCount(3);
+  int expectedMessages=(remoteInterfaceAddress != null) ? 3 : 2;
+  getMockEndpoint("mock:endpoint").expectedMessageCount(expectedMessages);
   URL localUrl=new URL("http://localhost:4567/testRoute");
   String localResponse=IOUtils.toString(localUrl.openStream());
   assertEquals("local",localResponse);
   localUrl=new URL("http://127.0.0.1:4568/testRoute");
   localResponse=IOUtils.toString(localUrl.openStream());
   assertEquals("local-differentPort",localResponse);
-  URL url=new URL("http://" + remoteInterfaceAddress + ":4567/testRoute");
-  String remoteResponse=IOUtils.toString(url.openStream());
-  assertEquals("remote",remoteResponse);
+  if (remoteInterfaceAddress != null) {
+    URL url=new URL("http://" + remoteInterfaceAddress + ":4567/testRoute");
+    String remoteResponse=IOUtils.toString(url.openStream());
+    assertEquals("remote",remoteResponse);
+  }
   assertMockEndpointsSatisfied();
 }
