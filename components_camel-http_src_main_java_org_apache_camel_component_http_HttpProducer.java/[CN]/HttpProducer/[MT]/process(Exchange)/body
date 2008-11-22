@@ -32,22 +32,22 @@
     }
  else {
       HttpOperationFailedException exception=null;
+      InputStream is=extractResponseBody(method);
       if (responseCode >= 300 && responseCode < 400) {
         String redirectLocation;
         Header locationHeader=method.getResponseHeader("location");
         if (locationHeader != null) {
           redirectLocation=locationHeader.getValue();
-          exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),redirectLocation);
+          exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),redirectLocation,is);
         }
  else {
-          exception=new HttpOperationFailedException(responseCode,method.getStatusLine());
+          exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),is);
         }
       }
  else {
-        exception=new HttpOperationFailedException(responseCode,method.getStatusLine());
+        exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),is);
       }
       if (exception != null) {
-        exception.setResponseBody(extractResponseBody(method));
         throw exception;
       }
     }
