@@ -5,6 +5,11 @@
   expected.setLastName("BAR");
   MockEndpoint resultEndpoint=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
   resultEndpoint.expectedBodiesReceived(expected);
-  template.sendBody("direct:start",xml);
+  template.sendBody("direct:getJAXBElementValue",xml);
   resultEndpoint.assertIsSatisfied();
+  resultEndpoint.reset();
+  resultEndpoint.expectedMessageCount(1);
+  template.sendBody("direct:getJAXBElement",xml);
+  resultEndpoint.assertIsSatisfied();
+  assertTrue("We should get the JAXBElement here",resultEndpoint.getExchanges().get(0).getIn().getBody() instanceof JAXBElement);
 }
