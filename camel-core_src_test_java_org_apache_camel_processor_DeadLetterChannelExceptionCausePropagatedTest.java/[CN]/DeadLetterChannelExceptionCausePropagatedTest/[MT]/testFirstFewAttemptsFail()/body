@@ -1,0 +1,11 @@
+{
+  MockEndpoint failedEndpoint=getMockEndpoint("mock:failed");
+  MockEndpoint successEndpoint=getMockEndpoint("mock:success");
+  failedEndpoint.expectedBodiesReceived(body);
+  failedEndpoint.message(0).header(DeadLetterChannel.CAUGHT_EXCEPTION_HEADER).isEqualTo(RUNTIME_EXCEPTION);
+  failedEndpoint.expectedMessageCount(1);
+  successEndpoint.expectedMessageCount(0);
+  sendBody("direct:start",body);
+  assertMockEndpointsSatisfied();
+  assertNull(failedEndpoint.getExchanges().get(0).getException());
+}
