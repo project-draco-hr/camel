@@ -1,16 +1,19 @@
 {
-  boolean fileSource=exchange.getIn().getBody() instanceof File;
-  File target=createFileName(exchange.getIn());
-  buildDirectory(target);
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("About to write to: " + target + " from exchange: "+ exchange);
+  File target=createFileName(exchange);
+  boolean writeAsTempAndRename=ObjectHelper.isNotNullAndNonEmpty(endpoint.getTempPrefix());
+  File tempTarget=null;
+  if (writeAsTempAndRename) {
+    tempTarget=new File(target.getParent(),endpoint.getTempPrefix() + target.getName());
   }
-  if (fileSource) {
-    File source=ExchangeHelper.getMandatoryInBody(exchange,File.class);
-    writeFileByFile(source,target);
+  writeFile(exchange,tempTarget != null ? tempTarget : target);
+  if (tempTarget != null) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Renaming file: " + tempTarget + " to: "+ target);
+    }
+    boolean renamed=tempTarget.renameTo(target);
+    if (!renamed) {
+      throw new IOException("Can not rename file from: " + tempTarget + " to: "+ target);
+    }
   }
- else {
-    InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-    writeFileByStream(in,target);
-  }
+  exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,target.getAbsolutePath());
 }

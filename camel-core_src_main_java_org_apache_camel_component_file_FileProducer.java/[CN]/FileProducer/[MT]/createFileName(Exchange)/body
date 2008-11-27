@@ -2,7 +2,7 @@
   File answer;
   String name=null;
   if (!endpoint.isIgnoreFileNameHeader()) {
-    name=message.getHeader(FileComponent.HEADER_FILE_NAME,String.class);
+    name=exchange.getIn().getHeader(FileComponent.HEADER_FILE_NAME,String.class);
   }
   Expression expression=endpoint.getExpression();
   if (name != null) {
@@ -17,19 +17,19 @@
     if (LOG.isDebugEnabled()) {
       LOG.debug("Filename evaluated as expression: " + expression);
     }
-    Object result=expression.evaluate(message.getExchange());
-    name=message.getExchange().getContext().getTypeConverter().convertTo(String.class,result);
+    Object result=expression.evaluate(exchange);
+    name=exchange.getContext().getTypeConverter().convertTo(String.class,result);
   }
   File endpointFile=endpoint.getFile();
   if (endpointFile.isDirectory()) {
     if (name != null) {
       answer=new File(endpointFile,name);
       if (answer.isDirectory()) {
-        answer=new File(answer,endpoint.getGeneratedFileName(message));
+        answer=new File(answer,endpoint.getGeneratedFileName(exchange.getIn()));
       }
     }
  else {
-      answer=new File(endpointFile,endpoint.getGeneratedFileName(message));
+      answer=new File(endpointFile,endpoint.getGeneratedFileName(exchange.getIn()));
     }
   }
  else {
@@ -40,6 +40,5 @@
       answer=new File(endpointFile,name);
     }
   }
-  message.setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,answer.getAbsolutePath());
   return answer;
 }
