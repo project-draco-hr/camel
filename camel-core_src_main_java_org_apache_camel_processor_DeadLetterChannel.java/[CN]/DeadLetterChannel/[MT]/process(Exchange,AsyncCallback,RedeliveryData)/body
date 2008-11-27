@@ -20,15 +20,17 @@
       if (exceptionPolicy != null) {
         data.currentRedeliveryPolicy=exceptionPolicy.createRedeliveryPolicy(exchange.getContext(),data.currentRedeliveryPolicy);
         data.handledPredicate=exceptionPolicy.getHandledPolicy();
+        data.retryUntilPredicate=exceptionPolicy.getRetryUntilPolicy();
         Processor processor=exceptionPolicy.getErrorHandler();
         if (processor != null) {
           data.failureProcessor=processor;
         }
       }
-      logFailedDelivery("Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e,data,e);
+      logFailedDelivery(true,exchange,"Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e,data,e);
       data.redeliveryCounter=incrementRedeliveryCounter(exchange,e);
     }
-    if (!data.currentRedeliveryPolicy.shouldRedeliver(data.redeliveryCounter)) {
+    boolean shouldRedeliver=shouldRedeliver(exchange,data);
+    if (!shouldRedeliver) {
       setFailureHandled(exchange);
       decrementRedeliveryCounter(exchange);
       AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
@@ -39,7 +41,7 @@
         }
       }
 );
-      logFailedDelivery("Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor,data,null);
+      logFailedDelivery(false,exchange,"Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor,data,null);
       return sync;
     }
     if (data.redeliveryCounter > 0) {
