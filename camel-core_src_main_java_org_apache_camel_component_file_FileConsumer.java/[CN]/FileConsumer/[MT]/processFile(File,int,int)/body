@@ -1,0 +1,51 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing file: " + file);
+  }
+  final FileProcessStrategy processStrategy=endpoint.getFileStrategy();
+  final FileExchange exchange=endpoint.createExchange(file);
+  exchange.getIn().setHeader(FileComponent.HEADER_FILE_BATCH_TOTAL,total);
+  exchange.getIn().setHeader(FileComponent.HEADER_FILE_BATCH_INDEX,index);
+  endpoint.configureMessage(file,exchange.getIn());
+  try {
+    if (exclusiveReadLock) {
+      acquireExclusiveReadLock(file);
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("About to process file: " + file + " using exchange: "+ exchange);
+    }
+    if (processStrategy.begin(endpoint,exchange,file)) {
+      getAsyncProcessor().process(exchange,new AsyncCallback(){
+        public void done(        boolean sync){
+          boolean failed=exchange.isFailed();
+          boolean handled=DeadLetterChannel.isFailureHandled(exchange);
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Done processing file: " + file + ". Status is: "+ (failed ? "failed: " + failed + ", handled by failure processor: "+ handled : "processed OK"));
+          }
+          boolean committed=false;
+          try {
+            if (!failed || handled) {
+              processStrategyCommit(processStrategy,exchange,file,handled);
+              committed=true;
+            }
+ else {
+              handleException(exchange.getException());
+            }
+          }
+  finally {
+            if (!committed) {
+              processStrategyRollback(processStrategy,exchange,file);
+            }
+          }
+        }
+      }
+);
+    }
+ else {
+      LOG.warn(endpoint + " can not process file: " + file);
+    }
+  }
+ catch (  Exception e) {
+    handleException(e);
+  }
+}
