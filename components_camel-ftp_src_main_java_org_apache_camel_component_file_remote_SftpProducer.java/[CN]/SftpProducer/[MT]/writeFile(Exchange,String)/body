@@ -1,0 +1,23 @@
+{
+  InputStream payload=exchange.getIn().getBody(InputStream.class);
+  try {
+    int lastPathIndex=fileName.lastIndexOf('/');
+    if (lastPathIndex != -1) {
+      String directory=fileName.substring(0,lastPathIndex);
+      boolean success=SftpUtils.buildDirectory(channel,directory);
+      if (!success) {
+        log.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
+      }
+    }
+    if (log.isTraceEnabled()) {
+      log.trace("About to send: " + fileName + " to: "+ remoteServer()+ " from exchange: "+ exchange);
+    }
+    channel.put(payload,fileName);
+    if (log.isDebugEnabled()) {
+      log.debug("Sent: " + fileName + " to: "+ remoteServer());
+    }
+  }
+  finally {
+    ObjectHelper.close(payload,"Closing payload",log);
+  }
+}

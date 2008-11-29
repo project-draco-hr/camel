@@ -1,22 +1,16 @@
 {
-  InputStream payload=exchange.getIn().getBody(InputStream.class);
-  try {
-    String remoteServer=endpoint.getConfiguration().remoteServerInformation();
-    String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
-    int lastPathIndex=fileName.lastIndexOf('/');
-    if (lastPathIndex != -1) {
-      String directory=fileName.substring(0,lastPathIndex);
-      boolean success=SftpUtils.buildDirectory(channel,directory);
-      if (!success) {
-        log.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
-      }
-    }
-    channel.put(payload,fileName);
-    log.info("Sent: " + fileName + " to: "+ remoteServer);
+  String target=createFileName(exchange);
+  boolean writeAsTempAndRename=ObjectHelper.isNotNullAndNonEmpty(endpoint.getConfiguration().getTempPrefix());
+  String tempTarget=null;
+  if (writeAsTempAndRename) {
+    tempTarget=createTempFileName(target);
   }
-  finally {
-    if (payload != null) {
-      payload.close();
+  writeFile(exchange,tempTarget != null ? tempTarget : target);
+  if (tempTarget != null) {
+    if (log.isTraceEnabled()) {
+      log.trace("Renaming file: " + tempTarget + " to: "+ target);
     }
+    channel.rename(tempTarget,target);
   }
+  exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,target);
 }

@@ -1,6 +1,6 @@
 {
   String answer;
-  String name=message.getHeader(FileComponent.HEADER_FILE_NAME,String.class);
+  String name=exchange.getIn().getHeader(FileComponent.HEADER_FILE_NAME,String.class);
   Expression expression=endpoint.getConfiguration().getExpression();
   if (name != null) {
     if (name.indexOf("${") > -1) {
@@ -14,21 +14,20 @@
     if (log.isDebugEnabled()) {
       log.debug("Filename evaluated as expression: " + expression);
     }
-    Object result=expression.evaluate(message.getExchange());
-    name=message.getExchange().getContext().getTypeConverter().convertTo(String.class,result);
+    Object result=expression.evaluate(exchange);
+    name=exchange.getContext().getTypeConverter().convertTo(String.class,result);
   }
-  String endpointFile=fileConfig.getFile();
-  if (fileConfig.isDirectory()) {
+  String endpointFile=endpoint.getConfiguration().getFile();
+  if (endpoint.getConfiguration().isDirectory()) {
     String baseDir="";
     if (endpointFile.length() > 0) {
       baseDir=endpointFile + (endpointFile.endsWith("/") ? "" : "/");
     }
-    String fileName=(name != null) ? name : endpoint.getGeneratedFileName(message);
+    String fileName=(name != null) ? name : endpoint.getGeneratedFileName(exchange.getIn());
     answer=baseDir + fileName;
   }
  else {
     answer=endpointFile;
   }
-  message.setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,answer);
   return answer;
 }

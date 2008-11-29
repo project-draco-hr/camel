@@ -1,24 +1,20 @@
 {
-  InputStream payload=exchange.getIn().getBody(InputStream.class);
-  try {
-    String fileName=createFileName(exchange.getIn(),endpoint.getConfiguration());
-    int lastPathIndex=fileName.lastIndexOf('/');
-    if (lastPathIndex != -1) {
-      String directory=fileName.substring(0,lastPathIndex);
-      if (!FtpUtils.buildDirectory(client,directory)) {
-        log.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
-      }
-    }
-    boolean success=client.storeFile(fileName,payload);
-    if (!success) {
-      String message="Error sending file: " + fileName + " to: "+ remoteServer();
-      throw new FtpOperationFailedException(client.getReplyCode(),client.getReplyString(),message);
-    }
-    log.info("Sent: " + fileName + " to: "+ remoteServer());
+  String target=createFileName(exchange);
+  boolean writeAsTempAndRename=ObjectHelper.isNotNullAndNonEmpty(endpoint.getConfiguration().getTempPrefix());
+  String tempTarget=null;
+  if (writeAsTempAndRename) {
+    tempTarget=createTempFileName(target);
   }
-  finally {
-    if (payload != null) {
-      payload.close();
+  writeFile(exchange,tempTarget != null ? tempTarget : target);
+  if (tempTarget != null) {
+    if (log.isTraceEnabled()) {
+      log.trace("Renaming file: " + tempTarget + " to: "+ target);
+    }
+    boolean renamed=client.rename(tempTarget,target);
+    if (!renamed) {
+      String msg="Can not rename file from: " + tempTarget + " to: "+ target;
+      throw new FtpOperationFailedException(client.getReplyCode(),client.getReplyString(),msg);
     }
   }
+  exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,target);
 }

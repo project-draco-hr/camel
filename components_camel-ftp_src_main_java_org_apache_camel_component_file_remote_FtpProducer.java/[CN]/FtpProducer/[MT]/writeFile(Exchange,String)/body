@@ -1,0 +1,26 @@
+{
+  InputStream payload=exchange.getIn().getBody(InputStream.class);
+  try {
+    int lastPathIndex=fileName.lastIndexOf('/');
+    if (lastPathIndex != -1) {
+      String directory=fileName.substring(0,lastPathIndex);
+      if (!FtpUtils.buildDirectory(client,directory)) {
+        log.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
+      }
+    }
+    if (log.isTraceEnabled()) {
+      log.trace("About to send: " + fileName + " to: "+ remoteServer()+ " from exchange: "+ exchange);
+    }
+    boolean success=client.storeFile(fileName,payload);
+    if (!success) {
+      String message="Error sending file: " + fileName + " to: "+ remoteServer();
+      throw new FtpOperationFailedException(client.getReplyCode(),client.getReplyString(),message);
+    }
+    if (log.isDebugEnabled()) {
+      log.debug("Sent: " + fileName + " to: "+ remoteServer());
+    }
+  }
+  finally {
+    ObjectHelper.close(payload,"Closing payload",log);
+  }
+}
