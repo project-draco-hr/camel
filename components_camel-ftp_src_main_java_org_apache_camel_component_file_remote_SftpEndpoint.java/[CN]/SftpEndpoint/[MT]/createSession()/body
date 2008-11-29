@@ -1,7 +1,18 @@
 {
   final JSch jsch=new JSch();
+  String privateKeyFile=getConfiguration().getPrivateKeyFile();
+  if (isNotNullAndNonEmpty(privateKeyFile)) {
+    log.debug("Using private keyfile: " + privateKeyFile);
+    String privateKeyFilePassphrase=getConfiguration().getPrivateKeyFilePassphrase();
+    if (isNotNullAndNonEmpty(privateKeyFilePassphrase)) {
+      jsch.addIdentity(privateKeyFile,privateKeyFilePassphrase);
+    }
+ else {
+      jsch.addIdentity(privateKeyFile);
+    }
+  }
   String knownHostsFile=getConfiguration().getKnownHosts();
-  if (knownHostsFile != null && knownHostsFile.trim().length() > 0) {
+  if (isNotNullAndNonEmpty(knownHostsFile)) {
     log.debug("Using knownHosts: " + knownHostsFile);
     jsch.setKnownHosts(knownHostsFile);
   }
