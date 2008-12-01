@@ -3,10 +3,15 @@
     public Object doInTransaction(    TransactionStatus arg0){
       List list=jpaTemplate.find(QUERY_STRING,processorName,messageId);
       if (list.isEmpty()) {
-        return Boolean.FALSE;
+        MessageProcessed processed=new MessageProcessed();
+        processed.setProcessorName(processorName);
+        processed.setMessageId(messageId);
+        jpaTemplate.persist(processed);
+        jpaTemplate.flush();
+        return Boolean.TRUE;
       }
  else {
-        return Boolean.TRUE;
+        return Boolean.FALSE;
       }
     }
   }
