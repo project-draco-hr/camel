@@ -1,12 +1,13 @@
 {
-  byte[] input=(byte[])exchange.getIn().getBody(byte[].class);
-  Inflater inflater=new Inflater();
-  inflater.setInput(input);
-  ByteArrayOutputStream bos=new ByteArrayOutputStream(input.length);
-  byte[] buf=new byte[INITIALBYTEARRAYSIZE];
-  while (!inflater.finished()) {
-    int count=inflater.inflate(buf);
-    bos.write(buf,0,count);
+  InputStream is=stream;
+  if (is == null) {
+    exchange.getIn().getBody(InputStream.class);
   }
+  if (is == null) {
+    throw new IllegalArgumentException("Can't get the inputStream for ZipDataFormat unmashalling");
+  }
+  InflaterInputStream unzipInput=new InflaterInputStream(is);
+  ByteArrayOutputStream bos=new ByteArrayOutputStream();
+  IOConverter.copy(unzipInput,bos);
   return bos.toByteArray();
 }

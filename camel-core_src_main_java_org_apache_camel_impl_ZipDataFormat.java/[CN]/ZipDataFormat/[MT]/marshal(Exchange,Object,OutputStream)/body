@@ -1,11 +1,13 @@
 {
-  byte[] input=(byte[])exchange.getIn().getBody(byte[].class);
-  Deflater deflater=new Deflater(compressionLevel);
-  deflater.setInput(input);
-  deflater.finish();
-  byte[] output=new byte[INITIALBYTEARRAYSIZE];
-  while (!deflater.finished()) {
-    int count=deflater.deflate(output);
-    stream.write(output,0,count);
+  InputStream is;
+  if (body instanceof InputStream) {
+    is=(InputStream)body;
   }
+  is=exchange.getIn().getBody(InputStream.class);
+  if (is == null) {
+    throw new IllegalArgumentException("Can't get the inputstream for ZipDataFormat mashalling");
+  }
+  DeflaterOutputStream zipOutput=new DeflaterOutputStream(stream,new Deflater(compressionLevel));
+  IOConverter.copy(is,zipOutput);
+  zipOutput.close();
 }
