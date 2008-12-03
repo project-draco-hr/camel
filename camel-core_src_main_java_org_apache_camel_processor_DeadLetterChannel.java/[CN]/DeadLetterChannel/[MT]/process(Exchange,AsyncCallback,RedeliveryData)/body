@@ -14,35 +14,11 @@
       return data.sync;
     }
     if (exchange.getException() != null) {
-      Throwable e=exchange.getException();
-      exchange.setProperty(EXCEPTION_CAUSE_PROPERTY,e);
-      ExceptionType exceptionPolicy=getExceptionPolicy(exchange,e);
-      if (exceptionPolicy != null) {
-        data.currentRedeliveryPolicy=exceptionPolicy.createRedeliveryPolicy(exchange.getContext(),data.currentRedeliveryPolicy);
-        data.handledPredicate=exceptionPolicy.getHandledPolicy();
-        data.retryUntilPredicate=exceptionPolicy.getRetryUntilPolicy();
-        Processor processor=exceptionPolicy.getErrorHandler();
-        if (processor != null) {
-          data.failureProcessor=processor;
-        }
-      }
-      logFailedDelivery(true,exchange,"Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e,data,e);
-      data.redeliveryCounter=incrementRedeliveryCounter(exchange,e);
+      handleException(exchange,data);
     }
     boolean shouldRedeliver=shouldRedeliver(exchange,data);
     if (!shouldRedeliver) {
-      setFailureHandled(exchange);
-      decrementRedeliveryCounter(exchange);
-      AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
-      boolean sync=afp.process(exchange,new AsyncCallback(){
-        public void done(        boolean sync){
-          restoreExceptionOnExchange(exchange,data.handledPredicate);
-          callback.done(data.sync);
-        }
-      }
-);
-      logFailedDelivery(false,exchange,"Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor,data,null);
-      return sync;
+      return deliverToFaultProcessor(exchange,callback,data);
     }
     if (data.redeliveryCounter > 0) {
       if (exchange.getException() != null) {
@@ -57,7 +33,7 @@
         }
         data.sync=false;
         if (exchange.getException() != null && !isFailureHandled(exchange)) {
-          process(exchange,callback,data);
+          asyncProcess(exchange,callback,data);
         }
  else {
           callback.done(sync);

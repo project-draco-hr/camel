@@ -1,0 +1,16 @@
+{
+  Throwable e=exchange.getException();
+  exchange.setProperty(EXCEPTION_CAUSE_PROPERTY,e);
+  ExceptionType exceptionPolicy=getExceptionPolicy(exchange,e);
+  if (exceptionPolicy != null) {
+    data.currentRedeliveryPolicy=exceptionPolicy.createRedeliveryPolicy(exchange.getContext(),data.currentRedeliveryPolicy);
+    data.handledPredicate=exceptionPolicy.getHandledPolicy();
+    data.retryUntilPredicate=exceptionPolicy.getRetryUntilPolicy();
+    Processor processor=exceptionPolicy.getErrorHandler();
+    if (processor != null) {
+      data.failureProcessor=processor;
+    }
+  }
+  logFailedDelivery(true,exchange,"Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e,data,e);
+  data.redeliveryCounter=incrementRedeliveryCounter(exchange,e);
+}

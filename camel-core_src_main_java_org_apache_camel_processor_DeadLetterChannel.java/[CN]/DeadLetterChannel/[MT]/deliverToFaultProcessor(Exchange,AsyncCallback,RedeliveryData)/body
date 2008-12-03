@@ -1,0 +1,14 @@
+{
+  setFailureHandled(exchange);
+  decrementRedeliveryCounter(exchange);
+  AsyncProcessor afp=AsyncProcessorTypeConverter.convert(data.failureProcessor);
+  boolean sync=afp.process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      restoreExceptionOnExchange(exchange,data.handledPredicate);
+      callback.done(data.sync);
+    }
+  }
+);
+  logFailedDelivery(false,exchange,"Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor,data,null);
+  return sync;
+}
