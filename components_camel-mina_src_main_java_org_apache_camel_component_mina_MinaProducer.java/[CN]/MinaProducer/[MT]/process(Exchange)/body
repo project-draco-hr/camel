@@ -15,6 +15,8 @@
   }
   if (sync) {
     latch=new CountDownLatch(1);
+    ResponseHandler handler=(ResponseHandler)session.getHandler();
+    handler.reset();
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Writing body: " + body);
@@ -29,6 +31,9 @@
     ResponseHandler handler=(ResponseHandler)session.getHandler();
     if (handler.getCause() != null) {
       throw new CamelException("Response Handler had an exception",handler.getCause());
+    }
+ else     if (!handler.isMessageRecieved()) {
+      throw new CamelExchangeException("No response received from remote server: " + endpoint.getEndpointUri(),exchange);
     }
  else {
       if (ExchangeHelper.isOutCapable(exchange)) {
