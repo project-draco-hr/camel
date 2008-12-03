@@ -1,0 +1,32 @@
+{
+  CometdEndpoint endpoint=(CometdEndpoint)prodcon.getEndpoint();
+  String connectorKey=endpoint.getProtocol() + ":" + endpoint.getUri().getHost()+ ":"+ endpoint.getPort();
+synchronized (connectors) {
+    ConnectorRef connectorRef=connectors.get(connectorKey);
+    if (connectorRef == null) {
+      Connector connector;
+      if ("cometds".equals(endpoint.getProtocol())) {
+        connector=getSslSocketConnector();
+      }
+ else {
+        connector=new SelectChannelConnector();
+      }
+      connector.setPort(endpoint.getPort());
+      connector.setHost(endpoint.getUri().getHost());
+      if ("localhost".equalsIgnoreCase(endpoint.getUri().getHost())) {
+        LOG.warn("You use localhost interface! It means that no external connections will be available." + " Don't you want to use 0.0.0.0 instead (all network interfaces)?");
+      }
+      getServer().addConnector(connector);
+      ContinuationCometdServlet servlet=createServletForConnector(connector,endpoint);
+      connectorRef=new ConnectorRef(connector,servlet);
+      connector.start();
+      connectors.put(connectorKey,connectorRef);
+    }
+ else {
+      connectorRef.increment();
+    }
+    AbstractBayeux bayeux=connectorRef.servlet.getBayeux();
+    bayeux.setJSONCommented(endpoint.isJsonCommented());
+    prodcon.setBayeux(bayeux);
+  }
+}
