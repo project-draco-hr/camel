@@ -1,0 +1,16 @@
+{
+  assertFalse(repo.contains("report.txt"));
+  template.sendBodyAndHeader("file://target/fileidempotent/","Hello World",FileComponent.HEADER_FILE_NAME,"report.txt");
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  assertMockEndpointsSatisfied();
+  mock.reset();
+  mock.expectedMessageCount(0);
+  File file=new File("target/fileidempotent/done/report.txt");
+  File renamed=new File("target/fileidempotent/report.txt");
+  file=file.getAbsoluteFile();
+  file.renameTo(renamed.getAbsoluteFile());
+  Thread.sleep(2000);
+  assertMockEndpointsSatisfied();
+  assertTrue(repo.contains("report.txt"));
+}
