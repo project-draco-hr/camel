@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.getTypeConverterRegistry().addTypeConverter(LocalDateTime.class,String.class,new MyLocalDateTimeConverter());
+      errorHandler(deadLetterChannel("mock:error"));
+      onException(IllegalArgumentException.class).handled(true).to("mock:wrapped");
+      from("direct:start").convertBodyTo(LocalDateTime.class).to("mock:end");
+    }
+  }
+;
+}
