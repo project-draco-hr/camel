@@ -1,0 +1,25 @@
+{
+  resultEndpoint.expectedBodiesReceived("A","B","C","D","E");
+  sendMessage("AAAAAAAAAA","A");
+  sendMessage("BBBBBBBBBB","B");
+  sendMessage("CCCCCCCCCC","C");
+  sendMessage("AAAAAAAAAA","A");
+  sendMessage("DDDDDDDDDD","D");
+  sendMessage("BBBBBBBBBB","B");
+  sendMessage("EEEEEEEEEE","E");
+  resultEndpoint.assertIsSatisfied();
+  resultEndpoint.reset();
+  resultEndpoint.expectedBodiesReceived("Z","X");
+  sendMessage("ZZZZZZZZZZ","Z");
+  IdempotentRepository<String> repo2=FileIdempotentRepository.fileIdempotentRepository(store);
+  assertFalse(repo2.contains("AAAAAAAAAA"));
+  assertTrue(repo2.contains("BBBBBBBBBB"));
+  assertTrue(repo2.contains("CCCCCCCCCC"));
+  assertTrue(repo2.contains("DDDDDDDDDD"));
+  assertTrue(repo2.contains("EEEEEEEEEE"));
+  assertTrue(repo2.contains("ZZZZZZZZZZ"));
+  sendMessage("XXXXXXXXXX","X");
+  resultEndpoint.assertIsSatisfied();
+  assertFalse(repo.contains("BBBBBBBBBB"));
+  assertTrue(repo.contains("XXXXXXXXXX"));
+}
