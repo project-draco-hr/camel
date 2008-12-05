@@ -1,0 +1,15 @@
+{
+  deleteDirectory("target/inprogress");
+  deleteDirectory("target/reports");
+  File file=new File("target/inprogress");
+  file.mkdirs();
+  FileWriter fw=new FileWriter("./target/inprogress/london.txt");
+  fw.write("I was there once in London");
+  fw.flush();
+  fw.close();
+  MockEndpoint mock=getMockEndpoint("mock:report");
+  mock.expectedBodiesReceived("Hello London");
+  template.sendBodyAndHeader("file:target/reports","Hello London",FileComponent.HEADER_FILE_NAME,"london.txt");
+  Thread.sleep(100);
+  mock.assertIsSatisfied();
+}
