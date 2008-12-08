@@ -1,0 +1,23 @@
+{
+  Iterator it=parameters.keySet().iterator();
+  while (it.hasNext()) {
+    Object key=it.next();
+    String value=(String)parameters.get(key);
+    if (isReferenceParameter(value)) {
+      Object ref=lookup(value.substring(1));
+      String name=key.toString();
+      if (ref != null) {
+        boolean hit=IntrospectionSupport.setProperty(getCamelContext().getTypeConverter(),bean,name,ref);
+        if (hit) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Configued property: " + name + " on bean: "+ bean+ " with value: "+ ref);
+          }
+          it.remove();
+        }
+ else {
+          throw new IllegalArgumentException("Property: " + name + " not found on bean: "+ bean+ " of type: "+ bean.getClass().getName());
+        }
+      }
+    }
+  }
+}
