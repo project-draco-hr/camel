@@ -1,9 +1,8 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      onException(OrderFailedException.class).handled(true).bean(OrderService.class,"orderFailed").to("mock:error");
       errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(1));
-      from("direct:start").bean(OrderService.class,"handleOrder").to("mock:result");
+      from("direct:start").onException(OrderFailedException.class).handled(true).bean(OrderService.class,"orderFailed").to("mock:error").end().bean(OrderService.class,"handleOrder").to("mock:result");
     }
   }
 ;
