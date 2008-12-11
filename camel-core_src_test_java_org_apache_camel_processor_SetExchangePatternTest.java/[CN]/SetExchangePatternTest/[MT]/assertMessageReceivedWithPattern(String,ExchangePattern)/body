@@ -1,0 +1,21 @@
+{
+  ExchangePattern sendPattern;
+switch (expectedPattern) {
+case InOut:
+    sendPattern=ExchangePattern.InOnly;
+  break;
+case InOnly:
+case RobustInOnly:
+sendPattern=ExchangePattern.InOut;
+break;
+default :
+sendPattern=ExchangePattern.InOnly;
+}
+MockEndpoint resultEndpoint=getMockEndpoint("mock:result");
+String expectedBody="InOnlyMessage";
+resultEndpoint.expectedBodiesReceived(expectedBody);
+template.sendBody(sendUri,sendPattern,expectedBody);
+resultEndpoint.assertIsSatisfied();
+ExchangePattern actualPattern=resultEndpoint.getExchanges().get(0).getPattern();
+assertEquals("received exchange pattern",actualPattern,expectedPattern);
+}
