@@ -2,10 +2,17 @@
   while (true) {
     try {
       Thread.sleep(batchTimeout);
+      queue.drainTo(collection,batchSize);
     }
  catch (    InterruptedException e) {
       if (cancelRequested) {
         return;
+      }
+      while (isInBatchCompleted(queue.size())) {
+        queue.drainTo(collection,batchSize);
+      }
+      if (!isOutBatchCompleted()) {
+        continue;
       }
     }
     try {
