@@ -1,16 +1,15 @@
 {
   LOG.info("Asserting: " + this + " is satisfied");
-  if (expectedCount >= 0) {
+  if (expectedCount == 0) {
+    if (timeoutForEmptyEndpoints > 0) {
+      LOG.debug("Sleeping for: " + timeoutForEmptyEndpoints + " millis to check there really are no messages received");
+      Thread.sleep(timeoutForEmptyEndpoints);
+    }
+    assertEquals("Received message count",expectedCount,getReceivedCounter());
+  }
+ else   if (expectedCount > 0) {
     if (expectedCount != getReceivedCounter()) {
-      if (expectedCount == 0) {
-        if (timeoutForEmptyEndpoints > 0) {
-          LOG.debug("Sleeping for: " + timeoutForEmptyEndpoints + " millis to check there really are no messages received");
-          Thread.sleep(timeoutForEmptyEndpoints);
-        }
-      }
- else {
-        waitForCompleteLatch();
-      }
+      waitForCompleteLatch();
     }
     assertEquals("Received message count",expectedCount,getReceivedCounter());
   }
