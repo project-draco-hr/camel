@@ -1,0 +1,39 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Waiting for exclusive read lock to file: " + file);
+  }
+  FileChannel channel=new RandomAccessFile(file,"rw").getChannel();
+  long start=System.currentTimeMillis();
+  boolean exclusive=false;
+  try {
+    while (!exclusive) {
+      if (timeout > 0) {
+        long delta=System.currentTimeMillis() - start;
+        if (delta > timeout) {
+          LOG.debug("Could not acquire read lock within " + timeout + " millis. Will skip the file: "+ file);
+          return false;
+        }
+      }
+      FileLock lock=timeout > 0 ? channel.tryLock() : channel.lock();
+      if (lock != null) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Acquired exclusive read lock: " + lock + " to file: "+ file);
+        }
+        lock.release();
+        exclusive=true;
+      }
+ else {
+        LOG.trace("Exclusive read lock not granted. Sleeping for 1000 millis.");
+        try {
+          Thread.sleep(1000);
+        }
+ catch (        InterruptedException e) {
+        }
+      }
+    }
+  }
+  finally {
+    ObjectHelper.close(channel,"while acquiring exclusive read lock for file: " + file,LOG);
+  }
+  return true;
+}

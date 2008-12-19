@@ -11,10 +11,13 @@
   boolean move=moveNamePrefix != null || moveNamePostfix != null;
   boolean preMove=preMoveNamePrefix != null || preMoveNamePostfix != null;
   if (isNoop) {
-    return new NoOpFileProcessStrategy(isLock);
+    NoOpFileProcessStrategy strategy=new NoOpFileProcessStrategy(isLock);
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    return strategy;
   }
  else   if (move || preMove) {
     RenameFileProcessStrategy strategy=new RenameFileProcessStrategy(isLock);
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
     if (move) {
       strategy.setCommitRenamer(new DefaultFileRenamer(moveNamePrefix,moveNamePostfix));
     }
@@ -25,6 +28,7 @@
   }
  else   if (expression != null || preMoveExpression != null) {
     RenameFileProcessStrategy strategy=new RenameFileProcessStrategy(isLock);
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
     if (expression != null) {
       FileExpressionRenamer renamer=new FileExpressionRenamer();
       renamer.setExpression(expression);
@@ -38,9 +42,13 @@
     return strategy;
   }
  else   if (isDelete) {
-    return new DeleteFileProcessStrategy(isLock);
+    DeleteFileProcessStrategy strategy=new DeleteFileProcessStrategy(isLock);
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    return strategy;
   }
  else {
-    return new RenameFileProcessStrategy(isLock);
+    RenameFileProcessStrategy strategy=new RenameFileProcessStrategy(isLock);
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    return strategy;
   }
 }

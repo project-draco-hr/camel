@@ -1,0 +1,34 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Waiting for exclusive read lock to file: " + file);
+  }
+  String originalName=file.getName();
+  File tempFile=new File(file.getParent(),originalName + ".camelExclusiveReadLock");
+  long start=System.currentTimeMillis();
+  boolean exclusive=false;
+  while (!exclusive) {
+    if (timeout > 0) {
+      long delta=System.currentTimeMillis() - start;
+      if (delta > timeout) {
+        LOG.debug("Could not acquire read lock within " + timeout + " millis. Will skip the file: "+ file);
+        return false;
+      }
+    }
+    exclusive=file.renameTo(tempFile);
+    if (exclusive) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Acquired exclusive read lock to file: " + file);
+      }
+      tempFile.renameTo(file);
+    }
+ else {
+      LOG.trace("Exclusive read lock not granted. Sleeping for 1000 millis.");
+      try {
+        Thread.sleep(1000);
+      }
+ catch (      InterruptedException e) {
+      }
+    }
+  }
+  return true;
+}
