@@ -2,10 +2,11 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("Waiting for exclusive read lock to file: " + file);
   }
-  FileChannel channel=new RandomAccessFile(file,"rw").getChannel();
-  long start=System.currentTimeMillis();
-  boolean exclusive=false;
+  FileChannel channel=null;
   try {
+    channel=new RandomAccessFile(file,"rw").getChannel();
+    long start=System.currentTimeMillis();
+    boolean exclusive=false;
     while (!exclusive) {
       if (timeout > 0) {
         long delta=System.currentTimeMillis() - start;
@@ -23,16 +24,20 @@
         exclusive=true;
       }
  else {
-        LOG.trace("Exclusive read lock not granted. Sleeping for 1000 millis.");
-        try {
-          Thread.sleep(1000);
-        }
- catch (        InterruptedException e) {
-        }
+        sleep();
       }
     }
   }
-  finally {
+ catch (  IOException e) {
+    if (timeout == 0) {
+      throw new RuntimeCamelException(e);
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Can not acquire read lock. Will try again.",e);
+    }
+    sleep();
+  }
+ finally {
     ObjectHelper.close(channel,"while acquiring exclusive read lock for file: " + file,LOG);
   }
   return true;
