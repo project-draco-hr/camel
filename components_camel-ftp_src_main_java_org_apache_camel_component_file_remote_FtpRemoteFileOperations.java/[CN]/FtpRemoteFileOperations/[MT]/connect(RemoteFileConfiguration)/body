@@ -1,0 +1,42 @@
+{
+  String host=config.getHost();
+  int port=config.getPort();
+  String username=config.getUsername();
+  if (config.getFtpClientConfig() != null) {
+    LOG.trace("Configuring FTPClient with config: " + config.getFtpClientConfig());
+    client.configure(config.getFtpClientConfig());
+  }
+  LOG.trace("Connecting to " + config.remoteServerInformation());
+  try {
+    client.connect(host,port);
+  }
+ catch (  IOException e) {
+    throw new RemoteFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+  }
+  if (config.isPassiveMode()) {
+    LOG.trace("Using passive mode connections");
+    client.enterLocalPassiveMode();
+  }
+  try {
+    boolean login;
+    if (username != null) {
+      LOG.trace("Attempting to login user: " + username);
+      login=client.login(username,config.getPassword());
+    }
+ else {
+      LOG.trace("Attempting to login anonymous");
+      login=client.login("anonymous",null);
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("User " + (username != null ? username : "anonymous") + " logged in: "+ login);
+    }
+    if (!login) {
+      throw new RemoteFileOperationFailedException(client.getReplyCode(),client.getReplyString());
+    }
+    client.setFileType(config.isBinary() ? FTPClient.BINARY_FILE_TYPE : FTPClient.ASCII_FILE_TYPE);
+  }
+ catch (  IOException e) {
+    throw new RemoteFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+  }
+  return true;
+}

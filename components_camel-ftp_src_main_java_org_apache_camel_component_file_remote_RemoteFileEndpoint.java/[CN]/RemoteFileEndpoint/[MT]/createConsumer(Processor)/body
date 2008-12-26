@@ -1,0 +1,19 @@
+{
+  String protocol=getConfiguration().getProtocol();
+  ObjectHelper.notEmpty(protocol,"protocol");
+  RemoteFileConsumer consumer=null;
+  if ("ftp".equals(protocol)) {
+    consumer=new FtpConsumer(this,processor,remoteFileOperations);
+  }
+ else   if ("sftp".equals(protocol)) {
+    consumer=new SftpConsumer(this,processor,remoteFileOperations);
+  }
+ else {
+    throw new IllegalArgumentException("Unsupported protocol: " + protocol);
+  }
+  if (isDelete() && (getMoveNamePrefix() != null || getMoveNamePostfix() != null || getExpression() != null)) {
+    throw new IllegalArgumentException("You cannot set delete=true and a moveNamePrefix, moveNamePostfix or expression option");
+  }
+  configureConsumer(consumer);
+  return consumer;
+}

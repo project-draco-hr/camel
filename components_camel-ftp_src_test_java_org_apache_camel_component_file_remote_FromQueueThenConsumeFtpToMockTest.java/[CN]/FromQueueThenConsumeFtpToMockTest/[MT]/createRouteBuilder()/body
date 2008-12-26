@@ -6,16 +6,10 @@
           String filename=exchange.getIn().getHeader("myfile",String.class);
           String url=getUrl + filename;
           Endpoint ftp=context.getEndpoint(url);
-          final CountDownLatch latch=new CountDownLatch(1);
-          Consumer consumer=ftp.createConsumer(new Processor(){
-            public void process(            Exchange result) throws Exception {
-              exchange.getIn().setBody(result.getIn().getBody());
-              latch.countDown();
-            }
-          }
-);
+          PollingConsumer consumer=ftp.createPollingConsumer();
           consumer.start();
-          latch.await(30,TimeUnit.SECONDS);
+          Exchange result=consumer.receive();
+          exchange.getIn().setBody(result.getIn().getBody());
           consumer.stop();
         }
       }

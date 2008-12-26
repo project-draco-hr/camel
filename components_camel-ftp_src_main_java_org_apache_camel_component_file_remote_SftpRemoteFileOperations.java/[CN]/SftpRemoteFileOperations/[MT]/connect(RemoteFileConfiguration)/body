@@ -1,0 +1,22 @@
+{
+  try {
+    if (isConnected()) {
+      return true;
+    }
+    if (channel == null || !channel.isConnected()) {
+      if (session == null || !session.isConnected()) {
+        LOG.trace("Session isn't connected, trying to recreate and connect.");
+        session=createSession(configuration);
+        session.connect();
+      }
+      LOG.trace("Channel isn't connected, trying to recreate and connect.");
+      channel=(ChannelSftp)session.openChannel("sftp");
+      channel.connect();
+      LOG.info("Connected to " + configuration.remoteServerInformation());
+    }
+    return true;
+  }
+ catch (  JSchException e) {
+    throw new RemoteFileOperationFailedException("Cannot connect to " + configuration.remoteServerInformation(),e);
+  }
+}

@@ -1,0 +1,39 @@
+{
+  final JSch jsch=new JSch();
+  if (isNotEmpty(configuration.getPrivateKeyFile())) {
+    LOG.debug("Using private keyfile: " + configuration.getPrivateKeyFile());
+    if (isNotEmpty(configuration.getPrivateKeyFilePassphrase())) {
+      jsch.addIdentity(configuration.getPrivateKeyFile(),configuration.getPrivateKeyFilePassphrase());
+    }
+ else {
+      jsch.addIdentity(configuration.getPrivateKeyFile());
+    }
+  }
+  if (isNotEmpty(configuration.getKnownHostsFile())) {
+    LOG.debug("Using knownhosts file: " + configuration.getKnownHostsFile());
+    jsch.setKnownHosts(configuration.getKnownHostsFile());
+  }
+  final Session session=jsch.getSession(configuration.getUsername(),configuration.getHost(),configuration.getPort());
+  session.setUserInfo(new UserInfo(){
+    public String getPassphrase(){
+      return null;
+    }
+    public String getPassword(){
+      return configuration.getPassword();
+    }
+    public boolean promptPassword(    String s){
+      return true;
+    }
+    public boolean promptPassphrase(    String s){
+      return true;
+    }
+    public boolean promptYesNo(    String s){
+      LOG.error(s);
+      return false;
+    }
+    public void showMessage(    String s){
+    }
+  }
+);
+  return session;
+}

@@ -1,0 +1,25 @@
+{
+  try {
+    String originalDirectory=client.printWorkingDirectory();
+    boolean success=false;
+    try {
+      success=client.changeWorkingDirectory(directory);
+      if (!success) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Trying to build remote directory: " + directory);
+        }
+        success=client.makeDirectory(directory);
+        if (!success) {
+          buildDirectoryChunks(directory);
+        }
+      }
+    }
+  finally {
+      client.changeWorkingDirectory(originalDirectory);
+    }
+    return success;
+  }
+ catch (  IOException e) {
+    throw new RemoteFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+  }
+}

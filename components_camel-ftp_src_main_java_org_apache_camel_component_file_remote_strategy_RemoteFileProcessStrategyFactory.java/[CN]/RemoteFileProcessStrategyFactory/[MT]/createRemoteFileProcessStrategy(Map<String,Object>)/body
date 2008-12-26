@@ -1,0 +1,53 @@
+{
+  boolean isNoop=params.get("noop") != null;
+  boolean isDelete=params.get("delete") != null;
+  String moveNamePrefix=(String)params.get("moveNamePrefix");
+  String moveNamePostfix=(String)params.get("moveNamePostfix");
+  String preMoveNamePrefix=(String)params.get("preMoveNamePrefix");
+  String preMoveNamePostfix=(String)params.get("preMoveNamePostfix");
+  Expression expression=(Expression)params.get("expression");
+  Expression preMoveExpression=(Expression)params.get("preMoveExpression");
+  boolean move=moveNamePrefix != null || moveNamePostfix != null;
+  boolean preMove=preMoveNamePrefix != null || preMoveNamePostfix != null;
+  if (isNoop) {
+    NoOpRemoteFileProcessStrategy strategy=new NoOpRemoteFileProcessStrategy();
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    return strategy;
+  }
+ else   if (isDelete) {
+    DeleteRemoteFileProcessStrategy strategy=new DeleteRemoteFileProcessStrategy();
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    return strategy;
+  }
+ else   if (move || preMove) {
+    RenameRemoteFileProcessStrategy strategy=new RenameRemoteFileProcessStrategy();
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    if (move) {
+      strategy.setCommitRenamer(new DefaultRemoteFileRenamer(moveNamePrefix,moveNamePostfix));
+    }
+    if (preMove) {
+      strategy.setBeginRenamer(new DefaultRemoteFileRenamer(preMoveNamePrefix,preMoveNamePostfix));
+    }
+    return strategy;
+  }
+ else   if (expression != null || preMoveExpression != null) {
+    RenameRemoteFileProcessStrategy strategy=new RenameRemoteFileProcessStrategy();
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    if (expression != null) {
+      RemoteFileExpressionRenamer renamer=new RemoteFileExpressionRenamer();
+      renamer.setExpression(expression);
+      strategy.setCommitRenamer(renamer);
+    }
+    if (preMoveExpression != null) {
+      RemoteFileExpressionRenamer renamer=new RemoteFileExpressionRenamer();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
+    return strategy;
+  }
+ else {
+    NoOpRemoteFileProcessStrategy strategy=new NoOpRemoteFileProcessStrategy();
+    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    return strategy;
+  }
+}

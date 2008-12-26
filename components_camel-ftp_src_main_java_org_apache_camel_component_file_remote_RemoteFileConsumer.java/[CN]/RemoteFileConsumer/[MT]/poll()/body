@@ -1,0 +1,39 @@
+{
+  connectIfNecessary();
+  if (!loggedIn) {
+    String message="Could not connect/login to: " + endpoint.remoteServerInformation() + ". Will skip this poll.";
+    log.warn(message);
+    return;
+  }
+  List<RemoteFile> files=new ArrayList<RemoteFile>();
+  String name=endpoint.getConfiguration().getFile();
+  boolean isDirectory=endpoint.getConfiguration().isDirectory();
+  if (isDirectory) {
+    pollDirectory(name,true,files);
+  }
+ else {
+    pollFile(name,files);
+  }
+  if (endpoint.getSorter() != null) {
+    Collections.sort(files,endpoint.getSorter());
+  }
+  List<RemoteFileExchange> exchanges=new ArrayList<RemoteFileExchange>(files.size());
+  for (  RemoteFile file : files) {
+    RemoteFileExchange exchange=endpoint.createExchange(file);
+    endpoint.configureMessage(file,exchange.getIn());
+    exchanges.add(exchange);
+  }
+  if (endpoint.getSortBy() != null) {
+    Collections.sort(exchanges,endpoint.getSortBy());
+  }
+  int total=exchanges.size();
+  if (total > 0 && log.isDebugEnabled()) {
+    log.debug("Total " + total + " files to consume");
+  }
+  for (int index=0; index < total; index++) {
+    RemoteFileExchange exchange=exchanges.get(index);
+    exchange.getIn().setHeader(FileComponent.HEADER_FILE_BATCH_INDEX,index);
+    exchange.getIn().setHeader(FileComponent.HEADER_FILE_BATCH_TOTAL,total);
+    processExchange(exchange);
+  }
+}

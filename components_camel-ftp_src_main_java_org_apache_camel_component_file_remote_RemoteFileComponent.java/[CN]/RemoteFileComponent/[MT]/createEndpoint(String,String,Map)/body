@@ -1,20 +1,28 @@
 {
-  RemoteFileConfiguration config=getConfiguration().copy();
   if (uri.indexOf("?") != -1) {
     uri=uri.substring(0,uri.indexOf("?"));
   }
-  config.configure(new URI(uri));
+  RemoteFileConfiguration config=new RemoteFileConfiguration(new URI(uri));
   final RemoteFileEndpoint endpoint;
   if ("ftp".equals(config.getProtocol())) {
-    endpoint=new FtpEndpoint(uri,this,config);
+    RemoteFileOperations operations=new FtpRemoteFileOperations();
+    endpoint=new RemoteFileEndpoint(uri,this,operations,config);
   }
  else   if ("sftp".equals(config.getProtocol())) {
-    endpoint=new SftpEndpoint(uri,this,config);
+    RemoteFileOperations operations=new SftpRemoteFileOperations();
+    endpoint=new RemoteFileEndpoint(uri,this,operations,config);
   }
  else {
-    throw new RuntimeCamelException("Unsupported protocol: " + config.getProtocol());
+    throw new IllegalArgumentException("Unsupported protocol: " + config.getProtocol());
   }
-  configureFTPClientConfig(parameters,endpoint);
+  String sortBy=getAndRemoveParameter(parameters,"sortBy",String.class);
+  if (isNotEmpty(sortBy) && !isReferenceParameter(sortBy)) {
+    String[] groups=sortBy.split(";");
+    Iterator<String> it=ObjectHelper.createIterator(groups);
+    Comparator<RemoteFileExchange> comparator=createSortByComparator(it);
+    endpoint.setSortBy(comparator);
+  }
   setProperties(endpoint.getConfiguration(),parameters);
+  setProperties(endpoint,parameters);
   return endpoint;
 }

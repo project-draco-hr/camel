@@ -1,0 +1,30 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Waiting for exclusive read lock to remote file: " + file);
+  }
+  String newName=file.getFileName() + ".camelExclusiveReadLock";
+  RemoteFile newFile=file.clone();
+  newFile.changeFileName(newName);
+  long start=System.currentTimeMillis();
+  boolean exclusive=false;
+  while (!exclusive) {
+    if (timeout > 0) {
+      long delta=System.currentTimeMillis() - start;
+      if (delta > timeout) {
+        LOG.debug("Could not acquire read lock within " + timeout + " millis. Will skip the remote file: "+ file);
+        return false;
+      }
+    }
+    exclusive=operations.renameFile(file.getAbsolutelFileName(),newFile.getAbsolutelFileName());
+    if (exclusive) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Acquired exclusive read lock to file: " + file);
+      }
+      operations.renameFile(newFile.getAbsolutelFileName(),file.getAbsolutelFileName());
+    }
+ else {
+      sleep();
+    }
+  }
+  return true;
+}

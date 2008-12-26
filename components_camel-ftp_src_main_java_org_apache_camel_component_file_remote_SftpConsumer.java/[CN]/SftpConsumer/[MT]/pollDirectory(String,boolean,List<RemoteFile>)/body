@@ -1,0 +1,24 @@
+{
+  if (fileName == null) {
+    return;
+  }
+  String currentDir=operations.getCurrentDirectory();
+  operations.changeCurrentDirectory(fileName);
+  if (log.isTraceEnabled()) {
+    log.trace("Polling directory: " + fileName);
+  }
+  List<ChannelSftp.LsEntry> files=operations.listFiles();
+  for (  ChannelSftp.LsEntry file : files) {
+    RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(file);
+    if (processDir && file.getAttrs().isDir() && isValidFile(remote,true)) {
+      pollDirectory(file.getFilename(),endpoint.isRecursive(),fileList);
+    }
+ else     if (!file.getAttrs().isLink() && isValidFile(remote,false)) {
+      fileList.add(remote);
+    }
+ else {
+      log.debug("Ignoring unsupported file type " + file);
+    }
+  }
+  operations.changeCurrentDirectory(currentDir);
+}

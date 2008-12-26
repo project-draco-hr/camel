@@ -1,0 +1,56 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("Processing remote file: " + exchange.getRemoteFile());
+  }
+  try {
+    final RemoteFileProcessStrategy processStrategy=endpoint.getRemoteFileProcessStrategy();
+    if (processStrategy.begin(operations,endpoint,exchange,exchange.getRemoteFile())) {
+      final RemoteFile target=exchange.getRemoteFile();
+      final String name=target.getAbsolutelFileName();
+      if (log.isTraceEnabled()) {
+        log.trace("Retriving remote file: " + name + " from: "+ remoteServer());
+      }
+      OutputStream os=new ByteArrayOutputStream();
+      target.setBody(os);
+      operations.retrieveFile(name,os);
+      if (log.isTraceEnabled()) {
+        log.trace("Retrieved remote file: " + name + " from: "+ remoteServer());
+      }
+      if (log.isDebugEnabled()) {
+        log.debug("About to process remote file: " + target + " using exchange: "+ exchange);
+      }
+      getAsyncProcessor().process(exchange,new AsyncCallback(){
+        public void done(        boolean sync){
+          final RemoteFile file=exchange.getRemoteFile();
+          boolean failed=exchange.isFailed();
+          boolean handled=DeadLetterChannel.isFailureHandled(exchange);
+          if (log.isDebugEnabled()) {
+            log.debug("Done processing remote file: " + file.getAbsolutelFileName() + ". Status is: "+ (failed ? "failed: " + failed + ", handled by failure processor: "+ handled : "processed OK"));
+          }
+          boolean committed=false;
+          try {
+            if (!failed || handled) {
+              processStrategyCommit(processStrategy,exchange,file,handled);
+              committed=true;
+            }
+ else {
+              handleException(exchange.getException());
+            }
+          }
+  finally {
+            if (!committed) {
+              processStrategyRollback(processStrategy,exchange,file);
+            }
+          }
+        }
+      }
+);
+    }
+ else {
+      log.warn(endpoint + " cannot process remote file: " + exchange.getRemoteFile());
+    }
+  }
+ catch (  Exception e) {
+    handleException(e);
+  }
+}

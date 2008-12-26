@@ -1,0 +1,25 @@
+{
+  if (fileName == null) {
+    return;
+  }
+  if (fileName.endsWith("/")) {
+    fileName=fileName.substring(0,fileName.length() - 1);
+  }
+  if (log.isTraceEnabled()) {
+    log.trace("Polling directory: " + fileName);
+  }
+  List<FTPFile> files=operations.listFiles(fileName);
+  for (  FTPFile file : files) {
+    RemoteFile<FTPFile> remote=asRemoteFile(fileName,file);
+    if (processDir && file.isDirectory() && isValidFile(remote,true)) {
+      String directory=fileName + "/" + file.getName();
+      pollDirectory(directory,endpoint.isRecursive(),fileList);
+    }
+ else     if (file.isFile() && isValidFile(remote,false)) {
+      fileList.add(remote);
+    }
+ else {
+      log.debug("Ignoring unsupported file type " + file);
+    }
+  }
+}
