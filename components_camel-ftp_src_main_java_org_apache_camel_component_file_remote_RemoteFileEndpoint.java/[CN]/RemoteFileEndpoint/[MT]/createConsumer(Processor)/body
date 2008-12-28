@@ -1,18 +1,26 @@
 {
   String protocol=getConfiguration().getProtocol();
   ObjectHelper.notEmpty(protocol,"protocol");
-  RemoteFileConsumer consumer=null;
+  RemoteFileConsumer consumer;
   if ("ftp".equals(protocol)) {
-    consumer=new FtpConsumer(this,processor,remoteFileOperations);
+    consumer=new FtpConsumer(this,processor,operations);
   }
  else   if ("sftp".equals(protocol)) {
-    consumer=new SftpConsumer(this,processor,remoteFileOperations);
+    consumer=new SftpConsumer(this,processor,operations);
   }
  else {
     throw new IllegalArgumentException("Unsupported protocol: " + protocol);
   }
   if (isDelete() && (getMoveNamePrefix() != null || getMoveNamePostfix() != null || getExpression() != null)) {
     throw new IllegalArgumentException("You cannot set delete=true and a moveNamePrefix, moveNamePostfix or expression option");
+  }
+  if (isNoop() && !isIdempotent()) {
+    LOG.info("Endpoint is configured with noop=true so forcing endpoint to be idempotent as well");
+    setIdempotent(true);
+  }
+  if (isIdempotent() && idempotentRepository == null) {
+    LOG.info("Using default memory based idempotent repository with cache max size: " + DEFAULT_IDEMPOTENT_CACHE_SIZE);
+    idempotentRepository=MemoryIdempotentRepository.memoryIdempotentRepository(DEFAULT_IDEMPOTENT_CACHE_SIZE);
   }
   configureConsumer(consumer);
   return consumer;
