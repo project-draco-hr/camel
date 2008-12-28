@@ -11,15 +11,19 @@
   List<FTPFile> files=operations.listFiles(fileName);
   for (  FTPFile file : files) {
     RemoteFile<FTPFile> remote=asRemoteFile(fileName,file);
-    if (processDir && file.isDirectory() && isValidFile(remote,true)) {
-      String directory=fileName + "/" + file.getName();
-      pollDirectory(directory,endpoint.isRecursive(),fileList);
+    if (processDir && file.isDirectory()) {
+      if (isValidFile(remote,true)) {
+        String directory=fileName + "/" + file.getName();
+        pollDirectory(directory,endpoint.isRecursive(),fileList);
+      }
     }
- else     if (file.isFile() && isValidFile(remote,false)) {
-      fileList.add(remote);
+ else     if (file.isFile()) {
+      if (isValidFile(remote,false)) {
+        fileList.add(remote);
+      }
     }
  else {
-      log.debug("Ignoring unsupported file type " + file);
+      log.debug("Ignoring unsupported remote file type: " + file);
     }
   }
 }
