@@ -1,0 +1,22 @@
+{
+  super(endpoint,processor);
+  restlet=new Restlet(){
+    @Override public void handle(    Request request,    Response response){
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Consumer restlet handle request method: " + request.getMethod());
+      }
+      try {
+        Exchange exchange=getEndpoint().createExchange();
+        RestletBinding binding=((RestletEndpoint)getEndpoint()).getRestletBinding();
+        binding.populateExchangeFromRestletRequest(request,exchange);
+        getProcessor().process(exchange);
+        binding.populateRestletResponseFromExchange(exchange,response);
+      }
+ catch (      Exception e) {
+        LOG.error(e);
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+    }
+  }
+;
+}
