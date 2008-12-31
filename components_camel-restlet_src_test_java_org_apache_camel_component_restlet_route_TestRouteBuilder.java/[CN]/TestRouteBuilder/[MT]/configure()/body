@@ -1,0 +1,10 @@
+{
+  from("direct:start-auth").setHeader("id",constant(ID)).setHeader(RestletConstants.LOGIN,constant("admin")).setHeader(RestletConstants.PASSWORD,constant("foo")).to("restlet:http://localhost:8080/securedOrders?restletMethod=post");
+  from("direct:start-bad-auth").setHeader("id",constant(ID)).setHeader(RestletConstants.LOGIN,constant("admizzzn")).setHeader(RestletConstants.PASSWORD,constant("fozzzo")).to("restlet:http://localhost:8080/securedOrders?restletMethod=post");
+  from("restlet:http://localhost:8080/securedOrders?restletMethod=post&restletRealmRef=realm").process(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getOut().setBody("received [" + exchange.getIn().getBody() + "] as an order id = "+ exchange.getIn().getHeader("id"));
+    }
+  }
+);
+}

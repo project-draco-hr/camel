@@ -6,6 +6,15 @@
   if (LOG.isDebugEnabled()) {
     LOG.debug("Populate Restlet request from exchange body: " + body);
   }
+  String login=(String)exchange.getIn().removeHeader(RestletConstants.LOGIN);
+  String password=(String)exchange.getIn().removeHeader(RestletConstants.PASSWORD);
+  if (login != null && password != null) {
+    ChallengeResponse authentication=new ChallengeResponse(ChallengeScheme.HTTP_BASIC,login,password);
+    request.setChallengeResponse(authentication);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Basic HTTP Authentication has been applied");
+    }
+  }
   for (  Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
     form.add(entry.getKey(),entry.getValue().toString());
     if (LOG.isDebugEnabled()) {

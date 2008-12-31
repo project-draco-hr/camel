@@ -3,14 +3,28 @@
   String ref=getAndRemoveParameter(parameters,"restletBindingRef",String.class);
   if (ref != null) {
     restletBinding=CamelContextHelper.mandatoryLookup(getCamelContext(),ref,RestletBinding.class);
+    if (restletBinding == null) {
+      LOG.warn("Binding '" + ref + "' cannot be found in the context");
+    }
   }
   if (restletBinding == null) {
     restletBinding=new DefaultRestletBinding();
+  }
+  Map<String,String> realm=null;
+  ref=getAndRemoveParameter(parameters,"restletRealmRef",String.class);
+  if (ref != null) {
+    realm=CamelContextHelper.mandatoryLookup(getCamelContext(),ref,Map.class);
+    if (realm == null) {
+      LOG.warn("Realm '" + ref + "' cannot be found in the context");
+    }
   }
   Method method=getAndRemoveParameter(parameters,"restletMethod",Method.class);
   RestletEndpoint result=new RestletEndpoint(this,remaining,parameters,restletBinding);
   if (method != null) {
     result.setRestletMethod(method);
+  }
+  if (realm != null) {
+    result.setRealm(realm);
   }
   return result;
 }
