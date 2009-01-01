@@ -1,4 +1,12 @@
 {
+  for (  Map.Entry<String,Object> entry : response.getAttributes().entrySet()) {
+    if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue())) {
+      exchange.getOut().setHeader(entry.getKey(),entry.getValue());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Populate exchange from Restlet response header: " + entry.getKey() + " value: "+ entry.getValue());
+      }
+    }
+  }
   String text=response.getEntity().getText();
   if (LOG.isDebugEnabled()) {
     LOG.debug("Populate exchange from Restlet response: " + text);
@@ -7,6 +15,6 @@
     exchange.getOut().setBody(text);
   }
  else {
-    LOG.warn("Exchange is incapable of receiving response");
+    throw new RuntimeCamelException("Exchange is incapable of receiving response: " + exchange);
   }
 }

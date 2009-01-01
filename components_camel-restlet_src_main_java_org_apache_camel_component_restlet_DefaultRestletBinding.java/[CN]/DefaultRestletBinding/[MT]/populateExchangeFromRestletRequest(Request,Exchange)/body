@@ -1,35 +1,29 @@
 {
   for (  Map.Entry<String,Object> entry : request.getAttributes().entrySet()) {
-    if (!entry.getKey().startsWith("org.restlet.")) {
+    if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue())) {
       exchange.getIn().setHeader(entry.getKey(),entry.getValue());
       if (LOG.isDebugEnabled()) {
         LOG.debug("Populate exchange from Restlet request header: " + entry.getKey() + " value: "+ entry.getValue());
-      }
-    }
-  }
-  Form headers=(Form)request.getAttributes().get("org.restlet.http.headers");
-  if (headers != null) {
-    for (    Map.Entry<String,String> entry : headers.getValuesMap().entrySet()) {
-      if (!entry.getKey().startsWith("org.restlet.") && !entry.getKey().equals("Host") && !entry.getKey().equals("User-Agent")&& !entry.getKey().equals("Content-Length")&& !entry.getKey().equals("Content-Type")&& !entry.getKey().equals("Connection")&& !entry.getKey().equals("Accept")) {
-        exchange.getIn().setHeader(entry.getKey(),entry.getValue());
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Populate exchange from Restlet request header: " + entry.getKey() + " value: "+ entry.getValue());
-        }
       }
     }
   }
   Form form=new Form(request.getEntity());
   if (form != null) {
     for (    Map.Entry<String,String> entry : form.getValuesMap().entrySet()) {
-      exchange.getIn().setHeader(entry.getKey(),entry.getValue());
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Populate exchange from Restlet request header: " + entry.getKey() + " value: "+ entry.getValue());
+      if (CAMEL_REQUEST.equals(entry.getKey())) {
+        exchange.getIn().setBody(entry.getValue());
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Populate exchange from Restlet request body: " + entry.getValue());
+        }
+      }
+ else {
+        if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue())) {
+          exchange.getIn().setHeader(entry.getKey(),entry.getValue());
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Populate exchange from Restlet request user header: " + entry.getKey() + " value: "+ entry.getValue());
+          }
+        }
       }
     }
-  }
-  Object body=form.getValuesMap().get("camel.body");
-  exchange.getIn().setBody(body);
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Populate exchange from Restlet request body: " + body);
   }
 }

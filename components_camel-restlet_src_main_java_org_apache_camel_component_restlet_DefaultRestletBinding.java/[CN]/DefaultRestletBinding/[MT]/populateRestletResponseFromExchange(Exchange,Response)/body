@@ -7,10 +7,17 @@
  else   if (body instanceof StringSource || body instanceof DOMSource) {
     mediaType=MediaType.TEXT_XML;
   }
+  for (  Map.Entry<String,Object> entry : exchange.getOut().getHeaders().entrySet()) {
+    if (!headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue())) {
+      response.getAttributes().put(entry.getKey(),entry.getValue());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Populate Restlet response from exchange header: " + entry.getKey() + " value: "+ entry.getValue());
+      }
+    }
+  }
   String text=exchange.getOut().getBody(String.class);
   if (LOG.isDebugEnabled()) {
     LOG.debug("Populate Restlet response from exchange body: " + text);
   }
   response.setEntity(text,mediaType);
-  exchange.getIn().setBody(body);
 }
