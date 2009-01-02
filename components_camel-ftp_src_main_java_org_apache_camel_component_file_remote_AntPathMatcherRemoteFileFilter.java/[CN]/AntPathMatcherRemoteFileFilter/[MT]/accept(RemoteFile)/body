@@ -1,0 +1,15 @@
+{
+  Class clazz=ObjectHelper.loadClass(ANTPATHMATCHER_CLASSNAME);
+  ObjectHelper.notNull(clazz,ANTPATHMATCHER_CLASSNAME + " not found in classpath. camel-spring.jar is required in the classpath.");
+  try {
+    Object filter=ObjectHelper.newInstance(clazz);
+    ObjectHelper.invokeMethod(filter.getClass().getMethod("setIncludes",String.class),filter,collectionAsCommaDelimitedString(includes));
+    ObjectHelper.invokeMethod(filter.getClass().getMethod("setExcludes",String.class),filter,collectionAsCommaDelimitedString(excludes));
+    String path=file.getRelativeFileName();
+    Boolean result=(Boolean)ObjectHelper.invokeMethod(filter.getClass().getMethod("acceptPathName",String.class),filter,path);
+    return result;
+  }
+ catch (  NoSuchMethodException e) {
+    throw new TypeNotPresentException(ANTPATHMATCHER_CLASSNAME,e);
+  }
+}

@@ -8,16 +8,15 @@
   if (log.isTraceEnabled()) {
     log.trace("Polling directory: " + fileName);
   }
-  List<FTPFile> files=operations.listFiles(fileName);
-  for (  FTPFile file : files) {
-    RemoteFile<FTPFile> remote=asRemoteFile(fileName,file);
-    if (processDir && file.isDirectory()) {
-      if (isValidFile(remote,true)) {
-        String directory=fileName + "/" + file.getName();
-        pollDirectory(directory,endpoint.isRecursive(),fileList);
+  List<ChannelSftp.LsEntry> files=operations.listFiles(fileName);
+  for (  ChannelSftp.LsEntry file : files) {
+    RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
+    if (file.getAttrs().isDir()) {
+      if (endpoint.isRecursive() && isValidFile(remote,true)) {
+        pollDirectory(file.getFilename(),fileList);
       }
     }
- else     if (file.isFile()) {
+ else     if (!file.getAttrs().isLink()) {
       if (isValidFile(remote,false)) {
         fileList.add(remote);
       }
