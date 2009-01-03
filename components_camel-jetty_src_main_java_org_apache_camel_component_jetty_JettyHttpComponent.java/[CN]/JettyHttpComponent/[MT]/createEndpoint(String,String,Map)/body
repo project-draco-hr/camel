@@ -1,16 +1,11 @@
 {
   uri=uri.startsWith("jetty:") ? remaining : uri;
-  if (httpClient == null) {
-    httpClient=createHttpClient();
-  }
-  IntrospectionSupport.setProperties(httpClient,parameters,"httpClient.");
-  String ref=getAndRemoveParameter(parameters,"httpBindingRef",String.class);
-  if (ref != null) {
-    httpBinding=CamelContextHelper.mandatoryLookup(getCamelContext(),ref,HttpBinding.class);
-  }
+  HttpClientParams params=new HttpClientParams();
+  IntrospectionSupport.setProperties(params,parameters,"httpClient.");
+  configureParameters(parameters);
   URI httpUri=URISupport.createRemainingURI(new URI(uri),parameters);
   uri=httpUri.toString();
-  JettyHttpEndpoint result=new JettyHttpEndpoint(this,uri,httpUri,getHttpConnectionManager());
+  JettyHttpEndpoint result=new JettyHttpEndpoint(this,uri,httpUri,params,getHttpConnectionManager(),httpClientConfigurer);
   if (httpBinding != null) {
     result.setBinding(httpBinding);
   }

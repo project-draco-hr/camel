@@ -1,7 +1,8 @@
 {
-  JettyHttpComponent jetty=context.getComponent("jetty",JettyHttpComponent.class);
-  assertNotNull(jetty);
-  assertEquals(5555,jetty.getHttpClient().getIdleTimeout());
+  JettyHttpEndpoint jettyEndpoint=(JettyHttpEndpoint)context.getEndpoint("jetty:http://localhost:8080/myapp/myservice?httpClient.soTimeout=5555");
+  assertNotNull("Jetty endpoint should not be null ",jettyEndpoint);
+  HttpProducer producer=(HttpProducer)jettyEndpoint.createProducer();
+  assertEquals("Get the wrong http client parameter",5555,producer.getHttpClient().getParams().getSoTimeout());
   Object out=template.requestBody("http://localhost:8080/myapp/myservice","Hello World");
   assertEquals("Bye World",context.getTypeConverter().convertTo(String.class,out));
 }
