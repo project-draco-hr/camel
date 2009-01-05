@@ -1,14 +1,6 @@
 {
-  long now=currentSystemTime();
-  startTimeMillis.compareAndSet(0,now);
-  if (now - startTimeMillis.get() > timePeriodMillis) {
-    requestCount.set(0);
-    startTimeMillis.set(now);
-  }
- else {
-    if (requestCount.incrementAndGet() > maximumRequestsPerPeriod) {
-      long time=startTimeMillis.get() + timePeriodMillis;
-      waitUntil(time,exchange);
-    }
+  TimeSlot slot=nextSlot();
+  if (!slot.isActive()) {
+    waitUntil(slot.startTime,exchange);
   }
 }
