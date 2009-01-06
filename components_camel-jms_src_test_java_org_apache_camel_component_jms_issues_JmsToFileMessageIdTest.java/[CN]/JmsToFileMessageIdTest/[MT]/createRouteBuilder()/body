@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("activemq:foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String camelId=exchange.getIn().getMessageId();
+          assertNotNull(camelId);
+          JmsMessage jms=(JmsMessage)exchange.getIn();
+          String jmsId=jms.getJmsMessage().getJMSMessageID();
+          assertNotNull(jmsId);
+          assertEquals(jmsId,camelId);
+        }
+      }
+).to("file://target/tofile").process(new Processor(){
+        public void process(        Exchange exchange){
+          assertNotNull(exchange.getIn().getMessageId());
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
