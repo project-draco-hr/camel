@@ -1,0 +1,24 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:error").delay(0L));
+      intercept().when(header("org.apache.camel.Redelivered").isNotNull()).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          int count=exchange.getIn().getHeader("org.apache.camel.RedeliveryCounter",Integer.class);
+          exchange.getIn().setBody(body + count);
+        }
+      }
+);
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          if (++counter <= 3) {
+            throw new MyTechnicalException("Forced by unit test");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
