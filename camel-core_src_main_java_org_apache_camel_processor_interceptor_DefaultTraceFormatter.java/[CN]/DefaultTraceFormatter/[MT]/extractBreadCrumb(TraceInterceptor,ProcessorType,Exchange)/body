@@ -1,6 +1,5 @@
 {
   String id="";
-  String nodeMsg="";
   String result;
   if (!showBreadCrumb && !showExchangeId && !showShortExchangeId&& !showNode) {
     return "";
@@ -14,17 +13,32 @@
       id=id.substring(id.indexOf("/") + 1);
     }
   }
-  if (showNode) {
-    nodeMsg=getNodeMessage(node);
+  String from="";
+  if (showNode && exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
+    TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
+    ProcessorType prev=tuow.getLastInterceptedNode();
+    if (prev != null) {
+      from=getNodeMessage(prev);
+    }
+ else     if (exchange.getFromEndpoint() != null) {
+      from=exchange.getFromEndpoint().getEndpointUri();
+    }
   }
-  if (interceptor.shouldTraceOutExchanges() && exchange.getOut(false) != null) {
-    result=nodeMsg.trim() + " -> " + id.trim();
+  String to="";
+  if (showNode) {
+    to=getNodeMessage(currentNode);
+  }
+  if (showNode) {
+    result=id.trim() + " >>> " + from.toString()+ " --> "+ to.trim();
+    if (interceptor.shouldTraceOutExchanges() && exchange.getOut(false) != null) {
+      result+=" (OUT) ";
+    }
   }
  else {
-    result=id.trim() + " -> " + nodeMsg.trim();
+    result=id;
   }
   if (breadCrumbLength > 0) {
-    return String.format("%1$-" + breadCrumbLength + "."+ breadCrumbLength+ "s",result).trim();
+    return String.format("%1$-" + breadCrumbLength + "."+ breadCrumbLength+ "s",result.trim());
   }
  else {
     return result.trim();

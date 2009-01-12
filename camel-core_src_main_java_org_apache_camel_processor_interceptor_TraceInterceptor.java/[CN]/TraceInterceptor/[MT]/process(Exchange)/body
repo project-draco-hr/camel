@@ -3,13 +3,18 @@
     super.process(exchange);
     return;
   }
+  boolean shouldLog=shouldLogNode(node) && shouldLogExchange(exchange);
   try {
-    if (shouldLogNode(node) && shouldLogExchange(exchange)) {
+    if (shouldLog) {
       logExchange(exchange);
       traceExchange(exchange);
+      if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
+        TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
+        tuow.addInterceptedNode(node);
+      }
     }
     super.proceed(exchange);
-    if (tracer.isTraceOutExchanges() && shouldLogNode(node) && shouldLogExchange(exchange)) {
+    if (shouldLog && tracer.isTraceOutExchanges()) {
       logExchange(exchange);
       traceExchange(exchange);
     }
