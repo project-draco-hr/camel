@@ -1,0 +1,14 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      Tracer tracer=new Tracer();
+      tracer.setDestination(context.getEndpoint("direct:traced"));
+      tracer.setLogLevel(LoggingLevel.OFF);
+      getContext().addInterceptStrategy(tracer);
+      from("direct:start").process(new MyProcessor("Hello World")).process(new MyProcessor("Goodday World")).process(new MyProcessor("Bye World")).to("mock:result");
+      from("direct:foo").process(new MyProcessor("Foo World")).to("mock:result");
+      from("direct:traced").process(new MyTraveAssertProcessor()).process(new MyTraceMessageProcessor()).to("mock:traced");
+    }
+  }
+;
+}
