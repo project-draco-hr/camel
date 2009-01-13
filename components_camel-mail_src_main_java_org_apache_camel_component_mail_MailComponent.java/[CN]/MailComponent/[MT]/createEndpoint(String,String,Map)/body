@@ -3,10 +3,16 @@
   if ("nntp".equalsIgnoreCase(url.getScheme())) {
     throw new UnsupportedOperationException("nntp protocol is not supported");
   }
-  MailConfiguration config=new MailConfiguration();
+  ObjectHelper.notNull(configuration,"configuration");
+  MailConfiguration config=configuration.copy();
   config.configure(url);
   configureAdditionalJavaMailProperties(config,parameters);
   MailEndpoint endpoint=new MailEndpoint(uri,this,config);
   setProperties(endpoint.getConfiguration(),parameters);
+  ObjectHelper.notEmpty(config.getHost(),"host");
+  ObjectHelper.notEmpty(config.getProtocol(),"protocol");
+  if (config.getPort() <= 0) {
+    throw new IllegalArgumentException("port mut be specified");
+  }
   return endpoint;
 }
