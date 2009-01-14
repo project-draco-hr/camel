@@ -1,11 +1,31 @@
 {
   if (tracer.getDestinationUri() != null) {
     TraceEventExchange event=new TraceEventExchange(exchange);
+    Date timestamp=new Date();
     event.setNodeId(node.getId());
-    event.setTimestamp(new Date());
+    event.setTimestamp(timestamp);
     event.setTracedExchange(exchange);
-    TraceEventMessage msg=new TraceEventMessage(node,exchange);
-    event.getIn().setBody(msg);
+    TraceEventMessage msg=new DefaultTraceEventMessage(timestamp,node,exchange);
+    if (tracer.isUseJpa()) {
+      LOG.trace("Using class: " + JPA_TRACE_EVENT_MESSAGE + " for tracing event messages");
+synchronized (this) {
+        if (jpaTraceEventMessageClass == null) {
+          jpaTraceEventMessageClass=ObjectHelper.loadClass(JPA_TRACE_EVENT_MESSAGE);
+          if (jpaTraceEventMessageClass == null) {
+            throw new IllegalArgumentException("Cannot find class: " + JPA_TRACE_EVENT_MESSAGE + ". Make sure camel-jpa.jar is on the classpath.");
+          }
+        }
+      }
+      Object jpa=ObjectHelper.newInstance(jpaTraceEventMessageClass);
+      Map options=new HashMap();
+      IntrospectionSupport.getProperties(msg,options,null);
+      IntrospectionSupport.setProperties(jpa,options);
+      IntrospectionSupport.setProperty(jpa,"timestamp",msg.getTimestamp());
+      event.getIn().setBody(jpa);
+    }
+ else {
+      event.getIn().setBody(msg);
+    }
     event.setProperty(TRACE_EVENT,Boolean.TRUE);
     try {
       getTraceEventProducer(exchange).process(event);
