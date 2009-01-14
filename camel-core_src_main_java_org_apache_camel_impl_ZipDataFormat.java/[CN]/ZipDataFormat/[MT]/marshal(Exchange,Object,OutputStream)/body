@@ -1,13 +1,13 @@
 {
-  InputStream is;
-  if (body instanceof InputStream) {
-    is=(InputStream)body;
-  }
-  is=exchange.getIn().getBody(InputStream.class);
+  InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,graph);
   if (is == null) {
-    throw new IllegalArgumentException("Can't get the inputstream for ZipDataFormat mashalling");
+    throw new IllegalArgumentException("Cannot get the inputstream for ZipDataFormat mashalling");
   }
   DeflaterOutputStream zipOutput=new DeflaterOutputStream(stream,new Deflater(compressionLevel));
-  IOConverter.copy(is,zipOutput);
-  zipOutput.close();
+  try {
+    IOConverter.copy(is,zipOutput);
+  }
+  finally {
+    zipOutput.close();
+  }
 }
