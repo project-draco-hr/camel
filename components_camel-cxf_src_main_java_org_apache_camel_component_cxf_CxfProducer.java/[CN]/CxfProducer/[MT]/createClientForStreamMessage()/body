@@ -1,19 +1,11 @@
 {
   CxfClientFactoryBean cfb=new CxfClientFactoryBean();
   Class serviceClass=null;
-  if (endpoint.isSpringContextEndpoint()) {
-    CxfEndpointBean cxfEndpointBean=endpoint.getCxfEndpointBean();
-    serviceClass=cxfEndpointBean.getServiceClass();
-    CxfEndpointUtils.checkServiceClass(serviceClass);
+  try {
+    serviceClass=CxfEndpointUtils.getServiceClass(endpoint);
   }
- else {
-    CxfEndpointUtils.checkServiceClassName(endpoint.getServiceClass());
-    try {
-      serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
-    }
- catch (    ClassNotFoundException e) {
-      throw new CamelException(e);
-    }
+ catch (  ClassNotFoundException e) {
+    throw new CamelException(e);
   }
   boolean jsr181Enabled=CxfEndpointUtils.hasWebServiceAnnotation(serviceClass);
   cfb.setJSR181Enabled(jsr181Enabled);

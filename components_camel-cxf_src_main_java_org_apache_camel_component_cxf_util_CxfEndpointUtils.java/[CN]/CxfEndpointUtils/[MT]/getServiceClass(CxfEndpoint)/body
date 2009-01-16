@@ -1,0 +1,27 @@
+{
+  Class<?> answer=null;
+  if (cxfEndpoint.isSpringContextEndpoint()) {
+    answer=cxfEndpoint.getCxfEndpointBean().getServiceClass();
+    if (answer != null) {
+      return answer;
+    }
+  }
+  if (cxfEndpoint.getServiceClassInstance() != null) {
+    Object bean=cxfEndpoint.getCamelContext().getRegistry().lookup(cxfEndpoint.getServiceClassInstance());
+    if (bean != null) {
+      answer=ClassHelper.getRealClass(bean);
+    }
+ else {
+      throw new ClassNotFoundException("Can't find serviceClass instace with name" + cxfEndpoint.getServiceClassInstance() + " from CamelContext registry.");
+    }
+  }
+ else {
+    if (ObjectHelper.isNotEmpty(cxfEndpoint.getServiceClass())) {
+      answer=ClassLoaderUtils.loadClass(cxfEndpoint.getServiceClass(),CxfEndpointUtils.class);
+    }
+ else {
+      throw new ClassNotFoundException("Can't find serviceClass from uri, please check the cxf endpoint configuration");
+    }
+  }
+  return answer;
+}

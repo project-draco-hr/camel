@@ -9,36 +9,26 @@
  else {
     bus=BusFactory.getThreadDefaultBus();
   }
+  Class serviceClass=CxfEndpointUtils.getServiceClass(endpoint);
+  if (cfb == null) {
+    cfb=CxfEndpointUtils.getClientFactoryBean(serviceClass);
+  }
   if (endpoint.isSpringContextEndpoint()) {
-    CxfEndpointBean cxfEndpointBean=endpoint.getCxfEndpointBean();
-    CxfEndpointUtils.checkServiceClass(cxfEndpointBean.getServiceClass());
-    if (cfb == null) {
-      cfb=CxfEndpointUtils.getClientFactoryBean(cxfEndpointBean.getServiceClass());
-    }
     endpoint.configure(cfb);
   }
  else {
-    CxfEndpointUtils.checkServiceClassName(endpoint.getServiceClass());
-    try {
-      Class serviceClass=ClassLoaderUtils.loadClass(endpoint.getServiceClass(),this.getClass());
-      if (cfb == null) {
-        cfb=CxfEndpointUtils.getClientFactoryBean(serviceClass);
-      }
-      cfb.setAddress(endpoint.getAddress());
-      if (null != endpoint.getServiceClass()) {
-        cfb.setServiceClass(ObjectHelper.loadClass(endpoint.getServiceClass()));
-      }
-      if (null != endpoint.getWsdlURL()) {
-        cfb.setWsdlURL(endpoint.getWsdlURL());
-      }
+    cfb.setAddress(endpoint.getAddress());
+    if (null != endpoint.getServiceClass()) {
+      cfb.setServiceClass(ObjectHelper.loadClass(endpoint.getServiceClass()));
     }
- catch (    ClassNotFoundException e) {
-      throw new CamelException(e);
+    if (null != endpoint.getWsdlURL()) {
+      cfb.setWsdlURL(endpoint.getWsdlURL());
     }
     if (endpoint.getWsdlURL() != null) {
       cfb.setWsdlURL(endpoint.getWsdlURL());
     }
   }
+  cfb.setServiceClass(serviceClass);
   if (CxfEndpointUtils.getServiceName(endpoint) != null) {
     cfb.setServiceName(CxfEndpointUtils.getServiceName(endpoint));
   }
