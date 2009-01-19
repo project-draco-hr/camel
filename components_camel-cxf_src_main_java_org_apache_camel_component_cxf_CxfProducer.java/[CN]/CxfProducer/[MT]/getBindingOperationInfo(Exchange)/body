@@ -1,0 +1,29 @@
+{
+  BindingOperationInfo answer=null;
+  String lp=ex.getIn().getHeader(CxfConstants.OPERATION_NAME,String.class);
+  if (lp == null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Try to find a default operation.  You should set '" + CxfConstants.OPERATION_NAME + "' in header.");
+    }
+    Collection<BindingOperationInfo> bois=client.getEndpoint().getEndpointInfo().getBinding().getOperations();
+    Iterator<BindingOperationInfo> iter=bois.iterator();
+    if (iter.hasNext()) {
+      answer=iter.next();
+    }
+  }
+ else {
+    String ns=ex.getIn().getHeader(CxfConstants.OPERATION_NAMESPACE,String.class);
+    if (ns == null) {
+      ns=client.getEndpoint().getService().getName().getNamespaceURI();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Operation namespace not in header.  Set it to: " + ns);
+      }
+    }
+    QName qname=new QName(ns,lp);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Operation qname = " + qname.toString());
+    }
+    answer=client.getEndpoint().getEndpointInfo().getBinding().getOperation(qname);
+  }
+  return answer;
+}

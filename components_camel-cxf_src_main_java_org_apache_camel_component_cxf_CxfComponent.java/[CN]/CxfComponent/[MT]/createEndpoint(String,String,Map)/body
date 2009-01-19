@@ -1,5 +1,15 @@
 {
-  CxfEndpoint result=new CxfEndpoint(uri,remaining,this);
-  setProperties(result,parameters);
+  CxfEndpoint result=null;
+  if (remaining.startsWith(CxfConstants.SPRING_CONTEXT_ENDPOINT)) {
+    String beanId=remaining.substring(CxfConstants.SPRING_CONTEXT_ENDPOINT.length());
+    if (beanId.startsWith("//")) {
+      beanId=beanId.substring(2);
+    }
+    CxfEndpointBean bean=CamelContextHelper.mandatoryLookup(getCamelContext(),beanId,CxfEndpointBean.class);
+    result=new CxfSpringEndpoint(this,beanId,bean);
+  }
+ else {
+    result=new CxfEndpoint(this,remaining);
+  }
   return result;
 }

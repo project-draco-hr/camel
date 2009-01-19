@@ -1,0 +1,47 @@
+{
+  Map<String,Object> responseContext=new HashMap<String,Object>();
+  Map<String,Object> camelHeaders=camelExchange.getOut().getHeaders();
+  extractInvocationContextFromCamel(camelExchange,camelHeaders,responseContext,Client.RESPONSE_CONTEXT);
+  propagateHeadersFromCamelToCxf(camelExchange,camelHeaders,cxfExchange,responseContext);
+  Endpoint ep=cxfExchange.get(Endpoint.class);
+  Message outMessage=ep.getBinding().createMessage();
+  cxfExchange.setOutMessage(outMessage);
+  DataFormat dataFormat=camelExchange.getProperty(DataFormat.class.getName(),DataFormat.class);
+  if (dataFormat != DataFormat.POJO) {
+    outMessage.putAll(responseContext);
+  }
+  outMessage.put(Client.RESPONSE_CONTEXT,responseContext);
+  Object outBody=DefaultCxfBinding.getBodyFromCamel(camelExchange.getOut(),dataFormat);
+  if (outBody != null) {
+    if (dataFormat == DataFormat.PAYLOAD) {
+      CxfPayload<?> payload=(CxfPayload)outBody;
+      outMessage.put(List.class,payload.getBody());
+      outMessage.put(Header.HEADER_LIST,payload.getHeaders());
+    }
+ else {
+      MessageContentsList resList=null;
+      if (outBody instanceof MessageContentsList) {
+        resList=(MessageContentsList)outBody;
+      }
+ else       if (outBody instanceof List) {
+        resList=new MessageContentsList((List)outBody);
+      }
+ else       if (outBody.getClass().isArray()) {
+        resList=new MessageContentsList((Object[])outBody);
+      }
+ else {
+        resList=new MessageContentsList(outBody);
+      }
+      if (resList != null) {
+        outMessage.setContent(List.class,resList);
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Set Out CXF message content = " + resList);
+        }
+      }
+    }
+  }
+  BindingOperationInfo boi=cxfExchange.get(BindingOperationInfo.class);
+  if (boi != null) {
+    cxfExchange.put(BindingMessageInfo.class,boi.getOutput());
+  }
+}

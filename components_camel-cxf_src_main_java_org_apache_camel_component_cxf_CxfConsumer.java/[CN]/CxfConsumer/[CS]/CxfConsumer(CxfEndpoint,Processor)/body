@@ -1,47 +1,42 @@
 {
   super(endpoint,processor);
-  Bus bus=null;
-  this.endpoint=endpoint;
-  boolean isWebServiceProvider=false;
-  if (endpoint.getApplicationContext() != null) {
-    bus=endpoint.getCxfEndpointBean().getBus();
-    if (CxfEndpointUtils.getSetDefaultBus(endpoint)) {
-      BusFactory.setThreadDefaultBus(bus);
+  ServerFactoryBean svrBean=endpoint.createServerFactoryBean();
+  svrBean.setInvoker(new Invoker(){
+    public Object invoke(    Exchange cxfExchange,    Object o){
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Received CXF Request: " + cxfExchange);
+      }
+      CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
+      CxfBinding binding=endpoint.getCxfBinding();
+      org.apache.camel.Exchange camelExchange=endpoint.createExchange();
+      DataFormat dataFormat=endpoint.getDataFormat();
+      camelExchange.setProperty(DataFormat.class.getName(),dataFormat);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Set Exchange property: " + DataFormat.class.getName() + "="+ dataFormat);
+      }
+      binding.populateExchangeFromCxfRequest(cxfExchange,camelExchange);
+      try {
+        getProcessor().process(camelExchange);
+      }
+ catch (      Exception e) {
+        throw new Fault(e);
+      }
+      if (camelExchange.isFailed()) {
+        Throwable t=(Throwable)camelExchange.getFault().getBody();
+        if (t instanceof Fault) {
+          throw (Fault)t;
+        }
+ else         if (t == null) {
+          t=camelExchange.getException();
+        }
+        throw new Fault(t);
+      }
+      if (camelExchange.getPattern().isOutCapable()) {
+        binding.populateCxfResponseFromExchange(camelExchange,cxfExchange);
+      }
+      return null;
     }
   }
- else {
-    bus=BusFactory.getThreadDefaultBus();
-  }
-  Class serviceClass=CxfEndpointUtils.getServiceClass(endpoint);
-  ServerFactoryBean svrBean=CxfEndpointUtils.getServerFactoryBean(serviceClass);
-  isWebServiceProvider=CxfEndpointUtils.hasAnnotation(serviceClass,WebServiceProvider.class);
-  if (endpoint.isSpringContextEndpoint()) {
-    endpoint.configure(svrBean);
-  }
- else {
-    svrBean.setAddress(endpoint.getAddress());
-    if (endpoint.getWsdlURL() != null) {
-      svrBean.setWsdlURL(endpoint.getWsdlURL());
-    }
-  }
-  svrBean.setServiceClass(serviceClass);
-  if (CxfEndpointUtils.getServiceName(endpoint) != null) {
-    svrBean.setServiceName(CxfEndpointUtils.getServiceName(endpoint));
-  }
-  if (CxfEndpointUtils.getServiceName(endpoint) != null) {
-    svrBean.setEndpointName(CxfEndpointUtils.getPortName(endpoint));
-  }
-  DataFormat dataFormat=CxfEndpointUtils.getDataFormat(endpoint);
-  svrBean.setInvoker(new CamelInvoker(this));
-  if (!dataFormat.equals(DataFormat.POJO) && !isWebServiceProvider) {
-    if (dataFormat.equals(DataFormat.PAYLOAD)) {
-      svrBean.getFeatures().add(new PayLoadDataFormatFeature());
-    }
- else     if (dataFormat.equals(DataFormat.MESSAGE)) {
-      svrBean.getFeatures().add(new MessageDataFormatFeature());
-    }
-  }
-  svrBean.setBus(bus);
-  svrBean.setStart(false);
+);
   server=svrBean.create();
 }

@@ -1,0 +1,40 @@
+{
+  Map<String,List<String>> transportHeaders=new HashMap<String,List<String>>();
+  if (camelExchange != null) {
+    Map<String,List<String>> h=(Map)camelExchange.getProperty(Message.PROTOCOL_HEADERS);
+    if (h != null) {
+      transportHeaders.putAll(h);
+    }
+  }
+  Map<String,List<String>> headers=(Map)camelHeaders.get(Message.PROTOCOL_HEADERS);
+  if (headers != null) {
+    transportHeaders.putAll(headers);
+  }
+  for (  Map.Entry<String,Object> entry : camelHeaders.entrySet()) {
+    if (headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue())) {
+      continue;
+    }
+    if (CamelTransportConstants.CONTENT_TYPE.equals(entry.getKey())) {
+      cxfExchange.put(Message.CONTENT_TYPE,entry.getValue());
+      continue;
+    }
+    if (Message.RESPONSE_CODE.equals(entry.getKey())) {
+      cxfContext.put(entry.getKey(),entry.getValue());
+      continue;
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Propagate to CXF header: " + entry.getKey() + " value: "+ entry.getValue());
+    }
+    if (entry.getValue() instanceof List) {
+      transportHeaders.put(entry.getKey(),(List<String>)entry.getValue());
+    }
+ else {
+      List<String> listValue=new ArrayList<String>();
+      listValue.add(entry.getValue().toString());
+      transportHeaders.put(entry.getKey(),listValue);
+    }
+  }
+  if (transportHeaders.size() > 0) {
+    cxfContext.put(Message.PROTOCOL_HEADERS,transportHeaders);
+  }
+}

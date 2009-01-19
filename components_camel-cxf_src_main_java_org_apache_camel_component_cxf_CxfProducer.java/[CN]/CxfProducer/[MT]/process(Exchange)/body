@@ -1,5 +1,43 @@
 {
-  CxfExchange cxfExchange=(CxfExchange)endpoint.createExchange(exchange);
-  process(cxfExchange);
-  exchange.copyFrom(cxfExchange);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Process exchange: " + camelExchange);
+  }
+  ExchangeImpl cxfExchange=new ExchangeImpl();
+  CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
+  CxfBinding binding=endpoint.getCxfBinding();
+  Map<String,Object> requestContext=new WrappedMessageContext(new HashMap<String,Object>(),null,Scope.APPLICATION);
+  Map<String,Object> responseContext=new HashMap<String,Object>();
+  DataFormat dataFormat=endpoint.getDataFormat();
+  camelExchange.setProperty(DataFormat.class.getName(),dataFormat);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Set Camel Exchange property: " + DataFormat.class.getName() + "="+ dataFormat);
+  }
+  requestContext.put(DataFormat.class.getName(),dataFormat);
+  if (dataFormat == DataFormat.MESSAGE) {
+    cxfExchange.put(Client.KEEP_CONDUIT_ALIVE,true);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Set CXF Exchange property: " + Client.KEEP_CONDUIT_ALIVE + "="+ true);
+    }
+  }
+  binding.populateCxfRequestFromExchange(cxfExchange,camelExchange,requestContext);
+  BindingOperationInfo boi=getBindingOperationInfo(camelExchange);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("BOI = " + boi);
+  }
+  ObjectHelper.notNull(boi,"You should set '" + CxfConstants.OPERATION_NAME + "' in header.");
+  if (!endpoint.isWrapped() && boi != null) {
+    if (boi.isUnwrappedCapable()) {
+      boi=boi.getUnwrappedOperation();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Unwrapped BOI " + boi);
+      }
+    }
+  }
+  Map<String,Object> invocationContext=new HashMap<String,Object>();
+  invocationContext.put(Client.RESPONSE_CONTEXT,responseContext);
+  invocationContext.put(Client.REQUEST_CONTEXT,((WrappedMessageContext)requestContext).getWrappedMap());
+  client.invoke(boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
+  if (!boi.getOperationInfo().isOneWay()) {
+    binding.populateExchangeFromCxfResponse(camelExchange,cxfExchange,responseContext);
+  }
 }

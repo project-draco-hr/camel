@@ -1,0 +1,54 @@
+{
+  Method method=null;
+  QName operationName=null;
+  ExchangePattern mep=ExchangePattern.InOut;
+  BindingOperationInfo bop=cxfExchange.get(BindingOperationInfo.class);
+  if (bop != null) {
+    camelExchange.setProperty(BindingOperationInfo.class.getName(),bop);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Set exchange property: BindingOperationInfo: " + bop);
+    }
+    Service service=(Service)cxfExchange.get(Service.class);
+    if (service != null) {
+      MethodDispatcher md=(MethodDispatcher)service.get(MethodDispatcher.class.getName());
+      if (md != null) {
+        method=md.getMethod(bop);
+      }
+    }
+    if (bop.getOperationInfo().isOneWay()) {
+      mep=ExchangePattern.InOnly;
+    }
+    operationName=bop.getName();
+  }
+  if (operationName != null) {
+    camelExchange.getIn().setHeader(CxfConstants.OPERATION_NAMESPACE,bop.getName().getNamespaceURI());
+    camelExchange.getIn().setHeader(CxfConstants.OPERATION_NAME,bop.getName().getLocalPart());
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Set IN header: " + CxfConstants.OPERATION_NAMESPACE + "="+ bop.getName().getNamespaceURI());
+      LOG.trace("Set IN header: " + CxfConstants.OPERATION_NAME + "="+ bop.getName().getLocalPart());
+    }
+  }
+ else   if (method != null) {
+    camelExchange.getIn().setHeader(CxfConstants.OPERATION_NAME,method.getName());
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Set IN header: " + CxfConstants.OPERATION_NAME + "="+ method.getName());
+    }
+  }
+  camelExchange.setPattern(mep);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Set exchange MEP: " + mep);
+  }
+  Message cxfMessage=cxfExchange.getInMessage();
+  propagateHeadersFromCxfToCamel(cxfMessage,camelExchange.getIn());
+  Object value=cxfMessage.get(Client.REQUEST_CONTEXT);
+  if (value != null && !headerFilterStrategy.applyFilterToExternalHeaders(Client.REQUEST_CONTEXT,value)) {
+    camelExchange.getIn().setHeader(Client.REQUEST_CONTEXT,value);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Populate context from CXF message " + Client.REQUEST_CONTEXT + " value="+ value);
+    }
+  }
+  Object body=DefaultCxfBinding.getContentFromCxf(cxfMessage,camelExchange.getProperty(DataFormat.class.getName(),DataFormat.class));
+  if (body != null) {
+    camelExchange.getIn().setBody(body);
+  }
+}
