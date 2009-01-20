@@ -1,0 +1,7 @@
+{
+  OutputReportIncident ok=new OutputReportIncident();
+  ok.setCode("0");
+  String cxfEndpoint="cxf://http://localhost:8080/reportincident/webservices/incident" + "?serviceClass=org.apache.camel.example.reportincident.ReportIncidentEndpoint" + "&wsdlURL=report_incident.wsdl";
+  from(cxfEndpoint).convertBodyTo(InputReportIncident.class).setHeader(FileComponent.HEADER_FILE_NAME,BeanLanguage.bean(FilenameGenerator.class,"generateFilename")).to("velocity:MailBody.vm").to("file://target/subfolder").transform(constant(ok));
+  from("file://target/subfolder").setHeader("subject",constant("new incident reported")).to("smtp://someone@localhost?password=secret&to=incident@mycompany.com");
+}
