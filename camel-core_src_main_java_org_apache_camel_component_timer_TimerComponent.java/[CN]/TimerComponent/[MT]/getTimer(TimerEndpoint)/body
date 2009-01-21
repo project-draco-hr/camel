@@ -3,10 +3,13 @@
   if (!endpoint.isDaemon()) {
     key="nonDaemon:" + key;
   }
-  Timer answer=timers.get(key);
-  if (answer == null) {
-    answer=new Timer(endpoint.getTimerName(),endpoint.isDaemon());
-    timers.put(key,answer);
+  Timer answer;
+synchronized (timers) {
+    answer=timers.get(key);
+    if (answer == null) {
+      answer=new Timer(endpoint.getTimerName(),endpoint.isDaemon());
+      timers.put(key,answer);
+    }
   }
   return answer;
 }
