@@ -2,15 +2,22 @@
   Set<Method> candidates=new LinkedHashSet<Method>();
   name="set" + ObjectHelper.capitalize(name);
   while (clazz != Object.class) {
+    Method objectSetMethod=null;
     Method[] methods=clazz.getMethods();
     for (    Method method : methods) {
       Class params[]=method.getParameterTypes();
       if (method.getName().equals(name) && params.length == 1) {
         Class paramType=params[0];
-        if (typeConverter != null || isSettableType(paramType) || paramType.isInstance(value)) {
+        if (paramType.equals(Object.class)) {
+          objectSetMethod=method;
+        }
+ else         if (typeConverter != null || isSettableType(paramType) || paramType.isInstance(value)) {
           candidates.add(method);
         }
       }
+    }
+    if (objectSetMethod != null) {
+      candidates.add(objectSetMethod);
     }
     clazz=clazz.getSuperclass();
   }
