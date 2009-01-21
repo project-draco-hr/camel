@@ -2,15 +2,39 @@
   Charset charset=endpoint.getCharset();
   BufferedReader br=new BufferedReader(new InputStreamReader(inputStream,charset));
   String line;
-  boolean eos=false;
-  while (!eos) {
-    if (endpoint.getPromptMessage() != null) {
-      doPromptMessage();
+  if (endpoint.isScanStream()) {
+    while (isRunAllowed()) {
+      line=br.readLine();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Read line: " + line);
+      }
+      boolean eos=line == null;
+      if (!eos && isRunAllowed()) {
+        processLine(line);
+      }
+      try {
+        Thread.sleep(endpoint.getScanStreamDelay());
+      }
+ catch (      InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      }
     }
-    line=br.readLine();
-    eos=line == null;
-    if (!eos) {
-      consumeLine(line);
+  }
+ else {
+    boolean eos=false;
+    while (!eos && isRunAllowed()) {
+      if (endpoint.getPromptMessage() != null) {
+        doPromptMessage();
+      }
+      line=br.readLine();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Read line: " + line);
+      }
+      eos=line == null;
+      if (!eos && isRunAllowed()) {
+        processLine(line);
+      }
     }
   }
 }
