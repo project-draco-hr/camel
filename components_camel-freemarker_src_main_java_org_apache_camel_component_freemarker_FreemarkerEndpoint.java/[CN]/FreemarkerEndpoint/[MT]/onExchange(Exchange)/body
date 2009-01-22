@@ -1,0 +1,27 @@
+{
+  String path=getResourceUri();
+  ObjectHelper.notNull(configuration,"configuration");
+  ObjectHelper.notNull(path,"resourceUri");
+  Map variableMap=ExchangeHelper.createVariableMap(exchange);
+  if (log.isDebugEnabled()) {
+    log.debug("Freemarker is evaluating " + path + " using context: "+ variableMap);
+  }
+  Template template;
+  if (encoding != null) {
+    template=configuration.getTemplate(path,encoding);
+  }
+ else {
+    template=configuration.getTemplate(path);
+  }
+  StringWriter buffer=new StringWriter();
+  template.process(variableMap,buffer);
+  buffer.flush();
+  Message out=exchange.getOut(true);
+  out.setBody(buffer.toString());
+  out.setHeader("org.apache.camel.freemarker.resource",getResource());
+  out.setHeader("org.apache.camel.freemarker.resourceUri",path);
+  Map<String,Object> headers=(Map<String,Object>)variableMap.get("headers");
+  for (  String key : headers.keySet()) {
+    out.setHeader(key,headers.get(key));
+  }
+}
