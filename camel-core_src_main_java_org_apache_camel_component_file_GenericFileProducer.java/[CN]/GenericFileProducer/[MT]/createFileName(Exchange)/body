@@ -1,0 +1,33 @@
+{
+  String answer;
+  String name=exchange.getIn().getHeader(FileComponent.HEADER_FILE_NAME,String.class);
+  Expression expression=getGenericFileEndpoint().getExpression();
+  if (name != null) {
+    if (name.indexOf("${") > -1) {
+      if (log.isDebugEnabled()) {
+        log.debug(FileComponent.HEADER_FILE_NAME + " contains a FileLanguage expression: " + name);
+      }
+      expression=FileLanguage.file(name);
+    }
+  }
+  if (expression != null) {
+    if (log.isDebugEnabled()) {
+      log.debug("Filename evaluated as expression: " + expression);
+    }
+    Object result=expression.evaluate(exchange);
+    name=exchange.getContext().getTypeConverter().convertTo(String.class,result);
+  }
+  String endpointFile=getGenericFileEndpoint().getConfiguration().getFile();
+  if (getGenericFileEndpoint().getConfiguration().isDirectory()) {
+    String baseDir="";
+    if (endpointFile.length() > 0) {
+      baseDir=endpointFile + (endpointFile.endsWith("/") ? "" : "/");
+    }
+    String fileName=(name != null) ? name : getGenericFileEndpoint().getGeneratedFileName(exchange.getIn());
+    answer=baseDir + fileName;
+  }
+ else {
+    answer=endpointFile;
+  }
+  return answer;
+}
