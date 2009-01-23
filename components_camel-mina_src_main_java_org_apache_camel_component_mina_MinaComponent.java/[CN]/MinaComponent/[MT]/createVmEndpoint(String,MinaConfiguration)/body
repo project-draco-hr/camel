@@ -1,0 +1,27 @@
+{
+  boolean minaLogger=configuration.isMinaLogger();
+  boolean sync=configuration.isSync();
+  IoAcceptor acceptor=new VmPipeAcceptor();
+  SocketAddress address=new VmPipeAddress(configuration.getPort());
+  IoConnector connector=new VmPipeConnector();
+  configureCodecFactory("MinaProducer",connector.getDefaultConfig(),configuration);
+  if (minaLogger) {
+    connector.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  configureCodecFactory("MinaConsumer",acceptor.getDefaultConfig(),configuration);
+  if (minaLogger) {
+    acceptor.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  MinaEndpoint endpoint=new MinaEndpoint(uri,this);
+  endpoint.setAddress(address);
+  endpoint.setAcceptor(acceptor);
+  endpoint.setConnector(connector);
+  endpoint.setConfiguration(configuration);
+  if (sync) {
+    endpoint.setExchangePattern(ExchangePattern.InOut);
+  }
+ else {
+    endpoint.setExchangePattern(ExchangePattern.InOnly);
+  }
+  return endpoint;
+}

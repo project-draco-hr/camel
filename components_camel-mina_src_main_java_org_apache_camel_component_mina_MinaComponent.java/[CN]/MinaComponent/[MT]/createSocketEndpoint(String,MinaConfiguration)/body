@@ -1,0 +1,35 @@
+{
+  boolean minaLogger=configuration.isMinaLogger();
+  long timeout=configuration.getTimeout();
+  boolean sync=configuration.isSync();
+  IoAcceptor acceptor=new SocketAcceptor();
+  SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
+  IoConnector connector=new SocketConnector();
+  SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
+  configureCodecFactory("MinaProducer",connectorConfig,configuration);
+  if (minaLogger) {
+    connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  connectorConfig.setConnectTimeout((int)(timeout / 1000));
+  SocketAcceptorConfig acceptorConfig=new SocketAcceptorConfig();
+  configureCodecFactory("MinaConsumer",acceptorConfig,configuration);
+  acceptorConfig.setReuseAddress(true);
+  acceptorConfig.setDisconnectOnUnbind(true);
+  if (minaLogger) {
+    acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  MinaEndpoint endpoint=new MinaEndpoint(uri,this);
+  endpoint.setAddress(address);
+  endpoint.setAcceptor(acceptor);
+  endpoint.setAcceptorConfig(acceptorConfig);
+  endpoint.setConnector(connector);
+  endpoint.setConnectorConfig(connectorConfig);
+  endpoint.setConfiguration(configuration);
+  if (sync) {
+    endpoint.setExchangePattern(ExchangePattern.InOut);
+  }
+ else {
+    endpoint.setExchangePattern(ExchangePattern.InOnly);
+  }
+  return endpoint;
+}

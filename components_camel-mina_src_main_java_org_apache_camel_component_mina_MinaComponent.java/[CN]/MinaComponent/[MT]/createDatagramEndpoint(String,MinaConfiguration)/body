@@ -1,0 +1,38 @@
+{
+  boolean minaLogger=configuration.isMinaLogger();
+  long timeout=configuration.getTimeout();
+  boolean transferExchange=configuration.isTransferExchange();
+  boolean sync=configuration.isSync();
+  IoAcceptor acceptor=new DatagramAcceptor();
+  SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
+  IoConnector connector=new DatagramConnector();
+  if (transferExchange) {
+    throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
+  }
+  DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
+  configureDataGramCodecFactory("MinaProducer",connectorConfig,configuration);
+  if (minaLogger) {
+    connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  connectorConfig.setConnectTimeout((int)(timeout / 1000));
+  DatagramAcceptorConfig acceptorConfig=new DatagramAcceptorConfig();
+  configureDataGramCodecFactory("MinaConsumer",acceptorConfig,configuration);
+  acceptorConfig.setDisconnectOnUnbind(true);
+  if (minaLogger) {
+    acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  MinaEndpoint endpoint=new MinaEndpoint(uri,this);
+  endpoint.setAddress(address);
+  endpoint.setAcceptor(acceptor);
+  endpoint.setAcceptorConfig(acceptorConfig);
+  endpoint.setConnector(connector);
+  endpoint.setConnectorConfig(connectorConfig);
+  endpoint.setConfiguration(configuration);
+  if (sync) {
+    endpoint.setExchangePattern(ExchangePattern.InOut);
+  }
+ else {
+    endpoint.setExchangePattern(ExchangePattern.InOnly);
+  }
+  return endpoint;
+}

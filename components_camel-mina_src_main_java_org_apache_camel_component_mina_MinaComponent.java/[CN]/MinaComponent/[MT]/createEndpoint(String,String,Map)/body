@@ -1,17 +1,10 @@
 {
-  setProperties(this,parameters);
+  ObjectHelper.notNull(configuration,"configuration");
+  MinaConfiguration config=configuration.copy();
   URI u=new URI(remaining);
-  String protocol=u.getScheme();
-  if (protocol != null) {
-    if (protocol.equals("tcp")) {
-      return createSocketEndpoint(uri,u,parameters);
-    }
- else     if (protocol.equals("udp") || protocol.equals("mcast") || protocol.equals("multicast")) {
-      return createDatagramEndpoint(uri,u,parameters);
-    }
- else     if (protocol.equals("vm")) {
-      return createVmEndpoint(uri,u);
-    }
-  }
-  throw new IllegalArgumentException("Unrecognised MINA protocol: " + protocol + " for uri: "+ uri);
+  config.setHost(u.getHost());
+  config.setPort(u.getPort());
+  config.setProtocol(u.getScheme());
+  setProperties(config,parameters);
+  return createEndpoint(uri,config);
 }
