@@ -1,19 +1,13 @@
 {
-  InputStream payload=exchange.getIn().getBody(InputStream.class);
-  try {
-    int lastPathIndex=fileName.lastIndexOf('/');
-    if (lastPathIndex != -1) {
-      String directory=fileName.substring(0,lastPathIndex);
-      if (!operations.buildDirectory(directory)) {
-        log.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
-      }
-    }
-    boolean success=operations.storeFile(fileName,payload);
-    if (!success) {
-      throw new GenericFileOperationFailedException("Error writing file: " + fileName);
+  int lastPathIndex=fileName.lastIndexOf('/');
+  if (lastPathIndex != -1) {
+    String directory=fileName.substring(0,lastPathIndex);
+    if (!operations.buildDirectory(directory)) {
+      log.warn("Couldn't build directory: " + directory + " (could be because of denied permissions)");
     }
   }
-  finally {
-    ObjectHelper.close(payload,"Closing payload",log);
+  boolean success=operations.storeFile(fileName,exchange);
+  if (!success) {
+    throw new GenericFileOperationFailedException("Error writing file: " + fileName);
   }
 }

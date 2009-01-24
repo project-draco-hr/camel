@@ -1,0 +1,16 @@
+{
+  deleteDirectory("target/producefile");
+  NewFileComponent comp=new NewFileComponent();
+  comp.setCamelContext(context);
+  Endpoint endpoint=comp.createEndpoint("newfile://target/producefile","target/producefile",new HashMap());
+  template.send(endpoint,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME,"bye.txt");
+      exchange.getIn().setBody("Bye World");
+    }
+  }
+);
+  File file=new File("target/producefile/bye.txt");
+  file=file.getAbsoluteFile();
+  assertTrue("The file should have been created",file.exists());
+}
