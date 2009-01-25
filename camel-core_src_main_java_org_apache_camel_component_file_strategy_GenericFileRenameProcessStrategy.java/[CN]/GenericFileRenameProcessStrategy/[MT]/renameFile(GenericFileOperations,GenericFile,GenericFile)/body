@@ -1,19 +1,13 @@
 {
-  boolean deleted=false;
   try {
-    deleted=operations.deleteFile(to.getAbsoluteFileName());
+    operations.deleteFile(to.getAbsoluteFileName());
   }
  catch (  GenericFileOperationFailedException e) {
   }
-  if (!deleted) {
-    String name=to.getAbsoluteFileName();
-    int lastPathIndex=name.lastIndexOf('/');
-    if (lastPathIndex != -1) {
-      String directory=name.substring(0,lastPathIndex);
-      if (!operations.buildDirectory(directory)) {
-        LOG.warn("Cannot build directory: " + directory + " (maybe because of denied permissions)");
-      }
-    }
+  String parent=to.getParent();
+  boolean mkdir=operations.buildDirectory(parent);
+  if (!mkdir) {
+    throw new GenericFileOperationFailedException("Cannot create directory: " + parent + " (could be because of denied permissions)");
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Renaming file: " + from + " to: "+ to);
