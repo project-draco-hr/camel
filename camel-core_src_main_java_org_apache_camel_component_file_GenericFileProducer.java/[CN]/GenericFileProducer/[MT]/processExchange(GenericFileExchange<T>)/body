@@ -2,21 +2,27 @@
   if (log.isTraceEnabled()) {
     log.trace("Processing " + exchange);
   }
-  String target=createFileName(exchange);
-  boolean writeAsTempAndRename=ObjectHelper.isNotEmpty(getGenericFileEndpoint().getTempPrefix());
-  String tempTarget=null;
-  if (writeAsTempAndRename) {
-    tempTarget=createTempFileName(target);
-  }
-  writeFile(exchange,tempTarget != null ? tempTarget : target);
-  if (tempTarget != null) {
-    if (log.isTraceEnabled()) {
-      log.trace("Renaming file: " + tempTarget + " to: "+ target);
+  try {
+    String target=createFileName(exchange);
+    preWriteCheck();
+    boolean writeAsTempAndRename=ObjectHelper.isNotEmpty(getGenericFileEndpoint().getTempPrefix());
+    String tempTarget=null;
+    if (writeAsTempAndRename) {
+      tempTarget=createTempFileName(target);
     }
-    boolean renamed=operations.renameFile(tempTarget,target);
-    if (!renamed) {
-      throw new GenericFileOperationFailedException("Cannot rename file from: " + tempTarget + " to: "+ target);
+    writeFile(exchange,tempTarget != null ? tempTarget : target);
+    if (tempTarget != null) {
+      if (log.isTraceEnabled()) {
+        log.trace("Renaming file: [" + tempTarget + "] to: ["+ target+ "]");
+      }
+      boolean renamed=getOperations().renameFile(tempTarget,target);
+      if (!renamed) {
+        throw new GenericFileOperationFailedException("Cannot rename file from: " + tempTarget + " to: "+ target);
+      }
     }
+    exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,target);
   }
-  exchange.getIn().setHeader(FileComponent.HEADER_FILE_NAME_PRODUCED,target);
+ catch (  Exception e) {
+    handleFailedWrite(exchange,e);
+  }
 }
