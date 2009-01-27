@@ -1,10 +1,10 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      from("file://target/reports?preMoveExpression=../inprogress/${file:name.noext}.bak&expression=../done/${file:name}&consumer.delay=5000").process(new Processor(){
+      from("newfile://target/reports?preMoveExpression=../inprogress/${file:name.noext}.bak&expression=../done/${file:name}&consumer.delay=5000").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
-          FileExchange fe=(FileExchange)exchange;
-          assertEquals("The file should have been move to inprogress","inprogress",fe.getFile().getParentFile().getName());
+          GenericFileExchange<File> fe=(GenericFileExchange<File>)exchange;
+          assertTrue(fe.getGenericFile().getRelativeFileName().indexOf("inprogress") > -1);
         }
       }
 ).to("mock:report");

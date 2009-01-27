@@ -1,0 +1,47 @@
+{
+  File target=new File(file.getAbsoluteFileName());
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Waiting for exclusive read lock to file: " + target);
+  }
+  try {
+    FileChannel channel=new RandomAccessFile(target,"rw").getChannel();
+    long start=System.currentTimeMillis();
+    boolean exclusive=false;
+    while (!exclusive) {
+      if (timeout > 0) {
+        long delta=System.currentTimeMillis() - start;
+        if (delta > timeout) {
+          LOG.debug("Could not acquire read lock within " + timeout + " millis. Will skip the file: "+ target);
+          return false;
+        }
+      }
+      FileLock lock=null;
+      try {
+        lock=timeout > 0 ? channel.tryLock() : channel.lock();
+      }
+ catch (      IllegalStateException ex) {
+      }
+      if (lock != null) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Acquired exclusive read lock: " + lock + " to file: "+ target);
+        }
+        exchange.setProperty("org.apache.camel.file.lock",lock);
+        exchange.setProperty("org.apache.camel.file.lock.fileName",target.getName());
+        exclusive=true;
+      }
+ else {
+        sleep();
+      }
+    }
+  }
+ catch (  IOException e) {
+    if (timeout == 0) {
+      throw e;
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Cannot acquire read lock. Will try again.",e);
+    }
+    sleep();
+  }
+  return true;
+}

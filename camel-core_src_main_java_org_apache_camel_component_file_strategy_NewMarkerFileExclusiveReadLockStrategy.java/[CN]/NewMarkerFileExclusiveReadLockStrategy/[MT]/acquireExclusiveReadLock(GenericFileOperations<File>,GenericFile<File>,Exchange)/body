@@ -1,0 +1,17 @@
+{
+  GenericFile newFile=lockFileRenamer.renameFile((GenericFileExchange)exchange,file);
+  String lockFileName=newFile.getAbsoluteFileName();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Locking the file: " + file + " using the lock file name: "+ lockFileName);
+  }
+  FileChannel channel=new RandomAccessFile(lockFileName,"rw").getChannel();
+  FileLock lock=channel.lock();
+  if (lock != null) {
+    exchange.setProperty("org.apache.camel.file.marker.lock",lock);
+    exchange.setProperty("org.apache.camel.file.marker.filename",lockFileName);
+    return true;
+  }
+ else {
+    return false;
+  }
+}

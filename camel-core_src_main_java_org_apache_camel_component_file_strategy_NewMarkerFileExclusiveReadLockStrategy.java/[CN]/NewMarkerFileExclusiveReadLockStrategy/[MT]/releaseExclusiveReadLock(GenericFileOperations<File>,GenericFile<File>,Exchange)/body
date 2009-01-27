@@ -1,0 +1,19 @@
+{
+  FileLock lock=ExchangeHelper.getMandatoryProperty(exchange,"org.apache.camel.file.marker.lock",FileLock.class);
+  String lockFileName=ExchangeHelper.getMandatoryProperty(exchange,"org.apache.camel.file.marker.filename",String.class);
+  Channel channel=lock.channel();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Unlocking file: " + lockFileName);
+  }
+  try {
+    lock.release();
+  }
+  finally {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Deleting lock file: " + lockFileName);
+    }
+    File lockfile=new File(lockFileName);
+    lockfile.delete();
+    ObjectHelper.close(channel,"Closing channel",LOG);
+  }
+}
