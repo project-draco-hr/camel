@@ -1,9 +1,13 @@
 {
   try {
-    channel.put((InputStream)exchange.getIn().getBody(InputStream.class),name);
+    InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
+    channel.put(in,name);
     return true;
   }
  catch (  SftpException e) {
+    throw new RemoteFileOperationFailedException("Could not write the file [" + name + "]",e);
+  }
+catch (  InvalidPayloadException e) {
     throw new RemoteFileOperationFailedException("Could not write the file [" + name + "]",e);
   }
 }
