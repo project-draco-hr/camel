@@ -1,0 +1,20 @@
+{
+  StringBuilder builder=new StringBuilder();
+  Map<Integer,DataField> dataFields=new TreeMap<Integer,DataField>(mapDataField);
+  Iterator<Integer> it=dataFields.keySet().iterator();
+  ObjectHelper.notNull(this.separator,"The separator has not been instantiated or property not defined in the @CsvRecord annotation");
+  while (it.hasNext()) {
+    DataField dataField=mapDataField.get(it.next());
+    Field field=mapAnnotedField.get(dataField.pos());
+    field.setAccessible(true);
+    Format format;
+    String pattern=dataField.pattern();
+    format=FormatFactory.getFormat(field.getType(),pattern,dataField.precision());
+    Object obj=model.get(field.getDeclaringClass().getName());
+    builder.append(format.format(field.get(obj)));
+    if (it.hasNext()) {
+      builder.append(this.getSeparator());
+    }
+  }
+  return builder.toString();
+}

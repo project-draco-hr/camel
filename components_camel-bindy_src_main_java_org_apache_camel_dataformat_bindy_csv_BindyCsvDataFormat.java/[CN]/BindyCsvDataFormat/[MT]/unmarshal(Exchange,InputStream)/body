@@ -1,0 +1,35 @@
+{
+  List<Map<String,Object>> models=new ArrayList<Map<String,Object>>();
+  Map<String,Object> model=getFactory().factory();
+  InputStreamReader in=new InputStreamReader(inputStream);
+  Scanner scanner=new Scanner(in);
+  String separator=getFactory().getSeparator();
+  ObjectHelper.notEmpty(separator,"The separator has not been defined in the annotation @Record or not instantiated during initModel.");
+  int count=0;
+  try {
+    if (getFactory().getSkipFirstLine()) {
+      scanner.nextLine();
+    }
+    while (scanner.hasNextLine()) {
+      String line=scanner.nextLine().trim();
+      if (ObjectHelper.isEmpty(line)) {
+        continue;
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Counter " + count++ + " : content : "+ line);
+      }
+      List<String> result=Arrays.asList(line.split(separator));
+      getFactory().bind(result,model);
+      getFactory().link(model);
+      models.add(model);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Graph of objects created : " + model);
+      }
+    }
+    return models;
+  }
+  finally {
+    scanner.close();
+    ObjectHelper.close(in,"in",LOG);
+  }
+}
