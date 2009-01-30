@@ -1,0 +1,40 @@
+{
+  final JSch jsch=new JSch();
+  SftpConfiguration sftpConfig=(SftpConfiguration)configuration;
+  if (isNotEmpty(sftpConfig.getPrivateKeyFile())) {
+    LOG.debug("Using private keyfile: " + sftpConfig.getPrivateKeyFile());
+    if (isNotEmpty(sftpConfig.getPrivateKeyFilePassphrase())) {
+      jsch.addIdentity(sftpConfig.getPrivateKeyFile(),sftpConfig.getPrivateKeyFilePassphrase());
+    }
+ else {
+      jsch.addIdentity(sftpConfig.getPrivateKeyFile());
+    }
+  }
+  if (isNotEmpty(sftpConfig.getKnownHostsFile())) {
+    LOG.debug("Using knownhosts file: " + sftpConfig.getKnownHostsFile());
+    jsch.setKnownHosts(sftpConfig.getKnownHostsFile());
+  }
+  final Session session=jsch.getSession(configuration.getUsername(),configuration.getHost(),configuration.getPort());
+  session.setUserInfo(new UserInfo(){
+    public String getPassphrase(){
+      return null;
+    }
+    public String getPassword(){
+      return configuration.getPassword();
+    }
+    public boolean promptPassword(    String s){
+      return true;
+    }
+    public boolean promptPassphrase(    String s){
+      return true;
+    }
+    public boolean promptYesNo(    String s){
+      LOG.error(s);
+      return false;
+    }
+    public void showMessage(    String s){
+    }
+  }
+);
+  return session;
+}
