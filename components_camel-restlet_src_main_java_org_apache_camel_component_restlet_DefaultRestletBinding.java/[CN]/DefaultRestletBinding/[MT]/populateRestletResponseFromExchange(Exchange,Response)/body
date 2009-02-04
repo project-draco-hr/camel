@@ -1,13 +1,21 @@
 {
-  Object body=exchange.getOut().getBody();
-  MediaType mediaType=MediaType.TEXT_PLAIN;
-  if (body instanceof String) {
+  Message out=exchange.getOut();
+  MediaType mediaType=out.getHeader(RestletConstants.MEDIA_TYPE,MediaType.class);
+  if (mediaType == null) {
+    Object body=out.getBody();
     mediaType=MediaType.TEXT_PLAIN;
+    if (body instanceof String) {
+      mediaType=MediaType.TEXT_PLAIN;
+    }
+ else     if (body instanceof StringSource || body instanceof DOMSource) {
+      mediaType=MediaType.TEXT_XML;
+    }
   }
- else   if (body instanceof StringSource || body instanceof DOMSource) {
-    mediaType=MediaType.TEXT_XML;
+  Integer responseCode=out.getHeader(RestletConstants.RESPONSE_CODE,Integer.class);
+  if (responseCode != null) {
+    response.setStatus(Status.valueOf(responseCode));
   }
-  for (  Map.Entry<String,Object> entry : exchange.getOut().getHeaders().entrySet()) {
+  for (  Map.Entry<String,Object> entry : out.getHeaders().entrySet()) {
     if (!headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue())) {
       response.getAttributes().put(entry.getKey(),entry.getValue());
       if (LOG.isDebugEnabled()) {
@@ -15,7 +23,7 @@
       }
     }
   }
-  String text=exchange.getOut().getBody(String.class);
+  String text=out.getBody(String.class);
   if (LOG.isDebugEnabled()) {
     LOG.debug("Populate Restlet response from exchange body: " + text);
   }
