@@ -1,9 +1,16 @@
 {
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("newfile://target/filelanguage/report2.txt?directory=false&autoCreate=false" + "&expression=backup-${id}-${file:name.noext}.bak").to("mock:result");
+    }
+  }
+);
+  context.start();
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedBodiesReceived("Bye World");
-  template.sendBodyAndHeader("newfile://target/filelanguage/","Bye World",FileComponent.HEADER_FILE_NAME,"report2.txt");
+  template.sendBodyAndHeader("newfile://target/filelanguage/","Bye World",NewFileComponent.HEADER_FILE_NAME,"report2.txt");
   assertMockEndpointsSatisfied();
-  Thread.sleep(100);
+  Thread.sleep(200);
   String id=mock.getExchanges().get(0).getIn().getMessageId();
   File file=new File("target/filelanguage/backup-" + id + "-report2.bak");
   file=file.getAbsoluteFile();

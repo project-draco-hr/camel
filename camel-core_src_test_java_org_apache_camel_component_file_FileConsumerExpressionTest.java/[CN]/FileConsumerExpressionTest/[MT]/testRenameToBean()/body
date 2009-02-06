@@ -1,9 +1,16 @@
 {
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("newfile://target/filelanguage/report3.txt?directory=false&autoCreate=false" + "&expression=backup/${bean:myguidgenerator.guid}.txt").to("mock:result");
+    }
+  }
+);
+  context.start();
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedBodiesReceived("Bye Big World");
-  template.sendBodyAndHeader("newfile://target/filelanguage/","Bye Big World",FileComponent.HEADER_FILE_NAME,"report3.txt");
+  template.sendBodyAndHeader("newfile://target/filelanguage/","Bye Big World",NewFileComponent.HEADER_FILE_NAME,"report3.txt");
   assertMockEndpointsSatisfied();
-  Thread.sleep(100);
+  Thread.sleep(200);
   File file=new File("target/filelanguage/backup/123.txt");
   file=file.getAbsoluteFile();
   assertTrue("File should have been renamed",file.exists());
