@@ -1,0 +1,14 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("newfile://target/filelanguage/report4.txt?directory=false&autoCreate=false" + "&moveExpression=../backup/${file:name}.bak").to("mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello Big World");
+  mock.expectedFileExists("target/backup/report4.txt.bak");
+  template.sendBodyAndHeader("newfile://target/filelanguage/","Hello Big World",NewFileComponent.HEADER_FILE_NAME,"report4.txt");
+  assertMockEndpointsSatisfied();
+}

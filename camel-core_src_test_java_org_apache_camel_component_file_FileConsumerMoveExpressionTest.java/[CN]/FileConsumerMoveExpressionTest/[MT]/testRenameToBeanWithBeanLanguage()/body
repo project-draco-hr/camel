@@ -1,0 +1,21 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      NewFileEndpoint endpoint=new NewFileEndpoint();
+      endpoint.setCamelContext(context);
+      endpoint.setFile(new File("target/filelanguage/report5.txt"));
+      endpoint.setOperations(new NewFileOperations(endpoint));
+      endpoint.setDirectory(false);
+      endpoint.setAutoCreate(false);
+      endpoint.setMoveExpression(BeanLanguage.bean("myguidgenerator"));
+      from(endpoint).to("mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Bean Language Rules The World");
+  mock.expectedFileExists("target/filelanguage/123");
+  template.sendBodyAndHeader("newfile://target/filelanguage/","Bean Language Rules The World",NewFileComponent.HEADER_FILE_NAME,"report5.txt");
+  assertMockEndpointsSatisfied();
+}
