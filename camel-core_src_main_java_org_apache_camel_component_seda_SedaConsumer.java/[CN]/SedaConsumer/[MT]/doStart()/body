@@ -1,5 +1,14 @@
 {
-  thread=new Thread(this,getThreadName(endpoint.getEndpointUri()));
-  thread.setDaemon(true);
-  thread.start();
+  int concurrentConsumers=endpoint.getConcurrentConsumers();
+  executor=Executors.newFixedThreadPool(concurrentConsumers,new ThreadFactory(){
+    public Thread newThread(    Runnable runnable){
+      Thread thread=new Thread(runnable,getThreadName(endpoint.getEndpointUri()));
+      thread.setDaemon(true);
+      return thread;
+    }
+  }
+);
+  for (int i=0; i < concurrentConsumers; i++) {
+    executor.execute(this);
+  }
 }
