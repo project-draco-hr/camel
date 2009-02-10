@@ -15,17 +15,17 @@
   }
   if (message.getBody() != null) {
     InputStream is=message.getBody(InputStream.class);
-    int length=0;
     if (is != null) {
-      ServletOutputStream os=null;
+      ServletOutputStream os=response.getOutputStream();
       try {
-        os=response.getOutputStream();
+        ByteArrayOutputStream initialArray=new ByteArrayOutputStream();
         int c;
         while ((c=is.read()) >= 0) {
-          os.write(c);
-          length++;
+          initialArray.write(c);
         }
-        response.setContentLength(length);
+        byte[] processedArray=processReponseContent(message,initialArray.toByteArray(),response);
+        os.write(processedArray);
+        response.setContentLength(processedArray.length);
         os.flush();
       }
   finally {

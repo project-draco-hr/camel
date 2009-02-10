@@ -1,0 +1,13 @@
+{
+  Endpoint endpoint=context.getEndpoint("http://localhost:9080/myapp/myservice");
+  Exchange exchange=endpoint.createExchange();
+  exchange.getIn().setBody("<order>123</order>");
+  exchange.getIn().setHeader("user","Claus");
+  exchange.getIn().setHeader("content-type","text/xml");
+  GZIPHelper.setGZIPMessageHeader(exchange.getIn());
+  template.send(endpoint,exchange);
+  String body=exchange.getOut().getBody(String.class);
+  assertEquals("<order>OK</order>",body);
+  assertOutMessageHeader(exchange,"content-type","text/xml");
+  assertOutMessageHeader(exchange,GZIPHelper.CONTENT_ENCODING,GZIPHelper.GZIP);
+}
