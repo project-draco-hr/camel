@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:enricher-test-1").enrich("direct:enricher-constant-resource",aggregationStrategy).to("mock:mock");
+      from("direct:enricher-test-3").enrich("direct:enricher-fault-resource",aggregationStrategy).to("mock:mock");
+      from("direct:enricher-test-4").errorHandler(noErrorHandler()).enrich("direct:enricher-error-resource",aggregationStrategy).to("mock:mock");
+      from("direct:enricher-test-5").enrich("direct:enricher-constant-resource",aggregationStrategy);
+      from("direct:enricher-test-7").enrich("direct:enricher-fault-resource",aggregationStrategy);
+      from("direct:enricher-test-8").errorHandler(noErrorHandler()).enrich("direct:enricher-error-resource",aggregationStrategy);
+      from("direct:enricher-constant-resource").transform().constant("blah");
+      from("direct:enricher-fault-resource").errorHandler(noErrorHandler()).process(new FailureProcessor(false));
+      from("direct:enricher-error-resource").errorHandler(noErrorHandler()).process(new FailureProcessor(true));
+    }
+  }
+;
+}
