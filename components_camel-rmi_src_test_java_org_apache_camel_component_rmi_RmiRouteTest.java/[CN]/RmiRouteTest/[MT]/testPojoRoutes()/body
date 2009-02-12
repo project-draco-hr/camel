@@ -2,19 +2,11 @@
   if (classPathHasSpaces()) {
     return;
   }
-  LocateRegistry.createRegistry(37541);
+  LocateRegistry.createRegistry(getPort());
   JndiContext context=new JndiContext();
   context.bind("bye",new SayService("Good Bye!"));
   CamelContext camelContext=new DefaultCamelContext(context);
-  camelContext.addRoutes(new RouteBuilder(){
-    public void configure(){
-      from("direct:hello").to("rmi://localhost:37541/bye");
-      RmiEndpoint bye=(RmiEndpoint)endpoint("rmi://localhost:37541/bye");
-      bye.setRemoteInterfaces(ISay.class);
-      from(bye).to("bean:bye");
-    }
-  }
-);
+  camelContext.addRoutes(getRouteBuilder(camelContext));
   camelContext.start();
   Endpoint endpoint=camelContext.getEndpoint("direct:hello");
   ISay proxy=ProxyHelper.createProxy(endpoint,ISay.class);
