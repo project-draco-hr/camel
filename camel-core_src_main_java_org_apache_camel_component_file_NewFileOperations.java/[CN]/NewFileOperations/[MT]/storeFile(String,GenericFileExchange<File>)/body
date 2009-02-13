@@ -2,9 +2,13 @@
   ObjectHelper.notNull(endpoint,"endpoint");
   File file=new File(fileName);
   try {
-    boolean fileSource=exchange.getIn().getBody() instanceof File;
-    if (fileSource) {
-      File source=ExchangeHelper.getMandatoryInBody(exchange,File.class);
+    File source=null;
+    try {
+      source=exchange.getIn().getBody(File.class);
+    }
+ catch (    NoTypeConversionAvailableException e) {
+    }
+    if (source != null && source.exists()) {
       writeFileByFile(source,file);
     }
  else {
@@ -13,10 +17,10 @@
     }
   }
  catch (  IOException e) {
-    throw new GenericFileOperationFailedException("Can not store file: " + file,e);
+    throw new GenericFileOperationFailedException("Cannot store file: " + file,e);
   }
 catch (  InvalidPayloadException e) {
-    throw new GenericFileOperationFailedException("Can not store file: " + file,e);
+    throw new GenericFileOperationFailedException("Cannot store file: " + file,e);
   }
   return true;
 }

@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from(getFtpUrl()).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          File body=exchange.getIn().getBody(File.class);
+          assertNotNull(body);
+          assertTrue("Local work file should exists",body.exists());
+          assertEquals("target/lwd/hello.txt",body.getPath());
+        }
+      }
+).to("file://target/out","mock:result");
+    }
+  }
+;
+}

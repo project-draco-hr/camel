@@ -1,12 +1,8 @@
 {
-  try {
-    GenericFile<ChannelSftp.LsEntry> target=exchange.getGenericFile();
-    OutputStream os=new ByteArrayOutputStream();
-    target.setBody(os);
-    channel.get(name,os);
-    return true;
+  if (ObjectHelper.isNotEmpty(endpoint.getLocalWorkDirectory())) {
+    return retrieveFileToFileInLocalWorkDirectory(name,exchange);
   }
- catch (  SftpException e) {
-    throw new RemoteFileOperationFailedException("Could not retrieve the file [" + name + "]",e);
+ else {
+    return retrieveFileToStreamInBody(name,exchange);
   }
 }
