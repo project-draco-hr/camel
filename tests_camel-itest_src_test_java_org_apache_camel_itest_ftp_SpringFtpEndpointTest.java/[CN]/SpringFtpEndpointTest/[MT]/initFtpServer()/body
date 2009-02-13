@@ -1,10 +1,13 @@
 {
-  ftpServer=new FtpServer();
-  PropertiesUserManager uman=new PropertiesUserManager();
-  uman.setFile(new File("./src/test/resources/users.properties").getAbsoluteFile());
-  uman.setPasswordEncryptor(new ClearTextPasswordEncryptor());
-  uman.setAdminName("admin");
-  uman.configure();
-  ftpServer.setUserManager(uman);
-  ftpServer.getListener("default").setPort(20125);
+  FtpServerFactory serverFactory=new FtpServerFactory();
+  File file=new File("./src/test/resources/users.properties").getAbsoluteFile();
+  UserManager uman=new PropertiesUserManager(new ClearTextPasswordEncryptor(),file,"admin");
+  serverFactory.setUserManager(uman);
+  NativeFileSystemFactory fsf=new NativeFileSystemFactory();
+  fsf.setCreateHome(true);
+  serverFactory.setFileSystem(fsf);
+  ListenerFactory factory=new ListenerFactory();
+  factory.setPort(20125);
+  serverFactory.addListener("default",factory.createListener());
+  ftpServer=serverFactory.createServer();
 }
