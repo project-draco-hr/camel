@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      Predicate user=header("username").isNotNull();
+      Predicate admin=and(user,header("admin").isEqualTo("true"));
+      Predicate god=and(admin,or(body().contains("Camel Rider"),header("type").isEqualTo("god")));
+      from("direct:start").choice().when(god).to("mock:god").when(admin).to("mock:admin").when(user).to("mock:user").otherwise().to("mock:guest").end();
+    }
+  }
+;
+}
