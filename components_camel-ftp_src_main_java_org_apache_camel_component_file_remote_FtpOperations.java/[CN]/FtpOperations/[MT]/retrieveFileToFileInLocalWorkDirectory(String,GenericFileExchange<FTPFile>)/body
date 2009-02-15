@@ -1,6 +1,6 @@
 {
   File temp;
-  File local=new File(endpoint.getLocalWorkDirectory());
+  File local=new File(FileUtil.normalizePath(endpoint.getLocalWorkDirectory()));
   OutputStream os;
   try {
     String relativeName=exchange.getGenericFile().getRelativeFileName();
@@ -31,15 +31,15 @@
     GenericFile<FTPFile> target=exchange.getGenericFile();
     target.setBody(local);
     result=client.retrieveFile(name,os);
-    if (!temp.renameTo(local)) {
-      throw new RemoteFileOperationFailedException("Cannot rename local work file from: " + temp + " to: "+ local);
-    }
   }
  catch (  IOException e) {
     throw new RemoteFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
   }
  finally {
     ObjectHelper.close(os,"retrieve: " + name,LOG);
+  }
+  if (!temp.renameTo(local)) {
+    throw new RemoteFileOperationFailedException("Cannot rename local work file from: " + temp + " to: "+ local);
   }
   return result;
 }
