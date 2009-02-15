@@ -1,0 +1,49 @@
+{
+  final Expression left=createSimpleExpression(matcher.group(1));
+  final SimpleLangaugeOperator operator=asOperator(matcher.group(2));
+  String text=matcher.group(3);
+  final Expression right;
+  if ("null".equals(text)) {
+    right=createConstantExpression(null);
+  }
+ else {
+    String constant=ObjectHelper.between(text,"'","'");
+    String simple=ObjectHelper.between(text,"${","}");
+    Expression exp=simple != null ? createSimpleExpression(simple) : createConstantExpression(constant);
+    right=ExpressionBuilder.convertTo(exp,left);
+  }
+  return new ExpressionAdapter(){
+    @Override protected String assertionFailureMessage(    Exchange exchange){
+      return super.assertionFailureMessage(exchange);
+    }
+    @Override public Object evaluate(    Exchange exchange){
+      Predicate predicate=null;
+      if (operator == EQ) {
+        predicate=PredicateBuilder.isEqualTo(left,right);
+      }
+ else       if (operator == GT) {
+        predicate=PredicateBuilder.isGreaterThan(left,right);
+      }
+ else       if (operator == GTE) {
+        predicate=PredicateBuilder.isGreaterThanOrEqualTo(left,right);
+      }
+ else       if (operator == LT) {
+        predicate=PredicateBuilder.isLessThan(left,right);
+      }
+ else       if (operator == LTE) {
+        predicate=PredicateBuilder.isLessThanOrEqualTo(left,right);
+      }
+ else       if (operator == NOT) {
+        predicate=PredicateBuilder.isNotEqualTo(left,right);
+      }
+      if (predicate == null) {
+        throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
+      }
+      return predicate.matches(exchange);
+    }
+    @Override public String toString(){
+      return left + " " + operator+ " "+ right;
+    }
+  }
+;
+}
