@@ -3,8 +3,10 @@
   final SimpleLangaugeOperator operator=asOperator(matcher.group(2));
   String text=matcher.group(3);
   final Expression right;
+  final Expression rightConverted;
   if ("null".equals(text)) {
     right=createConstantExpression(null);
+    rightConverted=right;
   }
  else {
     String constant=ObjectHelper.between(text,"'","'");
@@ -12,32 +14,44 @@
       constant=text;
     }
     String simple=ObjectHelper.between(text,"${","}");
-    Expression exp=simple != null ? createSimpleExpression(simple) : createConstantExpression(constant);
-    right=ExpressionBuilder.convertTo(exp,left);
+    right=simple != null ? createSimpleExpression(simple) : createConstantExpression(constant);
+    rightConverted=ExpressionBuilder.convertTo(right,left);
   }
   return new ExpressionAdapter(){
-    @Override protected String assertionFailureMessage(    Exchange exchange){
-      return super.assertionFailureMessage(exchange);
-    }
-    @Override public Object evaluate(    Exchange exchange){
+    @Override public Object evaluate(    final Exchange exchange){
       Predicate predicate=null;
       if (operator == EQ) {
-        predicate=PredicateBuilder.isEqualTo(left,right);
+        predicate=PredicateBuilder.isEqualTo(left,rightConverted);
       }
  else       if (operator == GT) {
-        predicate=PredicateBuilder.isGreaterThan(left,right);
+        predicate=PredicateBuilder.isGreaterThan(left,rightConverted);
       }
  else       if (operator == GTE) {
-        predicate=PredicateBuilder.isGreaterThanOrEqualTo(left,right);
+        predicate=PredicateBuilder.isGreaterThanOrEqualTo(left,rightConverted);
       }
  else       if (operator == LT) {
-        predicate=PredicateBuilder.isLessThan(left,right);
+        predicate=PredicateBuilder.isLessThan(left,rightConverted);
       }
  else       if (operator == LTE) {
-        predicate=PredicateBuilder.isLessThanOrEqualTo(left,right);
+        predicate=PredicateBuilder.isLessThanOrEqualTo(left,rightConverted);
       }
  else       if (operator == NOT) {
-        predicate=PredicateBuilder.isNotEqualTo(left,right);
+        predicate=PredicateBuilder.isNotEqualTo(left,rightConverted);
+      }
+ else       if (operator == CONTAINS) {
+        predicate=PredicateBuilder.contains(left,rightConverted);
+      }
+ else       if (operator == REGEX) {
+        predicate=PredicateBuilder.regex(left,right.evaluate(exchange,String.class));
+      }
+ else       if (operator == IN) {
+        Iterator it=ObjectHelper.createIterator(right.evaluate(exchange));
+        List<Object> values=new ArrayList<Object>();
+        while (it.hasNext()) {
+          values.add(it.next());
+        }
+        ValueBuilder vb=new ValueBuilder(left);
+        predicate=vb.in(values.toArray());
       }
       if (predicate == null) {
         throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
