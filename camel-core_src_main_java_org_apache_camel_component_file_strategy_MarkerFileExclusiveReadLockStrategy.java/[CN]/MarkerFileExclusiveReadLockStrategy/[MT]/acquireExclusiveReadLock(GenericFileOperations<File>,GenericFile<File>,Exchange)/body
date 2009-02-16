@@ -1,0 +1,16 @@
+{
+  String lockFileName=file.getAbsoluteFileName() + FileComponent.DEFAULT_LOCK_FILE_POSTFIX;
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Locking the file: " + file + " using the lock file name: "+ lockFileName);
+  }
+  FileChannel channel=new RandomAccessFile(lockFileName,"rw").getChannel();
+  FileLock lock=channel.lock();
+  if (lock != null) {
+    exchange.setProperty("CamelFileLock",lock);
+    exchange.setProperty("CamelFileLockName",lockFileName);
+    return true;
+  }
+ else {
+    return false;
+  }
+}

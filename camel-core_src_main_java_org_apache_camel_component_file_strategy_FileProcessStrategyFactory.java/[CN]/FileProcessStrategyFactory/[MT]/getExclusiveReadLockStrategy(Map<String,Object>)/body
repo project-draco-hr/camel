@@ -1,5 +1,5 @@
 {
-  ExclusiveReadLockStrategy strategy=(ExclusiveReadLockStrategy)params.get("exclusiveReadLockStrategy");
+  GenericFileExclusiveReadLockStrategy strategy=(GenericFileExclusiveReadLockStrategy)params.get("exclusiveReadLockStrategy");
   if (strategy != null) {
     return strategy;
   }
@@ -9,7 +9,7 @@
       return null;
     }
  else     if ("fileLock".equals(readLock)) {
-      FileLockExclusiveReadLockStrategy readLockStrategy=new FileLockExclusiveReadLockStrategy();
+      GenericFileExclusiveReadLockStrategy<File> readLockStrategy=new FileLockExclusiveReadLockStrategy();
       Long timeout=(Long)params.get("readLockTimeout");
       if (timeout != null) {
         readLockStrategy.setTimeout(timeout);
@@ -17,12 +17,15 @@
       return readLockStrategy;
     }
  else     if ("rename".equals(readLock)) {
-      FileRenameExclusiveReadLockStrategy readLockStrategy=new FileRenameExclusiveReadLockStrategy();
+      GenericFileExclusiveReadLockStrategy<File> readLockStrategy=new GenericFileRenameExclusiveReadLockStrategy<File>();
       Long timeout=(Long)params.get("readLockTimeout");
       if (timeout != null) {
         readLockStrategy.setTimeout(timeout);
       }
       return readLockStrategy;
+    }
+ else     if ("markerFile".equals(readLock)) {
+      return new MarkerFileExclusiveReadLockStrategy();
     }
   }
   return null;

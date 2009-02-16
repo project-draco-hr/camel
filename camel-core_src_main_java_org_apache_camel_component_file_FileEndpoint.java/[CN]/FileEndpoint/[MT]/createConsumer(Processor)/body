@@ -1,15 +1,23 @@
 {
-  Consumer result=new FileConsumer(this,processor);
-  if (isDelete() && (getMoveNamePrefix() != null || getMoveNamePostfix() != null || getExpression() != null)) {
-    throw new IllegalArgumentException("You cannot set delete=true and a moveNamePrefix, moveNamePostfix or expression option");
+  ObjectHelper.notNull(operations,"operations");
+  ObjectHelper.notNull(file,"file");
+  FileConsumer result=new FileConsumer(this,processor,operations);
+  if (isDelete() && getMoveExpression() != null) {
+    throw new IllegalArgumentException("You cannot set both delete=true and moveExpression options");
   }
   if (isNoop() && !isIdempotent()) {
-    LOG.info("Endpoint is configured with noop=true so forcing endpoint to be idempotent as well");
+    log.info("Endpoint is configured with noop=true so forcing endpoint to be idempotent as well");
     setIdempotent(true);
   }
   if (isIdempotent() && idempotentRepository == null) {
-    LOG.info("Using default memory based idempotent repository with cache max size: " + DEFAULT_IDEMPOTENT_CACHE_SIZE);
+    log.info("Using default memory based idempotent repository with cache max size: " + DEFAULT_IDEMPOTENT_CACHE_SIZE);
     idempotentRepository=MemoryIdempotentRepository.memoryIdempotentRepository(DEFAULT_IDEMPOTENT_CACHE_SIZE);
+  }
+  if (isDirectory() && file.isFile()) {
+    if (log.isDebugEnabled()) {
+      log.debug(file + " is not a directory so setting option directory=false");
+    }
+    setDirectory(false);
   }
   configureConsumer(result);
   return result;
