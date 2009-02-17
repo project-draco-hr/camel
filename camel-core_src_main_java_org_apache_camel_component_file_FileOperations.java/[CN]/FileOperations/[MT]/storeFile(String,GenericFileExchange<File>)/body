@@ -4,17 +4,29 @@
   try {
     File source=null;
     try {
-      source=exchange.getIn().getBody(File.class);
+      if (exchange.getIn().getBody() instanceof File || exchange.getIn().getBody() instanceof GenericFile) {
+        source=exchange.getIn().getBody(File.class);
+      }
     }
  catch (    NoTypeConversionAvailableException e) {
     }
-    if (source != null && source.exists()) {
-      writeFileByFile(source,file);
+    if (source != null) {
+      File local=exchange.getIn().getHeader(FileComponent.HEADER_FILE_LOCAL_WORK_PATH,File.class);
+      if (local != null && local.exists()) {
+        boolean renamed=writeFileByLocalWorkPath(local,file);
+        if (renamed) {
+          exchange.getIn().setHeader(FileComponent.HEADER_FILE_LOCAL_WORK_PATH,null);
+          return true;
+        }
+      }
+ else       if (source.exists()) {
+        writeFileByFile(source,file);
+        return true;
+      }
     }
- else {
-      InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-      writeFileByStream(in,file);
-    }
+    InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
+    writeFileByStream(in,file);
+    return true;
   }
  catch (  IOException e) {
     throw new GenericFileOperationFailedException("Cannot store file: " + file,e);
@@ -22,5 +34,4 @@
 catch (  InvalidPayloadException e) {
     throw new GenericFileOperationFailedException("Cannot store file: " + file,e);
   }
-  return true;
 }

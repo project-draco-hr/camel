@@ -38,13 +38,19 @@
  else       if (operator == NOT) {
         predicate=PredicateBuilder.isNotEqualTo(left,rightConverted);
       }
- else       if (operator == CONTAINS) {
+ else       if (operator == CONTAINS || operator == NOT_CONTAINS) {
         predicate=PredicateBuilder.contains(left,rightConverted);
+        if (operator == NOT_CONTAINS) {
+          predicate=PredicateBuilder.not(predicate);
+        }
       }
- else       if (operator == REGEX) {
+ else       if (operator == REGEX || operator == NOT_REGEX) {
         predicate=PredicateBuilder.regex(left,right.evaluate(exchange,String.class));
+        if (operator == NOT_REGEX) {
+          predicate=PredicateBuilder.not(predicate);
+        }
       }
- else       if (operator == IN) {
+ else       if (operator == IN || operator == NOT_IN) {
         Iterator it=ObjectHelper.createIterator(right.evaluate(exchange));
         List<Object> values=new ArrayList<Object>();
         while (it.hasNext()) {
@@ -52,6 +58,9 @@
         }
         ValueBuilder vb=new ValueBuilder(left);
         predicate=vb.in(values.toArray());
+        if (operator == NOT_IN) {
+          predicate=PredicateBuilder.not(predicate);
+        }
       }
       if (predicate == null) {
         throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
