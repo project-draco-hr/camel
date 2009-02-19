@@ -48,15 +48,13 @@
       }
       route.clearOutput();
       route.getOutputs().addAll(exceptionHandlers);
+      intercept.afterPropertiesSet();
       InterceptType proxy=intercept.createProxy();
       route.addOutput(proxy);
       route.pushBlock(proxy.getProceed());
-      int outputsSize=proxy.getOutputs().size();
-      if (outputsSize > 0) {
-        ProcessorType processorType=proxy.getOutputs().get(outputsSize - 1);
-        if (processorType instanceof ProceedType) {
-          route.getOutputs().addAll(outputs);
-        }
+      ProceedType proceed=ProcessorTypeHelper.findFirstTypeInOutputs(proxy.getOutputs(),ProceedType.class);
+      if (proceed != null) {
+        proceed.getOutputs().addAll(outputs);
       }
     }
   }
