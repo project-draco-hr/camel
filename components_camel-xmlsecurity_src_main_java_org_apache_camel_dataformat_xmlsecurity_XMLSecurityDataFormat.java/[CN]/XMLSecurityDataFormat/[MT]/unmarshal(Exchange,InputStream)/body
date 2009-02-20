@@ -1,0 +1,34 @@
+{
+  InputStream is=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
+  Key keyEncryptionkey;
+  if (xmlCipherAlgorithm.equals(XMLCipher.TRIPLEDES)) {
+    keyEncryptionkey=generateEncryptionKey("DESede");
+  }
+ else {
+    keyEncryptionkey=generateEncryptionKey("AES");
+  }
+  XMLCipher xmlCipher=XMLCipher.getInstance();
+  xmlCipher.init(XMLCipher.DECRYPT_MODE,null);
+  xmlCipher.setKEK(keyEncryptionkey);
+  Document encodedDocument=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,is);
+  if (secureTag.equalsIgnoreCase("")) {
+    encodedDocument=xmlCipher.doFinal(encodedDocument,encodedDocument.getDocumentElement());
+  }
+ else {
+    NodeIterator iter=XPathAPI.selectNodeIterator(encodedDocument,secureTag);
+    Node node;
+    while ((node=iter.nextNode()) != null) {
+      Document temp=xmlCipher.doFinal(encodedDocument,(Element)node,getSecureTagContents());
+      encodedDocument.importNode(temp.getDocumentElement().cloneNode(true),true);
+    }
+  }
+  DOMSource source=new DOMSource(encodedDocument);
+  ByteArrayOutputStream bos=new ByteArrayOutputStream();
+  try {
+    IOConverter.copy(IOConverter.toInputStrean(source),bos);
+  }
+  finally {
+    bos.close();
+  }
+  return bos.toByteArray();
+}
