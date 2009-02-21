@@ -1,0 +1,19 @@
+{
+  counter=0;
+  MockEndpoint mock=getMockEndpoint("mock:error");
+  mock.expectedMessageCount(1);
+  mock.message(0).header("org.apache.camel.Redelivered").isEqualTo(Boolean.TRUE);
+  mock.message(0).header("org.apache.camel.RedeliveryCounter").isEqualTo(3);
+  long start=System.currentTimeMillis();
+  try {
+    template.sendBody("direct:start","Hello World");
+    fail("Should have thrown exception");
+  }
+ catch (  Exception e) {
+    assertEquals("Forced exception by unit test",e.getCause().getMessage());
+  }
+  long delta=System.currentTimeMillis() - start;
+  assertTrue("Should be slower",delta > 1000);
+  assertMockEndpointsSatisfied();
+  assertEquals(3,counter);
+}
