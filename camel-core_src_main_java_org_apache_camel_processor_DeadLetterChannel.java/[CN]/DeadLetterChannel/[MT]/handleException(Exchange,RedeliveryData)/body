@@ -1,6 +1,6 @@
 {
   Throwable e=exchange.getException();
-  exchange.setProperty(EXCEPTION_CAUSE_PROPERTY,e);
+  exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
   ExceptionType exceptionPolicy=getExceptionPolicy(exchange,e);
   if (exceptionPolicy != null) {
     data.currentRedeliveryPolicy=exceptionPolicy.createRedeliveryPolicy(exchange.getContext(),data.currentRedeliveryPolicy);
@@ -9,6 +9,10 @@
     Processor processor=exceptionPolicy.getErrorHandler();
     if (processor != null) {
       data.failureProcessor=processor;
+    }
+    processor=exceptionPolicy.getOnRedelivery();
+    if (processor != null) {
+      data.onRedeliveryProcessor=processor;
     }
   }
   String msg="Failed delivery for exchangeId: " + exchange.getExchangeId() + ". On delivery attempt: "+ data.redeliveryCounter+ " caught: "+ e;

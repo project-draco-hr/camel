@@ -1,14 +1,14 @@
 {
   final Processor processor=new AsyncProcessor(){
     public void process(    Exchange exchange){
-      Integer counter=exchange.getIn().getHeader(DeadLetterChannel.REDELIVERY_COUNTER,Integer.class);
+      Integer counter=exchange.getIn().getHeader(Exchange.REDELIVERY_COUNTER,Integer.class);
       int attempt=(counter == null) ? 1 : counter + 1;
       if (attempt < failUntilAttempt) {
         throw new RuntimeException("Failed to process due to attempt: " + attempt + " being less than: "+ failUntilAttempt);
       }
     }
     public boolean process(    Exchange exchange,    AsyncCallback callback){
-      Integer counter=exchange.getIn().getHeader(DeadLetterChannel.REDELIVERY_COUNTER,Integer.class);
+      Integer counter=exchange.getIn().getHeader(Exchange.REDELIVERY_COUNTER,Integer.class);
       int attempt=(counter == null) ? 1 : counter + 1;
       if (attempt > 1) {
         assertEquals("Now we should use TimerThread to call the process",Thread.currentThread().getName(),"Timer-0");
