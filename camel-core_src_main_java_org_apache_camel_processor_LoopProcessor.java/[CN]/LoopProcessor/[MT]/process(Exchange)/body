@@ -2,13 +2,15 @@
   String text=expression.evaluate(exchange,String.class);
   Integer value=ExchangeHelper.convertToType(exchange,Integer.class,text);
   if (value == null) {
-    throw new RuntimeCamelException("Expression \"" + expression + "\" does not evaluate to an int.");
+    throw new RuntimeCamelException("Expression \"" + expression + "\" is not convertable to an Integer.");
   }
-  int count=value.intValue();
-  exchange.setProperty(PROP_ITER_COUNT,count);
+  int count=value;
+  exchange.setProperty(Exchange.LOOP_SIZE,count);
   for (int i=0; i < count; i++) {
-    LOG.debug("LoopProcessor: iteration #" + i);
-    exchange.setProperty(PROP_ITER_INDEX,i);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("LoopProcessor: iteration #" + i);
+    }
+    exchange.setProperty(Exchange.LOOP_INDEX,i);
     super.process(exchange);
   }
 }
