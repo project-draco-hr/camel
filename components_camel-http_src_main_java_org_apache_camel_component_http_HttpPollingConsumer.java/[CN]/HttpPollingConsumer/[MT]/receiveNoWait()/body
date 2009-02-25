@@ -5,9 +5,13 @@
     int responseCode=httpClient.executeMethod(method);
     LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
     InputStream is=method.getResponseBodyAsStream();
-    IOUtils.copy(is,bos);
-    bos.flush();
-    is.close();
+    try {
+      IOUtils.copy(is,bos);
+      bos.flush();
+    }
+  finally {
+      is.close();
+    }
     Message message=exchange.getIn();
     message.setBody(bos.createInputStream());
     Header[] headers=method.getResponseHeaders();
@@ -19,7 +23,7 @@
         message.setHeader(name,value);
       }
     }
-    message.setHeader("http.responseCode",responseCode);
+    message.setHeader(HttpConstants.HTTP_RESPONSE_CODE,responseCode);
     return exchange;
   }
  catch (  IOException e) {
