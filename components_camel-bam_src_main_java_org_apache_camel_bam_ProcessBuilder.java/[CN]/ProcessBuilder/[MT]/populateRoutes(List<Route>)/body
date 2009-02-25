@@ -1,11 +1,14 @@
 {
-  boolean first=true;
-  for (  ActivityBuilder builder : activityBuilders) {
-    Route route=builder.createRoute();
-    if (first) {
-      route.getServices().add(new ActivityMonitorEngine(getJpaTemplate(),getTransactionTemplate(),getProcessRules()));
-      first=false;
-    }
-    routes.add(route);
+  if (engine == null) {
+    engine=new ActivityMonitorEngine(getJpaTemplate(),getTransactionTemplate(),getProcessRules());
   }
+  CamelContext camelContext=getContext();
+  if (camelContext instanceof DefaultCamelContext) {
+    DefaultCamelContext defaultCamelContext=(DefaultCamelContext)camelContext;
+    defaultCamelContext.addService(engine);
+  }
+  for (  ActivityBuilder builder : activityBuilders) {
+    from(builder.getEndpoint()).process(builder.getProcessor());
+  }
+  super.populateRoutes(routes);
 }
