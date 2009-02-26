@@ -1,0 +1,28 @@
+{
+  StringBuilder builder=new StringBuilder();
+  Map<Integer,KeyValuePairField> keyValuePairFields=new TreeMap<Integer,KeyValuePairField>(mapKeyValuePairField);
+  Iterator<Integer> it=keyValuePairFields.keySet().iterator();
+  ObjectHelper.notNull(this.pairSeparator,"The pair separator has not been instantiated or property not defined in the @Message annotation");
+  char separator=ConvertSeparator.getCharDelimitor(this.getPairSeparator());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Separator converted : " + separator + ", from : "+ this.getPairSeparator());
+  }
+  while (it.hasNext()) {
+    KeyValuePairField keyValuePairField=mapKeyValuePairField.get(it.next());
+    ObjectHelper.notNull(keyValuePairField,"KeyValuePair is null !");
+    Field field=mapAnnotedField.get(keyValuePairField.tag());
+    field.setAccessible(true);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Tag : " + keyValuePairField.tag() + ", Field type : "+ field.getType()+ ", class : "+ field.getDeclaringClass().getName());
+    }
+    Format format;
+    String pattern=keyValuePairField.pattern();
+    format=FormatFactory.getFormat(field.getType(),pattern,keyValuePairField.precision());
+    Object obj=model.get(field.getDeclaringClass().getName());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Model object : " + obj.toString());
+    }
+    builder.append(keyValuePairField.tag() + this.getKeyValuePairSeparator() + format.format(field.get(obj))+ separator);
+  }
+  return builder.toString();
+}
