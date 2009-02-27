@@ -7,11 +7,13 @@
  catch (  Exception e) {
   }
   LOG.debug("Sending late reply");
-  template.send(componentName + ":" + replyDestination,new Processor(){
+  template.send("activemq:dummy",new Processor(){
     public void process(    Exchange exchange) throws Exception {
       exchange.setPattern(ExchangePattern.InOnly);
-      exchange.getIn().setBody("Late reply");
-      exchange.getIn().setHeader("JMSCorrelationID",cid);
+      exchange.setProperty(JmsConstants.JMS_DESTINATION,replyDestination);
+      Message in=exchange.getIn();
+      in.setBody(expectedBody);
+      in.setHeader("JMSCorrelationID",cid);
     }
   }
 );

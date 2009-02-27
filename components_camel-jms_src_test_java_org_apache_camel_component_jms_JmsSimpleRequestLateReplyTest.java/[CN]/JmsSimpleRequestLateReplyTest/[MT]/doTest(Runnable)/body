@@ -1,9 +1,9 @@
 {
-  Thread sender=new Thread(new SendLateReply());
+  Thread sender=new Thread(runnable);
   sender.start();
   MockEndpoint result=getMockEndpoint("mock:result");
   result.expectedMessageCount(1);
-  Exchange out=template.request("activemq:queue:hello",new Processor(){
+  Exchange out=template.request(getQueueEndpointName(),new Processor(){
     public void process(    Exchange exchange) throws Exception {
       exchange.setPattern(ExchangePattern.InOut);
       exchange.getIn().setBody("Hello World");
@@ -12,4 +12,5 @@
 );
   result.assertIsSatisfied();
   assertNotNull(out);
+  assertEquals(expectedBody,out.getOut().getBody());
 }
