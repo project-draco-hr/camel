@@ -1,5 +1,22 @@
 {
-  Message out=exchange.getOut();
+  Message out=null;
+  if (exchange.isFailed()) {
+    response.setStatus(Status.valueOf(500));
+    out=exchange.getFault(false);
+    if (out == null) {
+      Throwable t=exchange.getException();
+      if (t != null) {
+        StringWriter sw=new StringWriter();
+        PrintWriter pw=new PrintWriter(sw);
+        t.printStackTrace(pw);
+        response.setEntity(sw.toString(),MediaType.TEXT_PLAIN);
+        return;
+      }
+    }
+  }
+ else {
+    out=exchange.getOut();
+  }
   MediaType mediaType=out.getHeader(RestletConstants.MEDIA_TYPE,MediaType.class);
   if (mediaType == null) {
     Object body=out.getBody();
