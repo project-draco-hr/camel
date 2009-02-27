@@ -1,3 +1,14 @@
 {
-  return exchange.getContext().getTypeConverter().convertTo(type,exchange,value);
+  CamelContext camelContext=exchange.getContext();
+  if (camelContext != null) {
+    TypeConverter converter=camelContext.getTypeConverter();
+    if (converter != null) {
+      return converter.convertTo(type,exchange,value);
+    }
+  }
+  LOG.warn("No CamelContext and type converter available to convert types for exchange " + exchange);
+  if (type.isInstance(value)) {
+    return type.cast(value);
+  }
+  return null;
 }
