@@ -1,13 +1,10 @@
 {
   ResultSetMetaData meta=rs.getMetaData();
-  HashMap<String,Object> props=new HashMap<String,Object>();
-  IntrospectionSupport.getProperties(meta,props,"jdbc.");
-  exchange.getOut().setHeaders(props);
   int count=meta.getColumnCount();
-  List<HashMap<String,Object>> data=new ArrayList<HashMap<String,Object>>();
+  List<Map<String,Object>> data=new ArrayList<Map<String,Object>>();
   int rowNumber=0;
   while (rs.next() && (readSize == 0 || rowNumber < readSize)) {
-    HashMap<String,Object> row=new HashMap<String,Object>();
+    Map<String,Object> row=new HashMap<String,Object>();
     for (int i=0; i < count; i++) {
       int columnNumber=i + 1;
       String columnName=meta.getColumnName(columnNumber);
@@ -16,5 +13,6 @@
     data.add(row);
     rowNumber++;
   }
+  exchange.getOut().setHeader(JdbcConstants.JDBC_ROW_COUNT,rowNumber);
   exchange.getOut().setBody(data);
 }
