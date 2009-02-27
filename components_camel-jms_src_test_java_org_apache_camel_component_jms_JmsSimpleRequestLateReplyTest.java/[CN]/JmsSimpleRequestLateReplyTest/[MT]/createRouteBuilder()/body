@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from(componentName + ":queue:hello").setExchangePattern(ExchangePattern.InOptionalOut).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("Hello World",exchange.getIn().getBody());
+          replyDestination=exchange.getProperty(JmsConstants.JMS_REPLY_DESTINATION,String.class);
+          cid=exchange.getIn().getHeader("JMSCorrelationID",String.class);
+          LOG.debug("ReplyDestination: " + replyDestination);
+          LOG.debug("JMSCorrelationID: " + cid);
+          LOG.debug("Ahh I cannot send a reply. Someone else must do it.");
+          latch.countDown();
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
