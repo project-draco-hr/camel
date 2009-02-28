@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2).delay(5000));
+      from("direct:start").delay(500).to("mock:result");
+      from("seda:damm").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new IllegalArgumentException("Damm");
+        }
+      }
+);
+    }
+  }
+;
+}

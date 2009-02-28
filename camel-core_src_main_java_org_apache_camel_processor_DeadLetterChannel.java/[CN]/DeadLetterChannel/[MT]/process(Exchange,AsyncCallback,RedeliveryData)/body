@@ -1,6 +1,9 @@
 {
   while (true) {
     if (!isRunAllowed()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Rejected execution as we are not started for exchange: " + exchange);
+      }
       if (exchange.getException() == null) {
         exchange.setException(new RejectedExecutionException());
       }
@@ -25,7 +28,13 @@
         exchange.setException(null);
       }
       MessageHelper.resetStreamCache(exchange.getIn());
-      data.redeliveryDelay=data.currentRedeliveryPolicy.sleep(data.redeliveryDelay,data.redeliveryCounter);
+      try {
+        data.redeliveryDelay=data.currentRedeliveryPolicy.sleep(data.redeliveryDelay,data.redeliveryCounter);
+      }
+ catch (      InterruptedException e) {
+        LOG.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
+        continue;
+      }
       deliverToRedeliveryProcessor(exchange,callback,data);
     }
     boolean sync=outputAsync.process(exchange,new AsyncCallback(){
