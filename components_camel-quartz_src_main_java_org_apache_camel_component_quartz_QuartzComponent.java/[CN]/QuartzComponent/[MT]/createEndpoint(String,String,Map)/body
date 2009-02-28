@@ -1,37 +1,27 @@
 {
   QuartzEndpoint answer=new QuartzEndpoint(uri,this,getScheduler());
   URI u=new URI(uri);
+  String path=ObjectHelper.after(u.getPath(),"/");
+  String host=u.getHost();
+  String cron=getAndRemoveParameter(parameters,"cron",String.class);
   String name;
-  String group="Camel";
-  String path=u.getPath();
-  CronTrigger cronTrigger=null;
-  if (path != null && path.length() > 1) {
-    if (path.startsWith("/")) {
-      path=path.substring(1);
-    }
-    int idx=path.indexOf('/');
-    if (idx > 0) {
-      cronTrigger=new CronTrigger();
-      name=path.substring(0,idx);
-      String cronExpression=path.substring(idx + 1);
-      cronExpression=cronExpression.replace('/',' ');
-      cronExpression=cronExpression.replace('$','?');
-      LOG.debug("Creating cron trigger: " + cronExpression);
-      cronTrigger.setCronExpression(cronExpression);
-      answer.setTrigger(cronTrigger);
-    }
- else {
-      name=path;
-    }
-    group=u.getHost();
+  String group;
+  if (ObjectHelper.isNotEmpty(path) && ObjectHelper.isNotEmpty(host)) {
+    group=host;
+    name=path;
   }
  else {
-    name=u.getHost();
+    group="Camel";
+    name=host;
   }
-  Trigger trigger=cronTrigger;
-  if (trigger == null) {
-    trigger=answer.getTrigger();
+  Trigger trigger;
+  if (ObjectHelper.isNotEmpty(cron)) {
+    trigger=createCronTrigger(cron);
   }
+ else {
+    trigger=new SimpleTrigger();
+  }
+  answer.setTrigger(trigger);
   trigger.setName(name);
   trigger.setGroup(group);
   Map triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
