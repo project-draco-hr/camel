@@ -1,0 +1,36 @@
+{
+  if (out == null) {
+    out=new ByteArrayOutputStream();
+  }
+  if (currentStream instanceof CachedOutputStream) {
+    CachedOutputStream ac=(CachedOutputStream)currentStream;
+    InputStream in=ac.getInputStream();
+    IOHelper.copyAndCloseInput(in,out);
+  }
+ else {
+    if (inmem) {
+      if (currentStream instanceof ByteArrayOutputStream) {
+        ByteArrayOutputStream byteOut=(ByteArrayOutputStream)currentStream;
+        if (copyOldContent && byteOut.size() > 0) {
+          byteOut.writeTo(out);
+        }
+      }
+ else {
+        throw new IOException("Unknown format of currentStream");
+      }
+    }
+ else {
+      currentStream.close();
+      FileInputStream fin=new FileInputStream(tempFile);
+      if (copyOldContent) {
+        IOHelper.copyAndCloseInput(fin,out);
+      }
+      streamList.remove(currentStream);
+      tempFile.delete();
+      tempFile=null;
+      inmem=true;
+    }
+  }
+  currentStream=out;
+  outputLocked=false;
+}

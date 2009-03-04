@@ -1,0 +1,38 @@
+{
+  if (defaultTempDir != null && defaultTempDir.exists()) {
+    return defaultTempDir;
+  }
+  String s=null;
+  try {
+    s=System.getProperty(FileUtil.class.getName() + ".TempDirectory");
+  }
+ catch (  SecurityException e) {
+  }
+  if (s == null) {
+    int x=(int)(Math.random() * 1000000);
+    s=System.getProperty("java.io.tmpdir");
+    File checkExists=new File(s);
+    if (!checkExists.exists()) {
+      throw new RuntimeException("The directory " + checkExists.getAbsolutePath() + " does not exist, please set java.io.tempdir"+ " to an existing directory");
+    }
+    File f=new File(s,"camel-tmp-" + x);
+    while (!f.mkdir()) {
+      x=(int)(Math.random() * 1000000);
+      f=new File(s,"camel-tmp-" + x);
+    }
+    defaultTempDir=f;
+    Thread hook=new Thread(){
+      @Override public void run(){
+        removeDir(defaultTempDir);
+      }
+    }
+;
+    Runtime.getRuntime().addShutdownHook(hook);
+  }
+ else {
+    File f=new File(s);
+    f.mkdirs();
+    defaultTempDir=f;
+  }
+  return defaultTempDir;
+}
