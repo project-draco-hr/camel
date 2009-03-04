@@ -3,11 +3,18 @@
   if (e != null) {
     CamelContext camelContext=e.getContext();
     if (camelContext != null) {
+      boolean tryConvert=true;
       TypeConverter converter=camelContext.getTypeConverter();
-      try {
-        return converter.convertTo(type,e,body);
+      if (body != null && converter instanceof DefaultTypeConverter) {
+        DefaultTypeConverter defaultTypeConverter=(DefaultTypeConverter)converter;
+        tryConvert=!defaultTypeConverter.hasNoConverterFor(type,body.getClass());
       }
- catch (      NoTypeConversionAvailableException ex) {
+      if (tryConvert) {
+        try {
+          return converter.convertTo(type,e,body);
+        }
+ catch (        NoTypeConversionAvailableException ex) {
+        }
       }
       return converter.convertTo(type,this);
     }
