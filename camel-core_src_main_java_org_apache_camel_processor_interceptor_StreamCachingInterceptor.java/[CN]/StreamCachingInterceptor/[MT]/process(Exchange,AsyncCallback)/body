@@ -1,18 +1,12 @@
 {
-  Object body=exchange.getIn().getBody();
-  if (body != null) {
-    TypeConverter tc=exchange.getContext().getTypeConverterRegistry().lookup(StreamCache.class,body.getClass());
-    if (tc != null) {
-      try {
-        StreamCache newBody=tc.convertTo(StreamCache.class,exchange,body);
-        if (newBody != null) {
-          exchange.getIn().setBody(newBody);
-        }
-        MessageHelper.resetStreamCache(exchange.getIn());
-      }
- catch (      NoTypeConversionAvailableException ex) {
-      }
+  try {
+    StreamCache newBody=exchange.getIn().getBody(StreamCache.class);
+    if (newBody != null) {
+      exchange.getIn().setBody(newBody);
     }
+    MessageHelper.resetStreamCache(exchange.getIn());
+  }
+ catch (  NoTypeConversionAvailableException ex) {
   }
   return proceed(exchange,callback);
 }
