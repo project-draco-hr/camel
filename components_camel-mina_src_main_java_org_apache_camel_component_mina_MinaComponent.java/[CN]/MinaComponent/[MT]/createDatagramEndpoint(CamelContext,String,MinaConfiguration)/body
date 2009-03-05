@@ -1,27 +1,31 @@
 {
   boolean minaLogger=configuration.isMinaLogger();
   long timeout=configuration.getTimeout();
+  boolean transferExchange=configuration.isTransferExchange();
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
-  IoAcceptor acceptor=new SocketAcceptor();
+  IoAcceptor acceptor=new DatagramAcceptor();
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
-  IoConnector connector=new SocketConnector();
-  SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
-  configureCodecFactory("MinaProducer",connectorConfig,configuration);
+  IoConnector connector=new DatagramConnector();
+  if (transferExchange) {
+    throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
+  }
+  DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
+  configureDataGramCodecFactory("MinaProducer",connectorConfig,configuration);
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
   appendIoFiltersToChain(filters,connectorConfig.getFilterChain());
   connectorConfig.setConnectTimeout((int)(timeout / 1000));
-  SocketAcceptorConfig acceptorConfig=new SocketAcceptorConfig();
-  configureCodecFactory("MinaConsumer",acceptorConfig,configuration);
-  acceptorConfig.setReuseAddress(true);
+  DatagramAcceptorConfig acceptorConfig=new DatagramAcceptorConfig();
+  configureDataGramCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setDisconnectOnUnbind(true);
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
   appendIoFiltersToChain(filters,acceptorConfig.getFilterChain());
   MinaEndpoint endpoint=new MinaEndpoint(uri,this);
+  endpoint.setCamelContext(context);
   endpoint.setAddress(address);
   endpoint.setAcceptor(acceptor);
   endpoint.setAcceptorConfig(acceptorConfig);
