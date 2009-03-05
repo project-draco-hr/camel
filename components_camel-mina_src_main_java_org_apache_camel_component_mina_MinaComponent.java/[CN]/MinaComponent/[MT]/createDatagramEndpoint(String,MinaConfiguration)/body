@@ -3,6 +3,7 @@
   long timeout=configuration.getTimeout();
   boolean transferExchange=configuration.isTransferExchange();
   boolean sync=configuration.isSync();
+  List<IoFilter> filters=configuration.getFilters();
   IoAcceptor acceptor=new DatagramAcceptor();
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   IoConnector connector=new DatagramConnector();
@@ -14,6 +15,7 @@
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
+  appendIoFiltersToChain(filters,connectorConfig.getFilterChain());
   connectorConfig.setConnectTimeout((int)(timeout / 1000));
   DatagramAcceptorConfig acceptorConfig=new DatagramAcceptorConfig();
   configureDataGramCodecFactory("MinaConsumer",acceptorConfig,configuration);
@@ -21,6 +23,7 @@
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
+  appendIoFiltersToChain(filters,acceptorConfig.getFilterChain());
   MinaEndpoint endpoint=new MinaEndpoint(uri,this);
   endpoint.setAddress(address);
   endpoint.setAcceptor(acceptor);
