@@ -1,39 +1,38 @@
 {
   newName=needToNormalize() ? FileUtil.normalizePath(newName) : newName;
   boolean absolute=isAbsolutePath(newName);
+  boolean nameChangeOnly=newName.indexOf(getFileSeparator()) == -1;
+  File file=new File(newName);
   if (absolute) {
     setAbsolute(true);
-    setAbsoluteFileName(newName);
+    setFileName(file.getName());
+    try {
+      setCanonicalFileName(file.getCanonicalPath());
+    }
+ catch (    IOException e) {
+    }
     setRelativeFileName(null);
-    setCanonicalFileName(null);
-    String fileName=newName.substring(newName.lastIndexOf(getFileSeparator()) + 1);
-    setFileName(fileName);
-    return;
-  }
-  setAbsolute(false);
-  setAbsoluteFileName(getParent() + getFileSeparator() + newName);
-  setCanonicalFileName(null);
-  String baseNewName=null;
-  if (newName.indexOf(getFileSeparator()) != -1) {
-    baseNewName=newName.substring(0,newName.lastIndexOf(getFileSeparator()));
-    newName=newName.substring(newName.lastIndexOf(getFileSeparator()) + 1);
-  }
-  if (relativeFileName != null && relativeFileName.indexOf(getFileSeparator()) != -1) {
-    String relative=relativeFileName.substring(0,relativeFileName.lastIndexOf(getFileSeparator()));
-    if (baseNewName != null) {
-      setRelativeFileName(relative + getFileSeparator() + baseNewName+ getFileSeparator()+ newName);
-    }
- else {
-      setRelativeFileName(relative + getFileSeparator() + newName);
-    }
+    setAbsoluteFileName(file.getAbsolutePath());
   }
  else {
-    if (baseNewName != null) {
-      setRelativeFileName(baseNewName + getFileSeparator() + newName);
+    setAbsolute(false);
+    setFileName(file.getName());
+    try {
+      setCanonicalFileName(file.getCanonicalPath());
+    }
+ catch (    IOException e) {
+    }
+    if (nameChangeOnly) {
+      setRelativeFileName(changeNameOnly(getRelativeFileName(),file.getName()));
     }
  else {
-      setRelativeFileName(newName);
+      if (file.getParent() != null) {
+        setRelativeFileName(file.getParent() + getFileSeparator() + file.getName());
+      }
+ else {
+        setRelativeFileName(file.getName());
+      }
     }
+    setAbsoluteFileName(endpointPath + getFileSeparator() + getRelativeFileName());
   }
-  setFileName(newName);
 }

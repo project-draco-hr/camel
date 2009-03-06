@@ -1,0 +1,36 @@
+{
+  GenericFile<File> answer=new GenericFile<File>();
+  answer.setEndpointPath(rootPath);
+  answer.setBinding(new FileBinding());
+  answer.setFile(file);
+  answer.setFileLength(file.length());
+  answer.setFileName(file.getName());
+  answer.setAbsolute(file.isAbsolute());
+  answer.setAbsoluteFileName(file.getAbsolutePath());
+  try {
+    answer.setCanonicalFileName(file.getCanonicalPath());
+  }
+ catch (  IOException e) {
+  }
+  answer.setLastModified(file.lastModified());
+  if (file.isAbsolute()) {
+    answer.setRelativeFileName(null);
+  }
+ else {
+    File path;
+    if (file.getPath().startsWith(rootPath)) {
+      path=new File(ObjectHelper.after(file.getPath(),rootPath + File.separator));
+    }
+ else {
+      path=new File(file.getPath());
+    }
+    if (path.getParent() != null) {
+      answer.setRelativeFileName(path.getParent() + File.separator + file.getName());
+    }
+ else {
+      answer.setRelativeFileName(path.getName());
+    }
+  }
+  answer.setBody(file);
+  return answer;
+}
