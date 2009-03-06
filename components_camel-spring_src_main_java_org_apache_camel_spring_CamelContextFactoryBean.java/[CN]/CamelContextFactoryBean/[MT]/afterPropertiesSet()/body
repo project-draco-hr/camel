@@ -42,15 +42,15 @@
       ((CamelBeanPostProcessor)beanPostProcessor).setCamelContext(getContext());
     }
   }
-  for (  RouteType route : routes) {
+  for (  RouteDefinition route : routes) {
     if (exceptionClauses != null) {
       route.getOutputs().addAll(exceptionClauses);
     }
-    for (    InterceptType intercept : intercepts) {
-      List<ProcessorType<?>> outputs=new ArrayList<ProcessorType<?>>();
-      List<ProcessorType<?>> exceptionHandlers=new ArrayList<ProcessorType<?>>();
-      for (      ProcessorType output : route.getOutputs()) {
-        if (output instanceof ExceptionType) {
+    for (    InterceptDefinition intercept : intercepts) {
+      List<ProcessorDefinition<?>> outputs=new ArrayList<ProcessorDefinition<?>>();
+      List<ProcessorDefinition<?>> exceptionHandlers=new ArrayList<ProcessorDefinition<?>>();
+      for (      ProcessorDefinition output : route.getOutputs()) {
+        if (output instanceof ExceptionDefinition) {
           exceptionHandlers.add(output);
         }
  else {
@@ -60,10 +60,10 @@
       route.clearOutput();
       route.getOutputs().addAll(exceptionHandlers);
       intercept.afterPropertiesSet();
-      InterceptType proxy=intercept.createProxy();
+      InterceptDefinition proxy=intercept.createProxy();
       route.addOutput(proxy);
       route.pushBlock(proxy.getProceed());
-      ProceedType proceed=ProcessorTypeHelper.findFirstTypeInOutputs(proxy.getOutputs(),ProceedType.class);
+      ProceedDefinition proceed=ProcessorTypeHelper.findFirstTypeInOutputs(proxy.getOutputs(),ProceedDefinition.class);
       if (proceed != null) {
         proceed.getOutputs().addAll(outputs);
       }

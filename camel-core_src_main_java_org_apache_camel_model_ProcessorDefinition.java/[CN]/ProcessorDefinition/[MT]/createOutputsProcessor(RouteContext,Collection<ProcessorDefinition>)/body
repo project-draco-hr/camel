@@ -1,0 +1,25 @@
+{
+  List<Processor> list=new ArrayList<Processor>();
+  for (  ProcessorDefinition output : outputs) {
+    Processor processor=output.createProcessor(routeContext);
+    if ((output instanceof ProceedDefinition || output instanceof StopDefinition) && processor == null) {
+      continue;
+    }
+    processor=output.wrapProcessorInInterceptors(routeContext,processor);
+    ProcessorDefinition currentProcessor=this;
+    if (!(currentProcessor instanceof ExceptionDefinition || currentProcessor instanceof TryDefinition)) {
+      processor=output.wrapInErrorHandler(routeContext,processor);
+    }
+    list.add(processor);
+  }
+  Processor processor=null;
+  if (!list.isEmpty()) {
+    if (list.size() == 1) {
+      processor=list.get(0);
+    }
+ else {
+      processor=createCompositeProcessor(routeContext,list);
+    }
+  }
+  return processor;
+}

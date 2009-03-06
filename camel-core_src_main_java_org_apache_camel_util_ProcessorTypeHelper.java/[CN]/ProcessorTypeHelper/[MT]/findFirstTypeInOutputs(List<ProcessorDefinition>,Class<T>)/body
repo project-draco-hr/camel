@@ -1,0 +1,31 @@
+{
+  if (outputs == null || outputs.isEmpty()) {
+    return null;
+  }
+  for (  ProcessorDefinition out : outputs) {
+    if (type.isInstance(out)) {
+      return type.cast(out);
+    }
+    if (out instanceof ChoiceDefinition) {
+      ChoiceDefinition choice=(ChoiceDefinition)out;
+      for (      WhenDefinition when : choice.getWhenClauses()) {
+        List<ProcessorDefinition> children=when.getOutputs();
+        T child=findFirstTypeInOutputs(children,type);
+        if (child != null) {
+          return child;
+        }
+      }
+      List<ProcessorDefinition> children=choice.getOtherwise().getOutputs();
+      T child=findFirstTypeInOutputs(children,type);
+      if (child != null) {
+        return child;
+      }
+    }
+    List<ProcessorDefinition> children=out.getOutputs();
+    T child=findFirstTypeInOutputs(children,type);
+    if (child != null) {
+      return child;
+    }
+  }
+  return null;
+}

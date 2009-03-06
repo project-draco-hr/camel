@@ -1,0 +1,33 @@
+{
+  ObjectHelper.notNull(target,"target",this);
+  List<InterceptStrategy> strategies=new ArrayList<InterceptStrategy>();
+  CamelContext camelContext=routeContext.getCamelContext();
+  strategies.addAll(camelContext.getInterceptStrategies());
+  strategies.addAll(routeContext.getInterceptStrategies());
+  for (  InterceptStrategy strategy : strategies) {
+    if (strategy != null) {
+      target=strategy.wrapProcessorInInterceptors(this,target);
+    }
+  }
+  List<InterceptorDefinition> list=routeContext.getRoute().getInterceptors();
+  if (interceptors != null) {
+    list.addAll(interceptors);
+  }
+  Collections.reverse(list);
+  Set<Processor> interceptors=new HashSet<Processor>();
+  interceptors.add(target);
+  for (  InterceptorDefinition interceptorType : list) {
+    DelegateProcessor interceptor=interceptorType.createInterceptor(routeContext);
+    if (!interceptors.contains(interceptor)) {
+      interceptors.add(interceptor);
+      if (interceptor.getProcessor() != null) {
+        LOG.warn("Interceptor " + interceptor + " currently wraps target "+ interceptor.getProcessor()+ " is attempting to change target "+ target+ " new wrapping has been denied.");
+      }
+ else {
+        interceptor.setProcessor(target);
+        target=interceptor;
+      }
+    }
+  }
+  return target;
+}

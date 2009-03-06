@@ -1,0 +1,17 @@
+{
+  route.setCamelContext(getCamelContext());
+  route.setInheritErrorHandlerFlag(getInheritErrorHandlerFlag());
+  List<InterceptorDefinition> list=getInterceptors();
+  for (  InterceptorDefinition interceptorType : list) {
+    route.addInterceptor(interceptorType);
+  }
+  List<InterceptDefinition> intercepts=getIntercepts();
+  for (  InterceptDefinition intercept : intercepts) {
+    InterceptDefinition proxy=intercept.createProxy();
+    route.addOutput(proxy);
+    route.pushBlock(proxy.getProceed());
+  }
+  route.getOutputs().addAll(getExceptions());
+  getRoutes().add(route);
+  return route;
+}

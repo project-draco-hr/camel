@@ -1,0 +1,40 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Finding best suited exception policy for thrown exception " + exception.getClass().getName());
+  }
+  int targetLevel=getInheritanceLevel(exception.getClass());
+  ExceptionDefinition candidate=null;
+  int candidateDiff=Integer.MAX_VALUE;
+  Set<Map.Entry<ExceptionPolicyKey,ExceptionDefinition>> entries=exceptionPolicices.entrySet();
+  for (  Map.Entry<ExceptionPolicyKey,ExceptionDefinition> entry : entries) {
+    Class clazz=entry.getKey().getExceptionClass();
+    ExceptionDefinition type=entry.getValue();
+    if (filter(type,clazz,exception)) {
+      if (!matchesWhen(type,exchange)) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("The type did not match when: " + type);
+        }
+        continue;
+      }
+      if (clazz.equals(exception.getClass())) {
+        candidate=type;
+        break;
+      }
+      int level=getInheritanceLevel(clazz);
+      int diff=targetLevel - level;
+      if (diff < candidateDiff) {
+        candidate=type;
+        candidateDiff=diff;
+      }
+    }
+  }
+  if (LOG.isDebugEnabled()) {
+    if (candidate != null) {
+      LOG.debug("Using " + candidate + " as the exception policy");
+    }
+ else {
+      LOG.debug("No candidate found to be used as exception policy");
+    }
+  }
+  return candidate;
+}

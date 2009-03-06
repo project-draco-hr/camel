@@ -1,0 +1,27 @@
+{
+  InterceptDefinition answer=new InterceptDefinition();
+  answer.getOutputs().addAll(this.getOutputs());
+  answer.setStopIntercept(getStopIntercept());
+  if (answer.getOutputs().size() > 0) {
+    ChoiceDefinition choice=null;
+    for (    ProcessorDefinition processor : answer.getOutputs()) {
+      if (processor instanceof ChoiceDefinition) {
+        choice=(ChoiceDefinition)processor;
+        if (usePredicate && getStopIntercept()) {
+          WhenDefinition when=choice.getWhenClauses().get(0);
+          when.getOutputs().remove(this.getProceed());
+        }
+        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1),usePredicate && !getStopIntercept());
+        addProceedProxy(this.getProceed(),answer.getProceed(),choice.getOtherwise(),!getStopIntercept());
+        if (getStopIntercept()) {
+          addProceedProxy(this.getProceed(),answer.getProceed(),choice.getWhenClauses().get(choice.getWhenClauses().size() - 1),usePredicate);
+        }
+        break;
+      }
+    }
+    if (choice == null) {
+      addProceedProxy(this.getProceed(),answer.getProceed(),answer,!getStopIntercept());
+    }
+  }
+  return answer;
+}
