@@ -1,17 +1,18 @@
 {
-  RemoteFile<ChannelSftp.LsEntry> remote=new RemoteFile<ChannelSftp.LsEntry>();
-  remote.setFile(file);
-  remote.setFileName(file.getFilename());
-  remote.setFileLength(file.getAttrs().getSize());
-  remote.setLastModified(file.getAttrs().getMTime() * 1000L);
-  remote.setHostname(((RemoteFileConfiguration)endpoint.getConfiguration()).getHost());
+  RemoteFile<ChannelSftp.LsEntry> answer=new RemoteFile<ChannelSftp.LsEntry>();
+  answer.setEndpointPath(endpointPath);
+  answer.setFile(file);
+  answer.setFileName(file.getFilename());
+  answer.setFileLength(file.getAttrs().getSize());
+  answer.setLastModified(file.getAttrs().getMTime() * 1000L);
+  answer.setHostname(((RemoteFileConfiguration)endpoint.getConfiguration()).getHost());
+  answer.setAbsolute(false);
   String absoluteFileName=(ObjectHelper.isNotEmpty(directory) ? directory + "/" : "") + file.getFilename();
-  remote.setAbsoluteFileName(absoluteFileName);
-  String ftpBasePath=endpoint.getConfiguration().getFile();
-  String relativePath=absoluteFileName.substring(ftpBasePath.length());
+  answer.setAbsoluteFileName(absoluteFileName);
+  String relativePath=ObjectHelper.after(absoluteFileName,endpointPath);
   if (relativePath.startsWith("/")) {
     relativePath=relativePath.substring(1);
   }
-  remote.setRelativeFileName(relativePath);
-  return remote;
+  answer.setRelativeFileName(relativePath);
+  return answer;
 }
