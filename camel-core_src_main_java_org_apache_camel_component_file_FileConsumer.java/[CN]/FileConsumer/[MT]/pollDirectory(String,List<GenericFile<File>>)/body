@@ -1,16 +1,13 @@
 {
-  File fileOrDirectory=new File(fileName);
-  if (!fileOrDirectory.exists()) {
-    return;
-  }
-  if (fileOrDirectory.isFile()) {
-    pollFile(fileName,fileList);
+  File directory=new File(fileName);
+  if (!directory.exists() || !directory.isDirectory()) {
+    log.warn("Cannot poll directory as file does not exists or is not a directory: " + directory);
     return;
   }
   if (log.isTraceEnabled()) {
-    log.trace("Polling directory: " + fileOrDirectory.getPath());
+    log.trace("Polling directory: " + directory.getPath());
   }
-  File[] files=fileOrDirectory.listFiles();
+  File[] files=directory.listFiles();
   if (files == null || files.length == 0) {
     return;
   }
@@ -18,8 +15,8 @@
     GenericFile<File> gf=asGenericFile(endpointPath,file);
     if (file.isDirectory()) {
       if (endpoint.isRecursive() && isValidFile(gf,true)) {
-        String directory=fileName + "/" + file.getName();
-        pollDirectory(directory,fileList);
+        String subDirectory=fileName + File.separator + file.getName();
+        pollDirectory(subDirectory,fileList);
       }
     }
  else     if (file.isFile()) {
@@ -28,7 +25,7 @@
       }
     }
  else {
-      log.debug("Ignoring unsupported file type " + file);
+      log.debug("Ignoring unsupported file type for file: " + file);
     }
   }
 }

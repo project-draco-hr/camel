@@ -9,22 +9,22 @@
     local.mkdirs();
     if (temp.exists()) {
       if (!temp.delete()) {
-        throw new RemoteFileOperationFailedException("Cannot delete existing local work file: " + temp);
+        throw new GenericFileOperationFailedException("Cannot delete existing local work file: " + temp);
       }
     }
     if (local.exists()) {
       if (!local.delete()) {
-        throw new RemoteFileOperationFailedException("Cannot delete existing local work file: " + local);
+        throw new GenericFileOperationFailedException("Cannot delete existing local work file: " + local);
       }
     }
     if (!temp.createNewFile()) {
-      throw new RemoteFileOperationFailedException("Cannot create new local work file: " + temp);
+      throw new GenericFileOperationFailedException("Cannot create new local work file: " + temp);
     }
     os=new FileOutputStream(temp);
     exchange.getIn().setHeader(Exchange.FILE_LOCAL_WORK_PATH,local.getPath());
   }
  catch (  Exception e) {
-    throw new RemoteFileOperationFailedException("Cannot create new local work file: " + local);
+    throw new GenericFileOperationFailedException("Cannot create new local work file: " + local);
   }
   boolean result;
   try {
@@ -33,13 +33,13 @@
     result=client.retrieveFile(name,os);
   }
  catch (  IOException e) {
-    throw new RemoteFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+    throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
   }
  finally {
     ObjectHelper.close(os,"retrieve: " + name,LOG);
   }
   if (!temp.renameTo(local)) {
-    throw new RemoteFileOperationFailedException("Cannot rename local work file from: " + temp + " to: "+ local);
+    throw new GenericFileOperationFailedException("Cannot rename local work file from: " + temp + " to: "+ local);
   }
   return result;
 }
