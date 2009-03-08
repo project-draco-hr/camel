@@ -2,22 +2,21 @@
   if (fileName == null) {
     return;
   }
-  if (fileName.endsWith("/")) {
-    fileName=fileName.substring(0,fileName.length() - 1);
-  }
+  fileName=FileUtil.stripTrailingSeparator(fileName);
   if (log.isTraceEnabled()) {
     log.trace("Polling directory: " + fileName);
   }
   List<ChannelSftp.LsEntry> files=operations.listFiles(fileName);
   for (  ChannelSftp.LsEntry file : files) {
-    RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
     if (file.getAttrs().isDir()) {
+      RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
       if (endpoint.isRecursive() && isValidFile(remote,true)) {
         String directory=fileName + "/" + file.getFilename();
         pollDirectory(directory,fileList);
       }
     }
  else {
+      RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
       if (isValidFile(remote,false)) {
         fileList.add(remote);
       }
