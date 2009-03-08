@@ -17,8 +17,8 @@
     right=simple != null ? createSimpleExpression(simple) : createConstantExpression(constant);
     rightConverted=ExpressionBuilder.convertToExpression(right,left);
   }
-  return new ExpressionAdapter(){
-    @Override public Object evaluate(    final Exchange exchange){
+  return new Expression(){
+    public Object evaluate(    final Exchange exchange){
       Predicate predicate=null;
       if (operator == EQ) {
         predicate=PredicateBuilder.isEqualTo(left,rightConverted);
@@ -66,6 +66,10 @@
         throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
       }
       return predicate.matches(exchange);
+    }
+    public <T>T evaluate(    Exchange exchange,    Class<T> type){
+      Object result=evaluate(exchange);
+      return exchange.getContext().getTypeConverter().convertTo(type,result);
     }
     @Override public String toString(){
       return left + " " + operator+ " "+ right;
