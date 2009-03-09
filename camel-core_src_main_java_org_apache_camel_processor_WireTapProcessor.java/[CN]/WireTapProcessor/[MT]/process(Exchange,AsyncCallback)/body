@@ -1,0 +1,26 @@
+{
+  if (producer == null) {
+    if (isStopped()) {
+      LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
+    }
+ else {
+      exchange.setException(new IllegalStateException("No producer, this processor has not been started!"));
+    }
+    callback.done(true);
+    return true;
+  }
+ else {
+    exchange=configureExchange(exchange);
+    final Exchange wireTapExchange=configureExchange(exchange);
+    getExecutorService().submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Processing wiretap: " + wireTapExchange);
+        }
+        return processor.process(wireTapExchange,callback);
+      }
+    }
+);
+    return true;
+  }
+}
