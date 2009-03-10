@@ -2,38 +2,7 @@
   ProtocolCodecFactory codecFactory=configuration.getCodec();
   if (codecFactory == null) {
     final Charset charset=getEncodingParameter(type,configuration);
-    codecFactory=new ProtocolCodecFactory(){
-      public ProtocolEncoder getEncoder() throws Exception {
-        return new ProtocolEncoder(){
-          private CharsetEncoder encoder;
-          public void encode(          IoSession session,          Object message,          ProtocolEncoderOutput out) throws Exception {
-            if (encoder == null) {
-              encoder=charset.newEncoder();
-            }
-            ByteBuffer buf=toByteBuffer(message,encoder);
-            buf.flip();
-            out.write(buf);
-          }
-          public void dispose(          IoSession session) throws Exception {
-          }
-        }
-;
-      }
-      public ProtocolDecoder getDecoder() throws Exception {
-        return new ProtocolDecoder(){
-          public void decode(          IoSession session,          ByteBuffer in,          ProtocolDecoderOutput out) throws Exception {
-            in.acquire();
-            out.write(in);
-          }
-          public void finishDecode(          IoSession session,          ProtocolDecoderOutput out) throws Exception {
-          }
-          public void dispose(          IoSession session) throws Exception {
-          }
-        }
-;
-      }
-    }
-;
+    codecFactory=new MinaUdpProtocolCodecFactory(getCamelContext(),charset);
     if (LOG.isDebugEnabled()) {
       LOG.debug(type + ": Using CodecFactory: " + codecFactory+ " using encoding: "+ charset);
     }
