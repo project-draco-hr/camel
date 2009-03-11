@@ -1,5 +1,5 @@
 {
-  Throwable e=null;
+  Throwable e;
   try {
     tryProcessor.process(exchange);
     e=exchange.getException();
@@ -7,40 +7,19 @@
       e=null;
     }
   }
- catch (  Throwable ex) {
+ catch (  Exception ex) {
     e=ex;
     exchange.setException(e);
   }
-  Exception unexpected=null;
   try {
     if (e != null) {
-      LOG.info("Caught exception while processing exchange.",e);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Caught exception while processing exchange.",e);
+      }
       handleException(exchange,e);
     }
   }
- catch (  Exception ex) {
-    unexpected=ex;
-  }
-catch (  Throwable ex) {
-    unexpected=wrapRuntimeCamelException(ex);
-  }
- finally {
-    try {
-      processFinally(exchange);
-    }
- catch (    Exception ex) {
-      unexpected=ex;
-    }
-catch (    Throwable ex) {
-      unexpected=wrapRuntimeCamelException(ex);
-    }
-    if (unexpected != null) {
-      LOG.warn("Caught exception inside processFinally clause.",unexpected);
-      throw unexpected;
-    }
-  }
-  if (unexpected != null) {
-    LOG.warn("Caught exception inside handle clause.",unexpected);
-    throw unexpected;
+  finally {
+    processFinally(exchange);
   }
 }
