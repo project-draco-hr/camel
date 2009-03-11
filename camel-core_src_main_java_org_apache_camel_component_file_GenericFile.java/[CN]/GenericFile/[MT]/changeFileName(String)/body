@@ -4,6 +4,12 @@
   }
   File file=new File(newName);
   boolean absolute=file.isAbsolute();
+  if (!absolute) {
+    if (ObjectHelper.isNotEmpty(endpointPath) && newName.startsWith(endpointPath)) {
+      newName=ObjectHelper.after(newName,endpointPath + getFileSeparator());
+      file=new File(newName);
+    }
+  }
   setFileNameOnly(file.getName());
   setFileName(file.getName());
   if (file.getParent() != null) {
@@ -18,7 +24,8 @@
   }
  else {
     setAbsolute(false);
-    setAbsoluteFilePath(endpointPath + getFileSeparator() + getRelativeFilePath());
+    String path=ObjectHelper.isEmpty(endpointPath) ? "" : endpointPath + getFileSeparator();
+    setAbsoluteFilePath(path + getRelativeFilePath());
   }
   if (LOG.isTraceEnabled()) {
     LOG.trace("Name changed to: " + this);
