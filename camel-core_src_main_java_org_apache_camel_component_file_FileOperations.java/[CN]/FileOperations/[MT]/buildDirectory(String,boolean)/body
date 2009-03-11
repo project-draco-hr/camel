@@ -1,20 +1,25 @@
 {
   ObjectHelper.notNull(endpoint,"endpoint");
   if (endpoint.isAutoCreate() && !endpoint.getFile().exists()) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Building starting directory: " + endpoint.getFile());
+    }
     endpoint.getFile().mkdirs();
   }
   if (ObjectHelper.isEmpty(directory)) {
     return true;
   }
+  File endpointPath=endpoint.getFile();
+  File target=new File(directory);
   File path;
   if (absolute) {
-    path=new File(directory);
+    path=target;
   }
- else   if (endpoint.getFile().equals(new File(directory))) {
-    path=endpoint.getFile();
+ else   if (endpointPath.equals(target)) {
+    path=endpointPath;
   }
  else {
-    String afterRoot=ObjectHelper.after(directory,endpoint.getFile().getPath());
+    String afterRoot=ObjectHelper.after(directory,endpointPath.getPath() + File.separator);
     if (ObjectHelper.isNotEmpty(afterRoot)) {
       path=new File(endpoint.getFile(),afterRoot);
     }
@@ -26,6 +31,9 @@
     return true;
   }
  else {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Building directory: " + path);
+    }
     return path.mkdirs();
   }
 }
