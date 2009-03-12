@@ -1,3 +1,17 @@
 {
-  return getLanguageResolver().resolveLanguage(language,this);
+  Language answer;
+synchronized (languages) {
+    answer=languages.get(language);
+    if (answer != null && answer instanceof IsSingleton) {
+      boolean singleton=((IsSingleton)answer).isSingleton();
+      if (singleton) {
+        return answer;
+      }
+    }
+    answer=getLanguageResolver().resolveLanguage(language,this);
+    if (answer != null) {
+      languages.put(language,answer);
+    }
+  }
+  return answer;
 }
