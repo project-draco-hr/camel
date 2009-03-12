@@ -2,14 +2,16 @@
   return new ExpressionAdapter(){
     public Object evaluate(    Exchange exchange){
       try {
-        return SimpleLanguage.simple(simple).evaluate(exchange);
+        Language simple=exchange.getContext().resolveLanguage("simple");
+        return simple.createExpression(expression).evaluate(exchange);
       }
- catch (      IllegalSyntaxException e) {
-        return ConstantLanguage.constant(simple).evaluate(exchange);
+ catch (      ExpressionIllegalSyntaxException e) {
+        Language constant=exchange.getContext().resolveLanguage("constant");
+        return constant.createExpression(expression).evaluate(exchange);
       }
     }
     @Override public String toString(){
-      return "simple(" + simple + ")";
+      return "simple(" + expression + ")";
     }
   }
 ;
