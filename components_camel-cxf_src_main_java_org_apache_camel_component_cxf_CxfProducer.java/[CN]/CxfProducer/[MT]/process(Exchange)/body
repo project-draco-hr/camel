@@ -5,7 +5,7 @@
   ExchangeImpl cxfExchange=new ExchangeImpl();
   CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
   CxfBinding binding=endpoint.getCxfBinding();
-  Map<String,Object> requestContext=new WrappedMessageContext(new HashMap<String,Object>(),null,Scope.APPLICATION);
+  WrappedMessageContext requestContext=new WrappedMessageContext(new HashMap<String,Object>(),null,Scope.APPLICATION);
   Map<String,Object> responseContext=new HashMap<String,Object>();
   DataFormat dataFormat=endpoint.getDataFormat();
   camelExchange.setProperty(DataFormat.class.getName(),dataFormat);
@@ -33,9 +33,10 @@
       }
     }
   }
+  requestContext.getScopes().remove(Message.PROTOCOL_HEADERS);
   Map<String,Object> invocationContext=new HashMap<String,Object>();
   invocationContext.put(Client.RESPONSE_CONTEXT,responseContext);
-  invocationContext.put(Client.REQUEST_CONTEXT,((WrappedMessageContext)requestContext).getWrappedMap());
+  invocationContext.put(Client.REQUEST_CONTEXT,requestContext.getWrappedMap());
   client.invoke(boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
   if (!boi.getOperationInfo().isOneWay()) {
     binding.populateExchangeFromCxfResponse(camelExchange,cxfExchange,responseContext);
