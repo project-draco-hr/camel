@@ -3,10 +3,16 @@
   if (messageId == null) {
     throw new NoMessageIdException(exchange,messageIdExpression);
   }
-  if (idempotentRepository.add(messageId)) {
-    nextProcessor.process(exchange);
+  if (idempotentRepository.contains(messageId)) {
+    onDuplicateMessage(exchange,messageId);
   }
  else {
-    onDuplicateMessage(exchange,messageId);
+    nextProcessor.process(exchange);
+    if (!exchange.isFailed()) {
+      onCompletedMessage(exchange,messageId);
+    }
+ else {
+      onFailedMessage(exchange,messageId);
+    }
   }
 }
