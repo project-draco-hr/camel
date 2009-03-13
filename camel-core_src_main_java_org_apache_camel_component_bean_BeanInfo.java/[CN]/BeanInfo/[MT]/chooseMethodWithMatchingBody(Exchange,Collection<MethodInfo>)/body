@@ -7,23 +7,33 @@
       LOG.trace("Matching for method with a single parameter that matches type: " + bodyType.getCanonicalName());
     }
     List<MethodInfo> possibles=new ArrayList<MethodInfo>();
+    List<MethodInfo> possiblesWithException=new ArrayList<MethodInfo>();
     for (    MethodInfo methodInfo : operationList) {
       boolean out=exchange.getPattern().isOutCapable();
       if (out && methodInfo.isReturnTypeVoid()) {
         continue;
       }
       if (methodInfo.bodyParameterMatches(bodyType)) {
-        possibles.add(methodInfo);
+        if (methodInfo.hasExceptionParameter()) {
+          possiblesWithException.add(methodInfo);
+        }
+ else {
+          possibles.add(methodInfo);
+        }
       }
     }
-    if (possibles.size() == 1) {
+    Exception exception=ExpressionBuilder.exchangeExceptionExpression().evaluate(exchange,Exception.class);
+    if (exception != null && possiblesWithException.size() == 1) {
+      return possiblesWithException.get(0);
+    }
+ else     if (possibles.size() == 1) {
       return possibles.get(0);
     }
  else     if (possibles.isEmpty()) {
       Object newBody=null;
       MethodInfo matched=null;
       for (      MethodInfo methodInfo : operationList) {
-        Object value=null;
+        Object value;
         try {
           value=convertToType(exchange,methodInfo.getBodyParameterType(),body);
           if (value != null) {
