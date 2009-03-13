@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(0).logStackTrace(false));
+      from("imap://localhost?username=claus&password=secret&unseen=true&delay=250").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          counter++;
+          if (counter < 3) {
+            throw new IllegalArgumentException("Forced by unit test");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
