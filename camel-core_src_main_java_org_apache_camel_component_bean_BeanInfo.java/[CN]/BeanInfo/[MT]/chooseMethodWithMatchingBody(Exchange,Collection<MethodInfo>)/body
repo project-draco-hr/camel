@@ -14,6 +14,9 @@
         continue;
       }
       if (methodInfo.bodyParameterMatches(bodyType)) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Found a possible method: " + methodInfo);
+        }
         if (methodInfo.hasExceptionParameter()) {
           possiblesWithException.add(methodInfo);
         }
@@ -22,44 +25,7 @@
         }
       }
     }
-    Exception exception=ExpressionBuilder.exchangeExceptionExpression().evaluate(exchange,Exception.class);
-    if (exception != null && possiblesWithException.size() == 1) {
-      return possiblesWithException.get(0);
-    }
- else     if (possibles.size() == 1) {
-      return possibles.get(0);
-    }
- else     if (possibles.isEmpty()) {
-      Object newBody=null;
-      MethodInfo matched=null;
-      for (      MethodInfo methodInfo : operationList) {
-        Object value;
-        try {
-          value=convertToType(exchange,methodInfo.getBodyParameterType(),body);
-          if (value != null) {
-            if (newBody != null) {
-              throw new AmbiguousMethodCallException(exchange,Arrays.asList(matched,methodInfo));
-            }
- else {
-              newBody=value;
-              matched=methodInfo;
-            }
-          }
-        }
- catch (        NoTypeConversionAvailableException e) {
-        }
-      }
-      if (matched != null) {
-        in.setBody(newBody);
-        return matched;
-      }
-    }
- else {
-      if (operationsWithCustomAnnotation.size() == 1) {
-        return operationsWithCustomAnnotation.get(0);
-      }
-      return chooseMethodWithCustomAnnotations(exchange,possibles);
-    }
+    return chooseBestPossibleMethodInfo(exchange,operationList,body,possibles,possiblesWithException);
   }
   return null;
 }

@@ -1,0 +1,58 @@
+{
+  Exception exception=ExpressionBuilder.exchangeExceptionExpression().evaluate(exchange,Exception.class);
+  if (exception != null && possiblesWithException.size() == 1) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Exchange has exception set so we prefer method that also has exception as parameter");
+    }
+    return possiblesWithException.get(0);
+  }
+ else   if (possibles.size() == 1) {
+    return possibles.get(0);
+  }
+ else   if (possibles.isEmpty()) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("No poosible methods trying to convert body to parameter types");
+    }
+    Object newBody=null;
+    MethodInfo matched=null;
+    for (    MethodInfo methodInfo : operationList) {
+      Object value;
+      try {
+        value=convertToType(exchange,methodInfo.getBodyParameterType(),body);
+        if (value != null) {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Converted body from: " + body.getClass().getCanonicalName() + "to: "+ methodInfo.getBodyParameterType().getCanonicalName());
+          }
+          if (newBody != null) {
+            throw new AmbiguousMethodCallException(exchange,Arrays.asList(matched,methodInfo));
+          }
+ else {
+            newBody=value;
+            matched=methodInfo;
+          }
+        }
+      }
+ catch (      NoTypeConversionAvailableException e) {
+      }
+    }
+    if (matched != null) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Setting converted body: " + body);
+      }
+      Message in=exchange.getIn();
+      in.setBody(newBody);
+      return matched;
+    }
+  }
+ else {
+    if (operationsWithCustomAnnotation.size() == 1) {
+      MethodInfo answer=operationsWithCustomAnnotation.get(0);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("There are only one method with annotations so we choose it: " + answer);
+      }
+      return answer;
+    }
+    return chooseMethodWithCustomAnnotations(exchange,possibles);
+  }
+  return null;
+}
