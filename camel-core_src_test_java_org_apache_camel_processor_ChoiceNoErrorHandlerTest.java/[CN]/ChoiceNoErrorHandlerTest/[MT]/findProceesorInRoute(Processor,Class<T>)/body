@@ -1,0 +1,47 @@
+{
+  if (route == null) {
+    return null;
+  }
+  if (type.isInstance(route)) {
+    return type.cast(route);
+  }
+  try {
+    Method m=route.getClass().getMethod("getProcessor");
+    Processor child=(Processor)ObjectHelper.invokeMethod(m,route);
+    return findProceesorInRoute(child,type);
+  }
+ catch (  NoSuchMethodException e) {
+  }
+  try {
+    Method m=route.getClass().getMethod("getProcessors");
+    Collection<Processor> children=(Collection<Processor>)ObjectHelper.invokeMethod(m,route);
+    for (    Processor child : children) {
+      T out=findProceesorInRoute(child,type);
+      if (out != null) {
+        return out;
+      }
+    }
+  }
+ catch (  NoSuchMethodException e) {
+  }
+  try {
+    Method m=route.getClass().getMethod("getFilters");
+    List<FilterProcessor> children=(List<FilterProcessor>)ObjectHelper.invokeMethod(m,route);
+    for (    Processor child : children) {
+      T out=findProceesorInRoute(child,type);
+      if (out != null) {
+        return out;
+      }
+    }
+  }
+ catch (  NoSuchMethodException e) {
+  }
+  try {
+    Method m=route.getClass().getMethod("getOtherwise");
+    Processor child=(Processor)ObjectHelper.invokeMethod(m,route);
+    return findProceesorInRoute(child,type);
+  }
+ catch (  NoSuchMethodException e) {
+  }
+  return null;
+}
