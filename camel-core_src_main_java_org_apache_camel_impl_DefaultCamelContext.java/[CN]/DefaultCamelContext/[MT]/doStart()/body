@@ -15,7 +15,17 @@
       addInterceptStrategy(new Delayer(getDelay()));
     }
   }
-  lifecycleStrategy.onContextStart(this);
+  try {
+    lifecycleStrategy.onContextStart(this);
+  }
+ catch (  Exception e) {
+    LOG.warn("Cannot start lifecycleStrategy: " + lifecycleStrategy + ". Cause: "+ e.getMessage());
+    if (lifecycleStrategy instanceof InstrumentationLifecycleStrategy) {
+      LOG.warn("Will fallback to use default (non JMX) lifecycle strategy");
+      lifecycleStrategy=new DefaultLifecycleStrategy();
+      lifecycleStrategy.onContextStart(this);
+    }
+  }
   forceLazyInitialization();
   if (components != null) {
     for (    Component component : components.values()) {
