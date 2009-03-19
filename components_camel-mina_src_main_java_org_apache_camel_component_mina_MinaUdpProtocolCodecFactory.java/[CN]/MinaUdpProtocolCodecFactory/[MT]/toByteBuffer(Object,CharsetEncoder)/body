@@ -1,26 +1,9 @@
 {
-  String value=null;
-  if (message instanceof String) {
-    value=(String)message;
-  }
- else {
-    TypeConverter tc=context.getTypeConverterRegistry().lookup(String.class,message.getClass());
-    if (tc != null) {
-      value=tc.convertTo(String.class,message);
-    }
-  }
-  TypeConverter tc=context.getTypeConverterRegistry().lookup(ByteBuffer.class,message.getClass());
-  if (tc == null && value == null) {
-    try {
-      value=context.getTypeConverter().convertTo(String.class,message);
-    }
- catch (    NoTypeConversionAvailableException e) {
-    }
-  }
+  String value=context.getTypeConverter().convertTo(String.class,message);
   if (value != null) {
     ByteBuffer answer=ByteBuffer.allocate(value.length()).setAutoExpand(false);
     answer.putString(value,encoder);
     return answer;
   }
-  return context.getTypeConverter().convertTo(ByteBuffer.class,message);
+  return context.getTypeConverter().mandatoryConvertTo(ByteBuffer.class,message);
 }

@@ -1,23 +1,15 @@
 {
   Exchange e=getExchange();
   if (e != null) {
-    CamelContext camelContext=e.getContext();
-    if (camelContext != null) {
-      boolean tryConvert=true;
-      TypeConverter converter=camelContext.getTypeConverter();
-      if (body != null && converter instanceof DefaultTypeConverter) {
-        DefaultTypeConverter defaultTypeConverter=(DefaultTypeConverter)converter;
-        tryConvert=!defaultTypeConverter.hasNoConverterFor(type,body.getClass());
-      }
-      if (tryConvert) {
-        try {
-          return converter.convertTo(type,e,body);
-        }
- catch (        NoTypeConversionAvailableException ex) {
-        }
-      }
-      return converter.convertTo(type,this);
+    TypeConverter converter=e.getContext().getTypeConverter();
+    T answer=converter.convertTo(type,getExchange(),body);
+    if (answer != null) {
+      return answer;
+    }
+    answer=converter.convertTo(type,getExchange(),this);
+    if (answer != null) {
+      return answer;
     }
   }
-  return (T)getBody();
+  return null;
 }
