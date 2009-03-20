@@ -3,13 +3,20 @@
   message.setTo(room);
   message.setFrom(endpoint.getUser());
   endpoint.getBinding().populateXmppMessage(message,exchange);
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Sending XMPP message: " + message.getBody());
-  }
   try {
+    if (!connection.isConnected()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Reconnecting to: " + XmppEndpoint.getConnectionMessage(connection));
+      }
+      connection.connect();
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Sending XMPP message: " + message.getBody());
+    }
     chat.sendMessage(message);
+    chat.nextMessage();
   }
  catch (  XMPPException e) {
-    throw new RuntimeXmppException(e);
+    throw new RuntimeExchangeException("Cannot send XMPP message: " + message,exchange,e);
   }
 }
