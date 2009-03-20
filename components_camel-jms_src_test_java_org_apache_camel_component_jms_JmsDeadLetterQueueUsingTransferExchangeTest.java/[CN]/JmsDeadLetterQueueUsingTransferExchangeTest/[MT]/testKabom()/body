@@ -1,0 +1,14 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:dead");
+  mock.expectedBodiesReceived("Kabom");
+  try {
+    template.sendBody("direct:start","Kabom");
+    fail("Should have thrown a RuntimeCamelException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertEquals("Kabom",e.getCause().getMessage());
+  }
+  assertMockEndpointsSatisfied();
+  Exchange dead=mock.getReceivedExchanges().get(0);
+  assertEquals("Kabom",dead.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class).getMessage());
+}

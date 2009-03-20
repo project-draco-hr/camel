@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("seda:dead").disableRedelivery());
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          if ("Kabom".equals(body)) {
+            throw new IllegalArgumentException("Kabom");
+          }
+        }
+      }
+).to("mock:result");
+      from("seda:dead").transform(exceptionMessage()).to(getUri());
+      from(getUri()).to("mock:dead");
+    }
+  }
+;
+}
