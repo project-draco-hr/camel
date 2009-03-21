@@ -1,0 +1,20 @@
+{
+  errorHandler(transactionErrorHandler(required));
+  from(data).to("http://localhost:8080/sender").convertBodyTo(String.class).choice().when().xpath("/reply/status != 'ok'").to("mock:rollback").process(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      throw new IllegalArgumentException("Rollback please");
+    }
+  }
+).otherwise().end();
+  from("jetty:http://localhost:8080/sender").process(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      if (counter++ < 2) {
+        exchange.getOut().setBody(nok);
+      }
+ else {
+        exchange.getOut().setBody(ok);
+      }
+    }
+  }
+);
+}
