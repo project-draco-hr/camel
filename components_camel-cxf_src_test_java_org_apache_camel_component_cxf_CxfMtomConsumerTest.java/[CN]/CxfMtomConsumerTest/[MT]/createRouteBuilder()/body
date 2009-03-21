@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(MTOM_ENDPOINT_URI).process(new Processor(){
+        @SuppressWarnings("unchecked") public void process(        final Exchange exchange) throws Exception {
+          Message in=exchange.getIn();
+          List<?> parameter=in.getBody(List.class);
+          Holder<byte[]> photo=(Holder<byte[]>)parameter.get(0);
+          assertNotNull("The photo should not be null",photo.value);
+          assertEquals("Should get the right request",new String(photo.value,"UTF-8"),"RequestFromCXF");
+          photo.value="ResponseFromCamel".getBytes("UTF-8");
+          Holder<Image> image=(Holder<Image>)parameter.get(1);
+          assertNotNull("We should get the image here",image.value);
+          exchange.getOut().setBody(new Object[]{null,photo,image});
+        }
+      }
+);
+    }
+  }
+;
+}

@@ -1,0 +1,14 @@
+{
+  if (Boolean.getBoolean("java.awt.headless")) {
+    System.out.println("Running headless. Skipping test as Images may not work.");
+    return;
+  }
+  Holder<byte[]> photo=new Holder<byte[]>("RequestFromCXF".getBytes("UTF-8"));
+  Holder<Image> image=new Holder<Image>(getImage("/java.jpg"));
+  Hello port=getPort();
+  SOAPBinding binding=(SOAPBinding)((BindingProvider)port).getBinding();
+  binding.setMTOMEnabled(true);
+  port.detail(photo,image);
+  assertEquals("ResponseFromCamel",new String(photo.value,"UTF-8"));
+  assertNotNull(image.value);
+}
