@@ -1,9 +1,9 @@
 {
+  if (LOG.isDebugEnabled()) {
+    LOG.debug(endpoint + " consumer receiving JMS message: " + message);
+  }
   RuntimeCamelException rce=null;
   try {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(endpoint + " consumer receiving JMS message: " + message);
-    }
     Destination replyDestination=getReplyToDestination(message);
     final JmsExchange exchange=createExchange(message,replyDestination);
     if (eagerLoadingOfProperties) {
@@ -11,19 +11,30 @@
     }
     processor.process(exchange);
     JmsMessage body=null;
+    Exception cause=null;
+    boolean sendReply=false;
     if (exchange.isFailed()) {
       if (exchange.getException() != null) {
-        rce=wrapRuntimeCamelException(exchange.getException());
+        if (endpoint.isTransferException()) {
+          body=null;
+          cause=exchange.getException();
+          sendReply=true;
+        }
+ else {
+          rce=wrapRuntimeCamelException(exchange.getException());
+        }
       }
  else       if (exchange.getFault().getBody() != null) {
         body=exchange.getFault();
+        sendReply=true;
       }
     }
  else {
       body=exchange.getOut(false);
+      sendReply=true;
     }
-    if (rce == null && body != null && !disableReplyTo && exchange.getPattern().isOutCapable()) {
-      sendReply(replyDestination,message,exchange,body);
+    if (sendReply && !disableReplyTo && exchange.getPattern().isOutCapable()) {
+      sendReply(replyDestination,message,exchange,body,cause);
     }
   }
  catch (  Exception e) {

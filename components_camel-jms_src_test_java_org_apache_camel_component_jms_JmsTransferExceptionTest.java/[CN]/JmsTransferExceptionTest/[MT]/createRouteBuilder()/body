@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:dead").maximumRedeliveries(2).delay(0).logStackTrace(false));
+      from(getUri()).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          counter++;
+          String body=exchange.getIn().getBody(String.class);
+          if (body.equals("Kabom")) {
+            throw new IllegalArgumentException("Boom");
+          }
+          exchange.getOut().setBody("Bye World");
+        }
+      }
+);
+    }
+  }
+;
+}

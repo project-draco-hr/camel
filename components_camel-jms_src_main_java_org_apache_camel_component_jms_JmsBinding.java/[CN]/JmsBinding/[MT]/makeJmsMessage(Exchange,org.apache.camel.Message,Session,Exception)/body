@@ -1,0 +1,23 @@
+{
+  Message answer=null;
+  boolean alwaysCopy=(endpoint != null) && endpoint.getConfiguration().isAlwaysCopyMessage();
+  if (!alwaysCopy && camelMessage instanceof JmsMessage) {
+    JmsMessage jmsMessage=(JmsMessage)camelMessage;
+    if (!jmsMessage.shouldCreateNewMessage()) {
+      answer=jmsMessage.getJmsMessage();
+    }
+  }
+  if (answer == null) {
+    if (cause != null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Will create JmsMessage with caused exception: " + cause);
+      }
+      answer=createJmsMessage(cause,session);
+    }
+ else {
+      answer=createJmsMessage(exchange,camelMessage.getBody(),camelMessage.getHeaders(),session,exchange.getContext());
+      appendJmsProperties(answer,exchange,camelMessage);
+    }
+  }
+  return answer;
+}
