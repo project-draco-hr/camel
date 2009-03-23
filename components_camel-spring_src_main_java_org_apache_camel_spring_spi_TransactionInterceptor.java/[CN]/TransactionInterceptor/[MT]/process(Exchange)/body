@@ -28,13 +28,22 @@
  catch (      Exception e) {
         rce=wrapRuntimeCamelException(e);
       }
-      if (rce != null) {
+      if (rce != null || exchange.isRollbackOnly()) {
         delayBeforeRedelivery();
         if (activeTx) {
           status.setRollbackOnly();
-          LOG.debug("Setting transaction to rollbackOnly due to exception being thrown: " + rce.getMessage());
+          if (LOG.isDebugEnabled()) {
+            if (rce != null) {
+              LOG.debug("Setting transaction to rollbackOnly due to exception being thrown: " + rce.getMessage());
+            }
+ else {
+              LOG.debug("Setting transaction to rollbackOnly as Exchange was marked as rollback only");
+            }
+          }
         }
-        throw rce;
+        if (rce != null) {
+          throw rce;
+        }
       }
     }
   }

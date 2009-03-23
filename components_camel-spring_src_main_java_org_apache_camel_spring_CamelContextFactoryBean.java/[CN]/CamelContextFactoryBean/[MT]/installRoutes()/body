@@ -1,22 +1,21 @@
 {
-  if (autowireRouteBuilders != null && autowireRouteBuilders) {
-    Map builders=getApplicationContext().getBeansOfType(RouteBuilder.class,true,true);
-    if (builders != null) {
-      for (      Object builder : builders.values()) {
-        getContext().addRoutes((RouteBuilder)builder);
-      }
+  List<RouteBuilder> builders=new ArrayList<RouteBuilder>();
+  if (routeBuilder != null) {
+    builders.add(routeBuilder);
+  }
+  if (builderRefs != null) {
+    for (    RouteBuilderDefinition builderRef : builderRefs) {
+      RouteBuilder builder=builderRef.createRouteBuilder(getContext());
+      builders.add(builder);
     }
   }
   for (  Routes routeBuilder : additionalBuilders) {
     getContext().addRoutes(routeBuilder);
   }
-  if (routeBuilder != null) {
-    getContext().addRoutes(routeBuilder);
-  }
-  if (builderRefs != null) {
-    for (    RouteBuilderDefinition builderRef : builderRefs) {
-      RouteBuilder builder=builderRef.createRouteBuilder(getContext());
-      getContext().addRoutes(builder);
+  for (  RouteBuilder builder : builders) {
+    if (beanPostProcessor != null) {
+      beanPostProcessor.postProcessBeforeInitialization(builder,builder.toString());
     }
+    getContext().addRoutes(builder);
   }
 }

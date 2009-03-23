@@ -1,0 +1,13 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:dead");
+  mock.expectedMessageCount(1);
+  getMockEndpoint("mock:rollback").expectedMessageCount(2);
+  try {
+    template.requestBody("direct:start","bad");
+    fail("Should have thrown a RollbackExchangeException");
+  }
+ catch (  RuntimeCamelException e) {
+    assertTrue(e.getCause() instanceof RollbackExchangeException);
+  }
+  assertMockEndpointsSatisfied();
+}
