@@ -4,7 +4,14 @@
       jmsMessage.setJMSCorrelationID(ExchangeHelper.convertToType(exchange,String.class,headerValue));
     }
  else     if (headerName.equals("JMSReplyTo") && headerValue != null) {
-      jmsMessage.setJMSReplyTo(ExchangeHelper.convertToType(exchange,Destination.class,headerValue));
+      if (exchange.getPattern().isOutCapable()) {
+        jmsMessage.setJMSReplyTo(ExchangeHelper.convertToType(exchange,Destination.class,headerValue));
+      }
+ else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Exchange is not out capable, Ignoring JMSReplyTo: " + headerValue);
+        }
+      }
     }
  else     if (headerName.equals("JMSType")) {
       jmsMessage.setJMSType(ExchangeHelper.convertToType(exchange,String.class,headerValue));
