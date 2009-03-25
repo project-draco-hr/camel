@@ -1,0 +1,12 @@
+{
+  MockEndpoint resultEndpoint=(MockEndpoint)context.getEndpoint("mock:result");
+  ProducerTemplate template=context.createProducerTemplate();
+  String expectedBody="<matched/>";
+  resultEndpoint.expectedBodiesReceived(expectedBody);
+  template.sendBodyAndHeader("direct:start",expectedBody,"foo","bar");
+  resultEndpoint.assertIsSatisfied();
+  resultEndpoint.reset();
+  resultEndpoint.expectedMessageCount(0);
+  template.sendBodyAndHeader("direct:start","<notMatched/>","foo","notMatchedHeaderValue");
+  resultEndpoint.assertIsSatisfied();
+}
