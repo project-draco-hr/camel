@@ -11,6 +11,9 @@
     outMessage.putAll(responseContext);
   }
   outMessage.put(Client.RESPONSE_CONTEXT,responseContext);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Set out response context = " + responseContext);
+  }
   Object outBody=DefaultCxfBinding.getBodyFromCamel(camelExchange.getOut(),dataFormat);
   if (outBody != null) {
     if (dataFormat == DataFormat.PAYLOAD) {
@@ -19,6 +22,9 @@
       outMessage.put(Header.HEADER_LIST,payload.getHeaders());
     }
  else {
+      if (responseContext.get(Header.HEADER_LIST) != null) {
+        outMessage.put(Header.HEADER_LIST,responseContext.get(Header.HEADER_LIST));
+      }
       MessageContentsList resList=null;
       if (outBody instanceof MessageContentsList) {
         resList=(MessageContentsList)outBody;

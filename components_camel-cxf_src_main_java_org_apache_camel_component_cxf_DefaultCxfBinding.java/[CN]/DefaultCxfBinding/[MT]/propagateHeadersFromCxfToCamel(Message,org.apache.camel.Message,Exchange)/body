@@ -1,0 +1,35 @@
+{
+  Map<String,List<String>> cxfHeaders=(Map)cxfMessage.get(Message.PROTOCOL_HEADERS);
+  Map<String,Object> camelHeaders=camelMessage.getHeaders();
+  if (cxfHeaders != null) {
+    for (    Map.Entry<String,List<String>> entry : cxfHeaders.entrySet()) {
+      if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
+        camelHeaders.put(entry.getKey(),entry.getValue().get(0));
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Populate header from CXF header=" + entry.getKey() + " value="+ entry.getValue());
+        }
+      }
+    }
+  }
+  String key=Message.CONTENT_TYPE;
+  Object value=cxfMessage.get(key);
+  if (value != null && !headerFilterStrategy.applyFilterToExternalHeaders(key,value,exchange)) {
+    camelHeaders.put(CamelTransportConstants.CONTENT_TYPE,value);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Populate header from CXF header=" + key + " value="+ value);
+    }
+  }
+  key=Header.HEADER_LIST;
+  value=cxfMessage.get(key);
+  if (value != null) {
+    if (!headerFilterStrategy.applyFilterToExternalHeaders(key,value,exchange)) {
+      camelHeaders.put(key,value);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Populate header from CXF header=" + key + " value="+ value);
+      }
+    }
+ else {
+      ((List<?>)value).clear();
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  if (!Header.HEADER_LIST.equals(key) || value == null) {
+    return false;
+  }
+  if (!relayHeaders) {
+    return true;
+  }
+  if (relayAllMessageHeaders) {
+    return false;
+  }
+  MessageHeaderFilter messageHeaderfilter=getMessageHeaderFilter(exchange);
+  if (messageHeaderfilter == null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("No CXF Binding namespace can be resolved.  Message headers are intact.");
+    }
+    return false;
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("messageHeaderfilter = " + messageHeaderfilter);
+  }
+  try {
+    messageHeaderfilter.filter(direction,(List<Header>)value);
+  }
+ catch (  Throwable t) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Failed to cast value to Header<List> due to " + t.toString(),t);
+    }
+  }
+  return false;
+}
