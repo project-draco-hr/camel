@@ -1,13 +1,14 @@
 {
   ObjectHelper.notEmpty(uri,"uri");
   Endpoint answer;
+  String scheme=null;
 synchronized (endpoints) {
     answer=endpoints.get(uri);
     if (answer == null) {
       try {
         String splitURI[]=ObjectHelper.splitOnCharacter(uri,":",2);
         if (splitURI[1] != null) {
-          String scheme=splitURI[0];
+          scheme=splitURI[0];
           Component component=getComponent(scheme);
           if (component != null) {
             answer=component.createEndpoint(uri);
@@ -29,6 +30,9 @@ synchronized (endpoints) {
         throw new ResolveEndpointFailedException(uri,e);
       }
     }
+  }
+  if (answer == null && scheme != null) {
+    throw new ResolveEndpointFailedException(uri,"No component found with scheme: " + scheme);
   }
   return answer;
 }
