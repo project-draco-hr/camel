@@ -3,11 +3,20 @@
     CachedOutputStream cos=new CachedOutputStream(exchange.getContext().getProperties());
     IOHelper.copyAndCloseInput(source.getInputStream(),cos);
     streamCache=cos.getStreamCache();
+    readCache=null;
     setSystemId(source.getSystemId());
+    stream=(InputStream)streamCache;
   }
-  if (source.getReader() != null) {
+ else   if (source.getReader() != null) {
     String data=exchange.getContext().getTypeConverter().convertTo(String.class,source.getReader());
     readCache=new ReaderCache(data);
+    streamCache=null;
     setReader(readCache);
+    stream=new ByteArrayInputStream(data.getBytes());
+  }
+ else {
+    streamCache=null;
+    readCache=null;
+    stream=null;
   }
 }

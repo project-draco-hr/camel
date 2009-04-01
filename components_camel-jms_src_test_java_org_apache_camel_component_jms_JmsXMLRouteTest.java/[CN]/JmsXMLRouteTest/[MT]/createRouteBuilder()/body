@@ -1,14 +1,25 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("direct:start").to("activemq:queue:foo");
-      from("activemq:queue:foo").process(new Processor(){
+      from("direct:object").to("activemq:queue:object?jmsMessageType=Object");
+      from("direct:bytes").to("activemq:queue:bytes?jmsMessageType=Bytes");
+      from("direct:default").to("activemq:queue:default");
+      from("activemq:queue:object").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           Object body=exchange.getIn().getBody();
           assertIsInstanceOf(Source.class,body);
         }
       }
-).choice().when().xpath("/person/city = 'London'").to("mock:london").when().xpath("/person/city = 'Tampa'").to("mock:tampa").otherwise().to("mock:unknown").end();
+).to("seda:choice");
+      from("activemq:queue:bytes").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Object body=exchange.getIn().getBody();
+          assertIsInstanceOf(byte[].class,body);
+        }
+      }
+).to("seda:choice");
+      from("activemq:queue:default").to("seda:choice");
+      from("seda:choice").choice().when().xpath("/person/city = 'London'").to("mock:london").when().xpath("/person/city = 'Tampa'").to("mock:tampa").otherwise().to("mock:unknown").end();
     }
   }
 ;
