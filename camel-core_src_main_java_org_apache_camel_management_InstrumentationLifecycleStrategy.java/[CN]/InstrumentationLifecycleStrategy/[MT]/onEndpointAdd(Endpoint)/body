@@ -2,11 +2,15 @@
   if (!initialized) {
     return;
   }
-  try {
-    ManagedEndpoint me=new ManagedEndpoint(endpoint);
-    agent.register(me,getNamingStrategy().getObjectName(me));
+  Class annotationClass=resolveManagedAnnotation(endpoint);
+  if (annotationClass == null) {
+    registerEndpointAsManagedEndpoint(endpoint);
+    return;
   }
- catch (  JMException e) {
-    LOG.warn("Could not register Endpoint MBean",e);
+  Object annotation=endpoint.getClass().getAnnotation(annotationClass);
+  if (annotation == null) {
+    registerEndpointAsManagedEndpoint(endpoint);
+    return;
   }
+  attemptToRegisterManagedResource(endpoint,annotation);
 }
