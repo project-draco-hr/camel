@@ -1,0 +1,18 @@
+{
+  for (  Map.Entry<String,DataHandler> entry : camelMessage.getAttachments().entrySet()) {
+    String attachmentFilename=entry.getKey();
+    DataHandler handler=entry.getValue();
+    if (handler != null) {
+      if (shouldOutputAttachment(camelMessage,attachmentFilename,handler)) {
+        BodyPart messageBodyPart=new MimeBodyPart();
+        messageBodyPart.setDataHandler(handler);
+        if (attachmentFilename.toLowerCase().startsWith("cid:")) {
+          messageBodyPart.addHeader("Content-ID",attachmentFilename.substring(4));
+        }
+        messageBodyPart.setFileName(attachmentFilename);
+        messageBodyPart.setDisposition(partDisposition);
+        multipart.addBodyPart(messageBodyPart);
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  MimeMultipart multipartAlternative=new MimeMultipart("alternative");
+  mimeMessage.setContent(multipartAlternative);
+  BodyPart plainText=new MimeBodyPart();
+  plainText.setText(getAlternativeBody(configuration,camelMessage));
+  multipartAlternative.addBodyPart(plainText);
+  if (!camelMessage.hasAttachments()) {
+    addBodyToMultipart(camelMessage,configuration,multipartAlternative);
+  }
+ else {
+    if (!configuration.isUseInlineAttachments()) {
+      BodyPart mixedAttachments=new MimeBodyPart();
+      mixedAttachments.setContent(createMixedMultipartAttachments(camelMessage,configuration));
+      multipartAlternative.addBodyPart(mixedAttachments);
+    }
+ else {
+      MimeMultipart multipartRelated=new MimeMultipart("related");
+      BodyPart related=new MimeBodyPart();
+      related.setContent(multipartRelated);
+      multipartAlternative.addBodyPart(related);
+      addBodyToMultipart(camelMessage,configuration,multipartRelated);
+      addAttachmentsToMultipart(camelMessage,multipartRelated,Part.INLINE);
+    }
+  }
+}

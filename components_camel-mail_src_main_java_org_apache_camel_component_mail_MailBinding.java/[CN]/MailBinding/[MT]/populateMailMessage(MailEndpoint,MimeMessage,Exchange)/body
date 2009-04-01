@@ -13,16 +13,21 @@
     String from=endpoint.getConfiguration().getFrom();
     mimeMessage.setFrom(new InternetAddress(from));
   }
-  if (exchange.getIn().hasAttachments()) {
-    appendAttachmentsFromCamel(mimeMessage,exchange.getIn(),endpoint.getConfiguration());
+  if (hasAlternativeBody(endpoint.getConfiguration(),exchange.getIn())) {
+    createMultipartAlternativeMessage(mimeMessage,exchange.getIn(),endpoint.getConfiguration());
   }
  else {
-    if ("text/html".equals(endpoint.getConfiguration().getContentType())) {
-      DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),"text/html");
-      mimeMessage.setDataHandler(new DataHandler(ds));
+    if (exchange.getIn().hasAttachments()) {
+      appendAttachmentsFromCamel(mimeMessage,exchange.getIn(),endpoint.getConfiguration());
     }
  else {
-      mimeMessage.setText(exchange.getIn().getBody(String.class));
+      if ("text/html".equals(endpoint.getConfiguration().getContentType())) {
+        DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),"text/html");
+        mimeMessage.setDataHandler(new DataHandler(ds));
+      }
+ else {
+        mimeMessage.setText(exchange.getIn().getBody(String.class));
+      }
     }
   }
 }
