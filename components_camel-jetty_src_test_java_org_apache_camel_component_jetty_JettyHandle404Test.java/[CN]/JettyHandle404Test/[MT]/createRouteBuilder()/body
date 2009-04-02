@@ -1,0 +1,31 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(noErrorHandler());
+      from("direct:start").enrich("direct:tohttp",new AggregationStrategy(){
+        public Exchange aggregate(        Exchange original,        Exchange resource){
+          Integer code=resource.getOut().getHeader(HttpConstants.HTTP_RESPONSE_CODE,Integer.class);
+          assertEquals(404,code.intValue());
+          return resource;
+        }
+      }
+).to("mock:result");
+      from("direct:tohttp").tryBlock().to("http://localhost:8123/myserver?user=Camel").handle(HttpOperationFailedException.class).process(new Processor(){
+        public void process(        Exchange exchange){
+          HttpOperationFailedException cause=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,HttpOperationFailedException.class);
+          exchange.getOut().setHeader(HttpConstants.HTTP_RESPONSE_CODE,cause.getStatusCode());
+          exchange.getOut().setBody(cause.getResponseBody());
+        }
+      }
+).end();
+      from("jetty://http://localhost:8123/myserver").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody("Page not found");
+          exchange.getOut().setHeader(HttpConstants.HTTP_RESPONSE_CODE,404);
+        }
+      }
+);
+    }
+  }
+;
+}
