@@ -16,40 +16,15 @@
     if (LOG.isDebugEnabled()) {
       LOG.debug("Http responseCode: " + responseCode);
     }
-    if (responseCode >= 100 && responseCode < 300) {
-      Message answer=exchange.getOut(true);
-      answer.setHeaders(in.getHeaders());
-      answer.setHeader(HttpConstants.HTTP_RESPONSE_CODE,responseCode);
-      answer.setBody(extractResponseBody(method,exchange));
-      Header[] headers=method.getResponseHeaders();
-      for (      Header header : headers) {
-        String name=header.getName();
-        String value=header.getValue();
-        if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
-          answer.setHeader(name,value);
-        }
-      }
+    if (!throwException) {
+      populateResponse(exchange,method,in,strategy,responseCode);
     }
  else {
-      HttpOperationFailedException exception=null;
-      Header[] headers=method.getResponseHeaders();
-      InputStream is=extractResponseBody(method,exchange);
-      if (responseCode >= 300 && responseCode < 400) {
-        String redirectLocation;
-        Header locationHeader=method.getResponseHeader("location");
-        if (locationHeader != null) {
-          redirectLocation=locationHeader.getValue();
-          exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),redirectLocation,headers,is);
-        }
- else {
-          exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),headers,is);
-        }
+      if (responseCode >= 100 && responseCode < 300) {
+        populateResponse(exchange,method,in,strategy,responseCode);
       }
  else {
-        exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),headers,is);
-      }
-      if (exception != null) {
-        throw exception;
+        throw populateHttpOperationFailedException(exchange,method,responseCode);
       }
     }
   }
