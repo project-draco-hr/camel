@@ -1,0 +1,14 @@
+{
+  Exception e=exchange.getException();
+  exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
+  OnExceptionDefinition exceptionPolicy=getExceptionPolicy(exchange,e);
+  if (exceptionPolicy != null) {
+    Predicate handledPredicate=exceptionPolicy.getHandledPolicy();
+    Processor processor=exceptionPolicy.getErrorHandler();
+    if (processor != null) {
+      prepareExchangeBeforeOnException(exchange);
+      deliverToFaultProcessor(exchange,processor);
+      prepareExchangeAfterOnException(exchange,handledPredicate);
+    }
+  }
+}
