@@ -1,0 +1,54 @@
+{
+  if (output == null) {
+    return;
+  }
+  transactionTemplate.execute(new TransactionCallbackWithoutResult(){
+    protected void doInTransactionWithoutResult(    TransactionStatus status){
+      RuntimeCamelException rce;
+      boolean activeTx=TransactionSynchronizationManager.isActualTransactionActive();
+      if (!activeTx) {
+        activeTx=status.isNewTransaction() && !status.isCompleted();
+        if (!activeTx) {
+          if (DefaultTransactionStatus.class.isAssignableFrom(status.getClass())) {
+            DefaultTransactionStatus defStatus=DefaultTransactionStatus.class.cast(status);
+            activeTx=defStatus.hasTransaction() && !status.isCompleted();
+          }
+        }
+      }
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Is actual transaction active: " + activeTx);
+      }
+      if (activeTx) {
+        exchange.setProperty(Exchange.TRANSACTED,Boolean.TRUE);
+      }
+      try {
+        output.process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+      if (exchange.getException() != null) {
+        handleException(exchange);
+      }
+      if (exchange.getException() != null || exchange.isRollbackOnly()) {
+        rce=wrapRuntimeCamelException(exchange.getException());
+        if (activeTx) {
+          status.setRollbackOnly();
+          if (LOG.isDebugEnabled()) {
+            if (rce != null) {
+              LOG.debug("Setting transaction to rollbackOnly due to exception being thrown: " + rce.getMessage());
+            }
+ else {
+              LOG.debug("Setting transaction to rollbackOnly as Exchange was marked as rollback only");
+            }
+          }
+        }
+        delayBeforeRedelivery();
+        if (rce != null) {
+          throw rce;
+        }
+      }
+    }
+  }
+);
+}
