@@ -50,28 +50,8 @@
     if (onExceptions != null) {
       route.getOutputs().addAll(onExceptions);
     }
-    for (    InterceptDefinition intercept : intercepts) {
-      List<ProcessorDefinition<?>> outputs=new ArrayList<ProcessorDefinition<?>>();
-      List<ProcessorDefinition<?>> exceptionHandlers=new ArrayList<ProcessorDefinition<?>>();
-      for (      ProcessorDefinition output : route.getOutputs()) {
-        if (output instanceof OnExceptionDefinition) {
-          exceptionHandlers.add(output);
-        }
- else {
-          outputs.add(output);
-        }
-      }
-      route.clearOutput();
-      route.getOutputs().addAll(exceptionHandlers);
-      intercept.afterPropertiesSet();
-      InterceptDefinition proxy=intercept.createProxy();
-      route.addOutput(proxy);
-      route.pushBlock(proxy.getProceed());
-      ProceedDefinition proceed=ProcessorDefinitionHelper.findFirstTypeInOutputs(proxy.getOutputs(),ProceedDefinition.class);
-      if (proceed != null) {
-        proceed.getOutputs().addAll(outputs);
-      }
-    }
+    initInterceptors(route);
+    initPolicies(route);
   }
   if (dataFormats != null) {
     getContext().setDataFormats(dataFormats.asMap());
