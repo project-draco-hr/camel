@@ -1,0 +1,31 @@
+{
+  onException(HttpOperationFailedException.class).onWhen(new Predicate(){
+    public boolean matches(    Exchange exchange){
+      HttpOperationFailedException e=exchange.getException(HttpOperationFailedException.class);
+      return e != null && e.getStatusCode() == 404;
+    }
+  }
+).handled(true).to("mock:404").transform(constant(noAccess));
+  from("activemq:queue:data").policy(required).to("http://localhost:8080/sender").convertBodyTo(String.class).choice().when().xpath("/reply/status != 'ok'").to("mock:rollback").rollback().otherwise().end();
+  from("jetty:http://localhost:8080/sender").process(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      if (counter++ < 1) {
+        exchange.getOut().setHeader(HttpConstants.HTTP_RESPONSE_CODE,500);
+        exchange.getOut().setBody("Damn some internal server error");
+        return;
+      }
+      String user=exchange.getIn().getHeader("user",String.class);
+      if ("unknown".equals(user)) {
+        exchange.getOut().setHeader(HttpConstants.HTTP_RESPONSE_CODE,404);
+        exchange.getOut().setBody("Page does not exists");
+        return;
+      }
+ else       if ("guest".equals(user)) {
+        exchange.getOut().setBody(nok);
+        return;
+      }
+      exchange.getOut().setBody(ok);
+    }
+  }
+);
+}
