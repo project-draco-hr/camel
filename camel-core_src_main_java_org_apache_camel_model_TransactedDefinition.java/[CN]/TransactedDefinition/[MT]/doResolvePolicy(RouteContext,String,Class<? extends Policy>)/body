@@ -1,0 +1,60 @@
+{
+  Policy answer=null;
+  if (ObjectHelper.isNotEmpty(ref)) {
+    answer=routeContext.lookup(ref,Policy.class);
+  }
+  if (answer == null && type != null) {
+    Map types=routeContext.lookupByType(type);
+    if (types.size() == 1) {
+      Object found=types.values().iterator().next();
+      if (type.isInstance(found)) {
+        return type.cast(found);
+      }
+    }
+  }
+  if (answer == null && type == TransactedPolicy.class) {
+    answer=routeContext.lookup(PROPAGATION_REQUIRED,TransactedPolicy.class);
+  }
+  if (answer == null && type == TransactedPolicy.class) {
+    Class tmClazz=routeContext.getCamelContext().getClassResolver().resolveClass("org.springframework.transaction.PlatformTransactionManager");
+    if (tmClazz != null) {
+      Map<String,Object> maps=routeContext.lookupByType(tmClazz);
+      if (maps.size() == 1) {
+        Object transactionManager=maps.values().iterator().next();
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("One instance of PlatformTransactionManager found in registry: " + transactionManager);
+        }
+        Class txClazz=routeContext.getCamelContext().getClassResolver().resolveClass("org.apache.camel.spring.spi.SpringTransactionPolicy");
+        if (txClazz != null) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating a new temporary SpringTransactionPolicy using the PlatformTransactionManager: " + transactionManager);
+          }
+          TransactedPolicy txPolicy=ObjectHelper.newInstance(txClazz,TransactedPolicy.class);
+          Method method;
+          try {
+            method=txClazz.getMethod("setTransactionManager",tmClazz);
+          }
+ catch (          NoSuchMethodException e) {
+            throw new RuntimeCamelException("Cannot get method setTransactionManager(PlatformTransactionManager) on class: " + txClazz);
+          }
+          ObjectHelper.invokeMethod(method,txPolicy,transactionManager);
+          return txPolicy;
+        }
+ else {
+          LOG.warn("Cannot create a transacted policy as camel-spring.jar is not on the classpath!");
+        }
+      }
+ else {
+        if (LOG.isDebugEnabled()) {
+          if (maps.isEmpty()) {
+            LOG.debug("No PlatformTransactionManager found in registry.");
+          }
+ else {
+            LOG.debug("Found " + maps.size() + " PlatformTransactionManager in registry. "+ "Cannot determine which one to use. Please configure a TransactionTemplate on the policy");
+          }
+        }
+      }
+    }
+  }
+  return answer;
+}
