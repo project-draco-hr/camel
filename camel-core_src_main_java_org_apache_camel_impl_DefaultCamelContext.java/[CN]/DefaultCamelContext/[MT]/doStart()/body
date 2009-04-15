@@ -1,5 +1,11 @@
 {
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is starting");
+  if (getStreamCache()) {
+    if (StreamCaching.getStreamCache(this) == null) {
+      LOG.debug("StreamCaching is enabled");
+      addInterceptStrategy(new StreamCaching());
+    }
+  }
   if (getTrace()) {
     if (Tracer.getTracer(this) == null) {
       Tracer tracer=new Tracer();
@@ -7,11 +13,13 @@
       if (formatter != null) {
         tracer.setFormatter(formatter);
       }
+      LOG.debug("Tracing is enabled");
       addInterceptStrategy(tracer);
     }
   }
   if (getDelay() > 0) {
     if (Delayer.getDelayer(this) == null) {
+      LOG.debug("Delayer is enabled");
       addInterceptStrategy(new Delayer(getDelay()));
     }
   }

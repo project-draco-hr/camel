@@ -14,14 +14,17 @@
     Processor processor=unwrap(consumerRoute.getProcessor());
     LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
     if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-      processor=loggingProcessor.getOutput();
+      StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,loggingProcessor.getOutput());
+      processor=cache.getProcessor();
     }
  else {
       InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,loggingProcessor.getOutput());
-      processor=interceptor.getProcessor();
+      StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,interceptor.getProcessor());
+      processor=cache.getProcessor();
     }
     FilterProcessor filterProcessor=assertIsInstanceOf(FilterProcessor.class,processor);
-    SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,filterProcessor.getProcessor());
+    StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,filterProcessor.getProcessor());
+    SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,cache.getProcessor());
     log.debug("Found sendProcessor: " + sendProcessor);
   }
 }
