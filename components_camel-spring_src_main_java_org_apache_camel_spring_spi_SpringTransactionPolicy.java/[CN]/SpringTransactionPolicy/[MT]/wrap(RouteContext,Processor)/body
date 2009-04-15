@@ -4,10 +4,12 @@
   ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
   if (builder instanceof ErrorHandlerBuilderRef) {
     ErrorHandlerBuilderRef ref=(ErrorHandlerBuilderRef)builder;
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Looking up ErrorHandlerBuilder with ref: " + ref.getRef());
+    if (ref.isErrorHandlerBuilderConfigued()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Looking up ErrorHandlerBuilder with ref: " + ref.getRef());
+      }
+      builder=ref.lookupErrorHandlerBuilder(routeContext);
     }
-    builder=ref.lookupErrorHandlerBuilder(routeContext);
   }
   if (builder instanceof TransactionErrorHandlerBuilder) {
     TransactionErrorHandlerBuilder txBuilder=(TransactionErrorHandlerBuilder)builder;
@@ -31,6 +33,7 @@
     }
     answer.setExceptionPolicy(txBuilder.getExceptionPolicyStrategy());
     txBuilder.configure(answer);
+    routeContext.getRoute().setErrorHandlerBuilder(txBuilder);
   }
   return answer;
 }

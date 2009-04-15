@@ -4,11 +4,11 @@
       errorHandler(noErrorHandler());
       Processor clientProc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
-          InputStream is=(InputStream)exchange.getIn().getBody();
+          assertIsInstanceOf(InputStream.class,exchange.getIn().getBody());
         }
       }
 ;
-      from("direct:start").to("http://localhost:9080/hello").process(clientProc).intercept(new StreamCachingInterceptor()).convertBodyTo(String.class).to("mock:a");
+      from("direct:start").to("http://localhost:9080/hello").process(clientProc).convertBodyTo(String.class).to("mock:a");
       Processor proc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
           ByteArrayInputStream bis=new ByteArrayInputStream("<b>Hello World</b>".getBytes());
@@ -17,7 +17,6 @@
       }
 ;
       from("jetty:http://localhost:9080/hello").process(proc);
-      noStreamCaching();
     }
   }
 ;

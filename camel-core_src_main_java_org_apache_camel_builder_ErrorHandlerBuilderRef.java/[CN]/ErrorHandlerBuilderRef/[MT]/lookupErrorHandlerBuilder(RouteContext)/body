@@ -1,6 +1,23 @@
 {
   if (handler == null) {
-    handler=routeContext.lookup(ref,ErrorHandlerBuilder.class);
+    if (!isErrorHandlerBuilderConfigued()) {
+      handler=routeContext.getRoute().getErrorHandlerBuilder();
+      if (handler == null) {
+        handler=routeContext.lookup(routeContext.getRoute().getErrorHandlerRef(),ErrorHandlerBuilder.class);
+      }
+      if (handler == null) {
+        handler=new DefaultErrorHandlerBuilder();
+      }
+      if (handler instanceof ErrorHandlerBuilderRef) {
+        ErrorHandlerBuilderRef other=(ErrorHandlerBuilderRef)handler;
+        if (!other.isErrorHandlerBuilderConfigued()) {
+          handler=new DefaultErrorHandlerBuilder();
+        }
+      }
+    }
+ else {
+      handler=routeContext.lookup(ref,ErrorHandlerBuilder.class);
+    }
     ObjectHelper.notNull(handler,"error handler '" + ref + "'");
     List<OnExceptionDefinition> list=getErrorHandlers();
     for (    OnExceptionDefinition exceptionType : list) {

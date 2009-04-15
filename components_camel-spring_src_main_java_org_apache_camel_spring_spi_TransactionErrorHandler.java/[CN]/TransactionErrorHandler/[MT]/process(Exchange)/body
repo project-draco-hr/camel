@@ -4,7 +4,7 @@
   }
   transactionTemplate.execute(new TransactionCallbackWithoutResult(){
     protected void doInTransactionWithoutResult(    TransactionStatus status){
-      RuntimeCamelException rce;
+      TransactedRuntimeCamelException rce;
       boolean activeTx=TransactionSynchronizationManager.isActualTransactionActive();
       if (!activeTx) {
         activeTx=status.isNewTransaction() && !status.isCompleted();
@@ -28,10 +28,17 @@
         exchange.setException(e);
       }
       if (exchange.getException() != null) {
-        handleException(exchange);
+        boolean handled=false;
+        if (exchange.getException() instanceof TransactedRuntimeCamelException) {
+          TransactedRuntimeCamelException trce=exchange.getException(TransactedRuntimeCamelException.class);
+          handled=trce.isHandled();
+        }
+        if (!handled) {
+          handleException(exchange);
+        }
       }
       if (exchange.getException() != null || exchange.isRollbackOnly()) {
-        rce=wrapRuntimeCamelException(exchange.getException());
+        rce=wrapTransactedRuntimeException(exchange.getException());
         if (activeTx) {
           status.setRollbackOnly();
           if (LOG.isDebugEnabled()) {
