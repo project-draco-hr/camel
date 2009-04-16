@@ -1,25 +1,49 @@
 {
-  while (true) {
-    try {
-      Thread.sleep(batchTimeout);
-      queue.drainTo(collection,batchSize);
-    }
- catch (    InterruptedException e) {
-      if (cancelRequested) {
-        return;
+  queueLock.lock();
+  try {
+    do {
+      try {
+        if (!exchangeEnqueued) {
+          exchangeEnqueuedCondition.await(batchTimeout,TimeUnit.MILLISECONDS);
+        }
+        if (!exchangeEnqueued) {
+          drainQueueTo(collection,batchSize);
+        }
+ else {
+          exchangeEnqueued=false;
+          while (isInBatchCompleted(queue.size())) {
+            drainQueueTo(collection,batchSize);
+          }
+          queueLock.unlock();
+          try {
+            if (!isOutBatchCompleted()) {
+              continue;
+            }
+          }
+  finally {
+            queueLock.lock();
+          }
+        }
+        queueLock.unlock();
+        try {
+          try {
+            sendExchanges();
+          }
+ catch (          Exception e) {
+            getExceptionHandler().handleException(e);
+          }
+        }
+  finally {
+          queueLock.lock();
+        }
       }
-      while (isInBatchCompleted(queue.size())) {
-        queue.drainTo(collection,batchSize);
-      }
-      if (!isOutBatchCompleted()) {
-        continue;
+ catch (      InterruptedException e) {
+        break;
       }
     }
-    try {
-      sendExchanges();
-    }
- catch (    Exception e) {
-      getExceptionHandler().handleException(e);
-    }
+ while (true);
+  }
+  finally {
+    queueLock.unlock();
   }
 }
