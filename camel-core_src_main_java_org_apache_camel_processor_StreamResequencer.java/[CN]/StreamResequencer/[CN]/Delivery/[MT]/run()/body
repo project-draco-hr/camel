@@ -1,12 +1,16 @@
 {
   while (true) {
     try {
-      Thread.sleep(DELIVERY_ATTEMPT_INTERVAL);
+      deliveryRequestLock.lock();
+      try {
+        deliveryRequestCondition.await(DELIVERY_ATTEMPT_INTERVAL,TimeUnit.MILLISECONDS);
+      }
+  finally {
+        deliveryRequestLock.unlock();
+      }
     }
  catch (    InterruptedException e) {
-      if (cancelRequested) {
-        return;
-      }
+      break;
     }
     try {
       engine.deliver();
