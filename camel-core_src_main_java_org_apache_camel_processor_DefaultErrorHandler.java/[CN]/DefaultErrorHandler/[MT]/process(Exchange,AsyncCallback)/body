@@ -1,7 +1,14 @@
 {
-  return outputAsync.process(exchange,new AsyncCallback(){
+  return output.process(exchange,new AsyncCallback(){
     public void done(    boolean sync){
-      if (exchange.getException() != null && !ExchangeHelper.isFailureHandled(exchange)) {
+      boolean handle=true;
+      if (exchange.isTransacted() && !supportTransacted()) {
+        handle=false;
+        if (log.isDebugEnabled()) {
+          log.debug("This error handler does not support transacted exchanges." + " Bypassing this error handler: " + this + " for exchangeId: "+ exchange.getExchangeId());
+        }
+      }
+      if (handle && exchange.getException() != null && !ExchangeHelper.isFailureHandled(exchange)) {
         handleException(exchange);
       }
       callback.done(sync);

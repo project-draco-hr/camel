@@ -1,0 +1,60 @@
+{
+  while (true) {
+    if (!isRunAllowed()) {
+      if (log.isDebugEnabled()) {
+        log.debug("Rejected execution as we are not started for exchange: " + exchange);
+      }
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      callback.done(data.sync);
+      return data.sync;
+    }
+    if (exchange.isTransacted() && !supportTransacted() && exchange.getException() != null) {
+      if (log.isDebugEnabled()) {
+        log.debug("This error handler does not support transacted exchanges." + " Bypassing this error handler: " + this + " for exchangeId: "+ exchange.getExchangeId());
+      }
+      return data.sync;
+    }
+    if (exchange.getException() != null) {
+      handleException(exchange,data);
+    }
+    boolean shouldRedeliver=shouldRedeliver(exchange,data);
+    if (!shouldRedeliver) {
+      return deliverToFaultProcessor(exchange,callback,data);
+    }
+    if (data.redeliveryCounter > 0) {
+      prepareExchangeForRedelivery(exchange);
+      try {
+        data.redeliveryDelay=data.currentRedeliveryPolicy.sleep(data.redeliveryDelay,data.redeliveryCounter);
+      }
+ catch (      InterruptedException e) {
+        log.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
+        continue;
+      }
+      deliverToRedeliveryProcessor(exchange,callback,data);
+    }
+    boolean sync=outputAsync.process(exchange,new AsyncCallback(){
+      public void done(      boolean sync){
+        if (sync) {
+          return;
+        }
+        data.sync=false;
+        if (exchange.getException() != null && !ExchangeHelper.isFailureHandled(exchange)) {
+          asyncProcess(exchange,callback,data);
+        }
+ else {
+          callback.done(sync);
+        }
+      }
+    }
+);
+    if (!sync) {
+      return false;
+    }
+    if (exchange.getException() == null || ExchangeHelper.isFailureHandled(exchange)) {
+      callback.done(true);
+      return true;
+    }
+  }
+}

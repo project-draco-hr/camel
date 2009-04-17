@@ -11,10 +11,12 @@
       builder=ref.lookupErrorHandlerBuilder(routeContext);
     }
   }
-  if (builder instanceof TransactionErrorHandlerBuilder) {
-    TransactionErrorHandlerBuilder txBuilder=(TransactionErrorHandlerBuilder)builder;
-    answer.setExceptionPolicy(txBuilder.getExceptionPolicyStrategy());
-    txBuilder.configure(answer);
+  if (builder != null && builder.supportTransacted()) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("The ErrorHandlerBuilder configured is already a TransactionErrorHandlerBuilder: " + builder);
+    }
+    answer.setExceptionPolicy(builder.getExceptionPolicyStrategy());
+    builder.configure(answer);
   }
  else {
     if (LOG.isDebugEnabled()) {
