@@ -1,6 +1,9 @@
 {
   for (  CatchProcessor catchClause : catchClauses) {
-    if (catchClause.catches(e)) {
+    if (catchClause.catches(exchange,e)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("This TryProcessor handles the exception: " + e.getClass().getName() + " caused by: "+ e.getMessage());
+      }
       Exchange localExchange=exchange.copy();
       localExchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
       localExchange.setException(null);
@@ -9,5 +12,8 @@
       ExchangeHelper.copyResults(exchange,localExchange);
       return;
     }
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("This TryProcessor does not handle the exception: " + e.getClass().getName() + " caused by: "+ e.getMessage());
   }
 }
