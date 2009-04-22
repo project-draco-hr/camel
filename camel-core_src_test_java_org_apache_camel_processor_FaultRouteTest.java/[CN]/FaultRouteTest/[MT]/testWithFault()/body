@@ -1,5 +1,4 @@
 {
-  shouldWork=false;
   a.whenExchangeReceived(1,new Processor(){
     public void process(    Exchange exchange) throws Exception {
       exchange.getFault().setBody("fault");
@@ -8,12 +7,14 @@
 );
   a.expectedMessageCount(1);
   b.expectedMessageCount(0);
-  c.expectedMessageCount(0);
-  template.sendBody("direct:start","in");
-  MockEndpoint.assertIsSatisfied(a,b,c);
-  List<Exchange> list=a.getReceivedExchanges();
-  Exchange exchange=list.get(0);
-  Message fault=exchange.getFault();
-  assertNotNull("Should have a fault on A",fault);
-  assertEquals("Fault body","fault",fault.getBody());
+  Exchange response=template.request("direct:start",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("in");
+    }
+  }
+);
+  assertMockEndpointsSatisfied();
+  assertNull("Fault should be removed",response.getFault(false));
+  assertNotNull("Should have exception",response.getException());
+  assertEquals("fault",response.getException().getMessage());
 }

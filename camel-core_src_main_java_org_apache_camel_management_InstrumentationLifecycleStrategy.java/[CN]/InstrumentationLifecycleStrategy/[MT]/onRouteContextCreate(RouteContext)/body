@@ -21,29 +21,4 @@ catch (    JMException e) {
   }
   routeContext.addInterceptStrategy(new InstrumentationInterceptStrategy(registeredCounters));
   routeContext.setErrorHandlerWrappingStrategy(new DefaultErrorHandlerWrappingStrategy(routeContext));
-  RouteDefinition routeType=routeContext.getRoute();
-  if (routeType.getInputs() != null && !routeType.getInputs().isEmpty()) {
-    if (routeType.getInputs().size() > 1) {
-      LOG.warn("Addding InstrumentationProcessor to first input only.");
-    }
-    Endpoint endpoint=routeType.getInputs().get(0).getEndpoint();
-    List<ProcessorDefinition> exceptionHandlers=new ArrayList<ProcessorDefinition>();
-    List<ProcessorDefinition> outputs=new ArrayList<ProcessorDefinition>();
-    for (    ProcessorDefinition output : routeType.getOutputs()) {
-      if (output instanceof OnExceptionDefinition) {
-        exceptionHandlers.add(output);
-      }
- else {
-        outputs.add(output);
-      }
-    }
-    routeType.clearOutput();
-    routeType.getOutputs().addAll(exceptionHandlers);
-    InstrumentationProcessor processor=new InstrumentationProcessor();
-    routeType.intercept(processor);
-    for (    ProcessorDefinition processorType : outputs) {
-      routeType.addOutput(processorType);
-    }
-    interceptorMap.put(endpoint,processor);
-  }
 }

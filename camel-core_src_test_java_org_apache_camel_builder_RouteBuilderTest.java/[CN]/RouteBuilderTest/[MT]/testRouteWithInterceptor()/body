@@ -6,6 +6,11 @@
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
     Processor processor=getProcessorWithoutErrorHandler(route);
+    Pipeline line=assertIsInstanceOf(Pipeline.class,processor);
+    assertEquals(3,line.getProcessors().size());
+    List<Processor> processors=new ArrayList<Processor>(line.getProcessors());
+    processor=unwrapErrorHandler(processors.get(2));
+    processor=unwrapDelegateProcessor(processor);
     assertIsInstanceOf(SendProcessor.class,processor);
     assertSendTo(processor,"seda:d");
   }
