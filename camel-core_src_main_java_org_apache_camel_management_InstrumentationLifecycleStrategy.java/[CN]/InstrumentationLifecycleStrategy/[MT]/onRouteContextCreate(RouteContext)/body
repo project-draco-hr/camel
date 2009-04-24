@@ -20,4 +20,19 @@ catch (    JMException e) {
     }
   }
   routeContext.addInterceptStrategy(new InstrumentationInterceptStrategy(registeredCounters));
+  final Endpoint endpoint=routeContext.getEndpoint();
+  ProcessorDefinition out=routeContext.getRoute().getOutputs().get(0);
+  out.addInterceptStrategy(new InterceptStrategy(){
+    public Processor wrapProcessorInInterceptors(    ProcessorDefinition processorDefinition,    Processor target) throws Exception {
+      if (registeredRoutes.containsKey(endpoint)) {
+        return target;
+      }
+      InstrumentationProcessor wrapper=new InstrumentationProcessor(null);
+      wrapper.setType(processorDefinition.getShortName());
+      wrapper.setProcessor(target);
+      registeredRoutes.put(endpoint,wrapper);
+      return wrapper;
+    }
+  }
+);
 }
