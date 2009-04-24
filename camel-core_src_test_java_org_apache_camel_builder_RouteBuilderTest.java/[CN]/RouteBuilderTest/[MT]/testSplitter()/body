@@ -5,11 +5,8 @@
   for (  Route route : routes) {
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
-    Processor processor=getProcessorWithoutErrorHandler(route);
-    if (!Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,processor);
-      processor=interceptor.getProcessor();
-    }
-    Splitter p1=assertIsInstanceOf(Splitter.class,processor);
+    EventDrivenConsumerRoute consumer=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
+    Channel channel=unwrapChannel(consumer.getProcessor());
+    assertIsInstanceOf(Splitter.class,channel.getNextProcessor());
   }
 }

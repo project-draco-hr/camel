@@ -1,9 +1,8 @@
 {
   return new RouteBuilder(){
     public void configure(){
-      errorHandler(deadLetterChannel().delay(25));
-      TryDefinition tryType=from("direct:start").doTry().process(validator).to("mock:valid");
-      tryType.doFinally().to("mock:all");
+      errorHandler(deadLetterChannel("mock:dead").delay(0).maximumRedeliveries(3).logStackTrace(false));
+      from("direct:start").doTry().process(validator).to("mock:valid").doFinally().to("mock:all");
     }
   }
 ;

@@ -5,15 +5,12 @@
   for (  Route route : routes) {
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
-    Processor processor=getProcessorWithoutErrorHandler(route);
-    if (!Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,processor);
-      processor=interceptor.getProcessor();
-    }
-    IdempotentConsumer idempotentConsumer=assertIsInstanceOf(IdempotentConsumer.class,processor);
+    EventDrivenConsumerRoute consumer=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
+    Channel channel=unwrapChannel(consumer.getProcessor());
+    IdempotentConsumer idempotentConsumer=assertIsInstanceOf(IdempotentConsumer.class,channel.getNextProcessor());
     assertEquals("messageIdExpression","header(myMessageId)",idempotentConsumer.getMessageIdExpression().toString());
     assertIsInstanceOf(MemoryIdempotentRepository.class,idempotentConsumer.getIdempotentRepository());
-    SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,unwrapErrorHandler(idempotentConsumer.getNextProcessor()));
+    SendProcessor sendProcessor=assertIsInstanceOf(SendProcessor.class,unwrapChannel(idempotentConsumer.getNextProcessor()).getNextProcessor());
     assertEquals("Endpoint URI","seda:b",sendProcessor.getDestination().getEndpointUri());
   }
 }

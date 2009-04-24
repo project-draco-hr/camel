@@ -2,15 +2,11 @@
   List<Processor> list=new ArrayList<Processor>();
   for (  ProcessorDefinition output : outputs) {
     Processor processor=output.createProcessor(routeContext);
-    if ((output instanceof ProceedDefinition || output instanceof StopDefinition) && processor == null) {
+    if ((output instanceof ProceedDefinition || output instanceof StopDefinition || output instanceof Channel) && processor == null) {
       continue;
     }
-    processor=output.wrapProcessorInInterceptors(routeContext,processor);
-    ProcessorDefinition currentProcessor=this;
-    if (!(currentProcessor instanceof OnExceptionDefinition || currentProcessor instanceof TryDefinition)) {
-      processor=output.wrapInErrorHandler(routeContext,processor);
-    }
-    list.add(processor);
+    Processor channel=wrapChannel(routeContext,processor);
+    list.add(channel);
   }
   Processor processor=null;
   if (!list.isEmpty()) {

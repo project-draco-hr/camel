@@ -5,18 +5,15 @@
   for (  Route route : routes) {
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
-    Processor processor=getProcessorWithoutErrorHandler(route);
-    if (!Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,processor);
-      processor=interceptor.getProcessor();
-    }
-    ChoiceProcessor choiceProcessor=assertIsInstanceOf(ChoiceProcessor.class,processor);
+    EventDrivenConsumerRoute consumer=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
+    Channel channel=unwrapChannel(consumer.getProcessor());
+    ChoiceProcessor choiceProcessor=assertIsInstanceOf(ChoiceProcessor.class,channel.getNextProcessor());
     List<FilterProcessor> filters=choiceProcessor.getFilters();
     assertEquals("Should be two when clauses",2,filters.size());
     FilterProcessor filter1=filters.get(0);
-    assertSendTo(filter1.getProcessor(),"seda:b");
+    assertSendTo(unwrapChannel(filter1.getProcessor()).getNextProcessor(),"seda:b");
     FilterProcessor filter2=filters.get(1);
-    assertSendTo(filter2.getProcessor(),"seda:c");
-    assertSendTo(choiceProcessor.getOtherwise(),"seda:d");
+    assertSendTo(unwrapChannel(filter2.getProcessor()).getNextProcessor(),"seda:c");
+    assertSendTo(unwrapChannel(choiceProcessor.getOtherwise()).getNextProcessor(),"seda:d");
   }
 }

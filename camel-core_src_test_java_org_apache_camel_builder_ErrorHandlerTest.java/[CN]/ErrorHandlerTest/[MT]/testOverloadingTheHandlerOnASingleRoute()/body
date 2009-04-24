@@ -8,39 +8,4 @@
 ;
   List<Route> list=getRouteList(builder);
   assertEquals("Number routes created" + list,2,list.size());
-  for (  Route route : list) {
-    Endpoint key=route.getEndpoint();
-    String endpointUri=key.getEndpointUri();
-    EventDrivenConsumerRoute consumerRoute=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
-    Processor processor=unwrap(consumerRoute.getProcessor());
-    SendProcessor sendProcessor=null;
-    if (endpointUri.equals("seda:a")) {
-      LoggingErrorHandler loggingProcessor=assertIsInstanceOf(LoggingErrorHandler.class,processor);
-      Processor outputProcessor=loggingProcessor.getOutput();
-      if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-        StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,outputProcessor);
-        sendProcessor=assertIsInstanceOf(SendProcessor.class,cache.getProcessor());
-      }
- else {
-        InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,outputProcessor);
-        StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,interceptor.getProcessor());
-        sendProcessor=assertIsInstanceOf(SendProcessor.class,cache.getProcessor());
-      }
-    }
- else {
-      assertEquals("From endpoint","seda:b",endpointUri);
-      DefaultErrorHandler defaultErrorHandler=assertIsInstanceOf(DefaultErrorHandler.class,processor);
-      Processor outputProcessor=defaultErrorHandler.getOutput();
-      if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-        StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,outputProcessor);
-        sendProcessor=assertIsInstanceOf(SendProcessor.class,cache.getProcessor());
-      }
- else {
-        InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,outputProcessor);
-        StreamCachingInterceptor cache=assertIsInstanceOf(StreamCachingInterceptor.class,interceptor.getProcessor());
-        sendProcessor=assertIsInstanceOf(SendProcessor.class,cache.getProcessor());
-      }
-    }
-    log.debug("For " + endpointUri + " using: "+ sendProcessor);
-  }
 }

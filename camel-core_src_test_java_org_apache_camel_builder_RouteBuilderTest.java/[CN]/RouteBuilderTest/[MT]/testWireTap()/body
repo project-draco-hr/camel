@@ -5,13 +5,12 @@
   for (  Route route : routes) {
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
-    Processor processor=getProcessorWithoutErrorHandler(route);
-    processor=unwrapDelegateProcessor(processor);
-    processor=unwrapDelegateProcessor(processor);
-    MulticastProcessor multicastProcessor=assertIsInstanceOf(MulticastProcessor.class,processor);
+    EventDrivenConsumerRoute consumer=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
+    Channel channel=unwrapChannel(consumer.getProcessor());
+    MulticastProcessor multicastProcessor=assertIsInstanceOf(MulticastProcessor.class,channel.getNextProcessor());
     List<Processor> endpoints=new ArrayList<Processor>(multicastProcessor.getProcessors());
     assertEquals("Should have 2 endpoints",2,endpoints.size());
-    assertSendToProcessor(endpoints.get(0),"seda:tap");
-    assertSendToProcessor(endpoints.get(1),"seda:b");
+    assertSendToProcessor(unwrapChannel(endpoints.get(0)).getNextProcessor(),"seda:tap");
+    assertSendToProcessor(unwrapChannel(endpoints.get(1)).getNextProcessor(),"seda:b");
   }
 }

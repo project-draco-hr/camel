@@ -5,12 +5,9 @@
   for (  Route route : routes) {
     Endpoint key=route.getEndpoint();
     assertEquals("From endpoint","seda:a",key.getEndpointUri());
-    Processor processor=getProcessorWithoutErrorHandler(route);
-    if (!Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-      InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,processor);
-      processor=interceptor.getProcessor();
-    }
-    FilterProcessor filterProcessor=assertIsInstanceOf(FilterProcessor.class,processor);
-    assertEquals("Should be called with my processor",myProcessor,unwrapErrorHandler(filterProcessor.getProcessor()));
+    EventDrivenConsumerRoute consumer=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
+    Channel channel=unwrapChannel(consumer.getProcessor());
+    FilterProcessor filterProcessor=assertIsInstanceOf(FilterProcessor.class,channel.getNextProcessor());
+    assertEquals("Should be called with my processor",myProcessor,unwrapChannel(filterProcessor.getProcessor()).getNextProcessor());
   }
 }

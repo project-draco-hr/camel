@@ -1,0 +1,20 @@
+{
+  Channel channel=createChannel(routeContext);
+  channel.setNextProcessor(processor);
+  channel.addInterceptStrategies(routeContext.getCamelContext().getInterceptStrategies());
+  channel.addInterceptStrategies(routeContext.getInterceptStrategies());
+  channel.initChannel(this,routeContext);
+  if (this instanceof OnExceptionDefinition) {
+    Processor errorHandler=getErrorHandlerBuilder().createErrorHandler(routeContext,channel.getOutput());
+    channel.setErrorHandler(errorHandler);
+    return channel;
+  }
+ else   if (this instanceof TryDefinition || this instanceof CatchDefinition || this instanceof FinallyDefinition) {
+    return channel;
+  }
+ else {
+    Processor errorHandler=getErrorHandlerBuilder().createErrorHandler(routeContext,channel.getOutput());
+    channel.setErrorHandler(errorHandler);
+    return channel;
+  }
+}

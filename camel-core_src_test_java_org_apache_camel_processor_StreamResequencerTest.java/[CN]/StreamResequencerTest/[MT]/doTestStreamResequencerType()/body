@@ -3,15 +3,7 @@
   assertEquals("Number of routes created: " + list,1,list.size());
   Route route=list.get(0);
   EventDrivenConsumerRoute consumerRoute=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
-  Processor processor=unwrap(consumerRoute.getProcessor());
-  DefaultErrorHandler deadLetterChannel=assertIsInstanceOf(DefaultErrorHandler.class,processor);
-  Processor outputProcessor=deadLetterChannel.getOutput();
-  if (!Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-    InstrumentationProcessor interceptor=assertIsInstanceOf(InstrumentationProcessor.class,outputProcessor);
-    outputProcessor=interceptor.getProcessor();
-  }
-  while (outputProcessor instanceof DelegateProcessor) {
-    outputProcessor=((DelegateProcessor)outputProcessor).getProcessor();
-  }
-  assertIsInstanceOf(StreamResequencer.class,outputProcessor);
+  Channel channel=unwrapChannel(consumerRoute.getProcessor());
+  assertIsInstanceOf(DefaultErrorHandler.class,channel.getErrorHandler());
+  assertIsInstanceOf(StreamResequencer.class,channel.getNextProcessor());
 }
