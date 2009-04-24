@@ -1,0 +1,26 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  Endpoint endpoint=context.getEndpoint("seda:start");
+  Producer producer=endpoint.createProducer();
+  Exchange exchange=producer.createExchange(ExchangePattern.InOut);
+  exchange.getIn().setBody("Hello World");
+  AsyncProcessor async=(AsyncProcessor)producer;
+  boolean sync=async.process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      if (sync) {
+        doneSync=true;
+      }
+      if (!sync) {
+        latchAsync.countDown();
+      }
+    }
+  }
+);
+  route=route + "send";
+  assertMockEndpointsSatisfied();
+  assertEquals("Send should occur before processor","sendprocess",route);
+  assertTrue("Sync done should have occured",doneSync);
+  boolean zero=latchAsync.await(2,TimeUnit.SECONDS);
+  String response=exchange.getOut().getBody(String.class);
+}
