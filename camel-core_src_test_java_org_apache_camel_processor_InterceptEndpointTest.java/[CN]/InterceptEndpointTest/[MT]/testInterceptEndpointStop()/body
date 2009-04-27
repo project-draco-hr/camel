@@ -1,0 +1,16 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      interceptEndpoint("mock:foo").transform(constant("Bye World")).to("mock:detour").stop();
+      from("direct:third").to("mock:bar").to("mock:foo").to("mock:result");
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:bar").expectedBodiesReceived("Hello World");
+  getMockEndpoint("mock:detour").expectedBodiesReceived("Bye World");
+  getMockEndpoint("mock:foo").expectedMessageCount(0);
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  template.sendBody("direct:third","Hello World");
+  assertMockEndpointsSatisfied();
+}

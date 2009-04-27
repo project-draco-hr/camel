@@ -1,6 +1,24 @@
 {
   Processor processor=makeProcessor(routeContext);
   if (!routeContext.isRouteAdded()) {
-    routeContext.addEventDrivenProcessor(processor);
+    boolean endpointInterceptor=false;
+    if (processor instanceof Channel) {
+      Channel channel=(Channel)processor;
+      Processor next=channel.getNextProcessor();
+      if (next instanceof InterceptEndpointProcessor) {
+        endpointInterceptor=true;
+      }
+    }
+    if (endpointInterceptor) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Endpoint interceptor should not be added as an event driven consumer route: " + processor);
+      }
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Adding event driven processor: " + processor);
+      }
+      routeContext.addEventDrivenProcessor(processor);
+    }
   }
 }

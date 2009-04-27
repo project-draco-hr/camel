@@ -1,0 +1,42 @@
+{
+  producer=delegate.createProducer();
+  return new Producer(){
+    public Endpoint getEndpoint(){
+      return producer.getEndpoint();
+    }
+    public Exchange createExchange(){
+      return producer.createExchange();
+    }
+    public Exchange createExchange(    ExchangePattern pattern){
+      return producer.createExchange(pattern);
+    }
+    public Exchange createExchange(    Exchange exchange){
+      return producer.createExchange(exchange);
+    }
+    public void process(    Exchange exchange) throws Exception {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Sending to endpoint: " + getEndpointUri() + " is intercepted and detoured to: "+ detour+ " for exchange: "+ exchange);
+      }
+      detour.process(exchange);
+      if (exchange.getOut(false) != null) {
+        exchange.setIn(exchange.getOut());
+        exchange.setOut(null);
+      }
+      if (!skip) {
+        producer.process(exchange);
+      }
+ else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Stop() means skip sending exchange to original intended destination: " + getEndpointUri() + " for exchange: "+ exchange);
+        }
+      }
+    }
+    public void start() throws Exception {
+      ServiceHelper.startService(detour);
+    }
+    public void stop() throws Exception {
+      ServiceHelper.stopService(detour);
+    }
+  }
+;
+}
