@@ -2,16 +2,16 @@
   Message out;
   if (exchange.isFailed()) {
     response.setStatus(Status.valueOf(500));
-    out=exchange.getFault(false);
-    if (out == null) {
-      Throwable t=exchange.getException();
-      if (t != null) {
-        StringWriter sw=new StringWriter();
-        PrintWriter pw=new PrintWriter(sw);
-        t.printStackTrace(pw);
-        response.setEntity(sw.toString(),MediaType.TEXT_PLAIN);
-        return;
-      }
+    if (exchange.hasFault()) {
+      out=exchange.getFault();
+    }
+ else {
+      Exception t=exchange.getException();
+      StringWriter sw=new StringWriter();
+      PrintWriter pw=new PrintWriter(sw);
+      t.printStackTrace(pw);
+      response.setEntity(sw.toString(),MediaType.TEXT_PLAIN);
+      return;
     }
   }
  else {
