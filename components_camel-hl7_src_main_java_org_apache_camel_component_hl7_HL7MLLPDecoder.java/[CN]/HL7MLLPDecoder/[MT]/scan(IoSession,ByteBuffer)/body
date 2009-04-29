@@ -1,0 +1,31 @@
+{
+  DecoderState state=decoderState(session);
+  in.position(state.current);
+  LOG.debug("Start scanning buffer at position " + in.position());
+  while (in.hasRemaining()) {
+    byte b=in.get();
+    if (b == config.getStartByte()) {
+      if (state.posStart > 0) {
+        LOG.warn("Ignoring message start at position " + in.position() + " before previous message has ended.");
+      }
+ else {
+        state.posStart=in.position();
+        LOG.debug("Message starts at position " + state.posStart);
+      }
+    }
+    if (b == config.getEndByte1()) {
+      byte next=in.get();
+      if (next == config.getEndByte2()) {
+        state.posEnd=in.position() - 2;
+        LOG.debug("Message ends at position " + state.posEnd);
+        break;
+      }
+ else {
+        LOG.warn("The 2nd end byte " + config.getEndByte2() + " was not found, but was "+ b);
+      }
+    }
+  }
+  state.current=in.position();
+  in.rewind();
+  return state.posEnd > 0;
+}
