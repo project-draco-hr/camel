@@ -1,17 +1,28 @@
 {
   route.setCamelContext(getCamelContext());
-  List<InterceptFromDefinition> intercepts=getInterceptFroms();
-  for (  InterceptFromDefinition intercept : intercepts) {
-    InterceptFromDefinition proxy=intercept.createProxy();
-    route.addOutput(proxy);
-    route.pushBlock(proxy.getProceed());
+  for (  InterceptFromDefinition intercept : getInterceptFroms()) {
+    boolean match=true;
+    if (intercept.getUri() != null) {
+      match=false;
+      for (      FromDefinition input : route.getInputs()) {
+        if (input.getUri().equals(intercept.getUri())) {
+          match=true;
+          break;
+        }
+      }
+    }
+    if (match) {
+      InterceptFromDefinition proxy=intercept.createProxy();
+      route.addOutput(proxy);
+      route.pushBlock(proxy.getProceed());
+    }
   }
   List<InterceptSendToEndpointDefinition> sendTos=getInterceptSendTos();
   for (  InterceptSendToEndpointDefinition sendTo : sendTos) {
     sendTo.proxyEndpoint(getCamelContext());
     route.addOutput(sendTo);
   }
-  route.getOutputs().addAll(getExceptions());
+  route.getOutputs().addAll(getOnExceptions());
   getRoutes().add(route);
   return route;
 }
