@@ -1,15 +1,16 @@
 {
-  super.afterPropertiesSet();
-  if (usePredicate != null && usePredicate) {
-    ChoiceDefinition choice=ProcessorDefinitionHelper.findFirstTypeInOutputs(outputs,ChoiceDefinition.class);
-    if (choice != null && outputs.size() > 1) {
-      for (int i=1; i < outputs.size(); i++) {
-        ProcessorDefinition out=outputs.get(i);
-        choice.getOtherwise().addOutput(out);
-      }
-      ProcessorDefinition keep=outputs.get(0);
-      clearOutput();
-      outputs.add(keep);
+  if (getOutputs().size() == 0) {
+    return;
+  }
+  ProcessorDefinition first=getOutputs().get(0);
+  if (first instanceof WhenDefinition) {
+    WhenDefinition when=(WhenDefinition)first;
+    for (int i=1; i < outputs.size(); i++) {
+      ProcessorDefinition out=outputs.get(i);
+      when.addOutput(out);
     }
+    ProcessorDefinition keep=outputs.get(0);
+    clearOutput();
+    outputs.add(keep);
   }
 }
