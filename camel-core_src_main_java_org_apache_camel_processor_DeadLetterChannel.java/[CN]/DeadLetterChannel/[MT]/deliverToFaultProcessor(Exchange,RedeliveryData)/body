@@ -1,0 +1,17 @@
+{
+  if (data.failureProcessor == null) {
+    return;
+  }
+  ExchangeHelper.setFailureHandled(exchange);
+  decrementRedeliveryCounter(exchange);
+  try {
+    data.failureProcessor.process(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  log.trace("Fault processor done");
+  prepareExchangeForFailure(exchange,data.handledPredicate);
+  String msg="Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Handled by the failure processor: "+ data.failureProcessor;
+  logFailedDelivery(false,exchange,msg,data,null);
+}
