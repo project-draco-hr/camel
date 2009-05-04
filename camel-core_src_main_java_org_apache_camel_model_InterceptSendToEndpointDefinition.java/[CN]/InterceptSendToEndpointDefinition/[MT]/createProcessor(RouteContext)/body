@@ -1,8 +1,20 @@
 {
-  Endpoint endpoint=lookupEndpoint(routeContext.getCamelContext());
-  Processor detour=routeContext.createProcessor(this);
-  InterceptSendToEndpoint proxy=routeContext.getCamelContext().getTypeConverter().mandatoryConvertTo(InterceptSendToEndpoint.class,endpoint);
-  proxy.setDetour(detour);
+  final Processor detour=routeContext.createProcessor(this);
+  routeContext.getCamelContext().addRegisterEndpointCallback(new EndpointStrategy(){
+    public Endpoint registerEndpoint(    String uri,    Endpoint endpoint){
+      boolean match=getUri() == null || EndpointHelper.matchEndpoint(uri,getUri());
+      if (match) {
+        boolean skip=skipSendToOriginalEndpoint != null ? skipSendToOriginalEndpoint : false;
+        InterceptSendToEndpoint proxy=new InterceptSendToEndpoint(endpoint,skip);
+        proxy.setDetour(detour);
+        return proxy;
+      }
+ else {
+        return endpoint;
+      }
+    }
+  }
+);
   RouteDefinition route=routeContext.getRoute();
   List<ProcessorDefinition> outputs=route.getOutputs();
   outputs.remove(this);
