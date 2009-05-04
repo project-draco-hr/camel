@@ -1,9 +1,15 @@
 {
   String filter=exchange.getIn().getBody(String.class);
-  List<SearchResult> data=new ArrayList<SearchResult>();
-  NamingEnumeration<SearchResult> namingEnumeration=ldapContext.search(searchBase,filter,getControls());
-  while (namingEnumeration.hasMore()) {
-    data.add(namingEnumeration.next());
+  DirContext ldapContext=(DirContext)getEndpoint().getCamelContext().getRegistry().lookup(remaining);
+  try {
+    List<SearchResult> data=new ArrayList<SearchResult>();
+    NamingEnumeration<SearchResult> namingEnumeration=ldapContext.search(searchBase,filter,getControls());
+    while (namingEnumeration.hasMore()) {
+      data.add(namingEnumeration.next());
+    }
+    exchange.getOut().setBody(data);
   }
-  exchange.getOut().setBody(data);
+  finally {
+    ldapContext.close();
+  }
 }
