@@ -1,3 +1,13 @@
 {
-  AsyncProcessorHelper.process(this,exchange);
+  org.springframework.integration.core.Message request=SpringIntegrationBinding.createSpringIntegrationMessage(exchange);
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getIn().getHeaders().put(MessageHeaders.REPLY_CHANNEL,replyChannel);
+    replyChannel.subscribe(new MessageHandler(){
+      public void handleMessage(      Message<?> message){
+        SpringIntegrationBinding.storeToCamelMessage(message,exchange.getOut());
+      }
+    }
+);
+  }
+  requestChannel.send(request);
 }

@@ -1,3 +1,13 @@
 {
-  AsyncProcessorHelper.process(this,exchange);
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getIn().getHeaders().put(MessageHeaders.REPLY_CHANNEL,inputChannel);
+    inputChannel.subscribe(new MessageHandler(){
+      public void handleMessage(      Message<?> message){
+        SpringIntegrationBinding.storeToCamelMessage(message,exchange.getOut());
+      }
+    }
+);
+  }
+  org.springframework.integration.core.Message siOutmessage=SpringIntegrationBinding.createSpringIntegrationMessage(exchange);
+  outputChannel.send(siOutmessage);
 }
