@@ -4,22 +4,23 @@
   if (request instanceof HttpEntityEnclosingRequest) {
     exchange.getIn().setBody(((HttpEntityEnclosingRequest)request).getEntity());
   }
-  getAsyncProcessor().process(exchange,new AsyncCallback(){
-    public void done(    boolean doneSynchronously){
-      LOG.debug("handleExchange");
-      ProtocolVersion httpVersion=(HttpVersion)request.getRequestLine().getProtocolVersion();
-      HttpResponse response=responseFactory.newHttpResponse(httpVersion,HttpStatus.SC_OK,context);
-      response.setParams(params);
-      HttpEntity entity=exchange.getOut().getBody(HttpEntity.class);
-      response.setEntity(entity);
-      response.setParams(getEndpoint().getParams());
-      try {
-        handler.sendResponse(response);
-      }
- catch (      Exception e) {
-        LOG.info(e);
-      }
-    }
+  try {
+    getProcessor().process(exchange);
   }
-);
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  LOG.debug("handleExchange");
+  ProtocolVersion httpVersion=(HttpVersion)request.getRequestLine().getProtocolVersion();
+  HttpResponse response=responseFactory.newHttpResponse(httpVersion,HttpStatus.SC_OK,context);
+  response.setParams(params);
+  HttpEntity entity=exchange.getOut().getBody(HttpEntity.class);
+  response.setEntity(entity);
+  response.setParams(getEndpoint().getParams());
+  try {
+    handler.sendResponse(response);
+  }
+ catch (  Exception e) {
+    LOG.info(e);
+  }
 }
