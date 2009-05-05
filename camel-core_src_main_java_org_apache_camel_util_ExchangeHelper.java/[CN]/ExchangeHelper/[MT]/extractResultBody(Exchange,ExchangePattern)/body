@@ -1,0 +1,23 @@
+{
+  Object answer=null;
+  if (exchange != null) {
+    if (exchange.getException() != null) {
+      throw wrapRuntimeCamelException(exchange.getException());
+    }
+    if (hasFaultMessage(exchange)) {
+      return exchange.getFault().getBody();
+    }
+    boolean notOut=pattern != null && !pattern.isOutCapable();
+    boolean hasOut=exchange.hasOut();
+    if (hasOut && !notOut) {
+      answer=exchange.getOut().getBody();
+    }
+ else     if (!hasOut && exchange.getPattern() == ExchangePattern.InOptionalOut) {
+      answer=null;
+    }
+ else {
+      answer=exchange.getIn().getBody();
+    }
+  }
+  return answer;
+}
