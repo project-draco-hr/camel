@@ -1,14 +1,7 @@
 {
-  int concurrentConsumers=endpoint.getConcurrentConsumers();
-  executor=Executors.newFixedThreadPool(concurrentConsumers,new ThreadFactory(){
-    public Thread newThread(    Runnable runnable){
-      Thread thread=new Thread(runnable,getThreadName(endpoint.getEndpointUri()));
-      thread.setDaemon(true);
-      return thread;
-    }
-  }
-);
-  for (int i=0; i < concurrentConsumers; i++) {
+  int poolSize=endpoint.getConcurrentConsumers();
+  executor=ExecutorServiceHelper.newFixedThreadPool(poolSize,endpoint.getEndpointUri(),true);
+  for (int i=0; i < poolSize; i++) {
     executor.execute(this);
   }
   endpoint.onStarted(this);
