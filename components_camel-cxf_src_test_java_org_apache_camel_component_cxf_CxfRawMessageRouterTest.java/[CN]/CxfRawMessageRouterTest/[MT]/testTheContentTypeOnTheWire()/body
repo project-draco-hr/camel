@@ -1,0 +1,13 @@
+{
+  Exchange exchange=template.send(ROUTER_ADDRESS,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" + "<soap:Body><ns1:echo xmlns:ns1=\"http://cxf.component.camel.apache.org/\">" + "<arg0 xmlns=\"http://cxf.component.camel.apache.org/\">hello world</arg0>"+ "</ns1:echo></soap:Body></soap:Envelope>");
+    }
+  }
+);
+  assertNotNull("We should get the content type here",exchange.getOut().getHeader("Content-Type"));
+  assertEquals("Get wrong content type","text/xml; charset=utf-8",exchange.getOut().getHeader("Content-Type"));
+  String response=exchange.getOut().getBody(String.class);
+  assertNotNull("Response should not be null",response);
+  assertTrue("We should get right return result",response.indexOf("echo hello world") > 0);
+}
