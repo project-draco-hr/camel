@@ -1,0 +1,14 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello World");
+  mock.expectedHeaderReceived("foo",123);
+  Future<Object> future=template.asyncRequestBodyAndHeader("direct:start","Hello","foo",123);
+  long start=System.currentTimeMillis();
+  String echo=template.requestBody("direct:echo","Hi",String.class);
+  assertEquals("HiHi",echo);
+  String result=template.asyncExtractBody(future,String.class);
+  assertMockEndpointsSatisfied();
+  long delta=System.currentTimeMillis() - start;
+  assertTrue("Should take longer than: " + delta,delta > 250);
+  assertEquals("Hello World",result);
+}

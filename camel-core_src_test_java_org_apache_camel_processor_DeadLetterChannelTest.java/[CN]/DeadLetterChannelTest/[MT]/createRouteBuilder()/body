@@ -1,23 +1,11 @@
 {
-  final Processor processor=new AsyncProcessor(){
+  final Processor processor=new Processor(){
     public void process(    Exchange exchange){
       Integer counter=exchange.getIn().getHeader(Exchange.REDELIVERY_COUNTER,Integer.class);
       int attempt=(counter == null) ? 1 : counter + 1;
       if (attempt < failUntilAttempt) {
         throw new RuntimeException("Failed to process due to attempt: " + attempt + " being less than: "+ failUntilAttempt);
       }
-    }
-    public boolean process(    Exchange exchange,    AsyncCallback callback){
-      Integer counter=exchange.getIn().getHeader(Exchange.REDELIVERY_COUNTER,Integer.class);
-      int attempt=(counter == null) ? 1 : counter + 1;
-      if (attempt > 1) {
-        assertEquals("Now we should use TimerThread to call the process",Thread.currentThread().getName(),"Camel DeadLetterChannel Redeliver Timer");
-      }
-      if (attempt < failUntilAttempt) {
-        exchange.setException(new RuntimeException("Failed to process due to attempt: " + attempt + " being less than: "+ failUntilAttempt));
-      }
-      callback.done(false);
-      return false;
     }
   }
 ;

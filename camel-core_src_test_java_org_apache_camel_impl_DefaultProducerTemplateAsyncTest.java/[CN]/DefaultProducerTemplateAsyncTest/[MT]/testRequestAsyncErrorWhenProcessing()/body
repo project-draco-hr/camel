@@ -1,0 +1,17 @@
+{
+  Exchange exchange=new DefaultExchange(context);
+  exchange.getIn().setBody("Hello");
+  Future<Object> future=template.asyncRequestBody("direct:error",exchange);
+  long start=System.currentTimeMillis();
+  String echo=template.requestBody("direct:echo","Hi",String.class);
+  assertEquals("HiHi",echo);
+  try {
+    Exchange result=template.asyncExtractBody(future,Exchange.class);
+    fail("Should have thrown exception");
+  }
+ catch (  RuntimeCamelException e) {
+    assertEquals("Damn forced by unit test",e.getCause().getMessage());
+  }
+  long delta=System.currentTimeMillis() - start;
+  assertTrue("Should take longer than: " + delta,delta > 250);
+}
