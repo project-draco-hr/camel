@@ -1,50 +1,14 @@
 {
   final AtomicExchange result=new AtomicExchange();
-  Iterable<ProcessorExchangePair> pairs=createProcessorExchangePairs(exchange);
-  if (isParallelProcessing) {
-    List<Exchange> exchanges=new LinkedList<Exchange>();
-    final CountingLatch completedExchanges=new CountingLatch();
-    int i=0;
-    for (    ProcessorExchangePair pair : pairs) {
-      Processor producer=pair.getProcessor();
-      final Exchange subExchange=pair.getExchange();
-      updateNewExchange(subExchange,i,pairs);
-      exchanges.add(subExchange);
-      completedExchanges.increment();
-      ProcessCall call=new ProcessCall(subExchange,producer,new AsyncCallback(){
-        public void done(        boolean sync){
-          if (streaming && aggregationStrategy != null) {
-            doAggregate(result,subExchange);
-          }
-          completedExchanges.decrement();
-        }
-      }
-);
-      executor.execute(call);
-      i++;
-    }
-    completedExchanges.await();
-    if (!streaming && aggregationStrategy != null) {
-      for (      Exchange resultExchange : exchanges) {
-        doAggregate(result,resultExchange);
-      }
-    }
+  final Iterable<ProcessorExchangePair> pairs=createProcessorExchangePairs(exchange);
+  if (isParallelProcessing() && isStreaming()) {
+    doProcessNewParallelStreaming(result,pairs);
+  }
+ else   if (isParallelProcessing()) {
+    doProcessNewParallel(result,pairs);
   }
  else {
-    int i=0;
-    for (    ProcessorExchangePair pair : pairs) {
-      Processor producer=pair.getProcessor();
-      Exchange subExchange=pair.getExchange();
-      updateNewExchange(subExchange,i,pairs);
-      try {
-        producer.process(subExchange);
-      }
- catch (      Exception e) {
-        subExchange.setException(e);
-      }
-      doAggregate(result,subExchange);
-      i++;
-    }
+    doProcessSequntiel(result,pairs);
   }
   if (result.get() != null) {
     ExchangeHelper.copyResults(exchange,result.get());

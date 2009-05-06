@@ -1,0 +1,32 @@
+{
+  CompletionService<Exchange> completion=new ExecutorCompletionService<Exchange>(executorService);
+  int total=0;
+  for (  ProcessorExchangePair pair : pairs) {
+    final Processor producer=pair.getProcessor();
+    final Exchange subExchange=pair.getExchange();
+    updateNewExchange(subExchange,total,pairs);
+    completion.submit(new Callable<Exchange>(){
+      public Exchange call() throws Exception {
+        try {
+          producer.process(subExchange);
+        }
+ catch (        Exception e) {
+          subExchange.setException(e);
+        }
+        return subExchange;
+      }
+    }
+);
+    total++;
+  }
+  for (int i=0; i < total; i++) {
+    Future<Exchange> future=completion.take();
+    Exchange subExchange=future.get();
+    if (aggregationStrategy != null) {
+      doAggregate(result,subExchange);
+    }
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Done parallel streaming processing " + total + " exchanges");
+  }
+}
