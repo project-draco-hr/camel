@@ -1,0 +1,24 @@
+{
+  final Processor output=getProcessor();
+  if (output == null) {
+    return;
+  }
+  final Exchange copy=exchange.newCopy();
+  Callable<Exchange> task=new Callable<Exchange>(){
+    public Exchange call() throws Exception {
+      output.process(copy);
+      return copy;
+    }
+  }
+;
+  Future<Exchange> future=getExecutorService().submit(task);
+  if (waitTaskComplete) {
+    Exchange response=future.get();
+    if (ExchangeHelper.isOutCapable(exchange)) {
+      ExchangeHelper.copyResults(exchange,response);
+    }
+  }
+ else {
+    exchange.getOut().setBody(future);
+  }
+}

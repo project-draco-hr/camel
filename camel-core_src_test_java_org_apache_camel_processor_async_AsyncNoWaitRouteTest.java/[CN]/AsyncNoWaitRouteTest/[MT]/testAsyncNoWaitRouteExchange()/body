@@ -1,0 +1,20 @@
+{
+  getMockEndpoint("mock:foo").expectedBodiesReceived("Hello World");
+  getMockEndpoint("mock:result").expectedBodiesReceived("Bye World");
+  Exchange exchange=template.send("direct:start",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.setPattern(ExchangePattern.InOut);
+      exchange.getIn().setBody("Hello");
+    }
+  }
+);
+  route+="A";
+  Object out=exchange.getOut().getBody();
+  assertIsInstanceOf(Future.class,out);
+  Future future=(Future)out;
+  assertFalse("Should not be done",future.isDone());
+  assertMockEndpointsSatisfied();
+  assertEquals("AB",route);
+  String response=context.getTypeConverter().convertTo(String.class,future);
+  assertEquals("Bye World",response);
+}

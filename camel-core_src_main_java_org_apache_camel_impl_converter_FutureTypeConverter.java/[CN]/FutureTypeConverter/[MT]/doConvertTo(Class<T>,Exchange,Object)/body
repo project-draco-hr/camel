@@ -1,0 +1,38 @@
+{
+  if (StreamCache.class.isAssignableFrom(value.getClass())) {
+    return null;
+  }
+  if (Future.class.isAssignableFrom(value.getClass())) {
+    Future future=(Future)value;
+    if (future.isCancelled()) {
+      return null;
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Getting future response");
+    }
+    Object body;
+    try {
+      body=future.get();
+    }
+ catch (    ExecutionException e) {
+      exchange.setException(e);
+      throw e;
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Got future response");
+    }
+    if (body == null) {
+      return null;
+    }
+    Class from=body.getClass();
+    if (from.isAssignableFrom(type)) {
+      return type.cast(from);
+    }
+ else     if (body instanceof Exchange) {
+      Exchange result=(Exchange)body;
+      body=ExchangeHelper.extractResultBody(result,result.getPattern());
+    }
+    return converter.convertTo(type,exchange,body);
+  }
+  return null;
+}
