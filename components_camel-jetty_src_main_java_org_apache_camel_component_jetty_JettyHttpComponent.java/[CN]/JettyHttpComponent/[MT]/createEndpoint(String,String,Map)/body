@@ -2,12 +2,23 @@
   uri=uri.startsWith("jetty:") ? remaining : uri;
   HttpClientParams params=new HttpClientParams();
   IntrospectionSupport.setProperties(params,parameters,"httpClient.");
+  List<Handler> handlerList=new ArrayList<Handler>();
+  String handlers=getAndRemoveParameter(parameters,"handlers",String.class);
+  if (handlers != null) {
+    handlers=handlers.replaceAll("#","");
+    for (    String key : handlers.split(",")) {
+      handlerList.add(CamelContextHelper.mandatoryLookup(getCamelContext(),key,Handler.class));
+    }
+  }
   configureParameters(parameters);
   URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encode(uri)),parameters);
   uri=httpUri.toString();
   JettyHttpEndpoint result=new JettyHttpEndpoint(this,uri,httpUri,params,getHttpConnectionManager(),httpClientConfigurer);
   if (httpBinding != null) {
     result.setBinding(httpBinding);
+  }
+  if (handlerList.size() > 0) {
+    result.setHandlers(handlerList);
   }
   setProperties(result,parameters);
   return result;
