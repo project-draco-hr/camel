@@ -16,7 +16,11 @@
   if (exchange.getIn().getHeader(Exchange.ASYNC_WAIT) != null) {
     wait=exchange.getIn().getHeader(Exchange.ASYNC_WAIT,WaitForTaskToComplete.class);
   }
-  if (wait != WaitForTaskToComplete.Newer) {
+  if (wait == WaitForTaskToComplete.Always) {
+    Exchange response=future.get();
+    ExchangeHelper.copyResults(exchange,response);
+  }
+  if (wait == WaitForTaskToComplete.IfReplyExpected && ExchangeHelper.isOutCapable(exchange)) {
     Exchange response=future.get();
     ExchangeHelper.copyResults(exchange,response);
   }
