@@ -15,8 +15,12 @@
       body=future.get();
     }
  catch (    ExecutionException e) {
-      exchange.setException(e);
-      throw e;
+      if (e.getCause() instanceof Exception) {
+        throw (Exception)e.getCause();
+      }
+ else {
+        throw e;
+      }
     }
     if (LOG.isTraceEnabled()) {
       LOG.trace("Got future response");
@@ -24,9 +28,8 @@
     if (body == null) {
       return null;
     }
-    Class from=body.getClass();
-    if (from.isAssignableFrom(type)) {
-      return type.cast(from);
+    if (type.isAssignableFrom(body.getClass())) {
+      return type.cast(body);
     }
  else     if (body instanceof Exchange) {
       Exchange result=(Exchange)body;

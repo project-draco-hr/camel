@@ -12,11 +12,13 @@
   }
 ;
   Future<Exchange> future=getExecutorService().submit(task);
-  if (waitTaskComplete) {
+  boolean wait=waitTaskComplete;
+  if (exchange.getIn().getHeader(Exchange.ASYNC_WAIT) != null) {
+    wait=exchange.getIn().getHeader(Exchange.ASYNC_WAIT,Boolean.class);
+  }
+  if (wait) {
     Exchange response=future.get();
-    if (ExchangeHelper.isOutCapable(exchange)) {
-      ExchangeHelper.copyResults(exchange,response);
-    }
+    ExchangeHelper.copyResults(exchange,response);
   }
  else {
     exchange.getOut().setBody(future);

@@ -1,0 +1,18 @@
+{
+  if (data.deadLetterQueue == null) {
+    return;
+  }
+  ExchangeHelper.setFailureHandled(exchange);
+  decrementRedeliveryCounter(exchange);
+  MessageHelper.resetStreamCache(exchange.getIn());
+  try {
+    data.deadLetterQueue.process(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  log.trace("DedLetterQueue processor done");
+  prepareExchangeAfterMovedToDeadLetterQueue(exchange,data.handledPredicate);
+  String msg="Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Moved to the dead letter queue: "+ data.deadLetterQueue;
+  logFailedDelivery(false,exchange,msg,data,null);
+}

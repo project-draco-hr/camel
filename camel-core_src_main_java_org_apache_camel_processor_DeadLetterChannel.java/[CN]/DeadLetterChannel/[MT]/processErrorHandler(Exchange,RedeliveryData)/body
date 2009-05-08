@@ -6,6 +6,7 @@
       }
       if (exchange.getException() == null) {
         exchange.setException(new RejectedExecutionException());
+        return;
       }
     }
     if (exchange.isTransacted() && !supportTransacted() && exchange.getException() != null) {
@@ -19,7 +20,7 @@
     }
     boolean shouldRedeliver=shouldRedeliver(exchange,data);
     if (!shouldRedeliver) {
-      deliverToFaultProcessor(exchange,data);
+      deliverToDeadLetterQueue(exchange,data);
       return;
     }
     if (data.redeliveryCounter > 0) {
