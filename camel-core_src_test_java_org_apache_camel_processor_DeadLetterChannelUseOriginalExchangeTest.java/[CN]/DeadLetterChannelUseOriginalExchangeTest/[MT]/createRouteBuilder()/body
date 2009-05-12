@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      DeadLetterChannelBuilder a=deadLetterChannel("mock:a").maximumRedeliveries(2).delay(0).logStackTrace(false).useOriginalExchange().handled(true);
+      DeadLetterChannelBuilder b=deadLetterChannel("mock:b").maximumRedeliveries(2).delay(0).logStackTrace(false).handled(true);
+      from("direct:a").errorHandler(a).setBody(body().append(" World")).process(new MyThrowProcessor());
+      from("direct:b").errorHandler(b).setBody(body().append(" World")).process(new MyThrowProcessor());
+    }
+  }
+;
+}
