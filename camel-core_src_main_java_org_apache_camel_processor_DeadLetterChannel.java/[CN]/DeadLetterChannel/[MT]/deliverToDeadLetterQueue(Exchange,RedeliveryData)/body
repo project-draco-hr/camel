@@ -5,18 +5,12 @@
   ExchangeHelper.setFailureHandled(exchange);
   decrementRedeliveryCounter(exchange);
   MessageHelper.resetStreamCache(exchange.getIn());
-  if (data.useOriginalExchange) {
+  if (data.useOriginalInBody) {
     if (log.isTraceEnabled()) {
-      log.trace("Using the original exchange bodies in the DedLetterQueue instead of the current exchange bodies");
+      log.trace("Using the original IN body in the DedLetterQueue instead of the current IN body");
     }
-    Exchange original=exchange.getUnitOfWork().getOriginalExchange();
-    exchange.setIn(original.getIn());
-    if (original.hasOut()) {
-      exchange.setOut(original.getOut());
-    }
- else {
-      exchange.setOut(null);
-    }
+    Object original=exchange.getUnitOfWork().getOriginalInBody();
+    exchange.getIn().setBody(original);
   }
   if (log.isTraceEnabled()) {
     log.trace("DeadLetterQueue " + data.deadLetterQueue + " is processing Exchange: "+ exchange);
