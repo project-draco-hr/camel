@@ -1,0 +1,59 @@
+{
+  if (processor == null) {
+    return;
+  }
+  if (!onComplete && !onFailure) {
+    return;
+  }
+  exchange.getUnitOfWork().addSynchronization(new SynchronizationAdapter(){
+    @Override public void onComplete(    Exchange exchange){
+      if (!onComplete) {
+        return;
+      }
+      final Exchange copy=exchange.newCopy();
+      copy.setPattern(ExchangePattern.InOnly);
+      copy.setProperty(Exchange.ON_COMPLETION,Boolean.TRUE);
+      getExecutorService().submit(new Callable<Exchange>(){
+        public Exchange call() throws Exception {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Processing onCompleteOnly: " + copy);
+          }
+          processor.process(copy);
+          return copy;
+        }
+      }
+);
+    }
+    public void onFailure(    Exchange exchange){
+      if (!onFailure) {
+        return;
+      }
+      final Exchange copy=exchange.newCopy();
+      copy.setPattern(ExchangePattern.InOnly);
+      copy.setProperty(Exchange.ON_COMPLETION,Boolean.TRUE);
+      copy.setException(null);
+      getExecutorService().submit(new Callable<Exchange>(){
+        public Exchange call() throws Exception {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Processing onFailureOnly: " + copy);
+          }
+          processor.process(copy);
+          return copy;
+        }
+      }
+);
+    }
+    @Override public String toString(){
+      if (onComplete && onFailure) {
+        return "onCompleteOrFailure";
+      }
+ else       if (onComplete) {
+        return "onCompleteOnly";
+      }
+ else {
+        return "onFailureOnly";
+      }
+    }
+  }
+);
+}

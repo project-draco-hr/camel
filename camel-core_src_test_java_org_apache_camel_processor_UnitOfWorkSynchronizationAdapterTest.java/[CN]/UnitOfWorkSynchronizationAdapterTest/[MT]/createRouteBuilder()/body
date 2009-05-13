@@ -1,0 +1,37 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("seda:async").to("direct:foo");
+      from("direct:foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          log.info("Received: " + exchange);
+          exchange.getUnitOfWork().addSynchronization(new SynchronizationAdapter(){
+            @Override public void onComplete(            Exchange exchange){
+              completed=exchange;
+              doneLatch.countDown();
+            }
+          }
+);
+          exchange.getUnitOfWork().addSynchronization(new SynchronizationAdapter(){
+            @Override public void onFailure(            Exchange exchange){
+              failed=exchange;
+              doneLatch.countDown();
+            }
+          }
+);
+          String name=getName();
+          if (name.equals("testFail")) {
+            log.info("Failing test!");
+            exchange.getFault().setBody("testFail() should always fail with a fault!");
+          }
+ else           if (name.equals("testException")) {
+            log.info("Throwing exception!");
+            throw new Exception("Failing test!");
+          }
+        }
+      }
+);
+    }
+  }
+;
+}
