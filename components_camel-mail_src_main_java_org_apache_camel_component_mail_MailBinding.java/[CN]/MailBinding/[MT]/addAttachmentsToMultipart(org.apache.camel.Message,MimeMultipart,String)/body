@@ -1,18 +1,43 @@
 {
+  LOG.trace("Adding attachments +++ start +++");
+  int i=0;
   for (  Map.Entry<String,DataHandler> entry : camelMessage.getAttachments().entrySet()) {
     String attachmentFilename=entry.getKey();
     DataHandler handler=entry.getValue();
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Attachment #" + i + ": Disposition: "+ partDisposition);
+      LOG.trace("Attachment #" + i + ": DataHandler: "+ handler);
+      LOG.trace("Attachment #" + i + ": FileName: "+ attachmentFilename);
+    }
     if (handler != null) {
-      if (shouldOutputAttachment(camelMessage,attachmentFilename,handler)) {
+      if (shouldAddAttachment(camelMessage,attachmentFilename,handler)) {
         BodyPart messageBodyPart=new MimeBodyPart();
         messageBodyPart.setDataHandler(handler);
         if (attachmentFilename.toLowerCase().startsWith("cid:")) {
           messageBodyPart.addHeader("Content-ID",attachmentFilename.substring(4));
         }
         messageBodyPart.setFileName(attachmentFilename);
+        LOG.trace("Attachment #" + i + ": ContentType: "+ messageBodyPart.getContentType());
+        if (contentTypeResolver != null) {
+          String contentType=contentTypeResolver.resolveContentType(attachmentFilename);
+          LOG.trace("Attachment #" + i + ": Using content type resolver: "+ contentTypeResolver+ " resolved content type as: "+ contentType);
+          if (contentType != null) {
+            String value=contentType + "; name=" + attachmentFilename;
+            messageBodyPart.setHeader("Content-Type",value);
+            LOG.trace("Attachment #" + i + ": ContentType: "+ messageBodyPart.getContentType());
+          }
+        }
         messageBodyPart.setDisposition(partDisposition);
         multipart.addBodyPart(messageBodyPart);
       }
+ else {
+        LOG.trace("shouldAddAttachment: false");
+      }
     }
+ else {
+      LOG.warn("Cannot add attachment: " + attachmentFilename + " as DataHandler is null");
+    }
+    i++;
   }
+  LOG.trace("Adding attachments +++ done +++");
 }
