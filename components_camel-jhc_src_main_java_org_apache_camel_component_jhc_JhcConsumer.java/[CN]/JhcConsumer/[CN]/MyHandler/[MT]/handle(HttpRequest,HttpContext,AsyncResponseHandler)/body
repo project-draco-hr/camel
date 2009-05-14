@@ -1,14 +1,15 @@
 {
   final Exchange exchange=getEndpoint().createExchange();
-  exchange.getIn().setHeader("http.uri",request.getRequestLine().getUri());
+  exchange.getIn().setHeader(Exchange.HTTP_URI,request.getRequestLine().getUri());
   if (request instanceof HttpEntityEnclosingRequest) {
+    exchange.getIn().setHeader(Exchange.CONTENT_TYPE,((HttpEntityEnclosingRequest)request).getEntity().getContentType());
     exchange.getIn().setBody(((HttpEntityEnclosingRequest)request).getEntity());
   }
   try {
     getProcessor().process(exchange);
   }
  catch (  Exception e) {
-    exchange.setException(e);
+    throw new HttpException("Get the exception when processing the exchange",e);
   }
   LOG.debug("handleExchange");
   ProtocolVersion httpVersion=(HttpVersion)request.getRequestLine().getProtocolVersion();
@@ -19,6 +20,10 @@
   HttpResponse response=responseFactory.newHttpResponse(httpVersion,responseCode,context);
   response.setParams(params);
   HttpEntity entity=exchange.getOut().getBody(HttpEntity.class);
+  String contentType=MessageHelper.getContentType(exchange.getOut());
+  if (contentType != null && entity instanceof AbstractHttpEntity) {
+    ((AbstractHttpEntity)entity).setContentType(contentType);
+  }
   response.setEntity(entity);
   response.setParams(getEndpoint().getParams());
   try {
