@@ -1,4 +1,27 @@
 {
   message.getBody();
-  message.getHeaders();
+  Map<String,Object> headers=message.getHeaders();
+  Enumeration names=request.getHeaderNames();
+  while (names.hasMoreElements()) {
+    String name=(String)names.nextElement();
+    Object value=request.getHeader(name);
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
+      headers.put(name,value);
+    }
+  }
+  if (request.getMethod().equalsIgnoreCase("GET")) {
+    names=request.getParameterNames();
+    while (names.hasMoreElements()) {
+      String name=(String)names.nextElement();
+      Object value=request.getParameter(name);
+      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
+        headers.put(name,value);
+      }
+    }
+  }
+  headers.put(HttpConstants.HTTP_METHOD,request.getMethod());
+  headers.put(HttpConstants.HTTP_QUERY,request.getQueryString());
+  headers.put(HttpConstants.HTTP_PATH,request.getPathInfo());
+  headers.put(HttpConstants.HTTP_CONTENT_TYPE,request.getContentType());
+  headers.put(HttpConstants.HTTP_CHARACTER_ENCODING,request.getCharacterEncoding());
 }
