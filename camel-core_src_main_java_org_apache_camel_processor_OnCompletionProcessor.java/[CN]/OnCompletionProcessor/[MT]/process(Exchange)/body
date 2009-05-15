@@ -10,9 +10,10 @@
       if (!onComplete) {
         return;
       }
-      final Exchange copy=exchange.newCopy();
-      copy.setPattern(ExchangePattern.InOnly);
-      copy.setProperty(Exchange.ON_COMPLETION,Boolean.TRUE);
+      if (onWhen != null && !onWhen.matches(exchange)) {
+        return;
+      }
+      final Exchange copy=prepareExchange(exchange);
       getExecutorService().submit(new Callable<Exchange>(){
         public Exchange call() throws Exception {
           if (LOG.isDebugEnabled()) {
@@ -28,9 +29,10 @@
       if (!onFailure) {
         return;
       }
-      final Exchange copy=exchange.newCopy();
-      copy.setPattern(ExchangePattern.InOnly);
-      copy.setProperty(Exchange.ON_COMPLETION,Boolean.TRUE);
+      if (onWhen != null && !onWhen.matches(exchange)) {
+        return;
+      }
+      final Exchange copy=prepareExchange(exchange);
       copy.setException(null);
       getExecutorService().submit(new Callable<Exchange>(){
         public Exchange call() throws Exception {
