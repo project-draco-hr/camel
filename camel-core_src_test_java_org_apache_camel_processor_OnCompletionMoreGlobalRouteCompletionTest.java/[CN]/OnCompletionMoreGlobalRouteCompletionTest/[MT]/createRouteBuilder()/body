@@ -1,0 +1,13 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onCompletion().to("log:global").to("mock:sync");
+      onCompletion().to("log:global").to("mock:two");
+      onCompletion().onCompleteOnly().to("log:global").to("mock:complete");
+      onCompletion().onFailureOnly().to("log:global").to("mock:failure");
+      from("direct:start").process(new MyProcessor()).to("mock:result");
+      from("direct:other").onCompletion().to("mock:route").end().process(new MyProcessor()).to("mock:other");
+    }
+  }
+;
+}
