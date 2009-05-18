@@ -1,8 +1,8 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      errorHandler(deadLetterChannel().logStackTrace(false).disableRedelivery());
-      onException(Exception.class).handled(true).beanRef("foo").to("mock:result");
+      errorHandler(deadLetterChannel().logStackTrace(false).maximumRedeliveries(3));
+      onException(Exception.class).handled(true).beanRef("foo","handleFailure").to("mock:result");
       from("direct:a").beanRef("foo").to("mock:result");
       from("direct:b").to("mock:foo");
     }
