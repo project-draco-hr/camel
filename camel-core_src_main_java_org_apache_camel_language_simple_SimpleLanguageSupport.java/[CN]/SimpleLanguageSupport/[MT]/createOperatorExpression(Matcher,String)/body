@@ -4,11 +4,14 @@
   String text=matcher.group(3);
   final Expression right;
   final Expression rightConverted;
-  if ("null".equals(text)) {
+  final Boolean isNull;
+  if ("null".equals(text) || "'null'".equals(text)) {
+    isNull=Boolean.TRUE;
     right=createConstantExpression(null);
     rightConverted=right;
   }
  else {
+    isNull=Boolean.FALSE;
     String constant=ObjectHelper.between(text,"'","'");
     if (constant == null) {
       constant=text;
@@ -20,7 +23,13 @@
   return new Expression(){
     public <T>T evaluate(    Exchange exchange,    Class<T> type){
       Predicate predicate=null;
-      if (operator == EQ) {
+      if (operator == EQ && isNull) {
+        predicate=PredicateBuilder.isNull(left);
+      }
+ else       if (operator == NOT && isNull) {
+        predicate=PredicateBuilder.isNotNull(left);
+      }
+ else       if (operator == EQ) {
         predicate=PredicateBuilder.isEqualTo(left,rightConverted);
       }
  else       if (operator == GT) {
