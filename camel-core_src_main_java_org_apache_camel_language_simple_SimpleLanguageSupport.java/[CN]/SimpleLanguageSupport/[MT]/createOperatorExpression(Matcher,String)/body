@@ -71,6 +71,36 @@
           predicate=PredicateBuilder.not(predicate);
         }
       }
+ else       if (operator == IS || operator == NOT_IS) {
+        String name=right.evaluate(exchange,String.class);
+        Class rightType=exchange.getContext().getClassResolver().resolveClass(name);
+        if (rightType == null) {
+          rightType=exchange.getContext().getClassResolver().resolveClass("java.lang." + name);
+        }
+        if (rightType == null) {
+          throw new IllegalArgumentException("Syntax error in is operator: " + expression + " cannot find class with name: "+ name);
+        }
+        predicate=PredicateBuilder.isInstanceOf(left,rightType);
+        if (operator == NOT_IS) {
+          predicate=PredicateBuilder.not(predicate);
+        }
+      }
+ else       if (operator == RANGE || operator == NOT_RANGE) {
+        String range=right.evaluate(exchange,String.class);
+        Matcher matcher=RANGE_PATTERN.matcher(range);
+        if (matcher.matches()) {
+          Expression from=ExpressionBuilder.constantExpression(matcher.group(1));
+          Expression to=ExpressionBuilder.constantExpression(matcher.group(3));
+          predicate=PredicateBuilder.isGreaterThanOrEqualTo(left,from);
+          predicate=PredicateBuilder.and(predicate,PredicateBuilder.isLessThanOrEqualTo(left,to));
+        }
+ else {
+          throw new IllegalArgumentException("Syntax error in range operator: " + expression + " is not valid."+ " Valid syntax: from..to (where from and to are numbers).");
+        }
+        if (operator == NOT_RANGE) {
+          predicate=PredicateBuilder.not(predicate);
+        }
+      }
       if (predicate == null) {
         throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
       }
