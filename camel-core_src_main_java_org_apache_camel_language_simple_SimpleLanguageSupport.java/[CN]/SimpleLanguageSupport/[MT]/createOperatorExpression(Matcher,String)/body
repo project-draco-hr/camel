@@ -1,115 +1,42 @@
 {
-  final Expression left=createSimpleExpression(matcher.group(1),true);
-  final SimpleLangaugeOperator operator=asOperator(matcher.group(2));
-  String text=matcher.group(3);
-  final Expression right;
-  final Expression rightConverted;
-  final Boolean isNull;
-  if ("null".equals(text) || "'null'".equals(text)) {
-    isNull=Boolean.TRUE;
-    right=createConstantExpression(null);
-    rightConverted=right;
+  int groupCount=matcher.groupCount();
+  if (log.isTraceEnabled()) {
+    log.trace("Matcher expression: " + expression);
+    log.trace("Matcher group count: " + groupCount);
+    for (int i=0; i < matcher.groupCount() + 1; i++) {
+      String group=matcher.group(i);
+      if (log.isTraceEnabled()) {
+        log.trace("Matcher group #" + i + ": "+ group);
+      }
+    }
+  }
+  String operatorText=matcher.group(6);
+  if (operatorText == null) {
+    return doCreateOperatorExpression(expression,matcher.group(2),matcher.group(3),matcher.group(4));
   }
  else {
-    isNull=Boolean.FALSE;
-    String constant=ObjectHelper.between(text,"'","'");
-    if (constant == null) {
-      constant=text;
+    final Expression first=doCreateOperatorExpression(expression,matcher.group(2),matcher.group(3),matcher.group(4));
+    final SimpleLangaugeOperator operator=asOperator(operatorText);
+    final Expression last=doCreateOperatorExpression(expression,matcher.group(8),matcher.group(9),matcher.group(10));
+    final Predicate compoundPredicate;
+    if (operator == AND) {
+      compoundPredicate=PredicateBuilder.and(PredicateBuilder.toPredicate(first),PredicateBuilder.toPredicate(last));
     }
-    String simple=ObjectHelper.between(text,"${","}");
-    right=simple != null ? createSimpleExpression(simple,true) : createConstantExpression(constant);
-    rightConverted=ExpressionBuilder.convertToExpression(right,left);
-  }
-  return new Expression(){
-    public <T>T evaluate(    Exchange exchange,    Class<T> type){
-      Predicate predicate=null;
-      if (operator == EQ && isNull) {
-        predicate=PredicateBuilder.isNull(left);
-      }
- else       if (operator == NOT && isNull) {
-        predicate=PredicateBuilder.isNotNull(left);
-      }
- else       if (operator == EQ) {
-        predicate=PredicateBuilder.isEqualTo(left,rightConverted);
-      }
- else       if (operator == GT) {
-        predicate=PredicateBuilder.isGreaterThan(left,rightConverted);
-      }
- else       if (operator == GTE) {
-        predicate=PredicateBuilder.isGreaterThanOrEqualTo(left,rightConverted);
-      }
- else       if (operator == LT) {
-        predicate=PredicateBuilder.isLessThan(left,rightConverted);
-      }
- else       if (operator == LTE) {
-        predicate=PredicateBuilder.isLessThanOrEqualTo(left,rightConverted);
-      }
- else       if (operator == NOT) {
-        predicate=PredicateBuilder.isNotEqualTo(left,rightConverted);
-      }
- else       if (operator == CONTAINS || operator == NOT_CONTAINS) {
-        predicate=PredicateBuilder.contains(left,rightConverted);
-        if (operator == NOT_CONTAINS) {
-          predicate=PredicateBuilder.not(predicate);
-        }
-      }
- else       if (operator == REGEX || operator == NOT_REGEX) {
-        predicate=PredicateBuilder.regex(left,right.evaluate(exchange,String.class));
-        if (operator == NOT_REGEX) {
-          predicate=PredicateBuilder.not(predicate);
-        }
-      }
- else       if (operator == IN || operator == NOT_IN) {
-        Iterator it=ObjectHelper.createIterator(right.evaluate(exchange,Object.class));
-        List<Object> values=new ArrayList<Object>();
-        while (it.hasNext()) {
-          values.add(it.next());
-        }
-        ValueBuilder vb=new ValueBuilder(left);
-        predicate=vb.in(values.toArray());
-        if (operator == NOT_IN) {
-          predicate=PredicateBuilder.not(predicate);
-        }
-      }
- else       if (operator == IS || operator == NOT_IS) {
-        String name=right.evaluate(exchange,String.class);
-        Class rightType=exchange.getContext().getClassResolver().resolveClass(name);
-        if (rightType == null) {
-          rightType=exchange.getContext().getClassResolver().resolveClass("java.lang." + name);
-        }
-        if (rightType == null) {
-          throw new IllegalArgumentException("Syntax error in is operator: " + expression + " cannot find class with name: "+ name);
-        }
-        predicate=PredicateBuilder.isInstanceOf(left,rightType);
-        if (operator == NOT_IS) {
-          predicate=PredicateBuilder.not(predicate);
-        }
-      }
- else       if (operator == RANGE || operator == NOT_RANGE) {
-        String range=right.evaluate(exchange,String.class);
-        Matcher matcher=RANGE_PATTERN.matcher(range);
-        if (matcher.matches()) {
-          Expression from=ExpressionBuilder.constantExpression(matcher.group(1));
-          Expression to=ExpressionBuilder.constantExpression(matcher.group(3));
-          predicate=PredicateBuilder.isGreaterThanOrEqualTo(left,from);
-          predicate=PredicateBuilder.and(predicate,PredicateBuilder.isLessThanOrEqualTo(left,to));
-        }
+ else     if (operator == OR) {
+      compoundPredicate=PredicateBuilder.or(PredicateBuilder.toPredicate(first),PredicateBuilder.toPredicate(last));
+    }
  else {
-          throw new IllegalArgumentException("Syntax error in range operator: " + expression + " is not valid."+ " Valid syntax: from..to (where from and to are numbers).");
-        }
-        if (operator == NOT_RANGE) {
-          predicate=PredicateBuilder.not(predicate);
-        }
-      }
-      if (predicate == null) {
-        throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
-      }
-      boolean matches=predicate.matches(exchange);
-      return exchange.getContext().getTypeConverter().convertTo(type,matches);
+      throw new IllegalArgumentException("Syntax error in expression: " + expression + ". Expected operator as either and/or but was: "+ operator);
     }
-    @Override public String toString(){
-      return left + " " + operator+ " "+ right;
+    return new Expression(){
+      public <T>T evaluate(      Exchange exchange,      Class<T> type){
+        boolean matches=compoundPredicate.matches(exchange);
+        return exchange.getContext().getTypeConverter().convertTo(type,matches);
+      }
+      @Override public String toString(){
+        return first + " " + operator+ " "+ last;
+      }
     }
-  }
 ;
+  }
 }
