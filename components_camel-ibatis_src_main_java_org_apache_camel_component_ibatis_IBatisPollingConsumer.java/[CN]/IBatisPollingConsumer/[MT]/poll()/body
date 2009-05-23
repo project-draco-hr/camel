@@ -4,16 +4,24 @@
     LOG.trace("Polling: " + endpoint);
   }
   List data=endpoint.getProcessingStrategy().poll(this,getEndpoint());
+  List<DataHolder> answer=new ArrayList<DataHolder>();
   if (useIterator) {
-    for (    Object object : data) {
-      if (isRunAllowed()) {
-        process(object);
-      }
+    for (    Object item : data) {
+      Exchange exchange=createExchange(item);
+      DataHolder holder=new DataHolder();
+      holder.exchange=exchange;
+      holder.data=item;
+      answer.add(holder);
     }
   }
  else {
     if (!data.isEmpty() || routeEmptyResultSet) {
-      process(data);
+      Exchange exchange=createExchange(data);
+      DataHolder holder=new DataHolder();
+      holder.exchange=exchange;
+      holder.data=data;
+      answer.add(holder);
     }
   }
+  processBatch(answer);
 }
