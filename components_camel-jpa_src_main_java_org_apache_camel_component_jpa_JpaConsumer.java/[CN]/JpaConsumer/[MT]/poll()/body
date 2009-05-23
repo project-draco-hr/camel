@@ -1,23 +1,22 @@
 {
   template.execute(new JpaCallback(){
     public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+      List<DataHolder> answer=new ArrayList<DataHolder>();
       Query query=getQueryFactory().createQuery(entityManager);
       configureParameters(query);
       List results=query.getResultList();
       for (      Object result : results) {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Processing new entity: " + result);
-        }
-        if (lockEntity(result,entityManager)) {
-          Exchange exchange=createExchange(result);
-          try {
-            getProcessor().process(exchange);
-          }
- catch (          Exception e) {
-            throw new PersistenceException(e);
-          }
-          getDeleteHandler().deleteObject(entityManager,result);
-        }
+        DataHolder holder=new DataHolder();
+        holder.manager=entityManager;
+        holder.result=result;
+        holder.exchange=createExchange(result);
+        answer.add(holder);
+      }
+      try {
+        processBatch(answer);
+      }
+ catch (      Exception e) {
+        throw new PersistenceException(e);
       }
       entityManager.flush();
       return null;
