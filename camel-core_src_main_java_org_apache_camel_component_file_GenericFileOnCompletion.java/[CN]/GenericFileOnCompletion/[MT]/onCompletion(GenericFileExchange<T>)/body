@@ -1,0 +1,25 @@
+{
+  GenericFileProcessStrategy<T> processStrategy=endpoint.getGenericFileProcessStrategy();
+  final GenericFile<T> file=exchange.getGenericFile();
+  boolean failed=exchange.isFailed();
+  if (log.isDebugEnabled()) {
+    log.debug("Done processing file: " + file + " using exchange: "+ exchange);
+  }
+  boolean committed=false;
+  try {
+    if (!failed) {
+      processStrategyCommit(processStrategy,exchange,file);
+      committed=true;
+    }
+ else {
+      if (exchange.getException() != null) {
+        handleException(exchange.getException());
+      }
+    }
+  }
+  finally {
+    if (!committed) {
+      processStrategyRollback(processStrategy,exchange,file);
+    }
+  }
+}

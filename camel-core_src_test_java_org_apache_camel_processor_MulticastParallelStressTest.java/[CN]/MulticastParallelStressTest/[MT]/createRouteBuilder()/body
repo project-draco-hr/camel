@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").multicast(new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          if (oldExchange == null) {
+            return newExchange;
+          }
+          String body=oldExchange.getIn().getBody(String.class);
+          oldExchange.getIn().setBody(body + newExchange.getIn().getBody(String.class));
+          return oldExchange;
+        }
+      }
+).parallelProcessing().to("direct:a","direct:b","direct:c","direct:d").end().to("mock:result");
+      from("direct:a").delay(20).setBody(body().append("A"));
+      from("direct:b").setBody(body().append("B"));
+      from("direct:c").delay(50).setBody(body().append("C"));
+      from("direct:d").delay(10).setBody(body().append("D"));
+    }
+  }
+;
+}

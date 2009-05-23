@@ -3,48 +3,46 @@
     AggregationStrategy surnameAggregator=new AggregationStrategy(){
       public Exchange aggregate(      Exchange oldExchange,      Exchange newExchange){
         debugIn("Surname Aggregator",oldExchange,newExchange);
-        Message oldIn=oldExchange.getIn();
-        Message newIn=newExchange.getIn();
-        List<String> brothers=null;
-        if (oldIn.getBody() instanceof List) {
-          brothers=oldIn.getBody(List.class);
-          brothers.add(newIn.getBody(String.class));
+        Exchange answer=newExchange;
+        if (oldExchange != null) {
+          List<String> brothers=oldExchange.getIn().getBody(List.class);
+          brothers.add(newExchange.getIn().getBody(String.class));
+          answer=oldExchange;
         }
  else {
-          brothers=new ArrayList<String>();
-          brothers.add(oldIn.getBody(String.class));
-          brothers.add(newIn.getBody(String.class));
-          oldExchange.getIn().setBody(brothers);
+          List<String> brothers=new ArrayList<String>();
+          brothers.add(newExchange.getIn().getBody(String.class));
+          newExchange.getIn().setBody(brothers);
         }
-        debugOut("Surname Aggregator",oldExchange);
-        return oldExchange;
+        debugOut("Surname Aggregator",answer);
+        return answer;
       }
     }
 ;
-    AggregationStrategy brothersAggregator=new AggregationStrategy(){
+    @SuppressWarnings("unchecked") AggregationStrategy brothersAggregator=new AggregationStrategy(){
       public Exchange aggregate(      Exchange oldExchange,      Exchange newExchange){
         debugIn("Brothers Aggregator",oldExchange,newExchange);
-        Message oldIn=oldExchange.getIn();
-        Message newIn=newExchange.getIn();
-        Map<String,List> brothers=null;
-        if (oldIn.getBody() instanceof Map) {
-          brothers=oldIn.getBody(Map.class);
-          brothers.put(newIn.getHeader(SURNAME_HEADER,String.class),newIn.getBody(List.class));
+        Exchange answer=newExchange;
+        if (oldExchange != null) {
+          Map<String,List> brothers=oldExchange.getIn().getBody(Map.class);
+          brothers.put(newExchange.getIn().getHeader(SURNAME_HEADER,String.class),newExchange.getIn().getBody(List.class));
+          answer=oldExchange;
         }
  else {
-          brothers=new HashMap<String,List>();
-          brothers.put(oldIn.getHeader(SURNAME_HEADER,String.class),oldIn.getBody(List.class));
-          brothers.put(newIn.getHeader(SURNAME_HEADER,String.class),newIn.getBody(List.class));
-          oldExchange.getIn().setBody(brothers);
+          Map<String,List> brothers=new HashMap<String,List>();
+          brothers.put(newExchange.getIn().getHeader(SURNAME_HEADER,String.class),newExchange.getIn().getBody(List.class));
+          newExchange.getIn().setBody(brothers);
         }
-        debugOut("Brothers Aggregator",oldExchange);
-        return oldExchange;
+        debugOut("Brothers Aggregator",answer);
+        return answer;
       }
     }
 ;
     private void debugIn(    String stringId,    Exchange oldExchange,    Exchange newExchange){
-      log.debug(stringId + " old headers in: " + oldExchange.getIn().getHeaders());
-      log.debug(stringId + " old body in: " + oldExchange.getIn().getBody());
+      if (oldExchange != null) {
+        log.debug(stringId + " old headers in: " + oldExchange.getIn().getHeaders());
+        log.debug(stringId + " old body in: " + oldExchange.getIn().getBody());
+      }
       log.debug(stringId + " new headers in: " + newExchange.getIn().getHeaders());
       log.debug(stringId + " new body in: " + newExchange.getIn().getBody());
     }

@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from(uri).aggregate(constant(true),new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          Exchange answer=oldExchange != null ? oldExchange : newExchange;
+          COUNTER.getAndIncrement();
+          Integer newIndex=newExchange.getIn().getHeader("index",Integer.class);
+          int total=SUM.addAndGet(newIndex);
+          answer.getIn().setHeader("total",total);
+          LOG.debug("Index: " + newIndex + ". Total so far: "+ total);
+          return answer;
+        }
+      }
+).batchTimeout(60000).completionPredicate(property(Exchange.AGGREGATED_SIZE).isEqualTo(100)).to("direct:foo");
+      from("direct:foo").setBody().header("total").to("mock:result");
+    }
+  }
+;
+}

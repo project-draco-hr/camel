@@ -1,6 +1,14 @@
 {
   MockEndpoint mock=getMockEndpoint("mock:result");
-  mock.expectedBodiesReceived("AB");
-  template.sendBody("direct:start","Hello");
+  mock.expectedMessageCount(20);
+  mock.whenAnyExchangeReceived(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      assertEquals("AB",exchange.getIn().getBody(String.class));
+    }
+  }
+);
+  for (int i=0; i < 20; i++) {
+    template.sendBody("direct:start","Hello");
+  }
   assertMockEndpointsSatisfied();
 }

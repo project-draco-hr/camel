@@ -6,7 +6,7 @@
     final GenericFileProcessStrategy<T> processStrategy=endpoint.getGenericFileProcessStrategy();
     boolean begin=processStrategy.begin(operations,endpoint,exchange,exchange.getGenericFile());
     if (!begin) {
-      log.warn(endpoint + " cannot process remote file: " + exchange.getGenericFile());
+      log.warn(endpoint + " cannot begin processing file: " + exchange.getGenericFile());
       return;
     }
     final GenericFile<T> target=exchange.getGenericFile();
@@ -21,34 +21,8 @@
     if (log.isDebugEnabled()) {
       log.debug("About to process file: " + target + " using exchange: "+ exchange);
     }
-    try {
-      getProcessor().process(exchange);
-    }
- catch (    Exception e) {
-      exchange.setException(e);
-    }
-    final GenericFile<T> file=exchange.getGenericFile();
-    boolean failed=exchange.isFailed();
-    if (log.isDebugEnabled()) {
-      log.debug("Done processing file: " + file + " using exchange: "+ exchange);
-    }
-    boolean committed=false;
-    try {
-      if (!failed) {
-        processStrategyCommit(processStrategy,exchange,file);
-        committed=true;
-      }
- else {
-        if (exchange.getException() != null) {
-          handleException(exchange.getException());
-        }
-      }
-    }
-  finally {
-      if (!committed) {
-        processStrategyRollback(processStrategy,exchange,file);
-      }
-    }
+    exchange.addOnCompletion(new GenericFileOnCompletion<T>(endpoint,operations));
+    getProcessor().process(exchange);
   }
  catch (  Exception e) {
     handleException(e);
