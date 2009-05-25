@@ -1,0 +1,25 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  Map<Integer,Future> responses=new ConcurrentHashMap();
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    Future out=executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        Map<String,Object> headers=new HashMap<String,Object>();
+        headers.put("username","davsclaus");
+        headers.put("id",index);
+        return template.requestBodyAndHeaders("restlet:http://localhost:9080/users/{username}/{id}?restletMethod=POST",null,headers,String.class);
+      }
+    }
+);
+    responses.put(index,out);
+  }
+  assertMockEndpointsSatisfied();
+  assertEquals(files,responses.size());
+  Set unique=new HashSet();
+  for (  Future future : responses.values()) {
+    unique.add(future.get());
+  }
+  assertEquals("Should be " + files + " unique responses",files,unique.size());
+}

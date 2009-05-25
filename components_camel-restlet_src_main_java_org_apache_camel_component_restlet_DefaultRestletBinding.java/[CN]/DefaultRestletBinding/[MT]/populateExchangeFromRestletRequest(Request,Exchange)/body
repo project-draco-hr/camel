@@ -9,27 +9,25 @@
     }
   }
   String query=request.getResourceRef().getQuery();
-  if (null != query) {
+  if (query != null) {
     inMessage.setHeader(RestletConstants.RESTLET_QUERY_STRING,query);
   }
   if (!request.isEntityAvailable()) {
     return;
   }
   Form form=new Form(request.getEntity());
-  if (form != null) {
-    for (    Map.Entry<String,String> entry : form.getValuesMap().entrySet()) {
-      if (entry.getValue() == null) {
-        inMessage.setBody(entry.getKey());
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Populate exchange from Restlet request body: " + entry.getValue());
-        }
+  for (  Map.Entry<String,String> entry : form.getValuesMap().entrySet()) {
+    if (entry.getValue() == null) {
+      inMessage.setBody(entry.getKey());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Populate exchange from Restlet request body: " + entry.getValue());
       }
+    }
  else {
-        if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
-          inMessage.setHeader(entry.getKey(),entry.getValue());
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Populate exchange from Restlet request user header: " + entry.getKey() + " value: "+ entry.getValue());
-          }
+      if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
+        inMessage.setHeader(entry.getKey(),entry.getValue());
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Populate exchange from Restlet request user header: " + entry.getKey() + " value: "+ entry.getValue());
         }
       }
     }
