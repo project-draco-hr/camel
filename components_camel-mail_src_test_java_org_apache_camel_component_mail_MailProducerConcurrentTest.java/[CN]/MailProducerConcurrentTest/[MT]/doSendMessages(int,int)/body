@@ -1,0 +1,24 @@
+{
+  Mailbox.clearAll();
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  getMockEndpoint("mock:result").expectsNoDuplicates(body());
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        template.sendBodyAndHeader("direct:start","Message " + index,"To","someone@localhost");
+        return null;
+      }
+    }
+);
+  }
+  assertMockEndpointsSatisfied();
+  Mailbox box=Mailbox.get("someone@localhost");
+  assertEquals(files,box.size());
+  Set bodies=new HashSet();
+  for (int i=0; i < files; i++) {
+    bodies.add(box.get(i).getContent());
+  }
+  assertEquals("There should be " + files + " unique mails",files,bodies.size());
+}
