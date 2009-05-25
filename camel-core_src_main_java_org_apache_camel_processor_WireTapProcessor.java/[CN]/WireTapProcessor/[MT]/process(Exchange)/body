@@ -1,14 +1,10 @@
 {
-  if (producer == null) {
-    if (isStopped()) {
-      LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
-    }
- else {
-      throw new IllegalStateException("No producer, this processor has not been started!");
+  producerCache.doInProducer(destination,exchange,pattern,new ProducerCallback<Exchange>(){
+    public Exchange doInProducer(    Producer producer,    Exchange exchange,    ExchangePattern pattern) throws Exception {
+      Exchange wireTapExchange=configureExchange(exchange,pattern);
+      procesWireTap(producer,wireTapExchange);
+      return wireTapExchange;
     }
   }
- else {
-    Exchange wireTapExchange=configureExchange(exchange);
-    procesWireTap(wireTapExchange);
-  }
+);
 }

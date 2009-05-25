@@ -1,0 +1,24 @@
+{
+  Producer producer=getProducer(endpoint);
+  if (producer == null) {
+    if (isStopped()) {
+      LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
+      return null;
+    }
+ else {
+      throw new IllegalStateException("No producer, this processor has not been started: " + this);
+    }
+  }
+  try {
+    return callback.doInProducer(producer,exchange,pattern);
+  }
+  finally {
+    boolean singleton=true;
+    if (producer instanceof IsSingleton) {
+      singleton=((IsSingleton)producer).isSingleton();
+    }
+    if (!singleton) {
+      producer.stop();
+    }
+  }
+}

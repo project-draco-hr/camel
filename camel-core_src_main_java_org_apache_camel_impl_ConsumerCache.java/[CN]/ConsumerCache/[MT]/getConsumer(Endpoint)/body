@@ -9,7 +9,21 @@
  catch (    Exception e) {
       throw new FailedToCreateConsumerException(endpoint,e);
     }
-    consumers.put(key,answer);
+    boolean singleton=true;
+    if (answer instanceof IsSingleton) {
+      singleton=((IsSingleton)answer).isSingleton();
+    }
+    if (singleton) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Adding to consumer cache with key: " + endpoint + " for consumer: "+ answer);
+      }
+      consumers.put(key,answer);
+    }
+ else {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Consumer for endpoint: " + key + " is not singleton and thus not added to producer cache");
+      }
+    }
   }
   return answer;
 }
