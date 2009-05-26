@@ -1,0 +1,25 @@
+{
+  final Endpoint endpoint=context.getEndpoint("mock:foo");
+  ExecutorService exectur=Executors.newFixedThreadPool(5);
+  List<Future> response=new ArrayList<Future>();
+  for (int i=0; i < 5; i++) {
+    final int index=i;
+    Future out=exectur.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        Producer producer=pool.acquire(endpoint);
+        if (producer == null) {
+          producer=pool.addAndAcquire(endpoint,new MyProducer(endpoint));
+        }
+        assertNotNull(producer);
+        pool.release(endpoint,producer);
+        return index;
+      }
+    }
+);
+    response.add(out);
+  }
+  for (int i=0; i < 5; i++) {
+    assertEquals(i,response.get(i).get());
+  }
+  assertEquals(5,pool.size());
+}
