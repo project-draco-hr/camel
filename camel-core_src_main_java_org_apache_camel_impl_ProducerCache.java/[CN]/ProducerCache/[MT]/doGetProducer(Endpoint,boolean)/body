@@ -1,0 +1,29 @@
+{
+  String key=endpoint.getEndpointUri();
+  Producer answer=producers.get(key);
+  if (pooled && answer == null) {
+    answer=pool.acquire(endpoint);
+  }
+  if (answer == null) {
+    try {
+      answer=endpoint.createProducer();
+      answer.start();
+    }
+ catch (    Exception e) {
+      throw new FailedToCreateProducerException(endpoint,e);
+    }
+    if (pooled && answer instanceof ServicePoolAware) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Adding to producer service pool with key: " + endpoint + " for producer: "+ answer);
+      }
+      answer=pool.acquireIfAbsent(endpoint,answer);
+    }
+ else     if (answer.isSingleton()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Adding to producer cache with key: " + endpoint + " for producer: "+ answer);
+      }
+      producers.put(key,answer);
+    }
+  }
+  return answer;
+}

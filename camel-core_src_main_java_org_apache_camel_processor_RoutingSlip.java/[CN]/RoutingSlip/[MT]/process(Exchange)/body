@@ -4,12 +4,17 @@
   Exchange current=exchange;
   for (  String nextRecipient : recipients) {
     Endpoint endpoint=resolveEndpoint(exchange,nextRecipient);
-    Producer producer=producerCache.getProducer(endpoint);
-    Exchange ex=current.newInstance();
+    Exchange copy=current.newInstance();
     updateRoutingSlip(current);
-    copyOutToIn(ex,current);
-    producer.process(ex);
-    current=ex;
+    copyOutToIn(copy,current);
+    producerCache.doInProducer(endpoint,copy,null,new ProducerCallback<Object>(){
+      public Object doInProducer(      Producer producer,      Exchange exchange,      ExchangePattern exchangePattern) throws Exception {
+        producer.process(exchange);
+        return exchange;
+      }
+    }
+);
+    current=copy;
   }
   ExchangeHelper.copyResults(exchange,current);
 }

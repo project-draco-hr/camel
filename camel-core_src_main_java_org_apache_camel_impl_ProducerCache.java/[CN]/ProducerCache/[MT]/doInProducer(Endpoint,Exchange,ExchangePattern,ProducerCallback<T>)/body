@@ -1,5 +1,5 @@
 {
-  Producer producer=getProducer(endpoint);
+  Producer producer=doGetProducer(endpoint,true);
   if (producer == null) {
     if (isStopped()) {
       LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
@@ -13,11 +13,10 @@
     return callback.doInProducer(producer,exchange,pattern);
   }
   finally {
-    boolean singleton=true;
-    if (producer instanceof IsSingleton) {
-      singleton=((IsSingleton)producer).isSingleton();
+    if (producer instanceof ServicePoolAware) {
+      pool.release(endpoint,producer);
     }
-    if (!singleton) {
+ else     if (!producer.isSingleton()) {
       producer.stop();
     }
   }
