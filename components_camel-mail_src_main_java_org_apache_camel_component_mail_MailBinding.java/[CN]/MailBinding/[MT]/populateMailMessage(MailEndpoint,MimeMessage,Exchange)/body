@@ -21,12 +21,22 @@
       appendAttachmentsFromCamel(mimeMessage,exchange.getIn(),endpoint.getConfiguration());
     }
  else {
-      if ("text/html".equals(endpoint.getConfiguration().getContentType())) {
-        DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),"text/html");
-        mimeMessage.setDataHandler(new DataHandler(ds));
+      String contentType=populateContentType(endpoint,mimeMessage,exchange);
+      if (contentType == null) {
+        mimeMessage.setText(exchange.getIn().getBody(String.class));
+      }
+ else       if (contentType.startsWith("text/plain")) {
+        String charset=ObjectHelper.after(contentType,"charset=");
+        if (charset != null) {
+          mimeMessage.setText(exchange.getIn().getBody(String.class),charset);
+        }
+ else {
+          mimeMessage.setText(exchange.getIn().getBody(String.class));
+        }
       }
  else {
-        mimeMessage.setText(exchange.getIn().getBody(String.class));
+        DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),contentType);
+        mimeMessage.setDataHandler(new DataHandler(ds));
       }
     }
   }
