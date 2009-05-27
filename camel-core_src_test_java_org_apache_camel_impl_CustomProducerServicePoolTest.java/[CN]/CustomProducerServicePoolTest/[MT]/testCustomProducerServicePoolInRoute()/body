@@ -1,0 +1,20 @@
+{
+  context.addEndpoint("my",new MyEndpoint());
+  MyPool pool=new MyPool();
+  pool.start();
+  context.setProducerServicePool(pool);
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("my","mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(2);
+  template.sendBody("direct:start","Hello World");
+  template.sendBody("direct:start","Bye World");
+  assertMockEndpointsSatisfied();
+  assertEquals(2,COUNTER);
+  assertEquals(1,pool.size());
+}
