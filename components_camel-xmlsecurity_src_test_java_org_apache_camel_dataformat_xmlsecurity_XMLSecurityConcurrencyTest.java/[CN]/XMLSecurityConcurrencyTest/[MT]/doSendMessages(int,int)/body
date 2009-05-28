@@ -1,0 +1,21 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  getMockEndpoint("mock:secure").expectedMessageCount(files);
+  getMockEndpoint("mock:result").assertNoDuplicates(body());
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        String body="<?xml version=\"1.0\" encoding=\"UTF-8\" ?><body>you can not read me " + index + "</body>";
+        template.sendBody("direct:start",body);
+        return null;
+      }
+    }
+);
+  }
+  assertMockEndpointsSatisfied();
+  String secure=getMockEndpoint("mock:secure").getReceivedExchanges().get(0).getIn().getBody(String.class);
+  assertNotNull(secure);
+  assertTrue("Should not be readable",secure.indexOf("read") == -1);
+}
