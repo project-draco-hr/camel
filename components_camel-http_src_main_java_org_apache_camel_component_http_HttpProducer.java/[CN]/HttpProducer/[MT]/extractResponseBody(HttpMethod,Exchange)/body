@@ -1,16 +1,10 @@
 {
-  InputStream is=null;
-  try {
-    CachedOutputStream cos=new CachedOutputStream(exchange.getContext().getProperties());
-    is=GZIPHelper.getInputStream(method);
-    if (is == null) {
-      return null;
-    }
-    IOUtils.copy(is,cos);
-    cos.flush();
-    return cos.getInputStream();
+  InputStream is=method.getResponseBodyAsStream();
+  if (is == null) {
+    return null;
   }
-  finally {
-    ObjectHelper.close(is,"Extracting response body",LOG);
-  }
+  Header header=method.getRequestHeader(HttpConstants.CONTENT_ENCODING);
+  String contentEncoding=header != null ? header.getValue() : null;
+  is=GZIPHelper.toGZIPInputStream(contentEncoding,is);
+  return doExtractResponseBody(is,exchange);
 }

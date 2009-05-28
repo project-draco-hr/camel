@@ -14,32 +14,11 @@
     }
   }
   if (message.getBody() != null) {
-    InputStream is=message.getBody(InputStream.class);
-    if (is != null) {
-      ServletOutputStream os=response.getOutputStream();
-      try {
-        ByteArrayOutputStream initialArray=new ByteArrayOutputStream();
-        int c;
-        while ((c=is.read()) >= 0) {
-          initialArray.write(c);
-        }
-        byte[] processedArray=processReponseContent(message,initialArray.toByteArray(),response);
-        os.write(processedArray);
-        response.setContentLength(processedArray.length);
-        os.flush();
-      }
-  finally {
-        os.close();
-        is.close();
-      }
+    if (GZIPHelper.isGzip(message)) {
+      doWriteGZIPResponse(message,response,exchange);
     }
  else {
-      String data=message.getBody(String.class);
-      if (data != null) {
-        response.setContentLength(data.length());
-        response.getWriter().print(data);
-        response.getWriter().flush();
-      }
+      doWriteDirectResponse(message,response,exchange);
     }
   }
 }
