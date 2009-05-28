@@ -1,0 +1,20 @@
+{
+  if (classPathHasSpaces()) {
+    return;
+  }
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  getMockEndpoint("mock:result").assertNoDuplicates(body());
+  getMockEndpoint("mock:result").message(0).body().contains("Echo");
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        template.sendBody("direct:echo","" + index);
+        return null;
+      }
+    }
+);
+  }
+  assertMockEndpointsSatisfied();
+}
