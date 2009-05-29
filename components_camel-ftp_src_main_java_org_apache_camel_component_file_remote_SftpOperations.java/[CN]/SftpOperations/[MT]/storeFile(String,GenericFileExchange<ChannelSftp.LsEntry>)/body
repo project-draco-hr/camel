@@ -1,7 +1,24 @@
 {
+  if (endpoint.getFileExist() == GenericFileExist.Ignore || endpoint.getFileExist() == GenericFileExist.Fail) {
+    boolean existFile=existFile(name);
+    if (existFile && endpoint.getFileExist() == GenericFileExist.Ignore) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("An existing file already exists: " + name + ". Ignore and do not override it.");
+      }
+      return true;
+    }
+ else     if (existFile && endpoint.getFileExist() == GenericFileExist.Fail) {
+      throw new GenericFileOperationFailedException("File already exist: " + name + ". Cannot write new file.");
+    }
+  }
   try {
     InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-    channel.put(in,name);
+    if (endpoint.getFileExist() == GenericFileExist.Append) {
+      channel.put(in,name,ChannelSftp.APPEND);
+    }
+ else {
+      channel.put(in,name);
+    }
     return true;
   }
  catch (  SftpException e) {

@@ -1,6 +1,17 @@
 {
   ObjectHelper.notNull(endpoint,"endpoint");
   File file=new File(fileName);
+  if (file.exists()) {
+    if (endpoint.getFileExist() == GenericFileExist.Ignore) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("An existing file already exists: " + file + ". Ignore and do not override it.");
+      }
+      return true;
+    }
+ else     if (endpoint.getFileExist() == GenericFileExist.Fail) {
+      throw new GenericFileOperationFailedException("File already exist: " + file + ". Cannot write new file.");
+    }
+  }
   try {
     File source=null;
     if (exchange.getIn().getBody() instanceof File || exchange.getIn().getBody() instanceof GenericFile) {
