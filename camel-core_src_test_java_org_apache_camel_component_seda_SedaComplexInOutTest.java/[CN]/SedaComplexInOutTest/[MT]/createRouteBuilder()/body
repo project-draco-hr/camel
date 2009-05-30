@@ -1,0 +1,12 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      getContext().addInterceptStrategy(new Tracer());
+      from("direct:start").to("seda:a");
+      from("seda:a").to("log:bar","seda:b");
+      from("seda:b").delay(10).to("direct:c");
+      from("direct:c").transform(constant("Bye World")).to("mock:result");
+    }
+  }
+;
+}

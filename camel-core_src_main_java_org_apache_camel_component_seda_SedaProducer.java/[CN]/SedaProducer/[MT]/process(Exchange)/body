@@ -1,0 +1,30 @@
+{
+  Exchange copy=exchange.newCopy(true);
+  copy.setFromEndpoint(endpoint);
+  WaitForTaskToComplete wait=waitTaskComplete;
+  if (exchange.getIn().getHeader(Exchange.ASYNC_WAIT) != null) {
+    wait=exchange.getIn().getHeader(Exchange.ASYNC_WAIT,WaitForTaskToComplete.class);
+  }
+  if (wait == WaitForTaskToComplete.Always || (wait == WaitForTaskToComplete.IfReplyExpected && ExchangeHelper.isOutCapable(exchange))) {
+    if (endpoint.getConsumers().isEmpty()) {
+      throw new IllegalStateException("Cannot send to endpoint: " + endpoint.getEndpointUri() + " as no consumers is registered."+ " With no consumers we end up waiting forever for the reply, as there are no consumers to process our exchange: "+ exchange);
+    }
+    final CountDownLatch latch=new CountDownLatch(1);
+    copy.addOnCompletion(new SynchronizationAdapter(){
+      @Override public void onDone(      Exchange response){
+        try {
+          ExchangeHelper.copyResults(exchange,response);
+        }
+  finally {
+          latch.countDown();
+        }
+      }
+    }
+);
+    queue.add(copy);
+    latch.await();
+  }
+ else {
+    queue.add(copy);
+  }
+}
