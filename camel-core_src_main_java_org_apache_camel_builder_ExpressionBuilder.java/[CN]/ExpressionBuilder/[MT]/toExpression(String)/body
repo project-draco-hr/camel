@@ -1,0 +1,30 @@
+{
+  return new ExpressionAdapter(){
+    public Object evaluate(    Exchange exchange){
+      Endpoint endpoint=exchange.getContext().getEndpoint(uri);
+      if (endpoint == null) {
+        throw new NoSuchEndpointException(uri);
+      }
+      Producer producer;
+      try {
+        producer=endpoint.createProducer();
+        producer.start();
+        producer.process(exchange);
+        producer.stop();
+      }
+ catch (      Exception e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+      if (ExchangeHelper.isOutCapable(exchange)) {
+        return exchange.getOut().getBody();
+      }
+ else {
+        return exchange.getIn().getBody();
+      }
+    }
+    @Override public String toString(){
+      return "to(" + uri + ")";
+    }
+  }
+;
+}
