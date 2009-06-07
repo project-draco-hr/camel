@@ -1,9 +1,10 @@
 {
-  String messageId=messageIdExpression.evaluate(exchange,String.class);
+  final String messageId=messageIdExpression.evaluate(exchange,String.class);
   if (messageId == null) {
     throw new NoMessageIdException(exchange,messageIdExpression);
   }
-  if (idempotentRepository.contains(messageId)) {
+  boolean newKey=idempotentRepository.add(messageId);
+  if (!newKey) {
     onDuplicateMessage(exchange,messageId);
   }
  else {

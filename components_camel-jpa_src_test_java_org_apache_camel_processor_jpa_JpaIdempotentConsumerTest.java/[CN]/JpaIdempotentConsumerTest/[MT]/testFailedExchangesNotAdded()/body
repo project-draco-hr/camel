@@ -1,0 +1,27 @@
+{
+  context.addRoutes(new SpringRouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2).delay(0).logStackTrace(false));
+      from("direct:start").idempotentConsumer(header("messageId"),jpaMessageIdRepository(lookup(JpaTemplate.class),PROCESSOR_NAME)).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("messageId",String.class);
+          if (id.equals("2")) {
+            throw new IllegalArgumentException("Damm I cannot handle id 2");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:error").expectedMessageCount(2);
+  resultEndpoint.expectedBodiesReceived("one","three");
+  sendMessage("1","one");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  sendMessage("3","three");
+  assertMockEndpointsSatisfied();
+}
