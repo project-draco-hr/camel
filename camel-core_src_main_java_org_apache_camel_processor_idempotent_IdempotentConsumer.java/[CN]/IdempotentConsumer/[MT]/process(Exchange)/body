@@ -3,12 +3,17 @@
   if (messageId == null) {
     throw new NoMessageIdException(exchange,messageIdExpression);
   }
-  boolean newKey=idempotentRepository.add(messageId);
-  if (!newKey) {
-    onDuplicateMessage(exchange,messageId);
+  boolean newKey;
+  if (eager) {
+    newKey=idempotentRepository.add(messageId);
   }
  else {
-    exchange.addOnCompletion(new IdempotentOnCompletion(idempotentRepository,messageId));
-    processor.process(exchange);
+    newKey=!idempotentRepository.contains(messageId);
   }
+  if (!newKey) {
+    onDuplicateMessage(exchange,messageId);
+    return;
+  }
+  exchange.addOnCompletion(new IdempotentOnCompletion(idempotentRepository,messageId,eager));
+  processor.process(exchange);
 }
