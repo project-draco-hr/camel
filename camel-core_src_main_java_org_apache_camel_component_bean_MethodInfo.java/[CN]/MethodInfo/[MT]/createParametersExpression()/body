@@ -1,9 +1,15 @@
 {
   final int size=parameters.size();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Creating parameters expression for " + size + " parameters");
+  }
   final Expression[] expressions=new Expression[size];
   for (int i=0; i < size; i++) {
     Expression parameterExpression=parameters.get(i).getExpression();
     expressions[i]=parameterExpression;
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Parameter #" + i + " has expression: "+ parameterExpression);
+    }
   }
   return new Expression(){
     @SuppressWarnings("unchecked") public <T>T evaluate(    Exchange exchange,    Class<T> type){
@@ -19,7 +25,13 @@
           value=((Object[])body)[i];
         }
  else {
-          value=expressions[i].evaluate(exchange,parameters.get(i).getType());
+          Expression expression=expressions[i];
+          if (expression != null) {
+            value=expression.evaluate(exchange,parameters.get(i).getType());
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("Parameter #" + i + " evaluated as: "+ value+ " type: "+ ObjectHelper.type(value));
+            }
+          }
         }
         answer[i]=value;
       }
