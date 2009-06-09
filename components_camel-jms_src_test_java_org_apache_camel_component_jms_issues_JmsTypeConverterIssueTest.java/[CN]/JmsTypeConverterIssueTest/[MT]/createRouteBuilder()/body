@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("activemq:queue:inbox").setProperty(Exchange.CHARSET_NAME,constant("UTF-8")).setHeader("agentId",xpath("/agent/@id")).process(new FixateHeaderValuesProcessor()).setHeader(Exchange.FILE_NAME,simple("target/files/${in.header.agentId}/agent.xml")).process(new ReadLocalFile()).to("direct:filterxml").multicast().to("direct:portalxml","direct:historyxml");
+      from("direct:filterxml").process(new FilterProcessor()).to("mock:filterxml");
+      from("direct:portalxml").to("mock:portalxml");
+      from("direct:historyxml").to("mock:historyxml");
+    }
+  }
+;
+}
