@@ -6,7 +6,15 @@
   }
  else {
     prepareResult(exchange);
-    Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
-    copyResultsPreservePattern(exchange,aggregatedExchange);
+    Boolean filtered=resourceExchange.getProperty(Exchange.FILTERED,Boolean.class);
+    if (filtered == null || !filtered) {
+      Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+      copyResultsPreservePattern(exchange,aggregatedExchange);
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Cannot aggregate exchange as its filtered: " + resourceExchange);
+      }
+    }
   }
 }
