@@ -14,30 +14,14 @@
     mimeMessage.setFrom(new InternetAddress(from));
   }
   if (hasAlternativeBody(endpoint.getConfiguration(),exchange.getIn())) {
-    createMultipartAlternativeMessage(mimeMessage,exchange.getIn(),endpoint.getConfiguration());
+    createMultipartAlternativeMessage(mimeMessage,endpoint.getConfiguration(),exchange);
   }
  else {
     if (exchange.getIn().hasAttachments()) {
-      appendAttachmentsFromCamel(mimeMessage,exchange.getIn(),endpoint.getConfiguration());
+      appendAttachmentsFromCamel(mimeMessage,endpoint.getConfiguration(),exchange);
     }
  else {
-      String contentType=populateContentType(endpoint,mimeMessage,exchange);
-      if (contentType == null) {
-        mimeMessage.setText(exchange.getIn().getBody(String.class));
-      }
- else       if (contentType.startsWith("text/plain")) {
-        String charset=ObjectHelper.after(contentType,"charset=");
-        if (charset != null) {
-          mimeMessage.setText(exchange.getIn().getBody(String.class),charset);
-        }
- else {
-          mimeMessage.setText(exchange.getIn().getBody(String.class));
-        }
-      }
- else {
-        DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),contentType);
-        mimeMessage.setDataHandler(new DataHandler(ds));
-      }
+      populateContentOnMimeMessage(mimeMessage,endpoint.getConfiguration(),exchange);
     }
   }
 }

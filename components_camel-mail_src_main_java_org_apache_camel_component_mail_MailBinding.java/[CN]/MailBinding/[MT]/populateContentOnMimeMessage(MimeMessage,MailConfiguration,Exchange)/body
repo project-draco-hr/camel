@@ -1,0 +1,23 @@
+{
+  String contentType=determineContentType(configuration,exchange);
+  if (contentType == null) {
+    part.setText(exchange.getIn().getBody(String.class));
+  }
+ else {
+    if (contentType.startsWith("text/plain")) {
+      String charset=ObjectHelper.after(contentType,"charset=");
+      if (charset != null) {
+        part.setText(exchange.getIn().getBody(String.class),charset.trim());
+      }
+ else {
+        part.setText(exchange.getIn().getBody(String.class));
+      }
+    }
+ else {
+      DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),contentType);
+      part.setDataHandler(new DataHandler(ds));
+    }
+    part.setHeader("Content-Type",contentType);
+  }
+  return contentType;
+}

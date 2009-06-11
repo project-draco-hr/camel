@@ -2,15 +2,15 @@
   MimeMultipart multipartAlternative=new MimeMultipart("alternative");
   mimeMessage.setContent(multipartAlternative);
   BodyPart plainText=new MimeBodyPart();
-  plainText.setText(getAlternativeBody(configuration,camelMessage));
+  plainText.setText(getAlternativeBody(configuration,exchange.getIn()));
   multipartAlternative.addBodyPart(plainText);
-  if (!camelMessage.hasAttachments()) {
-    addBodyToMultipart(camelMessage,configuration,multipartAlternative);
+  if (!exchange.getIn().hasAttachments()) {
+    addBodyToMultipart(configuration,multipartAlternative,exchange);
   }
  else {
     if (!configuration.isUseInlineAttachments()) {
       BodyPart mixedAttachments=new MimeBodyPart();
-      mixedAttachments.setContent(createMixedMultipartAttachments(camelMessage,configuration));
+      mixedAttachments.setContent(createMixedMultipartAttachments(configuration,exchange));
       multipartAlternative.addBodyPart(mixedAttachments);
     }
  else {
@@ -18,8 +18,8 @@
       BodyPart related=new MimeBodyPart();
       related.setContent(multipartRelated);
       multipartAlternative.addBodyPart(related);
-      addBodyToMultipart(camelMessage,configuration,multipartRelated);
-      addAttachmentsToMultipart(camelMessage,multipartRelated,Part.INLINE);
+      addBodyToMultipart(configuration,multipartRelated,exchange);
+      addAttachmentsToMultipart(multipartRelated,Part.INLINE,exchange);
     }
   }
 }
