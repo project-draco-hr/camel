@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      MySplitBean bean=new MySplitBean();
+      from("direct:start").to("mock:start").split(body().tokenize(","),new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          if (oldExchange == null) {
+            return newExchange;
+          }
+          String body=oldExchange.getIn().getBody(String.class);
+          String newBody=newExchange.getIn().getBody(String.class);
+          newExchange.getIn().setBody(body + "@" + newBody);
+          return newExchange;
+        }
+      }
+).bean(bean,"hi").to("mock:split").end().transform(body().prepend("last ")).to("mock:last");
+    }
+  }
+;
+}
