@@ -1,0 +1,36 @@
+{
+  MethodBasedRouter router=getMethodRouter(uriPattern);
+  Map<String,String> realm=endpoint.getRestletRealm();
+  if (realm != null && realm.size() > 0) {
+    Guard guard=new Guard(component.getContext().createChildContext(),ChallengeScheme.HTTP_BASIC,"Camel-Restlet Endpoint Realm");
+    for (    Map.Entry<String,String> entry : realm.entrySet()) {
+      guard.getSecrets().put(entry.getKey(),entry.getValue().toCharArray());
+    }
+    guard.setNext(target);
+    target=guard;
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Target has been set to guard: " + guard);
+    }
+  }
+  if (endpoint.getRestletMethods() != null) {
+    Method[] methods=endpoint.getRestletMethods();
+    for (    Method method : methods) {
+      router.addRoute(method,target);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Attached restlet uriPattern: " + uriPattern + " method: "+ method);
+      }
+    }
+  }
+ else {
+    router.addRoute(endpoint.getRestletMethod(),target);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Attached restlet uriPattern: " + uriPattern + " method: "+ endpoint.getRestletMethod());
+    }
+  }
+  if (!router.hasBeenAttached()) {
+    component.getDefaultHost().attach(uriPattern,router);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Attached methodRouter uriPattern: " + uriPattern);
+    }
+  }
+}
