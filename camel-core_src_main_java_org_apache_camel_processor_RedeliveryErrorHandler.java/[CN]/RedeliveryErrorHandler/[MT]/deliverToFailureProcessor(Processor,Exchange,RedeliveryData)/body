@@ -2,25 +2,25 @@
   ExchangeHelper.setFailureHandled(exchange);
   decrementRedeliveryCounter(exchange);
   MessageHelper.resetStreamCache(exchange.getIn());
-  if (data.failureProcessor != null) {
+  if (processor != null) {
     if (data.useOriginalInBody) {
       if (log.isTraceEnabled()) {
-        log.trace("Using the original IN body in the DedLetterQueue instead of the current IN body");
+        log.trace("Using the original IN body instead of the current IN body");
       }
       Object original=exchange.getUnitOfWork().getOriginalInBody();
       exchange.getIn().setBody(original);
     }
     if (log.isTraceEnabled()) {
-      log.trace("Failure processor " + data.failureProcessor + " is processing Exchange: "+ exchange);
+      log.trace("Failure processor " + processor + " is processing Exchange: "+ exchange);
     }
     try {
-      data.failureProcessor.process(exchange);
+      processor.process(exchange);
     }
  catch (    Exception e) {
       exchange.setException(e);
     }
     log.trace("Failure processor done");
-    String msg="Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Processed by failure processor: "+ data.failureProcessor;
+    String msg="Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Processed by failure processor: "+ processor;
     logFailedDelivery(false,exchange,msg,data,null);
   }
 }
