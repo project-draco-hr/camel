@@ -1,5 +1,44 @@
 {
-  TransactionErrorHandler answer=new TransactionErrorHandler(transactionTemplate,processor,exceptionPolicyStrategy);
+  if (transactionTemplate == null) {
+    LOG.debug("No TransactionTemplate configured on TransactedErrorHandlerBuilder. Will try find it in the registry.");
+    TransactedPolicy policy=routeContext.lookup(PROPAGATION_REQUIRED,TransactedPolicy.class);
+    if (policy != null && policy instanceof SpringTransactionPolicy) {
+      transactionTemplate=((SpringTransactionPolicy)policy).getTransactionTemplate();
+    }
+    if (transactionTemplate == null) {
+      Map<String,TransactionTemplate> map=routeContext.lookupByType(TransactionTemplate.class);
+      if (map != null && map.size() == 1) {
+        transactionTemplate=map.values().iterator().next();
+      }
+ else       if (LOG.isDebugEnabled()) {
+        if (map == null || map.isEmpty()) {
+          LOG.debug("No TransactionTemplate found in registry.");
+        }
+ else {
+          LOG.debug("Found " + map.size() + " TransactionTemplate in registry. "+ "Cannot determine which one to use. Please configure a TransactionTemplate on the TransactedErrorHandlerBuilder");
+        }
+      }
+    }
+    if (transactionTemplate == null) {
+      Map<String,PlatformTransactionManager> map=routeContext.lookupByType(PlatformTransactionManager.class);
+      if (map != null && map.size() == 1) {
+        transactionTemplate=new TransactionTemplate(map.values().iterator().next());
+      }
+ else       if (LOG.isDebugEnabled()) {
+        if (map == null || map.isEmpty()) {
+          LOG.debug("No PlatformTransactionManager found in registry.");
+        }
+ else {
+          LOG.debug("Found " + map.size() + " PlatformTransactionManager in registry. "+ "Cannot determine which one to use for TransactionTemplate. Please configure a TransactionTemplate on the TransactedErrorHandlerBuilder");
+        }
+      }
+    }
+    if (transactionTemplate != null) {
+      LOG.debug("Found TransactionTemplate in registry to use: " + transactionTemplate);
+    }
+  }
+  ObjectHelper.notNull(transactionTemplate,"transactionTemplate");
+  TransactionErrorHandler answer=new TransactionErrorHandler(processor,getLogger(),getOnRedelivery(),getRedeliveryPolicy(),getHandledPolicy(),getExceptionPolicyStrategy(),transactionTemplate);
   configure(answer);
   return answer;
 }

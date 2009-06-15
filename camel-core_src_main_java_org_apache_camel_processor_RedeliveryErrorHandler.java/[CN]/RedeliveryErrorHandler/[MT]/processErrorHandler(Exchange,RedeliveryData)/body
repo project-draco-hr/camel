@@ -10,19 +10,19 @@
       }
     }
     if (exchange.isTransacted() && !supportTransacted() && exchange.getException() != null) {
-      if (log.isDebugEnabled()) {
-        log.debug("This error handler does not support transacted exchanges." + " Bypassing this error handler: " + this + " for exchangeId: "+ exchange.getExchangeId());
+      if (log.isTraceEnabled()) {
+        log.trace("This error handler does not support transacted exchanges." + " Bypassing this error handler: " + this + " for exchangeId: "+ exchange.getExchangeId());
       }
       return;
     }
-    if (exchange.getException() != null) {
+    boolean handle=shouldHandleException(exchange);
+    if (handle) {
       handleException(exchange,data);
     }
     boolean shouldRedeliver=shouldRedeliver(exchange,data);
     if (!shouldRedeliver) {
-      boolean isDeadLetter=data.failureProcessor == null && data.deadLetterProcessor != null;
       Processor target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;
-      deliverToFailureProcessor(target,exchange,data,isDeadLetter);
+      deliverToFailureProcessor(target,exchange,data);
       prepareExchangeAfterFailure(exchange,data);
       return;
     }
@@ -38,12 +38,12 @@
       deliverToRedeliveryProcessor(exchange,data);
     }
     try {
-      output.process(exchange);
+      processExchange(exchange);
     }
  catch (    Exception e) {
       exchange.setException(e);
     }
-    boolean done=exchange.getException() == null || ExchangeHelper.isFailureHandled(exchange);
+    boolean done=isDone(exchange);
     if (done) {
       return;
     }

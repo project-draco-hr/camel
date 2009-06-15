@@ -1,6 +1,5 @@
 {
-  TransactionErrorHandler answer=new TransactionErrorHandler(getTransactionTemplate());
-  answer.setOutput(processor);
+  TransactionErrorHandler answer;
   ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
   if (builder instanceof ErrorHandlerBuilderRef) {
     ErrorHandlerBuilderRef ref=(ErrorHandlerBuilderRef)builder;
@@ -15,6 +14,7 @@
     if (LOG.isDebugEnabled()) {
       LOG.debug("The ErrorHandlerBuilder configured is already a TransactionErrorHandlerBuilder: " + builder);
     }
+    answer=createTransactionErrorHandler(routeContext,processor,builder);
     answer.setExceptionPolicy(builder.getExceptionPolicyStrategy());
     builder.configure(answer);
   }
@@ -33,6 +33,7 @@
     if (builder != null) {
       txBuilder.setErrorHandlers(builder.getErrorHandlers());
     }
+    answer=createTransactionErrorHandler(routeContext,processor,txBuilder);
     answer.setExceptionPolicy(txBuilder.getExceptionPolicyStrategy());
     txBuilder.configure(answer);
     routeContext.getRoute().setErrorHandlerBuilder(txBuilder);

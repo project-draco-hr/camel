@@ -1,6 +1,6 @@
 {
-  if (output == null) {
-    return;
+  if (log.isTraceEnabled()) {
+    log.trace("Transaction error handler is processing: " + exchange);
   }
   transactionTemplate.execute(new TransactionCallbackWithoutResult(){
     protected void doInTransactionWithoutResult(    TransactionStatus status){
@@ -22,24 +22,14 @@
         exchange.setProperty(Exchange.TRANSACTED,Boolean.TRUE);
       }
       try {
-        output.process(exchange);
+        TransactionErrorHandler.super.process(exchange);
       }
  catch (      Exception e) {
         exchange.setException(e);
       }
-      if (exchange.getException() != null) {
-        boolean handled=false;
-        if (exchange.getException() instanceof TransactedRuntimeCamelException) {
-          TransactedRuntimeCamelException trce=exchange.getException(TransactedRuntimeCamelException.class);
-          handled=trce.isHandled();
-        }
-        if (!handled) {
-          handleException(exchange);
-        }
-      }
       if (exchange.getException() != null || exchange.isRollbackOnly()) {
         rce=wrapTransactedRuntimeException(exchange.getException());
-        if (activeTx) {
+        if (activeTx && !status.isRollbackOnly()) {
           status.setRollbackOnly();
           if (LOG.isDebugEnabled()) {
             if (rce != null) {
@@ -57,4 +47,5 @@
     }
   }
 );
+  log.trace("Transaction error handler done");
 }

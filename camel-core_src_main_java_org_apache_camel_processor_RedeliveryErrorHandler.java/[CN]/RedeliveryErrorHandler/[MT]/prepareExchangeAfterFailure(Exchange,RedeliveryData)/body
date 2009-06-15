@@ -1,9 +1,8 @@
 {
   ExchangeHelper.setFailureHandled(exchange);
-  Predicate handledPredicate=data.handledPredicate;
-  boolean alreadySet=exchange.getProperty(Exchange.EXCEPTION_HANDLED) != null;
+  boolean alreadySet=exchange.getProperty(Exchange.ERRORHANDLER_HANDLED) != null;
   if (alreadySet) {
-    boolean handled=exchange.getProperty(Exchange.EXCEPTION_HANDLED,Boolean.class);
+    boolean handled=exchange.getProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.class);
     if (log.isDebugEnabled()) {
       log.debug("This exchange has already been marked for handling: " + handled);
     }
@@ -15,17 +14,18 @@
     }
     return;
   }
+  Predicate handledPredicate=data.handledPredicate;
   if (handledPredicate == null || !handledPredicate.matches(exchange)) {
     if (log.isDebugEnabled()) {
       log.debug("This exchange is not handled so its marked as failed: " + exchange);
     }
-    exchange.setProperty(Exchange.EXCEPTION_HANDLED,Boolean.FALSE);
+    exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.FALSE);
     exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
   }
  else {
     if (log.isDebugEnabled()) {
       log.debug("This exchange is handled so its marked as not failed: " + exchange);
     }
-    exchange.setProperty(Exchange.EXCEPTION_HANDLED,Boolean.TRUE);
+    exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.TRUE);
   }
 }
