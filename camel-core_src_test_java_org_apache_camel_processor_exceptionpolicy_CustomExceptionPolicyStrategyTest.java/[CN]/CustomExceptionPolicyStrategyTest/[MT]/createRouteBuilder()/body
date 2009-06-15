@@ -1,7 +1,7 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      errorHandler(deadLetterChannel().exceptionPolicyStrategy(new MyPolicy()));
+      errorHandler(deadLetterChannel("mock:error").exceptionPolicyStrategy(new MyPolicy()));
       onException(MyPolicyException.class).maximumRedeliveries(1).setHeader(MESSAGE_INFO,constant("Damm my policy exception")).to(ERROR_QUEUE);
       onException(CamelException.class).maximumRedeliveries(3).setHeader(MESSAGE_INFO,constant("Damm a Camel exception")).to(ERROR_QUEUE);
       from("direct:a").process(new Processor(){
