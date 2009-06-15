@@ -1,11 +1,16 @@
 {
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(MyTechnicalException.class).handled(true).to("mock:tech");
+      onException(MyFunctionalException.class).handled(true).to("mock:onFunc").throwException(new MyTechnicalException("Tech error")).to("mock:doneFunc");
+      from("direct:start").throwException(new MyFunctionalException("Func error"));
+    }
+  }
+);
+  context.start();
   getMockEndpoint("mock:onFunc").expectedMessageCount(1);
   getMockEndpoint("mock:doneFunc").expectedMessageCount(0);
-  getMockEndpoint("mock:tech").expectedMessageCount(0);
-  try {
-    template.sendBody("direct:start","Hello World");
-  }
- catch (  Exception e) {
-  }
+  getMockEndpoint("mock:tech").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
   assertMockEndpointsSatisfied();
 }

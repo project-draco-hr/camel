@@ -1,0 +1,23 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(IOException.class).to("mock:tech");
+      onException(MyFunctionalException.class).handled(true).to("mock:onFunc").throwException(new IOException("Cannot do this")).to("mock:doneFunc");
+      from("direct:start").throwException(new MyFunctionalException("Func error"));
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:onFunc").expectedMessageCount(1);
+  getMockEndpoint("mock:doneFunc").expectedMessageCount(0);
+  getMockEndpoint("mock:tech").expectedMessageCount(1);
+  try {
+    template.sendBody("direct:start","Hello World");
+    fail("Should have thrown an exception");
+  }
+ catch (  CamelExecutionException e) {
+    assertIsInstanceOf(IOException.class,e.getCause());
+    assertEquals("Cannot do this",e.getCause().getMessage());
+  }
+  assertMockEndpointsSatisfied();
+}
