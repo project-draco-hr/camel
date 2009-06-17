@@ -2,12 +2,9 @@
   if (processor == null) {
     return;
   }
-  if (!onComplete && !onFailure) {
-    return;
-  }
   exchange.getUnitOfWork().addSynchronization(new SynchronizationAdapter(){
     @Override public void onComplete(    Exchange exchange){
-      if (!onComplete) {
+      if (onFailureOnly) {
         return;
       }
       if (onWhen != null && !onWhen.matches(exchange)) {
@@ -26,7 +23,7 @@
 );
     }
     public void onFailure(    Exchange exchange){
-      if (!onFailure) {
+      if (onCompleteOnly) {
         return;
       }
       if (onWhen != null && !onWhen.matches(exchange)) {
@@ -46,10 +43,10 @@
 );
     }
     @Override public String toString(){
-      if (onComplete && onFailure) {
+      if (!onCompleteOnly && !onFailureOnly) {
         return "onCompleteOrFailure";
       }
- else       if (onComplete) {
+ else       if (onCompleteOnly) {
         return "onCompleteOnly";
       }
  else {
