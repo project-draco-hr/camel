@@ -1,17 +1,10 @@
 {
   String contentType=determineContentType(configuration,exchange);
-  if (contentType == null) {
-    part.setText(exchange.getIn().getBody(String.class));
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Using Content-Type " + contentType + " for BodyPart: "+ part);
   }
- else {
-    if (contentType.startsWith("text/plain")) {
-      part.setText(exchange.getIn().getBody(String.class));
-    }
- else {
-      DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),contentType);
-      part.setDataHandler(new DataHandler(ds));
-    }
-    part.setHeader("Content-Type",contentType);
-  }
+  DataSource ds=new ByteArrayDataSource(exchange.getIn().getBody(String.class),contentType);
+  part.setDataHandler(new DataHandler(ds));
+  part.setHeader("Content-Type",contentType);
   return contentType;
 }
