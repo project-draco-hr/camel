@@ -1,16 +1,13 @@
 {
-  List<String> packages=new ArrayList<String>();
-  if (getPackages() != null && getPackages().length > 0) {
-    for (    String name : getPackages()) {
-      name=ObjectHelper.normalizeClassName(name);
-      if (ObjectHelper.isNotEmpty(name)) {
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("Using package: " + name + " to scan for RouteBuilder classes");
-        }
-        packages.add(name);
-      }
-    }
-    String[] normalized=packages.toArray(new String[packages.size()]);
+  PackageScanClassResolver resolver=getContext().getPackageScanClassResolver();
+  addPackageElementContentsToScanDefinition();
+  PackageScanDefinition packageScanDef=getPackageScan();
+  if (packageScanDef != null && packageScanDef.getPackages().size() > 0) {
+    PatternBasedPackageScanFilter filter=new PatternBasedPackageScanFilter();
+    filter.addIncludePatterns(packageScanDef.getIncludes());
+    filter.addExcludePatterns(packageScanDef.getExcludes());
+    resolver.addFilter(filter);
+    String[] normalized=normalizePackages(packageScanDef.getPackages());
     RouteBuilderFinder finder=new RouteBuilderFinder(getContext(),normalized,getContextClassLoaderOnStart(),getBeanPostProcessor(),getContext().getPackageScanClassResolver());
     finder.appendBuilders(getAdditionalBuilders());
   }
