@@ -5,11 +5,23 @@
   addBeanDefinitionParser("export",CamelServiceExporter.class);
   addBeanDefinitionParser("jmxAgent",CamelJMXAgentDefinition.class);
   addBeanDefinitionParser("endpoint",CamelEndpointFactoryBean.class);
+  boolean osgi=false;
   Class cl=CamelContextFactoryBean.class;
   try {
     cl=Class.forName("org.apache.camel.osgi.CamelContextFactoryBean");
+    osgi=true;
   }
  catch (  Throwable t) {
+    LOG.trace("Cannot find class so assuming not running in OSGI container: " + t.getMessage());
+  }
+  if (osgi) {
+    LOG.info("camel-osgi.jar detected in classpath");
+  }
+ else {
+    LOG.info("camel-osgi.jar not detected in classpath");
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Using " + cl.getCanonicalName() + " as CamelContextBeanDefinitionParser");
   }
   registerParser("camelContext",new CamelContextBeanDefinitionParser(cl));
 }
