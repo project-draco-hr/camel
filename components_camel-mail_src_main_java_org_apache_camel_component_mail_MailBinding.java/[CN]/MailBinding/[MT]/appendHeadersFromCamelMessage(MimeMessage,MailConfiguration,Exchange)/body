@@ -1,10 +1,13 @@
 {
-  for (  Map.Entry<String,Object> entry : camelMessage.getHeaders().entrySet()) {
+  for (  Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
     String headerName=entry.getKey();
     Object headerValue=entry.getValue();
     if (headerValue != null) {
       if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(headerName,headerValue,exchange)) {
         if (isRecipientHeader(headerName)) {
+          continue;
+        }
+        if (headerName.equalsIgnoreCase(configuration.getAlternativeBodyHeader())) {
           continue;
         }
         if (ObjectConverter.isCollection(headerValue)) {
