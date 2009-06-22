@@ -1,0 +1,35 @@
+{
+  failed=false;
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").aggregate(header("id"),new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          if (oldExchange == null) {
+            return newExchange;
+          }
+          String body=newExchange.getIn().getBody(String.class);
+          assertNotNull(body);
+          failed=newExchange.hasOut();
+          return newExchange;
+        }
+      }
+).batchSize(2).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertFalse("Should not have out",failed);
+          String s=exchange.getIn().getBody(String.class);
+          exchange.getIn().setBody("Hi " + s);
+          context.createProducerTemplate().send("mock:foo",exchange);
+        }
+      }
+).end().to("mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(2);
+  getMockEndpoint("mock:foo").expectedBodiesReceived("Hi Willem");
+  template.requestBodyAndHeader("direct:start","Claus","id",1);
+  template.requestBodyAndHeader("direct:start","Willem","id",1);
+  assertMockEndpointsSatisfied();
+}
