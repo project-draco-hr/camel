@@ -1,0 +1,19 @@
+{
+  Message inMessage=exchange.getIn();
+  WebClient client=cfb.createWebClient();
+  String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
+  Class responseClass=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_RESPONSE_CLASS,Class.class);
+  String path=inMessage.getHeader(Exchange.HTTP_RELATIVE_PATH,String.class);
+  client.path(path);
+  Object body=inMessage.getBody();
+  Object response=null;
+  if (responseClass == null) {
+    response=client.invoke(httpMethod,body,InputStream.class);
+  }
+ else {
+    response=client.invoke(httpMethod,body,responseClass);
+  }
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getOut().setBody(response);
+  }
+}

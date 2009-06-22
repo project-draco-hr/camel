@@ -1,20 +1,10 @@
 {
   Message inMessage=exchange.getIn();
-  Object[] varValues=inMessage.getHeader("VarValues",Object[].class);
-  String methodName=inMessage.getHeader(CxfConstants.OPERATION_NAME,String.class);
-  Client target=null;
-  if (varValues == null) {
-    target=cfb.create();
+  Boolean httpClientAPI=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_USING_HTTP_API,Boolean.class);
+  if (httpClientAPI != null && httpClientAPI.booleanValue()) {
+    invokeHttpClient(exchange);
   }
  else {
-    target=cfb.createWithValues(varValues);
-  }
-  JAXRSServiceFactoryBean sfb=cfb.getServiceFactory();
-  sfb.getResourceClasses();
-  Object[] parameters=inMessage.getBody(Object[].class);
-  Method method=findRightMethod(sfb.getResourceClasses(),methodName,getParameterTypes(parameters));
-  Object response=method.invoke(target,parameters);
-  if (exchange.getPattern().isOutCapable()) {
-    exchange.getOut().setBody(response);
+    invokeProxyClient(exchange);
   }
 }
