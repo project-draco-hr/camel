@@ -5,7 +5,10 @@
       response.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    HttpExchange exchange=new HttpExchange(consumer.getEndpoint(),request,response);
+    DefaultExchange exchange=new DefaultExchange(consumer.getEndpoint(),ExchangePattern.InOut);
+    exchange.setProperty(HttpConstants.SERVLET_REQUEST,request);
+    exchange.setProperty(HttpConstants.SERVLET_RESPONSE,response);
+    exchange.setIn(new HttpMessage(exchange,request));
     consumer.getProcessor().process(exchange);
     consumer.getBinding().writeResponse(exchange,response);
   }
