@@ -1,13 +1,21 @@
 {
   Schema schema=getSchema();
   Validator validator=schema.newValidator();
-  Source source=exchange.getIn().getBody(SAXSource.class);
+  Source source;
+  Result result;
+  if (useDom) {
+    source=exchange.getIn().getBody(DOMSource.class);
+    result=new DOMResult();
+  }
+ else {
+    source=exchange.getIn().getBody(SAXSource.class);
+    result=new SAXResult();
+  }
   if (source == null) {
     throw new NoXmlBodyValidationException(exchange);
   }
   ValidatorErrorHandler handler=errorHandler.getClass().newInstance();
   validator.setErrorHandler(handler);
-  SAXResult result=new SAXResult();
   validator.validate(source,result);
   handler.handleErrors(exchange,schema,result);
 }
