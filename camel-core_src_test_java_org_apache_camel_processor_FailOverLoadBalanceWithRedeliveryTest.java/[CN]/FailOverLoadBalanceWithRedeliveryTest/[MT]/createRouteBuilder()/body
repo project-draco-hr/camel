@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(defaultErrorHandler().maximumRedeliveries(2).redeliverDelay(0));
+      from("direct:start").loadBalance().failover().to("direct:a","direct:b");
+      from("direct:a").errorHandler(noErrorHandler()).to("mock:a").throwException(new IllegalArgumentException("I cannot do this"));
+      from("direct:b").errorHandler(noErrorHandler()).to("mock:b").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          if (counter++ < 1) {
+            throw new IllegalArgumentException("I can still not do this");
+          }
+          exchange.getIn().setBody("Bye World");
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
