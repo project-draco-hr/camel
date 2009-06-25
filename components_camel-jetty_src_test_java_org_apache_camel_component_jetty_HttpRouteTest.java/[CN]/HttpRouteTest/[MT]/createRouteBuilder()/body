@@ -30,6 +30,20 @@
 ;
       from("jetty:http://localhost:9080/hello?sessionSupport=true").process(proc);
       from("jetty:http://localhost:9080/echo").process(printProcessor).process(printProcessor);
+      Processor procPostParameters=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          HttpServletRequest req=exchange.getIn().getBody(HttpServletRequest.class);
+          String value=req.getParameter("request");
+          if (value != null) {
+            exchange.getOut().setBody(value);
+          }
+ else {
+            exchange.getOut().setBody("Can't get a right parameter");
+          }
+        }
+      }
+;
+      from("jetty:http://localhost:9080/post").process(procPostParameters);
     }
   }
 ;
