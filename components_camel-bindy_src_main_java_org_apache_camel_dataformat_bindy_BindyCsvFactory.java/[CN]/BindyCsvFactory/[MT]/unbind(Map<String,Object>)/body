@@ -2,16 +2,51 @@
   StringBuilder builder=new StringBuilder();
   Map<Integer,DataField> dataFields=new TreeMap<Integer,DataField>(mapDataField);
   Iterator<Integer> it=dataFields.keySet().iterator();
+  Map<Integer,String> positions=new TreeMap<Integer,String>();
   ObjectHelper.notNull(this.separator,"The separator has not been instantiated or property not defined in the @CsvRecord annotation");
+  char separator=Converter.getCharDelimitor(this.getSeparator());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Separator converted : '0x" + Integer.toHexString(separator) + "', from : "+ this.getSeparator());
+  }
   while (it.hasNext()) {
     DataField dataField=mapDataField.get(it.next());
     Field field=mapAnnotedField.get(dataField.pos());
     field.setAccessible(true);
     Format format=FormatFactory.getFormat(field.getType(),dataField.pattern(),dataField.precision());
     Object obj=model.get(field.getDeclaringClass().getName());
-    builder.append(format.format(field.get(obj)));
-    if (it.hasNext()) {
-      builder.append(this.getSeparator());
+    if (obj != null) {
+      if (this.isMessageOrdered()) {
+        Integer key1=sections.get(obj.getClass().getName());
+        Integer key2=dataField.position();
+        Integer keyGenerated=generateKey(key1,key2);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Key generated : " + String.valueOf(keyGenerated) + ", for section : "+ key1);
+        }
+        String value=format.format(field.get(obj));
+        positions.put(keyGenerated,value);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Positions size : " + positions.size());
+        }
+      }
+ else {
+        builder.append(format.format(field.get(obj)));
+        if (it.hasNext()) {
+          builder.append(separator);
+        }
+      }
+    }
+  }
+  if (this.isMessageOrdered()) {
+    Iterator<Integer> posit=positions.keySet().iterator();
+    while (posit.hasNext()) {
+      String value=positions.get(posit.next());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Value added at the position (" + posit + ") : "+ value+ separator);
+      }
+      builder.append(value);
+      if (it.hasNext()) {
+        builder.append(separator);
+      }
     }
   }
   return builder.toString();

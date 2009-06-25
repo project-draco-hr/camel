@@ -2,6 +2,7 @@
   StringBuilder builder=new StringBuilder();
   Map<Integer,KeyValuePairField> keyValuePairFields=new TreeMap<Integer,KeyValuePairField>(mapKeyValuePairField);
   Iterator<Integer> it=keyValuePairFields.keySet().iterator();
+  Map<Integer,String> positions=new TreeMap<Integer,String>();
   ObjectHelper.notNull(this.pairSeparator,"The pair separator has not been instantiated or property not defined in the @Message annotation");
   char separator=Converter.getCharDelimitor(this.getPairSeparator());
   if (LOG.isDebugEnabled()) {
@@ -19,10 +20,38 @@
     String pattern=keyValuePairField.pattern();
     format=FormatFactory.getFormat(field.getType(),pattern,keyValuePairField.precision());
     Object obj=model.get(field.getDeclaringClass().getName());
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Model object : " + obj.toString());
+    if (obj != null) {
+      if (this.isMessageOrdered()) {
+        Integer key1=sections.get(obj.getClass().getName());
+        Integer key2=keyValuePairField.position();
+        Integer keyGenerated=generateKey(key1,key2);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Key generated : " + String.valueOf(keyGenerated) + ", for section : "+ key1);
+        }
+        String value=keyValuePairField.tag() + this.getKeyValuePairSeparator() + format.format(field.get(obj));
+        positions.put(keyGenerated,value);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Positions size : " + positions.size());
+        }
+      }
+ else {
+        String value=keyValuePairField.tag() + this.getKeyValuePairSeparator() + format.format(field.get(obj))+ separator;
+        builder.append(value);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Value added : " + keyValuePairField.tag() + this.getKeyValuePairSeparator()+ format.format(field.get(obj))+ separator);
+        }
+      }
     }
-    builder.append(keyValuePairField.tag() + this.getKeyValuePairSeparator() + format.format(field.get(obj))+ separator);
+  }
+  if (this.isMessageOrdered()) {
+    Iterator<Integer> posit=positions.keySet().iterator();
+    while (posit.hasNext()) {
+      String value=positions.get(posit.next());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Value added at the position (" + posit + ") : "+ value+ separator);
+      }
+      builder.append(value + separator);
+    }
   }
   return builder.toString();
 }
