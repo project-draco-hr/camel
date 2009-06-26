@@ -1,6 +1,7 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
+      context.setTracing(true);
       MySplitBean bean=new MySplitBean();
       from("direct:start").to("mock:start").split(body().tokenize(","),new AggregationStrategy(){
         public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
@@ -13,7 +14,7 @@
           return newExchange;
         }
       }
-).bean(bean,"hi").to("mock:split").end().transform(body().prepend("last ")).to("mock:last");
+).bean(bean,"hi").to("mock:split").to("log:foo").end().transform(body().prepend("last ")).to("mock:last");
     }
   }
 ;
