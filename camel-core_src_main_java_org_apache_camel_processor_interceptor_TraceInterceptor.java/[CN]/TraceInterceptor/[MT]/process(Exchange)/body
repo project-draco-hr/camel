@@ -8,10 +8,36 @@
     if (shouldLog) {
       if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
         TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
-        tuow.addInterceptedProcessor(super.getProcessor());
+        if (node instanceof OnExceptionDefinition) {
+          Processor pseudo=new Processor(){
+            public void process(            Exchange exchange) throws Exception {
+            }
+            public String toString(){
+              String name=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class).getClass().getSimpleName();
+              return "onException[" + name + "]";
+            }
+          }
+;
+          tuow.addTraced(new DefaultRouteNode(pseudo,node));
+          logExchange(exchange);
+          traceExchange(exchange);
+        }
+        tuow.addTraced(new DefaultRouteNode(super.getProcessor(),node));
       }
       logExchange(exchange);
       traceExchange(exchange);
+      if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
+        TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
+        if (node instanceof InterceptDefinition) {
+          InterceptDefinition intercept=(InterceptDefinition)node;
+          Processor last=intercept.getInterceptedProcessor(tuow.getAndIncrement(intercept));
+          if (last != null) {
+            tuow.addTraced(new DefaultRouteNode(last,node));
+            logExchange(exchange);
+            traceExchange(exchange);
+          }
+        }
+      }
     }
     super.proceed(exchange);
     if (shouldLog && tracer.isTraceOutExchanges()) {
