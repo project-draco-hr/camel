@@ -14,19 +14,20 @@
     }
   }
   String from="";
+  String to="";
   if (showNode && exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
     TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
-    ProcessorDefinition prev=tuow.getLastInterceptedNode();
-    if (prev != null) {
-      from=getNodeMessage(prev);
+    Processor fromProcessor=tuow.getSecondLastInterceptedProcessor();
+    if (fromProcessor != null) {
+      from=getNodeMessage(fromProcessor);
     }
  else     if (exchange.getFromEndpoint() != null) {
-      from=exchange.getFromEndpoint().getEndpointUri();
+      from="from(" + exchange.getFromEndpoint().getEndpointUri() + ")";
     }
-  }
-  String to="";
-  if (showNode) {
-    to=getNodeMessage(currentNode);
+    Processor toProcessor=tuow.getLastInterceptedProcessor();
+    if (toProcessor != null) {
+      to=getNodeMessage(toProcessor);
+    }
   }
   if (showNode) {
     result=id.trim() + " >>> " + from+ " --> "+ to.trim();
