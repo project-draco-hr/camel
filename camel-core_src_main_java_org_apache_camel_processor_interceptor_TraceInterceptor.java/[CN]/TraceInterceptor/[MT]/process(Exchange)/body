@@ -10,45 +10,10 @@
       if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
         TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
         if (node instanceof OnExceptionDefinition) {
-          int index=tuow.getAndIncrement(node);
-          if (index == 0) {
-            Expression exp=new Expression(){
-              public <T>T evaluate(              Exchange exchange,              Class<T> type){
-                String label="OnException";
-                if (exchange.getProperty(Exchange.EXCEPTION_CAUGHT) != null) {
-                  label+="[" + exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class).getClass().getSimpleName() + "]";
-                }
-                return exchange.getContext().getTypeConverter().convertTo(type,label);
-              }
-            }
-;
-            tuow.addTraced(new DefaultRouteNode(node,exp));
-            logExchange(exchange);
-            traceExchange(exchange);
-          }
-          tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
+          trace=beforeOnException((OnExceptionDefinition)node,tuow,exchange);
         }
  else         if (node instanceof OnCompletionDefinition) {
-          trace=tuow.getLastNode() != null;
-          if (exchange.getProperty(Exchange.ON_COMPLETION) != null) {
-            int index=tuow.getAndIncrement(node);
-            if (index == 0) {
-              Expression exp=new Expression(){
-                public <T>T evaluate(                Exchange exchange,                Class<T> type){
-                  String label="OnCompletion[" + exchange.getProperty(Exchange.CORRELATION_ID) + "]";
-                  return exchange.getContext().getTypeConverter().convertTo(type,label);
-                }
-              }
-;
-              tuow.addTraced(new DefaultRouteNode(node,exp));
-              tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
-              logExchange(exchange);
-              traceExchange(exchange);
-            }
- else {
-              tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
-            }
-          }
+          trace=beforeOnCompletion((OnCompletionDefinition)node,tuow,exchange);
         }
  else {
           tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
@@ -61,13 +26,7 @@
       if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
         TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
         if (node instanceof InterceptDefinition) {
-          InterceptDefinition intercept=(InterceptDefinition)node;
-          Processor last=intercept.getInterceptedProcessor(tuow.getAndIncrement(intercept));
-          if (last != null) {
-            tuow.addTraced(new DefaultRouteNode(node,last));
-            logExchange(exchange);
-            traceExchange(exchange);
-          }
+          afterIntercept((InterceptDefinition)node,tuow,exchange);
         }
       }
     }

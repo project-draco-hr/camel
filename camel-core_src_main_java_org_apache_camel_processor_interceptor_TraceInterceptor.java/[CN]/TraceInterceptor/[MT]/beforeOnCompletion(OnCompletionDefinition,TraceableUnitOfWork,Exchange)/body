@@ -1,0 +1,23 @@
+{
+  boolean answer=tuow.getLastNode() != null;
+  if (exchange.getProperty(Exchange.ON_COMPLETION) != null) {
+    int index=tuow.getAndIncrement(node);
+    if (index == 0) {
+      Expression exp=new Expression(){
+        public <T>T evaluate(        Exchange exchange,        Class<T> type){
+          String label="OnCompletion[" + exchange.getProperty(Exchange.CORRELATION_ID) + "]";
+          return exchange.getContext().getTypeConverter().convertTo(type,label);
+        }
+      }
+;
+      tuow.addTraced(new DefaultRouteNode(node,exp));
+      tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
+      logExchange(exchange);
+      traceExchange(exchange);
+    }
+ else {
+      tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
+    }
+  }
+  return answer;
+}
