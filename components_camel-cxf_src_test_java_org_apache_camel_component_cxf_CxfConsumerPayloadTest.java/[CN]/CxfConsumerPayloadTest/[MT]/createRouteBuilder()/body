@@ -1,0 +1,24 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(SIMPLE_ENDPOINT_URI + "&dataFormat=PAYLOAD").to("log:info").process(new Processor(){
+        public void process(        final Exchange exchange) throws Exception {
+          CxfPayload<SoapHeader> requestPayload=exchange.getIn().getBody(CxfPayload.class);
+          List<Element> inElements=requestPayload.getBody();
+          List<Element> outElements=new ArrayList<Element>();
+          XmlConverter converter=new XmlConverter();
+          String documentString=ECHO_RESPONSE;
+          if (inElements.get(0).getLocalName().equals("echoBoolean")) {
+            documentString=ECHO_BOOLEAN_RESPONSE;
+          }
+          Document outDocument=converter.toDOMDocument(documentString);
+          outElements.add(outDocument.getDocumentElement());
+          CxfPayload<SoapHeader> responsePayload=new CxfPayload<SoapHeader>(null,outElements);
+          exchange.getOut().setBody(responsePayload);
+        }
+      }
+);
+    }
+  }
+;
+}
