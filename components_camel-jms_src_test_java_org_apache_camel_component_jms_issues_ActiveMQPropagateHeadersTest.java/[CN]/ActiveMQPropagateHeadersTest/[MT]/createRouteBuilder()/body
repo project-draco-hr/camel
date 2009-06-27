@@ -3,8 +3,10 @@
     public void configure() throws Exception {
       from("activemq:test.a").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
-          JmsExchange jmsExchange=assertIsInstanceOf(JmsExchange.class,exchange);
-          Message inMessage=jmsExchange.getInMessage();
+          assertNotNull(ExchangeHelper.getBinding(exchange,JmsBinding.class));
+          JmsMessage in=(JmsMessage)exchange.getIn();
+          assertNotNull(in);
+          Message inMessage=in.getJmsMessage();
           inMessage.setJMSReplyTo(replyQueue);
           inMessage.setJMSCorrelationID(correlationID);
           inMessage.setJMSType(messageType);
