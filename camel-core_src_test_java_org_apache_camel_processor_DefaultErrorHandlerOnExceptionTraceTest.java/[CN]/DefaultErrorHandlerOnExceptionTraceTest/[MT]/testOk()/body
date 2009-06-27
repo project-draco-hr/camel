@@ -1,0 +1,13 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Bye World");
+  getMockEndpoint("mock:trace").expectedMessageCount(2);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  TraceEventMessage msg1=getMockEndpoint("mock:trace").getReceivedExchanges().get(0).getIn().getBody(TraceEventMessage.class);
+  TraceEventMessage msg2=getMockEndpoint("mock:trace").getReceivedExchanges().get(1).getIn().getBody(TraceEventMessage.class);
+  assertEquals("direct:start",msg1.getFromEndpointUri());
+  assertTrue(msg1.getToNode().startsWith("org.apache.camel.processor.DefaultErrorHandlerOnExceptionTraceTest"));
+  assertTrue(msg2.getPreviousNode().startsWith("org.apache.camel.processor.DefaultErrorHandlerOnExceptionTraceTest"));
+  assertEquals("mock:result",msg2.getToNode());
+}
