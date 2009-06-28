@@ -1,11 +1,26 @@
 {
-  Exception expectedException=new Exception("Hello, I should be thrown on shutdown only!");
+  final Exception expectedException=new Exception("Hello, I should be thrown on shutdown only!");
   MockScheduledPollConsumer consumer=new MockScheduledPollConsumer(expectedException);
+  consumer.setPollStrategy(new PollingConsumerPollStrategy(){
+    public void begin(    Consumer consumer,    Endpoint endpoint){
+    }
+    public void commit(    Consumer consumer,    Endpoint endpoint){
+    }
+    public void rollback(    Consumer consumer,    Endpoint endpoint,    Exception e) throws Exception {
+      if (e == expectedException) {
+        rollback=true;
+      }
+    }
+  }
+);
   consumer.start();
   consumer.run();
   consumer.stop();
+  assertEquals("Should have rollback",true,rollback);
+  rollback=false;
   consumer.setExceptionToThrowOnPoll(null);
   consumer.start();
   consumer.run();
   consumer.stop();
+  assertEquals("Should not have rollback",false,rollback);
 }
