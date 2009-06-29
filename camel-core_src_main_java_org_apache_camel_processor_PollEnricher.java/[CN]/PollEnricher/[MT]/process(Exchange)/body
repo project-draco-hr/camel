@@ -1,0 +1,41 @@
+{
+  Exchange resourceExchange;
+  if (timeout < 0) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Consumer receive: " + consumer);
+    }
+    resourceExchange=consumer.receive();
+  }
+ else   if (timeout == 0) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Consumer receiveNoWait: " + consumer);
+    }
+    resourceExchange=consumer.receiveNoWait();
+  }
+ else {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Consumer receive with timeout: " + timeout + " ms. "+ consumer);
+    }
+    resourceExchange=consumer.receive(timeout);
+  }
+  if (resourceExchange != null && resourceExchange.isFailed()) {
+    copyResultsPreservePattern(exchange,resourceExchange);
+  }
+ else {
+    prepareResult(exchange);
+    Boolean filtered=null;
+    if (resourceExchange != null) {
+      filtered=resourceExchange.getProperty(Exchange.FILTERED,Boolean.class);
+    }
+    if (filtered == null || !filtered) {
+      ExchangeHelper.prepareAggregation(exchange,resourceExchange);
+      Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+      copyResultsPreservePattern(exchange,aggregatedExchange);
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Cannot aggregate exchange as its filtered: " + resourceExchange);
+      }
+    }
+  }
+}

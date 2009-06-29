@@ -1,0 +1,14 @@
+{
+  template.sendBody("seda:foo4","blah");
+  Exchange exchange=template.send("direct:enricher-test-4",ExchangePattern.InOut,new Processor(){
+    public void process(    Exchange exchange){
+      exchange.getIn().setHeader("foo","bar");
+      exchange.getIn().setBody("test");
+    }
+  }
+);
+  assertEquals("bar",exchange.getIn().getHeader("foo"));
+  assertEquals("test:blah",exchange.getIn().getBody());
+  assertFalse(exchange.hasFault());
+  assertNull(exchange.getException());
+}
