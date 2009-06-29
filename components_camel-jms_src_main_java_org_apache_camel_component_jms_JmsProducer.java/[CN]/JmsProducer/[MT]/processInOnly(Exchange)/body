@@ -1,0 +1,36 @@
+{
+  final org.apache.camel.Message in=exchange.getIn();
+  String destinationName=endpoint.getDestinationName();
+  Destination destination=exchange.getProperty(JmsConstants.JMS_DESTINATION,Destination.class);
+  if (destination == null) {
+    destination=endpoint.getDestination();
+  }
+  if (!endpoint.isPreserveMessageQos() && !endpoint.isExplicitQosEnabled()) {
+    Object replyTo=exchange.getIn().getHeader("JMSReplyTo");
+    if (replyTo != null) {
+      String to=destinationName != null ? destinationName : "" + destination;
+      LOG.warn("Disabling JMSReplyTo as this Exchange is not OUT capable with JMSReplyTo: " + replyTo + " to destination: "+ to+ " for Exchange: "+ exchange);
+      exchange.getIn().setHeader("JMSReplyTo",null);
+    }
+  }
+  MessageCreator messageCreator=new MessageCreator(){
+    public Message createMessage(    Session session) throws JMSException {
+      Message message=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(endpoint + " sending JMS message: " + message);
+      }
+      return message;
+    }
+  }
+;
+  if (destination != null) {
+    getInOnlyTemplate().send(destination,messageCreator);
+  }
+ else   if (destinationName != null) {
+    getInOnlyTemplate().send(destinationName,messageCreator);
+  }
+ else {
+    throw new IllegalArgumentException("Neither destination nor " + "destinationName are specified on this endpoint: " + endpoint);
+  }
+  setMessageId(exchange);
+}

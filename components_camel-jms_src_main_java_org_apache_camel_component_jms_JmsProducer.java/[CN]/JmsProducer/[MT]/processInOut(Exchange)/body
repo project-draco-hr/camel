@@ -1,0 +1,114 @@
+{
+  final org.apache.camel.Message in=exchange.getIn();
+  String destinationName=endpoint.getDestinationName();
+  Destination destination=exchange.getProperty(JmsConstants.JMS_DESTINATION,Destination.class);
+  if (destination == null) {
+    destination=endpoint.getDestination();
+  }
+  testAndSetRequestor();
+  final Destination replyTo=requestor.getReplyTo();
+  if (replyTo == null) {
+    throw new RuntimeExchangeException("Failed to resolve replyTo destination",exchange);
+  }
+  final boolean msgIdAsCorrId=endpoint.getConfiguration().isUseMessageIDAsCorrelationID();
+  String correlationId=in.getHeader("JMSCorrelationID",String.class);
+  if (correlationId == null && !msgIdAsCorrId) {
+    in.setHeader("JMSCorrelationID",getUuidGenerator().generateId());
+  }
+  final ValueHolder<FutureTask> futureHolder=new ValueHolder<FutureTask>();
+  final DeferredMessageSentCallback callback=msgIdAsCorrId ? deferredRequestReplyMap.createDeferredMessageSentCallback() : null;
+  MessageCreator messageCreator=new MessageCreator(){
+    public Message createMessage(    Session session) throws JMSException {
+      Message message=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
+      message.setJMSReplyTo(replyTo);
+      requestor.setReplyToSelectorHeader(in,message);
+      FutureTask future;
+      future=(!msgIdAsCorrId) ? requestor.getReceiveFuture(message.getJMSCorrelationID(),endpoint.getConfiguration().getRequestTimeout()) : requestor.getReceiveFuture(callback);
+      futureHolder.set(future);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(endpoint + " sending JMS message: " + message);
+      }
+      return message;
+    }
+  }
+;
+  CamelJmsTemplate template=null;
+  CamelJmsTeemplate102 template102=null;
+  if (endpoint.isUseVersion102()) {
+    template102=(CamelJmsTeemplate102)getInOutTemplate();
+  }
+ else {
+    template=(CamelJmsTemplate)getInOutTemplate();
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Using JMS API " + (endpoint.isUseVersion102() ? "v1.0.2" : "v1.1"));
+  }
+  if (destinationName != null) {
+    if (template != null) {
+      template.send(destinationName,messageCreator,callback);
+    }
+ else {
+      template102.send(destinationName,messageCreator,callback);
+    }
+  }
+ else   if (destination != null) {
+    if (template != null) {
+      template.send(destination,messageCreator,callback);
+    }
+ else {
+      template102.send(destination,messageCreator,callback);
+    }
+  }
+ else {
+    throw new IllegalArgumentException("Neither destination nor destinationName is specified on this endpoint: " + endpoint);
+  }
+  setMessageId(exchange);
+  long requestTimeout=endpoint.getConfiguration().getRequestTimeout();
+  try {
+    Message message=null;
+    try {
+      if (requestTimeout < 0) {
+        message=(Message)futureHolder.get().get();
+      }
+ else {
+        message=(Message)futureHolder.get().get(requestTimeout,TimeUnit.MILLISECONDS);
+      }
+    }
+ catch (    InterruptedException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Future interrupted: " + e,e);
+      }
+    }
+catch (    TimeoutException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Future timed out: " + e,e);
+      }
+    }
+    if (message != null) {
+      JmsMessage response=new JmsMessage(message,endpoint.getBinding());
+      Object body=response.getBody();
+      if (endpoint.isTransferException() && body instanceof Exception) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Reply recieved. Setting reply as Exception: " + body);
+        }
+        exchange.setException((Exception)body);
+      }
+ else {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Reply recieved. Setting reply as OUT message: " + body);
+        }
+        exchange.setOut(response);
+      }
+      if (correlationId != null) {
+        message.setJMSCorrelationID(correlationId);
+        exchange.getOut().setHeader("JMSCorrelationID",correlationId);
+      }
+    }
+ else {
+      exchange.setException(new ExchangeTimedOutException(exchange,requestTimeout));
+    }
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+}
