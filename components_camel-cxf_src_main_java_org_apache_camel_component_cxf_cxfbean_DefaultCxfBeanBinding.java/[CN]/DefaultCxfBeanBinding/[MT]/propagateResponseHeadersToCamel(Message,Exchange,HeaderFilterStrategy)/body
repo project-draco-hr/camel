@@ -1,0 +1,28 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Propagating response headers from CXF message " + cxfMessage);
+  }
+  if (strategy == null) {
+    return;
+  }
+  Map<String,Object> camelHeaders=exchange.getOut().getHeaders();
+  Map<String,List<String>> cxfHeaders=CastUtils.cast((Map)cxfMessage.get(Message.PROTOCOL_HEADERS));
+  if (cxfHeaders != null) {
+    for (    Map.Entry<String,List<String>> entry : cxfHeaders.entrySet()) {
+      if (!strategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
+        camelHeaders.put(entry.getKey(),entry.getValue().get(0));
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Populate header from CXF header=" + entry.getKey() + " value="+ entry.getValue());
+        }
+      }
+    }
+  }
+  String key=Message.RESPONSE_CODE;
+  Object value=cxfMessage.get(key);
+  if (value != null && !strategy.applyFilterToExternalHeaders(key,value,exchange)) {
+    camelHeaders.put(Exchange.HTTP_RESPONSE_CODE,value);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Populate header from CXF header=" + key + " value="+ value+ " as "+ Exchange.HTTP_RESPONSE_CODE);
+    }
+  }
+}
