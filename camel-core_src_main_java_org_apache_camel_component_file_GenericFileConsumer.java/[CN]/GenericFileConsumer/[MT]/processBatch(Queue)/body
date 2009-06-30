@@ -5,15 +5,17 @@
     total=maxMessagesPerPoll;
   }
   for (int index=0; index < total && isRunAllowed(); index++) {
-    GenericFileExchange<T> exchange=(GenericFileExchange<T>)exchanges.poll();
+    Exchange exchange=(Exchange)exchanges.poll();
     exchange.setProperty(Exchange.BATCH_INDEX,index);
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     processExchange(exchange);
   }
   for (int index=0; index < exchanges.size() && isRunAllowed(); index++) {
-    GenericFileExchange<T> exchange=(GenericFileExchange<T>)exchanges.poll();
-    String key=exchange.getGenericFile().getFileName();
-    endpoint.getInProgressRepository().remove(key);
+    Exchange exchange=(Exchange)exchanges.poll();
+    GenericFile<T> file=(GenericFile<T>)exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);
+    if (file != null) {
+      endpoint.getInProgressRepository().remove(file.getFileName());
+    }
   }
 }
