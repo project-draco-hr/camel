@@ -1,9 +1,11 @@
 {
   File temp;
-  File local=new File(endpoint.getLocalWorkDirectory());
+  File local=new File(FileUtil.normalizePath(endpoint.getLocalWorkDirectory()));
   OutputStream os;
   try {
-    String relativeName=exchange.getGenericFile().getRelativeFilePath();
+    GenericFile<FTPFile> target=(GenericFile<FTPFile>)exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);
+    ObjectHelper.notNull(target,"Exchange should have the " + FileComponent.FILE_EXCHANGE_FILE + " set");
+    String relativeName=target.getRelativeFilePath();
     temp=new File(local,relativeName + ".inprogress");
     local=new File(local,relativeName);
     local.mkdirs();
@@ -26,19 +28,20 @@
  catch (  Exception e) {
     throw new GenericFileOperationFailedException("Cannot create new local work file: " + local);
   }
+  boolean result;
   try {
-    GenericFile<ChannelSftp.LsEntry> target=exchange.getGenericFile();
+    GenericFile<FTPFile> target=(GenericFile<FTPFile>)exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);
     target.setBody(local);
-    channel.get(name,os);
-    if (!temp.renameTo(local)) {
-      throw new GenericFileOperationFailedException("Cannot rename local work file from: " + temp + " to: "+ local);
-    }
+    result=client.retrieveFile(name,os);
   }
- catch (  SftpException e) {
-    throw new GenericFileOperationFailedException("Cannot retrieve file: " + name,e);
+ catch (  IOException e) {
+    throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
   }
  finally {
     ObjectHelper.close(os,"retrieve: " + name,LOG);
   }
-  return true;
+  if (!temp.renameTo(local)) {
+    throw new GenericFileOperationFailedException("Cannot rename local work file from: " + temp + " to: "+ local);
+  }
+  return result;
 }
