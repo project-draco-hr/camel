@@ -5,6 +5,9 @@
   if (destination == null) {
     destination=endpoint.getDestination();
   }
+  if (destination != null) {
+    destinationName=null;
+  }
   testAndSetRequestor();
   final Destination replyTo=requestor.getReplyTo();
   if (replyTo == null) {
@@ -25,43 +28,11 @@
       FutureTask future;
       future=(!msgIdAsCorrId) ? requestor.getReceiveFuture(message.getJMSCorrelationID(),endpoint.getConfiguration().getRequestTimeout()) : requestor.getReceiveFuture(callback);
       futureHolder.set(future);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(endpoint + " sending JMS message: " + message);
-      }
       return message;
     }
   }
 ;
-  CamelJmsTemplate template=null;
-  CamelJmsTeemplate102 template102=null;
-  if (endpoint.isUseVersion102()) {
-    template102=(CamelJmsTeemplate102)getInOutTemplate();
-  }
- else {
-    template=(CamelJmsTemplate)getInOutTemplate();
-  }
-  if (LOG.isTraceEnabled()) {
-    LOG.trace("Using JMS API " + (endpoint.isUseVersion102() ? "v1.0.2" : "v1.1"));
-  }
-  if (destinationName != null) {
-    if (template != null) {
-      template.send(destinationName,messageCreator,callback);
-    }
- else {
-      template102.send(destinationName,messageCreator,callback);
-    }
-  }
- else   if (destination != null) {
-    if (template != null) {
-      template.send(destination,messageCreator,callback);
-    }
- else {
-      template102.send(destination,messageCreator,callback);
-    }
-  }
- else {
-    throw new IllegalArgumentException("Neither destination nor destinationName is specified on this endpoint: " + endpoint);
-  }
+  doSend(true,destinationName,destination,messageCreator,callback);
   setMessageId(exchange);
   long requestTimeout=endpoint.getConfiguration().getRequestTimeout();
   try {
