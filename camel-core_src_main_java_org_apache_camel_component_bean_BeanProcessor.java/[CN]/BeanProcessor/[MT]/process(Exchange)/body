@@ -38,23 +38,9 @@
       method=invocation.getMethod().getName();
     }
   }
+  Object value=null;
   try {
-    Object value=invocation.proceed();
-    if (value != null) {
-      if (exchange.getPattern().isOutCapable()) {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Setting bean invocation result on the OUT message: " + value);
-        }
-        exchange.getOut().setBody(value);
-        exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
-      }
- else {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Setting bean invocation result on the IN message: " + value);
-        }
-        exchange.getIn().setBody(value);
-      }
-    }
+    value=invocation.proceed();
   }
  catch (  InvocationTargetException e) {
     Throwable throwable=e.getCause();
@@ -70,6 +56,21 @@
  finally {
     if (isExplicitMethod) {
       in.setHeader(Exchange.BEAN_METHOD_NAME,prevMethod);
+    }
+  }
+  if (value != null) {
+    if (exchange.getPattern().isOutCapable()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Setting bean invocation result on the OUT message: " + value);
+      }
+      exchange.getOut().setBody(value);
+      exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    }
+ else {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Setting bean invocation result on the IN message: " + value);
+      }
+      exchange.getIn().setBody(value);
     }
   }
 }
