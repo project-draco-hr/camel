@@ -12,24 +12,34 @@
     DataField dataField=dataFieldsSorted.get(it.next());
     Field field=annotedFields.get(dataField.pos());
     field.setAccessible(true);
-    Format format=FormatFactory.getFormat(field.getType(),dataField.pattern(),dataField.precision());
-    Object obj=model.get(field.getDeclaringClass().getName());
-    if (obj != null) {
+    Class type=field.getType();
+    String pattern=dataField.pattern();
+    int precision=dataField.precision();
+    Format format=FormatFactory.getFormat(type,pattern,precision);
+    Object modelField=model.get(field.getDeclaringClass().getName());
+    if (modelField != null) {
       if (this.isMessageOrdered()) {
-        Integer key1=sections.get(obj.getClass().getName());
+        Integer key1=sections.get(modelField.getClass().getName());
         Integer key2=dataField.position();
         Integer keyGenerated=generateKey(key1,key2);
         if (LOG.isDebugEnabled()) {
           LOG.debug("Key generated : " + String.valueOf(keyGenerated) + ", for section : "+ key1);
         }
-        String value=format.format(field.get(obj));
-        positions.put(keyGenerated,value);
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Positions size : " + positions.size());
+        Object value=field.get(modelField);
+        if (value != null) {
+          String valueFormated=format.format(value);
+          positions.put(keyGenerated,valueFormated);
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Positions size : " + positions.size());
+          }
         }
       }
  else {
-        builder.append(format.format(field.get(obj)));
+        Object value=field.get(modelField);
+        if (value != null) {
+          String valueFormated=format.format(value);
+          builder.append(valueFormated);
+        }
         if (it.hasNext()) {
           builder.append(separator);
         }

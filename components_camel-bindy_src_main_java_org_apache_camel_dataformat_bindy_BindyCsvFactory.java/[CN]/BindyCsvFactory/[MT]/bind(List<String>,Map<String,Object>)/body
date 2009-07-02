@@ -3,7 +3,7 @@
   while (pos < data.size()) {
     if (!data.get(pos).equals("")) {
       DataField dataField=dataFields.get(pos);
-      ObjectHelper.notNull(dataField,"No position defined for the field positoned : " + pos);
+      ObjectHelper.notNull(dataField,"No position defined for the field");
       Field field=annotedFields.get(pos);
       field.setAccessible(true);
       if (LOG.isDebugEnabled()) {
@@ -12,7 +12,9 @@
       Format<?> format;
       String pattern=dataField.pattern();
       format=FormatFactory.getFormat(field.getType(),pattern,dataField.precision());
-      field.set(model.get(field.getDeclaringClass().getName()),format.parse(data.get(pos)));
+      Object modelField=model.get(field.getDeclaringClass().getName());
+      Object value=format.parse(data.get(pos));
+      field.set(modelField,value);
     }
     pos++;
   }
