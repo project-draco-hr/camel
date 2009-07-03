@@ -1,15 +1,17 @@
 {
-  String fixedUri=uri.toString();
-  if (fixedUri.startsWith("ircs")) {
+  if (uriStr.startsWith("ircs")) {
     setUsingSSL(true);
-    if (!fixedUri.startsWith("ircs://")) {
-      fixedUri=fixedUri.replace("ircs:","ircs://");
+    if (!uriStr.startsWith("ircs://")) {
+      uriStr=uriStr.replace("ircs:","ircs://");
     }
   }
- else   if (!fixedUri.startsWith("irc://")) {
-    fixedUri=fixedUri.replace("irc:","irc://");
+ else   if (!uriStr.startsWith("irc://")) {
+    uriStr=uriStr.replace("irc:","irc://");
   }
-  uri=uri.resolve(fixedUri);
+  if (uriStr.contains("?")) {
+    uriStr=ObjectHelper.before(uriStr,"?");
+  }
+  URI uri=new URI(uriStr);
   setNickname(uri.getUserInfo());
   setUsername(uri.getUserInfo());
   setRealname(uri.getUserInfo());
@@ -18,8 +20,5 @@
     throw new RuntimeCamelException("The IRC channel name is required but not configured");
   }
   String channel=uri.getFragment();
-  if (channel.contains("?")) {
-    channel=ObjectHelper.before(uri.getFragment(),"?");
-  }
   setTarget("#" + channel);
 }
