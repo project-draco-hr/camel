@@ -3,12 +3,20 @@
   WebClient client=cfb.createWebClient();
   String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
   Class responseClass=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_RESPONSE_CLASS,Class.class);
-  String path=inMessage.getHeader(Exchange.HTTP_RELATIVE_PATH,String.class);
-  client.path(path);
-  Object body=inMessage.getBody();
+  String path=inMessage.getHeader(Exchange.HTTP_PATH,String.class);
+  if (path != null) {
+    client.path(path);
+  }
+  Object body=null;
+  if (!"GET".equals(httpMethod)) {
+    body=checkRequestObject(inMessage.getBody());
+  }
   Object response=null;
   if (responseClass == null) {
     response=client.invoke(httpMethod,body,InputStream.class);
+  }
+ else   if (responseClass.equals(Response.class)) {
+    response=client.invoke(httpMethod,body);
   }
  else {
     response=client.invoke(httpMethod,body,responseClass);
