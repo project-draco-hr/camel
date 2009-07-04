@@ -1,10 +1,10 @@
 {
   if (tracer.getDestination() != null || tracer.getDestinationUri() != null) {
-    TraceEventExchange event=new TraceEventExchange(exchange);
     Date timestamp=new Date();
-    event.setNodeId(node.getId());
-    event.setTimestamp(timestamp);
-    event.setTracedExchange(exchange);
+    Exchange event=new DefaultExchange(exchange);
+    event.setProperty(Exchange.TRACE_EVENT_NODE_ID,node.getId());
+    event.setProperty(Exchange.TRACE_EVENT_TIMESTAMP,timestamp);
+    event.setProperty(Exchange.TRACE_EVENT_EXCHANGE,exchange);
     TraceEventMessage msg=new DefaultTraceEventMessage(timestamp,node,exchange);
     if (tracer.isUseJpa()) {
       LOG.trace("Using class: " + JPA_TRACE_EVENT_MESSAGE + " for tracing event messages");
@@ -26,12 +26,12 @@ synchronized (this) {
  else {
       event.getIn().setBody(msg);
     }
-    event.setProperty(TRACE_EVENT,Boolean.TRUE);
+    event.setProperty(Exchange.TRACE_EVENT,Boolean.TRUE);
     try {
       getTraceEventProducer(exchange).process(event);
     }
  catch (    Exception e) {
-      LOG.error("Error processing TraceEventExchange (original Exchange will be continued): " + event,e);
+      LOG.error("Error processing trace event (original Exchange will continue): " + event,e);
     }
   }
 }
