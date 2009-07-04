@@ -1,5 +1,5 @@
 {
-  GroupedExchange grouped=null;
+  Exchange grouped=null;
   Iterator<Exchange> iter=collection.iterator();
   while (iter.hasNext()) {
     Exchange exchange=iter.next();
@@ -9,9 +9,14 @@
     }
  else {
       if (grouped == null) {
-        grouped=new GroupedExchange(exchange.getContext());
+        grouped=new DefaultExchange(exchange);
       }
-      grouped.addExchange(exchange);
+      List<Exchange> list=grouped.getProperty(Exchange.GROUPED_EXCHANGE,List.class);
+      if (list == null) {
+        list=new ArrayList<Exchange>();
+        grouped.setProperty(Exchange.GROUPED_EXCHANGE,list);
+      }
+      list.add(exchange);
     }
   }
   if (grouped != null) {
