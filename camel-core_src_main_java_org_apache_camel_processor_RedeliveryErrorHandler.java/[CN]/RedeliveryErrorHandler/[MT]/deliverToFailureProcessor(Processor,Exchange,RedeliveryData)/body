@@ -1,6 +1,12 @@
 {
   exchange.setException(null);
-  decrementRedeliveryCounter(exchange);
+  if (data.handledPredicate != null && data.handledPredicate.matches(exchange)) {
+    exchange.getIn().removeHeader(Exchange.REDELIVERED);
+    exchange.getIn().removeHeader(Exchange.REDELIVERY_COUNTER);
+  }
+ else {
+    decrementRedeliveryCounter(exchange);
+  }
   MessageHelper.resetStreamCache(exchange.getIn());
   if (processor != null) {
     if (data.useOriginalInBody) {
