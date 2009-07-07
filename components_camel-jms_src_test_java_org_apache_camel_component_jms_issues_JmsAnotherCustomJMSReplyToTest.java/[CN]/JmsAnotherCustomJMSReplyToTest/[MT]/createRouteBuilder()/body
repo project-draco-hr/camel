@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("activemq:queue:hello").inOnly().process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getIn().setBody("What's your name");
+          exchange.getIn().setHeader("JMSReplyTo","nameReplyQueue");
+        }
+      }
+).to("activemq:queue:nameRequestor?preserveMessageQos=true");
+      from("activemq:queue:nameReplyQueue").to("mock:result");
+    }
+  }
+;
+}
