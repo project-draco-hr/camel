@@ -1,19 +1,11 @@
 {
-  FileLock lock=ExchangeHelper.getMandatoryProperty(exchange,"CamelFileLock",FileLock.class);
+  File lock=ExchangeHelper.getMandatoryProperty(exchange,"CamelFileLock",File.class);
   String lockFileName=ExchangeHelper.getMandatoryProperty(exchange,"CamelFileLockName",String.class);
-  Channel channel=lock.channel();
   if (LOG.isTraceEnabled()) {
     LOG.trace("Unlocking file: " + lockFileName);
   }
-  try {
-    lock.release();
-  }
-  finally {
-    ObjectHelper.close(channel,"Closing channel",LOG);
-    File lockfile=new File(lockFileName);
-    boolean deleted=lockfile.delete();
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Lock file: " + lockFileName + " was deleted: "+ deleted);
-    }
+  boolean deleted=lock.delete();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Lock file: " + lockFileName + " was deleted: "+ deleted);
   }
 }

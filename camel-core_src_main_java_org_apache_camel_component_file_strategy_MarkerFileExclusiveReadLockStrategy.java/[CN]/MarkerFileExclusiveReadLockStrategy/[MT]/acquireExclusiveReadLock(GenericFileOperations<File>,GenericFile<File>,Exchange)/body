@@ -3,14 +3,11 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("Locking the file: " + file + " using the lock file name: "+ lockFileName);
   }
-  FileChannel channel=new RandomAccessFile(lockFileName,"rw").getChannel();
-  FileLock lock=channel.lock();
-  if (lock != null) {
+  File lock=new File(lockFileName);
+  boolean acquired=lock.createNewFile();
+  if (acquired) {
     exchange.setProperty("CamelFileLock",lock);
     exchange.setProperty("CamelFileLockName",lockFileName);
-    return true;
   }
- else {
-    return false;
-  }
+  return acquired;
 }
