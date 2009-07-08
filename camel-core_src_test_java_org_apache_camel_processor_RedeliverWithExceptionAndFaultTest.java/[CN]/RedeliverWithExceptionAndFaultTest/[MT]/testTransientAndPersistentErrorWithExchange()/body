@@ -1,0 +1,14 @@
+{
+  counter=0;
+  getMockEndpoint("mock:result").expectedMessageCount(0);
+  Exchange out=template.request("direct:start",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("Boom");
+    }
+  }
+);
+  assertTrue("Should be failed",out.isFailed());
+  assertNull("No exception",out.getException());
+  assertEquals("Persistent error",out.getFault().getBody());
+  assertMockEndpointsSatisfied();
+}

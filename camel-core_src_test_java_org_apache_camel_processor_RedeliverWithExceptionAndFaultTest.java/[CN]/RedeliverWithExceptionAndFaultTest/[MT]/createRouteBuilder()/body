@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(defaultErrorHandler().maximumRedeliveries(5).redeliverDelay(0));
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          counter++;
+          if (counter < 3) {
+            throw new IllegalArgumentException("Try again");
+          }
+          if (exchange.getIn().getBody().equals("Boom")) {
+            exchange.getFault().setBody("Persistent error");
+          }
+ else {
+            exchange.getOut().setBody("Bye World");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
