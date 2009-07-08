@@ -1,14 +1,15 @@
 {
   HttpEndpoint endpoint=consumer.getEndpoint();
   String connectorKey=getConnectorKey(endpoint);
-synchronized (connectors) {
-    ConnectorRef connectorRef=connectors.get(connectorKey);
+synchronized (CONNECTORS) {
+    ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
     if (connectorRef != null) {
       connectorRef.servlet.disconnect(consumer);
       if (connectorRef.decrement() == 0) {
-        getServer().removeConnector(connectorRef.connector);
+        connectorRef.server.removeConnector(connectorRef.connector);
         connectorRef.connector.stop();
-        connectors.remove(connectorKey);
+        connectorRef.server.stop();
+        CONNECTORS.remove(connectorKey);
       }
     }
   }
