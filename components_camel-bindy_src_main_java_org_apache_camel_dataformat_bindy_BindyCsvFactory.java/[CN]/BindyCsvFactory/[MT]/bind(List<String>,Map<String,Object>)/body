@@ -1,21 +1,41 @@
 {
   int pos=0;
-  while (pos < data.size()) {
-    if (!data.get(pos).equals("")) {
-      DataField dataField=dataFields.get(pos);
-      ObjectHelper.notNull(dataField,"No position defined for the field");
-      Field field=annotedFields.get(pos);
-      field.setAccessible(true);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Pos : " + pos + ", Data : "+ data.get(pos)+ ", Field type : "+ field.getType());
+  int counterMandatoryFields=0;
+  for (  String data : tokens) {
+    DataField dataField=dataFields.get(pos);
+    ObjectHelper.notNull(dataField,"No position " + pos + " defined for the field : "+ data);
+    if (dataField.required()) {
+      ++counterMandatoryFields;
+      if (data.equals("")) {
+        throw new IllegalArgumentException("The mandatory field defined at the position " + pos + " is empty !");
       }
-      Format<?> format;
-      String pattern=dataField.pattern();
-      format=FormatFactory.getFormat(field.getType(),pattern,dataField.precision());
-      Object modelField=model.get(field.getDeclaringClass().getName());
-      Object value=format.parse(data.get(pos));
-      field.set(modelField,value);
     }
-    pos++;
+    Field field=annotedFields.get(pos);
+    field.setAccessible(true);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Pos : " + pos + ", Data : "+ data+ ", Field type : "+ field.getType());
+    }
+    Format<?> format;
+    String pattern=dataField.pattern();
+    format=FormatFactory.getFormat(field.getType(),pattern,dataField.precision());
+    Object modelField=model.get(field.getDeclaringClass().getName());
+    Object value=null;
+    if (!data.equals("")) {
+      value=format.parse(data);
+    }
+ else {
+      value=getDefaultValueforPrimitive(field.getType());
+    }
+    field.set(modelField,value);
+    ++pos;
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Counter mandatory fields : " + counterMandatoryFields);
+  }
+  if (pos < totalFields) {
+    throw new IllegalArgumentException("Some fields are missing (optional or mandatory) !!");
+  }
+  if (counterMandatoryFields < numberMandatoryFields) {
+    throw new IllegalArgumentException("Some mandatory fields are missing !!");
   }
 }

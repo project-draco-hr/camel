@@ -21,15 +21,29 @@
         LOG.debug("Counter " + count++ + " : content : "+ line);
       }
       model=factory.factory();
-      List<String> result=Arrays.asList(line.split(separator));
-      factory.bind(result,model);
-      factory.link(model);
-      models.add(model);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Graph of objects created : " + model);
+      String[] tokens=line.split(separator,-1);
+      List<String> result=Arrays.asList(tokens);
+      if (result.size() == 0 || result.isEmpty()) {
+        throw new java.lang.IllegalArgumentException("No records have been defined in the CSV !");
+      }
+      if (result.size() > 0) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Size of the record splitted : " + result.size());
+        }
+        factory.bind(result,model);
+        factory.link(model);
+        models.add(model);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Graph of objects created : " + model);
+        }
       }
     }
-    return models;
+    if (models.size() == 0) {
+      throw new java.lang.Exception("No records have been defined in the CSV !");
+    }
+ else {
+      return models;
+    }
   }
   finally {
     scanner.close();
