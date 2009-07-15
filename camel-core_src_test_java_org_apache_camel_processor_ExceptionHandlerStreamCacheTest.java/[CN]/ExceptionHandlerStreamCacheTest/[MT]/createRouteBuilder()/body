@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      onException(Exception.class).handled(true).to("mock:exception");
+      intercept().addInterceptStrategy(new HandleFault());
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String message=exchange.getIn().getBody(String.class);
+          if (message.contains("fault")) {
+            exchange.getFault().copyFrom(exchange.getIn());
+            exchange.getFault().setBody(new ByteArrayInputStream(message.getBytes()));
+          }
+          if (message.contains("error")) {
+            throw new RuntimeException(message);
+          }
+        }
+      }
+).to("mock:success");
+    }
+  }
+;
+}
