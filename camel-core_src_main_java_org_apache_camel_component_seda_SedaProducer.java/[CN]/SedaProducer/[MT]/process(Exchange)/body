@@ -6,9 +6,6 @@
     wait=exchange.getProperty(Exchange.ASYNC_WAIT,WaitForTaskToComplete.class);
   }
   if (wait == WaitForTaskToComplete.Always || (wait == WaitForTaskToComplete.IfReplyExpected && ExchangeHelper.isOutCapable(exchange))) {
-    if (endpoint.getEndpointUri().startsWith("seda") && endpoint.getConsumers().isEmpty()) {
-      throw new IllegalStateException("Cannot send to endpoint: " + endpoint.getEndpointUri() + " as no consumers is registered."+ " With no consumers we end up waiting forever for the reply, as there are no consumers to process our exchange: "+ exchange);
-    }
     final CountDownLatch latch=new CountDownLatch(1);
     copy.addOnCompletion(new SynchronizationAdapter(){
       @Override public void onDone(      Exchange response){
@@ -22,7 +19,10 @@
     }
 );
     queue.add(copy);
-    latch.await();
+    boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
+    if (!done) {
+      exchange.setException(new ExchangeTimedOutException(exchange,timeout));
+    }
   }
  else {
     queue.add(copy);
