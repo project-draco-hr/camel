@@ -1,0 +1,19 @@
+{
+  if (beforeUri == null && afterUri == null && afterFinallyUri == null) {
+    throw new IllegalArgumentException("At least one of before, after or afterFinally must be provided on: " + this);
+  }
+  Collection<ProcessorDefinition> pipe=new ArrayList<ProcessorDefinition>();
+  Processor finallyProcessor=null;
+  if (beforeUri != null) {
+    pipe.add(new SendDefinition(beforeUri));
+  }
+  pipe.addAll(getOutputs());
+  if (afterUri != null) {
+    pipe.add(new SendDefinition(afterUri));
+  }
+ else   if (afterFinallyUri != null) {
+    finallyProcessor=new SendDefinition(afterFinallyUri).createProcessor(routeContext);
+  }
+  Processor tryProcessor=createOutputsProcessor(routeContext,pipe);
+  return new AOPProcessor(tryProcessor,null,finallyProcessor);
+}
