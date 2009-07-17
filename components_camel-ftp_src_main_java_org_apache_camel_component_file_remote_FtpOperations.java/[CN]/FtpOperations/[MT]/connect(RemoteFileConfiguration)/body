@@ -21,10 +21,22 @@
         LOG.trace("Reconnect attempt #" + attempt + " connecting to + "+ configuration.remoteServerInformation());
       }
       client.connect(host,port);
-      connected=true;
+      int reply=client.getReplyCode();
+      if (FTPReply.isPositiveCompletion(reply)) {
+        connected=true;
+      }
+ else {
+        throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),"Server refused connection");
+      }
     }
  catch (    Exception e) {
-      GenericFileOperationFailedException failed=new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+      GenericFileOperationFailedException failed;
+      if (e instanceof GenericFileOperationFailedException) {
+        failed=(GenericFileOperationFailedException)e;
+      }
+ else {
+        failed=new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+      }
       if (LOG.isTraceEnabled()) {
         LOG.trace("Could not connect due: " + failed.getMessage());
       }
@@ -36,7 +48,7 @@
         try {
           Thread.sleep(endpoint.getReconnectDelay());
         }
- catch (        InterruptedException e1) {
+ catch (        InterruptedException ie) {
         }
       }
     }
