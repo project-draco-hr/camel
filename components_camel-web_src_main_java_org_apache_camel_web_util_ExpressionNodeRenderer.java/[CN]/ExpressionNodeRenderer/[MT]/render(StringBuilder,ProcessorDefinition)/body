@@ -1,0 +1,119 @@
+{
+  ExpressionNode expNode=(ExpressionNode)processor;
+  ExpressionDefinition expression=expNode.getExpression();
+  buffer.append(".").append(expNode.getShortName());
+  if (expNode instanceof DelayDefinition) {
+    String delay=expression.getExpressionValue().toString();
+    if (!delay.contains("(")) {
+      String delayTime=expression.getExpressionValue().toString();
+      buffer.append("(").append(delayTime).append(")");
+    }
+ else {
+      buffer.append("()");
+      ExpressionRenderer.render(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof FilterDefinition) {
+    if (expression.getPredicate() != null) {
+      PredicateRenderer.renderPredicate(buffer,expression.getPredicate());
+    }
+ else     if (expression.getLanguage() != null) {
+      buffer.append("()");
+      ExpressionRenderer.render(buffer,expression);
+    }
+ else {
+      buffer.append("()");
+      ExpressionRenderer.render(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof IdempotentConsumerDefinition) {
+  }
+ else   if (expNode instanceof LoopDefinition) {
+    if (expression instanceof ConstantExpression) {
+      buffer.append("(").append(expression.getExpression()).append(")");
+    }
+ else {
+      buffer.append("()");
+      ExpressionRenderer.render(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof RecipientListDefinition) {
+    buffer.append("(");
+    ExpressionRenderer.render(buffer,expression);
+    buffer.append(")");
+  }
+ else   if (expNode instanceof SetBodyDefinition) {
+    String expValue=expression.getExpressionValue().toString();
+    if (expValue.startsWith("append")) {
+      buffer.append("(");
+      ExpressionRenderer.render(buffer,expression);
+      buffer.append(")");
+    }
+ else {
+      buffer.append("()");
+      ExpressionRenderer.renderConstant(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof SetHeaderDefinition) {
+    SetHeaderDefinition set=(SetHeaderDefinition)expNode;
+    buffer.append("(\"").append(set.getHeaderName()).append("\")");
+    if (expression.getExpressionValue() != null) {
+      ExpressionRenderer.renderConstant(buffer,expression);
+    }
+ else     if (expression.getExpressionType() != null) {
+      ExpressionRenderer.render(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof SetOutHeaderDefinition) {
+    buffer.append("(\"unspported expressions in SetOutHeaderDefinition\")");
+  }
+ else   if (expNode instanceof SetPropertyDefinition) {
+    SetPropertyDefinition set=(SetPropertyDefinition)expNode;
+    buffer.append("(\"").append(set.getPropertyName()).append("\")");
+    if (expression.getExpressionValue() != null) {
+      ExpressionRenderer.renderConstant(buffer,expression);
+    }
+ else     if (expression.getExpressionType() != null) {
+      ExpressionRenderer.render(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof SplitDefinition) {
+    String expValue=expression.getExpressionValue().toString();
+    if (!expValue.contains("(")) {
+      buffer.append("().").append(expValue).append("()");
+    }
+ else {
+      ExpressionRenderer.render(buffer,expression);
+    }
+  }
+ else   if (expNode instanceof TransformDefinition) {
+    String expValue=expression.getExpressionValue().toString();
+    if (expValue.matches("\\w+")) {
+      buffer.append("()");
+      ExpressionRenderer.renderConstant(buffer,expression);
+    }
+ else     if (expValue.startsWith("append")) {
+      buffer.append("(");
+      ExpressionRenderer.render(buffer,expression);
+      buffer.append(")");
+    }
+ else     if (expValue.startsWith("xpath")) {
+      buffer.append("()");
+      ExpressionRenderer.render(buffer,expression);
+    }
+ else {
+      buffer.append("(");
+      ExpressionRenderer.render(buffer,expression);
+      buffer.append(")");
+    }
+  }
+ else   if (expNode instanceof WhenDefinition) {
+    if (expression.getPredicate() != null) {
+      PredicateRenderer.renderPredicate(buffer,expression.getPredicate());
+    }
+    if (expression instanceof ExpressionClause) {
+      buffer.append("()");
+      ExpressionRenderer.render(buffer,(ExpressionClause)expression);
+    }
+  }
+}

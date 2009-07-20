@@ -1,0 +1,25 @@
+{
+  List<FromDefinition> inputs=route.getInputs();
+  List<ProcessorDefinition> outputs=route.getOutputs();
+  if (!(route.getErrorHandlerBuilder() instanceof ErrorHandlerBuilderRef)) {
+    if (route.getErrorHandlerBuilder() instanceof DeadLetterChannelBuilder) {
+      DeadLetterChannelBuilder deadLetter=(DeadLetterChannelBuilder)route.getErrorHandlerBuilder();
+      buffer.append("errorHandler(deadLetterChannel(\"").append(deadLetter.getDeadLetterUri()).append("\")");
+      buffer.append(".maximumRedeliveries(").append(deadLetter.getRedeliveryPolicy().getMaximumRedeliveries()).append(")");
+      buffer.append(".redeliverDelay(").append(deadLetter.getRedeliveryPolicy().getRedeliverDelay()).append(")");
+      buffer.append(".handled(").append(deadLetter.getHandledPolicy().toString()).append(")");
+      buffer.append(");");
+    }
+  }
+  buffer.append("from(");
+  for (  FromDefinition input : inputs) {
+    buffer.append("\"").append(input.getUri()).append("\"");
+    if (input != inputs.get(inputs.size() - 1)) {
+      buffer.append(", ");
+    }
+  }
+  buffer.append(")");
+  for (  ProcessorDefinition processor : outputs) {
+    renderProcessor(buffer,processor);
+  }
+}
