@@ -4,8 +4,18 @@
   expects(new Runnable(){
     public void run(){
       assertTrue("No header with name " + headerName + " found.",actualHeader != null);
-      Object actualValue=getCamelContext().getTypeConverter().convertTo(actualHeader.getClass(),headerValue);
-      assertEquals("Header of message",actualValue,actualHeader);
+      Object actualValue;
+      if (actualHeader instanceof Expression) {
+        actualValue=((Expression)actualHeader).evaluate(mostRecentExchange(),headerValue.getClass());
+      }
+ else       if (actualHeader instanceof Predicate) {
+        actualValue=((Predicate)actualHeader).matches(mostRecentExchange());
+      }
+ else {
+        actualValue=getCamelContext().getTypeConverter().convertTo(headerValue.getClass(),actualHeader);
+        assertTrue("There is no type conversion possible from " + actualHeader.getClass().getName() + " to "+ headerValue.getClass().getName(),actualValue != null);
+      }
+      assertEquals("Header of message",headerValue,actualValue);
     }
   }
 );
