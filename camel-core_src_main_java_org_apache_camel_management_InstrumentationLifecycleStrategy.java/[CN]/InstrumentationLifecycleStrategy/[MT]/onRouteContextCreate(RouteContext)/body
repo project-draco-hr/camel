@@ -24,21 +24,30 @@ catch (    JMException e) {
   }
   routeContext.addInterceptStrategy(new InstrumentationInterceptStrategy(registeredCounters));
   final Endpoint endpoint=routeContext.getEndpoint();
-  ProcessorDefinition out=routeContext.getRoute().getOutputs().get(0);
-  out.addInterceptStrategy(new InterceptStrategy(){
-    public Processor wrapProcessorInInterceptors(    ProcessorDefinition processorDefinition,    Processor target,    Processor nextTarget) throws Exception {
-      if (registeredRoutes.containsKey(endpoint)) {
-        return target;
-      }
-      InstrumentationProcessor wrapper=new InstrumentationProcessor(null);
-      wrapper.setType(processorDefinition.getShortName());
-      wrapper.setProcessor(target);
-      registeredRoutes.put(endpoint,wrapper);
-      return wrapper;
+  ProcessorDefinition out=null;
+  for (  ProcessorDefinition processor : routeContext.getRoute().getOutputs()) {
+    if (!registerProcessor(processor)) {
+      continue;
     }
-    public String toString(){
-      return "Instrument";
-    }
+    out=processor;
+    break;
   }
+  if (out != null) {
+    out.addInterceptStrategy(new InterceptStrategy(){
+      public Processor wrapProcessorInInterceptors(      ProcessorDefinition processorDefinition,      Processor target,      Processor nextTarget) throws Exception {
+        if (registeredRoutes.containsKey(endpoint)) {
+          return target;
+        }
+        InstrumentationProcessor wrapper=new InstrumentationProcessor(null);
+        wrapper.setType(processorDefinition.getShortName());
+        wrapper.setProcessor(target);
+        registeredRoutes.put(endpoint,wrapper);
+        return wrapper;
+      }
+      public String toString(){
+        return "Instrument";
+      }
+    }
 );
+  }
 }
