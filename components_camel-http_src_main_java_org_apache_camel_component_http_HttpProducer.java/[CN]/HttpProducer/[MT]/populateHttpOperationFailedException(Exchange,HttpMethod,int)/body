@@ -2,19 +2,23 @@
   HttpOperationFailedException exception;
   Header[] headers=method.getResponseHeaders();
   InputStream is=extractResponseBody(method,exchange);
+  InputStream copy=null;
+  if (is != null) {
+    copy=new ByteArrayInputStream(exchange.getContext().getTypeConverter().convertTo(byte[].class,is));
+  }
   if (responseCode >= 300 && responseCode < 400) {
     String redirectLocation;
     Header locationHeader=method.getResponseHeader("location");
     if (locationHeader != null) {
       redirectLocation=locationHeader.getValue();
-      exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),redirectLocation,headers,is);
+      exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),redirectLocation,headers,copy);
     }
  else {
-      exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),headers,is);
+      exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),headers,copy);
     }
   }
  else {
-    exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),headers,is);
+    exception=new HttpOperationFailedException(responseCode,method.getStatusLine(),headers,copy);
   }
   return exception;
 }

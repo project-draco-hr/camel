@@ -1,27 +1,18 @@
 {
-  flush();
   if (inMemory) {
     if (currentStream instanceof ByteArrayOutputStream) {
       return new ByteArrayInputStream(((ByteArrayOutputStream)currentStream).toByteArray());
     }
  else {
-      return null;
+      throw new IllegalStateException("CurrentStream should be an instance of ByteArrayOutputStream but is: " + currentStream.getClass().getName());
     }
   }
  else {
     try {
-      FileInputStream fileInputStream=new FileInputStream(tempFile){
-        public void close() throws IOException {
-          super.close();
-          maybeDeleteTempFile(this);
-        }
-      }
-;
-      streamList.add(fileInputStream);
-      return fileInputStream;
+      return new FileInputStreamCache(tempFile,this);
     }
  catch (    FileNotFoundException e) {
-      throw IOHelper.createIOException("Cached file was already deleted",e);
+      throw IOHelper.createIOException("Cached file " + tempFile + " not found",e);
     }
   }
 }
