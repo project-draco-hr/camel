@@ -7,6 +7,12 @@
     Serializable holder=DefaultExchangeHolder.marshal(exchange);
     return session.createObjectMessage(holder);
   }
+  if (endpoint.getMessageConverter() != null) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Creating JmsMessage using a custom MessageConverter: " + endpoint.getMessageConverter() + " with body: "+ body);
+    }
+    return endpoint.getMessageConverter().toMessage(body,session);
+  }
   if (headers.containsKey(JmsConstants.JMS_MESSAGE_TYPE)) {
     type=context.getTypeConverter().convertTo(JmsMessageType.class,headers.get(JmsConstants.JMS_MESSAGE_TYPE));
   }
