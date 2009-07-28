@@ -1,0 +1,16 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.whenAnyExchangeReceived(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.setException(new IllegalArgumentException("Forced"));
+    }
+  }
+);
+  try {
+    template.sendBody("direct:a","Hello World");
+  }
+ catch (  Exception e) {
+    assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+    assertEquals("Forced",e.getCause().getMessage());
+  }
+}
