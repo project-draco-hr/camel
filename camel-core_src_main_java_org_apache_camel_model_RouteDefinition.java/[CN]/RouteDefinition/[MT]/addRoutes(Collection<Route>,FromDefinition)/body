@@ -3,9 +3,51 @@
   if (trace != null) {
     routeContext.setTracing(isTrace());
     if (isTrace()) {
-      if (Tracer.getTracer(camelContext.getInterceptStrategies()) == null) {
+      if (log.isDebugEnabled()) {
+        log.debug("Tracing is enabled on route: " + this);
+      }
+      if (Tracer.getTracer(camelContext) == null) {
         Tracer tracer=Tracer.createTracer(camelContext);
         addInterceptStrategy(tracer);
+      }
+    }
+  }
+  if (streamCache != null) {
+    routeContext.setStreamCaching(isStreamCache());
+    if (isStreamCache()) {
+      if (log.isDebugEnabled()) {
+        log.debug("StramCaching is enabled on route: " + this);
+      }
+      if (StreamCaching.getStreamCaching(camelContext) == null) {
+        addInterceptStrategy(new StreamCaching());
+      }
+    }
+  }
+  if (handleFault != null) {
+    routeContext.setHandleFault(isHandleFault());
+    if (isHandleFault()) {
+      if (log.isDebugEnabled()) {
+        log.debug("HandleFault is enabled on route: " + this);
+      }
+      if (HandleFault.getHandleFault(camelContext) == null) {
+        addInterceptStrategy(new HandleFault());
+      }
+    }
+  }
+  if (delayer != null) {
+    routeContext.setDelayer(getDelayer());
+    if (getDelayer() != null) {
+      long millis=getDelayer();
+      if (millis > 0) {
+        if (log.isDebugEnabled()) {
+          log.debug("Delayer is enabled with: " + millis + " ms. on route: "+ this);
+        }
+        addInterceptStrategy(new Delayer(millis));
+      }
+ else {
+        if (log.isDebugEnabled()) {
+          log.debug("Delayer is disabled on route: " + this);
+        }
       }
     }
   }

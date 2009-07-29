@@ -1,30 +1,30 @@
 {
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is starting");
   startServices(producerServicePool);
-  if (isStreamCacheEnabled()) {
+  if (isStreamCaching()) {
     if (StreamCaching.getStreamCaching(this) == null) {
       LOG.debug("StreamCaching is enabled");
       addInterceptStrategy(new StreamCaching());
     }
   }
-  if (isTraceEnabled()) {
-    if (Tracer.getTracer(this.getInterceptStrategies()) == null) {
+  if (isTracing()) {
+    if (Tracer.getTracer(this) == null) {
       Tracer tracer=Tracer.createTracer(this);
       LOG.debug("Tracing is enabled");
       addInterceptStrategy(tracer);
     }
   }
-  long delayInMillis=isDelayEnabled();
-  if (delayInMillis > 0) {
-    if (Delayer.getDelayer(this) == null) {
-      LOG.debug("Delayer is enabled with: " + delayInMillis + " ms.");
-      addInterceptStrategy(new Delayer(delayInMillis));
-    }
-  }
-  if (isHandleFaultEnabled()) {
+  if (isHandleFault()) {
     if (HandleFault.getHandleFault(this) == null) {
       LOG.debug("HandleFault is enabled");
       addInterceptStrategy(new HandleFault());
+    }
+  }
+  if (getDelayer() != null && getDelayer() > 0) {
+    if (Delayer.getDelayer(this) == null) {
+      long millis=getDelayer();
+      LOG.debug("Delayer is enabled with: " + millis + " ms.");
+      addInterceptStrategy(new Delayer(millis));
     }
   }
   try {

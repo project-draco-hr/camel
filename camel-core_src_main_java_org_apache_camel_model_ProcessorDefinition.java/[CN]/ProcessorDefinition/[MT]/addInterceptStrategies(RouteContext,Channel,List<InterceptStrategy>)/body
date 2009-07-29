@@ -3,6 +3,28 @@
     if (!routeContext.isTracing() && strategy instanceof Tracer) {
       continue;
     }
+    if (!routeContext.isStreamCaching() && strategy instanceof StreamCaching) {
+      continue;
+    }
+    if (!routeContext.isHandleFault() && strategy instanceof HandleFault) {
+      continue;
+    }
+    if (strategy instanceof Delayer) {
+      if ((routeContext.getDelayer() == null || routeContext.getDelayer() <= 0)) {
+        continue;
+      }
+ else {
+        Iterator<InterceptStrategy> it=channel.getInterceptStrategies().iterator();
+        while (it.hasNext()) {
+          InterceptStrategy existing=it.next();
+          if (existing instanceof Delayer) {
+            it.remove();
+          }
+        }
+        channel.addInterceptStrategy(strategy);
+        continue;
+      }
+    }
     channel.addInterceptStrategy(strategy);
   }
 }
