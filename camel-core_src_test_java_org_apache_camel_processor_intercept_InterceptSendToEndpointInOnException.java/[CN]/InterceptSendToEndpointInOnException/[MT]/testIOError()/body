@@ -1,0 +1,16 @@
+{
+  getMockEndpoint("mock:io").expectedMessageCount(0);
+  getMockEndpoint("mock:intercepted").expectedMessageCount(2);
+  getMockEndpoint("mock:foo").expectedMessageCount(2);
+  getMockEndpoint("mock:result").expectedMessageCount(0);
+  MockEndpoint foo=getMockEndpoint("mock:foo");
+  foo.whenAnyExchangeReceived(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      throw new IOException("Forced");
+    }
+  }
+);
+  template.sendBody("direct:start","Hello World");
+  template.sendBody("direct:start","Bye World");
+  assertMockEndpointsSatisfied();
+}

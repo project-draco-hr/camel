@@ -1,0 +1,28 @@
+{
+  getMockEndpoint("mock:io").expectedMessageCount(0);
+  getMockEndpoint("mock:intercepted").expectedMessageCount(0);
+  getMockEndpoint("mock:foo").expectedMessageCount(2);
+  getMockEndpoint("mock:result").expectedMessageCount(0);
+  MockEndpoint foo=getMockEndpoint("mock:foo");
+  foo.whenAnyExchangeReceived(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      throw new IllegalArgumentException("Forced");
+    }
+  }
+);
+  try {
+    template.sendBody("direct:start","Hello World");
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException e) {
+    assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+  }
+  try {
+    template.sendBody("direct:start","Bye World");
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException e) {
+    assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+  }
+  assertMockEndpointsSatisfied();
+}
