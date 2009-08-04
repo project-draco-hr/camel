@@ -1,0 +1,18 @@
+{
+  order="";
+  getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
+  final CountDownLatch latch=new CountDownLatch(1);
+  template.asyncCallbackSendBody("direct:start","Hello",new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      order+="B";
+      assertEquals("Hello World",exchange.getIn().getBody());
+      latch.countDown();
+    }
+  }
+);
+  order+="A";
+  latch.await(10,TimeUnit.SECONDS);
+  order+="C";
+  assertMockEndpointsSatisfied();
+  assertEquals("ABC",order);
+}

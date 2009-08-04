@@ -1,0 +1,19 @@
+{
+  order="";
+  Exchange exchange=context.getEndpoint("direct:start").createExchange();
+  exchange.getIn().setBody("Hello");
+  exchange.setPattern(ExchangePattern.InOut);
+  Future<Exchange> future=template.asyncCallback("direct:echo",exchange,new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      order+="B";
+      assertEquals("HelloHello",exchange.getOut().getBody());
+    }
+  }
+);
+  order+="A";
+  Exchange reply=future.get(10,TimeUnit.SECONDS);
+  order+="C";
+  assertEquals("ABC",order);
+  assertNotNull(reply);
+  assertEquals("HelloHello",reply.getOut().getBody());
+}

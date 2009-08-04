@@ -1,0 +1,17 @@
+{
+  order="";
+  getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
+  Future<Object> future=template.asyncCallbackSendBody("direct:start","Hello",new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      order+="B";
+      assertEquals("Hello World",exchange.getIn().getBody());
+    }
+  }
+);
+  order+="A";
+  Object reply=future.get(10,TimeUnit.SECONDS);
+  order+="C";
+  assertMockEndpointsSatisfied();
+  assertEquals("ABC",order);
+  assertEquals(null,reply);
+}

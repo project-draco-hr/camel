@@ -1,0 +1,21 @@
+{
+  return doInProducer(endpoint,exchange,pattern,new ProducerCallback<Exchange>(){
+    public Exchange doInProducer(    Producer producer,    Exchange exchange,    ExchangePattern pattern) throws Exception {
+      if (exchange == null) {
+        exchange=pattern != null ? producer.createExchange(pattern) : producer.createExchange();
+      }
+      if (processor != null) {
+        processor.process(exchange);
+      }
+      if (onCompletion != null) {
+        exchange.addOnCompletion(onCompletion);
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(">>>> " + endpoint + " "+ exchange);
+      }
+      producer.process(exchange);
+      return exchange;
+    }
+  }
+);
+}

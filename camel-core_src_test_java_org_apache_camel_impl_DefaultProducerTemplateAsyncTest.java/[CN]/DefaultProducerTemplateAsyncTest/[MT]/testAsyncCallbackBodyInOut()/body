@@ -1,0 +1,16 @@
+{
+  order="";
+  final CountDownLatch latch=new CountDownLatch(1);
+  template.asyncCallbackRequestBody("direct:echo","Hello",new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      order+="B";
+      assertEquals("HelloHello",exchange.getOut().getBody());
+      latch.countDown();
+    }
+  }
+);
+  order+="A";
+  latch.await(10,TimeUnit.SECONDS);
+  order+="C";
+  assertEquals("ABC",order);
+}
