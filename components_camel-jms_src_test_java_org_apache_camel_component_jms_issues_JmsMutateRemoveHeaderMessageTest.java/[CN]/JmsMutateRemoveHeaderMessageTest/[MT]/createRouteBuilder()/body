@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(uri).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          JmsMessage msg=assertIsInstanceOf(JmsMessage.class,exchange.getIn());
+          assertNotNull("javax.jms.Message should not be null",msg.getJmsMessage());
+          assertEquals("VALUE_1",exchange.getIn().getHeader("HEADER_1"));
+        }
+      }
+).removeHeader("HEADER_1").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          JmsMessage msg=assertIsInstanceOf(JmsMessage.class,exchange.getIn());
+          assertNotNull("javax.jms.Message should not be null",msg.getJmsMessage());
+          assertNull("Header should have been removed",exchange.getIn().getHeader("HEADER_1"));
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}

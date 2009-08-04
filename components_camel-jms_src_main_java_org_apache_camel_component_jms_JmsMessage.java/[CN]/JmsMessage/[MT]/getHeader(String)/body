@@ -1,14 +1,14 @@
 {
   Object answer=null;
-  if (jmsMessage != null && !name.startsWith("JMS")) {
+  if (jmsMessage != null && !hasPopulatedHeaders() && !name.startsWith("JMS")) {
     try {
-      answer=jmsMessage.getObjectProperty(name);
+      answer=getBinding().getObjectProperty(jmsMessage,name);
     }
  catch (    JMSException e) {
       throw new RuntimeExchangeException("Unable to retrieve header from JMS Message: " + name,getExchange(),e);
     }
   }
-  if (answer == null) {
+  if (answer == null && (hasPopulatedHeaders() || name.startsWith("JMS"))) {
     answer=super.getHeader(name);
   }
   return answer;
