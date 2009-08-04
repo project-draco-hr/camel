@@ -9,9 +9,25 @@
   if (contentType != null && contentType.contains(";")) {
     String before=ObjectHelper.before(contentType,";");
     String after=ObjectHelper.after(contentType,";");
-    if (before != null && after != null) {
-      contentType=before.trim() + "; " + after.trim();
+    if (after != null) {
+      String charset=ObjectHelper.after(after,"=");
+      charset=determineCharSet(configuration,charset);
+      if (charset != null) {
+        after="charset=" + charset;
+      }
+ else {
+        after=null;
+      }
     }
+    if (before != null && after == null) {
+      contentType=before.trim();
+    }
+ else     if (before != null && after != null) {
+      contentType=before.trim() + "; " + after;
+    }
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Determined Content-Type: " + contentType);
   }
   return contentType;
 }

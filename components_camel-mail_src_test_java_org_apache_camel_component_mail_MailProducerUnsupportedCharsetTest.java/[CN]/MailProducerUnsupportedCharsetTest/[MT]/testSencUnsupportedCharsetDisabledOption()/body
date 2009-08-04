@@ -1,0 +1,28 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("pop3://jones@localhost?password=secret&delay=1000&ignoreUnsupportedCharset=false").to("mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello World");
+  mock.allMessages().header("Content-Type").isEqualTo("text/plain");
+  Map headers=new HashMap();
+  headers.put("To","jones@localhost");
+  headers.put("Content-Type","text/plain");
+  template.sendBodyAndHeaders("smtp://localhost?ignoreUnsupportedCharset=false","Hello World",headers);
+  headers.clear();
+  headers.put("To","jones@localhost");
+  headers.put("Content-Type","text/plain; charset=XXX");
+  try {
+    template.sendBodyAndHeaders("smtp://localhost?ignoreUnsupportedCharset=false","Bye World",headers);
+    fail("Should have thrown an exception");
+  }
+ catch (  RuntimeCamelException e) {
+    assertIsInstanceOf(MailPreparationException.class,e.getCause());
+    assertIsInstanceOf(UnsupportedEncodingException.class,e.getCause().getCause());
+  }
+  mock.assertIsSatisfied();
+}
