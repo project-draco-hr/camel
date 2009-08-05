@@ -1,0 +1,24 @@
+{
+  Map<String,Object> answer=new HashMap<String,Object>();
+  if (response instanceof Response) {
+    for (    Map.Entry<String,List<Object>> entry : ((Response)response).getMetadata().entrySet()) {
+      if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
+        String mappedHeaderName=cxfToCamelHeaderMap.get(entry.getKey());
+        if (mappedHeaderName == null) {
+          mappedHeaderName=entry.getKey();
+        }
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Populate external header " + entry.getKey() + "="+ entry.getValue()+ " as "+ mappedHeaderName);
+        }
+        answer.put(mappedHeaderName,entry.getValue().get(0));
+      }
+ else {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Drop external header " + entry.getKey() + "="+ entry.getValue());
+        }
+      }
+    }
+    answer.put(Exchange.HTTP_RESPONSE_CODE,((Response)response).getStatus());
+  }
+  return answer;
+}
