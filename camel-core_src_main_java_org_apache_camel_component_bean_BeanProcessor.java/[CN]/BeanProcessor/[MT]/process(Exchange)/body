@@ -1,9 +1,13 @@
 {
+  boolean isExplicitMethod=ObjectHelper.isNotEmpty(method);
   Object bean=beanHolder.getBean();
   exchange.setProperty(Exchange.BEAN_HOLDER,beanHolder);
-  Processor processor=getProcessor();
   BeanInfo beanInfo=beanHolder.getBeanInfo();
-  if (processor != null) {
+  Processor processor=getProcessor();
+  if (!isExplicitMethod && processor != null) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Using a custom adapter as bean invocation: " + processor);
+    }
     processor.process(exchange);
     return;
   }
@@ -16,17 +20,15 @@
     beanInvoke.invoke(bean,exchange);
     return;
   }
-  boolean isExplicitMethod=false;
   String prevMethod=null;
   MethodInvocation invocation;
   if (methodObject != null) {
     invocation=beanInfo.createInvocation(methodObject,bean,exchange);
   }
  else {
-    if (ObjectHelper.isNotEmpty(method)) {
+    if (isExplicitMethod) {
       prevMethod=in.getHeader(Exchange.BEAN_METHOD_NAME,String.class);
       in.setHeader(Exchange.BEAN_METHOD_NAME,method);
-      isExplicitMethod=true;
     }
     invocation=beanInfo.createInvocation(bean,exchange);
   }
