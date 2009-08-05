@@ -1,8 +1,14 @@
 {
   Callable<Object> task=new Callable<Object>(){
     public Object call() throws Exception {
-      Exchange exchange=send(endpoint,pattern,createSetBodyProcessorCallback(body,onCompletion));
-      Object result=extractResultBody(exchange,pattern);
+      Exchange answer=send(endpoint,pattern,createSetBodyProcessor(body));
+      if (answer.isFailed()) {
+        onCompletion.onFailure(answer);
+      }
+ else {
+        onCompletion.onComplete(answer);
+      }
+      Object result=extractResultBody(answer,pattern);
       if (pattern.isOutCapable()) {
         return result;
       }
