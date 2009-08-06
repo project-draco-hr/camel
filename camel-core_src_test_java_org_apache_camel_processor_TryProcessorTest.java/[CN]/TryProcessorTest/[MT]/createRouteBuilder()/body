@@ -1,7 +1,10 @@
 {
   return new RouteBuilder(){
     public void configure(){
-      from("direct:start").doTry().process(new ProcessorFail()).to("mock:result").doCatch(Exception.class).process(new ProcessorHandle()).doFinally().to("mock:finally").end().to("mock:last");
+      from("direct:processor").doTry().process(new ProcessorFail()).to("mock:result").doCatch(CamelException.class).process(new ProcessorHandle()).doFinally().to("mock:finally").end().to("mock:last");
+      from("direct:expression").doTry().setBody(new ProcessorFail()).to("mock:result").doCatch(CamelException.class).process(new ProcessorHandle()).doFinally().to("mock:finally").end().to("mock:last");
+      from("direct:predicate").doTry().to("direct:sub-predicate").doCatch(CamelException.class).process(new ProcessorHandle()).doFinally().to("mock:finally").end().to("mock:last");
+      from("direct:sub-predicate").errorHandler(noErrorHandler()).filter(new ProcessorFail()).to("mock:result");
     }
   }
 ;
