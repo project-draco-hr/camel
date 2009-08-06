@@ -1,7 +1,28 @@
 {
   OutputDefinition out=(OutputDefinition)processor;
-  buffer.append(".").append(out.getShortName());
-  if (out instanceof BeanDefinition) {
+  boolean notGlobal=buffer.toString().endsWith(")");
+  if (notGlobal) {
+    buffer.append(".");
+  }
+  buffer.append(out.getShortName());
+  if (out instanceof AOPDefinition) {
+    buffer.append("()");
+    AOPDefinition aop=(AOPDefinition)out;
+    if (aop.getBeforeUri() != null && aop.getAfterUri() != null) {
+      buffer.append(".around(\"").append(aop.getBeforeUri());
+      buffer.append("\", \"").append(aop.getAfterUri()).append("\")");
+    }
+ else     if (aop.getBeforeUri() != null) {
+      buffer.append(".before(\"").append(aop.getBeforeUri()).append("\")");
+    }
+ else     if (aop.getAfterUri() != null) {
+      buffer.append(".after(\"").append(aop.getAfterUri()).append("\")");
+    }
+ else     if (aop.getAfterFinallyUri() != null) {
+      buffer.append(".afterFinally(\"").append(aop.getAfterUri()).append("\")");
+    }
+  }
+ else   if (out instanceof BeanDefinition) {
   }
  else   if (out instanceof EnrichDefinition) {
     String enrich=out.toString();
@@ -11,6 +32,7 @@
  else   if (out instanceof FinallyDefinition) {
   }
  else   if (out instanceof InterceptDefinition) {
+    buffer.append("()");
   }
  else   if (out instanceof InterceptSendToEndpointDefinition) {
   }

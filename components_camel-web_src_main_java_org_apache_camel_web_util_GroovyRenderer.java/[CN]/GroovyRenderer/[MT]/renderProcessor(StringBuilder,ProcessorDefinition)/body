@@ -37,7 +37,15 @@
     buffer.append(".").append("loadBalance").append("()");
     LoadBalancer lb=loadB.getLoadBalancerType().getLoadBalancer(null);
     if (lb instanceof FailOverLoadBalancer) {
-      buffer.append(".failover()");
+      buffer.append(".failover(");
+      List<Class> exceptions=((FailOverLoadBalancer)lb).getExceptions();
+      for (      Class excep : exceptions) {
+        buffer.append(excep.getSimpleName()).append(".class");
+        if (excep != exceptions.get(exceptions.size() - 1)) {
+          buffer.append(", ");
+        }
+      }
+      buffer.append(")");
     }
  else     if (lb instanceof RandomLoadBalancer) {
       buffer.append(".random()");
@@ -57,15 +65,26 @@
     }
     return;
   }
+ else   if (processor instanceof OnCompletionDefinition) {
+    OnCompletionDefinitionRenderer.render(buffer,processor);
+    return;
+  }
+ else   if (processor instanceof OnExceptionDefinition) {
+    OnExceptionDefinitionRenderer.render(buffer,processor);
+    return;
+  }
  else   if (processor instanceof OutputDefinition) {
     OutputDefinitionRenderer.render(buffer,processor);
   }
  else   if (processor instanceof ResequenceDefinition) {
     ResequenceDefinition resequence=(ResequenceDefinition)processor;
     buffer.append(".").append(processor.getShortName()).append("(");
-    List<ExpressionBuilder> exps=null;
-    for (    ExpressionBuilder exp : exps) {
-      buffer.append(exp.toString()).append("(),");
+    List<Expression> exps=resequence.getExpressionList();
+    for (    Expression exp : exps) {
+      buffer.append(exp.toString()).append("()");
+      if (exp != exps.get(exps.size() - 1)) {
+        buffer.append(", ");
+      }
     }
     buffer.append(")");
   }
