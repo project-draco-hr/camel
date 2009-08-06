@@ -12,6 +12,15 @@
         }
       }
 ).to("mock:result");
+      from("direct:predicate").aggregate(new Expression(){
+        public <T>T evaluate(        Exchange exchange,        Class<T> type){
+          if (exchange.getIn().getBody().equals("Damn")) {
+            throw new IllegalArgumentException();
+          }
+          return ExpressionBuilder.headerExpression("id").evaluate(exchange,type);
+        }
+      }
+).batchTimeout(500).to("mock:result");
     }
   }
 ;
