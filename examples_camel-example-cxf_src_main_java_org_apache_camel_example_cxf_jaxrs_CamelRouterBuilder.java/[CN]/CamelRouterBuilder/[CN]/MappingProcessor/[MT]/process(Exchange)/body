@@ -1,8 +1,11 @@
 {
   String operationName=exchange.getIn().getHeader(CxfConstants.OPERATION_NAME,String.class);
   Method method=findMethod(operationName,exchange.getIn().getBody(Object[].class));
-  BeanInvocation invocation=new BeanInvocation();
-  invocation.setMethod(method);
-  invocation.setArgs(exchange.getIn().getBody(Object[].class));
-  exchange.getOut().setBody(invocation);
+  try {
+    Object response=method.invoke(instance,exchange.getIn().getBody(Object[].class));
+    exchange.getOut().setBody(response);
+  }
+ catch (  InvocationTargetException e) {
+    throw (Exception)e.getCause();
+  }
 }
