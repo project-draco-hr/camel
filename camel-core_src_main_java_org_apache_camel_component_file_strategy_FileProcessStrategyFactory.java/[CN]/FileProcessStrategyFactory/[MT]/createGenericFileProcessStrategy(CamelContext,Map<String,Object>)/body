@@ -1,8 +1,10 @@
 {
+  Expression moveExpression=(Expression)params.get("move");
+  Expression moveFailedExpression=(Expression)params.get("moveFailed");
+  Expression preMoveExpression=(Expression)params.get("preMove");
   boolean isNoop=params.get("noop") != null;
   boolean isDelete=params.get("delete") != null;
-  Expression moveExpression=(Expression)params.get("move");
-  Expression preMoveExpression=(Expression)params.get("preMove");
+  boolean isMove=moveExpression != null || preMoveExpression != null || moveFailedExpression != null;
   if (isNoop) {
     GenericFileNoOpProcessStrategy<File> strategy=new GenericFileNoOpProcessStrategy<File>();
     strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
@@ -13,7 +15,7 @@
     strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
     return strategy;
   }
- else   if (moveExpression != null || preMoveExpression != null) {
+ else   if (isMove) {
     GenericFileRenameProcessStrategy<File> strategy=new GenericFileRenameProcessStrategy<File>();
     strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
     if (moveExpression != null) {
@@ -21,19 +23,25 @@
       renamer.setExpression(moveExpression);
       strategy.setCommitRenamer(renamer);
     }
+ else {
+      strategy.setCommitRenamer(getDefaultCommitRenamer(context));
+    }
     if (preMoveExpression != null) {
       GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();
       renamer.setExpression(preMoveExpression);
       strategy.setBeginRenamer(renamer);
+    }
+    if (moveFailedExpression != null) {
+      GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();
+      renamer.setExpression(moveFailedExpression);
+      strategy.setFailureRenamer(renamer);
     }
     return strategy;
   }
  else {
     GenericFileRenameProcessStrategy<File> strategy=new GenericFileRenameProcessStrategy<File>();
     strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
-    Language language=context.resolveLanguage("file");
-    Expression expression=language.createExpression("${file:parent}/.camel/${file:onlyname}");
-    strategy.setCommitRenamer(new GenericFileExpressionRenamer<File>(expression));
+    strategy.setCommitRenamer(getDefaultCommitRenamer(context));
     return strategy;
   }
 }
