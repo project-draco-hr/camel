@@ -10,6 +10,12 @@
   producer.process(exchange);
   Throwable fault=exchange.getException();
   if (fault != null) {
+    if (fault instanceof RuntimeCamelException) {
+      if (((RuntimeCamelException)fault).getCause() instanceof RuntimeException) {
+        throw (RuntimeException)((RuntimeCamelException)fault).getCause();
+      }
+      throw (RuntimeCamelException)fault;
+    }
     throw new InvocationTargetException(fault);
   }
   if (pattern.isOutCapable()) {
