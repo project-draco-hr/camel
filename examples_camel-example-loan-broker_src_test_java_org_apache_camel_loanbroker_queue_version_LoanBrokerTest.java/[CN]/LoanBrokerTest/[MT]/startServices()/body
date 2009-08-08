@@ -1,0 +1,16 @@
+{
+  camelContext=new DefaultCamelContext();
+  broker=new JmsBroker("vm://localhost");
+  broker.start();
+  ConnectionFactory connectionFactory=new ActiveMQConnectionFactory("vm://localhost");
+  camelContext.addComponent("jms",JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
+  camelContext.addRoutes(new LoanBroker());
+  camelContext.addRoutes(new RouteBuilder(){
+    public void configure() throws Exception {
+      from("jms:queue:loanReplyQueue").to("mock:endpoint");
+    }
+  }
+);
+  template=camelContext.createProducerTemplate();
+  camelContext.start();
+}
