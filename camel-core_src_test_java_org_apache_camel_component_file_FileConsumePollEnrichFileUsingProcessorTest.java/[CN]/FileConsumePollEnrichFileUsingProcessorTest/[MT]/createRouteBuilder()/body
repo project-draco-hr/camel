@@ -1,0 +1,29 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("file://target/enrich?move=.done").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String name=exchange.getIn().getHeader(Exchange.FILE_NAME_ONLY,String.class);
+          name=FileUtil.stripExt(name) + ".dat";
+          Exchange data=null;
+          ConsumerTemplate con=exchange.getContext().createConsumerTemplate();
+          try {
+            data=con.receive("file://target/enrichdata?move=.done&fileName=" + name,5000);
+          }
+  finally {
+            con.stop();
+          }
+          if (data != null) {
+            template.send("direct:data",data);
+          }
+ else {
+            throw new CamelExchangeException("Cannot find the data file " + name,exchange);
+          }
+        }
+      }
+).to("mock:start");
+      from("direct:data").to("mock:result");
+    }
+  }
+;
+}
