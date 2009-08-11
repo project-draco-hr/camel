@@ -15,7 +15,9 @@
   }
  else   if (expNode instanceof FilterDefinition) {
     if (expression.getPredicate() != null) {
-      PredicateRenderer.renderPredicate(buffer,expression.getPredicate());
+      buffer.append("(");
+      PredicateRenderer.render(buffer,expression.getPredicate());
+      buffer.append(")");
     }
  else     if (expression.getLanguage() != null) {
       buffer.append("()");
@@ -78,12 +80,18 @@
     }
   }
  else   if (expNode instanceof SplitDefinition) {
-    String expValue=expression.getExpressionValue().toString();
-    if (!expValue.contains("(")) {
-      buffer.append("().").append(expValue).append("()");
-    }
- else {
+    if (expression.getExpressionValue() != null) {
+      buffer.append("(");
       ExpressionRenderer.render(buffer,expression);
+      buffer.append(")");
+    }
+ else     if (expression.getExpressionType() != null) {
+      buffer.append("().");
+      ExpressionRenderer.render(buffer,expression);
+    }
+    SplitDefinition split=(SplitDefinition)expNode;
+    if (split.isStreaming()) {
+      buffer.append(".streaming()");
     }
   }
  else   if (expNode instanceof TransformDefinition) {
@@ -103,7 +111,9 @@
   }
  else   if (expNode instanceof WhenDefinition) {
     if (expression.getPredicate() != null) {
-      PredicateRenderer.renderPredicate(buffer,expression.getPredicate());
+      buffer.append("(");
+      PredicateRenderer.render(buffer,expression.getPredicate());
+      buffer.append(")");
     }
     if (expression instanceof ExpressionClause) {
       buffer.append("()");

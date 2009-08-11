@@ -12,8 +12,8 @@
     }
   }
   for (  ProcessorDefinition processor : outputs) {
-    if (processor.getParent() == null) {
-      renderProcessor(buffer,processor);
+    if (processor.getParent() == null && !(processor instanceof SendDefinition)) {
+      ProcessorDefinitionRenderer.render(buffer,processor);
       buffer.append(";");
     }
   }
@@ -25,9 +25,20 @@
     }
   }
   buffer.append(")");
+  if (route.isTrace() != null) {
+    if (route.isTrace()) {
+      buffer.append(".tracing()");
+    }
+ else {
+      buffer.append(".noTracing()");
+    }
+  }
+  if (route.isStreamCache() != null && route.isStreamCache()) {
+    buffer.append(".streamCaching()");
+  }
   for (  ProcessorDefinition processor : outputs) {
-    if (processor.getParent() == route) {
-      renderProcessor(buffer,processor);
+    if (processor.getParent() == route || processor instanceof SendDefinition) {
+      ProcessorDefinitionRenderer.render(buffer,processor);
     }
   }
 }
