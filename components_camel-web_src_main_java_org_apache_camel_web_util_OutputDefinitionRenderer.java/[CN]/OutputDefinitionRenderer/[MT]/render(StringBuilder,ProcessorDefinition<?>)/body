@@ -1,28 +1,15 @@
 {
-  OutputDefinition<?> out=(OutputDefinition<?>)processor;
+  OutputDefinition out=(OutputDefinition)processor;
   boolean notGlobal=buffer.toString().endsWith(")");
   if (notGlobal) {
     buffer.append(".");
   }
   buffer.append(out.getShortName());
   if (out instanceof AOPDefinition) {
-    buffer.append("()");
-    AOPDefinition aop=(AOPDefinition)out;
-    if (aop.getBeforeUri() != null && aop.getAfterUri() != null) {
-      buffer.append(".around(\"").append(aop.getBeforeUri());
-      buffer.append("\", \"").append(aop.getAfterUri()).append("\")");
-    }
- else     if (aop.getBeforeUri() != null) {
-      buffer.append(".before(\"").append(aop.getBeforeUri()).append("\")");
-    }
- else     if (aop.getAfterUri() != null) {
-      buffer.append(".after(\"").append(aop.getAfterUri()).append("\")");
-    }
- else     if (aop.getAfterFinallyUri() != null) {
-      buffer.append(".afterFinally(\"").append(aop.getAfterUri()).append("\")");
-    }
+    renderAop(buffer,out);
   }
  else   if (out instanceof BeanDefinition) {
+    renderBean(buffer,processor);
   }
  else   if (out instanceof EnrichDefinition) {
     String enrich=out.toString();
@@ -30,6 +17,7 @@
     buffer.append("(\"").append(resourceUri).append("\")");
   }
  else   if (out instanceof FinallyDefinition) {
+    renderFinally(buffer,out);
   }
  else   if (out instanceof InterceptDefinition) {
     if (out instanceof InterceptFromDefinition) {
@@ -50,7 +38,8 @@
   }
  else   if (out instanceof MarshalDefinition) {
     DataFormatDefinition dataFormat=((MarshalDefinition)out).getDataFormatType();
-    buffer.append("().").append(dataFormat.getClass().getAnnotation(XmlRootElement.class).name()).append("()");
+    XmlRootElement xmlRoot=dataFormat.getClass().getAnnotation(XmlRootElement.class);
+    buffer.append("().").append(xmlRoot.name()).append("()");
   }
  else   if (out instanceof MulticastDefinition) {
     buffer.append("()");
@@ -61,10 +50,13 @@
  else   if (out instanceof PipelineDefinition) {
   }
  else   if (out instanceof PolicyDefinition) {
+    renderPolicy(buffer,out);
   }
  else   if (out instanceof PollEnrichDefinition) {
+    renderPollEnrich(buffer,out);
   }
  else   if (out instanceof ProcessDefinition) {
+    renderProcess(buffer,out);
   }
  else   if (out instanceof RemoveHeaderDefinition) {
     RemoveHeaderDefinition remove=(RemoveHeaderDefinition)out;
@@ -75,6 +67,10 @@
     buffer.append("(\"").append(remove.getPropertyName()).append("\")");
   }
  else   if (out instanceof SetExchangePatternDefinition) {
+    SetExchangePatternDefinition setEP=(SetExchangePatternDefinition)out;
+    buffer.append("(ExchangePattern.");
+    buffer.append(setEP.getPattern().toString());
+    buffer.append(")");
   }
  else   if (out instanceof SortDefinition) {
     SortDefinition sort=(SortDefinition)out;
@@ -86,13 +82,17 @@
     buffer.append("()");
   }
  else   if (out instanceof ThreadsDefinition) {
+    renderThreads(buffer,out);
   }
  else   if (out instanceof TransactedDefinition) {
+    renderTransacted(buffer,out);
   }
  else   if (out instanceof TryDefinition) {
+    buffer.append("()");
   }
  else   if (out instanceof UnmarshalDefinition) {
     DataFormatDefinition dataFormat=((UnmarshalDefinition)out).getDataFormatType();
-    buffer.append("().").append(dataFormat.getClass().getAnnotation(XmlRootElement.class).name()).append("()");
+    XmlRootElement xmlRoot=dataFormat.getClass().getAnnotation(XmlRootElement.class);
+    buffer.append("().").append(xmlRoot.name()).append("()");
   }
 }

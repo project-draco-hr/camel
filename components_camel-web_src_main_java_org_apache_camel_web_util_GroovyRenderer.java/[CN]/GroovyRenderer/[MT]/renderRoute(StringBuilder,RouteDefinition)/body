@@ -2,14 +2,7 @@
   List<FromDefinition> inputs=route.getInputs();
   List<ProcessorDefinition> outputs=route.getOutputs();
   if (!(route.getErrorHandlerBuilder() instanceof ErrorHandlerBuilderRef)) {
-    if (route.getErrorHandlerBuilder() instanceof DeadLetterChannelBuilder) {
-      DeadLetterChannelBuilder deadLetter=(DeadLetterChannelBuilder)route.getErrorHandlerBuilder();
-      buffer.append("errorHandler(deadLetterChannel(\"").append(deadLetter.getDeadLetterUri()).append("\")");
-      buffer.append(".maximumRedeliveries(").append(deadLetter.getRedeliveryPolicy().getMaximumRedeliveries()).append(")");
-      buffer.append(".redeliverDelay(").append(deadLetter.getRedeliveryPolicy().getRedeliverDelay()).append(")");
-      buffer.append(".handled(").append(deadLetter.getHandledPolicy().toString()).append(")");
-      buffer.append(");");
-    }
+    ErrorHandlerRenderer.render(buffer,route.getErrorHandlerBuilder());
   }
   for (  ProcessorDefinition processor : outputs) {
     if (processor.getParent() == null && !(processor instanceof SendDefinition)) {
