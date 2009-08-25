@@ -1,18 +1,20 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      from("direct:toConsumer").to(getConsumerUri());
-      from("direct:toProducer").to(getProducerUri());
-      from(getConsumerUri()).to("mock:fromConsumer");
-      from(getProducerUri()).to("mock:fromProducer");
-      from("direct:getString").process(new Processor(){
+      Processor stringConverter=new Processor(){
         public void process(        Exchange exchange) throws Exception {
           XmppMessage xmppMessage=(XmppMessage)exchange.getIn();
           Message message=xmppMessage.getXmppMessage();
-          exchange.getIn().setBody(message.getBody());
+          String body=message.getBody();
+          LOG.debug("Converting message - " + body);
+          exchange.getIn().setBody(body);
         }
       }
-).to("direct:getStringResult");
+;
+      from("direct:toConsumer").to(getConsumerUri());
+      from("direct:toProducer").to(getProducerUri());
+      from(getConsumerUri()).process(stringConverter).to("mock:out1");
+      from(getProducerUri()).process(stringConverter).to("mock:out2");
     }
   }
 ;
