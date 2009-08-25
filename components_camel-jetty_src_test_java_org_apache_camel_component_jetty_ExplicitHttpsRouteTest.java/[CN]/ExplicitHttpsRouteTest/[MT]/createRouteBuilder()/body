@@ -1,14 +1,11 @@
 {
   return new RouteBuilder(){
     public void configure() throws URISyntaxException {
-      SslSocketConnector sslSocketConnector=new SslSocketConnector();
-      sslSocketConnector.setKeyPassword(pwd);
-      sslSocketConnector.setPassword(pwd);
-      URL keyStoreUrl=this.getClass().getClassLoader().getResource("jsse/localhost.ks");
-      sslSocketConnector.setKeystore(keyStoreUrl.toURI().getPath());
-      sslSocketConnector.setTruststoreType("JKS");
       JettyHttpComponent componentJetty=(JettyHttpComponent)context.getComponent("jetty");
-      componentJetty.setSslSocketConnector(sslSocketConnector);
+      Map<Integer,SslSocketConnector> connectors=new HashMap<Integer,SslSocketConnector>();
+      connectors.put(9080,createSslSocketConnector());
+      connectors.put(9090,createSslSocketConnector());
+      componentJetty.setSslSocketConnectors(connectors);
       from("jetty:https://localhost:9080/test").to("mock:a");
       Processor proc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
@@ -17,6 +14,7 @@
       }
 ;
       from("jetty:https://localhost:9080/hello").process(proc);
+      from("jetty:https://localhost:9090/test").to("mock:b");
     }
   }
 ;
