@@ -1,0 +1,20 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=routes,name=\"route1\"");
+  Long completed=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
+  assertEquals(1,completed.longValue());
+  Long last=(Long)mbeanServer.getAttribute(on,"LastProcessingTime");
+  Long total=(Long)mbeanServer.getAttribute(on,"TotalProcessingTime");
+  assertTrue("Should take around 2 sec: was " + last,last > 1900);
+  assertTrue("Should take around 2 sec: was " + total,total > 1900);
+  template.sendBody("direct:start","Bye World");
+  completed=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
+  assertEquals(2,completed.longValue());
+  last=(Long)mbeanServer.getAttribute(on,"LastProcessingTime");
+  total=(Long)mbeanServer.getAttribute(on,"TotalProcessingTime");
+  assertTrue("Should take around 2 sec: was " + last,last > 1900);
+  assertTrue("Should be around 4 sec now: was " + total,total > 3900);
+}

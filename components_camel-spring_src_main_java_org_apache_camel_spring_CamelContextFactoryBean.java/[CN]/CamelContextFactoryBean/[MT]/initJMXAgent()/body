@@ -1,7 +1,8 @@
 {
   if (camelJMXAgent != null && camelJMXAgent.isDisabled()) {
     LOG.info("JMXAgent disabled");
-    getContext().setLifecycleStrategy(new DefaultLifecycleStrategy());
+    getContext().setLifecycleStrategy(new SimpleLifecycleStrategy());
+    getContext().setManagementStrategy(new DefaultManagementStrategy());
   }
  else   if (camelJMXAgent != null) {
     DefaultInstrumentationAgent agent=new DefaultInstrumentationAgent();
@@ -14,6 +15,8 @@
     agent.setUsePlatformMBeanServer(camelJMXAgent.isUsePlatformMBeanServer());
     agent.setOnlyRegisterProcessorWithCustomId(camelJMXAgent.getOnlyRegisterProcessorWithCustomId());
     LOG.info("JMXAgent enabled: " + camelJMXAgent);
-    getContext().setLifecycleStrategy(new InstrumentationLifecycleStrategy(agent));
+    getContext().setLifecycleStrategy(new DefaultManagedLifecycleStrategy());
+    getContext().setManagementStrategy(new ManagedManagementStrategy());
+    getContext().getManagementStrategy().onlyManageProcessorWithCustomId(camelJMXAgent.getOnlyRegisterProcessorWithCustomId());
   }
 }

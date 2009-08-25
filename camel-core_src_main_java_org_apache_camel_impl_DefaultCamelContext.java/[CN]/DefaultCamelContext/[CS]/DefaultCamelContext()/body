@@ -2,13 +2,15 @@
   super();
   name=NAME_PREFIX + ++nameSuffix;
   if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-    LOG.info("JMX is disabled. Using DefaultLifecycleStrategy.");
-    lifecycleStrategy=new DefaultLifecycleStrategy();
+    LOG.info("JMX is disabled. Using SimpleLifecycleStrategy.");
+    lifecycleStrategy=new SimpleLifecycleStrategy();
+    managementStrategy=new DefaultManagementStrategy();
   }
  else {
     try {
-      LOG.info("JMX enabled. Using InstrumentationLifecycleStrategy.");
-      lifecycleStrategy=new InstrumentationLifecycleStrategy();
+      LOG.info("JMX enabled. Using DefaultManagedLifecycleStrategy.");
+      managementStrategy=new ManagedManagementStrategy(new DefaultInstrumentationAgent());
+      lifecycleStrategy=new DefaultManagedLifecycleStrategy(managementStrategy);
     }
  catch (    NoClassDefFoundError e) {
       LOG.warn("Could not find needed classes for JMX lifecycle strategy." + " Needed class is in spring-context.jar using Spring 2.5 or newer (" + " spring-jmx.jar using Spring 2.0.x)."+ " NoClassDefFoundError: "+ e.getMessage());
@@ -17,8 +19,9 @@ catch (    Exception e) {
       LOG.warn("Could not create JMX lifecycle strategy, caused by: " + e.getMessage());
     }
     if (lifecycleStrategy == null) {
-      LOG.warn("Cannot use JMX lifecycle strategy. Using DefaultLifecycleStrategy instead.");
-      lifecycleStrategy=new DefaultLifecycleStrategy();
+      LOG.warn("Cannot use JMX lifecycle strategy. Using SimpleLifecycleStrategy instead.");
+      managementStrategy=new DefaultManagementStrategy();
+      lifecycleStrategy=new SimpleLifecycleStrategy();
     }
   }
   if (WebSpherePacakageScanClassResolver.isWebSphereClassLoader(this.getClass().getClassLoader())) {

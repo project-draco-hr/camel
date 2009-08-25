@@ -1,13 +1,20 @@
 {
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is stopping");
+  EventHelper.notifyCamelContextStopping(this);
+  stopServices(endpoints.values());
+  endpoints.clear();
   stopServices(routeServices.values());
-  stopServices(servicesToClose);
-  if (components != null) {
-    for (    Component component : components.values()) {
-      stopServices(component);
-    }
-  }
-  servicesToClose.clear();
   stopServices(producerServicePool);
+  stopServices(components.values());
+  components.clear();
+  stopServices(servicesToClose);
+  servicesToClose.clear();
+  try {
+    lifecycleStrategy.onContextStop(this);
+  }
+ catch (  Exception e) {
+    LOG.warn("Cannot stop lifecycleStrategy: " + lifecycleStrategy + ". Cause: "+ e.getMessage());
+  }
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") stopped");
+  EventHelper.notifyCamelContextStopped(this);
 }

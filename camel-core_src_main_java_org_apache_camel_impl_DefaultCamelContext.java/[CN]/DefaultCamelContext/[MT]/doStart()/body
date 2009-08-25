@@ -1,5 +1,6 @@
 {
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is starting");
+  EventHelper.notifyCamelContextStarting(this);
   startServices(producerServicePool);
   if (isStreamCaching()) {
     if (StreamCaching.getStreamCaching(this) == null) {
@@ -32,18 +33,14 @@
   }
  catch (  Exception e) {
     LOG.warn("Cannot start lifecycleStrategy: " + lifecycleStrategy + ". Cause: "+ e.getMessage());
-    if (lifecycleStrategy instanceof InstrumentationLifecycleStrategy) {
-      LOG.warn("Will fallback to use default (non JMX) lifecycle strategy");
-      lifecycleStrategy=new DefaultLifecycleStrategy();
+    if (!(lifecycleStrategy instanceof SimpleLifecycleStrategy)) {
+      LOG.warn("Will fallback to use SimpleLifecycleStrategy (non JMX) lifecycle strategy");
+      lifecycleStrategy=new SimpleLifecycleStrategy();
       lifecycleStrategy.onContextStart(this);
     }
   }
   forceLazyInitialization();
-  if (components != null) {
-    for (    Component component : components.values()) {
-      startServices(component);
-    }
-  }
+  startServices(components.values());
   if (!routeDefinitionInitiated) {
     startRouteDefinitions(routeDefinitions);
     routeDefinitionInitiated=true;

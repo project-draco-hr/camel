@@ -1,0 +1,25 @@
+{
+  if (!initialized) {
+    return;
+  }
+  for (  Route route : routes) {
+    ManagedRoute mr=new ManagedRoute(strategy,route);
+    if (route instanceof EventDrivenConsumerRoute) {
+      EventDrivenConsumerRoute edcr=(EventDrivenConsumerRoute)route;
+      Processor processor=edcr.getProcessor();
+      if (processor instanceof InstrumentationProcessor) {
+        InstrumentationProcessor ip=(InstrumentationProcessor)processor;
+        ip.setCounter(mr);
+      }
+    }
+    try {
+      strategy.manageObject(mr);
+    }
+ catch (    JMException e) {
+      LOG.warn("Could not register Route MBean",e);
+    }
+catch (    Exception e) {
+      LOG.warn("Could not create Route MBean",e);
+    }
+  }
+}

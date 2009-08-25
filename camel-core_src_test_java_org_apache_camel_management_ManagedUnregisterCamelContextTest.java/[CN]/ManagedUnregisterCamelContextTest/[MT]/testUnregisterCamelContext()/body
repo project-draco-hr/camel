@@ -1,0 +1,13 @@
+{
+  CamelContext context=createCamelContext();
+  context.start();
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=context,name=\"camel-1\"");
+  assertTrue("Should be registered",mbeanServer.isRegistered(on));
+  String name=(String)mbeanServer.getAttribute(on,"Name");
+  assertEquals("camel-1",name);
+  Boolean started=(Boolean)mbeanServer.getAttribute(on,"Started");
+  assertEquals(true,started.booleanValue());
+  context.stop();
+  assertFalse("Should no longer be registered",mbeanServer.isRegistered(on));
+}
