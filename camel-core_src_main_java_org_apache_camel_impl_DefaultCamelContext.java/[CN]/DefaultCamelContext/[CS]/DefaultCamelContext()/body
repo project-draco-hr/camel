@@ -2,15 +2,16 @@
   super();
   name=NAME_PREFIX + ++nameSuffix;
   if (Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-    LOG.info("JMX is disabled. Using SimpleLifecycleStrategy.");
-    lifecycleStrategy=new SimpleLifecycleStrategy();
+    LOG.info("JMX is disabled. Using DefaultManagementStrategy.");
     managementStrategy=new DefaultManagementStrategy();
   }
  else {
+    boolean registered=false;
     try {
       LOG.info("JMX enabled. Using DefaultManagedLifecycleStrategy.");
       managementStrategy=new ManagedManagementStrategy(new DefaultInstrumentationAgent());
-      lifecycleStrategy=new DefaultManagedLifecycleStrategy(managementStrategy);
+      lifecycleStrategies.add(new DefaultManagedLifecycleStrategy(managementStrategy));
+      registered=true;
     }
  catch (    NoClassDefFoundError e) {
       LOG.warn("Could not find needed classes for JMX lifecycle strategy." + " Needed class is in spring-context.jar using Spring 2.5 or newer (" + " spring-jmx.jar using Spring 2.0.x)."+ " NoClassDefFoundError: "+ e.getMessage());
@@ -18,15 +19,14 @@
 catch (    Exception e) {
       LOG.warn("Could not create JMX lifecycle strategy, caused by: " + e.getMessage());
     }
-    if (lifecycleStrategy == null) {
-      LOG.warn("Cannot use JMX lifecycle strategy. Using SimpleLifecycleStrategy instead.");
+    if (!registered) {
+      LOG.warn("Cannot use JMX. Fallback to using DefaultManagementStrategy.");
       managementStrategy=new DefaultManagementStrategy();
-      lifecycleStrategy=new SimpleLifecycleStrategy();
     }
   }
-  if (WebSpherePacakageScanClassResolver.isWebSphereClassLoader(this.getClass().getClassLoader())) {
+  if (WebSpherePackageScanClassResolver.isWebSphereClassLoader(this.getClass().getClassLoader())) {
     LOG.info("Using WebSphere specific PackageScanClassResolver");
-    packageScanClassResolver=new WebSpherePacakageScanClassResolver("META-INF/services/org/apache/camel/TypeConverter");
+    packageScanClassResolver=new WebSpherePackageScanClassResolver("META-INF/services/org/apache/camel/TypeConverter");
   }
  else {
     packageScanClassResolver=new DefaultPackageScanClassResolver();

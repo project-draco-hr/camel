@@ -28,15 +28,15 @@
       addInterceptStrategy(new Delayer(millis));
     }
   }
-  try {
-    lifecycleStrategy.onContextStart(this);
-  }
- catch (  Exception e) {
-    LOG.warn("Cannot start lifecycleStrategy: " + lifecycleStrategy + ". Cause: "+ e.getMessage());
-    if (!(lifecycleStrategy instanceof SimpleLifecycleStrategy)) {
-      LOG.warn("Will fallback to use SimpleLifecycleStrategy (non JMX) lifecycle strategy");
-      lifecycleStrategy=new SimpleLifecycleStrategy();
-      lifecycleStrategy.onContextStart(this);
+  Iterator<LifecycleStrategy> it=lifecycleStrategies.iterator();
+  while (it.hasNext()) {
+    LifecycleStrategy strategy=it.next();
+    try {
+      strategy.onContextStart(this);
+    }
+ catch (    Exception e) {
+      LOG.warn("Cannot start lifecycle strategy: " + strategy + ". This strategy will be removed. Cause "+ e.getMessage(),e);
+      it.remove();
     }
   }
   forceLazyInitialization();
