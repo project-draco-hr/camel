@@ -3,6 +3,15 @@
   Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=routes,*"),null);
   assertEquals(1,set.size());
   ObjectName on=set.iterator().next();
+  boolean registered=mbeanServer.isRegistered(on);
+  assertEquals("Should be registered",true,registered);
   String uri=(String)mbeanServer.getAttribute(on,"EndpointUri");
   assertEquals("direct://start",uri);
+  String state=(String)mbeanServer.getAttribute(on,"State");
+  assertEquals("Should be started",ServiceStatus.Started.name(),state);
+  context.stopRoute(context.getRouteDefinitions().get(0));
+  registered=mbeanServer.isRegistered(on);
+  assertEquals("Should be registered",true,registered);
+  state=(String)mbeanServer.getAttribute(on,"State");
+  assertEquals("Should be stopped",ServiceStatus.Stopped.name(),state);
 }
