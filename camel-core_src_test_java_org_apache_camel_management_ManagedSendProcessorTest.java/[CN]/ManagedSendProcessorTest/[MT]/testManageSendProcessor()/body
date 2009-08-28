@@ -1,0 +1,17 @@
+{
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(1);
+  MockEndpoint foo=getMockEndpoint("mock:foo");
+  foo.expectedMessageCount(0);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"mysend\"");
+  mbeanServer.invoke(on,"changeDestination",new Object[]{"direct:foo"},new String[]{"java.lang.String"});
+  result.reset();
+  result.expectedMessageCount(0);
+  foo.reset();
+  foo.expectedMessageCount(1);
+  template.sendBody("direct:start","Bye World");
+  assertMockEndpointsSatisfied();
+}
