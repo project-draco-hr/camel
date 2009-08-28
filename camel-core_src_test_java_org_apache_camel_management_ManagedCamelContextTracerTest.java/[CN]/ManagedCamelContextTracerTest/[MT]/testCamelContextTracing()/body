@@ -1,0 +1,19 @@
+{
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=context,name=\"camel-1\"");
+  MockEndpoint traced=getMockEndpoint("mock:traced");
+  traced.setExpectedMessageCount(2);
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.setExpectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  Boolean tracing=(Boolean)mbeanServer.getAttribute(on,"Tracing");
+  assertEquals("Tracing should be enabled",true,tracing.booleanValue());
+  mbeanServer.setAttribute(on,new Attribute("Tracing",Boolean.FALSE));
+  traced.reset();
+  traced.setExpectedMessageCount(0);
+  result.reset();
+  result.setExpectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+}
