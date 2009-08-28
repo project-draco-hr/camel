@@ -18,6 +18,23 @@
       from("direct:z").process(processor);
       from("direct:b").process(new InToOut()).process(new InToOut()).process(new InToOut());
       from("direct:c").process(new InToOut()).process(new InToFault()).process(new InToOut());
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().copyFrom(exchange.getIn());
+          exchange.getOut().setHeader("test","testValue");
+          exchange.getOut().addAttachment("test1.xml",new DataHandler(new FileDataSource("pom.xml")));
+        }
+      }
+).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().copyFrom(exchange.getIn());
+          assertNotNull("The test attachment should not be null",exchange.getOut().getAttachment("test1.xml"));
+          assertNotNull("The test header should not be null",exchange.getOut().getHeader("test"));
+          exchange.getOut().removeAttachment("test1.xml");
+          exchange.getOut().removeHeader("test");
+        }
+      }
+);
     }
   }
 ;
