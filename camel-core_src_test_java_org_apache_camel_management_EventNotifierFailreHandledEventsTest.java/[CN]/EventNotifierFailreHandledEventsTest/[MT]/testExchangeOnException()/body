@@ -1,0 +1,21 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(IllegalArgumentException.class).handled(true).to("mock:dead");
+      from("direct:start").throwException(new IllegalArgumentException("Damn"));
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:dead").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals(6,events.size());
+  assertIsInstanceOf(CamelContextStartingEvent.class,events.get(0));
+  assertIsInstanceOf(RouteStartedEvent.class,events.get(1));
+  assertIsInstanceOf(CamelContextStartedEvent.class,events.get(2));
+  assertIsInstanceOf(ExchangeCreatedEvent.class,events.get(3));
+  ExchangeFailureHandledEvent e=assertIsInstanceOf(ExchangeFailureHandledEvent.class,events.get(4));
+  assertEquals("should NOT be DLC",false,e.isDeadLetterChannel());
+  assertIsInstanceOf(ExchangeCompletedEvent.class,events.get(5));
+}
