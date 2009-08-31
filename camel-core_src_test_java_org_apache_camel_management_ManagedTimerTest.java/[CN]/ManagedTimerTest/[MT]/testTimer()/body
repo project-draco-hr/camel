@@ -1,0 +1,19 @@
+{
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName name=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=endpoints,name=\"timer://foo\\?delay=5000&period=8000\"");
+  assertEquals("Should be registered",true,mbeanServer.isRegistered(name));
+  Long period=(Long)mbeanServer.getAttribute(name,"Period");
+  assertEquals(8000,period.longValue());
+  mbeanServer.setAttribute(name,new Attribute("Period",1000));
+  mbeanServer.setAttribute(name,new Attribute("Delay",0));
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.reset();
+  Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=consumers,*"),null);
+  assertEquals(1,set.size());
+  ObjectName on=set.iterator().next();
+  mbeanServer.invoke(on,"stop",null,null);
+  mbeanServer.invoke(on,"start",null,null);
+  mock.expectedMinimumMessageCount(3);
+  mock.setResultWaitTime(3900);
+  assertMockEndpointsSatisfied();
+}
