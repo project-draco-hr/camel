@@ -19,6 +19,14 @@
     }
     resourceExchange=consumer.receive(timeout);
   }
+  if (LOG.isDebugEnabled()) {
+    if (resourceExchange == null) {
+      LOG.debug("Consumer received no exchange");
+    }
+ else {
+      LOG.debug("Consumer received: " + resourceExchange);
+    }
+  }
   if (resourceExchange != null && resourceExchange.isFailed()) {
     copyResultsPreservePattern(exchange,resourceExchange);
   }
@@ -31,7 +39,9 @@
     if (filtered == null || !filtered) {
       ExchangeHelper.prepareAggregation(exchange,resourceExchange);
       Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
-      copyResultsPreservePattern(exchange,aggregatedExchange);
+      if (aggregatedExchange != null) {
+        copyResultsPreservePattern(exchange,aggregatedExchange);
+      }
     }
  else {
       if (LOG.isTraceEnabled()) {
