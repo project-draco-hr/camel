@@ -5,7 +5,14 @@
     contextId="camelContext";
     element.setAttribute("id",contextId);
   }
-  Object value=parseUsingJaxb(element,parserContext);
+  Binder<Node> binder=null;
+  try {
+    binder=getJaxbContext().createBinder();
+  }
+ catch (  JAXBException e) {
+    throw new BeanDefinitionStoreException("Failed to parse JAXB element: " + e,e);
+  }
+  Object value=parseUsingJaxb(element,parserContext,binder);
   if (value instanceof CamelContextFactoryBean) {
     CamelContextFactoryBean factoryBean=(CamelContextFactoryBean)value;
     builder.addPropertyValue("id",contextId);
@@ -56,9 +63,9 @@
       }
     }
   }
-  registerEndpointsWithIdsDefinedInFromOrToTypes(element,parserContext,contextId);
+  registerEndpointsWithIdsDefinedInFromOrToTypes(element,parserContext,contextId,binder);
   registerTemplates(element,parserContext,contextId);
-  injectNamespaces(element);
+  injectNamespaces(element,binder);
   if (!createdBeanPostProcessor) {
     Element childElement=element.getOwnerDocument().createElement("beanPostProcessor");
     element.appendChild(childElement);
