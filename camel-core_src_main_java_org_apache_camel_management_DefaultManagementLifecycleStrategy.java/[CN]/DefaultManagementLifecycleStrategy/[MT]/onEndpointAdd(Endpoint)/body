@@ -2,16 +2,20 @@
   if (!initialized) {
     return;
   }
-  Class annotationClass=resolveManagedAnnotation(endpoint);
-  if (annotationClass == null) {
-    registerEndpointAsManagedEndpoint(endpoint);
-    return;
-  }
-  Object annotation=endpoint.getClass().getAnnotation(annotationClass);
-  if (annotation == null) {
-    registerEndpointAsManagedEndpoint(endpoint);
-  }
+  try {
+    Object me;
+    if (endpoint instanceof ManagementAware) {
+      me=((ManagementAware)endpoint).getManagedObject(endpoint);
+    }
+ else     if (endpoint instanceof BrowsableEndpoint) {
+      me=new ManagedBrowsableEndpoint((BrowsableEndpoint)endpoint);
+    }
  else {
-    attemptToRegisterManagedResource(endpoint,annotation);
+      me=new ManagedEndpoint(endpoint);
+    }
+    getStrategy().manageObject(me);
+  }
+ catch (  Exception e) {
+    LOG.warn("Could not register Endpoint MBean for uri: " + endpoint.getEndpointUri(),e);
   }
 }

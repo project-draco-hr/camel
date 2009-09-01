@@ -5,7 +5,16 @@
   if (System.getProperty(JmxSystemPropertyKeys.USE_PLATFORM_MBS) != null && !Boolean.getBoolean(JmxSystemPropertyKeys.USE_PLATFORM_MBS)) {
     assertEquals(domainName,mbsc.getDefaultDomain());
   }
-  resolveMandatoryEndpoint("custom:end",CustomEndpoint.class);
-  ObjectName objName=new ObjectName("testdomain:name=customEndpoint");
-  assertEquals("bar",mbsc.getAttribute(objName,"Foo"));
+  resolveMandatoryEndpoint("custom://end",CustomEndpoint.class);
+  Set s=mbsc.queryNames(new ObjectName(domainName + ":type=endpoints,*"),null);
+  assertEquals("Could not find 2 endpoints: " + s,2,s.size());
+  Iterator<ObjectName> it=s.iterator();
+  ObjectName on1=it.next();
+  ObjectName on2=it.next();
+  if (on1.getCanonicalName().contains("custom")) {
+    assertEquals("bar",mbsc.getAttribute(on1,"Foo"));
+  }
+ else {
+    assertEquals("bar",mbsc.getAttribute(on2,"Foo"));
+  }
 }
