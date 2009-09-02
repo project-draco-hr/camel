@@ -1,0 +1,21 @@
+{
+  if (!initialized) {
+    return;
+  }
+  Object managedObject;
+  if (consumer instanceof ManagementAware) {
+    managedObject=((ManagementAware)consumer).getManagedObject(consumer);
+  }
+ else   if (consumer instanceof ScheduledPollConsumer) {
+    managedObject=new ManagedScheduledPollConsumer(route.getRouteContext().getCamelContext(),(ScheduledPollConsumer)consumer,route);
+  }
+ else {
+    managedObject=new ManagedConsumer(route.getRouteContext().getCamelContext(),consumer,route);
+  }
+  try {
+    getStrategy().unmanageObject(managedObject);
+  }
+ catch (  Exception e) {
+    LOG.warn("Could not register consumer MBean.",e);
+  }
+}
