@@ -1,0 +1,25 @@
+{
+  ManagementStrategy answer=null;
+  if (disableJMX || Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
+    LOG.info("JMX is disabled. Using DefaultManagementStrategy.");
+    answer=new DefaultManagementStrategy();
+  }
+ else {
+    try {
+      LOG.info("JMX enabled. Using DefaultManagedLifecycleStrategy.");
+      answer=new ManagedManagementStrategy(new DefaultManagementAgent());
+      lifecycleStrategies.add(0,new DefaultManagementLifecycleStrategy(this));
+    }
+ catch (    NoClassDefFoundError e) {
+      LOG.warn("Could not find needed classes for JMX lifecycle strategy." + " Needed class is in spring-context.jar using Spring 2.5 or newer (" + " spring-jmx.jar using Spring 2.0.x)."+ " NoClassDefFoundError: "+ e.getMessage());
+    }
+catch (    Exception e) {
+      LOG.warn("Could not create JMX lifecycle strategy, caused by: " + e.getMessage());
+    }
+  }
+  if (answer == null) {
+    LOG.warn("Cannot use JMX. Fallback to using DefaultManagementStrategy.");
+    answer=new DefaultManagementStrategy();
+  }
+  return answer;
+}
