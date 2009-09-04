@@ -13,9 +13,31 @@
     }
   }
   buffer.append(")");
+  if (onException.getRedeliveryPolicy() != null) {
+    RedeliveryPolicyDefinition redelivery=onException.getRedeliveryPolicy();
+    if (redelivery.getMaximumRedeliveries() != null) {
+      int maxRediliveries=redelivery.getMaximumRedeliveries();
+      if (maxRediliveries != 0) {
+        buffer.append(".maximumRedeliveries(").append(maxRediliveries).append(")");
+      }
+    }
+    if (redelivery.getRedeliveryDelay() != null) {
+      long redeliverDelay=redelivery.getRedeliveryDelay();
+      if (redeliverDelay != 1000) {
+        buffer.append(".redeliverDelay(").append(redeliverDelay).append(")");
+      }
+    }
+    if (redelivery.getLogStackTrace() != null) {
+      if (redelivery.getLogStackTrace()) {
+        buffer.append(".logStackTrace(true)");
+      }
+    }
+  }
   if (onException.getHandledPolicy() != null) {
-    String handled=onException.getHandledPolicy().toString();
-    buffer.append(".handled(").append(handled).append(")");
+    String handledPolicy=onException.getHandledPolicy().toString();
+    if (handledPolicy.equals("false")) {
+      buffer.append(".handled(").append(handledPolicy).append(")");
+    }
   }
   List<ProcessorDefinition> branches=onException.getOutputs();
   for (  ProcessorDefinition branch : branches) {
