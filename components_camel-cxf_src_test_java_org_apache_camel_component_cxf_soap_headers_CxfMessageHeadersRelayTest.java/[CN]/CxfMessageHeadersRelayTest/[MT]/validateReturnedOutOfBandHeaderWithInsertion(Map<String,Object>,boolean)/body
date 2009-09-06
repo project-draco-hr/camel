@@ -1,0 +1,40 @@
+{
+  List<OutofBandHeader> hdrToTest=new ArrayList<OutofBandHeader>();
+  List oobHdr=(List)responseContext.get(Header.HEADER_LIST);
+  if (!expect) {
+    if (oobHdr == null || (oobHdr != null && oobHdr.size() == 0)) {
+      return;
+    }
+    fail("Should have got *no* out-of-band headers, but some were found");
+  }
+  if (oobHdr == null) {
+    fail("Should have got List of out-of-band headers");
+  }
+  assertTrue("HeaderHolder list expected to conain 2 object received " + oobHdr.size(),oobHdr.size() == 2);
+  int i=0;
+  if (oobHdr != null & oobHdr instanceof List) {
+    Iterator iter=oobHdr.iterator();
+    while (iter.hasNext()) {
+      Object hdr=iter.next();
+      if (hdr instanceof Header) {
+        Header hdr1=(Header)hdr;
+        if (hdr1.getObject() instanceof Node) {
+          try {
+            JAXBElement job=(JAXBElement)JAXBContext.newInstance(org.apache.cxf.outofband.header.ObjectFactory.class).createUnmarshaller().unmarshal((Node)hdr1.getObject());
+            hdrToTest.add((OutofBandHeader)job.getValue());
+          }
+ catch (          JAXBException ex) {
+            ex.printStackTrace();
+          }
+        }
+      }
+    }
+  }
+  assertTrue("out-of-band header should not be null",hdrToTest.size() > 0);
+  assertTrue("Expected out-of-band Header name testOobReturnHeaderName recevied :" + hdrToTest.get(0).getName(),"testOobReturnHeaderName".equals(hdrToTest.get(0).getName()));
+  assertTrue("Expected out-of-band Header value testOobReturnHeaderValue recevied :" + hdrToTest.get(0).getValue(),"testOobReturnHeaderValue".equals(hdrToTest.get(0).getValue()));
+  assertTrue("Expected out-of-band Header attribute testReturnHdrAttribute recevied :" + hdrToTest.get(0).getHdrAttribute(),"testReturnHdrAttribute".equals(hdrToTest.get(0).getHdrAttribute()));
+  assertTrue("Expected out-of-band Header name New_testOobHeader recevied :" + hdrToTest.get(1).getName(),"New_testOobHeader".equals(hdrToTest.get(1).getName()));
+  assertTrue("Expected out-of-band Header value New_testOobHeaderValue recevied :" + hdrToTest.get(1).getValue(),"New_testOobHeaderValue".equals(hdrToTest.get(1).getValue()));
+  assertTrue("Expected out-of-band Header attribute testHdrAttribute recevied :" + hdrToTest.get(1).getHdrAttribute(),"testHdrAttribute".equals(hdrToTest.get(1).getHdrAttribute()));
+}

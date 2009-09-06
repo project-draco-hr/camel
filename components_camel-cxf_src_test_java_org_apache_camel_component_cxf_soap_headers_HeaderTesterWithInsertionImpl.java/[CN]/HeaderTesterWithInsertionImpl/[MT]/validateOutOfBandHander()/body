@@ -1,0 +1,24 @@
+{
+  MessageContext ctx=context == null ? null : context.getMessageContext();
+  if (!relayHeaders) {
+    if (ctx != null && !ctx.containsKey(Header.HEADER_LIST) || (ctx.containsKey(Header.HEADER_LIST) && ((List)ctx.get(Header.HEADER_LIST)).size() == 0)) {
+      return true;
+    }
+    return false;
+  }
+  boolean success=false;
+  if (ctx != null && ctx.containsKey(Header.HEADER_LIST)) {
+    List oobHdr=(List)ctx.get(Header.HEADER_LIST);
+    if (oobHdr.size() != 2) {
+      throw new RuntimeException("test failed expected 2 soap headers but found " + oobHdr.size());
+    }
+    verifyHeader(oobHdr.get(0),"testOobHeader","testOobHeaderValue");
+    verifyHeader(oobHdr.get(1),"New_testOobHeader","New_testOobHeaderValue");
+    oobHdr.clear();
+    success=true;
+  }
+ else {
+    throw new RuntimeException("MessageContext is null or doesnot contain OOBHeaders");
+  }
+  return success;
+}
