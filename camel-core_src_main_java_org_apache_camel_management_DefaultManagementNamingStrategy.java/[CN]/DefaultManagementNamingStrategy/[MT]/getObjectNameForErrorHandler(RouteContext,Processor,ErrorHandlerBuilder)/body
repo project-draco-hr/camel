@@ -1,0 +1,27 @@
+{
+  StringBuffer buffer=new StringBuffer();
+  buffer.append(domainName).append(":");
+  buffer.append(KEY_CONTEXT + "=").append(getContextId(routeContext.getCamelContext())).append(",");
+  buffer.append(KEY_TYPE + "=").append(TYPE_ERRORHANDLER).append(",");
+  String ref=null;
+  if (builder instanceof ErrorHandlerBuilderRef) {
+    ErrorHandlerBuilderRef builderRef=(ErrorHandlerBuilderRef)builder;
+    ref=builderRef.getRef();
+    builder=builderRef.lookupErrorHandlerBuilder(routeContext,builderRef.getRef());
+    if (builder instanceof ErrorHandlerBuilderRef) {
+      builderRef=(ErrorHandlerBuilderRef)builder;
+      if (!builderRef.getRef().equals(ErrorHandlerBuilderRef.DEFAULT_ERROR_HANDLER_BUILDER)) {
+        builder=builderRef.lookupErrorHandlerBuilder(routeContext,builderRef.getRef());
+        ref=builderRef.getRef();
+      }
+    }
+  }
+  if (ref != null) {
+    String name=builder.getClass().getSimpleName() + "(ref:" + ref+ ")";
+    buffer.append(KEY_NAME + "=").append(ObjectName.quote(name));
+  }
+ else {
+    buffer.append(KEY_NAME + "=").append(builder.getClass().getSimpleName()).append("(").append(getIdentityHashCode(builder)).append(")");
+  }
+  return createObjectName(buffer);
+}

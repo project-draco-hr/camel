@@ -1,0 +1,24 @@
+{
+  ErrorHandlerBuilder answer;
+  if (!isErrorHandlerBuilderConfigured(ref)) {
+    answer=routeContext.getRoute().getErrorHandlerBuilder();
+    if (answer == null) {
+      answer=routeContext.lookup(routeContext.getRoute().getErrorHandlerRef(),ErrorHandlerBuilder.class);
+    }
+    if (answer == null) {
+      answer=new DefaultErrorHandlerBuilder();
+    }
+    if (answer instanceof ErrorHandlerBuilderRef) {
+      ErrorHandlerBuilderRef other=(ErrorHandlerBuilderRef)answer;
+      String otherRef=other.getRef();
+      if (!isErrorHandlerBuilderConfigured(otherRef)) {
+        answer=new DefaultErrorHandlerBuilder();
+        answer.setErrorHandlers(other.getErrorHandlers());
+      }
+    }
+  }
+ else {
+    answer=routeContext.lookup(ref,ErrorHandlerBuilder.class);
+  }
+  return answer;
+}
