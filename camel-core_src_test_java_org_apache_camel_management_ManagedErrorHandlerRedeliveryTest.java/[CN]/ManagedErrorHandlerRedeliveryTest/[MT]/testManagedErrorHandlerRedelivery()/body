@@ -1,0 +1,29 @@
+{
+  counter=0;
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=errorhandlers,*"),null);
+  assertEquals(1,set.size());
+  ObjectName on=set.iterator().next();
+  Integer max=(Integer)mbeanServer.getAttribute(on,"MaximumRedeliveries");
+  assertEquals(5,max.intValue());
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertEquals(3,counter);
+  assertMockEndpointsSatisfied();
+  counter=0;
+  mock.reset();
+  mock.expectedMessageCount(0);
+  mbeanServer.setAttribute(on,new Attribute("MaximumRedeliveries",0));
+  try {
+    template.sendBody("direct:start","Bye World");
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException e) {
+    IllegalArgumentException cause=assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+    assertEquals("Forced",cause.getMessage());
+  }
+  assertEquals(1,counter);
+  max=(Integer)mbeanServer.getAttribute(on,"MaximumRedeliveries");
+  assertEquals(0,max.intValue());
+}
