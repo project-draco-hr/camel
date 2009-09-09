@@ -1,44 +1,11 @@
 {
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is starting");
   EventHelper.notifyCamelContextStarting(this);
-  startServices(producerServicePool);
-  if (isStreamCaching()) {
-    if (StreamCaching.getStreamCaching(this) == null) {
-      LOG.debug("StreamCaching is enabled");
-      addInterceptStrategy(new StreamCaching());
-    }
+  try {
+    doStartCamel();
   }
-  if (isTracing()) {
-    LOG.debug("Tracing is enabled");
-  }
-  if (isHandleFault()) {
-    if (HandleFault.getHandleFault(this) == null) {
-      LOG.debug("HandleFault is enabled");
-      addInterceptStrategy(new HandleFault());
-    }
-  }
-  if (getDelayer() != null && getDelayer() > 0) {
-    if (Delayer.getDelayer(this) == null) {
-      long millis=getDelayer();
-      LOG.debug("Delayer is enabled with: " + millis + " ms.");
-      addInterceptStrategy(new Delayer(millis));
-    }
-  }
-  Iterator<LifecycleStrategy> it=lifecycleStrategies.iterator();
-  while (it.hasNext()) {
-    LifecycleStrategy strategy=it.next();
-    try {
-      strategy.onContextStart(this);
-    }
- catch (    Exception e) {
-      LOG.warn("Cannot start lifecycle strategy: " + strategy + ". This strategy will be removed. Cause "+ e.getMessage(),e);
-      it.remove();
-    }
-  }
-  forceLazyInitialization();
-  startServices(components.values());
-  if (!routeDefinitionInitiated) {
-    startRouteDefinitions(routeDefinitions);
-    routeDefinitionInitiated=true;
+ catch (  Exception e) {
+    EventHelper.notifyCamelContextStartingFailedEvent(this,e);
+    throw e;
   }
 }
