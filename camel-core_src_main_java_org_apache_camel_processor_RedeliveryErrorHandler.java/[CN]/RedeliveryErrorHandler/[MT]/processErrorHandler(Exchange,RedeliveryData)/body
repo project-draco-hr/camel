@@ -1,13 +1,7 @@
 {
   while (true) {
-    if (!isRunAllowed()) {
-      if (log.isDebugEnabled()) {
-        log.debug("Rejected execution as we are not started for exchange: " + exchange);
-      }
-      if (exchange.getException() == null) {
-        exchange.setException(new RejectedExecutionException());
-        return;
-      }
+    if (!isRunAllowed(exchange)) {
+      return;
     }
     if (exchange.isTransacted() && !supportTransacted() && exchange.getException() != null) {
       if (log.isTraceEnabled()) {
@@ -38,6 +32,9 @@
  catch (      InterruptedException e) {
         log.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
         continue;
+      }
+      if (!isRunAllowed(exchange)) {
+        return;
       }
       deliverToRedeliveryProcessor(exchange,data);
     }
