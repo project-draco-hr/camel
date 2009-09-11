@@ -13,19 +13,27 @@
       if (ObjectHelper.isEmpty(line)) {
         continue;
       }
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Counter " + count++ + " : content : "+ line);
-      }
+      count++;
       model=factory.factory();
       List<String> result=Arrays.asList(line.split(separator));
-      factory.bind(result,model);
-      factory.link(model);
-      models.add(model);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Graph of objects created : " + model);
+      if (result.size() == 0 || result.isEmpty()) {
+        throw new java.lang.IllegalArgumentException("No records have been defined in the KVP !");
+      }
+      if (result.size() > 0) {
+        factory.bind(result,model,count);
+        factory.link(model);
+        models.add(model);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Graph of objects created : " + model);
+        }
       }
     }
-    return models;
+    if (models.size() == 0) {
+      throw new java.lang.IllegalArgumentException("No records have been defined in the KVP !");
+    }
+ else {
+      return models;
+    }
   }
   finally {
     scanner.close();
