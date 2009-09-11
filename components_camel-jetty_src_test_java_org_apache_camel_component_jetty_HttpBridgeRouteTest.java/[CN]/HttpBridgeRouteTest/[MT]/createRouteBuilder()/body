@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      errorHandler(noErrorHandler());
+      Processor serviceProc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String uri=exchange.getIn().getHeader(Exchange.HTTP_URI,String.class);
+          exchange.getOut().setBody(uri);
+        }
+      }
+;
+      from("jetty:http://localhost:9090/test/hello").to("http://localhost:9080?throwExceptionOnFailure=false&bridgeEndpoint=true");
+      from("jetty://http://localhost:9080?matchOnUriPrefix=true").process(serviceProc);
+    }
+  }
+;
+}
