@@ -1,8 +1,21 @@
 {
-  Resource resource=getResource();
-  ObjectHelper.notNull(resource,"resource");
   String path=getResourceUri();
   ObjectHelper.notNull(path,"resourceUri");
+  String newResourceUri=exchange.getIn().getHeader(VelocityConstants.VELOCITY_RESOURCE_URI,String.class);
+  if (newResourceUri != null) {
+    exchange.getIn().removeHeader(VelocityConstants.VELOCITY_RESOURCE_URI);
+    if (log.isDebugEnabled()) {
+      log.debug(VelocityConstants.VELOCITY_RESOURCE_URI + " set to " + newResourceUri+ " creating new endpoint to handle exchange");
+    }
+    VelocityEndpoint newEndpoint=findOrCreateEndpoint(getEndpointUri(),newResourceUri);
+    newEndpoint.onExchange(exchange);
+    return;
+  }
+  Resource resource=getResource();
+  ObjectHelper.notNull(resource,"resource");
+  if (log.isDebugEnabled()) {
+    log.debug("Using resource: " + resource + " with resourceUri: "+ path+ " for endpoint "+ getEndpointUri());
+  }
   Reader reader=encoding != null ? new InputStreamReader(getResourceAsInputStream(),encoding) : new InputStreamReader(getResourceAsInputStream());
   StringWriter buffer=new StringWriter();
   String logTag=getClass().getName();
