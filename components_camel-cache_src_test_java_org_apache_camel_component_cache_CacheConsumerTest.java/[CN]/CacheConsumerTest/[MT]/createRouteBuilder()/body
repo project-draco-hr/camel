@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("cache://TestCache1").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String operation=(String)exchange.getIn().getHeader("CACHE_OPERATION");
+          String key=(String)exchange.getIn().getHeader("CACHE_KEY");
+          Object body=exchange.getIn().getBody();
+          String data=exchange.getContext().getTypeConverter().convertTo(String.class,body);
+          LOG.info("------- Cache Event Notification ---------");
+          LOG.info("Received notification for the following activity in cache TestCache1:");
+          LOG.info("Operation = " + operation);
+          LOG.info("key = " + key);
+          LOG.info("value = " + data);
+          LOG.info("------ End Cache Event Notification ------");
+        }
+      }
+).to("mock:result");
+      from("direct:start").to("cache://TestCache1");
+    }
+  }
+;
+}

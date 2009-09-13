@@ -1,0 +1,16 @@
+{
+  cacheManager=new CacheManagerFactory().instantiateCacheManager();
+  if (isValid(cacheManager,cacheName,key)) {
+    cache=cacheManager.getCache(cacheName);
+    LOG.info("Replacing Token " + replacementToken + "in Message with value stored against key "+ key+ " in CacheName "+ cacheName);
+    exchange.getIn().setHeader("CACHE_KEY",key);
+    Object body=exchange.getIn().getBody();
+    InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,body);
+    byte[] buffer=IOConverter.toBytes(is);
+    is.close();
+    String cacheValue=exchange.getContext().getTypeConverter().convertTo(String.class,cache.get(key).getObjectValue());
+    String replacedTokenString=new String(buffer).replaceAll(replacementToken,cacheValue);
+    LOG.debug("replacedTokenString = " + replacedTokenString);
+    exchange.getIn().setBody(replacedTokenString.getBytes());
+  }
+}

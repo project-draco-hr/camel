@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("cache://TestCache1").filter(header("CACHE_KEY").isEqualTo("greeting")).process(new CacheBasedMessageBodyReplacer("cache://TestCache1","farewell")).to("direct:next");
+      from("direct:next").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String key=(String)exchange.getIn().getHeader("CACHE_KEY");
+          Object body=exchange.getIn().getBody();
+          String data=exchange.getContext().getTypeConverter().convertTo(String.class,body);
+          LOG.info("------- Payload Replacement Results ---------");
+          LOG.info("The following Payload was replaced from Cache: TestCache1");
+          LOG.info("key = " + key);
+          LOG.info("Before value = Hello World");
+          LOG.info("After value = " + data);
+          LOG.info("------ End  ------");
+        }
+      }
+).to("mock:result");
+      from("direct:start").to("cache://TestCache1");
+    }
+  }
+;
+}

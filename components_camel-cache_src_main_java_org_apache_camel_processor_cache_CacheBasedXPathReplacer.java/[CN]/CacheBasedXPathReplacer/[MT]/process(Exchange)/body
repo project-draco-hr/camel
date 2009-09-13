@@ -1,0 +1,34 @@
+{
+  cacheManager=new CacheManagerFactory().instantiateCacheManager();
+  if (isValid(cacheManager,cacheName,key)) {
+    cache=cacheManager.getCache(cacheName);
+    LOG.info("Replacing XPath value " + xpath + "in Message with value stored against key "+ key+ " in CacheName "+ cacheName);
+    exchange.getIn().setHeader("CACHE_KEY",key);
+    Object body=exchange.getIn().getBody();
+    InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,body);
+    try {
+      document=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,is);
+    }
+  finally {
+      is.close();
+    }
+    InputStream cis=exchange.getContext().getTypeConverter().convertTo(InputStream.class,cache.get(key).getObjectValue());
+    try {
+      Document cacheValueDocument=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,cis);
+      XmlConverter xmlConverter=new XmlConverter();
+      String xslString=IOConverter.toString(new File("./src/main/resources/xpathreplacer.xsl"));
+      xslString=xslString.replace("##match_token##",xpath);
+      Source xslSource=xmlConverter.toStreamSource(new StringReader(xslString));
+      TransformerFactory transformerFactory=xmlConverter.createTransformerFactory();
+      Transformer transformer=transformerFactory.newTransformer(xslSource);
+      source=xmlConverter.toSource(document);
+      result=new DOMResult();
+      transformer.setParameter("cacheValue",cacheValueDocument);
+      transformer.transform(source,result);
+    }
+  finally {
+      cis.close();
+    }
+  }
+  exchange.getIn().setBody(IOConverter.toBytes(IOConverter.toInputStrean(new DOMSource(result.getNode()))));
+}

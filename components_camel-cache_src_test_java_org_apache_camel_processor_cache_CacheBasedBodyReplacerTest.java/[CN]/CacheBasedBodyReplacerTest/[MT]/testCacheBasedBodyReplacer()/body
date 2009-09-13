@@ -1,0 +1,26 @@
+{
+  LOG.info("Beginning Test ---> testCacheBasedBodyReplacer()");
+  resultEndpoint.expectedMessageCount(1);
+  List<String> keys=new ArrayList<String>();
+  keys.add("farewell");
+  keys.add("greeting");
+  for (  final String key : keys) {
+    producerTemplate.send(new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+        exchange.setProperty(Exchange.CHARSET_NAME,"UTF-8");
+        Message in=exchange.getIn();
+        in.setHeader("CACHE_OPERATION","ADD");
+        in.setHeader("CACHE_KEY",key);
+        if (key.equalsIgnoreCase("greeting")) {
+          in.setBody("Hello World");
+        }
+ else {
+          in.setBody("Bye World");
+        }
+      }
+    }
+);
+  }
+  resultEndpoint.assertIsSatisfied();
+  LOG.info("Completed Test ---> testCacheBasedBodyReplacer()");
+}

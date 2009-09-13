@@ -1,0 +1,15 @@
+{
+  cacheManager=new CacheManagerFactory().instantiateCacheManager();
+  CacheEventListener cacheEventListener=new CacheEventListenerFactory().createCacheEventListener(null);
+  cacheEventListener.setCacheConsumer(this);
+  if (cacheManager.cacheExists(config.getCacheName())) {
+    cache=cacheManager.getCache(config.getCacheName());
+    cache.getCacheEventNotificationService().registerListener(cacheEventListener);
+  }
+ else {
+    cache=new Cache(config.getCacheName(),config.getMaxElementsInMemory(),config.getMemoryStoreEvictionPolicy(),config.isOverflowToDisk(),config.getDiskStorePath(),config.isEternal(),config.getTimeToLiveSeconds(),config.getTimeToIdleSeconds(),config.isDiskPersistent(),config.getDiskExpiryThreadIntervalSeconds(),null);
+    cache.getCacheEventNotificationService().registerListener(cacheEventListener);
+    cacheManager.addCache(cache);
+    LOG.info("Added a new cache: " + cache.getName());
+  }
+}
