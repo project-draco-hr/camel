@@ -1,15 +1,20 @@
 {
   ObjectHelper.notNull(config,"config");
-  Map map=ExchangeHelper.convertToMandatoryType(exchange,Map.class,object);
   OutputStreamWriter out=new OutputStreamWriter(outputStream);
+  CSVWriter csv=new CSVWriter(config);
+  csv.setWriter(out);
   try {
-    if (autogenColumns) {
-      Set set=map.keySet();
-      updateFieldsInConfig(set,exchange);
+    List list=ExchangeHelper.convertToType(exchange,List.class,object);
+    if (list != null) {
+      for (      Object child : list) {
+        Map row=ExchangeHelper.convertToMandatoryType(exchange,Map.class,child);
+        doMarshalRecord(exchange,row,out,csv);
+      }
     }
-    CSVWriter writer=new CSVWriter(config);
-    writer.setWriter(out);
-    writer.writeRecord(map);
+ else {
+      Map row=ExchangeHelper.convertToMandatoryType(exchange,Map.class,object);
+      doMarshalRecord(exchange,row,out,csv);
+    }
   }
   finally {
     out.close();
