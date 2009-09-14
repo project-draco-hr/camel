@@ -27,7 +27,10 @@
       }
       boolean isLocalFileSystem="file".equals(url.getProtocol());
       if (urlPath.startsWith("file:")) {
-        urlPath=urlPath.substring(5);
+        urlPath=new URI(url.getFile()).getPath();
+        if (urlPath.startsWith("file:")) {
+          urlPath=urlPath.substring(5);
+        }
         isLocalFileSystem=true;
       }
       if (url.toString().startsWith("bundle:") || urlPath.startsWith("bundle:")) {
@@ -65,8 +68,11 @@
         loadImplementationsInJar(test,packageName,stream,urlPath,classes);
       }
     }
- catch (    IOException ioe) {
-      log.warn("Could not read entries in url: " + url,ioe);
+ catch (    IOException e) {
+      log.warn("Could not read entries in url: " + url,e);
+    }
+catch (    URISyntaxException e) {
+      log.warn("Could not read entries in url: " + url,e);
     }
   }
 }
