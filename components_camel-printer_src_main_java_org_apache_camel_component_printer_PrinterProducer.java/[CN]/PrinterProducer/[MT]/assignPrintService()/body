@@ -1,0 +1,17 @@
+{
+  PrintService printService;
+  if ((config.getHostname().equalsIgnoreCase("localhost")) && (config.getPrintername().equalsIgnoreCase("/default"))) {
+    printService=PrintServiceLookup.lookupDefaultPrintService();
+  }
+ else {
+    PrintService[] services=PrintServiceLookup.lookupPrintServices(null,null);
+    setPrinter("\\\\" + config.getHostname() + "\\"+ config.getPrintername());
+    int position=findPrinter(services,printer);
+    if (position < 0) {
+      LOG.error("PrintServiceLookup failed. No printer found with the Printer Name: " + printer);
+      throw new PrintException("Printer Lookup Failure. Please verify that the host and printer are registered and reachable from this machine");
+    }
+    printService=services[position];
+  }
+  return printService;
+}

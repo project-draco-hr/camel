@@ -1,0 +1,46 @@
+{
+  byte[] buffer=null;
+  File file;
+  LOG.info("In printerOperations.print()");
+  LOG.info("Print Service = " + this.printService.getName());
+  LOG.info("About to print " + copies + " copy(s)");
+  for (int i=0; i < copies; i++) {
+    if (!sendToPrinter) {
+      LOG.info("\tPrint Flag is set to false. This job(s) will not be printed until this setting remains in effect. Please set the flag to true or remove the setting");
+      if (mimeType.equalsIgnoreCase("GIF") || mimeType.equalsIgnoreCase("RENDERABLE_IMAGE")) {
+        file=new File("./target/TestPrintJobNo" + i + "_"+ UUID.randomUUID()+ ".gif");
+      }
+ else       if (mimeType.equalsIgnoreCase("JPEG")) {
+        file=new File("./target/TestPrintJobNo" + i + "_"+ UUID.randomUUID()+ ".jpeg");
+      }
+ else       if (mimeType.equalsIgnoreCase("PDF")) {
+        file=new File("./target/TestPrintJobNo" + i + "_"+ UUID.randomUUID()+ ".pdf");
+      }
+ else {
+        file=new File("./target/TestPrintJobNo" + i + "_"+ UUID.randomUUID()+ ".txt");
+      }
+      LOG.info("\tWriting Print Job to File: " + file.getAbsolutePath());
+      try {
+        if (buffer == null) {
+          InputStream stream=doc.getStreamForBytes();
+          buffer=new byte[stream.available()];
+          int n=stream.available();
+          for (int j=0; j < n; j++) {
+            buffer[j]=(byte)stream.read();
+          }
+        }
+        FileOutputStream fileOutputStream=new FileOutputStream(file);
+        fileOutputStream.write(buffer);
+        fileOutputStream.flush();
+        fileOutputStream.close();
+      }
+ catch (      Exception e) {
+        throw new PrintException("Error writing Document to the target file " + file.getAbsolutePath());
+      }
+    }
+ else {
+      LOG.info("\tIssuing Job " + i + " to Printer: "+ this.printService.getName());
+      print(doc);
+    }
+  }
+}

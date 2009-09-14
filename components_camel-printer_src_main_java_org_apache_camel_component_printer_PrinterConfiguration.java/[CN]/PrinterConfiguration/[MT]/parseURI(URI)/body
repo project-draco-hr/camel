@@ -1,0 +1,27 @@
+{
+  String protocol=uri.getScheme();
+  if (!protocol.equalsIgnoreCase("lpr")) {
+    throw new IllegalArgumentException("Unrecognized Print protocol: " + protocol + " for uri: "+ uri);
+  }
+  setUri(uri);
+  setHostname(uri.getHost());
+  setPort(uri.getPort());
+  LOG.info("URI Path = " + uri.getPath());
+  setPrintername(uri.getPath());
+  printSettings=URISupport.parseParameters(uri);
+  setFlavor((String)printSettings.get("flavor"));
+  setMimeType((String)printSettings.get("mimeType"));
+  setDocFlavor(assignDocFlavor(flavor,mimeType));
+  if (printSettings.containsKey("copies")) {
+    setCopies(Integer.valueOf((String)printSettings.get("copies")).intValue());
+  }
+  setMediaSize((String)printSettings.get("mediaSize"));
+  setSides((String)printSettings.get("sides"));
+  setMediaSizeName(assignMediaSize(mediaSize));
+  setInternalSides(assignSides(sides));
+  if (printSettings.containsKey("sendToPrinter")) {
+    if (!(Boolean.valueOf((String)printSettings.get("sendToPrinter")).booleanValue())) {
+      setSendToPrinter(false);
+    }
+  }
+}
