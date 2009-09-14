@@ -1,0 +1,20 @@
+{
+  Exchange out=template.send("http://localhost:9090/test/filter",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("Claus");
+      exchange.getIn().setHeader("bar",123);
+    }
+  }
+);
+  assertNotNull(out);
+  assertEquals("Hi Claus",out.getOut().getBody(String.class));
+  Map<String,Object> headers=out.getOut().getHeaders();
+  for (  String key : headers.keySet()) {
+    if (!key.equalsIgnoreCase(Exchange.HTTP_RESPONSE_CODE)) {
+      assertTrue("Should not contain any Camel internal headers",!key.toLowerCase().startsWith("camel"));
+    }
+ else {
+      assertEquals(200,headers.get(Exchange.HTTP_RESPONSE_CODE));
+    }
+  }
+}
