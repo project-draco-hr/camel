@@ -27,7 +27,11 @@
       }
       boolean isLocalFileSystem="file".equals(url.getProtocol());
       if (urlPath.startsWith("file:")) {
-        urlPath=new URI(url.getFile()).getPath();
+        try {
+          urlPath=new URI(url.getFile()).getPath();
+        }
+ catch (        URISyntaxException e) {
+        }
         if (urlPath.startsWith("file:")) {
           urlPath=urlPath.substring(5);
         }
@@ -45,8 +49,8 @@
       }
       File file=new File(urlPath);
       if (file.isDirectory()) {
-        if (log.isDebugEnabled()) {
-          log.debug("Loading from directory: " + file);
+        if (log.isTraceEnabled()) {
+          log.trace("Loading from directory: " + file);
         }
         loadImplementationsInDirectory(test,packageName,file,classes);
       }
@@ -62,17 +66,14 @@
  else {
           stream=new FileInputStream(file);
         }
-        if (log.isDebugEnabled()) {
-          log.debug("Loading from jar: " + file);
+        if (log.isTraceEnabled()) {
+          log.trace("Loading from jar: " + file);
         }
         loadImplementationsInJar(test,packageName,stream,urlPath,classes);
       }
     }
  catch (    IOException e) {
-      log.warn("Could not read entries in url: " + url,e);
-    }
-catch (    URISyntaxException e) {
-      log.warn("Could not read entries in url: " + url,e);
+      log.debug("Could not read entries in url: " + url,e);
     }
   }
 }
