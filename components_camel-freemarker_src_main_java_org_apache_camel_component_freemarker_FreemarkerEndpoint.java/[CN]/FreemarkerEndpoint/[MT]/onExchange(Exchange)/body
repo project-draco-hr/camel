@@ -2,6 +2,16 @@
   String path=getResourceUri();
   ObjectHelper.notNull(configuration,"configuration");
   ObjectHelper.notNull(path,"resourceUri");
+  String newResourceUri=exchange.getIn().getHeader(FreemarkerConstants.FREEMARKER_RESOURCE_URI,String.class);
+  if (newResourceUri != null) {
+    exchange.getIn().removeHeader(FreemarkerConstants.FREEMARKER_RESOURCE_URI);
+    if (log.isDebugEnabled()) {
+      log.debug(FreemarkerConstants.FREEMARKER_RESOURCE_URI + " set to " + newResourceUri+ " creating new endpoint to handle exchange");
+    }
+    FreemarkerEndpoint newEndpoint=findOrCreateEndpoint(getEndpointUri(),newResourceUri);
+    newEndpoint.onExchange(exchange);
+    return;
+  }
   Map variableMap=ExchangeHelper.createVariableMap(exchange);
   if (log.isDebugEnabled()) {
     log.debug("Freemarker is evaluating " + path + " using context: "+ variableMap);
