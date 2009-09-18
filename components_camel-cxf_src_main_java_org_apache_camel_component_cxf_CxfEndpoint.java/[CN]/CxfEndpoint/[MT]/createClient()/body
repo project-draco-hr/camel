@@ -1,7 +1,17 @@
 {
-  ObjectHelper.notEmpty(getServiceClass(),CxfConstants.SERVICE_CLASS);
-  Class<?> cls=ClassLoaderUtils.loadClass(getServiceClass(),getClass());
+  if (getDataFormat().equals(DataFormat.POJO)) {
+    ObjectHelper.notEmpty(getServiceClass(),CxfConstants.SERVICE_CLASS);
+  }
+  Class<?> cls=null;
+  if (getServiceClass() != null) {
+    cls=ClassLoaderUtils.loadClass(getServiceClass(),getClass());
+  }
   ClientProxyFactoryBean factoryBean=createClientFactoryBean(cls);
   setupClientFactoryBean(factoryBean,cls);
-  return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
+  if (cls == null) {
+    return (Client)factoryBean.create();
+  }
+ else {
+    return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
+  }
 }
