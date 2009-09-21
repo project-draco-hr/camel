@@ -1,12 +1,12 @@
 {
   context.addRoutes(new SpringRouteBuilder(){
     @Override public void configure() throws Exception {
-      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2).redeliverDelay(0).logStackTrace(false).handled(false));
+      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(0).redeliverDelay(0).logStackTrace(false));
       from("direct:start").idempotentConsumer(header("messageId"),jpaMessageIdRepository(lookup(JpaTemplate.class),PROCESSOR_NAME)).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String id=exchange.getIn().getHeader("messageId",String.class);
           if (id.equals("2")) {
-            throw new IllegalArgumentException("Damm I cannot handle id 2");
+            throw new IllegalArgumentException("Damn I cannot handle id 2");
           }
         }
       }
@@ -24,4 +24,12 @@
   sendMessage("1","one");
   sendMessage("3","three");
   assertMockEndpointsSatisfied();
+  Set<String> ids=new HashSet<String>();
+  List<MessageProcessed> list=jpaTemplate.find(SELECT_ALL_STRING,PROCESSOR_NAME);
+  for (  MessageProcessed item : list) {
+    ids.add(item.getMessageId());
+  }
+  assertEquals(2,ids.size());
+  assertTrue("Should contain message 1",ids.contains("1"));
+  assertTrue("Should contain message 3",ids.contains("3"));
 }
