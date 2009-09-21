@@ -5,7 +5,7 @@
   }
   for (  Route route : routes) {
     if (LOG.isTraceEnabled()) {
-      LOG.trace("Starting route: " + route);
+      LOG.trace("Starting route services: " + route);
     }
     List<Service> services=route.getServices();
     route.onStartingServices(services);
@@ -13,8 +13,24 @@
     for (    Service service : services) {
       doGetChildServies(list,service);
     }
-    startChildService(route,list);
+    List<Service> childServices=new ArrayList<Service>();
+    for (    Service service : list) {
+      if (service instanceof Consumer) {
+        inputs.put(route,(Consumer)service);
+      }
+ else {
+        childServices.add(service);
+      }
+    }
+    startChildService(route,childServices);
     ServiceHelper.startService(route);
     EventHelper.notifyRouteStarted(camelContext,route);
+  }
+  if (startInputs) {
+    for (    Map.Entry<Route,Consumer> entry : inputs.entrySet()) {
+      Route route=entry.getKey();
+      Consumer consumer=entry.getValue();
+      startChildService(route,consumer);
+    }
   }
 }
