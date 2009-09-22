@@ -1,5 +1,4 @@
 {
-  LOG.info("In CacheProducer.process()");
   Object body=exchange.getIn().getBody();
   InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,body);
   byte[] buffer=new byte[is.available()];
@@ -8,16 +7,18 @@
     buffer[j]=(byte)is.read();
   }
   cacheManager=new CacheManagerFactory().instantiateCacheManager();
-  LOG.info("Cache Name: " + config.getCacheName());
+  LOG.debug("Cache Name: " + config.getCacheName());
   if (cacheManager.cacheExists(config.getCacheName())) {
-    LOG.info("Found an existing cache: " + config.getCacheName());
-    LOG.info("Cache " + config.getCacheName() + " currently contains "+ cacheManager.getCache(config.getCacheName()).getSize()+ " elements");
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Found an existing cache: " + config.getCacheName());
+      LOG.debug("Cache " + config.getCacheName() + " currently contains "+ cacheManager.getCache(config.getCacheName()).getSize()+ " elements");
+    }
     cache=cacheManager.getCache(config.getCacheName());
   }
  else {
     cache=new Cache(config.getCacheName(),config.getMaxElementsInMemory(),config.getMemoryStoreEvictionPolicy(),config.isOverflowToDisk(),config.getDiskStorePath(),config.isEternal(),config.getTimeToLiveSeconds(),config.getTimeToIdleSeconds(),config.isDiskPersistent(),config.getDiskExpiryThreadIntervalSeconds(),null);
     cacheManager.addCache(cache);
-    LOG.info("Added a new cache: " + cache.getName());
+    LOG.debug("Added a new cache: " + cache.getName());
   }
   String key=(String)exchange.getIn().getHeader("CACHE_KEY");
   String operation=(String)exchange.getIn().getHeader("CACHE_OPERATION");
