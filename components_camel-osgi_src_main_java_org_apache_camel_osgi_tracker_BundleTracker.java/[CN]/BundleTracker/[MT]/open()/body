@@ -1,0 +1,28 @@
+{
+  final Tracked t;
+synchronized (this) {
+    if (tracked != null) {
+      return;
+    }
+    if (DEBUG) {
+      System.out.println("BundleTracker.open");
+    }
+    t=new Tracked();
+synchronized (t) {
+      context.addBundleListener(t);
+      Bundle[] bundles=context.getBundles();
+      if (bundles != null) {
+        int length=bundles.length;
+        for (int i=0; i < length; i++) {
+          int state=bundles[i].getState();
+          if ((state & mask) == 0) {
+            bundles[i]=null;
+          }
+        }
+        t.setInitial(bundles);
+      }
+    }
+    tracked=t;
+  }
+  t.trackInitial();
+}

@@ -1,0 +1,30 @@
+{
+  if (DEBUG) {
+    System.out.println("AbstractTracked.trackAdding: " + item);
+  }
+  Object object=null;
+  boolean becameUntracked=false;
+  try {
+    object=customizerAdding(item,related);
+  }
+  finally {
+synchronized (this) {
+      if (adding.remove(item) && !closed) {
+        if (object != null) {
+          tracked.put(item,object);
+          modified();
+          notifyAll();
+        }
+      }
+ else {
+        becameUntracked=true;
+      }
+    }
+  }
+  if (becameUntracked && (object != null)) {
+    if (DEBUG) {
+      System.out.println("AbstractTracked.trackAdding[removed]: " + item);
+    }
+    customizerRemoved(item,related,object);
+  }
+}

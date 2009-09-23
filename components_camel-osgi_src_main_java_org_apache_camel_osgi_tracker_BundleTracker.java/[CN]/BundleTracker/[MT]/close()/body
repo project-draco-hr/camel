@@ -1,0 +1,26 @@
+{
+  final Bundle[] bundles;
+  final Tracked outgoing;
+synchronized (this) {
+    outgoing=tracked;
+    if (outgoing == null) {
+      return;
+    }
+    if (DEBUG) {
+      System.out.println("BundleTracker.close");
+    }
+    outgoing.close();
+    bundles=getBundles();
+    tracked=null;
+    try {
+      context.removeBundleListener(outgoing);
+    }
+ catch (    IllegalStateException e) {
+    }
+  }
+  if (bundles != null) {
+    for (int i=0; i < bundles.length; i++) {
+      outgoing.untrack(bundles[i],null);
+    }
+  }
+}
