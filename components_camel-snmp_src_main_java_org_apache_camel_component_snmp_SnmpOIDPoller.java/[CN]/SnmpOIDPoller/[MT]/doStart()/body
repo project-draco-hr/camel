@@ -1,0 +1,17 @@
+{
+  super.doStart();
+  LOG.debug("Activating oid poller");
+  this.targetAddress=GenericAddress.parse(this.endpoint.getAddress());
+  this.transport=new DefaultUdpTransportMapping();
+  this.snmp=new Snmp(this.transport);
+  this.usm=new USM(SecurityProtocols.getInstance(),new OctetString(MPv3.createLocalEngineID()),0);
+  SecurityModels.getInstance().addSecurityModel(usm);
+  target=new CommunityTarget();
+  target.setCommunity(new OctetString(this.endpoint.getSnmpCommunity()));
+  target.setAddress(targetAddress);
+  target.setRetries(this.endpoint.getRetries());
+  target.setTimeout(this.endpoint.getTimeout());
+  target.setVersion(this.endpoint.getSnmpVersion());
+  this.pdu=new PDU();
+  this.transport.listen();
+}
