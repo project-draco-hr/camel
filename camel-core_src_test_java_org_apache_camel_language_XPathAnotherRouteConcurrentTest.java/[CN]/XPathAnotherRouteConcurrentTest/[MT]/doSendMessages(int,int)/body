@@ -1,0 +1,24 @@
+{
+  getMockEndpoint("mock:claus").expectedMessageCount(files / 2);
+  getMockEndpoint("mock:james").expectedMessageCount(files / 2);
+  getMockEndpoint("mock:claus").assertNoDuplicates(body());
+  getMockEndpoint("mock:james").assertNoDuplicates(body());
+  getMockEndpoint("mock:other").expectedMessageCount(0);
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        if (index % 2 == 0) {
+          template.sendBody("seda:foo",createXmlBody(index,"Claus"));
+        }
+ else {
+          template.sendBody("seda:foo",createXmlBody(index,"James"));
+        }
+        return null;
+      }
+    }
+);
+  }
+  assertMockEndpointsSatisfied();
+}
