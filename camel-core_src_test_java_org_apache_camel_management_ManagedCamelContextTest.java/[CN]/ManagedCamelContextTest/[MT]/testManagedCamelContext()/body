@@ -1,0 +1,14 @@
+{
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=context,name=\"camel-1\"");
+  assertTrue("Should be registered",mbeanServer.isRegistered(on));
+  String name=(String)mbeanServer.getAttribute(on,"CamelId");
+  assertEquals("camel-1",name);
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello World");
+  mbeanServer.invoke(on,"sendBody",new Object[]{"direct:start","Hello World"},new String[]{"java.lang.String","java.lang.String"});
+  assertMockEndpointsSatisfied();
+  Object reply=mbeanServer.invoke(on,"requestBody",new Object[]{"direct:foo","Hello World"},new String[]{"java.lang.String","java.lang.String"});
+  assertEquals("Bye World",reply);
+  mbeanServer.invoke(on,"stop",null,null);
+}
