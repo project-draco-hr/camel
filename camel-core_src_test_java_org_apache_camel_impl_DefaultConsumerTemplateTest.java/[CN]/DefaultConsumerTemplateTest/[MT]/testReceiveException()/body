@@ -1,0 +1,13 @@
+{
+  Exchange exchange=new DefaultExchange(context);
+  exchange.setException(new IllegalArgumentException("Damn"));
+  template.send("seda:foo",exchange);
+  try {
+    consumer.receiveBody("seda:foo",String.class);
+    fail("Should have thrown an exception");
+  }
+ catch (  RuntimeCamelException e) {
+    assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+    assertEquals("Damn",e.getCause().getMessage());
+  }
+}
