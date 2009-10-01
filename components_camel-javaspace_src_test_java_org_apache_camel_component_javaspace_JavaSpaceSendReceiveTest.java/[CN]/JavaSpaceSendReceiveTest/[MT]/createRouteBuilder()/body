@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:input").to("javaspace:jini://localhost?spaceName=mySpace");
+      from("javaspace:jini://localhost?spaceName=mySpace&templateId=template&verb=take&concurrentConsumers=1").process(new Processor(){
+        public void process(        Exchange exc) throws Exception {
+          TestEntry msg=exc.getIn().getBody(TestEntry.class);
+          Assert.assertTrue(msg.id == 1);
+        }
+      }
+).to("mock:mymock");
+    }
+  }
+;
+}

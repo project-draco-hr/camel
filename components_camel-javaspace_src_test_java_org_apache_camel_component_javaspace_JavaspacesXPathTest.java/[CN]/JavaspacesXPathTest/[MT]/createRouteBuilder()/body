@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:input").to("javaspace:jini://localhost?spaceName=mySpace");
+      from("javaspace:jini://localhost?spaceName=mySpace&verb=take&concurrentConsumers=1&transactional=false").filter().xpath("/person[@name='James']").process(new Processor(){
+        public void process(        Exchange exc) throws Exception {
+          byte[] body=exc.getIn().getBody(byte[].class);
+          assertEquals("<person name='James' city='London'/>".getBytes(),body);
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+;
+}

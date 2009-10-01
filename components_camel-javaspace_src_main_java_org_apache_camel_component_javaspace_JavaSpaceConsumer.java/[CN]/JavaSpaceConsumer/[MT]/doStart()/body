@@ -1,0 +1,16 @@
+{
+  Utility.setSecurityPolicy("policy.all","policy_consumer.all");
+  int verb=TAKE;
+  if (this.verb.equalsIgnoreCase("read")) {
+    verb=READ;
+  }
+  javaSpace=JiniSpaceAccessor.findSpace(((JavaSpaceEndpoint)this.getEndpoint()).getRemaining(),((JavaSpaceEndpoint)this.getEndpoint()).getSpaceName());
+  if (transactional) {
+    transactionHelper=TransactionHelper.getInstance(((JavaSpaceEndpoint)this.getEndpoint()).getRemaining());
+  }
+  for (int i=0; i < concurrentConsumers; ++i) {
+    Task worker=new Task((JavaSpaceEndpoint)this.getEndpoint(),this.getProcessor(),javaSpace,transactionHelper,transactionTimeout,verb,templateId);
+    executor.scheduleWithFixedDelay(worker,0,1,TimeUnit.NANOSECONDS);
+  }
+  (new File("policy_consumer.all")).delete();
+}

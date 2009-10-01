@@ -1,0 +1,89 @@
+{
+  Transaction tnx=null;
+  try {
+    DefaultExchange exchange=(DefaultExchange)endpoint.createExchange(ExchangePattern.InOut);
+    Message message=exchange.getIn();
+    if (transactionHelper != null) {
+      tnx=transactionHelper.getJiniTransaction(transactionTimeout).transaction;
+    }
+    Entry entry=null;
+switch (verb) {
+case JavaSpaceConsumer.TAKE:
+      entry=javaSpace.take(template,tnx,100);
+    break;
+case JavaSpaceConsumer.READ:
+  entry=javaSpace.read(template,tnx,100);
+break;
+default :
+throw new RuntimeCamelException("Wrong verb");
+}
+if (entry != null) {
+if (entry instanceof InEntry) {
+if (((InEntry)entry).binary) {
+message.setBody(((InEntry)entry).buffer);
+}
+ else {
+ByteArrayInputStream bis=new ByteArrayInputStream(((InEntry)entry).buffer);
+ObjectInputStream ois=new ObjectInputStream(bis);
+Object obj=ois.readObject();
+message.setBody(obj);
+}
+processor.process(exchange);
+Message out=exchange.getOut();
+if (out.getBody() != null && ExchangeHelper.isOutCapable(exchange)) {
+OutEntry replyCamelEntry=new OutEntry();
+replyCamelEntry.correlationId=((InEntry)entry).correlationId;
+if (out.getBody() instanceof byte[]) {
+  replyCamelEntry.binary=true;
+  replyCamelEntry.buffer=(byte[])out.getBody();
+}
+ else {
+  ByteArrayOutputStream bos=new ByteArrayOutputStream();
+  ObjectOutputStream oos=new ObjectOutputStream(bos);
+  oos.writeObject(out.getBody());
+  replyCamelEntry.binary=false;
+  replyCamelEntry.buffer=bos.toByteArray();
+}
+javaSpace.write(replyCamelEntry,tnx,Lease.FOREVER);
+}
+}
+ else {
+message.setBody(entry,Entry.class);
+processor.process(exchange);
+}
+}
+}
+ catch (Exception e) {
+if (tnx != null) {
+try {
+tnx.abort();
+}
+ catch (UnknownTransactionException e1) {
+throw new RuntimeCamelException(e1);
+}
+catch (CannotAbortException e1) {
+throw new RuntimeCamelException(e1);
+}
+catch (RemoteException e1) {
+throw new RuntimeCamelException(e1);
+}
+}
+throw new RuntimeCamelException(e);
+}
+ finally {
+if (tnx != null) {
+try {
+tnx.commit();
+}
+ catch (UnknownTransactionException e1) {
+throw new RuntimeCamelException(e1);
+}
+catch (RemoteException e1) {
+throw new RuntimeCamelException(e1);
+}
+catch (CannotCommitException e1) {
+throw new RuntimeCamelException(e1);
+}
+}
+}
+}

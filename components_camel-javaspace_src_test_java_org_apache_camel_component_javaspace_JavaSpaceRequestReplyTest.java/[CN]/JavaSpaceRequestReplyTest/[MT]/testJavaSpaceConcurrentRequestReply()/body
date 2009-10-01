@@ -1,0 +1,21 @@
+{
+  Vector<FutureTask<Reply>> tasks=new Vector<FutureTask<Reply>>();
+  Endpoint endpoint=context.getEndpoint("direct:input");
+  ExecutorService es=Executors.newFixedThreadPool(10);
+  long start=System.currentTimeMillis();
+  for (int i=0; i < 1000; ++i) {
+    Request req=new Request();
+    req.setPayload("REQUEST " + i);
+    ITestPojo proxy=ProxyHelper.createProxy(endpoint,ITestPojo.class);
+    FutureTask<Reply> task=new FutureTask<Reply>(new PojoCallable(req,proxy));
+    tasks.add(task);
+    es.submit(task);
+  }
+  int i=0;
+  for (  FutureTask<Reply> futureTask : tasks) {
+    Assert.assertTrue(futureTask.get().getPayload().equals("REPLY for REQUEST " + i++));
+  }
+  long stop=System.currentTimeMillis();
+  System.out.println(stop - start);
+  es.shutdown();
+}
