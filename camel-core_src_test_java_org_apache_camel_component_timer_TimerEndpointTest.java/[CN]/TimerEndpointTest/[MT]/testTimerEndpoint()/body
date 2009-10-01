@@ -1,0 +1,16 @@
+{
+  final TimerEndpoint te=new TimerEndpoint();
+  te.setCamelContext(context);
+  te.setTimer(new Timer(true));
+  te.setEndpointUriIfNotSpecified("timer://foo");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(te).to("mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMinimumMessageCount(1);
+  assertMockEndpointsSatisfied();
+}
