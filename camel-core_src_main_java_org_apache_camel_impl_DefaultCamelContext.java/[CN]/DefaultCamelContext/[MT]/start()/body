@@ -2,14 +2,27 @@
   super.start();
   LOG.debug("Starting routes...");
 synchronized (this) {
-    Map<Route,Consumer> inputs=new HashMap<Route,Consumer>();
+    Map<Integer,KeyValueHolder<Route,Consumer>> inputs=new TreeMap<Integer,KeyValueHolder<Route,Consumer>>();
     for (    RouteService routeService : routeServices.values()) {
       Boolean autoStart=routeService.getRouteDefinition().isAutoStartup();
       if (autoStart == null || autoStart) {
         routeService.startInputs(false);
         try {
           routeService.start();
-          inputs.putAll(routeService.getInputs());
+          Integer startupOrder=routeService.getRouteDefinition().getStartupOrder();
+          if (startupOrder == null) {
+            startupOrder=defaultRouteStartupOrder++;
+          }
+          for (          Map.Entry<Route,Consumer> entry : routeService.getInputs().entrySet()) {
+            KeyValueHolder<Route,Consumer> holder=new KeyValueHolder<Route,Consumer>(entry.getKey(),entry.getValue());
+            if (inputs.containsKey(startupOrder)) {
+              if (LOG.isWarnEnabled()) {
+                LOG.warn("Another route has already startupOrder " + startupOrder + " which this route also want to use "+ entry.getKey().getId()+ ". Please correct startupOrder to be unique among your routes.");
+              }
+              startupOrder=defaultRouteStartupOrder++;
+            }
+            inputs.put(startupOrder,holder);
+          }
         }
   finally {
           routeService.startInputs(true);
@@ -19,16 +32,18 @@ synchronized (this) {
         LOG.info("Cannot start route " + routeService.getId() + " as it is configured with auto startup disabled.");
       }
     }
-    for (    Map.Entry<Route,Consumer> entry : inputs.entrySet()) {
-      Route route=entry.getKey();
-      Consumer consumer=entry.getValue();
+    for (    Map.Entry<Integer,KeyValueHolder<Route,Consumer>> entry : inputs.entrySet()) {
+      Integer order=entry.getKey();
+      Route route=entry.getValue().getKey();
+      Consumer consumer=entry.getValue().getValue();
       if (LOG.isTraceEnabled()) {
-        LOG.trace("Starting consumer on route: " + route.getId());
+        LOG.trace("Starting consumer (order: " + order + ") on route: "+ route.getId());
       }
       for (      LifecycleStrategy strategy : lifecycleStrategies) {
         strategy.onServiceAdd(this,consumer,route);
       }
       ServiceHelper.startService(consumer);
+      routeStartupOrder.add(consumer);
     }
   }
   if (LOG.isDebugEnabled()) {
