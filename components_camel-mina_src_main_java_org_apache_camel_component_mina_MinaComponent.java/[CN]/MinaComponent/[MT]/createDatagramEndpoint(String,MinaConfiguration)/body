@@ -4,14 +4,16 @@
   boolean transferExchange=configuration.isTransferExchange();
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
-  IoAcceptor acceptor=new DatagramAcceptor();
+  final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
+  IoAcceptor acceptor=new DatagramAcceptor(ExecutorServiceHelper.newCachedThreadPool("MinaDatagramAcceptor",true));
+  IoConnector connector=new DatagramConnector(ExecutorServiceHelper.newCachedThreadPool("MinaDatagramConnector",true));
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
-  IoConnector connector=new DatagramConnector();
   if (transferExchange) {
     throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
   }
   DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
   configureDataGramCodecFactory("MinaProducer",connectorConfig,configuration);
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }

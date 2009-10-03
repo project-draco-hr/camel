@@ -3,11 +3,14 @@
   long timeout=configuration.getTimeout();
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
-  IoAcceptor acceptor=new SocketAcceptor();
+  final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
+  IoAcceptor acceptor=new SocketAcceptor(processorCount,ExecutorServiceHelper.newCachedThreadPool("MinaSocketAcceptor",true));
+  IoConnector connector=new SocketConnector(processorCount,ExecutorServiceHelper.newCachedThreadPool("MinaSocketConnector",true));
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
-  IoConnector connector=new SocketConnector();
   SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
+  connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureCodecFactory("MinaProducer",connectorConfig,configuration);
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -17,6 +20,7 @@
   configureCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setReuseAddress(true);
   acceptorConfig.setDisconnectOnUnbind(true);
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
