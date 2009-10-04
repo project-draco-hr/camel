@@ -2,7 +2,7 @@
   super.start();
   LOG.debug("Starting routes...");
 synchronized (this) {
-    Map<Integer,KeyValueHolder<Route,Consumer>> inputs=new TreeMap<Integer,KeyValueHolder<Route,Consumer>>();
+    Map<Integer,StartupRouteHolder> inputs=new TreeMap<Integer,StartupRouteHolder>();
     for (    RouteService routeService : routeServices.values()) {
       Boolean autoStart=routeService.getRouteDefinition().isAutoStartup();
       if (autoStart == null || autoStart) {
@@ -13,18 +13,29 @@ synchronized (this) {
           if (startupOrder == null) {
             startupOrder=defaultRouteStartupOrder++;
           }
+          StartupRouteHolder holder=null;
           for (          Map.Entry<Route,Consumer> entry : routeService.getInputs().entrySet()) {
-            KeyValueHolder<Route,Consumer> holder=new KeyValueHolder<Route,Consumer>(entry.getKey(),entry.getValue());
-            if (inputs.containsKey(startupOrder)) {
-              if (LOG.isWarnEnabled()) {
-                LOG.warn("Another route has already startupOrder " + startupOrder + " which this route also want to use "+ entry.getKey().getId()+ ". Please correct startupOrder to be unique among your routes.");
-              }
-              startupOrder=defaultRouteStartupOrder++;
+            if (holder == null) {
+              holder=new StartupRouteHolder(startupOrder,entry.getKey());
             }
+            holder.addInput(entry.getValue());
+          }
+          StartupRouteHolder other=inputs.get(startupOrder);
+          if (other != null) {
+            String otherId=other.getRoute().getId();
+            throw new FailedToStartRouteException(holder.getRoute().getId(),"starupOrder clash. Route " + otherId + " already has startupOrder "+ startupOrder+ " configured which this route have as well. Please correct startupOrder to be unique among all your routes.");
+          }
+ else {
             inputs.put(startupOrder,holder);
           }
         }
-  finally {
+ catch (        FailedToStartRouteException e) {
+          throw e;
+        }
+catch (        Exception e) {
+          throw new FailedToStartRouteException(e);
+        }
+ finally {
           routeService.startInputs(true);
         }
       }
@@ -32,18 +43,20 @@ synchronized (this) {
         LOG.info("Cannot start route " + routeService.getId() + " as it is configured with auto startup disabled.");
       }
     }
-    for (    Map.Entry<Integer,KeyValueHolder<Route,Consumer>> entry : inputs.entrySet()) {
+    for (    Map.Entry<Integer,StartupRouteHolder> entry : inputs.entrySet()) {
       Integer order=entry.getKey();
-      Route route=entry.getValue().getKey();
-      Consumer consumer=entry.getValue().getValue();
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Starting consumer (order: " + order + ") on route: "+ route.getId());
+      Route route=entry.getValue().getRoute();
+      List<Consumer> consumers=entry.getValue().getInputs();
+      for (      Consumer consumer : consumers) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Starting consumer (order: " + order + ") on route: "+ route.getId());
+        }
+        for (        LifecycleStrategy strategy : lifecycleStrategies) {
+          strategy.onServiceAdd(this,consumer,route);
+        }
+        ServiceHelper.startService(consumer);
+        routeStartupOrder.add(consumer);
       }
-      for (      LifecycleStrategy strategy : lifecycleStrategies) {
-        strategy.onServiceAdd(this,consumer,route);
-      }
-      ServiceHelper.startService(consumer);
-      routeStartupOrder.add(consumer);
     }
   }
   if (LOG.isDebugEnabled()) {
