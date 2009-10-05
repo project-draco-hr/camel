@@ -1,0 +1,22 @@
+{
+  final DataSetEndpoint endpoint=new DataSetEndpoint();
+  endpoint.setCamelContext(context);
+  endpoint.setEndpointUriIfNotSpecified("dataset://foo");
+  endpoint.setDataSet(new SimpleDataSet(2));
+  endpoint.reset();
+  endpoint.setMinRate(1);
+  assertEquals(1,endpoint.getMinRate());
+  assertEquals(0,endpoint.getPreloadSize());
+  assertEquals(0,endpoint.getConsumeDelay());
+  assertEquals(3,endpoint.getProduceDelay());
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(endpoint).to("direct:foo");
+      from("direct:foo").to(endpoint);
+    }
+  }
+);
+  context.start();
+  endpoint.start();
+  endpoint.assertIsSatisfied();
+}

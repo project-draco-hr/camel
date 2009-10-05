@@ -1,0 +1,23 @@
+{
+  final DataSetEndpoint endpoint=new DataSetEndpoint("dataset://foo",new SimpleDataSet(10));
+  endpoint.setCamelContext(context);
+  endpoint.setEndpointUriIfNotSpecified("dataset://foo");
+  final AtomicBoolean reported=new AtomicBoolean(false);
+  endpoint.setReporter(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      reported.set(true);
+    }
+  }
+);
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(endpoint).to("direct:foo");
+      from("direct:foo").to(endpoint);
+    }
+  }
+);
+  context.start();
+  endpoint.start();
+  endpoint.assertIsSatisfied();
+  assertTrue(reported.get());
+}
