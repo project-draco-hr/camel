@@ -11,6 +11,7 @@
     throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
   }
   DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
+  connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureDataGramCodecFactory("MinaProducer",connectorConfig,configuration);
   connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
   if (minaLogger) {
@@ -19,8 +20,10 @@
   appendIoFiltersToChain(filters,connectorConfig.getFilterChain());
   connectorConfig.setConnectTimeout((int)(timeout / 1000));
   DatagramAcceptorConfig acceptorConfig=new DatagramAcceptorConfig();
+  acceptorConfig.setThreadModel(ThreadModel.MANUAL);
   configureDataGramCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setDisconnectOnUnbind(true);
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
