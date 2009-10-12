@@ -1,0 +1,19 @@
+{
+  DefaultValidationErrorHandler eh=new DefaultValidationErrorHandler();
+  eh.error(new SAXParseException("foo",createLocator(3,5)));
+  eh.error(new SAXParseException("bar",createLocator(9,12)));
+  eh.fatalError(new SAXParseException("cheese",createLocator(13,17)));
+  assertEquals(false,eh.isValid());
+  Exchange exchange=new DefaultExchange(context);
+  try {
+    eh.handleErrors(exchange,createScheme());
+    fail("Should have thrown an exception");
+  }
+ catch (  SchemaValidationException e) {
+    assertEquals(2,e.getErrors().size());
+    assertEquals(1,e.getFatalErrors().size());
+    assertEquals(0,e.getWarnings().size());
+    assertNotNull(e.getSchema());
+    assertNotNull(e.getExchange());
+  }
+}

@@ -1,0 +1,33 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  MockEndpoint traced=getMockEndpoint("mock:traced");
+  traced.expectedMessageCount(2);
+  template.send("direct:start",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.setPattern(ExchangePattern.InOut);
+      exchange.setProperty("foo",123);
+      exchange.getIn().setBody("Hello World");
+      exchange.getIn().setHeader("bar","456");
+      exchange.getOut().setBody("Bye World");
+      exchange.getOut().setHeader("cheese",789);
+    }
+  }
+);
+  assertMockEndpointsSatisfied();
+  DefaultTraceEventMessage em=traced.getReceivedExchanges().get(0).getIn().getBody(DefaultTraceEventMessage.class);
+  assertNotNull(em);
+  assertNotNull(em.getTimestamp());
+  assertEquals("direct://start",em.getFromEndpointUri());
+  assertEquals(null,em.getPreviousNode());
+  assertEquals("mock://foo",em.getToNode());
+  assertNotNull(em.getExchangeId());
+  assertNotNull(em.getShortExchangeId());
+  assertEquals("InOut",em.getExchangePattern());
+  assertEquals("{foo=123}",em.getProperties());
+  assertEquals("{bar=456}",em.getHeaders());
+  assertEquals("Hello World",em.getBody());
+  assertEquals("String",em.getBodyType());
+  assertEquals("Bye World",em.getOutBody());
+  assertEquals("String",em.getOutBodyType());
+  assertEquals("{cheese=789}",em.getOutHeaders());
+}
