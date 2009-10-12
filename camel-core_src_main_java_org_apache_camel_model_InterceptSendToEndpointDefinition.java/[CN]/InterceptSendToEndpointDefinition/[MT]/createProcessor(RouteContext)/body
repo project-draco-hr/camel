@@ -2,8 +2,10 @@
   final Processor detour=routeContext.createProcessor(this);
   routeContext.getCamelContext().addRegisterEndpointCallback(new EndpointStrategy(){
     public Endpoint registerEndpoint(    String uri,    Endpoint endpoint){
-      boolean match=getUri() == null || EndpointHelper.matchEndpoint(uri,getUri());
-      if (match) {
+      if (endpoint instanceof InterceptSendToEndpoint) {
+        return endpoint;
+      }
+ else       if (getUri() == null || EndpointHelper.matchEndpoint(uri,getUri())) {
         boolean skip=skipSendToOriginalEndpoint != null ? skipSendToOriginalEndpoint : false;
         InterceptSendToEndpoint proxy=new InterceptSendToEndpoint(endpoint,skip);
         proxy.setDetour(detour);
