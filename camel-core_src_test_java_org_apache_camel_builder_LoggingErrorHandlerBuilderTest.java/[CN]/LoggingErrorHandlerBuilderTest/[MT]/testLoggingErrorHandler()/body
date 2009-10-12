@@ -1,0 +1,21 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      LoggingErrorHandlerBuilder eh=loggingErrorHandler();
+      eh.setLevel(LoggingLevel.FATAL);
+      eh.setLog(LogFactory.getLog("foo"));
+      assertEquals(LoggingLevel.FATAL,eh.getLevel());
+      assertNotNull(eh.getLog());
+      assertFalse(eh.supportTransacted());
+      errorHandler(eh);
+      from("direct:start").to("mock:foo").throwException(new IllegalArgumentException("Damn"));
+    }
+  }
+);
+  context.start();
+  try {
+    template.sendBody("direct:start","Hello World");
+  }
+ catch (  Exception e) {
+  }
+}
