@@ -1,39 +1,22 @@
 {
-  this.exchange=exchange;
-  variableResolver.setExchange(exchange);
+  XPathExpression xpathExpression=pool.poll();
+  if (xpathExpression == null) {
+    LOG.trace("Creating new XPathExpression as none was available from pool");
+    try {
+      xpathExpression=createXPathExpression();
+    }
+ catch (    Exception e) {
+      throw new RuntimeExpressionException("Cannot create xpath expression",e);
+    }
+  }
+ else {
+    LOG.trace("Acquired XPathExpression from pool");
+  }
   try {
-    Object document=getDocument(exchange);
-    if (resultQName != null) {
-      if (document instanceof InputSource) {
-        InputSource inputSource=(InputSource)document;
-        return getExpression().evaluate(inputSource,resultQName);
-      }
- else       if (document instanceof DOMSource) {
-        DOMSource source=(DOMSource)document;
-        return getExpression().evaluate(source.getNode(),resultQName);
-      }
- else {
-        return getExpression().evaluate(document,resultQName);
-      }
-    }
- else {
-      if (document instanceof InputSource) {
-        InputSource inputSource=(InputSource)document;
-        return getExpression().evaluate(inputSource);
-      }
- else       if (document instanceof DOMSource) {
-        DOMSource source=(DOMSource)document;
-        return getExpression().evaluate(source.getNode());
-      }
- else {
-        return getExpression().evaluate(document);
-      }
-    }
+    return doInEvaluateAs(xpathExpression,exchange,resultQName);
   }
- catch (  XPathExpressionException e) {
-    throw new InvalidXPathExpression(getText(),e);
-  }
-catch (  XPathFactoryConfigurationException e) {
-    throw new InvalidXPathExpression(getText(),e);
+  finally {
+    pool.add(xpathExpression);
+    LOG.trace("Released XPathExpression back to pool");
   }
 }

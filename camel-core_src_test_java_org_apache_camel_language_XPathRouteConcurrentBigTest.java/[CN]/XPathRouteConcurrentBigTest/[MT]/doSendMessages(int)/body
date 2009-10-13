@@ -1,0 +1,26 @@
+{
+  LOG.info("Sending " + messageCount + " messages");
+  int forResult=(messageCount * 2 / 3) + messageCount % 3;
+  int forOther=messageCount - forResult;
+  long now=System.currentTimeMillis();
+  getMockEndpoint("mock:result").expectedMessageCount(forResult);
+  getMockEndpoint("mock:other").expectedMessageCount(forOther);
+  for (int i=0; i < messageCount; i++) {
+switch (i % 3) {
+case 0:
+      template.sendBody("seda:foo",XMLTEST1);
+    break;
+case 1:
+  template.sendBody("seda:foo",XMLTEST2);
+break;
+case 2:
+template.sendBody("seda:foo",XMLTEST3);
+break;
+default :
+break;
+}
+}
+LOG.info("Sent " + messageCount + " messages in "+ (System.currentTimeMillis() - now)+ " ms");
+assertMockEndpointsSatisfied();
+LOG.info("Processed " + messageCount + " messages in "+ (System.currentTimeMillis() - now)+ " ms");
+}

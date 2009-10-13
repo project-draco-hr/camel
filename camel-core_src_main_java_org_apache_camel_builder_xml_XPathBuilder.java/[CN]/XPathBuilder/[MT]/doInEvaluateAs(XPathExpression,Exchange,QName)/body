@@ -1,0 +1,43 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Evaluating exchange: " + exchange + " as: "+ resultQName);
+  }
+  Object answer;
+  this.exchange.set(exchange);
+  try {
+    Object document=getDocument(exchange);
+    if (resultQName != null) {
+      if (document instanceof InputSource) {
+        InputSource inputSource=(InputSource)document;
+        answer=xpathExpression.evaluate(inputSource,resultQName);
+      }
+ else       if (document instanceof DOMSource) {
+        DOMSource source=(DOMSource)document;
+        answer=xpathExpression.evaluate(source.getNode(),resultQName);
+      }
+ else {
+        answer=xpathExpression.evaluate(document,resultQName);
+      }
+    }
+ else {
+      if (document instanceof InputSource) {
+        InputSource inputSource=(InputSource)document;
+        answer=xpathExpression.evaluate(inputSource);
+      }
+ else       if (document instanceof DOMSource) {
+        DOMSource source=(DOMSource)document;
+        answer=xpathExpression.evaluate(source.getNode());
+      }
+ else {
+        answer=xpathExpression.evaluate(document);
+      }
+    }
+  }
+ catch (  XPathExpressionException e) {
+    throw new InvalidXPathExpression(getText(),e);
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Done evaluating exchange: " + exchange + " as: "+ resultQName+ " with result: "+ answer);
+  }
+  return answer;
+}
