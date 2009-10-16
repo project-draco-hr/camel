@@ -1,0 +1,39 @@
+{
+  final int numMsgs=10;
+  final int numThreads=10;
+  final AtomicLong total=new AtomicLong(0);
+  final String url=isParallel ? "direct:parallel" : "direct:sequential";
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(numThreads * numMsgs);
+  Runnable runner=new Runnable(){
+    public void run(){
+      try {
+        Processor processor=new Processor(){
+          public void process(          Exchange exchange){
+            Message in=exchange.getIn();
+            in.setBody("input");
+            in.setHeader("foo","bar");
+          }
+        }
+;
+        for (int count=0; count < numMsgs; count++) {
+          template.request(url,processor);
+        }
+        LOG.debug("Runner completed: " + total.incrementAndGet());
+      }
+ catch (      Exception e) {
+        fail(e.getMessage());
+      }
+    }
+  }
+;
+  ExecutorService executor=Executors.newCachedThreadPool();
+  for (int count=0; count < numThreads; count++) {
+    executor.execute(runner);
+  }
+  executor.shutdown();
+  while (!executor.isTerminated()) {
+    executor.awaitTermination(10,TimeUnit.SECONDS);
+  }
+  assertMockEndpointsSatisfied();
+}

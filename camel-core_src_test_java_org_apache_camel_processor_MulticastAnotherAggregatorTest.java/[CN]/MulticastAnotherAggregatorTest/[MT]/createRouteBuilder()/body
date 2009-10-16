@@ -1,7 +1,8 @@
 {
   return new RouteBuilder(){
     public void configure(){
-      ThreadPoolExecutor tpExecutor=new ThreadPoolExecutor(1,1,0,TimeUnit.MILLISECONDS,new ArrayBlockingQueue<Runnable>(10));
+      ThreadPoolExecutor tpExecutor=new ThreadPoolExecutor(1,10,0,TimeUnit.MILLISECONDS,new ArrayBlockingQueue<Runnable>(10));
+      tpExecutor.setRejectedExecutionHandler(new WorkQueuePolicy());
       from("direct:parallel").multicast(new BodyOutAggregatingStrategy(),true).executorService(tpExecutor).to("direct:x","direct:y","direct:z");
       from("direct:sequential").multicast(new BodyOutAggregatingStrategy()).to("direct:x","direct:y","direct:z");
       from("direct:x").process(new AppendingProcessor("x")).to("direct:aggregator");
