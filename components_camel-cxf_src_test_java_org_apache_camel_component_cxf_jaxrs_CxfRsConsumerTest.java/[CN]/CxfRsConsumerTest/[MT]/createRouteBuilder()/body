@@ -1,6 +1,7 @@
 {
   return new RouteBuilder(){
     public void configure(){
+      errorHandler(new NoErrorHandlerBuilder());
       from(CXF_RS_ENDPOINT_URI).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           Message inMessage=exchange.getIn();
@@ -10,11 +11,16 @@
             String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
             assertEquals("Get a wrong http method","GET",httpMethod);
             String uri=inMessage.getHeader(Exchange.HTTP_URI,String.class);
-            assertEquals("Get a wrong http uri","/customerservice/customers/126",uri);
-            Customer customer=new Customer();
-            customer.setId(Long.parseLong(id));
-            customer.setName("Willem");
-            exchange.getOut().setBody(customer);
+            if ("/customerservice/customers/126".equals(uri)) {
+              Customer customer=new Customer();
+              customer.setId(Long.parseLong(id));
+              customer.setName("Willem");
+              exchange.getOut().setBody(customer);
+            }
+ else {
+              Response r=Response.status(404).entity("Can't found the customer with uri " + uri).build();
+              throw new WebApplicationException(r);
+            }
           }
         }
       }
