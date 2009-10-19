@@ -1,22 +1,25 @@
 {
-  final Class<?> type=getEntityType();
-  if (type == null) {
-    return ExpressionBuilder.bodyExpression();
-  }
- else {
-    return new ExpressionAdapter(){
-      public Object evaluate(      Exchange exchange){
-        Object answer=exchange.getIn().getBody(type);
-        if (answer == null) {
-          Object defaultValue=exchange.getIn().getBody();
-          if (defaultValue != null) {
-            throw new RuntimeCamelException(new NoTypeConversionAvailableException(defaultValue,type));
-          }
-          answer=exchange.getContext().getInjector().newInstance(type);
+  return new ExpressionAdapter(){
+    public Object evaluate(    Exchange exchange){
+      Object answer;
+      try {
+        if (getEntityType() == null) {
+          answer=exchange.getIn().getMandatoryBody();
         }
+ else {
+          answer=exchange.getIn().getMandatoryBody(getEntityType());
+        }
+      }
+ catch (      InvalidPayloadException e) {
+        throw new InvalidPayloadRuntimeException(exchange,getEntityType());
+      }
+      if (answer == null) {
+        throw new InvalidPayloadRuntimeException(exchange,getEntityType());
+      }
+ else {
         return answer;
       }
     }
-;
   }
+;
 }
