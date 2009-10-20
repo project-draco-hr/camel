@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("jetty://http://localhost:9080/test?handlers=myAuthHandler").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          HttpServletRequest req=exchange.getIn().getBody(HttpServletRequest.class);
+          assertNotNull(req);
+          Principal user=req.getUserPrincipal();
+          assertNotNull(user);
+          assertEquals("donald",user.getName());
+        }
+      }
+).transform(constant("Bye World"));
+    }
+  }
+;
+}
