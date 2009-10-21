@@ -5,7 +5,7 @@
   }
   RuntimeCamelException rce=null;
   try {
-    Destination replyDestination=getReplyToDestination(message);
+    Object replyDestination=getReplyToDestination(message);
     final Exchange exchange=createExchange(message,replyDestination);
     if (eagerLoadingOfProperties) {
       exchange.getIn().getHeaders();
@@ -42,7 +42,12 @@
     }
     if (rce == null && sendReply && !disableReplyTo && exchange.getPattern().isOutCapable()) {
       LOG.trace("onMessage.sendReply START");
-      sendReply(replyDestination,message,exchange,body,cause);
+      if (replyDestination instanceof Destination) {
+        sendReply((Destination)replyDestination,message,exchange,body,cause);
+      }
+ else {
+        sendReply((String)replyDestination,message,exchange,body,cause);
+      }
       LOG.trace("onMessage.sendReply END");
     }
   }

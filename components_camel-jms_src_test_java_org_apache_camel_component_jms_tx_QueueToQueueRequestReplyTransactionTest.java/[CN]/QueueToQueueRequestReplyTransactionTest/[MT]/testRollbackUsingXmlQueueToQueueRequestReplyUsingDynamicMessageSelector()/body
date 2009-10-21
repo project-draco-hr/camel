@@ -1,11 +1,9 @@
 {
-  JmsComponent c=(JmsComponent)context.getComponent("activemq");
-  JmsComponent c1=(JmsComponent)context.getComponent("activemq-1");
   final ConditionalExceptionProcessor cp=new ConditionalExceptionProcessor(10);
   context.addRoutes(new SpringRouteBuilder(){
     @Override public void configure() throws Exception {
       Policy required=lookup("PROPAGATION_REQUIRED_POLICY",SpringTransactionPolicy.class);
-      from("activemq:queue:foo?replyTo=queue:foo.reply").policy(required).process(cp).to("activemq-1:queue:bar?replyTo=queue:bar.reply");
+      from("activemq:queue:foo").policy(required).process(cp).to("activemq-1:queue:bar?replyTo=queue:bar.reply");
       from("activemq-1:queue:bar").process(new Processor(){
         public void process(        Exchange e){
           String request=e.getIn().getBody(String.class);
