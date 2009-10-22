@@ -5,13 +5,15 @@
   Class<?> cls=null;
   if (getServiceClass() != null) {
     cls=ClassLoaderUtils.loadClass(getServiceClass(),getClass());
-  }
-  ClientProxyFactoryBean factoryBean=createClientFactoryBean(cls);
-  setupClientFactoryBean(factoryBean,cls);
-  if (cls == null) {
-    return (Client)factoryBean.create();
+    ClientProxyFactoryBean factoryBean=createClientFactoryBean(cls);
+    setupClientFactoryBean(factoryBean,cls);
+    return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
   }
  else {
-    return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
+    ObjectHelper.notNull(portName,"Please provide endpoint/port name");
+    ObjectHelper.notNull(serviceName,"Please provide service name");
+    ClientFactoryBean factoryBean=createClientFactoryBean();
+    setupClientFactoryBean(factoryBean);
+    return factoryBean.create();
   }
 }
