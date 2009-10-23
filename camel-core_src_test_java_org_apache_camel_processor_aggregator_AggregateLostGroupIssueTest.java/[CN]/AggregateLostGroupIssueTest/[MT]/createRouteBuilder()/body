@@ -1,0 +1,26 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("timer://foo?period=100").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody(messageIndex++);
+          exchange.getOut().setHeader("aggregateGroup","group1");
+        }
+      }
+).to("direct:aggregator");
+      from("direct:aggregator").aggregate(header("aggregateGroup"),new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          if (oldExchange == null) {
+            return newExchange;
+          }
+          String oldBody=oldExchange.getIn().getBody(String.class);
+          String newBody=newExchange.getIn().getBody(String.class);
+          oldExchange.getIn().setBody(oldBody + "," + newBody);
+          return oldExchange;
+        }
+      }
+).batchSize(10).batchTimeout(2000L).to("log:aggregated").to("mock:result");
+    }
+  }
+;
+}
