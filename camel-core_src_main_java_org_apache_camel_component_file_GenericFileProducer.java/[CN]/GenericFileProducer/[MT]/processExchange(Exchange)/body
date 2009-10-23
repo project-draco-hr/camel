@@ -9,6 +9,29 @@
     String tempTarget=null;
     if (writeAsTempAndRename) {
       tempTarget=createTempFileName(target);
+      if (operations.existsFile(target)) {
+        if (endpoint.getFileExist() == GenericFileExist.Ignore) {
+          if (log.isTraceEnabled()) {
+            log.trace("An existing file already exists: " + target + ". Ignore and do not override it.");
+          }
+          return;
+        }
+ else         if (endpoint.getFileExist() == GenericFileExist.Fail) {
+          throw new GenericFileOperationFailedException("File already exist: " + target + ". Cannot write new file.");
+        }
+ else         if (endpoint.getFileExist() == GenericFileExist.Override) {
+          if (log.isTraceEnabled()) {
+            log.trace("Deleting existing file: " + tempTarget);
+          }
+          operations.deleteFile(target);
+        }
+      }
+      if (operations.existsFile(tempTarget)) {
+        if (log.isTraceEnabled()) {
+          log.trace("Deleting existing temp file: " + tempTarget);
+        }
+        operations.deleteFile(tempTarget);
+      }
     }
     writeFile(exchange,tempTarget != null ? tempTarget : target);
     if (tempTarget != null) {
