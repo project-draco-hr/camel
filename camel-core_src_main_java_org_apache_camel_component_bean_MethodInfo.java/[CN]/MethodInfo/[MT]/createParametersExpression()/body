@@ -29,13 +29,14 @@
           if (expression != null) {
             Object result=expression.evaluate(exchange,Object.class);
             if (result != null) {
-              value=exchange.getContext().getTypeConverter().convertTo(parameters.get(i).getType(),result);
-              if (LOG.isTraceEnabled()) {
-                LOG.trace("Parameter #" + i + " evaluated as: "+ value+ " type: "+ ObjectHelper.type(value));
+              try {
+                value=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameters.get(i).getType(),result);
+                if (LOG.isTraceEnabled()) {
+                  LOG.trace("Parameter #" + i + " evaluated as: "+ value+ " type: "+ ObjectHelper.type(value));
+                }
               }
-              if (value == null) {
-                Exception e=new NoTypeConversionAvailableException(result,parameters.get(i).getType());
-                throw ObjectHelper.wrapRuntimeCamelException(e);
+ catch (              NoTypeConversionAvailableException e) {
+                throw ObjectHelper.wrapCamelExecutionException(exchange,e);
               }
             }
  else {
