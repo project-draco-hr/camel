@@ -1,0 +1,15 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:error");
+  mock.expectedMessageCount(1);
+  try {
+    template.sendBody("direct:fail","Hello World");
+  }
+ catch (  RuntimeCamelException e) {
+    assertIsInstanceOf(TransactedRuntimeCamelException.class,e.getCause());
+    RollbackExchangeException rollback=assertIsInstanceOf(RollbackExchangeException.class,e.getCause().getCause());
+    assertEquals("Donkey in Action",rollback.getExchange().getIn().getBody());
+  }
+  assertMockEndpointsSatisfied();
+  int count=jdbc.queryForInt("select count(*) from books");
+  assertEquals("Number of books",1,count);
+}
