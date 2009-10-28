@@ -1,0 +1,35 @@
+{
+  DataSource ds=null;
+  if (o instanceof StreamSource) {
+    StreamSource src=(StreamSource)o;
+    try {
+      if (src.getInputStream() != null) {
+        ByteArrayOutputStream bos=new ByteArrayOutputStream(2048);
+        IOUtils.copy(src.getInputStream(),bos,1024);
+        ds=new ByteArrayDataSource(bos.toByteArray(),ct);
+      }
+ else {
+        ds=new ByteArrayDataSource(IOUtils.toString(src.getReader()),ct);
+      }
+    }
+ catch (    IOException e) {
+      throw new Fault(e);
+    }
+  }
+ else {
+    StringWriter stringWriter=new StringWriter();
+    XMLStreamWriter writer=StaxUtils.createXMLStreamWriter(stringWriter);
+    try {
+      StaxUtils.copy((Source)o,writer);
+      writer.flush();
+      ds=new ByteArrayDataSource(stringWriter.toString(),ct);
+    }
+ catch (    XMLStreamException e1) {
+      throw new Fault(e1);
+    }
+catch (    IOException e) {
+      throw new Fault(e);
+    }
+  }
+  return ds;
+}

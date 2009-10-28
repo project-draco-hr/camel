@@ -2,4 +2,16 @@
   Map<String,Object> camelHeaders=camelExchange.getIn().getHeaders();
   extractInvocationContextFromCamel(camelExchange,camelHeaders,requestContext,Client.REQUEST_CONTEXT);
   propagateHeadersFromCamelToCxf(camelExchange,camelHeaders,cxfExchange,requestContext);
+  Set<Attachment> attachments=null;
+  for (  Map.Entry<String,DataHandler> entry : camelExchange.getIn().getAttachments().entrySet()) {
+    if (attachments == null) {
+      attachments=new HashSet<Attachment>();
+    }
+    AttachmentImpl attachment=new AttachmentImpl(entry.getKey(),entry.getValue());
+    attachment.setXOP(true);
+    attachments.add(attachment);
+  }
+  if (attachments != null) {
+    requestContext.put(CxfConstants.ATTACHMENTS_PROP_KEY,attachments);
+  }
 }
