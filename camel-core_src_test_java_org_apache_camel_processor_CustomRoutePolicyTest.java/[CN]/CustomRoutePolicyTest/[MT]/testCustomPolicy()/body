@@ -1,0 +1,16 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello World");
+  template.sendBody("seda:foo","Hello World");
+  assertMockEndpointsSatisfied();
+  mock.reset();
+  mock.expectedBodiesReceived("stop");
+  template.sendBody("seda:foo","stop");
+  Thread.sleep(500);
+  template.sendBody("seda:foo","Bye World");
+  assertMockEndpointsSatisfied();
+  mock.reset();
+  mock.expectedBodiesReceived("Bye World");
+  context.getRoutes().get(0).getConsumer().start();
+  assertMockEndpointsSatisfied();
+}
