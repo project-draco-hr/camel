@@ -1,0 +1,27 @@
+{
+  System.out.println("Notice this client requires that the CamelServer is already running!");
+  ApplicationContext context=new ClassPathXmlApplicationContext("camel-client.xml");
+  final ProducerTemplate producer=(ProducerTemplate)context.getBean("camelTemplate");
+  System.out.println("Sending ...");
+  final CountDownLatch latch=new CountDownLatch(POOL);
+  ExecutorService executors=Executors.newFixedThreadPool(POOL);
+  for (int i=0; i < POOL; i++) {
+    final Integer idx=i;
+    executors.execute(new Runnable(){
+      public void run(){
+        try {
+          for (int j=0; j < SIZE / POOL; j++) {
+            producer.sendBody("jms:queue:inbox","Message " + idx.intValue() * j + j);
+          }
+        }
+  finally {
+          latch.countDown();
+        }
+      }
+    }
+);
+  }
+  latch.await(300,TimeUnit.SECONDS);
+  System.out.println("... Send " + SIZE + " message to JMS broker");
+  System.exit(0);
+}
