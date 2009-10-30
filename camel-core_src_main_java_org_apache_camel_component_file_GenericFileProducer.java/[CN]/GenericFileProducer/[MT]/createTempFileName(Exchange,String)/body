@@ -1,0 +1,21 @@
+{
+  fileName=normalizePath(fileName);
+  String tempName;
+  if (exchange.getIn().getHeader(Exchange.FILE_NAME) == null) {
+    exchange.getIn().setHeader(Exchange.FILE_NAME,FileUtil.stripPath(fileName));
+    tempName=endpoint.getTempFileName().evaluate(exchange,String.class);
+    exchange.getIn().removeHeader(Exchange.FILE_NAME);
+  }
+ else {
+    tempName=endpoint.getTempFileName().evaluate(exchange,String.class);
+  }
+  int path=fileName.lastIndexOf(getFileSeparator());
+  if (path == -1) {
+    return tempName;
+  }
+ else {
+    StringBuilder sb=new StringBuilder(fileName.substring(0,path + 1));
+    sb.append(tempName);
+    return sb.toString();
+  }
+}
