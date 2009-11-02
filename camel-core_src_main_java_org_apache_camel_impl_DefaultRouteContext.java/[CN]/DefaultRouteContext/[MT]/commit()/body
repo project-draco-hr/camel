@@ -4,8 +4,17 @@
     Processor unitOfWorkProcessor=new UnitOfWorkProcessor(processor);
     Processor target=unitOfWorkProcessor;
     RoutePolicyProcessor routePolicyProcessor=null;
-    if (getRoutePolicy() != null) {
-      routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,getRoutePolicy());
+    RoutePolicy policy=getRoutePolicy();
+    if (policy != null) {
+      routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,policy);
+      if (!camelContext.hasService(policy)) {
+        try {
+          camelContext.addService(policy);
+        }
+ catch (        Exception e) {
+          throw ObjectHelper.wrapRuntimeCamelException(e);
+        }
+      }
       target=routePolicyProcessor;
     }
     InstrumentationProcessor wrapper=new InstrumentationProcessor();

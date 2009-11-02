@@ -1,14 +1,16 @@
 {
-  routePolicy.onExchangeBegin(route,exchange);
-  exchange.addOnCompletion(new SynchronizationAdapter(){
-    @Override public void onDone(    Exchange exchange){
-      if (isCamelStopping(exchange.getContext())) {
-        return;
+  if (isRoutePolicyRunAllowed()) {
+    routePolicy.onExchangeBegin(route,exchange);
+    exchange.addOnCompletion(new SynchronizationAdapter(){
+      @Override public void onDone(      Exchange exchange){
+        if (isCamelStopping(exchange.getContext())) {
+          return;
+        }
+        routePolicy.onExchangeDone(route,exchange);
       }
-      routePolicy.onExchangeDone(route,exchange);
     }
-  }
 );
+  }
   if (processor != null) {
     processor.process(exchange);
   }
