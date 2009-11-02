@@ -1,5 +1,8 @@
 {
   if (suspended) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Cannot start to poll: " + this.getEndpoint() + " as its suspended");
+    }
     return;
   }
   int retryCounter=-1;
@@ -7,7 +10,7 @@
   while (!done) {
     try {
       done=true;
-      if (isRunAllowed()) {
+      if (isRunAllowed() && !isSuspended()) {
         if (retryCounter == -1) {
           if (LOG.isTraceEnabled()) {
             LOG.trace("Starting to poll: " + this.getEndpoint());
@@ -25,6 +28,9 @@
         poll();
         pollStrategy.commit(this,getEndpoint());
       }
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Finished polling: " + this.getEndpoint());
+      }
     }
  catch (    Exception e) {
       try {
@@ -37,8 +43,5 @@
         throw ObjectHelper.wrapRuntimeCamelException(re);
       }
     }
-  }
-  if (LOG.isTraceEnabled()) {
-    LOG.trace("Finished polling: " + this.getEndpoint());
   }
 }
