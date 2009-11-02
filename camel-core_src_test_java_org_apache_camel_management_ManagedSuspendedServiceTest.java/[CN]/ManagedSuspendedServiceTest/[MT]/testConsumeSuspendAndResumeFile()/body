@@ -1,0 +1,31 @@
+{
+  deleteDirectory("target/suspended");
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=consumers,*"),null);
+  assertEquals(1,set.size());
+  ObjectName on=set.iterator().next();
+  boolean registered=mbeanServer.isRegistered(on);
+  assertEquals("Should be registered",true,registered);
+  Boolean ss=(Boolean)mbeanServer.getAttribute(on,"SupportSuspension");
+  assertEquals(true,ss.booleanValue());
+  Boolean suspended=(Boolean)mbeanServer.getAttribute(on,"Suspended");
+  assertEquals(false,suspended.booleanValue());
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Bye World");
+  template.sendBodyAndHeader("file://target/suspended","Bye World",Exchange.FILE_NAME,"bye.txt");
+  template.sendBodyAndHeader("file://target/suspended","Hello World",Exchange.FILE_NAME,"hello.txt");
+  assertMockEndpointsSatisfied();
+  Thread.sleep(1000);
+  suspended=(Boolean)mbeanServer.getAttribute(on,"Suspended");
+  assertEquals(true,suspended.booleanValue());
+  File file=new File("target/suspended/hello.txt").getAbsoluteFile();
+  assertEquals("The file should exists",true,file.exists());
+  mock.reset();
+  mock.expectedBodiesReceived("Hello World");
+  mbeanServer.invoke(on,"resume",null,null);
+  assertMockEndpointsSatisfied();
+  suspended=(Boolean)mbeanServer.getAttribute(on,"Suspended");
+  assertEquals(false,suspended.booleanValue());
+  Thread.sleep(500);
+  assertEquals("The file should not exists",false,file.exists());
+}

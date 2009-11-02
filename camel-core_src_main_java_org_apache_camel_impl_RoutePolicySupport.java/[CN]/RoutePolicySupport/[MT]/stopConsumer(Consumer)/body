@@ -1,35 +1,7 @@
 {
-  if (consumer instanceof SuspendableService) {
-    SuspendableService ss=(SuspendableService)consumer;
-    if (!ss.isSuspended()) {
-      ss.suspend();
-      if (log.isDebugEnabled()) {
-        log.debug("Suspending consumer " + consumer);
-      }
-      return true;
-    }
- else {
-      return false;
-    }
+  boolean suspended=ServiceHelper.suspendService(consumer);
+  if (suspended && log.isDebugEnabled()) {
+    log.debug("Suspended consumer " + consumer);
   }
- else   if (consumer instanceof ServiceSupport) {
-    ServiceSupport ss=(ServiceSupport)consumer;
-    if (ss.getStatus().isStoppable()) {
-      if (log.isDebugEnabled()) {
-        log.debug("Stopping consumer " + consumer);
-      }
-      consumer.stop();
-      return true;
-    }
- else {
-      return false;
-    }
-  }
- else {
-    if (log.isDebugEnabled()) {
-      log.debug("Stopping consumer " + consumer);
-    }
-    ServiceHelper.stopService(consumer);
-    return true;
-  }
+  return suspended;
 }
