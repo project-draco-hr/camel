@@ -10,7 +10,7 @@
     }
   }
  catch (  IOException ioe) {
-    log.warn("Could not read package: " + packageName,ioe);
+    log.warn("Cannot read package: " + packageName,ioe);
     return;
   }
   while (urls.hasMoreElements()) {
@@ -23,7 +23,7 @@
       String urlPath=url.getFile();
       urlPath=URLDecoder.decode(urlPath,"UTF-8");
       if (log.isTraceEnabled()) {
-        log.trace("Decoded urlPath: " + urlPath);
+        log.trace("Decoded urlPath: " + urlPath + " with protocol: "+ url.getProtocol());
       }
       boolean isLocalFileSystem="file".equals(url.getProtocol());
       if (urlPath.startsWith("file:")) {
@@ -45,35 +45,38 @@
         urlPath=urlPath.substring(0,urlPath.indexOf('!'));
       }
       if (log.isTraceEnabled()) {
+        log.trace("isLocalFileSystem: " + isLocalFileSystem);
         log.trace("Scanning for classes in [" + urlPath + "] matching criteria: "+ test);
       }
       File file=new File(urlPath);
       if (file.isDirectory()) {
         if (log.isTraceEnabled()) {
-          log.trace("Loading from directory: " + file);
+          log.trace("Loading from directory using file: " + file);
         }
         loadImplementationsInDirectory(test,packageName,file,classes);
       }
  else {
         InputStream stream;
         if (!isLocalFileSystem) {
-          log.debug("The current jar is accessed via http");
+          if (log.isTraceEnabled()) {
+            log.trace("Loading from jar using http/https: " + urlPath);
+          }
           URL urlStream=new URL(urlPath);
           URLConnection con=urlStream.openConnection();
           con.setUseCaches(false);
           stream=con.getInputStream();
         }
  else {
+          if (log.isTraceEnabled()) {
+            log.trace("Loading from jar using file: " + file);
+          }
           stream=new FileInputStream(file);
-        }
-        if (log.isTraceEnabled()) {
-          log.trace("Loading from jar: " + file);
         }
         loadImplementationsInJar(test,packageName,stream,urlPath,classes);
       }
     }
  catch (    IOException e) {
-      log.debug("Could not read entries in url: " + url,e);
+      log.debug("Cannot read entries in url: " + url,e);
     }
   }
 }
