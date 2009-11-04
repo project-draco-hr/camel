@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("activemq:queue:foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          thread1=Thread.currentThread().getName();
+        }
+      }
+).transacted().threads(5).waitForTaskToComplete(WaitForTaskToComplete.Always).to("mock:async").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          thread2=Thread.currentThread().getName();
+          if (counter++ == 0) {
+            throw new IllegalAccessException("Damn");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}

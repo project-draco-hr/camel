@@ -1,0 +1,10 @@
+{
+  counter=0;
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  getMockEndpoint("mock:async").expectedMessageCount(2);
+  getMockEndpoint("mock:async").message(0).header("JMSRedelivered").isEqualTo(false);
+  getMockEndpoint("mock:async").message(1).header("JMSRedelivered").isEqualTo(true);
+  template.sendBody("activemq:queue:foo","Bye World");
+  assertMockEndpointsSatisfied();
+  assertNotSame("Should use a different thread when doing async routing",thread1,thread2);
+}
