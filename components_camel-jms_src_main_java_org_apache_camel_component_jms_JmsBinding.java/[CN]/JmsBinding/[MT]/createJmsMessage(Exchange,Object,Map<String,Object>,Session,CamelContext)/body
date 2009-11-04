@@ -60,7 +60,15 @@ case Map:
     return message;
   }
 case Object:
-Serializable payload=context.getTypeConverter().convertTo(Serializable.class,exchange,body);
+Serializable payload;
+try {
+payload=context.getTypeConverter().mandatoryConvertTo(Serializable.class,exchange,body);
+}
+ catch (NoTypeConversionAvailableException e) {
+JMSException cause=new MessageFormatException(e.getMessage());
+cause.initCause(e);
+throw cause;
+}
 return session.createObjectMessage(payload);
 default :
 break;
