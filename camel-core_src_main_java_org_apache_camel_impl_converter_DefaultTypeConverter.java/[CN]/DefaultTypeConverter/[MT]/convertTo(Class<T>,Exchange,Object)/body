@@ -3,10 +3,11 @@
   try {
     answer=doConvertTo(type,exchange,value);
   }
- catch (  CamelExecutionException e) {
-    throw e;
-  }
-catch (  Exception e) {
+ catch (  Exception e) {
+    boolean execution=ObjectHelper.getException(ExecutionException.class,e) != null || ObjectHelper.getException(CamelExecutionException.class,e) != null;
+    if (execution) {
+      throw ObjectHelper.wrapCamelExecutionException(exchange,e);
+    }
     if (LOG.isDebugEnabled()) {
       LOG.debug(NoTypeConversionAvailableException.createMessage(value,type) + " Caused by: " + e.getMessage()+ ". Will ignore this and continue.");
     }
