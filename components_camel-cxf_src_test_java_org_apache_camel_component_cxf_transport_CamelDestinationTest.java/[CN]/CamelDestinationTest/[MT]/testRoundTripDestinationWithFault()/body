@@ -6,6 +6,7 @@
   final Message outMessage=new MessageImpl();
   endpointInfo.setAddress("camel://direct:EndpointA");
   final CamelDestination destination=setupCamelDestination(endpointInfo,true);
+  destination.setCheckException(true);
   MessageObserver observer=new MessageObserver(){
     public void onMessage(    Message m){
       try {
@@ -16,7 +17,8 @@
         Conduit backConduit;
         backConduit=destination.getBackChannel(m,null,null);
         Message replyMessage=new MessageImpl();
-        sendoutMessage(backConduit,replyMessage,true,"HelloWorld Response");
+        replyMessage.setContent(Exception.class,new RuntimeCamelException());
+        sendoutMessage(backConduit,replyMessage,true,"HelloWorld Fault");
       }
  catch (      Exception e) {
         throw new RuntimeException(e);
@@ -25,10 +27,10 @@
   }
 ;
   MockEndpoint error=(MockEndpoint)context.getEndpoint("mock:error");
-  error.expectedMessageCount(0);
+  error.expectedMessageCount(1);
   destination.setMessageObserver(observer);
   sendoutMessage(conduit,outMessage,false,"HelloWorld");
-  verifyReceivedMessage(inMessage,"HelloWorld Response");
+  verifyReceivedMessage(inMessage,"HelloWorld Fault");
   error.assertIsSatisfied();
   destination.shutdown();
 }
