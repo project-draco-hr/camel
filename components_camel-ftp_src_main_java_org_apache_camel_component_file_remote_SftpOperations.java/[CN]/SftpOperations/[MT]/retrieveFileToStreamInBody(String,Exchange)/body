@@ -1,13 +1,17 @@
 {
+  OutputStream os=null;
   try {
+    os=new ByteArrayOutputStream();
     GenericFile<ChannelSftp.LsEntry> target=(GenericFile<ChannelSftp.LsEntry>)exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);
     ObjectHelper.notNull(target,"Exchange should have the " + FileComponent.FILE_EXCHANGE_FILE + " set");
-    OutputStream os=new ByteArrayOutputStream();
     target.setBody(os);
     channel.get(name,os);
     return true;
   }
  catch (  SftpException e) {
     throw new GenericFileOperationFailedException("Cannot retrieve file: " + name,e);
+  }
+ finally {
+    ObjectHelper.close(os,"retrieve: " + name,LOG);
   }
 }

@@ -11,8 +11,9 @@
       throw new GenericFileOperationFailedException("File already exist: " + name + ". Cannot write new file.");
     }
   }
-  InputStream is=exchange.getIn().getBody(InputStream.class);
+  InputStream is=null;
   try {
+    is=exchange.getIn().getMandatoryBody(InputStream.class);
     if (endpoint.getFileExist() == GenericFileExist.Append) {
       return client.appendFile(name,is);
     }
@@ -22,6 +23,9 @@
   }
  catch (  IOException e) {
     throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+  }
+catch (  InvalidPayloadException e) {
+    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
   }
  finally {
     ObjectHelper.close(is,"store: " + name,LOG);

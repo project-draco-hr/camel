@@ -11,13 +11,14 @@
       throw new GenericFileOperationFailedException("File already exist: " + name + ". Cannot write new file.");
     }
   }
+  InputStream is=null;
   try {
-    InputStream in=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
+    is=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
     if (endpoint.getFileExist() == GenericFileExist.Append) {
-      channel.put(in,name,ChannelSftp.APPEND);
+      channel.put(is,name,ChannelSftp.APPEND);
     }
  else {
-      channel.put(in,name);
+      channel.put(is,name);
     }
     return true;
   }
@@ -26,5 +27,8 @@
   }
 catch (  InvalidPayloadException e) {
     throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
+  }
+ finally {
+    ObjectHelper.close(is,"store: " + name,LOG);
   }
 }
