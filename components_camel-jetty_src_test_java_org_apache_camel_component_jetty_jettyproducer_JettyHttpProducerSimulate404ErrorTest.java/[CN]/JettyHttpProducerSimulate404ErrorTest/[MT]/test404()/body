@@ -1,0 +1,16 @@
+{
+  Exchange exchange=template.request(url,null);
+  assertNotNull(exchange);
+  Future<String> future=exchange.getOut().getBody(Future.class);
+  assertNotNull(future);
+  assertEquals(false,future.isDone());
+  try {
+    future.get();
+  }
+ catch (  ExecutionException e) {
+    JettyHttpOperationFailedException cause=assertIsInstanceOf(JettyHttpOperationFailedException.class,e.getCause());
+    assertEquals(404,cause.getStatusCode());
+    assertEquals("http//0.0.0.0:9123/bar",cause.getUrl());
+    assertEquals("Page not found",cause.getResponseBody());
+  }
+}
