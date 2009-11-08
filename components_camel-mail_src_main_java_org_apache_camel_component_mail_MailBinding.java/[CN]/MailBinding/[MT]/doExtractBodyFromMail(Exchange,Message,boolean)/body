@@ -1,0 +1,23 @@
+{
+  try {
+    return message.getContent();
+  }
+ catch (  Exception e) {
+    UnsupportedEncodingException uee=ObjectHelper.getException(UnsupportedEncodingException.class,e);
+    if (firstAttempt && uee != null) {
+      LOG.debug("Unsupported encoding detected: " + uee.getMessage());
+      try {
+        String contentType=message.getContentType();
+        String type=ObjectHelper.before(contentType,"charset=");
+        if (type != null) {
+          message.setHeader("Content-Type",type);
+          LOG.debug("Trying to extract mail message again with fixed Content-Type: " + type);
+          return doExtractBodyFromMail(exchange,message,false);
+        }
+      }
+ catch (      Exception e2) {
+      }
+    }
+    throw new RuntimeCamelException("Failed to extract body due to: " + e.getMessage() + ". Exchange: "+ exchange+ ". Message: "+ message,e);
+  }
+}
