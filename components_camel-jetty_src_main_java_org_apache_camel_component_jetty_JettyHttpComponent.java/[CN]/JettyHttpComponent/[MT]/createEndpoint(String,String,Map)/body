@@ -1,7 +1,5 @@
 {
   uri=uri.startsWith("jetty:") ? remaining : uri;
-  HttpClientParams params=new HttpClientParams();
-  IntrospectionSupport.setProperties(params,parameters,"httpClient.");
   List<Handler> handlerList=new ArrayList<Handler>();
   String handlers=getAndRemoveParameter(parameters,"handlers",String.class);
   if (handlers != null) {
@@ -11,7 +9,7 @@
     }
   }
   configureParameters(parameters);
-  JettyHttpEndpoint result=new JettyHttpEndpoint(this,uri,null,params,getHttpConnectionManager(),httpClientConfigurer);
+  JettyHttpEndpoint result=new JettyHttpEndpoint(this,uri,null);
   if (httpBinding != null) {
     result.setBinding(httpBinding);
   }
@@ -20,6 +18,11 @@
     result.setHandlers(handlerList);
   }
   setProperties(result,parameters);
+  if (IntrospectionSupport.hasProperties(parameters,"httpClient.")) {
+    result.setClient(getHttpClient());
+    IntrospectionSupport.setProperties(getHttpClient(),parameters,"httpClient.");
+    validateParameters(uri,parameters,"httpClient.");
+  }
   URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encode(uri)),parameters);
   result.setHttpUri(httpUri);
   return result;
