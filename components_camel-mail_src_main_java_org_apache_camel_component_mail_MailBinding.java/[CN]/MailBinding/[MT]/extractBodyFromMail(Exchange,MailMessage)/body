@@ -1,18 +1,22 @@
 {
+  Message message=mailMessage.getMessage();
   try {
     return message.getContent();
   }
  catch (  Exception e) {
     UnsupportedEncodingException uee=ObjectHelper.getException(UnsupportedEncodingException.class,e);
-    if (firstAttempt && uee != null) {
+    if (uee != null) {
       LOG.debug("Unsupported encoding detected: " + uee.getMessage());
       try {
         String contentType=message.getContentType();
         String type=ObjectHelper.before(contentType,"charset=");
         if (type != null) {
-          message.setHeader("Content-Type",type);
           LOG.debug("Trying to extract mail message again with fixed Content-Type: " + type);
-          return doExtractBodyFromMail(exchange,message,false);
+          MimeMessage messageCopy=new MimeMessage((MimeMessage)message);
+          messageCopy.setHeader("Content-Type",type);
+          Object body=messageCopy.getContent();
+          mailMessage.setMessage(messageCopy);
+          return body;
         }
       }
  catch (      Exception e2) {
