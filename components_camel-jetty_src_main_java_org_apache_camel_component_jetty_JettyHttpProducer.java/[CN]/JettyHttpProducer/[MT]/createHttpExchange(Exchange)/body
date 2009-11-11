@@ -5,6 +5,26 @@
   JettyContentExchange httpExchange=new JettyContentExchange(exchange,getBinding(),client);
   httpExchange.setMethod(method);
   httpExchange.setURL(url);
+  if (HttpMethods.POST.equals(methodToUse)) {
+    String contentType=ExchangeHelper.getContentType(exchange);
+    if (contentType != null) {
+      httpExchange.setRequestContentType(contentType);
+    }
+    String data=exchange.getIn().getBody(String.class);
+    if (data != null) {
+      String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
+      if (charset != null) {
+        httpExchange.setRequestContent(new ByteArrayBuffer(data,charset));
+      }
+ else {
+        httpExchange.setRequestContent(new ByteArrayBuffer(data));
+      }
+    }
+ else {
+      InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,exchange,exchange.getIn().getBody());
+      httpExchange.setRequestContentSource(is);
+    }
+  }
   doSetQueryParameters(exchange,httpExchange);
   Message in=exchange.getIn();
   HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
