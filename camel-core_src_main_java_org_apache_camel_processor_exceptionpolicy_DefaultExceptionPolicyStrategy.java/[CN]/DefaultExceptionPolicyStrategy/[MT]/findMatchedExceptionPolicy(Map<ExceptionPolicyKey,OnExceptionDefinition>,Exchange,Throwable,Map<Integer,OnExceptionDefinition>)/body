@@ -5,7 +5,7 @@
   int targetLevel=getInheritanceLevel(exception.getClass());
   OnExceptionDefinition candidate=null;
   int candidateDiff=Integer.MAX_VALUE;
-  Set<Map.Entry<ExceptionPolicyKey,OnExceptionDefinition>> entries=exceptionPolicices.entrySet();
+  Set<Map.Entry<ExceptionPolicyKey,OnExceptionDefinition>> entries=exceptionPolicies.entrySet();
   for (  Map.Entry<ExceptionPolicyKey,OnExceptionDefinition> entry : entries) {
     Class clazz=entry.getKey().getExceptionClass();
     OnExceptionDefinition type=entry.getValue();
@@ -18,6 +18,7 @@
       }
       if (clazz.equals(exception.getClass())) {
         candidate=type;
+        candidateDiff=0;
         break;
       }
       int level=getInheritanceLevel(clazz);
@@ -28,13 +29,22 @@
       }
     }
   }
-  if (LOG.isTraceEnabled()) {
-    if (candidate != null) {
-      LOG.trace("Using " + candidate + " as the exception policy");
+  if (candidate != null) {
+    if (!candidates.containsKey(candidateDiff)) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Adding " + candidate + " as candidate at level "+ candidateDiff);
+      }
+      candidates.put(candidateDiff,candidate);
     }
  else {
-      LOG.trace("No candidate found to be used as exception policy");
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Existing candidate " + candidates.get(candidateDiff) + " takes precedence over "+ candidate+ " at level "+ candidateDiff);
+      }
     }
   }
-  return candidate;
+  boolean exactMatch=candidateDiff == 0;
+  if (LOG.isTraceEnabled() && exactMatch) {
+    LOG.trace("Exact match found for candidate: " + candidate);
+  }
+  return exactMatch;
 }

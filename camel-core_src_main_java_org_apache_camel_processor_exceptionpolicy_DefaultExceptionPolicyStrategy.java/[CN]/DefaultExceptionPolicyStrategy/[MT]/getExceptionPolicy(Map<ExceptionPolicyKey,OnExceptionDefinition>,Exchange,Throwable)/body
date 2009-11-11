@@ -1,10 +1,17 @@
 {
+  Map<Integer,OnExceptionDefinition> candidates=new TreeMap<Integer,OnExceptionDefinition>();
+  boolean exactMatch=false;
   Iterator<Throwable> it=createExceptionIterator(exception);
-  while (it.hasNext()) {
-    OnExceptionDefinition type=findMatchedExceptionPolicy(exceptionPolicices,exchange,it.next());
-    if (type != null) {
-      return type;
-    }
+  while (!exactMatch && it.hasNext()) {
+    exactMatch=findMatchedExceptionPolicy(exceptionPolicies,exchange,it.next(),candidates);
   }
-  return null;
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Found " + candidates.size() + " candidates");
+  }
+  if (candidates.isEmpty()) {
+    return null;
+  }
+ else {
+    return candidates.values().iterator().next();
+  }
 }
