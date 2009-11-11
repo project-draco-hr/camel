@@ -1,5 +1,23 @@
 {
   HttpClient client=getEndpoint().getClient();
-  JettyContentExchange httpExchange=createHttpExchange(exchange);
-  sendAsynchronous(exchange,client,httpExchange,callback);
+  final JettyContentExchange httpExchange=createHttpExchange(exchange);
+  AsyncCallback wrapped=new AsyncCallback(){
+    public void onTaskCompleted(    Exchange exchange){
+      try {
+        getBinding().populateResponse(exchange,httpExchange);
+      }
+ catch (      JettyHttpOperationFailedException e) {
+        exchange.setException(e);
+      }
+catch (      Exception e) {
+        LOG.error("Error populating response from " + httpExchange.getUrl() + " on Exchange "+ exchange,e);
+        exchange.setException(e);
+      }
+ finally {
+        callback.onTaskCompleted(exchange);
+      }
+    }
+  }
+;
+  sendAsynchronous(exchange,client,httpExchange,wrapped);
 }

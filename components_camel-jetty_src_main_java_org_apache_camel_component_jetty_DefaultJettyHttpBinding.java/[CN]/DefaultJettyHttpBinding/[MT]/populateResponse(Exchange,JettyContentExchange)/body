@@ -1,0 +1,18 @@
+{
+  int responseCode=httpExchange.getResponseStatus();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("HTTP responseCode: " + responseCode);
+  }
+  Message in=exchange.getIn();
+  if (!isThrowExceptionOnFailure()) {
+    populateResponse(exchange,httpExchange,exchange.getIn(),getHeaderFilterStrategy(),responseCode);
+  }
+ else {
+    if (responseCode >= 100 && responseCode < 300) {
+      populateResponse(exchange,httpExchange,in,getHeaderFilterStrategy(),responseCode);
+    }
+ else {
+      throw populateHttpOperationFailedException(exchange,httpExchange,responseCode);
+    }
+  }
+}
