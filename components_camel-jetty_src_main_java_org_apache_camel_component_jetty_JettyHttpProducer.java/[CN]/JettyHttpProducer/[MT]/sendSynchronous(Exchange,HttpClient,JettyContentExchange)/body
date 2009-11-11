@@ -1,5 +1,16 @@
 {
   doSendExchange(client,httpExchange);
-  httpExchange.waitForDone();
-  getBinding().populateResponse(exchange,httpExchange);
+  int exchangeState=httpExchange.waitForDone();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("HTTP exchange is done with state " + exchangeState);
+  }
+  if (exchangeState == HttpExchange.STATUS_COMPLETED) {
+    getBinding().populateResponse(exchange,httpExchange);
+  }
+ else   if (exchangeState == HttpExchange.STATUS_EXPIRED) {
+    throw new ExchangeTimedOutException(exchange,client.getTimeout());
+  }
+ else   if (exchangeState == HttpExchange.STATUS_EXCEPTED) {
+    throw new CamelExchangeException("JettyClient failed with state " + exchangeState,exchange);
+  }
 }

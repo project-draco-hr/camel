@@ -1,0 +1,28 @@
+{
+  if (callback == null) {
+    return;
+  }
+  int exchangeState=getStatus();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("TaskComplete with state " + exchangeState + " for url: "+ getUrl());
+  }
+  try {
+    if (exchangeState == HttpExchange.STATUS_COMPLETED) {
+      try {
+        jettyBinding.populateResponse(exchange,this);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+    }
+ else     if (exchangeState == HttpExchange.STATUS_EXPIRED) {
+      exchange.setException(new ExchangeTimedOutException(exchange,client.getTimeout()));
+    }
+ else     if (exchangeState == HttpExchange.STATUS_EXCEPTED) {
+      exchange.setException(new CamelExchangeException("JettyClient failed with state " + exchangeState,exchange));
+    }
+  }
+  finally {
+    callback.onTaskCompleted(exchange);
+  }
+}
