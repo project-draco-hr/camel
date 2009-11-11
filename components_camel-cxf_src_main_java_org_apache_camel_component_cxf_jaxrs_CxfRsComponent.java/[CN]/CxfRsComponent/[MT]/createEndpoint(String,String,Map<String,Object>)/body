@@ -1,0 +1,23 @@
+{
+  CxfRsEndpoint answer=null;
+  if (remaining.startsWith(CxfConstants.SPRING_CONTEXT_ENDPOINT)) {
+    String beanId=remaining.substring(CxfConstants.SPRING_CONTEXT_ENDPOINT.length());
+    if (beanId.startsWith("//")) {
+      beanId=beanId.substring(2);
+    }
+    AbstractJAXRSFactoryBean bean=CamelContextHelper.mandatoryLookup(getCamelContext(),beanId,AbstractJAXRSFactoryBean.class);
+    answer=new CxfRsSpringEndpoint(this.getCamelContext(),bean);
+    if (bean.getProperties() != null) {
+      Map<String,Object> copy=new HashMap<String,Object>();
+      copy.putAll(bean.getProperties());
+      setProperties(answer,copy);
+    }
+  }
+ else {
+    answer=new CxfRsEndpoint(remaining,this);
+  }
+  Map<String,String> params=CastUtils.cast(parameters);
+  answer.setParameters(params);
+  setEndpointHeaderFilterStrategy(answer);
+  return answer;
+}

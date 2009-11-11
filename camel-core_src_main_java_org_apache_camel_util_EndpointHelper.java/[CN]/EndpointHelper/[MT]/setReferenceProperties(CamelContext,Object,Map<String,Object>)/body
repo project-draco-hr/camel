@@ -1,0 +1,21 @@
+{
+  Iterator<Map.Entry<String,Object>> it=parameters.entrySet().iterator();
+  while (it.hasNext()) {
+    Map.Entry<String,Object> entry=it.next();
+    String name=entry.getKey();
+    Object v=entry.getValue();
+    String value=v != null ? v.toString() : null;
+    if (value != null && isReferenceParameter(value)) {
+      Object ref=resolveReferenceParameter(context,value,Object.class);
+      if (ref != null) {
+        boolean hit=IntrospectionSupport.setProperty(context.getTypeConverter(),bean,name,ref);
+        if (hit) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Configured property: " + name + " on bean: "+ bean+ " with value: "+ ref);
+          }
+          it.remove();
+        }
+      }
+    }
+  }
+}
