@@ -1,0 +1,31 @@
+{
+  if (exchanges.isEmpty()) {
+    return;
+  }
+  int total=exchanges.size();
+  if (maxMessagesPerPoll > 0 && total > maxMessagesPerPoll) {
+    LOG.debug("Limiting to maximum messages to poll " + maxMessagesPerPoll + " as there was "+ total+ " messages in this poll.");
+    total=maxMessagesPerPoll;
+  }
+  for (int index=0; index < total && isRunAllowed(); index++) {
+    DataHolder holder=ObjectHelper.cast(DataHolder.class,exchanges.poll());
+    EntityManager entityManager=holder.manager;
+    Exchange exchange=holder.exchange;
+    Object result=holder.result;
+    exchange.setProperty(Exchange.BATCH_INDEX,index);
+    exchange.setProperty(Exchange.BATCH_SIZE,total);
+    exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
+    if (lockEntity(result,entityManager)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Processing exchange: " + exchange);
+      }
+      try {
+        getProcessor().process(exchange);
+      }
+ catch (      Exception e) {
+        throw new PersistenceException(e);
+      }
+      getDeleteHandler().deleteObject(entityManager,result);
+    }
+  }
+}

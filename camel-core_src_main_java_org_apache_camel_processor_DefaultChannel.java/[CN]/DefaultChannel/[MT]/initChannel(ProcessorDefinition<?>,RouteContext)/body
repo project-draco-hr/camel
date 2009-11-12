@@ -1,0 +1,22 @@
+{
+  this.definition=outputDefinition;
+  this.camelContext=routeContext.getCamelContext();
+  Processor target=nextProcessor;
+  Processor next;
+  InterceptStrategy managed=routeContext.getManagedInterceptStrategy();
+  if (managed != null) {
+    next=target == nextProcessor ? null : nextProcessor;
+    target=managed.wrapProcessorInInterceptors(routeContext.getCamelContext(),outputDefinition,target,next);
+  }
+  TraceInterceptor trace=(TraceInterceptor)getOrCreateTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),outputDefinition,target,null);
+  trace.setRouteContext(routeContext);
+  target=trace;
+  for (  InterceptStrategy strategy : interceptors) {
+    next=target == nextProcessor ? null : nextProcessor;
+    if (strategy instanceof Tracer) {
+      continue;
+    }
+    target=strategy.wrapProcessorInInterceptors(routeContext.getCamelContext(),outputDefinition,target,next);
+  }
+  output=target;
+}
