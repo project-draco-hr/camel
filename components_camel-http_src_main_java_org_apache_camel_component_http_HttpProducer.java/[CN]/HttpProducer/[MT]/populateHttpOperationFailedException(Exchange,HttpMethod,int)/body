@@ -1,25 +1,26 @@
 {
   HttpOperationFailedException exception;
   String uri=method.getURI().toString();
-  Header[] headers=method.getResponseHeaders();
+  String statusText=method.getStatusLine() != null ? method.getStatusLine().getReasonPhrase() : null;
+  Map<String,String> headers=extractResponseHeaders(method.getResponseHeaders());
   InputStream is=extractResponseBody(method,exchange);
-  InputStream copy=null;
+  String copy=null;
   if (is != null) {
-    copy=new ByteArrayInputStream(exchange.getContext().getTypeConverter().convertTo(byte[].class,is));
+    copy=exchange.getContext().getTypeConverter().convertTo(String.class,exchange,is);
   }
   if (responseCode >= 300 && responseCode < 400) {
     String redirectLocation;
     Header locationHeader=method.getResponseHeader("location");
     if (locationHeader != null) {
       redirectLocation=locationHeader.getValue();
-      exception=new HttpOperationFailedException(uri,responseCode,method.getStatusLine(),redirectLocation,headers,copy);
+      exception=new HttpOperationFailedException(uri,responseCode,statusText,redirectLocation,headers,copy);
     }
  else {
-      exception=new HttpOperationFailedException(uri,responseCode,method.getStatusLine(),headers,copy);
+      exception=new HttpOperationFailedException(uri,responseCode,statusText,null,headers,copy);
     }
   }
  else {
-    exception=new HttpOperationFailedException(uri,responseCode,method.getStatusLine(),headers,copy);
+    exception=new HttpOperationFailedException(uri,responseCode,statusText,null,headers,copy);
   }
   return exception;
 }

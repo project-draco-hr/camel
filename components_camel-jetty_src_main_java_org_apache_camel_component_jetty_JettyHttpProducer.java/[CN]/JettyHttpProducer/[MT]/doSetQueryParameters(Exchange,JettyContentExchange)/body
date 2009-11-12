@@ -6,8 +6,14 @@
   if (ObjectHelper.isEmpty(queryString)) {
     return;
   }
-  Map<String,Object> parameters=URISupport.parseQuery(queryString);
-  for (  Map.Entry<String,Object> entry : parameters.entrySet()) {
-    httpExchange.setRequestHeader(entry.getKey(),entry.getValue().toString());
+  String uri=httpExchange.getURI();
+  Map parameters=URISupport.parseParameters(new URI(uri));
+  parameters.putAll(URISupport.parseQuery(queryString));
+  if (uri.contains("?")) {
+    uri=ObjectHelper.before(uri,"?");
+  }
+  if (!parameters.isEmpty()) {
+    uri=uri + "?" + URISupport.createQueryString(parameters);
+    httpExchange.setURI(uri);
   }
 }
