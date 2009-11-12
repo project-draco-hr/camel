@@ -1,0 +1,39 @@
+{
+  Resource resource=resolveMandatoryResource(remaining);
+  if (log.isDebugEnabled()) {
+    log.debug(this + " using schema resource: " + resource);
+  }
+  XsltBuilder xslt=getCamelContext().getInjector().newInstance(XsltBuilder.class);
+  XmlConverter converter=null;
+  String converterName=getAndRemoveParameter(parameters,"converter",String.class);
+  if (converterName != null) {
+    converter=CamelContextHelper.mandatoryLookup(getCamelContext(),converterName,XmlConverter.class);
+  }
+  if (converter == null) {
+    converter=getXmlConverter();
+  }
+  if (converter != null) {
+    xslt.setConverter(converter);
+  }
+  String transformerFactoryClassName=getAndRemoveParameter(parameters,"transformerFactoryClass",String.class);
+  TransformerFactory factory=null;
+  if (transformerFactoryClassName != null) {
+    Class<?> factoryClass=getCamelContext().getClassResolver().resolveClass(transformerFactoryClassName,XsltComponent.class.getClassLoader());
+    if (factoryClass != null) {
+      factory=(TransformerFactory)getCamelContext().getInjector().newInstance(factoryClass);
+    }
+ else {
+      log.warn("Cannot find the TransformerFactoryClass with the class name: " + transformerFactoryClassName);
+    }
+  }
+  String transformerFactoryName=getAndRemoveParameter(parameters,"transformerFactory",String.class);
+  if (transformerFactoryName != null) {
+    factory=CamelContextHelper.mandatoryLookup(getCamelContext(),transformerFactoryName,TransformerFactory.class);
+  }
+  if (factory != null) {
+    xslt.getConverter().setTransformerFactory(factory);
+  }
+  xslt.setTransformerInputStream(resource.getInputStream());
+  configureXslt(xslt,uri,remaining,parameters);
+  return new ProcessorEndpoint(uri,this,xslt);
+}

@@ -1,0 +1,32 @@
+{
+  QuartzEndpoint answer=new QuartzEndpoint(uri,this,getScheduler());
+  URI u=new URI(uri);
+  String path=ObjectHelper.after(u.getPath(),"/");
+  String host=u.getHost();
+  String cron=getAndRemoveParameter(parameters,"cron",String.class);
+  String name;
+  String group;
+  if (ObjectHelper.isNotEmpty(path) && ObjectHelper.isNotEmpty(host)) {
+    group=host;
+    name=path;
+  }
+ else {
+    group="Camel";
+    name=host;
+  }
+  Trigger trigger;
+  if (ObjectHelper.isNotEmpty(cron)) {
+    trigger=createCronTrigger(cron);
+  }
+ else {
+    trigger=new SimpleTrigger();
+  }
+  answer.setTrigger(trigger);
+  trigger.setName(name);
+  trigger.setGroup(group);
+  Map<String,Object> triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
+  Map<String,Object> jobParameters=IntrospectionSupport.extractProperties(parameters,"job.");
+  setProperties(trigger,triggerParameters);
+  setProperties(answer.getJobDetail(),jobParameters);
+  return answer;
+}
