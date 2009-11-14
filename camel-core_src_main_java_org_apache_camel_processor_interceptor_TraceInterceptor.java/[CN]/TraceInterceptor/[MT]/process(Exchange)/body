@@ -11,28 +11,29 @@
   boolean trace=true;
   try {
     if (shouldLog) {
-      if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
-        TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
-        if (node instanceof OnExceptionDefinition) {
-          trace=beforeOnException((OnExceptionDefinition)node,tuow,exchange);
+      if (exchange.getUnitOfWork() != null) {
+        TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
+        if (node instanceof OnCompletionDefinition || node instanceof OnExceptionDefinition || node instanceof TryDefinition) {
+          trace=false;
         }
- else         if (node instanceof OnCompletionDefinition) {
-          trace=beforeOnCompletion((OnCompletionDefinition)node,tuow,exchange);
+ else         if (exchange.getProperty(Exchange.ON_COMPLETION) != null) {
+          traceOnCompletion(traced,exchange);
         }
  else {
-          tuow.addTraced(new DefaultRouteNode(node,super.getProcessor()));
+          traced.addTraced(new DefaultRouteNode(node,super.getProcessor()));
         }
+      }
+ else {
+        LOG.trace("Cannot trace as this Exchange does not have an UnitOfWork: " + exchange);
       }
     }
     if (shouldLog && trace) {
       logExchange(exchange);
       traceExchange(exchange);
     }
-    if (exchange.getUnitOfWork() instanceof TraceableUnitOfWork) {
-      TraceableUnitOfWork tuow=(TraceableUnitOfWork)exchange.getUnitOfWork();
-      if (node instanceof InterceptDefinition) {
-        afterIntercept((InterceptDefinition)node,tuow,exchange);
-      }
+    if (node.getParent() instanceof InterceptDefinition && exchange.getUnitOfWork() != null) {
+      TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
+      traceIntercept((InterceptDefinition)node.getParent(),traced,exchange);
     }
     super.proceed(exchange);
     if (shouldLog && tracer.isTraceOutExchanges()) {

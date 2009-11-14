@@ -1,0 +1,26 @@
+{
+  Channel channel=createChannel(routeContext);
+  channel.setNextProcessor(processor);
+  addInterceptStrategies(routeContext,channel,routeContext.getCamelContext().getInterceptStrategies());
+  addInterceptStrategies(routeContext,channel,routeContext.getInterceptStrategies());
+  if (routeContext.getManagedInterceptStrategy() != null) {
+    channel.addInterceptStrategy(routeContext.getManagedInterceptStrategy());
+  }
+  addInterceptStrategies(routeContext,channel,this.getInterceptStrategies());
+  ProcessorDefinition defn=(ProcessorDefinition)this;
+  channel.setChildDefinition(child);
+  channel.initChannel(defn,routeContext);
+  if (defn instanceof TryDefinition || defn instanceof CatchDefinition || defn instanceof FinallyDefinition) {
+    return channel;
+  }
+ else {
+    Processor output=channel.getOutput();
+    ErrorHandlerBuilder builder=getErrorHandlerBuilder();
+    Processor errorHandler=builder.createErrorHandler(routeContext,output);
+    channel.setErrorHandler(errorHandler);
+    for (    LifecycleStrategy strategy : routeContext.getCamelContext().getLifecycleStrategies()) {
+      strategy.onErrorHandlerAdd(routeContext,errorHandler,builder);
+    }
+    return channel;
+  }
+}
