@@ -1,0 +1,25 @@
+{
+  if (visitedClasses.contains(type)) {
+    return;
+  }
+  visitedClasses.add(type);
+  try {
+    Method[] methods=type.getDeclaredMethods();
+    CachingInjector<?> injector=null;
+    for (    Method method : methods) {
+      if (ObjectHelper.hasAnnotation(method,Converter.class,true)) {
+        injector=handleHasConverterAnnotation(registry,type,injector,method);
+      }
+ else       if (ObjectHelper.hasAnnotation(method,FallbackConverter.class,true)) {
+        injector=handleHasFallbackConverterAnnotation(registry,type,injector,method);
+      }
+    }
+    Class<?> superclass=type.getSuperclass();
+    if (superclass != null && !superclass.equals(Object.class)) {
+      loadConverterMethods(registry,superclass);
+    }
+  }
+ catch (  NoClassDefFoundError e) {
+    LOG.warn("Ignoring converter type: " + type.getCanonicalName() + " as a dependent class could not be found: "+ e,e);
+  }
+}

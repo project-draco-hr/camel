@@ -1,0 +1,30 @@
+{
+  if (isValidConverterMethod(method)) {
+    int modifiers=method.getModifiers();
+    if (isAbstract(modifiers) || !isPublic(modifiers)) {
+      LOG.warn("Ignoring bad converter on type: " + type.getCanonicalName() + " method: "+ method+ " as a converter method is not a public and concrete method");
+    }
+ else {
+      Class<?> toType=method.getReturnType();
+      if (toType.equals(Void.class)) {
+        LOG.warn("Ignoring bad converter on type: " + type.getCanonicalName() + " method: "+ method+ " as a converter method returns a void method");
+      }
+ else {
+        Class<?> fromType=method.getParameterTypes()[0];
+        if (isStatic(modifiers)) {
+          registerTypeConverter(registry,method,toType,fromType,new StaticMethodTypeConverter(method));
+        }
+ else {
+          if (injector == null) {
+            injector=new CachingInjector<Object>(registry,CastUtils.cast(type,Object.class));
+          }
+          registerTypeConverter(registry,method,toType,fromType,new InstanceMethodTypeConverter(injector,method));
+        }
+      }
+    }
+  }
+ else {
+    LOG.warn("Ignoring bad converter on type: " + type.getCanonicalName() + " method: "+ method+ " as a converter method should have one parameter");
+  }
+  return injector;
+}
