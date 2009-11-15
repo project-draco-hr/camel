@@ -13,18 +13,32 @@
     if (shouldLog) {
       if (exchange.getUnitOfWork() != null) {
         TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
-        if (node instanceof OnCompletionDefinition || node instanceof OnExceptionDefinition || node instanceof TryDefinition) {
+        if (node instanceof OnCompletionDefinition || node instanceof OnExceptionDefinition) {
           trace=false;
         }
- else         if (exchange.getProperty(Exchange.ON_COMPLETION) != null) {
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(OnCompletionDefinition.class,node)) {
           traceOnCompletion(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(OnExceptionDefinition.class,node)) {
+          traceOnException(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(CatchDefinition.class,node)) {
+          traceDoCatch(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(FinallyDefinition.class,node)) {
+          traceDoFinally(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(AggregateDefinition.class,node)) {
+          traceAggregate(traced,exchange);
         }
  else {
           traced.addTraced(new DefaultRouteNode(node,super.getProcessor()));
         }
       }
  else {
-        LOG.trace("Cannot trace as this Exchange does not have an UnitOfWork: " + exchange);
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Cannot trace as this Exchange does not have an UnitOfWork: " + exchange);
+        }
       }
     }
     if (shouldLog && trace) {
