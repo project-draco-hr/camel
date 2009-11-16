@@ -2,14 +2,18 @@
   Exchange answer=getProducerCache(exchange).doInProducer(destination,exchange,pattern,new ProducerCallback<Exchange>(){
     public Exchange doInProducer(    Producer producer,    Exchange exchange,    ExchangePattern pattern) throws Exception {
       exchange=configureExchange(exchange,pattern);
-      AsyncProcessor asyncProducer=exchange.getContext().getTypeConverter().convertTo(AsyncProcessor.class,producer);
       final AsyncCallback callback=new AsyncCallback(){
         public void onTaskCompleted(        Exchange exchange){
           completedTasks.add(exchange);
         }
       }
 ;
-      asyncProducer.process(exchange,callback);
+      if (producer instanceof AsyncProcessor) {
+        doAsyncProcess((AsyncProcessor)producer,exchange,callback);
+      }
+ else {
+        doSimulateAsyncProcess(producer,exchange,callback);
+      }
       return exchange;
     }
   }
