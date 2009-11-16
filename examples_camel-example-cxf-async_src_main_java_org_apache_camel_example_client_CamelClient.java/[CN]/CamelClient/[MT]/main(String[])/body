@@ -1,0 +1,28 @@
+{
+  System.out.println("Notice this client requires that the CamelServer is already running!");
+  ApplicationContext context=new ClassPathXmlApplicationContext("META-INF/spring/camel-client.xml");
+  final ProducerTemplate producer=(ProducerTemplate)context.getBean("camelTemplate");
+  final MockEndpoint mock=(MockEndpoint)context.getBean("result");
+  mock.expectedMessageCount(SIZE);
+  mock.expectsNoDuplicates().body();
+  System.out.println("Sending ...");
+  for (int i=0; i < SIZE; i++) {
+    InputReportIncident input=new InputReportIncident();
+    input.setIncidentId("" + i);
+    input.setIncidentDate("20091116");
+    input.setGivenName("Claus");
+    input.setFamilyName("Ibsen");
+    input.setSummary("Camel rocks");
+    input.setDetails("More bla");
+    input.setEmail("davsclaus@apache.org");
+    input.setPhone("55512345678");
+    List data=new ArrayList();
+    data.add(input);
+    producer.sendBody("direct:start",data);
+  }
+  System.out.println("... Send done");
+  System.out.println("Asserting ...");
+  mock.assertIsSatisfied();
+  System.out.println("... Asserting done");
+  System.exit(0);
+}
