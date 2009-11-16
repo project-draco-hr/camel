@@ -1,4 +1,28 @@
 {
+  boolean noop=false;
+  try {
+    connectIfNecessary();
+    if (loggedIn) {
+      noop=getOperations().sendNoop();
+    }
+  }
+ catch (  Exception e) {
+    log.error(e);
+    noop=false;
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("preWriteCheck send noop success: " + noop);
+  }
+  if (!noop) {
+    try {
+      if (log.isDebugEnabled()) {
+        log.debug("preWriteCheck forcing a disconnect as noop failed");
+      }
+      disconnect();
+    }
+ catch (    IOException e) {
+    }
+  }
   connectIfNecessary();
   if (!loggedIn) {
     String message="Cannot connect/login to: " + ((RemoteFileEndpoint)getEndpoint()).remoteServerInformation();
