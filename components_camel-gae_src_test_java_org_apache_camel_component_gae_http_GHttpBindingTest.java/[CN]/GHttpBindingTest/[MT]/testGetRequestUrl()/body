@@ -1,0 +1,15 @@
+{
+  GHttpEndpoint endpoint=createEndpoint("ghttp://somewhere.com:9090/path");
+  assertEquals("http://somewhere.com:9090/path",binding.getRequestUrl(endpoint,exchange).toString());
+  exchange.getIn().setHeader(Exchange.HTTP_URI,"http://custom.org:8080/path");
+  assertEquals("http://somewhere.com:9090/path",binding.getRequestUrl(endpoint,exchange).toString());
+  endpoint=createEndpoint("ghttp://somewhere.com:9090/path?bridgeEndpoint=false");
+  assertEquals("http://custom.org:8080/path",binding.getRequestUrl(endpoint,exchange).toString());
+  exchange.getIn().setHeader(Exchange.HTTP_URI,"ghttp://another.org:8080/path");
+  assertEquals("http://another.org:8080/path",binding.getRequestUrl(endpoint,exchange).toString());
+  exchange.getIn().removeHeader(Exchange.HTTP_URI);
+  exchange.getIn().setHeader(Exchange.HTTP_QUERY,"a=b");
+  assertEquals("http://somewhere.com:9090/path?a=b",binding.getRequestUrl(endpoint,exchange).toString());
+  exchange.getIn().setHeader(Exchange.HTTP_URI,"http://custom.org:8080/path");
+  assertEquals("http://custom.org:8080/path?a=b",binding.getRequestUrl(endpoint,exchange).toString());
+}

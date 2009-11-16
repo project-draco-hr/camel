@@ -1,0 +1,18 @@
+{
+  HeaderFilterStrategy strategy=endpoint.getHeaderFilterStrategy();
+  Message in=exchange.getIn();
+  Message out=exchange.getOut();
+  out.setHeaders(in.getHeaders());
+  out.setHeader(Exchange.HTTP_RESPONSE_CODE,response.getResponseCode());
+  String contentType=getResponseHeader("Content-Type",response);
+  if (contentType != null) {
+    out.setHeader(Exchange.CONTENT_TYPE,contentType);
+  }
+  for (  HTTPHeader header : response.getHeaders()) {
+    String name=header.getName();
+    String value=header.getValue();
+    if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
+      out.setHeader(name,value);
+    }
+  }
+}
