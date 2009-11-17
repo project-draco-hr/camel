@@ -1,0 +1,33 @@
+{
+  boolean notGlobal=buffer.toString().endsWith(")");
+  if (notGlobal) {
+    buffer.append(".");
+  }
+  OnCompletionDefinition onComplete=(OnCompletionDefinition)processor;
+  buffer.append(processor.getShortName()).append("()");
+  if (onComplete.getOnWhen() != null) {
+    WhenDefinition when=onComplete.getOnWhen();
+    buffer.append(".onWhen");
+    if (when.getExpression().getPredicate() != null) {
+      buffer.append("(");
+      PredicateRenderer.render(buffer,when.getExpression().getPredicate());
+      buffer.append(")");
+    }
+ else {
+      buffer.append("Unsupported Expression!");
+    }
+  }
+  if (onComplete.getOnCompleteOnly()) {
+    buffer.append(".onCompleteOnly()");
+  }
+  if (onComplete.getOnFailureOnly()) {
+    buffer.append(".onFailureOnly()");
+  }
+  List<ProcessorDefinition<?>> branches=onComplete.getOutputs();
+  for (  ProcessorDefinition<?> branch : branches) {
+    SendDefinitionRenderer.render(buffer,branch);
+  }
+  if (notGlobal) {
+    buffer.append(".end()");
+  }
+}
