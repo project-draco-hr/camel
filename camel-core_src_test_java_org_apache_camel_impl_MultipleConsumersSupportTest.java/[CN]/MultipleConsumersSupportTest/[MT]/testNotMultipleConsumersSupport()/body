@@ -1,0 +1,18 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      MyEndpoint my=new MyEndpoint();
+      from(my).to("mock:a");
+      from("direct:start").to("mock:result");
+      from(my).to("mock:b");
+    }
+  }
+);
+  try {
+    context.start();
+    fail("Should have thrown exception");
+  }
+ catch (  FailedToStartRouteException e) {
+    assertTrue(e.getMessage().endsWith("Multiple consumers for the same endpoint is now allowed: Endpoint[MyEndpoint]"));
+  }
+}

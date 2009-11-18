@@ -49,6 +49,22 @@ catch (        Exception e) {
         LOG.info("Cannot start route " + routeService.getId() + " as it is configured with auto startup disabled.");
       }
     }
+    List<Endpoint> routeInputs=new ArrayList<Endpoint>();
+    for (    RouteService routeService : routeServices.values()) {
+      for (      Consumer consumer : routeService.getInputs().values()) {
+        Endpoint endpoint=consumer.getEndpoint();
+        boolean multipleConsumersSupported=false;
+        if (endpoint instanceof MultipleConsumersSupport) {
+          multipleConsumersSupported=((MultipleConsumersSupport)endpoint).isMultipleConsumersSupported();
+        }
+        if (!multipleConsumersSupported && routeInputs.contains(endpoint)) {
+          throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is now allowed: " + endpoint);
+        }
+ else {
+          routeInputs.add(endpoint);
+        }
+      }
+    }
     for (    Map.Entry<Integer,StartupRouteHolder> entry : inputs.entrySet()) {
       Integer order=entry.getKey();
       Route route=entry.getValue().getRoute();
