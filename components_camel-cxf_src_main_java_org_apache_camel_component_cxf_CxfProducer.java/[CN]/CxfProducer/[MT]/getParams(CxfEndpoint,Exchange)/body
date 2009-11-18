@@ -6,7 +6,17 @@
       params=list.toArray();
     }
  else {
-      params=new Object[0];
+      Iterator it=exchange.getIn().getBody(Iterator.class);
+      if (it != null && it.hasNext()) {
+        list=exchange.getContext().getTypeConverter().convertTo(List.class,it);
+        if (list != null) {
+          params=list.toArray();
+        }
+      }
+      if (params == null) {
+        params=new Object[1];
+        params[0]=exchange.getIn().getBody();
+      }
     }
   }
  else   if (endpoint.getDataFormat() == DataFormat.PAYLOAD) {
