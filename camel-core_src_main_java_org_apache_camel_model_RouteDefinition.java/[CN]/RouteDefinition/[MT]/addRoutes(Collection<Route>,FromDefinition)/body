@@ -12,7 +12,7 @@
     routeContext.setStreamCaching(isStreamCache());
     if (isStreamCache()) {
       if (log.isDebugEnabled()) {
-        log.debug("StramCaching is enabled on route: " + this);
+        log.debug("StreamCaching is enabled on route: " + this);
       }
       if (StreamCaching.getStreamCaching(getCamelContext()) == null) {
         addInterceptStrategy(new StreamCaching());
@@ -72,7 +72,13 @@
   }
   List<ProcessorDefinition> list=new ArrayList<ProcessorDefinition>(outputs);
   for (  ProcessorDefinition output : list) {
-    output.addRoutes(routeContext,routes);
+    try {
+      output.addRoutes(routeContext,routes);
+    }
+ catch (    Exception e) {
+      RouteDefinition route=routeContext.getRoute();
+      throw new FailedToCreateRouteException(route.getId(),route.toString(),output.toString(),e);
+    }
   }
   routeContext.commit();
   return routeContext;
