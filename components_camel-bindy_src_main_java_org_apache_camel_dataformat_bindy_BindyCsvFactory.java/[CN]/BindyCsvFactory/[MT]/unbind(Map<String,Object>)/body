@@ -1,76 +1,62 @@
 {
-  StringBuilder builder=new StringBuilder();
-  Map<Integer,DataField> dataFieldsSorted=new TreeMap<Integer,DataField>(dataFields);
-  Iterator<Integer> it=dataFieldsSorted.keySet().iterator();
-  Map<Integer,String> positions=new TreeMap<Integer,String>();
+  StringBuffer buffer=new StringBuffer();
+  results=new HashMap<Integer,List>();
   ObjectHelper.notNull(this.separator,"The separator has not been instantiated or property not defined in the @CsvRecord annotation");
   char separator=Converter.getCharDelimitor(this.getSeparator());
   if (LOG.isDebugEnabled()) {
     LOG.debug("Separator converted : '0x" + Integer.toHexString(separator) + "', from : "+ this.getSeparator());
   }
-  while (it.hasNext()) {
-    DataField dataField=dataFieldsSorted.get(it.next());
-    Field field=annotedFields.get(dataField.pos());
-    field.setAccessible(true);
-    Class type=field.getType();
-    String pattern=dataField.pattern();
-    int precision=dataField.precision();
-    Format format=FormatFactory.getFormat(type,pattern,precision);
-    Object modelField=model.get(field.getDeclaringClass().getName());
-    if (modelField != null) {
-      Object value=field.get(modelField);
-      String strValue="";
-      if (this.isMessageOrdered()) {
-        Integer key1=sections.get(modelField.getClass().getName());
-        Integer key2=dataField.position();
-        Integer keyGenerated=generateKey(key1,key2);
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Key generated : " + String.valueOf(keyGenerated) + ", for section : "+ key1);
-        }
-        if (value != null) {
-          try {
-            strValue=format.format(value);
-          }
- catch (          Exception e) {
-            throw new IllegalArgumentException("Formating error detected for the value : " + value,e);
-          }
-        }
-        positions.put(keyGenerated,strValue);
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Positions size : " + positions.size());
-        }
+  for (  Class clazz : models) {
+    if (model.containsKey(clazz.getName())) {
+      Object obj=model.get(clazz.getName());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Model object : " + obj + ", class : "+ obj.getClass().getName());
+      }
+      if (obj != null) {
+        generateCsvPositionMap(clazz,obj);
+      }
+    }
+  }
+  List<List> l=new ArrayList<List>();
+  if (isOneToMany) {
+    l=product(results);
+  }
+ else {
+    TreeMap<Integer,List> sortValues=new TreeMap<Integer,List>(results);
+    List<String> temp=new ArrayList<String>();
+    for (    Integer key : sortValues.keySet()) {
+      List<String> val=sortValues.get(key);
+      String value=(String)val.get(0);
+      if (value != null) {
+        temp.add(value);
       }
  else {
-        if (value != null) {
-          try {
-            strValue=format.format(value);
-          }
- catch (          Exception e) {
-            throw new IllegalArgumentException("Formating error detected for the value : " + value,e);
-          }
-        }
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Value to be formatted : " + value + ", position : "+ dataField.pos()+ ", and its formated value : "+ strValue);
-        }
-        builder.append(strValue);
-        if (it.hasNext()) {
-          builder.append(separator);
-        }
+        temp.add("");
       }
     }
+    l.add(temp);
   }
-  if (this.isMessageOrdered()) {
-    Iterator<Integer> posit=positions.keySet().iterator();
-    while (posit.hasNext()) {
-      String value=positions.get(posit.next());
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Value added at the position (" + posit + ") : "+ value+ separator);
+  if (l != null) {
+    Iterator it=l.iterator();
+    while (it.hasNext()) {
+      List<String> tokens=(ArrayList<String>)it.next();
+      Iterator itx=tokens.iterator();
+      while (itx.hasNext()) {
+        String res=(String)itx.next();
+        if (res != null) {
+          buffer.append(res);
+        }
+ else {
+          buffer.append("");
+        }
+        if (itx.hasNext()) {
+          buffer.append(separator);
+        }
       }
-      builder.append(value);
       if (it.hasNext()) {
-        builder.append(separator);
+        buffer.append(Converter.getStringCarriageReturn(getCarriageReturn()));
       }
     }
   }
-  return builder.toString();
+  return buffer.toString();
 }

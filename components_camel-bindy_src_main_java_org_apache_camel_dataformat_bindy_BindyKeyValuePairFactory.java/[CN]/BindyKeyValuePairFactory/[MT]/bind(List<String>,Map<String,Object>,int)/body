@@ -1,37 +1,30 @@
 {
-  int pos=0;
+  Map<Integer,List> results=new HashMap<Integer,List>();
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Data : " + data);
+    LOG.debug("Key value pairs data : " + data);
   }
-  while (pos < data.size()) {
-    if (!data.get(pos).equals("")) {
-      ObjectHelper.notNull(this.keyValuePairSeparator,"Key Value Pair not defined in the @Message annotation");
-      String[] keyValuePair=data.get(pos).split(this.getKeyValuePairSeparator());
-      int tag=Integer.parseInt(keyValuePair[0]);
-      String keyValue=keyValuePair[1];
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Key : " + tag + ", value : "+ keyValue);
-      }
-      KeyValuePairField keyValuePairField=keyValuePairFields.get(tag);
-      ObjectHelper.notNull(keyValuePairField,"No tag defined for the field : " + tag + ", line : "+ line);
-      Field field=annotedFields.get(tag);
-      field.setAccessible(true);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Tag : " + tag + ", Data : "+ keyValue+ ", Field type : "+ field.getType());
-      }
-      Format<?> format;
-      String pattern=keyValuePairField.pattern();
-      format=FormatFactory.getFormat(field.getType(),pattern,keyValuePairField.precision());
-      Object modelField=model.get(field.getDeclaringClass().getName());
-      Object value;
-      try {
-        value=format.parse(keyValue);
-      }
- catch (      Exception e) {
-        throw new IllegalArgumentException("Parsing error detected for field defined at the tag : " + tag + ", line : "+ line,e);
-      }
-      field.set(modelField,value);
+  ObjectHelper.notNull(keyValuePairSeparator,"Key Value Pair not defined in the @Message annotation");
+  for (  String s : data) {
+    String[] keyValuePair=s.split(getKeyValuePairSeparator());
+    int key=Integer.parseInt(keyValuePair[0]);
+    String value=keyValuePair[1];
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Key : " + key + ", value : "+ value);
     }
-    pos++;
+    if (!results.containsKey(key)) {
+      List list=new LinkedList();
+      list.add(value);
+      results.put(key,list);
+    }
+ else {
+      List list=(LinkedList)results.get(key);
+      list.add(value);
+    }
+  }
+  for (  Class clazz : models) {
+    Object obj=model.get(clazz.getName());
+    if (obj != null) {
+      generateModelFromKeyValueMap(clazz,obj,results,line);
+    }
   }
 }

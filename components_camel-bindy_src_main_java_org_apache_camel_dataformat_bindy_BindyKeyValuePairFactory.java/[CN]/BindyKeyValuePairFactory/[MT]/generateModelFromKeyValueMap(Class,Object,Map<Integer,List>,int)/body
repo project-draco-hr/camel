@@ -1,0 +1,151 @@
+{
+  for (  Field field : clazz.getDeclaredFields()) {
+    field.setAccessible(true);
+    KeyValuePairField keyValuePairField=field.getAnnotation(KeyValuePairField.class);
+    if (keyValuePairField != null) {
+      int key=keyValuePairField.tag();
+      List<String> values=results.get(key);
+      String value=null;
+      if (values == null) {
+        if (obj != null) {
+          if (keyValuePairField.required() && values == null) {
+            throw new IllegalArgumentException("The mandatory key/tag : " + key + " has not been defined !");
+          }
+          Object result=getDefaultValueforPrimitive(field.getType());
+          try {
+            field.set(obj,result);
+          }
+ catch (          Exception e) {
+            throw new IllegalArgumentException("Setting of field " + field + " failed for object : "+ obj+ " and result : "+ result);
+          }
+        }
+ else {
+          List l=lists.get(clazz.getName());
+          if (l != null) {
+            if (!l.isEmpty()) {
+              obj=l.get(0);
+            }
+ else {
+              obj=clazz.newInstance();
+            }
+            Object result=getDefaultValueforPrimitive(field.getType());
+            try {
+              field.set(obj,result);
+            }
+ catch (            Exception e) {
+              throw new IllegalArgumentException("Setting of field " + field + " failed for object : "+ obj+ " and result : "+ result);
+            }
+            if (!l.isEmpty()) {
+              l.set(0,obj);
+            }
+ else {
+              l.add(0,obj);
+            }
+            lists.put(clazz.getName(),l);
+            obj=null;
+          }
+ else {
+            throw new IllegalArgumentException("The list of values is empty for the following key : " + key + " defined in the class : "+ clazz.getName());
+          }
+        }
+      }
+ else {
+        if (values.size() >= 1) {
+          if (obj != null) {
+            value=(String)values.get(0);
+            Object result=null;
+            if (value != null) {
+              String pattern=keyValuePairField.pattern();
+              Format<?> format=FormatFactory.getFormat(field.getType(),pattern,keyValuePairField.precision());
+              result=formatField(format,value,key,line);
+              if (LOG.isDebugEnabled()) {
+                LOG.debug("Value formated : " + result);
+              }
+            }
+ else {
+              result=getDefaultValueforPrimitive(field.getType());
+            }
+            try {
+              field.set(obj,result);
+            }
+ catch (            Exception e) {
+              throw new IllegalArgumentException("Setting of field " + field + " failed for object : "+ obj+ " and result : "+ result);
+            }
+          }
+ else {
+            List l=lists.get(clazz.getName());
+            if (l != null) {
+              for (int i=0; i < values.size(); i++) {
+                if ((!l.isEmpty()) && (l.size() > i)) {
+                  obj=l.get(i);
+                }
+ else {
+                  obj=clazz.newInstance();
+                }
+                value=(String)values.get(i);
+                String pattern=keyValuePairField.pattern();
+                Format<?> format=FormatFactory.getFormat(field.getType(),pattern,keyValuePairField.precision());
+                Object result=formatField(format,value,key,line);
+                if (LOG.isDebugEnabled()) {
+                  LOG.debug("Value formated : " + result);
+                }
+                try {
+                  if (value != null) {
+                    field.set(obj,result);
+                  }
+ else {
+                    field.set(obj,getDefaultValueforPrimitive(field.getType()));
+                  }
+                }
+ catch (                Exception e) {
+                  throw new IllegalArgumentException("Setting of field " + field + " failed for object : "+ obj+ " and result : "+ result);
+                }
+                if ((!l.isEmpty()) && (l.size() > i)) {
+                  l.set(i,obj);
+                }
+ else {
+                  l.add(i,obj);
+                }
+                lists.put(clazz.getName(),l);
+                obj=null;
+              }
+            }
+ else {
+              throw new IllegalArgumentException("The list of values is empty for the following key : " + key + " defined in the class : "+ clazz.getName());
+            }
+          }
+        }
+ else {
+          Object result=getDefaultValueforPrimitive(field.getType());
+          try {
+            field.set(obj,result);
+          }
+ catch (          Exception e) {
+            throw new IllegalArgumentException("Setting of field " + field + " failed for object : "+ obj+ " and result : "+ result);
+          }
+        }
+      }
+    }
+    OneToMany oneToMany=field.getAnnotation(OneToMany.class);
+    if (oneToMany != null) {
+      String targetClass=oneToMany.mappedTo();
+      if (targetClass != "") {
+        Class cl=null;
+        try {
+          cl=Thread.currentThread().getContextClassLoader().loadClass(targetClass);
+        }
+ catch (        ClassNotFoundException e) {
+          cl=getClass().getClassLoader().loadClass(targetClass);
+        }
+        if (!lists.containsKey(cl.getName())) {
+          lists.put(cl.getName(),new ArrayList());
+        }
+        generateModelFromKeyValueMap(cl,null,results,line);
+        field.set(obj,lists.get(cl.getName()));
+      }
+ else {
+        throw new IllegalArgumentException("No target class has been defined in @OneToMany annotation !");
+      }
+    }
+  }
+}

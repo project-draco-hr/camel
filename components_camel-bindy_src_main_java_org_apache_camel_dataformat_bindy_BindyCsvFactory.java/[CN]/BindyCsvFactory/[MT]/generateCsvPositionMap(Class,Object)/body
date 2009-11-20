@@ -1,0 +1,60 @@
+{
+  String result="";
+  for (  Field field : clazz.getDeclaredFields()) {
+    field.setAccessible(true);
+    DataField datafield=field.getAnnotation(DataField.class);
+    if (datafield != null) {
+      if (obj != null) {
+        Class type=field.getType();
+        String pattern=datafield.pattern();
+        int precision=datafield.precision();
+        Format format=FormatFactory.getFormat(type,pattern,precision);
+        Object value=field.get(obj);
+        result=formatString(format,value);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Value to be formatted : " + value + ", position : "+ datafield.pos()+ ", and its formated value : "+ result);
+        }
+      }
+ else {
+        result="";
+      }
+      Integer key;
+      if (isMessageOrdered()) {
+        Integer key1=sections.get(obj.getClass().getName());
+        Integer key2=datafield.position();
+        Integer keyGenerated=generateKey(key1,key2);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Key generated : " + String.valueOf(keyGenerated) + ", for section : "+ key1);
+        }
+        key=keyGenerated;
+      }
+ else {
+        key=datafield.pos();
+      }
+      if (!results.containsKey(key)) {
+        List list=new LinkedList();
+        list.add(result);
+        results.put(key,list);
+      }
+ else {
+        List list=(LinkedList)results.get(key);
+        list.add(result);
+      }
+    }
+    OneToMany oneToMany=field.getAnnotation(OneToMany.class);
+    if (oneToMany != null) {
+      isOneToMany=true;
+      ArrayList list=(ArrayList)field.get(obj);
+      if (list != null) {
+        Iterator it=list.iterator();
+        while (it.hasNext()) {
+          Object target=it.next();
+          generateCsvPositionMap(target.getClass(),target);
+        }
+      }
+ else {
+        generateCsvPositionMap(field.getClass(),null);
+      }
+    }
+  }
+}

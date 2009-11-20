@@ -1,7 +1,13 @@
 {
   return new RouteBuilder(){
     @Override public void configure(){
-      from("direct:start").unmarshal(camelDataFormat).to("mock:result");
+      Tracer tracer=new Tracer();
+      tracer.setLogLevel(LoggingLevel.FATAL);
+      tracer.setLogName("org.apache.camel.bindy");
+      getContext().addInterceptStrategy(tracer);
+      errorHandler(deadLetterChannel(URI_MOCK_ERROR).redeliverDelay(0));
+      onException(Exception.class).maximumRedeliveries(0).handled(true);
+      from(URI_DIRECT_START).unmarshal(camelDataFormat).to(URI_MOCK_RESULT);
     }
   }
 ;
