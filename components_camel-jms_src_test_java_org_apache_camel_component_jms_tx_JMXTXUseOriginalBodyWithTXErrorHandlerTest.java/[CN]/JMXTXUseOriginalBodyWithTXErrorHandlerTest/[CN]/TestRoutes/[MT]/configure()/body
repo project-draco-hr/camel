@@ -1,0 +1,6 @@
+{
+  errorHandler(transactionErrorHandler());
+  onException(Exception.class).handled(true).useOriginalBody().maximumRedeliveries(2).to("mock:error");
+  from("activemq:broken").transacted().to("mock:checkpoint1").setBody(bean("foo")).to("mock:checkpoint2").throwException(new Exception("boo")).to("mock:end");
+  from("activemq:start").transacted().to("mock:checkpoint1").setBody(constant("oh no")).to("mock:checkpoint2").throwException(new Exception("boo")).to("mock:end");
+}
