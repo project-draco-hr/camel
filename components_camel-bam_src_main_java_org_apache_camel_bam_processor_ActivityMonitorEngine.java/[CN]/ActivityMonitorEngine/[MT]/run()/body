@@ -7,7 +7,9 @@
       final Date timeNow=new Date(now);
       transactionTemplate.execute(new TransactionCallbackWithoutResult(){
         protected void doInTransactionWithoutResult(        TransactionStatus status){
-          List<ActivityState> list=CastUtils.cast(template.find("select x from " + ActivityState.class.getName() + " x where x.timeOverdue < ?1",timeNow));
+          Map<String,Object> params=new HashMap<String,Object>(1);
+          params.put("timeNow",timeNow);
+          List<ActivityState> list=CastUtils.cast(template.findByNamedParams("select x from " + ActivityState.class.getName() + " x where x.timeOverdue < :timeNow",params));
           for (          ActivityState activityState : list) {
             fireExpiredEvent(activityState);
           }
