@@ -19,12 +19,19 @@
       }
       exchange.getIn().setHeader(Exchange.INTERCEPTED_ENDPOINT,delegate.getEndpointUri());
       detour.process(exchange);
-      if (exchange.hasOut()) {
-        exchange.setIn(exchange.getOut());
-        exchange.setOut(null);
-      }
       if (!skip) {
-        producer.process(exchange);
+        if (!exchange.isFailed()) {
+          if (exchange.hasOut()) {
+            exchange.setIn(exchange.getOut());
+            exchange.setOut(null);
+          }
+          producer.process(exchange);
+        }
+ else {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Exchange has failed so skip sending to original intended destination: " + getEndpointUri() + " for exchange: "+ exchange);
+          }
+        }
       }
  else {
         if (LOG.isDebugEnabled()) {
