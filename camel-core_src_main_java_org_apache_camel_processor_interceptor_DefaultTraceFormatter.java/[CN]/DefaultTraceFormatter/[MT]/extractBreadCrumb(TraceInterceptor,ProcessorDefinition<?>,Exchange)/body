@@ -15,7 +15,8 @@
   }
   String from="";
   String to="";
-  if (showNode) {
+  String route="";
+  if (showNode || showRouteId) {
     TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
     RouteNode traceFrom=traced.getSecondLastNode();
     if (traceFrom != null) {
@@ -27,10 +28,19 @@
     RouteNode traceTo=traced.getLastNode();
     if (traceTo != null) {
       to=getNodeMessage(traceTo,exchange);
+      if (traceTo.isAbstract()) {
+        traceTo=traced.getSecondLastNode();
+      }
+      route=extractRoute(traceTo.getProcessorDefinition());
     }
   }
   if (showNode) {
-    result=id.trim() + " >>> " + from+ " --> "+ to.trim();
+    if (showRouteId && route != null) {
+      result=id.trim() + " >>> (" + route+ ") "+ from+ " --> "+ to.trim()+ " <<< ";
+    }
+ else {
+      result=id.trim() + " >>> " + from+ " --> "+ to.trim()+ " <<< ";
+    }
     if (interceptor.shouldTraceOutExchanges() && exchange.hasOut()) {
       result+=" (OUT) ";
     }
