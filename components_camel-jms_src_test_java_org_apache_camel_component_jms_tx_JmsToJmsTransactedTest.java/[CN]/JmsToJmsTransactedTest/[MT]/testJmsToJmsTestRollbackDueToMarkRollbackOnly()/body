@@ -1,0 +1,16 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("activemq:queue:foo").transacted().to("mock:start").to("activemq:queue:bar").markRollbackOnly();
+      from("activemq:queue:bar").to("log:bar").to("mock:bar");
+    }
+  }
+);
+  context.start();
+  MockEndpoint bar=getMockEndpoint("mock:bar");
+  bar.expectedMessageCount(0);
+  MockEndpoint start=getMockEndpoint("mock:start");
+  start.expectedMessageCount(6);
+  template.sendBody("activemq:queue:foo","Hello World");
+  assertMockEndpointsSatisfied();
+}
