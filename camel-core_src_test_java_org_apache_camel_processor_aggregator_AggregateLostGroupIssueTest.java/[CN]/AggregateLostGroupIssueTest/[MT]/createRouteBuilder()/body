@@ -1,14 +1,14 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("timer://foo?period=100").process(new Processor(){
+      from("timer://foo?period=100").startupOrder(2).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getOut().setBody(messageIndex++);
           exchange.getOut().setHeader("aggregateGroup","group1");
         }
       }
 ).to("direct:aggregator");
-      from("direct:aggregator").aggregate(header("aggregateGroup"),new AggregationStrategy(){
+      from("direct:aggregator").startupOrder(1).aggregate(header("aggregateGroup"),new AggregationStrategy(){
         public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
           if (oldExchange == null) {
             return newExchange;
