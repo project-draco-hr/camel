@@ -1,28 +1,8 @@
 {
-  ProtocolCodecFactory codecFactory=configuration.getCodec();
-  if (codecFactory == null) {
-    if (configuration.isTextline()) {
-      Charset charset=getEncodingParameter(type,configuration);
-      LineDelimiter delimiter=getLineDelimiterParameter(configuration.getTextlineDelimiter());
-      TextLineCodecFactory tmpCodecFactory=new TextLineCodecFactory(charset,delimiter);
-      if (configuration.getEncoderMaxLineLength() > 0) {
-        tmpCodecFactory.setEncoderMaxLineLength(configuration.getEncoderMaxLineLength());
-      }
-      if (configuration.getDecoderMaxLineLength() > 0) {
-        tmpCodecFactory.setDecoderMaxLineLength(configuration.getDecoderMaxLineLength());
-      }
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(type + ": Using TextLineCodecFactory: " + codecFactory+ " using encoding: "+ charset+ " line delimiter: "+ configuration.getTextlineDelimiter()+ "("+ delimiter+ ")");
-        LOG.debug("Encoder maximum line length: " + tmpCodecFactory.getEncoderMaxLineLength() + "Decoder maximum line length: "+ tmpCodecFactory.getDecoderMaxLineLength());
-      }
-      codecFactory=tmpCodecFactory;
-    }
- else {
-      codecFactory=new ObjectSerializationCodecFactory();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(type + ": Using ObjectSerializationCodecFactory: " + codecFactory);
-      }
-    }
+  if (configuration.getCodec() != null) {
+    addCodecFactory(config,configuration.getCodec());
   }
-  addCodecFactory(config,codecFactory);
+ else   if (configuration.isAllowDefaultCodec()) {
+    configureDefaultCodecFactory(type,config,configuration);
+  }
 }
