@@ -3,6 +3,7 @@
   WebClient client=cfb.createWebClient();
   String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
   Class responseClass=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_RESPONSE_CLASS,Class.class);
+  Type genericType=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_RESPONSE_GENERIC_TYPE,Type.class);
   String path=inMessage.getHeader(Exchange.HTTP_PATH,String.class);
   if (LOG.isTraceEnabled()) {
     LOG.trace("HTTP method = " + httpMethod);
@@ -34,6 +35,15 @@
   Object response=null;
   if (responseClass == null || Response.class.equals(responseClass)) {
     response=client.invoke(httpMethod,body);
+  }
+ else   if (Collection.class.isAssignableFrom(responseClass)) {
+    if (genericType instanceof ParameterizedType) {
+      Type[] actualTypeArguments=((ParameterizedType)genericType).getActualTypeArguments();
+      response=client.invokeAndGetCollection(httpMethod,body,(Class)actualTypeArguments[0]);
+    }
+ else {
+      throw new CamelException("Can't find the Collection member type");
+    }
   }
  else {
     response=client.invoke(httpMethod,body,responseClass);
