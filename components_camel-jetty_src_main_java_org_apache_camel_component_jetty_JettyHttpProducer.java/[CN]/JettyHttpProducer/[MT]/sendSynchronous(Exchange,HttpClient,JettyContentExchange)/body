@@ -13,7 +13,12 @@
  else   if (exchangeState == HttpExchange.STATUS_EXPIRED) {
     throw new ExchangeTimedOutException(exchange,client.getTimeout());
   }
- else   if (exchangeState == HttpExchange.STATUS_EXCEPTED) {
-    throw new CamelExchangeException("JettyClient failed with state " + exchangeState,exchange);
+ else {
+    if (exchange.getException() != null) {
+      throw exchange.getException();
+    }
+ else {
+      exchange.setException(new CamelExchangeException("JettyClient failed with state " + exchangeState,exchange));
+    }
   }
 }
