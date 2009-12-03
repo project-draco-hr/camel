@@ -1,53 +1,8 @@
 {
-  if (log.isTraceEnabled()) {
-    log.trace("Transaction error handler is processing: " + exchange);
+  if (exchange.getUnitOfWork().isTransactedBy(transactionTemplate)) {
+    processByRegularErrorHandler(exchange);
   }
-  transactionTemplate.execute(new TransactionCallbackWithoutResult(){
-    protected void doInTransactionWithoutResult(    TransactionStatus status){
-      TransactedRuntimeCamelException rce=null;
-      boolean activeTx=TransactionSynchronizationManager.isActualTransactionActive();
-      if (!activeTx) {
-        activeTx=status.isNewTransaction() && !status.isCompleted();
-        if (!activeTx) {
-          if (DefaultTransactionStatus.class.isAssignableFrom(status.getClass())) {
-            DefaultTransactionStatus defStatus=DefaultTransactionStatus.class.cast(status);
-            activeTx=defStatus.hasTransaction() && !status.isCompleted();
-          }
-        }
-      }
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Is actual transaction active: " + activeTx);
-      }
-      if (activeTx) {
-        exchange.setProperty(Exchange.TRANSACTED,Boolean.TRUE);
-      }
-      try {
-        TransactionErrorHandler.super.process(exchange);
-      }
- catch (      Exception e) {
-        exchange.setException(e);
-      }
-      if (exchange.getException() != null || exchange.isRollbackOnly()) {
-        if (exchange.getException() != null) {
-          rce=wrapTransactedRuntimeException(exchange.getException());
-        }
-        if (activeTx && !status.isRollbackOnly()) {
-          status.setRollbackOnly();
-          if (LOG.isDebugEnabled()) {
-            if (rce != null) {
-              LOG.debug("Setting transaction to rollbackOnly due to exception being thrown: " + rce.getMessage());
-            }
  else {
-              LOG.debug("Setting transaction to rollbackOnly as Exchange was marked as rollback only");
-            }
-          }
-        }
-        if (rce != null) {
-          throw rce;
-        }
-      }
-    }
+    processInTransaction(exchange);
   }
-);
-  log.trace("Transaction error handler done");
 }

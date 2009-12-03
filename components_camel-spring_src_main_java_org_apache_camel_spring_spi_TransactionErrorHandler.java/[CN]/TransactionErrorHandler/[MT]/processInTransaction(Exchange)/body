@@ -1,0 +1,25 @@
+{
+  String id=ObjectHelper.getIdentityHashCode(transactionTemplate);
+  try {
+    exchange.getUnitOfWork().beginTransactedBy(transactionTemplate);
+    if (log.isDebugEnabled()) {
+      log.debug("Transaction begin (" + id + ") for ExchangeId: "+ exchange.getExchangeId());
+    }
+    doInTransactionTemplate(exchange);
+    if (log.isDebugEnabled()) {
+      log.debug("Transaction commit (" + id + ") for ExchangeId: "+ exchange.getExchangeId());
+    }
+  }
+ catch (  TransactionRollbackException e) {
+    if (log.isDebugEnabled()) {
+      log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId());
+    }
+  }
+catch (  Exception e) {
+    log.warn("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exception: "+ e.getMessage());
+    exchange.setException(e);
+  }
+ finally {
+    exchange.getUnitOfWork().endTransactedBy(transactionTemplate);
+  }
+}

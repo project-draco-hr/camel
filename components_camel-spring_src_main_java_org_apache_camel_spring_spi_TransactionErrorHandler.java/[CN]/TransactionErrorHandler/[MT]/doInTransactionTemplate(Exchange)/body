@@ -1,0 +1,30 @@
+{
+  transactionTemplate.execute(new TransactionCallbackWithoutResult(){
+    protected void doInTransactionWithoutResult(    TransactionStatus status){
+      RuntimeCamelException rce=null;
+      exchange.setProperty(Exchange.TRANSACTED,Boolean.TRUE);
+      try {
+        TransactionErrorHandler.super.process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+      if (exchange.getException() != null || exchange.isRollbackOnly()) {
+        exchange.removeProperty(Exchange.ROLLBACK_ONLY_LAST);
+        if (exchange.getException() != null) {
+          rce=ObjectHelper.wrapRuntimeCamelException(exchange.getException());
+        }
+        if (!status.isRollbackOnly()) {
+          status.setRollbackOnly();
+        }
+        if (rce != null) {
+          throw rce;
+        }
+ else {
+          throw new TransactionRollbackException();
+        }
+      }
+    }
+  }
+);
+}
