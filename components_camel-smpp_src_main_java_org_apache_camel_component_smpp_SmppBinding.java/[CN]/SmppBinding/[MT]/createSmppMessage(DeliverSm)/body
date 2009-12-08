@@ -1,0 +1,25 @@
+{
+  SmppMessage smppMessage=new SmppMessage(deliverSm);
+  if (deliverSm.isSmscDeliveryReceipt()) {
+    DeliveryReceipt smscDeliveryReceipt=deliverSm.getShortMessageAsDeliveryReceipt();
+    smppMessage.setBody(smscDeliveryReceipt.getText());
+    smppMessage.setHeader(ID,smscDeliveryReceipt.getId());
+    smppMessage.setHeader(DELIVERED,smscDeliveryReceipt.getDelivered());
+    smppMessage.setHeader(DONE_DATE,smscDeliveryReceipt.getDoneDate());
+    if (!"000".equals(smscDeliveryReceipt.getError())) {
+      smppMessage.setHeader(ERROR,smscDeliveryReceipt.getError());
+    }
+    smppMessage.setHeader(SUBMIT_DATE,smscDeliveryReceipt.getSubmitDate());
+    smppMessage.setHeader(SUBMITTED,smscDeliveryReceipt.getSubmitted());
+  }
+ else {
+    smppMessage.setBody(String.valueOf(new String(deliverSm.getShortMessage(),configuration.getEncoding())));
+    smppMessage.setHeader(SEQUENCE_NUMBER,deliverSm.getSequenceNumber());
+    smppMessage.setHeader(COMMAND_ID,deliverSm.getCommandId());
+    smppMessage.setHeader(SOURCE_ADDR,deliverSm.getSourceAddr());
+    smppMessage.setHeader(DEST_ADDR,deliverSm.getDestAddress());
+    smppMessage.setHeader(SCHEDULE_DELIVERY_TIME,deliverSm.getScheduleDeliveryTime());
+    smppMessage.setHeader(VALIDITY_PERIOD,deliverSm.getValidityPeriod());
+  }
+  return smppMessage;
+}

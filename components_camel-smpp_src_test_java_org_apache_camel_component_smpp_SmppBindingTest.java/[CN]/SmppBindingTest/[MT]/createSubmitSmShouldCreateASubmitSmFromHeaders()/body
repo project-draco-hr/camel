@@ -1,0 +1,32 @@
+{
+  Exchange exchange=new DefaultExchange(new DefaultCamelContext());
+  exchange.getIn().setBody("Hello SMPP world!");
+  exchange.getIn().setHeader(SmppBinding.DEST_ADDR,"1919");
+  exchange.getIn().setHeader(SmppBinding.DEST_ADDR_NPI,NumberingPlanIndicator.NATIONAL.value());
+  exchange.getIn().setHeader(SmppBinding.DEST_ADDR_TON,TypeOfNumber.NATIONAL.value());
+  exchange.getIn().setHeader(SmppBinding.PRIORITY_FLAG,(byte)0);
+  exchange.getIn().setHeader(SmppBinding.PROTOCOL_ID,(byte)1);
+  exchange.getIn().setHeader(SmppBinding.REGISTERED_DELIVERY,(byte)0);
+  exchange.getIn().setHeader(SmppBinding.REPLACE_IF_PRESENT_FLAG,(byte)1);
+  exchange.getIn().setHeader(SmppBinding.SCHEDULE_DELIVERY_TIME,new Date(1251753000000L));
+  exchange.getIn().setHeader(SmppBinding.SERVICE_TYPE,"XXX");
+  exchange.getIn().setHeader(SmppBinding.VALIDITY_PERIOD,new Date(1251753600000L));
+  exchange.getIn().setHeader(SmppBinding.SOURCE_ADDR,"1818");
+  exchange.getIn().setHeader(SmppBinding.SOURCE_ADDR_NPI,NumberingPlanIndicator.NATIONAL.value());
+  exchange.getIn().setHeader(SmppBinding.SOURCE_ADDR_TON,TypeOfNumber.NATIONAL.value());
+  SubmitSm submitSm=binding.createSubmitSm(exchange);
+  assertEquals("Hello SMPP world!",new String(submitSm.getShortMessage()));
+  assertEquals("1919",submitSm.getDestAddress());
+  assertEquals(0x08,submitSm.getDestAddrNpi());
+  assertEquals(0x02,submitSm.getDestAddrTon());
+  assertEquals(0x00,submitSm.getPriorityFlag());
+  assertEquals(0x01,submitSm.getProtocolId());
+  assertEquals(0x00,submitSm.getRegisteredDelivery());
+  assertEquals(0x01,submitSm.getReplaceIfPresent());
+  assertEquals("090831231000004+",submitSm.getScheduleDeliveryTime());
+  assertEquals("XXX",submitSm.getServiceType());
+  assertEquals("1818",submitSm.getSourceAddr());
+  assertEquals(0x08,submitSm.getSourceAddrNpi());
+  assertEquals(0x02,submitSm.getSourceAddrTon());
+  assertEquals("090831232000004+",submitSm.getValidityPeriod());
+}

@@ -1,0 +1,19 @@
+{
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(1);
+  Endpoint start=getMandatoryEndpoint("direct:start");
+  Exchange exchange=start.createExchange();
+  exchange.setPattern(ExchangePattern.InOut);
+  exchange.getIn().setBody("Hello SMPP World!");
+  template.send(start,exchange);
+  assertMockEndpointsSatisfied();
+  Exchange resultExchange=result.getExchanges().get(0);
+  assertEquals("Hello SMPP World!",resultExchange.getIn().getBody());
+  assertNotNull(resultExchange.getIn().getHeader(SmppBinding.ID));
+  assertEquals(1,resultExchange.getIn().getHeader(SmppBinding.SUBMITTED));
+  assertEquals(1,resultExchange.getIn().getHeader(SmppBinding.DELIVERED));
+  assertNotNull(resultExchange.getIn().getHeader(SmppBinding.DONE_DATE));
+  assertNotNull(resultExchange.getIn().getHeader(SmppBinding.SUBMIT_DATE));
+  assertNull(resultExchange.getIn().getHeader(SmppBinding.ERROR));
+  assertNotNull(exchange.getOut().getHeader(SmppBinding.ID));
+}

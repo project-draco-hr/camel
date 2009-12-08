@@ -1,0 +1,22 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Sending a short message for exchange id '" + exchange.getExchangeId() + "'...");
+  }
+  SubmitSm submitSm=getEndpoint().getBinding().createSubmitSm(exchange);
+  String messageId;
+  try {
+    messageId=doProcess(submitSm);
+  }
+ catch (  Exception e) {
+    doStop();
+    doStart();
+    messageId=doProcess(submitSm);
+  }
+  LOG.info("Sent a short message for exchange id '" + exchange.getExchangeId() + "' and received message id '"+ messageId+ "'");
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getOut().setHeader(SmppBinding.ID,messageId);
+  }
+ else {
+    exchange.getIn().setHeader(SmppBinding.ID,messageId);
+  }
+}
