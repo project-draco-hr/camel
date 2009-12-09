@@ -8,8 +8,12 @@
     String keyPassword=(String)ftpClientKeyStoreParameters.get("keyPassword");
     KeyStore keyStore=KeyStore.getInstance(type);
     FileInputStream keyStoreFileInputStream=new FileInputStream(new File(file));
-    keyStore.load(keyStoreFileInputStream,password.toCharArray());
-    keyStoreFileInputStream.close();
+    try {
+      keyStore.load(keyStoreFileInputStream,password.toCharArray());
+    }
+  finally {
+      ObjectHelper.close(keyStoreFileInputStream,"keyStore",log);
+    }
     KeyManagerFactory keyMgrFactory=KeyManagerFactory.getInstance(algorithm);
     keyMgrFactory.init(keyStore,keyPassword.toCharArray());
     client.setNeedClientAuth(true);
@@ -22,8 +26,12 @@
     String algorithm=(ftpClientTrustStoreParameters.containsKey("algorithm")) ? (String)ftpClientTrustStoreParameters.get("algorithm") : TrustManagerFactory.getDefaultAlgorithm();
     KeyStore trustStore=KeyStore.getInstance(type);
     FileInputStream trustStoreFileInputStream=new FileInputStream(new File(file));
-    trustStore.load(trustStoreFileInputStream,password.toCharArray());
-    trustStoreFileInputStream.close();
+    try {
+      trustStore.load(trustStoreFileInputStream,password.toCharArray());
+    }
+  finally {
+      ObjectHelper.close(trustStoreFileInputStream,"trustStore",log);
+    }
     TrustManagerFactory trustMgrFactory=TrustManagerFactory.getInstance(algorithm);
     trustMgrFactory.init(trustStore);
     client.setTrustManager(trustMgrFactory.getTrustManagers()[0]);
