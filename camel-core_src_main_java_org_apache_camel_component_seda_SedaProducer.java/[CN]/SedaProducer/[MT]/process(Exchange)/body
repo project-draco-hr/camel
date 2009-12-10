@@ -19,9 +19,20 @@
     }
 );
     queue.add(copy);
-    boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
-    if (!done) {
-      exchange.setException(new ExchangeTimedOutException(exchange,timeout));
+    if (timeout > 0) {
+      if (log.isTraceEnabled()) {
+        log.trace("Waiting for task to complete using timeout (ms): " + timeout);
+      }
+      boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
+      if (!done) {
+        exchange.setException(new ExchangeTimedOutException(exchange,timeout));
+      }
+    }
+ else {
+      if (log.isTraceEnabled()) {
+        log.trace("Waiting for task to complete (blocking)");
+      }
+      latch.await();
     }
   }
  else {
