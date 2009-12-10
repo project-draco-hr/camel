@@ -1,0 +1,15 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(Exception.class).maximumRedeliveries(2);
+      from("direct:start").multicast().stopOnException().to("mock:foo","mock:bar","mock:baz");
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  getMockEndpoint("mock:bar").expectedMessageCount(1);
+  getMockEndpoint("mock:baz").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+}

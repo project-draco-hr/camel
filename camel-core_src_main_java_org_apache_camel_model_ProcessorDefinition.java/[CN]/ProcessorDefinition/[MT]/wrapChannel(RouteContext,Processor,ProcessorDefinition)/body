@@ -13,14 +13,13 @@
   if (defn instanceof TryDefinition || defn instanceof CatchDefinition || defn instanceof FinallyDefinition) {
     return channel;
   }
+ else   if (defn instanceof MulticastDefinition) {
+    return channel;
+  }
  else {
     Processor output=channel.getOutput();
-    ErrorHandlerBuilder builder=getErrorHandlerBuilder();
-    Processor errorHandler=builder.createErrorHandler(routeContext,output);
+    Processor errorHandler=wrapInErrorHandler(routeContext,output);
     channel.setErrorHandler(errorHandler);
-    for (    LifecycleStrategy strategy : routeContext.getCamelContext().getLifecycleStrategies()) {
-      strategy.onErrorHandlerAdd(routeContext,errorHandler,builder);
-    }
     return channel;
   }
 }
