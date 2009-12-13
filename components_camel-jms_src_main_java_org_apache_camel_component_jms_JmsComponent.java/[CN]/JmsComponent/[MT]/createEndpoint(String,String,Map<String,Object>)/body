@@ -58,23 +58,16 @@
       throw new IllegalArgumentException("The JmsComponent's username or password is null");
     }
   }
-  String strategy=getAndRemoveParameter(parameters,"jmsKeyFormatStrategy",String.class);
-  if (strategy != null) {
-    if (EndpointHelper.isReferenceParameter(strategy)) {
-      String key=strategy.substring(1);
-      endpoint.setJmsKeyFormatStrategy(getCamelContext().getRegistry().lookup(key,JmsKeyFormatStrategy.class));
-    }
+  String strategyVal=getAndRemoveParameter(parameters,KEY_FORMAT_STRATEGY_PARAM,String.class);
+  if ("default".equalsIgnoreCase(strategyVal)) {
+    endpoint.setJmsKeyFormatStrategy(new DefaultJmsKeyFormatStrategy());
+  }
+ else   if ("passthrough".equalsIgnoreCase(strategyVal)) {
+    endpoint.setJmsKeyFormatStrategy(new PassThroughJmsKeyFormatStrategy());
+  }
  else {
-      if ("default".equalsIgnoreCase(strategy)) {
-        endpoint.setJmsKeyFormatStrategy(new DefaultJmsKeyFormatStrategy());
-      }
- else       if ("passthrough".equalsIgnoreCase(strategy)) {
-        endpoint.setJmsKeyFormatStrategy(new PassThroughJmsKeyFormatStrategy());
-      }
- else {
-        throw new IllegalArgumentException("Unknown jmsKeyFormatStrategy option: " + strategy);
-      }
-    }
+    parameters.put(KEY_FORMAT_STRATEGY_PARAM,strategyVal);
+    endpoint.setJmsKeyFormatStrategy(resolveAndRemoveReferenceParameter(parameters,KEY_FORMAT_STRATEGY_PARAM,JmsKeyFormatStrategy.class));
   }
   setProperties(endpoint.getConfiguration(),parameters);
   endpoint.setHeaderFilterStrategy(getHeaderFilterStrategy());

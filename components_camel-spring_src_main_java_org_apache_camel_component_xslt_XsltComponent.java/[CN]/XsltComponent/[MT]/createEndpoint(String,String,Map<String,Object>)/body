@@ -4,11 +4,7 @@
     log.debug(this + " using schema resource: " + resource);
   }
   XsltBuilder xslt=getCamelContext().getInjector().newInstance(XsltBuilder.class);
-  XmlConverter converter=null;
-  String converterName=getAndRemoveParameter(parameters,"converter",String.class);
-  if (converterName != null) {
-    converter=CamelContextHelper.mandatoryLookup(getCamelContext(),converterName,XmlConverter.class);
-  }
+  XmlConverter converter=resolveAndRemoveReferenceParameter(parameters,"converter",XmlConverter.class);
   if (converter == null) {
     converter=getXmlConverter();
   }
@@ -26,9 +22,8 @@
       log.warn("Cannot find the TransformerFactoryClass with the class name: " + transformerFactoryClassName);
     }
   }
-  String transformerFactoryName=getAndRemoveParameter(parameters,"transformerFactory",String.class);
-  if (transformerFactoryName != null) {
-    factory=CamelContextHelper.mandatoryLookup(getCamelContext(),transformerFactoryName,TransformerFactory.class);
+  if (parameters.get("transformerFactory") != null) {
+    factory=resolveAndRemoveReferenceParameter(parameters,"transformerFactory",TransformerFactory.class);
   }
   if (factory != null) {
     xslt.getConverter().setTransformerFactory(factory);
