@@ -5,6 +5,11 @@
       traced.pushBlock();
     }
     setToEndpoint(exchange,producer);
+    if (exchange.getUnitOfWork() != null && exchange.getUnitOfWork().getRouteContext() != null) {
+      RouteContext routeContext=exchange.getUnitOfWork().getRouteContext();
+      ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
+      producer=builder.createErrorHandler(routeContext,producer);
+    }
     producer.process(exchange);
   }
  catch (  Exception e) {

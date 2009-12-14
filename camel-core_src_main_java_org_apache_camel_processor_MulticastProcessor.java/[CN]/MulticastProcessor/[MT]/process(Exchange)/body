@@ -1,13 +1,19 @@
 {
   final AtomicExchange result=new AtomicExchange();
   final Iterable<ProcessorExchangePair> pairs=createProcessorExchangePairs(exchange);
-  if (isParallelProcessing()) {
-    doProcessParallel(result,pairs,isStreaming());
-  }
+  try {
+    if (isParallelProcessing()) {
+      doProcessParallel(result,pairs,isStreaming());
+    }
  else {
-    doProcessSequential(result,pairs);
+      doProcessSequential(result,pairs);
+    }
+    if (result.get() != null) {
+      ExchangeHelper.copyResults(exchange,result.get());
+    }
   }
-  if (result.get() != null) {
-    ExchangeHelper.copyResults(exchange,result.get());
+ catch (  Exception e) {
+    exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
+    exchange.setException(e);
   }
 }
