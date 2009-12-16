@@ -1,4 +1,5 @@
 {
+  Exception caught=exchange.getException();
   exchange.setException(null);
   if (data.handledPredicate != null && data.handledPredicate.matches(exchange)) {
     exchange.getIn().removeHeader(Exchange.REDELIVERED);
@@ -27,7 +28,11 @@
       exchange.setException(e);
     }
     log.trace("Failure processor done");
-    String msg="Failed delivery for exchangeId: " + exchange.getExchangeId() + ". Processed by failure processor: "+ processor;
-    logFailedDelivery(false,exchange,msg,data,null);
   }
+  String msg="Failed delivery for exchangeId: " + exchange.getExchangeId();
+  msg=msg + ". Exhausted after delivery attempt: " + data.redeliveryCounter+ " caught: "+ caught;
+  if (processor != null) {
+    msg=msg + ". Processed by failure processor: " + processor;
+  }
+  logFailedDelivery(false,exchange,msg,data,null);
 }

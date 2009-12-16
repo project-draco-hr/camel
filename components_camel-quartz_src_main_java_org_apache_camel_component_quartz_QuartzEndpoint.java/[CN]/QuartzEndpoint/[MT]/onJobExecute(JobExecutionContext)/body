@@ -6,13 +6,14 @@
   try {
     getLoadBalancer().process(exchange);
     if (exchange.getException() != null) {
-      LOG.error("Quart Job processing Exchange: " + exchange + " failed with exception.",exchange.getException());
+      throw new JobExecutionException(exchange.getException());
     }
   }
- catch (  JobExecutionException e) {
-    throw e;
-  }
-catch (  Exception e) {
+ catch (  Exception e) {
+    LOG.error(ExchangeHelper.createExceptionMessage("Error processing exchange",exchange,e));
+    if (e instanceof JobExecutionException) {
+      throw (JobExecutionException)e;
+    }
     throw new JobExecutionException(e);
   }
 }
