@@ -1,6 +1,13 @@
 {
   if (this.defaultInstance == null) {
-    throw new CamelException("There is not defaultInstance for protobuf unmarshaling");
+    if (instanceClassName == null) {
+      throw new CamelException("There is not defaultInstance for protobuf unmarshaling");
+    }
+ else {
+      if (!setDefaultInstanceHasBeenCalled.getAndSet(true)) {
+        defaultInstance=loadDefaultInstance(instanceClassName,exchange.getContext());
+      }
+    }
   }
   Builder builder=this.defaultInstance.newBuilderForType().mergeFrom(inputStream);
   if (!builder.isInitialized()) {
