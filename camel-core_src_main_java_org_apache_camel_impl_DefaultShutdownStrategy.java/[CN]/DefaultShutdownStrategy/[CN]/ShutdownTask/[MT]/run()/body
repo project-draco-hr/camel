@@ -1,0 +1,43 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("There are " + consumers.size() + " routes to shutdown");
+  }
+  List<Consumer> deferredConsumers=new ArrayList<Consumer>();
+  for (  Consumer consumer : consumers) {
+    boolean shutdown=true;
+    if (consumer instanceof ShutdownAware) {
+      shutdown=((ShutdownAware)consumer).deferShutdown();
+    }
+    if (shutdown) {
+      shutdownConsumer(consumer);
+    }
+ else {
+      deferredConsumers.add(consumer);
+    }
+  }
+  boolean done=false;
+  while (!done) {
+    int size=0;
+    for (    Consumer consumer : consumers) {
+      size+=context.getInflightRepository().size(consumer.getEndpoint());
+      if (consumer instanceof ShutdownAware) {
+        size+=((ShutdownAware)consumer).getPendingExchanges();
+      }
+    }
+    if (size > 0) {
+      try {
+        LOG.info("Waiting as there are still " + size + " inflight exchanges to complete before we can shutdown");
+        Thread.sleep(1000);
+      }
+ catch (      InterruptedException e) {
+        LOG.warn("Interrupted while waiting during graceful shutdown, will force shutdown now.");
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+ else {
+      done=true;
+    }
+  }
+  shutdownNow(deferredConsumers);
+}
