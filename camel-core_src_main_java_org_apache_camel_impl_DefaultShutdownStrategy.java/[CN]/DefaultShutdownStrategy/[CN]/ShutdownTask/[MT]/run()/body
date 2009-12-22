@@ -5,10 +5,19 @@
   List<Consumer> deferredConsumers=new ArrayList<Consumer>();
   for (  Consumer consumer : consumers) {
     boolean shutdown=true;
+    boolean suspend=false;
     if (consumer instanceof ShutdownAware) {
       shutdown=((ShutdownAware)consumer).deferShutdown();
     }
-    if (shutdown) {
+ else     if (consumer instanceof SuspendableService) {
+      shutdown=false;
+      suspend=true;
+    }
+    if (suspend) {
+      suspendNow((SuspendableService)consumer,consumer);
+      deferredConsumers.add(consumer);
+    }
+ else     if (shutdown) {
       shutdownNow(consumer);
     }
  else {
