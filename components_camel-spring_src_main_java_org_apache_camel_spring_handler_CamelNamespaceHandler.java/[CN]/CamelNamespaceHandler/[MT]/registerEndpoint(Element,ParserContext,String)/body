@@ -3,6 +3,12 @@
   if (ObjectHelper.isNotEmpty(id)) {
     BeanDefinition definition=endpointParser.parse(childElement,parserContext);
     definition.getPropertyValues().addPropertyValue("camelContext",new RuntimeBeanReference(contextId));
-    parserContext.registerComponent(new BeanComponentDefinition(definition,id));
+    try {
+      Method method=definition.getClass().getMethod("setDependsOn",String[].class);
+      method.invoke(definition,(Object)new String[]{contextId});
+    }
+ catch (    Exception e) {
+    }
+    parserContext.registerBeanComponent(new BeanComponentDefinition(definition,id));
   }
 }
