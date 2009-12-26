@@ -1,41 +1,60 @@
 {
   if (LOG.isDebugEnabled()) {
-    LOG.debug("There are " + consumers.size() + " routes to shutdown");
+    LOG.debug("There are " + routes.size() + " routes to shutdown");
   }
-  List<Consumer> deferredConsumers=new ArrayList<Consumer>();
-  for (  Consumer consumer : consumers) {
-    boolean shutdown=true;
-    boolean suspend=false;
-    if (consumer instanceof ShutdownAware) {
-      shutdown=((ShutdownAware)consumer).deferShutdown();
+  List<ShutdownDeferredConsumer> deferredConsumers=new ArrayList<ShutdownDeferredConsumer>();
+  for (  RouteStartupOrder order : routes) {
+    ShutdownRoute shutdownRoute=order.getRoute().getRouteContext().getShutdownRoute();
+    ShutdownRunningTask shutdownRunningTask=order.getRoute().getRouteContext().getShutdownRunningTask();
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Shutting down route: " + order.getRoute().getId() + " with options ["+ shutdownRoute+ ","+ shutdownRunningTask+ "]");
     }
- else     if (consumer instanceof SuspendableService) {
-      shutdown=false;
-      suspend=true;
-    }
-    if (suspend) {
-      suspendNow((SuspendableService)consumer,consumer);
-      deferredConsumers.add(consumer);
-    }
- else     if (shutdown) {
-      shutdownNow(consumer);
-    }
+    for (    Consumer consumer : order.getInputs()) {
+      boolean suspend=false;
+      boolean shutdown=shutdownRoute != ShutdownRoute.Defer;
+      if (shutdown) {
+        if (consumer instanceof ShutdownAware) {
+          shutdown=((ShutdownAware)consumer).deferShutdown();
+        }
+ else         if (consumer instanceof SuspendableService) {
+          suspend=true;
+        }
+      }
+      if (suspend) {
+        suspendNow((SuspendableService)consumer,consumer);
+        deferredConsumers.add(new ShutdownDeferredConsumer(order.getRoute(),consumer));
+        LOG.info("Route: " + order.getRoute().getId() + " suspended and shutdown deferred.");
+      }
+ else       if (shutdown) {
+        shutdownNow(consumer);
+        LOG.info("Route: " + order.getRoute().getId() + " shutdown complete.");
+      }
  else {
-      deferredConsumers.add(consumer);
+        deferredConsumers.add(new ShutdownDeferredConsumer(order.getRoute(),consumer));
+        LOG.info("Route: " + order.getRoute().getId() + " shutdown deferred.");
+      }
     }
   }
   boolean done=false;
   while (!done) {
     int size=0;
-    for (    Consumer consumer : consumers) {
-      size+=context.getInflightRepository().size(consumer.getEndpoint());
-      if (consumer instanceof ShutdownAware) {
-        size+=((ShutdownAware)consumer).getPendingExchangesSize();
+    for (    RouteStartupOrder order : routes) {
+      for (      Consumer consumer : order.getInputs()) {
+        int inflight=context.getInflightRepository().size(consumer.getEndpoint());
+        if (consumer instanceof ShutdownAware) {
+          inflight+=((ShutdownAware)consumer).getPendingExchangesSize();
+        }
+        if (inflight > 0) {
+          size+=inflight;
+          if (LOG.isDebugEnabled()) {
+            LOG.debug(inflight + " inflight and pending exchanges for consumer: " + consumer);
+          }
+        }
       }
     }
     if (size > 0) {
       try {
-        LOG.info("Waiting as there are still " + size + " inflight exchanges to complete before we can shutdown");
+        LOG.info("Waiting as there are still " + size + " inflight and pending exchanges to complete before we can shutdown");
         Thread.sleep(1000);
       }
  catch (      InterruptedException e) {
@@ -48,5 +67,8 @@
       done=true;
     }
   }
-  shutdownNow(deferredConsumers);
+  for (  ShutdownDeferredConsumer deferred : deferredConsumers) {
+    shutdownNow(deferred.getConsumer());
+    LOG.info("Route: " + deferred.getRoute().getId() + " shutdown complete.");
+  }
 }

@@ -8,7 +8,7 @@
   super.start();
   LOG.debug("Starting routes...");
 synchronized (this) {
-    Map<Integer,StartupRouteHolder> inputs=new TreeMap<Integer,StartupRouteHolder>();
+    Map<Integer,DefaultRouteStartupOrder> inputs=new TreeMap<Integer,DefaultRouteStartupOrder>();
     for (    RouteService routeService : routeServices.values()) {
       Boolean autoStart=routeService.getRouteDefinition().isAutoStartup();
       if (autoStart == null || autoStart) {
@@ -19,14 +19,14 @@ synchronized (this) {
           if (startupOrder == null) {
             startupOrder=defaultRouteStartupOrder++;
           }
-          StartupRouteHolder holder=null;
+          DefaultRouteStartupOrder holder=null;
           for (          Map.Entry<Route,Consumer> entry : routeService.getInputs().entrySet()) {
             if (holder == null) {
-              holder=new StartupRouteHolder(startupOrder,entry.getKey());
+              holder=new DefaultRouteStartupOrder(startupOrder,entry.getKey());
             }
             holder.addInput(entry.getValue());
           }
-          StartupRouteHolder other=inputs.get(startupOrder);
+          DefaultRouteStartupOrder other=inputs.get(startupOrder);
           if (other != null) {
             String otherId=other.getRoute().getId();
             throw new FailedToStartRouteException(holder.getRoute().getId(),"starupOrder clash. Route " + otherId + " already has startupOrder "+ startupOrder+ " configured which this route have as well. Please correct startupOrder to be unique among all your routes.");
@@ -65,19 +65,19 @@ catch (        Exception e) {
         }
       }
     }
-    for (    Map.Entry<Integer,StartupRouteHolder> entry : inputs.entrySet()) {
+    for (    Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
       Integer order=entry.getKey();
       Route route=entry.getValue().getRoute();
       List<Consumer> consumers=entry.getValue().getInputs();
       for (      Consumer consumer : consumers) {
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("Starting consumer (order: " + order + ") on route: "+ route.getId());
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
         }
         for (        LifecycleStrategy strategy : lifecycleStrategies) {
           strategy.onServiceAdd(this,consumer,route);
         }
         ServiceHelper.startService(consumer);
-        routeStartupOrder.add(consumer);
+        routeStartupOrder.add(entry.getValue());
       }
     }
   }
@@ -87,6 +87,7 @@ catch (        Exception e) {
     }
     LOG.debug("... Routes started");
   }
+  LOG.info("Started " + getRoutes().size() + " routes");
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") started");
   EventHelper.notifyCamelContextStarted(this);
 }
