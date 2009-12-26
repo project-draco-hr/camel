@@ -7,7 +7,7 @@
     LOG.debug("Limiting to maximum messages to poll " + maxMessagesPerPoll + " as there was "+ total+ " messages in this poll.");
     total=maxMessagesPerPoll;
   }
-  for (int index=0; index < total && isRunAllowed(); index++) {
+  for (int index=0; index < total && isBatchAllowed(); index++) {
     DataHolder holder=ObjectHelper.cast(DataHolder.class,exchanges.poll());
     EntityManager entityManager=holder.manager;
     Exchange exchange=holder.exchange;
@@ -15,6 +15,7 @@
     exchange.setProperty(Exchange.BATCH_INDEX,index);
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
+    pendingExchanges=total - index - 1;
     if (lockEntity(result,entityManager)) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Processing exchange: " + exchange);

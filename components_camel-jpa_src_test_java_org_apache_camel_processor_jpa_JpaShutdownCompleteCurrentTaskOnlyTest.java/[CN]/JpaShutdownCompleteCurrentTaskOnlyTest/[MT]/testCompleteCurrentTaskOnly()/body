@@ -1,0 +1,16 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("jpa://" + SendEmail.class.getName()).routeId("route1").shutdownRunningTask(ShutdownRunningTask.CompleteCurrentTaskOnly).delay(1000).to("seda:foo");
+      from("seda:foo").routeId("route2").to("mock:bar");
+    }
+  }
+);
+  context.start();
+  MockEndpoint bar=getMockEndpoint("mock:bar");
+  bar.expectedMinimumMessageCount(1);
+  bar.setResultWaitTime(3000);
+  assertMockEndpointsSatisfied();
+  context.stop();
+  assertTrue("Should NOT complete all messages, was: " + bar.getReceivedCounter(),bar.getReceivedCounter() < 8);
+}
