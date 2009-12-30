@@ -4,6 +4,7 @@
   String path=ObjectHelper.after(u.getPath(),"/");
   String host=u.getHost();
   String cron=getAndRemoveParameter(parameters,"cron",String.class);
+  Boolean fireNow=getAndRemoveParameter(parameters,"fireNow",Boolean.class,Boolean.FALSE);
   String name;
   String group;
   if (ObjectHelper.isNotEmpty(path) && ObjectHelper.isNotEmpty(host)) {
@@ -14,18 +15,25 @@
     group="Camel";
     name=host;
   }
+  Map<String,Object> triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
+  Map<String,Object> jobParameters=IntrospectionSupport.extractProperties(parameters,"job.");
   Trigger trigger;
   if (ObjectHelper.isNotEmpty(cron)) {
     trigger=createCronTrigger(cron);
   }
  else {
     trigger=new SimpleTrigger();
+    if (fireNow) {
+      String intervalString=(String)triggerParameters.get("repeatInterval");
+      if (intervalString != null) {
+        long interval=Long.valueOf(intervalString);
+        trigger.setStartTime(new Date(System.currentTimeMillis() - interval));
+      }
+    }
   }
   answer.setTrigger(trigger);
   trigger.setName(name);
   trigger.setGroup(group);
-  Map<String,Object> triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
-  Map<String,Object> jobParameters=IntrospectionSupport.extractProperties(parameters,"job.");
   setProperties(trigger,triggerParameters);
   setProperties(answer.getJobDetail(),jobParameters);
   return answer;
