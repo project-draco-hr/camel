@@ -1,8 +1,14 @@
 {
   return new ExpressionAdapter(){
     public Object evaluate(    Exchange exchange){
-      if (nullBodyAllowed && exchange.getIn().getBody() == null) {
-        return null;
+      if (nullBodyAllowed) {
+        if (exchange.getIn().getBody() == null) {
+          return null;
+        }
+        BeanInvocation bi=exchange.getIn().getBody(BeanInvocation.class);
+        if (bi != null && (bi.getArgs() == null || bi.getArgs().length == 0 || bi.getArgs()[0] == null)) {
+          return null;
+        }
       }
       try {
         return exchange.getIn().getMandatoryBody(type);

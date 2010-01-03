@@ -12,13 +12,24 @@
     return;
   }
   Message in=exchange.getIn();
-  if (in.getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) == null) {
-    in.setHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,isMultiParameterArray());
-  }
   BeanInvocation beanInvoke=in.getBody(BeanInvocation.class);
   if (beanInvoke != null) {
-    beanInvoke.invoke(bean,exchange);
-    return;
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Exchange IN body is a BeanInvocation instance: " + beanInvoke);
+    }
+    Class<?> clazz=beanInvoke.getMethod().getDeclaringClass();
+    boolean sameBean=clazz.isInstance(bean);
+    if (LOG.isTraceEnabled()) {
+      LOG.debug("BeanHolder bean: " + bean.getClass() + " and beanInvocation bean: "+ clazz+ " is same instance: "+ sameBean);
+    }
+    if (sameBean) {
+      beanInvoke.invoke(bean,exchange);
+      exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+      return;
+    }
+  }
+  if (in.getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) == null) {
+    in.setHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,isMultiParameterArray());
   }
   String prevMethod=null;
   MethodInvocation invocation;
@@ -34,6 +45,12 @@
   }
   if (invocation == null) {
     throw new IllegalStateException("No method invocation could be created, no matching method could be found on: " + bean);
+  }
+  in.removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
+  if (beanInvoke != null && beanInvoke.getMethod() == invocation.getMethod()) {
+    beanInvoke.invoke(bean,exchange);
+    exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    return;
   }
   Object value=null;
   try {
