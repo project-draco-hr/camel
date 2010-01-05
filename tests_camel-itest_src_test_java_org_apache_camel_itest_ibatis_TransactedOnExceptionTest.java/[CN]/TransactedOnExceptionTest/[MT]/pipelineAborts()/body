@@ -1,0 +1,18 @@
+{
+  end.expectedMessageCount(1);
+  end.whenAnyExchangeReceived(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      throw new MyException();
+    }
+  }
+);
+  error.expectedMessageCount(1);
+  try {
+    producer.sendBody(3);
+    assertFalse(true);
+  }
+ catch (  CamelExecutionException e) {
+    assertEquals(MyException.class,e.getCause().getCause().getClass());
+    assertEquals(0,table.values().size());
+  }
+}
