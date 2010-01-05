@@ -1,0 +1,27 @@
+{
+  if (file.canRead()) {
+    if (file.isDirectory()) {
+      String[] files=file.list();
+      if (files != null) {
+        for (int i=0; i < files.length; i++) {
+          add(new File(file.getAbsolutePath() + "/" + files[i]));
+        }
+      }
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Adding " + file);
+      }
+      openIndexWriter();
+      add("path",file.getPath(),false);
+      add("contents",new String(IOConverter.toByteArray(file)),true);
+      closeIndexWriter();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Added " + file + " successfully");
+      }
+    }
+  }
+ else {
+    LOG.warn("Directory/File " + file.getAbsolutePath() + "could not be read."+ " This directory will not be indexed. Please check permissions and rebuild indexes.");
+  }
+}
