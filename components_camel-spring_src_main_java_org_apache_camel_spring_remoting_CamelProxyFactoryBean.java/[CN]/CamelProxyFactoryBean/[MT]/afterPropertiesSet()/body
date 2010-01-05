@@ -1,23 +1,30 @@
 {
-  super.afterPropertiesSet();
-  try {
-    if (endpoint == null) {
-      if (camelContext == null && camelContextId != null) {
-        camelContext=CamelContextResolverHelper.getCamelContextWithId(applicationContext,camelContextId);
-      }
-      if (getServiceUrl() == null || camelContext == null) {
-        throw new IllegalArgumentException("If endpoint is not specified, the serviceUrl and camelContext must be specified.");
-      }
-      endpoint=camelContext.getEndpoint(getServiceUrl());
-      if (endpoint == null) {
-        throw new IllegalArgumentException("Could not resolve endpoint: " + getServiceUrl());
-      }
+  if (endpoint == null) {
+    if (camelContext == null && camelContextId != null) {
+      camelContext=CamelContextResolverHelper.getCamelContextWithId(applicationContext,camelContextId);
     }
+    if (camelContext == null) {
+      throw new IllegalArgumentException("camelContext or camelContextId must be specified");
+    }
+    if (getServiceUrl() == null && getServiceRef() == null) {
+      throw new IllegalArgumentException("serviceUrl or serviceRef must be specified.");
+    }
+    if (getServiceRef() != null) {
+      endpoint=camelContext.getRegistry().lookup(getServiceRef(),Endpoint.class);
+    }
+ else {
+      endpoint=camelContext.getEndpoint(getServiceUrl());
+    }
+    if (endpoint == null) {
+      throw new IllegalArgumentException("Could not resolve endpoint: " + getServiceUrl());
+    }
+  }
+  try {
     this.producer=endpoint.createProducer();
     this.producer.start();
     this.serviceProxy=ProxyHelper.createProxy(endpoint,producer,getServiceInterface());
   }
  catch (  Exception e) {
-    throw new IllegalArgumentException(e);
+    throw new FailedToCreateProducerException(endpoint,e);
   }
 }
