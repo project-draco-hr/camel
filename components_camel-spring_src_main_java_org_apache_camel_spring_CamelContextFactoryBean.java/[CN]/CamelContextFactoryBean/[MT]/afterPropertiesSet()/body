@@ -97,12 +97,17 @@
   }
   for (  RouteDefinition route : routes) {
     List<ProcessorDefinition> abstracts=new ArrayList<ProcessorDefinition>();
-    initAbstracts(route,abstracts);
-    initToAsync(route);
-    initInterceptors(route);
-    initOnCompletions(route,abstracts);
-    initPolicies(route,abstracts);
-    initOnExceptions(route,abstracts);
+    List<ProcessorDefinition> upper=new ArrayList<ProcessorDefinition>();
+    List<ProcessorDefinition> lower=new ArrayList<ProcessorDefinition>();
+    prepareRouteForInit(route,abstracts,lower);
+    initToAsync(lower);
+    initInterceptors(route,upper);
+    initOnCompletions(abstracts,upper);
+    initPolicies(abstracts,lower);
+    initOnExceptions(abstracts,upper);
+    route.clearOutput();
+    route.getOutputs().addAll(upper);
+    route.getOutputs().addAll(lower);
     initParent(route);
   }
   if (dataFormats != null) {
