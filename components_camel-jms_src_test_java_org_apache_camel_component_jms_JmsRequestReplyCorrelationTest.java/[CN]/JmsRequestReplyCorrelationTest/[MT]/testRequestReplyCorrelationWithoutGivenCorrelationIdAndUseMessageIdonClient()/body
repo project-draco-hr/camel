@@ -1,0 +1,17 @@
+{
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(1);
+  Exchange out=template.send("jms2:queue:hello",ExchangePattern.InOut,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      Message in=exchange.getIn();
+      in.setBody("Hello World");
+    }
+  }
+);
+  result.assertIsSatisfied();
+  assertNotNull(out);
+  assertEquals(REPLY_BODY,out.getOut().getBody(String.class));
+  String correlationId=(String)out.getOut().getHeader("JMSCorrelationID");
+  assertNotNull(correlationId);
+  assertTrue("CorrelationID should start with ID, was: " + correlationId,correlationId.startsWith("ID:"));
+}
