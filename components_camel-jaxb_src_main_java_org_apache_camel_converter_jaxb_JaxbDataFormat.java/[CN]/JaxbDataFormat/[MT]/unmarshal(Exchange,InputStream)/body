@@ -1,6 +1,13 @@
 {
   try {
-    Object answer=getContext().createUnmarshaller().unmarshal(stream);
+    Object answer;
+    Unmarshaller unmarshaller=getContext().createUnmarshaller();
+    if (needFiltering(exchange)) {
+      answer=unmarshaller.unmarshal(new NonXmlFilterReader(new InputStreamReader(stream)));
+    }
+ else {
+      answer=unmarshaller.unmarshal(stream);
+    }
     if (answer instanceof JAXBElement && isIgnoreJAXBElement()) {
       answer=((JAXBElement<?>)answer).getValue();
     }
