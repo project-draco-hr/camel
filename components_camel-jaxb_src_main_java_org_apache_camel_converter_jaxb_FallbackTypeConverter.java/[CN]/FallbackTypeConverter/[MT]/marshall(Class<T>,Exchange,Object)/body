@@ -1,0 +1,24 @@
+{
+  T answer=null;
+  if (parentTypeConverter != null) {
+    JAXBContext context=createContext(value.getClass());
+    Marshaller marshaller=context.createMarshaller();
+    Writer buffer=new StringWriter();
+    marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,isPrettyPrint() ? Boolean.TRUE : Boolean.FALSE);
+    if (exchange != null && exchange.getProperty(Exchange.CHARSET_NAME,String.class) != null) {
+      marshaller.setProperty(Marshaller.JAXB_ENCODING,exchange.getProperty(Exchange.CHARSET_NAME,String.class));
+    }
+    if (answer == null) {
+      if (exchange != null && exchange.getProperty(Exchange.FILTER_NON_XML_CHARS,Boolean.FALSE,Boolean.class)) {
+        XMLStreamWriter writer=XMLOutputFactory.newInstance().createXMLStreamWriter(buffer);
+        FilteringXmlStreamWriter filteringWriter=new FilteringXmlStreamWriter(writer);
+        marshaller.marshal(value,filteringWriter);
+      }
+ else {
+        marshaller.marshal(value,buffer);
+      }
+      answer=parentTypeConverter.convertTo(type,buffer.toString());
+    }
+  }
+  return answer;
+}
