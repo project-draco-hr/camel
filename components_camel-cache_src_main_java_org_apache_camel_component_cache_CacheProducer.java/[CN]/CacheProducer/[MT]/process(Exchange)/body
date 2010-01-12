@@ -1,24 +1,21 @@
 {
-  Object body=exchange.getIn().getBody();
-  InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,body);
-  byte[] buffer=new byte[is.available()];
-  int n=is.available();
-  for (int j=0; j < n; j++) {
-    buffer[j]=(byte)is.read();
-  }
   cacheManager=new CacheManagerFactory().instantiateCacheManager();
-  LOG.debug("Cache Name: " + config.getCacheName());
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Cache Name: " + config.getCacheName());
+  }
   if (cacheManager.cacheExists(config.getCacheName())) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Found an existing cache: " + config.getCacheName());
-      LOG.debug("Cache " + config.getCacheName() + " currently contains "+ cacheManager.getCache(config.getCacheName()).getSize()+ " elements");
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Found an existing cache: " + config.getCacheName());
+      LOG.trace("Cache " + config.getCacheName() + " currently contains "+ cacheManager.getCache(config.getCacheName()).getSize()+ " elements");
     }
     cache=cacheManager.getCache(config.getCacheName());
   }
  else {
     cache=new Cache(config.getCacheName(),config.getMaxElementsInMemory(),config.getMemoryStoreEvictionPolicy(),config.isOverflowToDisk(),config.getDiskStorePath(),config.isEternal(),config.getTimeToLiveSeconds(),config.getTimeToIdleSeconds(),config.isDiskPersistent(),config.getDiskExpiryThreadIntervalSeconds(),null);
     cacheManager.addCache(cache);
-    LOG.debug("Added a new cache: " + cache.getName());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Added a new cache: " + cache.getName());
+    }
   }
   String key=(String)exchange.getIn().getHeader("CACHE_KEY");
   String operation=(String)exchange.getIn().getHeader("CACHE_OPERATION");
@@ -28,5 +25,5 @@
   if ((key == null) && (!operation.equalsIgnoreCase("DELETEALL"))) {
     throw new CacheException("Cache Key is not specified in exchange either header or URL. Unable to add objects to the cache without a Key");
   }
-  performCacheOperation(operation,key,buffer);
+  performCacheOperation(exchange,operation,key);
 }

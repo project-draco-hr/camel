@@ -8,8 +8,13 @@
     exchange.getIn().setHeader("CACHE_KEY",key);
     Object body=exchange.getIn().getBody();
     InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,body);
-    byte[] buffer=IOConverter.toBytes(is);
-    is.close();
+    byte[] buffer;
+    try {
+      buffer=IOConverter.toBytes(is);
+    }
+  finally {
+      ObjectHelper.close(is,"is",LOG);
+    }
     String cacheValue=exchange.getContext().getTypeConverter().convertTo(String.class,cache.get(key).getObjectValue());
     String replacedTokenString=new String(buffer).replaceAll(replacementToken,cacheValue);
     if (LOG.isTraceEnabled()) {

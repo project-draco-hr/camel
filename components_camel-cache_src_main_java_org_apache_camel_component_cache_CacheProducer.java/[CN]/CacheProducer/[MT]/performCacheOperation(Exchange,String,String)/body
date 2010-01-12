@@ -1,0 +1,40 @@
+{
+  Object element;
+  Object body=exchange.getIn().getBody();
+  if (body instanceof Serializable) {
+    element=body;
+  }
+ else {
+    InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,body);
+    byte[] buffer=new byte[is.available()];
+    int n=is.available();
+    for (int j=0; j < n; j++) {
+      buffer[j]=(byte)is.read();
+    }
+    element=buffer;
+  }
+  if (operation.equalsIgnoreCase("ADD")) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Adding an element with key " + key + " into the Cache");
+    }
+    cache.put(new Element(key,element),true);
+  }
+ else   if (operation.equalsIgnoreCase("UPDATE")) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Updating an element with key " + key + " into the Cache");
+    }
+    cache.put(new Element(key,element),true);
+  }
+ else   if (operation.equalsIgnoreCase("DELETEALL")) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Deleting All elements from the Cache");
+    }
+    cache.removeAll();
+  }
+ else   if (operation.equalsIgnoreCase("DELETE")) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Deleting an element with key " + key + " into the Cache");
+    }
+    cache.remove(key,true);
+  }
+}
