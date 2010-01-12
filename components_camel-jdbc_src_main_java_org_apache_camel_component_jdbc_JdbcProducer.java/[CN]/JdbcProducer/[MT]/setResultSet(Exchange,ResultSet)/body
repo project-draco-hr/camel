@@ -1,5 +1,6 @@
 {
   ResultSetMetaData meta=rs.getMetaData();
+  boolean jdbc4=getEndpoint().isUseJDBC4ColumnNameAndLabelSemantics();
   int count=meta.getColumnCount();
   List<Map<String,Object>> data=new ArrayList<Map<String,Object>>();
   int rowNumber=0;
@@ -7,8 +8,19 @@
     Map<String,Object> row=new HashMap<String,Object>();
     for (int i=0; i < count; i++) {
       int columnNumber=i + 1;
-      String columnName=meta.getColumnName(columnNumber);
-      row.put(columnName,rs.getObject(columnName));
+      String columnName;
+      if (jdbc4) {
+        columnName=meta.getColumnLabel(columnNumber);
+      }
+ else {
+        try {
+          columnName=meta.getColumnLabel(columnNumber);
+        }
+ catch (        SQLException e) {
+          columnName=meta.getColumnName(columnNumber);
+        }
+      }
+      row.put(columnName,rs.getObject(columnNumber));
     }
     data.add(row);
     rowNumber++;
