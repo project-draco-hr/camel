@@ -5,19 +5,19 @@
   JAXBContext context=createContext(type);
   Unmarshaller unmarshaller=context.createUnmarshaller();
   if (parentTypeConverter != null) {
-    Reader reader=parentTypeConverter.convertTo(Reader.class,value);
-    if (reader != null) {
-      Object unmarshalled=unmarshal(unmarshaller,reader);
-      return type.cast(unmarshalled);
-    }
     InputStream inputStream=parentTypeConverter.convertTo(InputStream.class,value);
     if (inputStream != null) {
-      Object unmarshalled=unmarshal(unmarshaller,inputStream);
+      Object unmarshalled=unmarshal(unmarshaller,exchange,inputStream);
+      return type.cast(unmarshalled);
+    }
+    Reader reader=parentTypeConverter.convertTo(Reader.class,value);
+    if (reader != null) {
+      Object unmarshalled=unmarshal(unmarshaller,exchange,reader);
       return type.cast(unmarshalled);
     }
     Source source=parentTypeConverter.convertTo(Source.class,value);
     if (source != null) {
-      Object unmarshalled=unmarshal(unmarshaller,source);
+      Object unmarshalled=unmarshal(unmarshaller,exchange,source);
       return type.cast(unmarshalled);
     }
   }
@@ -25,7 +25,7 @@
     value=new StringReader((String)value);
   }
   if (value instanceof InputStream || value instanceof Reader) {
-    Object unmarshalled=unmarshal(unmarshaller,value);
+    Object unmarshalled=unmarshal(unmarshaller,exchange,value);
     return type.cast(unmarshalled);
   }
   return null;

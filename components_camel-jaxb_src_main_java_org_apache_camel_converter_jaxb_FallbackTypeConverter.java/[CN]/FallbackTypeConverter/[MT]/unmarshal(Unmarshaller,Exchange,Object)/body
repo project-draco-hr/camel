@@ -1,0 +1,28 @@
+{
+  try {
+    if (value instanceof InputStream) {
+      if (needFiltering(exchange)) {
+        return unmarshaller.unmarshal(new NonXmlFilterReader(new InputStreamReader((InputStream)value,IOConverter.getCharsetName(exchange))));
+      }
+      return unmarshaller.unmarshal((InputStream)value);
+    }
+ else     if (value instanceof Reader) {
+      Reader reader=(Reader)value;
+      if (needFiltering(exchange)) {
+        if (!(value instanceof NonXmlFilterReader)) {
+          reader=new NonXmlFilterReader((Reader)value);
+        }
+      }
+      return unmarshaller.unmarshal(reader);
+    }
+ else     if (value instanceof Source) {
+      return unmarshaller.unmarshal((Source)value);
+    }
+  }
+  finally {
+    if (value instanceof Closeable) {
+      ObjectHelper.close((Closeable)value,"Unmarshalling",LOG);
+    }
+  }
+  return null;
+}
