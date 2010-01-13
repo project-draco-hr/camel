@@ -1,15 +1,20 @@
 {
-  EventNotifier notifier=context.getManagementStrategy().getEventNotifier();
-  if (notifier == null || notifier.isIgnoreRouteEvents()) {
+  List<EventNotifier> notifiers=context.getManagementStrategy().getEventNotifiers();
+  if (notifiers == null || notifiers.isEmpty()) {
     return;
   }
-  EventFactory factory=context.getManagementStrategy().getEventFactory();
-  if (factory == null) {
-    return;
+  for (  EventNotifier notifier : notifiers) {
+    if (notifier.isIgnoreRouteEvents()) {
+      continue;
+    }
+    EventFactory factory=context.getManagementStrategy().getEventFactory();
+    if (factory == null) {
+      return;
+    }
+    EventObject event=factory.createRouteStoppedEvent(route);
+    if (event == null) {
+      return;
+    }
+    doNotifyEvent(notifier,event);
   }
-  EventObject event=factory.createRouteStoppedEvent(route);
-  if (event == null) {
-    return;
-  }
-  doNotifyEvent(notifier,event);
 }
