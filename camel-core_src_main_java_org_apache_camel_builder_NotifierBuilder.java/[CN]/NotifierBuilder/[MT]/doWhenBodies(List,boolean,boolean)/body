@@ -1,0 +1,51 @@
+{
+  stack.push(new EventPredicateSupport(){
+    private boolean matches;
+    private int current;
+    @Override public boolean onExchangeCreated(    Exchange exchange){
+      if (received) {
+        matchBody(exchange);
+      }
+      return true;
+    }
+    @Override public boolean onExchangeFailure(    Exchange exchange){
+      if (!received) {
+        matchBody(exchange);
+      }
+      return true;
+    }
+    @Override public boolean onExchangeCompleted(    Exchange exchange){
+      if (!received) {
+        matchBody(exchange);
+      }
+      return true;
+    }
+    private void matchBody(    Exchange exchange){
+      current++;
+      if (current > bodies.size()) {
+        return;
+      }
+      Object actual=exchange.getIn().getBody();
+      Object expected=bodies.get(current - 1);
+      matches=ObjectHelper.equal(expected,actual);
+    }
+    public boolean matches(){
+      if (exact) {
+        return matches && current == bodies.size();
+      }
+ else {
+        return matches && current >= bodies.size();
+      }
+    }
+    @Override public String toString(){
+      if (received) {
+        return "" + (exact ? "whenExactBodiesReceived(" : "whenBodiesReceived(") + bodies+ ")";
+      }
+ else {
+        return "" + (exact ? "whenExactBodiesDone(" : "whenBodiesDone(") + bodies+ ")";
+      }
+    }
+  }
+);
+  return this;
+}
