@@ -1,13 +1,25 @@
 {
   stack.push(new EventPredicateSupport(){
     private Producer producer;
+    @Override public boolean onExchangeCreated(    Exchange exchange){
+      if (received) {
+        sendToMock(exchange);
+      }
+      return true;
+    }
     @Override public boolean onExchangeFailure(    Exchange exchange){
-      return sendToMock(exchange);
+      if (!received) {
+        sendToMock(exchange);
+      }
+      return true;
     }
     @Override public boolean onExchangeCompleted(    Exchange exchange){
-      return sendToMock(exchange);
+      if (!received) {
+        sendToMock(exchange);
+      }
+      return true;
     }
-    private boolean sendToMock(    Exchange exchange){
+    private void sendToMock(    Exchange exchange){
       try {
         if (producer == null) {
           producer=mock.createProducer();
@@ -17,7 +29,6 @@
  catch (      Exception e) {
         throw ObjectHelper.wrapRuntimeCamelException(e);
       }
-      return true;
     }
     public boolean matches(){
       try {
@@ -28,7 +39,12 @@
       }
     }
     @Override public String toString(){
-      return "whenNotSatisfied(" + mock + ")";
+      if (received) {
+        return "whenReceivedNotSatisfied(" + mock + ")";
+      }
+ else {
+        return "whenDoneNotSatisfied(" + mock + ")";
+      }
     }
   }
 );
