@@ -1,0 +1,14 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:assert");
+  mock.expectedBodiesReceivedInAnyOrder("Hello World","Bye World","Hi World");
+  NotifierBuilder notifier=new NotifierBuilder(context).from("direct:foo").whenSatisfied(mock).create();
+  assertEquals(false,notifier.matches());
+  template.sendBody("direct:foo","Bye World");
+  assertEquals(false,notifier.matches());
+  template.sendBody("direct:foo","Hello World");
+  assertEquals(false,notifier.matches());
+  template.sendBody("direct:bar","Hi World");
+  assertEquals(false,notifier.matches());
+  template.sendBody("direct:foo","Hi World");
+  assertEquals(true,notifier.matches());
+}
