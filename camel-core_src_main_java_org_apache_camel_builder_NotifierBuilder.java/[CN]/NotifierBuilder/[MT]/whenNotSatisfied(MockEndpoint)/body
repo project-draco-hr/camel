@@ -1,0 +1,36 @@
+{
+  stack.push(new EventPredicateSupport(){
+    private Producer producer;
+    @Override public boolean onExchangeFailure(    Exchange exchange){
+      return sendToMock(exchange);
+    }
+    @Override public boolean onExchangeCompleted(    Exchange exchange){
+      return sendToMock(exchange);
+    }
+    private boolean sendToMock(    Exchange exchange){
+      try {
+        if (producer == null) {
+          producer=mock.createProducer();
+        }
+        producer.process(exchange);
+      }
+ catch (      Exception e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+      return true;
+    }
+    public boolean matches(){
+      try {
+        return !mock.await(0,TimeUnit.SECONDS);
+      }
+ catch (      InterruptedException e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+    }
+    @Override public String toString(){
+      return "whenNotSatisfied(" + mock + ")";
+    }
+  }
+);
+  return this;
+}
