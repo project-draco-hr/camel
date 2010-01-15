@@ -1,9 +1,16 @@
 {
   if (exchange.getUnitOfWork() != null) {
-    exchange.getUnitOfWork().setRouteContext(routeContext);
+    exchange.getUnitOfWork().pushRouteContext(routeContext);
   }
   Processor processor=getOutput();
-  if (processor != null && continueProcessing(exchange)) {
-    processor.process(exchange);
+  try {
+    if (processor != null && continueProcessing(exchange)) {
+      processor.process(exchange);
+    }
+  }
+  finally {
+    if (exchange.getUnitOfWork() != null) {
+      exchange.getUnitOfWork().popRouteContext();
+    }
   }
 }
