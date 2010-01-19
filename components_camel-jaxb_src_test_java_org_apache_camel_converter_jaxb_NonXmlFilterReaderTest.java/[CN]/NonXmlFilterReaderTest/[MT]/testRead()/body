@@ -1,10 +1,16 @@
 {
   char[] buffer=new char[10];
-  expect(readerMock.read(same(buffer),eq(3),eq(5))).andDelegateTo(new ConstantReader(new char[]{'a','b','c'}));
-  expect(nonXmlCharFiltererMock.filter(same(buffer),eq(3),eq(3))).andReturn(false);
-  replayAll();
+  when(readerMock.read(same(buffer),eq(3),eq(5))).thenAnswer(new Answer<Integer>(){
+    public Integer answer(    InvocationOnMock invocation) throws Throwable {
+      ConstantReader reader=new ConstantReader(new char[]{'a','b','c'});
+      Object[] args=invocation.getArguments();
+      return reader.read((char[])args[0],(Integer)args[1],(Integer)args[2]);
+    }
+  }
+);
   int result=nonXmlFilterReader.read(buffer,3,5);
-  verifyAll();
+  verify(readerMock).read(same(buffer),eq(3),eq(5));
+  verify(nonXmlCharFiltererMock).filter(same(buffer),eq(3),eq(3));
   assertEquals("Unexpected number of chars read",3,result);
   assertArrayEquals("Wrong buffer contents",new char[]{0,0,0,'a','b','c',0,0,0,0},buffer);
 }
