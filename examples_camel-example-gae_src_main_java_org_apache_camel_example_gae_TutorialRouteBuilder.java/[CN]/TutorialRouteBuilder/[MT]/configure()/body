@@ -1,4 +1,4 @@
 {
-  from("ghttp:///weather").to("gtask://default").setHeader(Exchange.CONTENT_TYPE,constant("text/plain")).transform(constant("Weather report will be sent to ").append(header("mailto")));
-  from("gtask://default").setHeader(Exchange.HTTP_QUERY,constant("weather=").append(header("city"))).to("ghttp://www.google.com/ig/api").process(new WeatherProcessor()).setHeader(GMailBinding.GMAIL_SUBJECT,constant("Weather report")).setHeader(GMailBinding.GMAIL_TO,header("mailto")).to("gmail://" + sender);
+  from("ghttp:///weather").process(new RequestProcessor()).marshal().serialization().to("gtask://default").unmarshal().serialization().process(new ResponseProcessor());
+  from("gtask://default").unmarshal().serialization().setHeader(Exchange.HTTP_QUERY,constant("weather=").append(ReportData.city())).enrich("ghttp://www.google.com/ig/api",reportDataAggregator()).setHeader(GMailBinding.GMAIL_SUBJECT,constant("Weather report")).setHeader(GMailBinding.GMAIL_SENDER,ReportData.requestor()).setHeader(GMailBinding.GMAIL_TO,ReportData.recipient()).process(new ReportGenerator()).to("gmail://default");
 }
