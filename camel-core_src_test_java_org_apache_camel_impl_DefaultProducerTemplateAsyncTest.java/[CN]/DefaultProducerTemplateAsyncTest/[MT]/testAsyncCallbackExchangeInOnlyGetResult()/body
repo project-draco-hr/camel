@@ -1,19 +1,19 @@
 {
-  order.set(0);
+  ORDER.set(0);
   getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
   Exchange exchange=context.getEndpoint("direct:start").createExchange();
   exchange.getIn().setBody("Hello");
   Future<Exchange> future=template.asyncCallback("direct:start",exchange,new SynchronizationAdapter(){
     @Override public void onDone(    Exchange exchange){
-      order.addAndGet(2);
+      ORDER.addAndGet(2);
       assertEquals("Hello World",exchange.getIn().getBody());
     }
   }
 );
-  order.addAndGet(1);
+  ORDER.addAndGet(1);
   Exchange reply=future.get(10,TimeUnit.SECONDS);
-  order.addAndGet(4);
+  ORDER.addAndGet(4);
   assertMockEndpointsSatisfied();
-  assertEquals(7,order.get());
+  assertEquals(7,ORDER.get());
   assertNotNull(reply);
 }
