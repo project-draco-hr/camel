@@ -2,11 +2,24 @@
   try {
     Object answer;
     Unmarshaller unmarshaller=getContext().createUnmarshaller();
-    if (needFiltering(exchange)) {
-      answer=unmarshaller.unmarshal(new NonXmlFilterReader(new InputStreamReader(stream,IOConverter.getCharsetName(exchange))));
+    if (getPartClass() != null) {
+      Source source;
+      if (needFiltering(exchange)) {
+        source=new StreamSource(createNonXmlFilterReader(exchange,stream));
+      }
+ else {
+        source=new StreamSource(stream);
+      }
+      answer=unmarshaller.unmarshal(source,getPartialClass(exchange));
     }
  else {
-      answer=unmarshaller.unmarshal(stream);
+      if (needFiltering(exchange)) {
+        NonXmlFilterReader reader=createNonXmlFilterReader(exchange,stream);
+        answer=unmarshaller.unmarshal(reader);
+      }
+ else {
+        answer=unmarshaller.unmarshal(stream);
+      }
     }
     if (answer instanceof JAXBElement && isIgnoreJAXBElement()) {
       answer=((JAXBElement<?>)answer).getValue();
