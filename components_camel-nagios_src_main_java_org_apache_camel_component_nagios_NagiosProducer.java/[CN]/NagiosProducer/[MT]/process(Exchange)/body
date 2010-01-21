@@ -1,0 +1,18 @@
+{
+  String message=exchange.getIn().getBody(String.class);
+  Level level=exchange.getIn().getHeader(LEVEL,Level.class);
+  if (level == null) {
+    String name=exchange.getIn().getHeader(LEVEL,Level.OK.name(),String.class);
+    level=Level.valueOf(name);
+  }
+  String serviceName=exchange.getIn().getHeader(SERIVCE_NAME,exchange.getContext().getName(),String.class);
+  String hostName=exchange.getIn().getHeader(HOST_NAME,"localhost",String.class);
+  MessagePayload payload=new MessagePayload(hostName,level.ordinal(),serviceName,message);
+  if (log.isDebugEnabled()) {
+    log.debug("Sending notification to Nagios: " + payload.getMessage());
+  }
+  sender.send(payload);
+  if (log.isTraceEnabled()) {
+    log.trace("Sending notification done");
+  }
+}

@@ -1,0 +1,16 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  Map headers=new HashMap();
+  headers.put(NagiosConstants.LEVEL,"CRITICAL");
+  headers.put(NagiosConstants.HOST_NAME,"myHost");
+  headers.put(NagiosConstants.SERIVCE_NAME,"myService");
+  template.sendBodyAndHeaders("direct:start","Hello Nagios",headers);
+  assertMockEndpointsSatisfied();
+  assertEquals(1,nagios.getMessagePayloadList().size());
+  MessagePayload payload=nagios.getMessagePayloadList().get(0);
+  assertEquals("Hello Nagios",payload.getMessage());
+  assertEquals("myHost",payload.getHostname());
+  assertEquals(Level.CRITICAL.ordinal(),payload.getLevel());
+  assertEquals("myService",payload.getServiceName());
+}
