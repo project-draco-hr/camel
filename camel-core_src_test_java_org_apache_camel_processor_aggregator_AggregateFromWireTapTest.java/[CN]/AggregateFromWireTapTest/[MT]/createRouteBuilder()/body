@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      context.setTracing(true);
+      from("direct:start").wireTap("direct:tap").to("mock:end");
+      from("direct:tap").aggregate(new MyAggregationStrategy()).constant(true).batchSize(2).batchTimeout(5000L).to("direct:aggregated").end();
+      from("direct:aggregated").to("mock:aggregated");
+    }
+  }
+;
+}
