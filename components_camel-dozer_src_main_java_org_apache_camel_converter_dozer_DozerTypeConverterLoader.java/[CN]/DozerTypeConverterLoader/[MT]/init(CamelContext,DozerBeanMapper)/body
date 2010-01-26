@@ -1,0 +1,19 @@
+{
+  this.camelContext=camelContext;
+  Map<String,DozerBeanMapper> mappers=new HashMap<String,DozerBeanMapper>(camelContext.getRegistry().lookupByType(DozerBeanMapper.class));
+  if (mapper != null) {
+    mappers.put("parameter",mapper);
+  }
+  if (mappers.size() > 0) {
+    log.warn("Loaded %d dozer mappers from Camel's registry. Dozer is most efficient when there is a single mapper instance. Consider amalgamating instances.");
+  }
+  TypeConverterRegistry registry=camelContext.getTypeConverterRegistry();
+  for (  DozerBeanMapper dozer : mappers.values()) {
+    Map<String,ClassMap> all=loadMappings(dozer);
+    DozerTypeConverter converter=new DozerTypeConverter(dozer);
+    for (    ClassMap map : all.values()) {
+      registry.addTypeConverter(map.getSrcClassToMap(),map.getDestClassToMap(),converter);
+      registry.addTypeConverter(map.getDestClassToMap(),map.getSrcClassToMap(),converter);
+    }
+  }
+}
