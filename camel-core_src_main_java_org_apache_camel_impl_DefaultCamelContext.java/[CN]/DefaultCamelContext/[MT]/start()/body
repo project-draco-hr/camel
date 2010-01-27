@@ -12,20 +12,13 @@ synchronized (this) {
     for (    RouteService routeService : routeServices.values()) {
       Boolean autoStart=routeService.getRouteDefinition().isAutoStartup();
       if (autoStart == null || autoStart) {
-        routeService.startInputs(false);
         try {
-          routeService.start();
           Integer startupOrder=routeService.getRouteDefinition().getStartupOrder();
           if (startupOrder == null) {
             startupOrder=defaultRouteStartupOrder++;
           }
-          DefaultRouteStartupOrder holder=null;
-          for (          Map.Entry<Route,Consumer> entry : routeService.getInputs().entrySet()) {
-            if (holder == null) {
-              holder=new DefaultRouteStartupOrder(startupOrder,entry.getKey());
-            }
-            holder.addInput(entry.getValue());
-          }
+          Route route=routeService.getRoutes().iterator().next();
+          DefaultRouteStartupOrder holder=new DefaultRouteStartupOrder(startupOrder,route,routeService);
           DefaultRouteStartupOrder other=inputs.get(startupOrder);
           if (other != null) {
             String otherId=other.getRoute().getId();
@@ -41,16 +34,26 @@ synchronized (this) {
 catch (        Exception e) {
           throw new FailedToStartRouteException(e);
         }
- finally {
-          routeService.startInputs(true);
-        }
       }
  else {
         LOG.info("Cannot start route " + routeService.getId() + " as it is configured with auto startup disabled.");
       }
     }
+    for (    Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
+      RouteService routeService=entry.getValue().getRouteService();
+      routeService.startInputs(false);
+      try {
+        routeService.start();
+      }
+  finally {
+        routeService.startInputs(true);
+      }
+    }
     List<Endpoint> routeInputs=new ArrayList<Endpoint>();
-    for (    RouteService routeService : routeServices.values()) {
+    for (    Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
+      Integer order=entry.getKey();
+      Route route=entry.getValue().getRoute();
+      RouteService routeService=entry.getValue().getRouteService();
       for (      Consumer consumer : routeService.getInputs().values()) {
         Endpoint endpoint=consumer.getEndpoint();
         boolean multipleConsumersSupported=false;
@@ -61,23 +64,16 @@ catch (        Exception e) {
           throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
         }
  else {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
+          }
+          for (          LifecycleStrategy strategy : lifecycleStrategies) {
+            strategy.onServiceAdd(this,consumer,route);
+          }
+          ServiceHelper.startService(consumer);
           routeInputs.add(endpoint);
+          routeStartupOrder.add(entry.getValue());
         }
-      }
-    }
-    for (    Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
-      Integer order=entry.getKey();
-      Route route=entry.getValue().getRoute();
-      List<Consumer> consumers=entry.getValue().getInputs();
-      for (      Consumer consumer : consumers) {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
-        }
-        for (        LifecycleStrategy strategy : lifecycleStrategies) {
-          strategy.onServiceAdd(this,consumer,route);
-        }
-        ServiceHelper.startService(consumer);
-        routeStartupOrder.add(entry.getValue());
       }
     }
   }
