@@ -1,7 +1,7 @@
 {
   from("direct:cafe").split().method("orderSplitter").to("direct:drink");
   from("direct:drink").recipientList().method("drinkRouter");
-  from("seda:coldDrinks?concurrentConsumers=2").to("bean: ?method=prepareColdDrink").to("direct:deliveries");
+  from("seda:coldDrinks?concurrentConsumers=2").to("bean:barista?method=prepareColdDrink").to("direct:deliveries");
   from("seda:hotDrinks?concurrentConsumers=3").to("bean:barista?method=prepareHotDrink").to("direct:deliveries");
   from("direct:deliveries").aggregate(new CafeAggregationStrategy()).method("waiter","checkOrder").batchTimeout(5 * 1000L).to("bean:waiter?method=prepareDelivery").to("bean:waiter?method=deliverCafes");
 }
