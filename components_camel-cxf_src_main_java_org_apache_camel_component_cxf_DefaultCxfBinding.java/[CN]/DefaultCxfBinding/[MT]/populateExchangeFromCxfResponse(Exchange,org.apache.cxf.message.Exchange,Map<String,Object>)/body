@@ -5,9 +5,11 @@
   }
   camelExchange.getOut().setBody(DefaultCxfBinding.getContentFromCxf(cxfMessage,camelExchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.class)));
   if (responseContext != null && responseContext.size() > 0) {
-    camelExchange.getOut().setHeader(Client.RESPONSE_CONTEXT,responseContext);
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Set header = " + Client.RESPONSE_CONTEXT + " value = "+ responseContext);
+    if (!headerFilterStrategy.applyFilterToExternalHeaders(Client.RESPONSE_CONTEXT,responseContext,camelExchange)) {
+      camelExchange.getOut().setHeader(Client.RESPONSE_CONTEXT,responseContext);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Set header = " + Client.RESPONSE_CONTEXT + " value = "+ responseContext);
+      }
     }
   }
   propagateHeadersFromCxfToCamel(cxfMessage,camelExchange.getOut(),camelExchange);
