@@ -1,11 +1,11 @@
 {
   OutputReportIncident ok=new OutputReportIncident();
   ok.setCode("0");
-  String cxfEndpointAddress="cxf:/incident";
+  String cxfEndpointAddress="cxf:/incident?bus=#cxf&";
   if (!usingServletTransport) {
-    cxfEndpointAddress="cxf://http://localhost:9080/camel-example-reportincident/webservices/incident";
+    cxfEndpointAddress="cxf://http://localhost:9080/camel-example-reportincident/webservices/incident?";
   }
-  String cxfEndpoint=cxfEndpointAddress + "?serviceClass=org.apache.camel.example.reportincident.ReportIncidentEndpoint" + "&wsdlURL=etc/report_incident.wsdl";
+  String cxfEndpoint=cxfEndpointAddress + "serviceClass=org.apache.camel.example.reportincident.ReportIncidentEndpoint" + "&wsdlURL=etc/report_incident.wsdl";
   from(cxfEndpoint).convertBodyTo(InputReportIncident.class).setHeader(Exchange.FILE_NAME,BeanLanguage.bean(FilenameGenerator.class,"generateFilename")).to("velocity:etc/MailBody.vm").to("file://target/subfolder").transform(constant(ok));
   from("file://target/subfolder").setHeader("subject",constant("new incident reported")).to("smtp://someone@localhost?password=secret&to=incident@mycompany.com");
 }
