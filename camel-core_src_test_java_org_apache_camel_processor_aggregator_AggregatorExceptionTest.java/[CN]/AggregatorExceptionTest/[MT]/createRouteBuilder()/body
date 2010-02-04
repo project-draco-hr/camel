@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      final String exceptionString="This is an Error not an Exception";
+      onException(Throwable.class).handled(true).to("mock:error");
+      from("seda:start").aggregate(header("id")).batchSize(2).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new java.lang.NoSuchMethodError(exceptionString);
+        }
+      }
+);
+    }
+  }
+;
+}
