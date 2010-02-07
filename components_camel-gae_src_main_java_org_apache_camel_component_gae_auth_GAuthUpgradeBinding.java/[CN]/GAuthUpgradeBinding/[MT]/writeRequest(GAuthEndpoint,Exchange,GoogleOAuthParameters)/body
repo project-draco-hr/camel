@@ -1,0 +1,16 @@
+{
+  request=new GoogleOAuthParameters();
+  request.setOAuthConsumerKey(endpoint.getConsumerKey());
+  request.setOAuthConsumerSecret(endpoint.getConsumerSecret());
+  request.setOAuthToken(exchange.getIn().getHeader("oauth_token",String.class));
+  request.setOAuthVerifier(exchange.getIn().getHeader("oauth_verifier",String.class));
+  if (endpoint.getComponent().getKeyLoader() == null) {
+    String cookie=exchange.getIn().getHeader("Cookie",String.class);
+    GAuthTokenSecret tokenSecret=GAuthTokenSecret.fromCookie(cookie);
+    if (tokenSecret == null) {
+      throw new GAuthException(GAuthTokenSecret.COOKIE_NAME + " cookie doesn't exist");
+    }
+    request.setOAuthTokenSecret(tokenSecret.getValue());
+  }
+  return request;
+}
