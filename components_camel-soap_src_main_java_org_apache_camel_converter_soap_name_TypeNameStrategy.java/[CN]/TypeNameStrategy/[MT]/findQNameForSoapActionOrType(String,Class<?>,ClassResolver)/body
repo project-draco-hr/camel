@@ -1,0 +1,18 @@
+{
+  XmlType xmlType=type.getAnnotation(XmlType.class);
+  if (xmlType == null || xmlType.name() == null) {
+    throw new RuntimeException("The type " + type.getName() + " needs to have an XmlType annotation with name");
+  }
+  String nameSpace=xmlType.namespace();
+  if ("##default".equals(nameSpace)) {
+    try {
+      Class<?> packageInfo=classResolver.resolveMandatoryClass(type.getPackage().getName() + ".package-info");
+      XmlSchema xmlSchema=packageInfo.getAnnotation(XmlSchema.class);
+      nameSpace=xmlSchema.namespace();
+    }
+ catch (    ClassNotFoundException e) {
+      throw new RuntimeException("package info not found for package " + type.getPackage().getName(),e);
+    }
+  }
+  return new QName(nameSpace,xmlType.name());
+}

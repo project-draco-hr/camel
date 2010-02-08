@@ -1,0 +1,19 @@
+{
+  QName name=new ExceptionNameStrategy().findQNameForSoapActionOrType(soapAction,exception.getClass(),classResolver);
+  Object faultObject=null;
+  try {
+    Method method=exception.getClass().getMethod("getFaultInfo");
+    faultObject=method.invoke(exception);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException("Exception while trying to get fault details",e);
+  }
+  Fault fault=new Fault();
+  fault.setFaultcode(new QName(exception.getClass().getPackage().getName(),exception.getClass().getSimpleName()));
+  fault.setFaultstring(exception.getMessage());
+  Detail detailEl=new ObjectFactory().createDetail();
+  JAXBElement<?> faultDetailContent=new JAXBElement(name,faultObject.getClass(),faultObject);
+  detailEl.getAny().add(faultDetailContent);
+  fault.setDetail(detailEl);
+  return new ObjectFactory().createFault(fault);
+}

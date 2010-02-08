@@ -1,0 +1,28 @@
+{
+  MethodInfo info=soapActionToMethodInfo.get(soapAction);
+  if (info != null) {
+    if (isClient) {
+      return info.getIn().getElName();
+    }
+ else {
+      return info.getOut().getElName();
+    }
+  }
+  QName qName=null;
+  if (isClient) {
+    qName=inTypeNameToQName.get(type.getName());
+  }
+ else {
+    qName=outTypeNameToQName.get(type.getName());
+  }
+  if (qName == null) {
+    try {
+      qName=fallBackStrategy.findQNameForSoapActionOrType(soapAction,type,classResolver);
+    }
+ catch (    Exception e) {
+      String msg="No method found that matches the given SoapAction " + soapAction + " or that has an "+ (isClient ? "input" : "output")+ " of type "+ type.getName();
+      throw new RuntimeCamelException(msg,e);
+    }
+  }
+  return qName;
+}

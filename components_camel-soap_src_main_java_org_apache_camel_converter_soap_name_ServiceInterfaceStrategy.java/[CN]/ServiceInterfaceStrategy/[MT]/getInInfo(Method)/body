@@ -1,0 +1,19 @@
+{
+  RequestWrapper requestWrapper=method.getAnnotation(RequestWrapper.class);
+  Class<?>[] types=method.getParameterTypes();
+  if (requestWrapper != null) {
+    if (requestWrapper.className() != null) {
+      return new TypeInfo(requestWrapper.className(),new QName(requestWrapper.targetNamespace(),requestWrapper.localName()));
+    }
+  }
+ else   if (types.length == 1) {
+    Annotation[] firstParamAnnotations=method.getParameterAnnotations()[0];
+    for (    Annotation annotation : firstParamAnnotations) {
+      if (annotation instanceof WebParam) {
+        WebParam webParam=(WebParam)annotation;
+        return new TypeInfo(types[0].getName(),new QName(webParam.targetNamespace(),webParam.name()));
+      }
+    }
+  }
+  return null;
+}
