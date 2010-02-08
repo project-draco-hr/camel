@@ -1,0 +1,29 @@
+{
+  return new ExpressionAdapter(){
+    public Object evaluate(    Exchange exchange){
+      try {
+        if (locations != null) {
+          Component component=exchange.getContext().getComponent("properties");
+          PropertiesComponent pc=exchange.getContext().getTypeConverter().mandatoryConvertTo(PropertiesComponent.class,component);
+          String[] paths=locations.split(",");
+          return pc.parseUri("#{" + key + "}",paths);
+        }
+ else {
+          Component component=exchange.getContext().hasComponent("properties");
+          if (component == null) {
+            throw new IllegalArgumentException("PropertiesComponent with name properties must be defined" + " in CamelContext to support property placeholders in expressions");
+          }
+          PropertiesComponent pc=exchange.getContext().getTypeConverter().mandatoryConvertTo(PropertiesComponent.class,component);
+          return pc.parseUri("#{" + key + "}");
+        }
+      }
+ catch (      Exception e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+    }
+    @Override public String toString(){
+      return "properties(" + key + ")";
+    }
+  }
+;
+}

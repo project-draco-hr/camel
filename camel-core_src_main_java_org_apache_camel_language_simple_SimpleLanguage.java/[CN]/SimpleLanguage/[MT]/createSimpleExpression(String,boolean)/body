@@ -60,6 +60,20 @@
   if (remainder != null) {
     return ExpressionBuilder.beanExpression(remainder);
   }
+  remainder=ifStartsWithReturnRemainder("properties:",expression);
+  if (remainder != null) {
+    String[] parts=remainder.split(":");
+    if (parts.length > 2) {
+      throw new ExpressionIllegalSyntaxException("Valid syntax: ${properties:[locations]:key} was: " + expression);
+    }
+    String locations=null;
+    String key=remainder;
+    if (parts.length == 2) {
+      locations=ObjectHelper.before(remainder,":");
+      key=ObjectHelper.after(remainder,":");
+    }
+    return ExpressionBuilder.propertiesComponentExpression(key,locations);
+  }
   if (strict) {
     throw new ExpressionIllegalSyntaxException(expression);
   }

@@ -1,0 +1,18 @@
+{
+  context.removeComponent("properties");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("#{cool.start}").to("log:#{cool.start}?showBodyType=false&showExchangeId=#{cool.showid}").to("mock:#{cool.result}");
+    }
+  }
+);
+  try {
+    context.start();
+    fail("Should throw exception");
+  }
+ catch (  FailedToCreateRouteException e) {
+    ResolveEndpointFailedException cause=assertIsInstanceOf(ResolveEndpointFailedException.class,e.getCause());
+    IllegalArgumentException iae=assertIsInstanceOf(IllegalArgumentException.class,cause.getCause());
+    assertEquals("PropertiesComponent with name properties must be defined in CamelContext to support property placeholders in endpoint URIs",iae.getMessage());
+  }
+}

@@ -1,0 +1,30 @@
+{
+  StringBuilder sb=new StringBuilder();
+  int pivot=0;
+  int size=uri.length();
+  while (pivot < size) {
+    int idx=uri.indexOf("#{",pivot);
+    if (idx < 0) {
+      sb.append(createConstantPart(uri,pivot,size));
+      break;
+    }
+ else {
+      if (pivot < idx) {
+        sb.append(createConstantPart(uri,pivot,idx));
+      }
+      pivot=idx + 2;
+      int endIdx=uri.indexOf('}',pivot);
+      if (endIdx < 0) {
+        throw new IllegalArgumentException("Expecting } but found end of string for uri: " + uri);
+      }
+      String key=uri.substring(pivot,endIdx);
+      String part=createPlaceholderPart(key,properties,replaced);
+      if (part == null) {
+        throw new IllegalArgumentException("Property with key [" + key + "] not found in properties for uri: "+ uri);
+      }
+      sb.append(part);
+      pivot=endIdx + 1;
+    }
+  }
+  return sb.toString();
+}
