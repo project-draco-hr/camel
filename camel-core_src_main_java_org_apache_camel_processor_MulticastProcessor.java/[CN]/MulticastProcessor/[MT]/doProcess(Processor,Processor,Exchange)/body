@@ -1,0 +1,26 @@
+{
+  TracedRouteNodes traced=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getTracedRouteNodes() : null;
+  long start=0;
+  if (processor instanceof Producer) {
+    start=System.currentTimeMillis();
+  }
+  try {
+    if (traced != null) {
+      traced.pushBlock();
+    }
+    prepared.process(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+ finally {
+    if (traced != null) {
+      traced.popBlock();
+    }
+    if (processor instanceof Producer) {
+      long timeTaken=System.currentTimeMillis() - start;
+      Endpoint endpoint=((Producer)processor).getEndpoint();
+      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+    }
+  }
+}

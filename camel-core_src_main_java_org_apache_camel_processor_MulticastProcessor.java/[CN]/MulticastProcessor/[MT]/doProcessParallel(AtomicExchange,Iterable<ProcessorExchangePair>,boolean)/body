@@ -9,7 +9,8 @@
   }
   final AtomicInteger total=new AtomicInteger(0);
   for (  ProcessorExchangePair pair : pairs) {
-    final Processor producer=pair.getProcessor();
+    final Processor processor=pair.getProcessor();
+    final Processor prepared=pair.getPrepared();
     final Exchange subExchange=pair.getExchange();
     updateNewExchange(subExchange,total.intValue(),pairs);
     completion.submit(new Callable<Exchange>(){
@@ -17,7 +18,7 @@
         if (!running.get()) {
           return subExchange;
         }
-        doProcess(producer,subExchange);
+        doProcess(processor,prepared,subExchange);
         if (stopOnException && subExchange.getException() != null) {
           running.set(false);
           throw new CamelExchangeException("Parallel processing failed for number " + total.intValue(),subExchange,subExchange.getException());
