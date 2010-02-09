@@ -10,14 +10,16 @@
   getMockEndpoint("mock:dead").expectedMessageCount(1);
   template.sendBody("direct:start","Hello World");
   assertMockEndpointsSatisfied();
-  assertEquals(6,events.size());
+  assertEquals(8,events.size());
   assertIsInstanceOf(CamelContextStartingEvent.class,events.get(0));
   assertIsInstanceOf(RouteStartedEvent.class,events.get(1));
   assertIsInstanceOf(CamelContextStartedEvent.class,events.get(2));
   assertIsInstanceOf(ExchangeCreatedEvent.class,events.get(3));
-  ExchangeFailureHandledEvent e=assertIsInstanceOf(ExchangeFailureHandledEvent.class,events.get(4));
+  assertIsInstanceOf(ExchangeSentEvent.class,events.get(4));
+  ExchangeFailureHandledEvent e=assertIsInstanceOf(ExchangeFailureHandledEvent.class,events.get(5));
   assertEquals("should be DLC",true,e.isDeadLetterChannel());
   SendProcessor send=assertIsInstanceOf(SendProcessor.class,e.getFailureHandler());
   assertEquals("mock://dead",send.getDestination().getEndpointUri());
-  assertIsInstanceOf(ExchangeCompletedEvent.class,events.get(5));
+  assertIsInstanceOf(ExchangeCompletedEvent.class,events.get(6));
+  assertIsInstanceOf(ExchangeSentEvent.class,events.get(7));
 }

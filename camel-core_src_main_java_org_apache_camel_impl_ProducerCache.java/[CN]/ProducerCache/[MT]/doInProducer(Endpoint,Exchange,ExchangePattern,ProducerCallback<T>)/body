@@ -9,10 +9,21 @@
       throw new IllegalStateException("No producer, this processor has not been started: " + this);
     }
   }
+  long start=0;
+  if (exchange != null) {
+    start=System.currentTimeMillis();
+  }
   try {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(">>>> " + endpoint + " "+ exchange);
+    }
     return callback.doInProducer(producer,exchange,pattern);
   }
   finally {
+    if (exchange != null) {
+      long timeTaken=System.currentTimeMillis() - start;
+      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+    }
     if (producer instanceof ServicePoolAware) {
       pool.release(endpoint,producer);
     }

@@ -1,0 +1,20 @@
+{
+  List<EventNotifier> notifiers=context.getManagementStrategy().getEventNotifiers();
+  if (notifiers == null || notifiers.isEmpty()) {
+    return;
+  }
+  for (  EventNotifier notifier : notifiers) {
+    if (notifier.isIgnoreExchangeEvents() || notifier.isIgnoreExchangeSentEvents()) {
+      continue;
+    }
+    EventFactory factory=context.getManagementStrategy().getEventFactory();
+    if (factory == null) {
+      return;
+    }
+    EventObject event=factory.createExchangeSentEvent(exchange,endpoint,timeTaken);
+    if (event == null) {
+      return;
+    }
+    doNotifyEvent(notifier,event);
+  }
+}

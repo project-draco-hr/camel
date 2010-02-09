@@ -1,0 +1,18 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals(4,events.size());
+  ExchangeSentEvent e0=assertIsInstanceOf(ExchangeSentEvent.class,events.get(0));
+  ExchangeSentEvent e1=assertIsInstanceOf(ExchangeSentEvent.class,events.get(1));
+  ExchangeSentEvent e2=assertIsInstanceOf(ExchangeSentEvent.class,events.get(2));
+  ExchangeSentEvent e3=assertIsInstanceOf(ExchangeSentEvent.class,events.get(3));
+  assertEquals("log://foo",e0.getEndpoint().getEndpointUri());
+  assertEquals("direct://bar",e1.getEndpoint().getEndpointUri());
+  long time=e1.getTimeTaken();
+  assertTrue("Should take about 1 sec, was: " + time,time > 900);
+  assertEquals("mock://result",e2.getEndpoint().getEndpointUri());
+  assertEquals("direct://start",e3.getEndpoint().getEndpointUri());
+  time=e3.getTimeTaken();
+  assertTrue("Should take about 1 sec, was: " + time,time > 900);
+}

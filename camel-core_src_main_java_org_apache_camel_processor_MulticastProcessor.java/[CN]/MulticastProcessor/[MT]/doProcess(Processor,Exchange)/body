@@ -1,16 +1,21 @@
 {
   TracedRouteNodes traced=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getTracedRouteNodes() : null;
+  long start=0;
+  if (producer instanceof Producer) {
+    start=System.currentTimeMillis();
+  }
   try {
     if (traced != null) {
       traced.pushBlock();
     }
     setToEndpoint(exchange,producer);
+    Processor wrapped=producer;
     if (exchange.getUnitOfWork() != null && exchange.getUnitOfWork().getRouteContext() != null) {
       RouteContext routeContext=exchange.getUnitOfWork().getRouteContext();
       ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
-      producer=builder.createErrorHandler(routeContext,producer);
+      wrapped=builder.createErrorHandler(routeContext,wrapped);
     }
-    producer.process(exchange);
+    wrapped.process(exchange);
   }
  catch (  Exception e) {
     exchange.setException(e);
@@ -18,6 +23,11 @@
  finally {
     if (traced != null) {
       traced.popBlock();
+    }
+    if (producer instanceof Producer) {
+      long timeTaken=System.currentTimeMillis() - start;
+      Endpoint endpoint=((Producer)producer).getEndpoint();
+      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
     }
   }
 }
