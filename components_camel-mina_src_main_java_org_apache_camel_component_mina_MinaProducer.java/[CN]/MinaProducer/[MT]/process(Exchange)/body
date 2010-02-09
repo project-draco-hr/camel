@@ -48,4 +48,21 @@
       }
     }
   }
+  Boolean close;
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    close=exchange.getOut().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+  }
+ else {
+    close=exchange.getIn().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+  }
+  boolean disconnect=endpoint.getConfiguration().isDisconnect();
+  if (close != null) {
+    disconnect=close;
+  }
+  if (disconnect) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Closing session when complete at address: " + endpoint.getAddress());
+    }
+    session.close();
+  }
 }

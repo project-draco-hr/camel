@@ -41,13 +41,19 @@
   }
   Boolean close;
   if (ExchangeHelper.isOutCapable(exchange)) {
-    close=exchange.getOut().getHeader(HEADER_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+    close=exchange.getOut().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
   }
  else {
-    close=exchange.getIn().getHeader(HEADER_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+    close=exchange.getIn().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
   }
-  if (close != null && close) {
-    LOG.debug("Closing session when complete");
+  boolean disconnect=endpoint.getConfiguration().isDisconnect();
+  if (close != null) {
+    disconnect=close;
+  }
+  if (disconnect) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Closing session when complete at address: " + address);
+    }
     session.close();
   }
 }
