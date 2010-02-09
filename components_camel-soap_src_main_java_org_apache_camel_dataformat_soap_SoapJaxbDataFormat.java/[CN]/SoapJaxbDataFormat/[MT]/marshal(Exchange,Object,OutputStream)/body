@@ -1,0 +1,21 @@
+{
+  checkElementNameStrategy(exchange);
+  String soapAction=(String)exchange.getProperty(Exchange.SOAP_ACTION);
+  Body body=new Body();
+  Throwable exception=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+  if (exception == null) {
+    exception=exchange.getIn().getHeader(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+  }
+  final JAXBElement<?> content;
+  if (exception != null) {
+    content=createFaultFromException(exception,soapAction);
+  }
+ else {
+    content=createBodyContentFromObject(inputObject,soapAction);
+  }
+  body.getAny().add(content);
+  Envelope envelope=new Envelope();
+  envelope.setBody(body);
+  JAXBElement<Envelope> envelopeEl=new ObjectFactory().createEnvelope(envelope);
+  super.marshal(exchange,envelopeEl,stream);
+}
