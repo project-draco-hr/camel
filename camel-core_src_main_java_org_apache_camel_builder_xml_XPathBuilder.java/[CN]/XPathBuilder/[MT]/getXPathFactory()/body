@@ -1,9 +1,26 @@
 {
   if (xpathFactory == null) {
     if (objectModelUri != null) {
+      LOG.info("Using objectModelUri " + objectModelUri + " when creating XPathFactory");
       xpathFactory=XPathFactory.newInstance(objectModelUri);
+      return xpathFactory;
     }
-    xpathFactory=XPathFactory.newInstance();
+    Properties properties=System.getProperties();
+    for (    Map.Entry prop : properties.entrySet()) {
+      String key=(String)prop.getKey();
+      if (key.startsWith(XPathFactory.DEFAULT_PROPERTY_NAME)) {
+        String uri=ObjectHelper.after(key,":");
+        if (uri != null) {
+          LOG.info("Using system property " + key + " with value: "+ prop.getValue()+ " when creating XPathFactory");
+          xpathFactory=XPathFactory.newInstance(uri);
+          return xpathFactory;
+        }
+      }
+    }
+    if (xpathFactory == null) {
+      LOG.debug("Creating default XPathFactory");
+      xpathFactory=XPathFactory.newInstance();
+    }
   }
   return xpathFactory;
 }
