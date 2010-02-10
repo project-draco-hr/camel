@@ -1,6 +1,12 @@
 {
   ObjectHelper.notNull(paths,"paths");
-  Properties prop=propertiesResolver.resolveProperties(getCamelContext(),paths);
+  Properties prop=cache ? cacheMap.get(paths) : null;
+  if (prop == null) {
+    prop=propertiesResolver.resolveProperties(getCamelContext(),paths);
+    if (cache) {
+      cacheMap.put(paths,prop);
+    }
+  }
   if (LOG.isTraceEnabled()) {
     LOG.trace("Parsing uri " + uri + " with properties: "+ prop);
   }
