@@ -13,4 +13,15 @@
     }
   }
 );
+  from("servlet:///testConverter?matchOnUriPrefix=true").convertBodyTo(String.class).process(new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      HttpServletRequest request=exchange.getIn(HttpServletRequest.class);
+      assertNotNull("We should get request object here",request);
+      HttpServletResponse response=exchange.getIn(HttpServletResponse.class);
+      assertNotNull("We should get response object here",response);
+      String s=exchange.getIn().getBody(String.class);
+      assertEquals("<request> hello world </request>",s);
+    }
+  }
+).transform(constant("Bye World"));
 }
