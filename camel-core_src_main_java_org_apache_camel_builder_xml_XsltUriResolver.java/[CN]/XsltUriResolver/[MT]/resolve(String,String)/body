@@ -1,0 +1,36 @@
+{
+  if (ObjectHelper.isEmpty(href)) {
+    throw new TransformerException("include href is empty");
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Resolving URI with href: " + href + " and base: "+ base);
+  }
+  if (href.startsWith("classpath:")) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Resolving URI from classpath: " + href);
+    }
+    String name=ObjectHelper.after(href,":");
+    InputStream is=resolver.loadResourceAsStream(name);
+    if (is == null) {
+      throw new TransformerException("Cannot find " + name + " in classpath");
+    }
+    return new StreamSource(is);
+  }
+  if (href.startsWith("file:")) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Resolving URI from file: " + href);
+    }
+    String name=ObjectHelper.after(href,":");
+    File file=new File(name);
+    return new StreamSource(file);
+  }
+  String path=FileUtil.onlyPath(location);
+  if (ObjectHelper.isEmpty(path)) {
+    path="classpath:" + href;
+    return resolve(path,base);
+  }
+ else {
+    path="classpath:" + path + File.separator+ href;
+    return resolve(path,base);
+  }
+}
