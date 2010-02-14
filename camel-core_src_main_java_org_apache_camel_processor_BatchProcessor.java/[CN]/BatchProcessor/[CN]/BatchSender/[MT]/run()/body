@@ -4,15 +4,35 @@
     do {
       try {
         if (!exchangeEnqueued) {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Waiting for new exchange to arrive or batchTimeout to occur after " + batchTimeout + " ms.");
+          }
           exchangeEnqueuedCondition.await(batchTimeout,TimeUnit.MILLISECONDS);
         }
-        if (!exchangeEnqueued) {
-          drainQueueTo(collection,batchSize);
+        String id=null;
+        if (!completionPredicateMatched.isEmpty()) {
+          id=completionPredicateMatched.poll();
+        }
+        if (id != null || !exchangeEnqueued) {
+          if (LOG.isTraceEnabled()) {
+            if (id != null) {
+              LOG.trace("Collecting exchanges to be aggregated triggered by completion predicate");
+            }
+ else {
+              LOG.trace("Collecting exchanges to be aggregated triggered by batch timeout");
+            }
+          }
+          drainQueueTo(collection,batchSize,id);
         }
  else {
           exchangeEnqueued=false;
+          boolean drained=false;
           while (isInBatchCompleted(queue.size())) {
-            drainQueueTo(collection,batchSize);
+            drained=true;
+            drainQueueTo(collection,batchSize,id);
+          }
+          if (drained) {
+            LOG.trace("Collecting exchanges to be aggregated triggered by new exchanges received");
           }
           if (!isOutBatchCompleted()) {
             continue;

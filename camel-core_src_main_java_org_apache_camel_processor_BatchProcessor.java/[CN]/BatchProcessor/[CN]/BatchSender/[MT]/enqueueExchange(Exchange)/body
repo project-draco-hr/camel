@@ -1,6 +1,18 @@
 {
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Received exchange to be batched: " + exchange);
+  }
   queueLock.lock();
   try {
+    if (completionPredicate != null) {
+      boolean matches=completionPredicate.matches(exchange);
+      if (matches) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Exchange matched completion predicate: " + exchange);
+        }
+        completionPredicateMatched.add(exchange.getExchangeId());
+      }
+    }
     queue.add(exchange);
     exchangeEnqueued=true;
     exchangeEnqueuedCondition.signal();
