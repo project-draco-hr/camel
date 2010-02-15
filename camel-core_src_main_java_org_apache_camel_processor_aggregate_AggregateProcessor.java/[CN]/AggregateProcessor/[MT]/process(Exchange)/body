@@ -1,7 +1,20 @@
 {
   Object key=correlationExpression.evaluate(exchange,Object.class);
   if (ObjectHelper.isEmpty(key)) {
-    throw new CamelExchangeException("Correlation key could not be evaluated to a value",exchange);
+    if (isIgnoreBadCorrelationKeys()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Correlation key could not be evaluated to a value. Exchange will be ignored: " + exchange);
+      }
+      return;
+    }
+ else {
+      throw new CamelExchangeException("Correlation key could not be evaluated to a value",exchange);
+    }
+  }
+  if (isCloseCorrelationKeyOnCompletion()) {
+    if (closedCorrelationKeys.contains(key)) {
+      throw new CamelExchangeException("Correlation key has been closed",exchange);
+    }
   }
   Exchange oldExchange=aggregationRepository.get(key);
   Exchange newExchange=exchange;
@@ -12,13 +25,13 @@
     size++;
   }
   boolean complete=false;
-  if (isEagerEvaluateCompletionPredicate()) {
+  if (isEagerCheckCompletion()) {
     complete=isCompleted(key,exchange,size);
   }
   ExchangeHelper.prepareAggregation(oldExchange,newExchange);
   newExchange=onAggregation(oldExchange,newExchange);
   newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
-  if (!isEagerEvaluateCompletionPredicate()) {
+  if (!isEagerCheckCompletion()) {
     complete=isCompleted(key,newExchange,size);
   }
   if (!complete && !newExchange.equals(oldExchange)) {
