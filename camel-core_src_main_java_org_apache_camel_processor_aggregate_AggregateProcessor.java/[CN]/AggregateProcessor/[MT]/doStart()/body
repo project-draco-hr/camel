@@ -1,0 +1,14 @@
+{
+  if (getCompletionTimeout() <= 0 && getCompletionAggregatedSize() <= 0 && getCompletionPredicate() == null) {
+    throw new IllegalStateException("At least one of the completions options" + " [completionTimeout, completionAggregatedSize, completionPredicate] must be set");
+  }
+  ServiceHelper.startService(aggregationRepository);
+  if (executorService == null) {
+    executorService=ExecutorServiceHelper.newFixedThreadPool(10,"AggregateProcessor",true);
+  }
+  if (getCompletionTimeout() > 0) {
+    ScheduledExecutorService scheduler=ExecutorServiceHelper.newScheduledThreadPool(1,"AggregationProcessorTimeoutReaper",true);
+    timeoutMap=new TimeoutReaper(scheduler,1000L);
+    ServiceHelper.startService(timeoutMap);
+  }
+}

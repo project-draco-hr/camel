@@ -1,0 +1,33 @@
+{
+  Object key=correlationExpression.evaluate(exchange,Object.class);
+  if (ObjectHelper.isEmpty(key)) {
+    throw new CamelExchangeException("Correlation key could not be evaluated to a value",exchange);
+  }
+  Exchange oldExchange=aggregationRepository.get(key);
+  Exchange newExchange=exchange;
+  Integer size=1;
+  if (oldExchange != null) {
+    size=oldExchange.getProperty(Exchange.AGGREGATED_SIZE,Integer.class);
+    ObjectHelper.notNull(size,Exchange.AGGREGATED_SIZE + " on " + oldExchange);
+    size++;
+  }
+  boolean complete=false;
+  if (isEagerEvaluateCompletionPredicate()) {
+    complete=isCompleted(key,exchange,size);
+  }
+  ExchangeHelper.prepareAggregation(oldExchange,newExchange);
+  newExchange=onAggregation(oldExchange,newExchange);
+  newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
+  if (!isEagerEvaluateCompletionPredicate()) {
+    complete=isCompleted(key,newExchange,size);
+  }
+  if (!complete && !newExchange.equals(oldExchange)) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Put exchange:" + newExchange + " with correlation key:"+ key);
+    }
+    aggregationRepository.add(key,newExchange);
+  }
+  if (complete) {
+    onCompletion(key,newExchange);
+  }
+}
