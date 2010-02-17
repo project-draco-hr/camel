@@ -4,10 +4,15 @@
   }
   ServiceHelper.startService(aggregationRepository);
   if (executorService == null) {
-    executorService=ExecutorServiceHelper.newFixedThreadPool(getConcurrentConsumers(),"AggregateProcessor",true);
+    if (isParallelProcessing()) {
+      executorService=ExecutorServiceHelper.newFixedThreadPool(10,"Aggregator",true);
+    }
+ else {
+      executorService=ExecutorServiceHelper.newFixedThreadPool(1,"Aggregator",true);
+    }
   }
   if (getCompletionTimeout() > 0) {
-    ScheduledExecutorService scheduler=ExecutorServiceHelper.newScheduledThreadPool(1,"AggregateProcessorTimeoutCompletion",true);
+    ScheduledExecutorService scheduler=ExecutorServiceHelper.newScheduledThreadPool(1,"AggregateTimeoutChecker",true);
     timeoutMap=new AggregationTimeoutMap(scheduler,1000L);
     ServiceHelper.startService(timeoutMap);
   }
