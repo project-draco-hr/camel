@@ -1,6 +1,6 @@
 {
   StringWriter buffer=new StringWriter();
-  Map variableMap=ExchangeHelper.createVariableMap(exchange);
+  Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
   String text=exchange.getContext().getTypeConverter().mandatoryConvertTo(String.class,getResourceAsInputStream());
   StringTemplate template=new StringTemplate(text);
   template.setAttributes(variableMap);
@@ -11,4 +11,8 @@
   Message out=exchange.getOut();
   out.setBody(buffer.toString());
   out.setHeader(StringTemplateConstants.STRINGTEMPLATE_RESOURCE,getResource());
+  Map<String,Object> headers=(Map<String,Object>)variableMap.get("headers");
+  for (  Entry<String,Object> entry : headers.entrySet()) {
+    out.setHeader(entry.getKey(),entry.getValue());
+  }
 }
