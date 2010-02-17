@@ -1,0 +1,39 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("+++ start +++ onAggregation for key " + key);
+  }
+  Exchange answer;
+  Exchange oldExchange=aggregationRepository.get(key);
+  Exchange newExchange=exchange;
+  Integer size=1;
+  if (oldExchange != null) {
+    size=oldExchange.getProperty(Exchange.AGGREGATED_SIZE,0,Integer.class);
+    size++;
+  }
+  boolean complete=false;
+  if (isEagerCheckCompletion()) {
+    newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
+    complete=isCompleted(key,newExchange);
+    newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
+  }
+  ExchangeHelper.prepareAggregation(oldExchange,newExchange);
+  answer=onAggregation(oldExchange,exchange);
+  answer.setProperty(Exchange.AGGREGATED_SIZE,size);
+  if (!isEagerCheckCompletion()) {
+    answer.setProperty(Exchange.AGGREGATED_SIZE,size);
+    complete=isCompleted(key,answer);
+  }
+  if (!complete) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("In progress aggregated exchange: " + answer + " with correlation key:"+ key);
+    }
+    aggregationRepository.add(key,answer);
+  }
+  if (complete) {
+    onCompletion(key,answer,false);
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("+++ end +++ onAggregation for key " + key + " with size "+ size);
+  }
+  return answer;
+}

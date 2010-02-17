@@ -16,40 +16,5 @@
       throw new CamelExchangeException("Correlation key has been closed",exchange);
     }
   }
-  if (isUseBatchSizeFromConsumer()) {
-    int size=exchange.getProperty(Exchange.BATCH_SIZE,0,Integer.class);
-    if (size > 0 && size != completionAggregatedSize) {
-      completionAggregatedSize=size;
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Using batch consumer completion, so setting completionAggregatedSize to: " + completionAggregatedSize);
-      }
-    }
-  }
-  Exchange oldExchange=aggregationRepository.get(key);
-  Exchange newExchange=exchange;
-  Integer size=1;
-  if (oldExchange != null) {
-    size=oldExchange.getProperty(Exchange.AGGREGATED_SIZE,Integer.class);
-    ObjectHelper.notNull(size,Exchange.AGGREGATED_SIZE + " on " + oldExchange);
-    size++;
-  }
-  boolean complete=false;
-  if (isEagerCheckCompletion()) {
-    complete=isCompleted(key,exchange,size);
-  }
-  ExchangeHelper.prepareAggregation(oldExchange,newExchange);
-  newExchange=onAggregation(oldExchange,newExchange);
-  newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
-  if (!isEagerCheckCompletion()) {
-    complete=isCompleted(key,newExchange,size);
-  }
-  if (!complete && !newExchange.equals(oldExchange)) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Put exchange:" + newExchange + " with correlation key:"+ key);
-    }
-    aggregationRepository.add(key,newExchange);
-  }
-  if (complete) {
-    onCompletion(key,newExchange);
-  }
+  doAggregation(key,exchange);
 }

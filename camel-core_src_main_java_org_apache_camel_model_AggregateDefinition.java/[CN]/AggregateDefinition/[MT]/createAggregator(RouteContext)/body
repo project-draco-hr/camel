@@ -1,50 +1,21 @@
 {
-  final Processor processor=routeContext.createProcessor(this);
-  final Aggregator aggregator;
-  if (getAggregationCollection() == null) {
-    setAggregationCollection(createAggregationCollection(routeContext));
+  Processor processor=routeContext.createProcessor(this);
+  processor=new UnitOfWorkProcessor(routeContext,processor);
+  Expression correlation=getExpression().createExpression(routeContext);
+  AggregationStrategy strategy=createAggregationStrategy(routeContext);
+  AggregateProcessor answer=new AggregateProcessor(processor,correlation,strategy);
+  if (getCompletionPredicate() != null) {
+    Predicate predicate=getCompletionPredicate().createPredicate(routeContext);
+    answer.setCompletionPredicate(predicate);
   }
-  if (aggregationCollection != null) {
-    if (aggregationCollection.getCorrelationExpression() == null) {
-      aggregationCollection.setCorrelationExpression(getExpression());
-    }
-    if (aggregationCollection.getAggregationStrategy() == null) {
-      AggregationStrategy strategy=createAggregationStrategy(routeContext);
-      aggregationCollection.setAggregationStrategy(strategy);
-    }
-    aggregator=new Aggregator(processor,aggregationCollection);
+  if (getCompletionSize() != null) {
+    answer.setCompletionSize(getCompletionSize());
   }
- else {
-    AggregationStrategy strategy=createAggregationStrategy(routeContext);
-    if (getExpression() == null) {
-      throw new IllegalArgumentException("You need to specify an expression or " + "aggregation collection for this aggregator: " + this);
-    }
-    Expression aggregateExpression=getExpression().createExpression(routeContext);
-    Predicate predicate=null;
-    if (getCompletionPredicate() != null) {
-      predicate=getCompletionPredicate().createPredicate(routeContext);
-    }
-    if (predicate != null) {
-      aggregator=new Aggregator(processor,aggregateExpression,strategy,predicate);
-    }
- else {
-      aggregator=new Aggregator(processor,aggregateExpression,strategy);
-    }
+  if (getCompletionTimeout() != null) {
+    answer.setCompletionTimeout(getCompletionTimeout());
   }
-  if (batchSize != null) {
-    aggregator.setBatchSize(batchSize);
+  if (isCompletionFromBatchConsumer() != null) {
+    answer.setCompletionFromBatchConsumer(isCompletionFromBatchConsumer());
   }
-  if (batchTimeout != null) {
-    aggregator.setBatchTimeout(batchTimeout);
-  }
-  if (outBatchSize != null) {
-    aggregator.setOutBatchSize(outBatchSize);
-  }
-  if (groupExchanges != null) {
-    aggregator.setGroupExchanges(groupExchanges);
-  }
-  if (batchSizeFromConsumer != null) {
-    aggregator.setBatchConsumer(batchSizeFromConsumer);
-  }
-  return aggregator;
+  return answer;
 }

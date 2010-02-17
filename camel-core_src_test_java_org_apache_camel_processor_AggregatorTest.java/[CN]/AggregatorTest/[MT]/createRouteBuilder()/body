@@ -1,11 +1,9 @@
 {
   return new RouteBuilder(){
     public void configure(){
-      from("direct:start").aggregate(header("cheese")).to("mock:result");
-      from("seda:header").setHeader("visited",constant(true)).aggregate(header("cheese")).to("mock:result");
+      from("direct:start").aggregate(header("cheese"),new UseLatestAggregationStrategy()).completionTimeout(1000L).to("mock:result");
+      from("seda:header").setHeader("visited",constant(true)).aggregate(header("cheese"),new UseLatestAggregationStrategy()).completionTimeout(1000L).to("mock:result");
       from("direct:predicate").aggregate(header("cheese"),new MyAggregationStrategy()).completionPredicate(header("aggregated").isEqualTo(5)).to("mock:result");
-      from("direct:outBatchPredicate").aggregate(header("cheese"),new MyAggregationStrategy()).completionPredicate(header("aggregated").isEqualTo(5)).outBatchSize(10).to("mock:result");
-      from("direct:outBatchNoInBatching").aggregate(header("cheese"),new MyAggregationStrategy()).completionPredicate(header("aggregated").isEqualTo(5)).batchSize(1).outBatchSize(10).to("mock:result");
     }
   }
 ;

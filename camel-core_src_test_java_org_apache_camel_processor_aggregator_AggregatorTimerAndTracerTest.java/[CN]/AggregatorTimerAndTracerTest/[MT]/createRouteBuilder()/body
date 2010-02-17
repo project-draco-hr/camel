@@ -2,7 +2,7 @@
   return new RouteBuilder(){
     public void configure() throws Exception {
       getContext().setTracing(true);
-      from("seda:splitted").aggregate(header("id")).to("mock:foo").to("mock:result");
+      from("seda:splitted").aggregate(header("id"),new UseLatestAggregationStrategy()).completionTimeout(1000L).to("mock:foo").to("mock:result");
       from("timer://kickoff?period=9999910000").setHeader("id").constant("foo").setBody().constant("a b c").split(body().tokenize(" ")).to("seda:splitted");
     }
   }

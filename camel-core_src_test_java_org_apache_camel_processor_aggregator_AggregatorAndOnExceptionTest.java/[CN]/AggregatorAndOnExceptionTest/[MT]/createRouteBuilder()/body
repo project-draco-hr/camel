@@ -3,12 +3,12 @@
     @Override public void configure() throws Exception {
       errorHandler(deadLetterChannel("mock:error"));
       onException(CamelException.class).maximumRedeliveries(2);
-      from("seda:start").aggregate(new PredicateAggregationCollection(header("id"),new AggregationStrategy(){
+      from("seda:start").aggregate(header("id"),new AggregationStrategy(){
         public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
           return newExchange;
         }
       }
-,property(Exchange.AGGREGATED_SIZE).isEqualTo(2))).batchTimeout(500L).to("mock:result");
+).completionSize(2).completionTimeout(500L).to("mock:result");
     }
   }
 ;

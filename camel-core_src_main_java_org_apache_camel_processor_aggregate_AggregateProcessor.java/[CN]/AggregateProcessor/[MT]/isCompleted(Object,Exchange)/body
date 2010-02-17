@@ -1,0 +1,29 @@
+{
+  if (getCompletionPredicate() != null) {
+    boolean answer=getCompletionPredicate().matches(exchange);
+    if (answer) {
+      return true;
+    }
+  }
+  if (getCompletionSize() > 0) {
+    int size=exchange.getProperty(Exchange.AGGREGATED_SIZE,1,Integer.class);
+    if (size >= getCompletionSize()) {
+      return true;
+    }
+  }
+  if (getCompletionTimeout() > 0) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Updating correlation key " + key + " to timeout after "+ getCompletionTimeout()+ " ms. as exchange received: "+ exchange);
+    }
+    timeoutMap.put(key,exchange,getCompletionTimeout());
+  }
+  if (isCompletionFromBatchConsumer()) {
+    batchConsumerCounter++;
+    int size=exchange.getProperty(Exchange.BATCH_SIZE,0,Integer.class);
+    if (size > 0 && batchConsumerCounter >= size) {
+      batchConsumerCounter=0;
+      return true;
+    }
+  }
+  return false;
+}

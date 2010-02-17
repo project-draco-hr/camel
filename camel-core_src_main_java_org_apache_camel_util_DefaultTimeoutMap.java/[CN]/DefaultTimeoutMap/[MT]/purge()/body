@@ -1,23 +1,22 @@
 {
+  if (log.isTraceEnabled()) {
+    log.debug("There are " + map.size() + " in the timeout map");
+  }
   long now=currentTime();
-synchronized (map) {
-    for (Iterator<TimeoutMapEntry<K,V>> iter=index.iterator(); iter.hasNext(); ) {
-      TimeoutMapEntry<K,V> entry=iter.next();
-      if (entry == null) {
-        break;
-      }
-      if (entry.getExpireTime() < now) {
-        if (isValidForEviction(entry)) {
+  lock.lock();
+  try {
+    for (    Map.Entry<K,TimeoutMapEntry<K,V>> entry : map.entrySet()) {
+      if (entry.getValue().getExpireTime() < now) {
+        if (isValidForEviction(entry.getValue())) {
           if (log.isDebugEnabled()) {
             log.debug("Evicting inactive request for correlationID: " + entry);
           }
-          map.remove(entry.getKey());
-          iter.remove();
+          map.remove(entry.getKey(),entry.getValue());
         }
       }
- else {
-        break;
-      }
     }
+  }
+  finally {
+    lock.unlock();
   }
 }
