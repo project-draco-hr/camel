@@ -2,6 +2,16 @@
   if (getCompletionTimeout() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null) {
     throw new IllegalStateException("At least one of the completions options" + " [completionTimeout, completionAggregatedSize, completionPredicate] must be set");
   }
+  if (getCloseCorrelationKeyOnCompletion() != null) {
+    if (getCloseCorrelationKeyOnCompletion() > 0) {
+      LOG.info("Using ClosedCorrelationKeys with a LRUCache with a capacity of " + getCloseCorrelationKeyOnCompletion());
+      closedCorrelationKeys=new LRUCache<Object,Object>(getCloseCorrelationKeyOnCompletion());
+    }
+ else {
+      LOG.info("Using ClosedCorrelationKeys with unbounded capacity");
+      closedCorrelationKeys=new HashMap<Object,Object>();
+    }
+  }
   ServiceHelper.startService(aggregationRepository);
   if (executorService == null) {
     if (isParallelProcessing()) {
