@@ -5,13 +5,33 @@
       return true;
     }
   }
+  if (getCompletionSizeExpression() != null) {
+    Integer value=getCompletionSizeExpression().evaluate(exchange,Integer.class);
+    if (value != null && value > 0) {
+      int size=exchange.getProperty(Exchange.AGGREGATED_SIZE,1,Integer.class);
+      if (size >= value) {
+        return true;
+      }
+    }
+  }
   if (getCompletionSize() > 0) {
     int size=exchange.getProperty(Exchange.AGGREGATED_SIZE,1,Integer.class);
     if (size >= getCompletionSize()) {
       return true;
     }
   }
-  if (getCompletionTimeout() > 0) {
+  boolean timeoutSet=false;
+  if (getCompletionTimeoutExpression() != null) {
+    Long value=getCompletionTimeoutExpression().evaluate(exchange,Long.class);
+    if (value != null && value > 0) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Updating correlation key " + key + " to timeout after "+ value+ " ms. as exchange received: "+ exchange);
+      }
+      timeoutMap.put(key,exchange,value);
+      timeoutSet=true;
+    }
+  }
+  if (!timeoutSet && getCompletionTimeout() > 0) {
     if (LOG.isTraceEnabled()) {
       LOG.trace("Updating correlation key " + key + " to timeout after "+ getCompletionTimeout()+ " ms. as exchange received: "+ exchange);
     }

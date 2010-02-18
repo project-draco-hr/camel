@@ -1,6 +1,6 @@
 {
-  if (getCompletionTimeout() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null) {
-    throw new IllegalStateException("At least one of the completions options" + " [completionTimeout, completionAggregatedSize, completionPredicate] must be set");
+  if (getCompletionTimeout() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null && !isCompletionFromBatchConsumer() && getCompletionTimeoutExpression() == null && getCompletionSizeExpression() == null) {
+    throw new IllegalStateException("At least one of the completions options" + " [completionTimeout, completionSize, completionPredicate, completionFromBatchConsumer] must be set");
   }
   if (getCloseCorrelationKeyOnCompletion() != null) {
     if (getCloseCorrelationKeyOnCompletion() > 0) {
@@ -21,7 +21,7 @@
       executorService=ExecutorServiceHelper.newFixedThreadPool(1,"Aggregator",true);
     }
   }
-  if (getCompletionTimeout() > 0) {
+  if (getCompletionTimeout() > 0 || getCompletionTimeoutExpression() != null) {
     ScheduledExecutorService scheduler=ExecutorServiceHelper.newScheduledThreadPool(1,"AggregateTimeoutChecker",true);
     timeoutMap=new AggregationTimeoutMap(scheduler,1000L);
     ServiceHelper.startService(timeoutMap);
