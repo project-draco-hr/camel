@@ -1,0 +1,20 @@
+{
+  try {
+    final Buffer keyBuffer=marshallKey(key);
+    final Buffer exchangeBuffer=marshallExchange(exchange);
+    Buffer rc=file.execute(new Work<Buffer>(){
+      public Buffer execute(      Transaction tx){
+        Index<Buffer,Buffer> index=file.getRepositoryIndex(tx,name);
+        return index.put(keyBuffer,exchangeBuffer);
+      }
+    }
+);
+    if (rc == null) {
+      return null;
+    }
+    return unmarshallExchange(rc);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException(e);
+  }
+}
