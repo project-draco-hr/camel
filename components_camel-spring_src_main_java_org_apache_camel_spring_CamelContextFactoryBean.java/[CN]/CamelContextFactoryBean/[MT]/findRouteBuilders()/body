@@ -4,10 +4,16 @@
   PackageScanDefinition packageScanDef=getPackageScan();
   if (packageScanDef != null && packageScanDef.getPackages().size() > 0) {
     PatternBasedPackageScanFilter filter=new PatternBasedPackageScanFilter();
-    filter.addIncludePatterns(packageScanDef.getIncludes());
-    filter.addExcludePatterns(packageScanDef.getExcludes());
+    for (    String include : packageScanDef.getIncludes()) {
+      include=getContext().resolvePropertyPlaceholders(include);
+      filter.addIncludePattern(include);
+    }
+    for (    String exclude : packageScanDef.getExcludes()) {
+      exclude=getContext().resolvePropertyPlaceholders(exclude);
+      filter.addExcludePattern(exclude);
+    }
     resolver.addFilter(filter);
-    String[] normalized=normalizePackages(packageScanDef.getPackages());
+    String[] normalized=normalizePackages(getContext(),packageScanDef.getPackages());
     RouteBuilderFinder finder=new RouteBuilderFinder(getContext(),normalized,getContextClassLoaderOnStart(),getBeanPostProcessor(),getContext().getPackageScanClassResolver());
     finder.appendBuilders(builders);
   }
