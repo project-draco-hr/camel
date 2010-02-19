@@ -1,5 +1,5 @@
 {
-  if (camelJMXAgent != null && camelJMXAgent.isDisabled()) {
+  if (camelJMXAgent != null && camelJMXAgent.isAgentDisabled()) {
     LOG.info("JMXAgent disabled");
     getContext().getLifecycleStrategies().clear();
     getContext().setManagementStrategy(new DefaultManagementStrategy());
@@ -7,19 +7,20 @@
  else   if (camelJMXAgent != null) {
     LOG.info("JMXAgent enabled: " + camelJMXAgent);
     DefaultManagementAgent agent=new DefaultManagementAgent();
-    agent.setConnectorPort(camelJMXAgent.getConnectorPort());
-    agent.setCreateConnector(camelJMXAgent.isCreateConnector());
-    agent.setMBeanObjectDomainName(camelJMXAgent.getMbeanObjectDomainName());
-    agent.setMBeanServerDefaultDomain(camelJMXAgent.getMbeanServerDefaultDomain());
-    agent.setRegistryPort(camelJMXAgent.getRegistryPort());
-    agent.setServiceUrlPath(camelJMXAgent.getServiceUrlPath());
-    agent.setUsePlatformMBeanServer(camelJMXAgent.isUsePlatformMBeanServer());
-    agent.setOnlyRegisterProcessorWithCustomId(camelJMXAgent.getOnlyRegisterProcessorWithCustomId());
+    agent.setConnectorPort(parseInteger(camelJMXAgent.getConnectorPort()));
+    agent.setCreateConnector(parseBoolean(camelJMXAgent.getCreateConnector()));
+    agent.setMBeanObjectDomainName(parseText(camelJMXAgent.getMbeanObjectDomainName()));
+    agent.setMBeanServerDefaultDomain(parseText(camelJMXAgent.getMbeanServerDefaultDomain()));
+    agent.setRegistryPort(parseInteger(camelJMXAgent.getRegistryPort()));
+    agent.setServiceUrlPath(parseText(camelJMXAgent.getServiceUrlPath()));
+    agent.setUsePlatformMBeanServer(parseBoolean(camelJMXAgent.getUsePlatformMBeanServer()));
+    agent.setOnlyRegisterProcessorWithCustomId(parseBoolean(camelJMXAgent.getOnlyRegisterProcessorWithCustomId()));
     ManagementStrategy managementStrategy=new ManagedManagementStrategy(agent);
     getContext().setManagementStrategy(managementStrategy);
     getContext().getLifecycleStrategies().clear();
     getContext().addLifecycleStrategy(new DefaultManagementLifecycleStrategy(getContext()));
-    getContext().getManagementStrategy().onlyManageProcessorWithCustomId(camelJMXAgent.getOnlyRegisterProcessorWithCustomId());
+    boolean onlyId=agent.getOnlyRegisterProcessorWithCustomId() != null && agent.getOnlyRegisterProcessorWithCustomId();
+    getContext().getManagementStrategy().onlyManageProcessorWithCustomId(onlyId);
     getContext().getManagementStrategy().setStatisticsLevel(camelJMXAgent.getStatisticsLevel());
   }
 }
