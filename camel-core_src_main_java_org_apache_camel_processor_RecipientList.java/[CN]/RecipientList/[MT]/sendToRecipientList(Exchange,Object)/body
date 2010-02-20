@@ -1,12 +1,22 @@
 {
   Iterator<Object> iter=ObjectHelper.createIterator(receipientList,delimiter);
-  List<Processor> processors=new ArrayList<Processor>();
-  while (iter.hasNext()) {
-    Object recipient=iter.next();
-    Endpoint endpoint=resolveEndpoint(exchange,recipient);
-    Producer producer=getProducerCache(exchange).getProducer(endpoint);
-    processors.add(producer);
+  ProducerCache cache=getProducerCache(exchange);
+  Map<Endpoint,Producer> producers=new LinkedHashMap<Endpoint,Producer>();
+  try {
+    List<Processor> processors=new ArrayList<Processor>();
+    while (iter.hasNext()) {
+      Object recipient=iter.next();
+      Endpoint endpoint=resolveEndpoint(exchange,recipient);
+      Producer producer=cache.acquireProducer(endpoint);
+      processors.add(producer);
+      producers.put(endpoint,producer);
+    }
+    MulticastProcessor mp=new MulticastProcessor(processors,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),false,isStopOnException());
+    mp.process(exchange);
   }
-  MulticastProcessor mp=new MulticastProcessor(processors,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),false,isStopOnException());
-  mp.process(exchange);
+  finally {
+    for (    Map.Entry<Endpoint,Producer> entry : producers.entrySet()) {
+      cache.releaseProducer(entry.getKey(),entry.getValue());
+    }
+  }
 }
