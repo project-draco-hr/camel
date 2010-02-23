@@ -1,12 +1,13 @@
 {
-  GetMethod get=new GetMethod("http://localhost:9000/customerservice/customers/123");
-  get.addRequestHeader("Accept","application/json");
-  HttpClient httpclient=new HttpClient();
+  HttpGet get=new HttpGet("http://localhost:9000/customerservice/customers/123");
+  get.addHeader("Accept","application/json");
+  HttpClient httpclient=new DefaultHttpClient();
   try {
-    assertEquals(200,httpclient.executeMethod(get));
-    assertEquals("{\"Customer\":{\"id\":123,\"name\":\"John\"}}",get.getResponseBodyAsString());
+    HttpResponse response=httpclient.execute(get);
+    assertEquals(200,response.getStatusLine().getStatusCode());
+    assertEquals("{\"Customer\":{\"id\":123,\"name\":\"John\"}}",EntityUtils.toString(response.getEntity()));
   }
   finally {
-    get.releaseConnection();
+    httpclient.getConnectionManager().shutdown();
   }
 }

@@ -1,14 +1,15 @@
 {
-  PutMethod put=new PutMethod("http://localhost:9000/customerservice/customers");
-  RequestEntity entity=new StringRequestEntity(PUT_REQUEST,"text/xml","ISO-8859-1");
-  put.setRequestEntity(entity);
-  HttpClient httpclient=new HttpClient();
+  HttpPut put=new HttpPut("http://localhost:9000/customerservice/customers");
+  StringEntity entity=new StringEntity(PUT_REQUEST,"ISO-8859-1");
+  entity.setContentType("text/xml; charset=ISO-8859-1");
+  put.setEntity(entity);
+  HttpClient httpclient=new DefaultHttpClient();
   try {
-    assertEquals(200,httpclient.executeMethod(put));
-    assertEquals("",put.getResponseBodyAsString());
-    assertEquals("We should get content-type from the response","text/xml",put.getResponseHeader("content-type").getValue());
+    HttpResponse response=httpclient.execute(put);
+    assertEquals(200,response.getStatusLine().getStatusCode());
+    assertEquals("",EntityUtils.toString(response.getEntity()));
   }
   finally {
-    put.releaseConnection();
+    httpclient.getConnectionManager().shutdown();
   }
 }

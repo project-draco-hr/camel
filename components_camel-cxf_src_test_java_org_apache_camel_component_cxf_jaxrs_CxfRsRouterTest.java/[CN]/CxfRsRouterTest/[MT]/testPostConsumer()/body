@@ -1,14 +1,16 @@
 {
-  PostMethod post=new PostMethod("http://localhost:9000/customerservice/customers");
-  post.addRequestHeader("Accept","text/xml");
-  RequestEntity entity=new StringRequestEntity(POST_REQUEST,"text/xml","ISO-8859-1");
-  post.setRequestEntity(entity);
-  HttpClient httpclient=new HttpClient();
+  HttpPost post=new HttpPost("http://localhost:9000/customerservice/customers");
+  post.addHeader("Accept","text/xml");
+  StringEntity entity=new StringEntity(POST_REQUEST,"ISO-8859-1");
+  entity.setContentType("text/xml; charset=ISO-8859-1");
+  post.setEntity(entity);
+  HttpClient httpclient=new DefaultHttpClient();
   try {
-    assertEquals(200,httpclient.executeMethod(post));
-    assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Customer><id>124</id><name>Jack</name></Customer>",post.getResponseBodyAsString());
+    HttpResponse response=httpclient.execute(post);
+    assertEquals(200,response.getStatusLine().getStatusCode());
+    assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Customer><id>124</id><name>Jack</name></Customer>",EntityUtils.toString(response.getEntity()));
   }
   finally {
-    post.releaseConnection();
+    httpclient.getConnectionManager().shutdown();
   }
 }

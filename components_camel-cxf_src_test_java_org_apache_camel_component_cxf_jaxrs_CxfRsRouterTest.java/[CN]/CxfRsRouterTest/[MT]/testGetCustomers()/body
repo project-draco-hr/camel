@@ -1,10 +1,11 @@
 {
-  GetMethod get=new GetMethod("http://localhost:9000/customerservice/customers/");
-  get.addRequestHeader("Accept","application/xml");
-  HttpClient httpclient=new HttpClient();
+  HttpGet get=new HttpGet("http://localhost:9000/customerservice/customers/");
+  get.addHeader("Accept","application/xml");
+  HttpClient httpclient=new DefaultHttpClient();
   try {
-    assertEquals(200,httpclient.executeMethod(get));
-    String s=get.getResponseBodyAsString();
+    HttpResponse response=httpclient.execute(get);
+    assertEquals(200,response.getStatusLine().getStatusCode());
+    String s=EntityUtils.toString(response.getEntity());
     boolean m1="<Customers><Customer><id>123</id><name>John</name></Customer><Customer><id>113</id><name>Dan</name></Customer></Customers>".equals(s);
     boolean m2="<Customers><Customer><id>113</id><name>Dan</name></Customer><Customer><id>123</id><name>John</name></Customer></Customers>".equals(s);
     if (!m1 && !m2) {
@@ -12,6 +13,6 @@
     }
   }
   finally {
-    get.releaseConnection();
+    httpclient.getConnectionManager().shutdown();
   }
 }
