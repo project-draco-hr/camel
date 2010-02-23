@@ -1,6 +1,4 @@
 {
-  StringBuilder sb=new StringBuilder("Created ClientConnectionManager configured with");
-  ThreadSafeClientConnManager answer;
   SchemeRegistry schemeRegistry=new SchemeRegistry();
   if (isSecureConnection(uri)) {
     schemeRegistry.register(new Scheme("https",SSLSocketFactory.getSocketFactory(),443));
@@ -8,22 +6,15 @@
  else {
     schemeRegistry.register(new Scheme("http",PlainSocketFactory.getSocketFactory(),80));
   }
-  answer=new ThreadSafeClientConnManager(clientParams,schemeRegistry);
   ConnManagerParamBean param=new ConnManagerParamBean(clientParams);
   if (getMaxTotalConnections() > 0) {
-    sb.append(" maxTotalConnections=" + getMaxTotalConnections());
     param.setMaxTotalConnections(getMaxTotalConnections());
   }
   if (getConnectionsPerRoute() > 0) {
-    sb.append(" connectionsPerRoute=" + getConnectionsPerRoute());
     param.setConnectionsPerRoute(new ConnPerRouteBean(getConnectionsPerRoute()));
   }
-  if (LOG.isDebugEnabled()) {
-    String msg=sb.toString();
-    if (msg.endsWith("with")) {
-      msg+=" default values";
-    }
-    LOG.debug(msg + ": " + answer);
-  }
+  ThreadSafeClientConnManager answer;
+  answer=new ThreadSafeClientConnManager(clientParams,schemeRegistry);
+  LOG.info("Created ClientConnectionManager " + answer);
   return answer;
 }
