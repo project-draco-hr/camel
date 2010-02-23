@@ -1,0 +1,17 @@
+{
+  Message answer=exchange.getOut();
+  answer.setHeaders(in.getHeaders());
+  answer.setHeader(Exchange.HTTP_RESPONSE_CODE,responseCode);
+  answer.setBody(extractResponseBody(httpRequest,httpResponse,exchange));
+  Header[] headers=httpResponse.getAllHeaders();
+  for (  Header header : headers) {
+    String name=header.getName();
+    String value=header.getValue();
+    if (name.toLowerCase().equals("content-type")) {
+      name=Exchange.CONTENT_TYPE;
+    }
+    if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
+      answer.setHeader(name,value);
+    }
+  }
+}

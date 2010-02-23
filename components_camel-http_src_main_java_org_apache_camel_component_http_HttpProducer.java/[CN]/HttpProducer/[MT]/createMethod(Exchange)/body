@@ -1,22 +1,31 @@
 {
   String url=HttpProducerHelper.createURL(exchange,getEndpoint());
-  RequestEntity requestEntity=createRequestEntity(exchange);
+  URI uri=new URI(url);
+  HttpEntity requestEntity=createRequestEntity(exchange);
   HttpMethods methodToUse=HttpProducerHelper.createMethod(exchange,getEndpoint(),requestEntity != null);
-  HttpMethod method=methodToUse.createMethod(url);
   String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
   if (queryString == null) {
     queryString=getEndpoint().getHttpUri().getQuery();
   }
-  if (queryString != null) {
-    method.setQueryString(queryString);
+  StringBuilder builder=new StringBuilder(uri.getScheme()).append("://").append(uri.getHost());
+  if (uri.getPort() != -1) {
+    builder.append(":").append(uri.getPort());
   }
+  if (uri.getPath() != null) {
+    builder.append(uri.getPath());
+  }
+  if (queryString != null) {
+    builder.append('?');
+    builder.append(queryString);
+  }
+  HttpRequestBase httpRequest=methodToUse.createMethod(builder.toString());
   if (methodToUse.isEntityEnclosing()) {
-    ((EntityEnclosingMethod)method).setRequestEntity(requestEntity);
+    ((HttpEntityEnclosingRequestBase)httpRequest).setEntity(requestEntity);
     if (requestEntity != null && requestEntity.getContentType() == null) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("No Content-Type provided for URL: " + url + " with exchange: "+ exchange);
       }
     }
   }
-  return method;
+  return httpRequest;
 }

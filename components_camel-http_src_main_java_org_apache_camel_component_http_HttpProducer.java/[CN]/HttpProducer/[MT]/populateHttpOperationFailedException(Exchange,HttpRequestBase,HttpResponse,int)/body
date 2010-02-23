@@ -1,0 +1,19 @@
+{
+  HttpOperationFailedException exception;
+  String uri=httpRequest.getURI().toString();
+  String statusText=httpResponse.getStatusLine() != null ? httpResponse.getStatusLine().getReasonPhrase() : null;
+  Map<String,String> headers=extractResponseHeaders(httpResponse.getAllHeaders());
+  InputStream is=extractResponseBody(httpRequest,httpResponse,exchange);
+  String copy=null;
+  if (is != null) {
+    copy=exchange.getContext().getTypeConverter().convertTo(String.class,exchange,is);
+  }
+  Header locationHeader=httpResponse.getFirstHeader("location");
+  if (locationHeader != null && (responseCode >= 300 && responseCode < 400)) {
+    exception=new HttpOperationFailedException(uri,responseCode,statusText,locationHeader.getValue(),headers,copy);
+  }
+ else {
+    exception=new HttpOperationFailedException(uri,responseCode,statusText,null,headers,copy);
+  }
+  return exception;
+}

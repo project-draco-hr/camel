@@ -1,0 +1,28 @@
+{
+  if (expectedMethod != null && !expectedMethod.equals(request.getRequestLine().getMethod())) {
+    response.setStatusCode(HttpStatus.SC_METHOD_FAILURE);
+    return;
+  }
+  try {
+    String query=new URI(request.getRequestLine().getUri()).getQuery();
+    if (expectedQuery != null && !expectedQuery.equals(query)) {
+      response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
+      return;
+    }
+  }
+ catch (  URISyntaxException e) {
+    throw IOHelper.createIOException(e);
+  }
+  if (expectedContent != null) {
+    HttpEntity entity=((HttpEntityEnclosingRequest)request).getEntity();
+    String content=EntityUtils.toString(entity);
+    if (!expectedContent.equals(content)) {
+      response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
+      return;
+    }
+  }
+  response.setStatusCode(HttpStatus.SC_OK);
+  if (responseContent != null) {
+    response.setEntity(new StringEntity(responseContent,HTTP.ASCII));
+  }
+}

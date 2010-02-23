@@ -1,34 +1,37 @@
 {
-  HttpMethod method=createMethod(exchange);
+  HttpRequestBase httpRequest=createMethod(exchange);
   Message in=exchange.getIn();
   HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
   for (  String headerName : in.getHeaders().keySet()) {
     String headerValue=in.getHeader(headerName,String.class);
     if (strategy != null && !strategy.applyFilterToCamelHeaders(headerName,headerValue,exchange)) {
-      method.addRequestHeader(headerName,headerValue);
+      httpRequest.addHeader(headerName,headerValue);
     }
   }
+  HttpResponse httpResponse=null;
   try {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Executing http " + method.getName() + " method: "+ method.getURI().toString());
+      LOG.debug("Executing http " + httpRequest.getMethod() + " method: "+ httpRequest.getURI().toString());
     }
-    int responseCode=executeMethod(method);
+    httpResponse=executeMethod(httpRequest);
+    int responseCode=httpResponse.getStatusLine().getStatusCode();
     if (LOG.isDebugEnabled()) {
       LOG.debug("Http responseCode: " + responseCode);
     }
-    if (!throwException) {
-      populateResponse(exchange,method,in,strategy,responseCode);
+    if (throwException && (responseCode < 100 || responseCode >= 300)) {
+      throw populateHttpOperationFailedException(exchange,httpRequest,httpResponse,responseCode);
     }
  else {
-      if (responseCode >= 100 && responseCode < 300) {
-        populateResponse(exchange,method,in,strategy,responseCode);
-      }
- else {
-        throw populateHttpOperationFailedException(exchange,method,responseCode);
-      }
+      populateResponse(exchange,httpRequest,httpResponse,in,strategy,responseCode);
     }
   }
   finally {
-    method.releaseConnection();
+    if (httpResponse != null && httpResponse.getEntity() != null) {
+      try {
+        httpResponse.getEntity().consumeContent();
+      }
+ catch (      IOException e) {
+      }
+    }
   }
 }

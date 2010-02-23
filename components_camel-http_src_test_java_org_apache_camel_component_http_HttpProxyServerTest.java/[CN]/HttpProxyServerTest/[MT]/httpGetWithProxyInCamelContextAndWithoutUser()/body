@@ -1,0 +1,20 @@
+{
+  context.getProperties().put("http.proxyHost",getProxyHost());
+  context.getProperties().put("http.proxyPort",String.valueOf(getProxyPort()));
+  Map<String,String> expectedHeaders=new HashMap<String,String>();
+  expectedHeaders.put("Host",getHostName() + ":" + getPort());
+  expectedHeaders.put("Proxy-Connection","Keep-Alive");
+  try {
+    proxy.register("*",new HeaderValidationHandler("GET",null,null,getExpectedContent(),expectedHeaders));
+    Exchange exchange=template.request("http://" + getHostName() + ":"+ getPort(),new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+      }
+    }
+);
+    assertExchange(exchange);
+  }
+  finally {
+    context.getProperties().remove("http.proxyHost");
+    context.getProperties().remove("http.proxyPort");
+  }
+}

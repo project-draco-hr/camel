@@ -3,14 +3,21 @@
   if (in.getBody() == null) {
     return null;
   }
-  RequestEntity answer=in.getBody(RequestEntity.class);
+  HttpEntity answer=in.getBody(HttpEntity.class);
   if (answer == null) {
     try {
       String data=in.getBody(String.class);
       if (data != null) {
         String contentType=ExchangeHelper.getContentType(exchange);
         String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
-        answer=new StringRequestEntity(data,contentType,charset);
+        if (charset == null) {
+          charset=HTTP.DEFAULT_CONTENT_CHARSET;
+        }
+        answer=new StringEntity(data,charset);
+        ((StringEntity)answer).setContentEncoding(charset);
+        if (contentType != null) {
+          ((StringEntity)answer).setContentType(contentType);
+        }
       }
     }
  catch (    UnsupportedEncodingException e) {

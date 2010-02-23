@@ -1,13 +1,16 @@
 {
   Exchange exchange=endpoint.createExchange();
-  HttpMethod method=createMethod();
+  HttpRequestBase method=createMethod();
   if (timeout > 0) {
-    method.getParams().setSoTimeout(timeout);
+    HttpConnectionParams.setSoTimeout(method.getParams(),timeout);
   }
+  HttpEntity responeEntity=null;
   try {
-    int responseCode=httpClient.executeMethod(method);
+    HttpResponse response=httpClient.execute(method);
+    int responseCode=response.getStatusLine().getStatusCode();
+    responeEntity=response.getEntity();
     LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
-    InputStream is=method.getResponseBodyAsStream();
+    InputStream is=responeEntity.getContent();
     try {
       IOHelper.copy(is,bos);
       bos.flush();
@@ -17,7 +20,7 @@
     }
     Message message=exchange.getIn();
     message.setBody(bos.createInputStream());
-    Header[] headers=method.getResponseHeaders();
+    Header[] headers=response.getAllHeaders();
     HeaderFilterStrategy strategy=endpoint.getHeaderFilterStrategy();
     for (    Header header : headers) {
       String name=header.getName();
@@ -33,6 +36,12 @@
     throw new RuntimeCamelException(e);
   }
  finally {
-    method.releaseConnection();
+    if (responeEntity != null) {
+      try {
+        responeEntity.consumeContent();
+      }
+ catch (      IOException e) {
+      }
+    }
   }
 }
