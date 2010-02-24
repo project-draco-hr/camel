@@ -1,0 +1,25 @@
+{
+  List<Object> detailList=fault.getDetail().getAny();
+  String message=fault.getFaultstring();
+  if (detailList.size() == 0) {
+    return new RuntimeCamelException(message);
+  }
+  JAXBElement<?> detailEl=(JAXBElement<?>)detailList.get(0);
+  Class<? extends Exception> exceptionClass=elementNameStrategy.findExceptionForFaultName(detailEl.getName());
+  Constructor<? extends Exception> messageContructor;
+  Constructor<? extends Exception> constructor;
+  try {
+    messageContructor=exceptionClass.getConstructor(String.class);
+    Object detail=JAXBIntrospector.getValue(detailEl);
+    try {
+      constructor=exceptionClass.getConstructor(String.class,detail.getClass());
+      return constructor.newInstance(message,detail);
+    }
+ catch (    NoSuchMethodException e) {
+      return messageContructor.newInstance(message);
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException(e);
+  }
+}

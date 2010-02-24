@@ -1,5 +1,9 @@
 {
-  QName name=new ExceptionNameStrategy().findQNameForSoapActionOrType(soapAction,exception.getClass());
+  WebFault webFault=exception.getClass().getAnnotation(WebFault.class);
+  if (webFault == null || webFault.targetNamespace() == null) {
+    throw new RuntimeException("The exception " + exception.getClass().getName() + " needs to have an WebFault annotation with name and targetNamespace");
+  }
+  QName name=new QName(webFault.targetNamespace(),webFault.name());
   Object faultObject=null;
   try {
     Method method=exception.getClass().getMethod("getFaultInfo");
@@ -9,7 +13,7 @@
     throw new RuntimeCamelException("Exception while trying to get fault details",e);
   }
   Fault fault=new Fault();
-  fault.setFaultcode(new QName(exception.getClass().getPackage().getName(),exception.getClass().getSimpleName()));
+  fault.setFaultcode(FAULT_CODE_SERVER);
   fault.setFaultstring(exception.getMessage());
   Detail detailEl=new ObjectFactory().createDetail();
   JAXBElement<?> faultDetailContent=new JAXBElement(name,faultObject.getClass(),faultObject);

@@ -5,5 +5,13 @@
   }
   Envelope envelope=(Envelope)rootObject;
   Object payloadEl=envelope.getBody().getAny().get(0);
-  return (isIgnoreJAXBElement()) ? JAXBIntrospector.getValue(payloadEl) : payloadEl;
+  Object payload=JAXBIntrospector.getValue(payloadEl);
+  if (payload instanceof Fault) {
+    Exception exception=createExceptionFromFault((Fault)payload);
+    exchange.setException(exception);
+    return null;
+  }
+ else {
+    return isIgnoreJAXBElement() ? payload : payloadEl;
+  }
 }
