@@ -1,9 +1,11 @@
 {
   Exception caught=exchange.getException();
   exchange.setException(null);
+  boolean handled=false;
   if (data.handledPredicate != null && data.handledPredicate.matches(exchange)) {
     exchange.getIn().removeHeader(Exchange.REDELIVERED);
     exchange.getIn().removeHeader(Exchange.REDELIVERY_COUNTER);
+    handled=true;
   }
  else {
     decrementRedeliveryCounter(exchange);
@@ -34,5 +36,5 @@
   if (processor != null) {
     msg=msg + ". Processed by failure processor: " + processor;
   }
-  logFailedDelivery(false,exchange,msg,data,null);
+  logFailedDelivery(false,handled,exchange,msg,data,null);
 }
