@@ -1,4 +1,5 @@
 {
+  Exchange answer=null;
   try {
     final Buffer keyBuffer=marshallKey(key);
     Buffer rc=hawtDBFile.execute(new Work<Buffer>(){
@@ -8,12 +9,15 @@
       }
     }
 );
-    if (rc == null) {
-      return null;
+    if (rc != null) {
+      answer=unmarshallExchange(camelContext,rc);
     }
-    return unmarshallExchange(camelContext,rc);
   }
  catch (  IOException e) {
     throw new RuntimeException("Error getting key " + key + " from repository "+ repositoryName,e);
   }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Getting key  [" + key + "] -> "+ answer);
+  }
+  return answer;
 }
