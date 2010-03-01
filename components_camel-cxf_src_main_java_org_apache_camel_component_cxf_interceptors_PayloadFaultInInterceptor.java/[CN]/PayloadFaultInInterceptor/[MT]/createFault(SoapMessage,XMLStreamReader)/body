@@ -1,0 +1,29 @@
+{
+  String exMessage=null;
+  QName faultCode=null;
+  String role=null;
+  Element detail=null;
+  try {
+    while (reader.nextTag() == XMLStreamReader.START_ELEMENT) {
+      if (reader.getLocalName().equals("faultcode")) {
+        faultCode=StaxUtils.readQName(reader);
+      }
+ else       if (reader.getLocalName().equals("faultstring")) {
+        exMessage=reader.getElementText();
+      }
+ else       if (reader.getLocalName().equals("faultactor")) {
+        role=reader.getElementText();
+      }
+ else       if (reader.getLocalName().equals("detail")) {
+        detail=StaxUtils.read(reader).getDocumentElement();
+      }
+    }
+  }
+ catch (  XMLStreamException e) {
+    throw new SoapFault("Could not parse message.",e,message.getVersion().getSender());
+  }
+  SoapFault fault=new SoapFault(exMessage,faultCode);
+  fault.setDetail(detail);
+  fault.setRole(role);
+  return fault;
+}

@@ -30,15 +30,19 @@
  catch (      Exception e) {
         throw new Fault(e);
       }
+      checkFailure(camelExchange);
+      if (camelExchange.getPattern().isOutCapable()) {
+        binding.populateCxfResponseFromExchange(camelExchange,cxfExchange);
+      }
+      checkFailure(camelExchange);
+      binding.copyJaxWsContext(cxfExchange,context);
+      return null;
+    }
+    private void checkFailure(    org.apache.camel.Exchange camelExchange) throws Fault {
       if (camelExchange.isFailed()) {
         Throwable t=(camelExchange.hasOut() && camelExchange.getOut().isFault()) ? (Throwable)camelExchange.getOut().getBody() : camelExchange.getException();
         throw (t instanceof Fault) ? (Fault)t : new Fault(t);
       }
-      if (camelExchange.getPattern().isOutCapable()) {
-        binding.populateCxfResponseFromExchange(camelExchange,cxfExchange);
-      }
-      binding.copyJaxWsContext(cxfExchange,context);
-      return null;
     }
   }
 );
