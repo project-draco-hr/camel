@@ -8,13 +8,40 @@
   }
   String path=exchange.getIn().getHeader(Exchange.HTTP_PATH,String.class);
   if (path != null) {
-    if (!uri.endsWith("/")) {
-      uri=uri + "/";
-    }
     if (path.startsWith("/")) {
-      path=path.substring(1);
+      URI baseURI;
+      String baseURIString=exchange.getIn().getHeader(Exchange.HTTP_BASE_URI,String.class);
+      try {
+        if (baseURIString == null) {
+          if (exchange.getFromEndpoint() != null) {
+            baseURIString=exchange.getFromEndpoint().getEndpointUri();
+          }
+ else {
+            baseURIString="/";
+          }
+        }
+        baseURI=new URI(baseURIString);
+        String basePath=baseURI.getPath();
+        if (path.startsWith(basePath)) {
+          path=path.substring(basePath.length());
+          if (path.startsWith("/")) {
+            path=path.substring(1);
+          }
+        }
+ else {
+          throw new RuntimeCamelException("Can't anylze the Exchange.HTTP_PATH header, due to: can't find the right HTTP_BASE_URI");
+        }
+      }
+ catch (      Throwable t) {
+        throw new RuntimeCamelException("Can't anylze the Exchange.HTTP_PATH header, due to: " + t.getMessage(),t);
+      }
     }
-    uri=uri.concat(path);
+    if (path.length() > 0) {
+      if (!uri.endsWith("/")) {
+        uri=uri + "/";
+      }
+      uri=uri.concat(path);
+    }
   }
   return uri;
 }

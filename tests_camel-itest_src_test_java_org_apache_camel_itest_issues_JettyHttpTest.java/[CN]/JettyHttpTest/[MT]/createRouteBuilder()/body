@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(targetConsumerUri).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String path=exchange.getIn().getHeader(Exchange.HTTP_PATH,String.class);
+          exchange.getOut().setBody("Hi! " + path);
+        }
+      }
+);
+      from(sourceUri).to(targetProducerUri);
+      from("direct:root").to(sourceProducerUri).to("mock:result");
+      from("direct:relative").to(sourceProducerUri + "/relative").to("mock:result");
+    }
+  }
+;
+}
