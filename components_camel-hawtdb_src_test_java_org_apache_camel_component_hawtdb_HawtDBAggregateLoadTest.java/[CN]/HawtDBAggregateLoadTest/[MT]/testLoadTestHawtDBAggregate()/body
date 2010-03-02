@@ -1,20 +1,12 @@
 {
   MockEndpoint mock=getMockEndpoint("mock:result");
-  mock.expectedMinimumMessageCount(10);
+  mock.expectedMinimumMessageCount(1);
   mock.setResultWaitTime(60 * 60 * 1000);
-  ExecutorService executor=Executors.newFixedThreadPool(10);
   System.out.println("Staring to send " + SIZE + " messages.");
   for (int i=0; i < SIZE; i++) {
     final int value=1;
-    final int key=i % 10;
-    executor.submit(new Callable<Object>(){
-      public Object call() throws Exception {
-        char id=KEYS[key];
-        template.sendBodyAndHeader("seda:start?size=" + SIZE,value,"id","" + id);
-        return null;
-      }
-    }
-);
+    char id='A';
+    template.sendBodyAndHeader("seda:start?size=" + SIZE,value,"id","" + id);
   }
   System.out.println("Sending all " + SIZE + " message done. Now waiting for aggregation to complete.");
   assertMockEndpointsSatisfied();

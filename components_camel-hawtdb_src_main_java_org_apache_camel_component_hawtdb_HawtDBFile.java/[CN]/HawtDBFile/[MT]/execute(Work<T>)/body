@@ -1,18 +1,20 @@
 {
   if (LOG.isTraceEnabled()) {
-    LOG.trace("Executing work " + work);
+    LOG.trace("Executing work +++ start +++ " + work);
   }
+  T answer;
   Transaction tx=pageFile.tx();
   try {
-    T rc=work.execute(tx);
+    answer=work.execute(tx);
     tx.commit();
-    return rc;
   }
  catch (  RuntimeException e) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Error executing work " + work + " will do rollback",e);
-    }
+    LOG.warn("Error executing work " + work + " will do rollback.",e);
     tx.rollback();
     throw e;
   }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Executing work +++ done  +++ " + work);
+  }
+  return answer;
 }
