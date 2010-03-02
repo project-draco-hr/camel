@@ -4,7 +4,17 @@
   context.setConnectorNames(new String[]{connector.getName()});
   ServletHolder holder=new ServletHolder();
   holder.setServlet(servlet);
-  context.setResourceBase(endpoint.getResourceBase());
+  if (endpoint.getBaseResource() != null) {
+    String[] resources=endpoint.getBaseResource().split(":");
+    LOG.debug(">>> Protocol found :" + resources[0] + ", and resource : "+ resources[1]);
+    if (resources[0].equals("file")) {
+      context.setBaseResource(Resource.newResource(resources[1]));
+    }
+ else     if (resources[0].equals("classpath")) {
+      URL url=this.getCamelContext().getClassResolver().loadResourceAsURL(resources[1]);
+      context.setBaseResource(Resource.newResource(url));
+    }
+  }
   context.addServlet(holder,"/cometd/*");
   context.addServlet("org.mortbay.jetty.servlet.DefaultServlet","/");
   connector.start();
