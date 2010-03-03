@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(ValidationException.class).setHeader(Exchange.HTTP_RESPONSE_CODE,constant(HttpServletResponse.SC_BAD_REQUEST));
+      onException(ExchangeTimedOutException.class).setOutHeader(Exchange.HTTP_RESPONSE_CODE,constant(HttpServletResponse.SC_GATEWAY_TIMEOUT));
+      from("direct:start").to("jetty://http://localhost:8123/myserver?throwExceptionOnFailure=false").to("mock:result");
+      from("jetty://http://localhost:8123/myserver").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String request=exchange.getIn().getBody(String.class);
+          if (request.equals("ValidationException")) {
+            throw new ValidationException(exchange,request);
+          }
+          if (request.equals("ExchangeTimedOutException")) {
+            throw new ExchangeTimedOutException(exchange,200);
+          }
+          throw new RuntimeCamelException("Runtime exception");
+        }
+      }
+);
+    }
+  }
+;
+}
