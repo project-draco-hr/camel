@@ -1,0 +1,14 @@
+{
+  getMockEndpoint("mock:foo").expectedBodiesReceived("World");
+  getMockEndpoint("mock:bar").expectedBodiesReceived("Bye World");
+  Exchange reply=template.request("http://localhost:8234/myserver?throwExceptionOnFailure=false",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("World");
+    }
+  }
+);
+  assertMockEndpointsSatisfied();
+  assertNotNull(reply);
+  assertTrue(reply.getOut().getBody(String.class).startsWith("java.lang.IllegalArgumentException: I cannot do this"));
+  assertEquals(500,reply.getOut().getHeader(Exchange.HTTP_RESPONSE_CODE));
+}
