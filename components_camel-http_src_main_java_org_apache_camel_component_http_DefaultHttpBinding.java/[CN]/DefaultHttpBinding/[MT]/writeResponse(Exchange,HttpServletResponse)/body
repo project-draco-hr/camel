@@ -1,23 +1,17 @@
 {
   if (exchange.isFailed()) {
     if (exchange.getException() != null) {
-      int responseCode=500;
-      if (exchange.hasOut()) {
-        responseCode=exchange.getOut().getHeader(Exchange.HTTP_RESPONSE_CODE,500,int.class);
-      }
- else {
-        responseCode=exchange.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE,500,int.class);
-      }
-      doWriteExceptionResponse(exchange.getException(),response,responseCode);
+      doWriteExceptionResponse(exchange.getException(),response);
     }
  else {
       doWriteFaultResponse(exchange.getOut(),response,exchange);
     }
   }
  else {
-    if (exchange.hasOut()) {
-      copyProtocolHeaders(exchange.getIn(),exchange.getOut());
-      doWriteResponse(exchange.getOut(),response,exchange);
+    copyProtocolHeaders(exchange.getIn(),exchange.getOut());
+    Message out=exchange.getOut();
+    if (out != null) {
+      doWriteResponse(out,response,exchange);
     }
   }
 }
