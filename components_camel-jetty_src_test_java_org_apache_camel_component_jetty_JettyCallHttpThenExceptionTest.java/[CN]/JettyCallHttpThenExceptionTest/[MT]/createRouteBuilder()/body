@@ -1,7 +1,7 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("jetty://http://localhost:8234/myserver").to("log:A").convertBodyTo(String.class).removeHeader(Exchange.HTTP_PATH).removeHeader(Exchange.HTTP_BASE_URI).removeHeader(Exchange.HTTP_RESPONSE_CODE).removeHeader(Exchange.HTTP_CHARACTER_ENCODING).removeHeader(Exchange.HTTP_CHUNKED).removeHeader(Exchange.HTTP_METHOD).removeHeader(Exchange.HTTP_QUERY).removeHeader(Exchange.HTTP_RESPONSE_CODE).removeHeader(Exchange.HTTP_SERVLET_REQUEST).removeHeader(Exchange.HTTP_SERVLET_RESPONSE).removeHeader(Exchange.HTTP_URI).removeHeader(Exchange.HTTP_URL).removeHeader("Content-Length").to("http://localhost:8234/other").convertBodyTo(String.class).to("log:B").to("mock:bar").throwException(new IllegalArgumentException("I cannot do this"));
+      from("jetty://http://localhost:8234/myserver").to("log:A").removeHeaders("CamelHttp*").to("http://localhost:8234/other").removeHeaders("CamelHttp*").to("mock:bar").throwException(new IllegalArgumentException("I cannot do this"));
       from("jetty://http://localhost:8234/other").convertBodyTo(String.class).to("log:C").to("mock:foo").transform().simple("Bye ${body}");
     }
   }
