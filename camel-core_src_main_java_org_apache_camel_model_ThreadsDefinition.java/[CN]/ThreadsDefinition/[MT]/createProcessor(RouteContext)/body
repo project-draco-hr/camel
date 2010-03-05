@@ -5,8 +5,14 @@
       throw new IllegalArgumentException("ExecutorServiceRef " + executorServiceRef + " not found in registry.");
     }
   }
-  if (executorService == null && poolSize != null) {
-    executorService=ExecutorServiceHelper.newThreadPool("Threads",poolSize,poolSize);
+  if (executorService == null) {
+    if (poolSize == null || poolSize <= 0) {
+      executorService=ExecutorServiceHelper.newCachedThreadPool("Threads",true);
+    }
+ else {
+      int max=getMaxPoolSize() != null ? getMaxPoolSize() : poolSize;
+      executorService=ExecutorServiceHelper.newThreadPool("Threads",poolSize,max,getKeepAliveTime(),getUnits(),true);
+    }
   }
   Processor childProcessor=routeContext.createProcessor(this);
   UnitOfWorkProcessor uow=new UnitOfWorkProcessor(routeContext,childProcessor);
