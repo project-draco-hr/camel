@@ -4,8 +4,8 @@
   boolean transferExchange=configuration.isTransferExchange();
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
-  IoAcceptor acceptor=new DatagramAcceptor(ExecutorServiceHelper.newCachedThreadPool("MinaDatagramAcceptor",true));
-  IoConnector connector=new DatagramConnector(ExecutorServiceHelper.newCachedThreadPool("MinaDatagramConnector",true));
+  IoAcceptor acceptor=new DatagramAcceptor(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaDatagramAcceptor"));
+  IoConnector connector=new DatagramConnector(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaDatagramConnector"));
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   if (transferExchange) {
     throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
@@ -13,7 +13,7 @@
   DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
   connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureDataGramCodecFactory("MinaProducer",connectorConfig,configuration);
-  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaThreadPool")));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -23,7 +23,7 @@
   acceptorConfig.setThreadModel(ThreadModel.MANUAL);
   configureDataGramCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setDisconnectOnUnbind(true);
-  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaThreadPool")));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }

@@ -8,14 +8,14 @@
   if (executorService == null) {
     String name=getThreadName() != null ? getThreadName() : "Threads";
     if (poolSize == null || poolSize <= 0) {
-      executorService=ExecutorServiceHelper.newCachedThreadPool(name,true);
+      executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(name);
     }
  else {
       int max=getMaxPoolSize() != null ? getMaxPoolSize() : poolSize;
-      executorService=ExecutorServiceHelper.newThreadPool(name,poolSize,max,getKeepAliveTime(),getUnits(),true);
+      executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newThreadPool(name,poolSize,max,getKeepAliveTime(),getUnits(),true);
     }
   }
   Processor childProcessor=routeContext.createProcessor(this);
   UnitOfWorkProcessor uow=new UnitOfWorkProcessor(routeContext,childProcessor);
-  return new ThreadsProcessor(uow,executorService,waitForTaskToComplete);
+  return new ThreadsProcessor(routeContext.getCamelContext(),uow,executorService,waitForTaskToComplete);
 }

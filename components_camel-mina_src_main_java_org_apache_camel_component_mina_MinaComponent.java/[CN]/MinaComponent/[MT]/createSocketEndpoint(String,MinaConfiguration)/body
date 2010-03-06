@@ -4,13 +4,13 @@
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
   final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
-  IoAcceptor acceptor=new SocketAcceptor(processorCount,ExecutorServiceHelper.newCachedThreadPool("MinaSocketAcceptor",true));
-  IoConnector connector=new SocketConnector(processorCount,ExecutorServiceHelper.newCachedThreadPool("MinaSocketConnector",true));
+  IoAcceptor acceptor=new SocketAcceptor(processorCount,getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaSocketAcceptor"));
+  IoConnector connector=new SocketConnector(processorCount,getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaSocketConnector"));
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
   connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureCodecFactory("MinaProducer",connectorConfig,configuration);
-  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaThreadPool")));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -21,7 +21,7 @@
   configureCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setReuseAddress(true);
   acceptorConfig.setDisconnectOnUnbind(true);
-  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(ExecutorServiceHelper.newCachedThreadPool("MinaThreadPool",true)));
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool("MinaThreadPool")));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }

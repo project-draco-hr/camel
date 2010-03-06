@@ -1,12 +1,16 @@
 {
+  if (camelContext == null && camelContextId != null) {
+    camelContext=CamelContextResolverHelper.getCamelContextWithId(applicationContext,camelContextId);
+  }
+  notNull(camelContext,"camelContext");
   String name=getThreadName() != null ? getThreadName() : getId();
   ExecutorService answer;
   if (getPoolSize() == null || getPoolSize() <= 0) {
-    answer=ExecutorServiceHelper.newCachedThreadPool(name,isDeamon());
+    answer=camelContext.getExecutorServiceStrategy().newCachedThreadPool(name);
   }
  else {
     int max=getMaxPoolSize() != null ? getMaxPoolSize() : getPoolSize();
-    answer=ExecutorServiceHelper.newThreadPool(name,getPoolSize(),max,getKeepAliveTime(),getUnits(),isDeamon());
+    answer=camelContext.getExecutorServiceStrategy().newThreadPool(name,getPoolSize(),max,getKeepAliveTime(),getUnits(),isDeamon());
   }
   return answer;
 }
