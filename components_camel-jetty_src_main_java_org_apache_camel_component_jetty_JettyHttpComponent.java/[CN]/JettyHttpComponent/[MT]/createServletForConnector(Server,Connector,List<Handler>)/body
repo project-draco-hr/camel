@@ -1,16 +1,23 @@
 {
-  CamelServlet camelServlet=new CamelServlet();
-  Context context=new Context(server,"/",Context.NO_SECURITY | Context.NO_SESSIONS);
+  ServletContextHandler context=new ServletContextHandler(server,"/",ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
   context.setConnectorNames(new String[]{connector.getName()});
-  if (handlers != null) {
+  if (handlers != null && !handlers.isEmpty()) {
     for (    Handler handler : handlers) {
-      context.addHandler(handler);
+      if (handler instanceof HandlerWrapper) {
+        ((HandlerWrapper)handler).setHandler(server.getHandler());
+        server.setHandler(handler);
+      }
+ else {
+        HandlerCollection handlerCollection=new HandlerCollection();
+        handlerCollection.addHandler(server.getHandler());
+        handlerCollection.addHandler(handler);
+        server.setHandler(handlerCollection);
+      }
     }
   }
+  CamelServlet camelServlet=new CamelServlet();
   ServletHolder holder=new ServletHolder();
   holder.setServlet(camelServlet);
   context.addServlet(holder,"/*");
-  connector.start();
-  context.start();
   return camelServlet;
 }
