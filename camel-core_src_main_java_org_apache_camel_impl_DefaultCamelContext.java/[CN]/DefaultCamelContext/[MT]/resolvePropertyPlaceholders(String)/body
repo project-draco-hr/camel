@@ -1,10 +1,13 @@
 {
   if (uri != null && !uri.startsWith("properties:") && uri.contains("#{")) {
-    Component component=getComponent("properties");
+    Component component=hasComponent("properties");
+    if (component == null) {
+      component=getRegistry().lookup("properties",Component.class);
+    }
     if (component == null) {
       throw new IllegalArgumentException("PropertiesComponent with name properties must be defined" + " in CamelContext to support property placeholders in endpoint URIs");
     }
-    PropertiesComponent pc=getTypeConverter().mandatoryConvertTo(PropertiesComponent.class,component);
+    PropertiesComponent pc=getComponent("properties",PropertiesComponent.class);
     String answer=pc.parseUri(uri);
     if (LOG.isDebugEnabled()) {
       LOG.debug("Resolved uri: " + uri + " --> "+ answer);
