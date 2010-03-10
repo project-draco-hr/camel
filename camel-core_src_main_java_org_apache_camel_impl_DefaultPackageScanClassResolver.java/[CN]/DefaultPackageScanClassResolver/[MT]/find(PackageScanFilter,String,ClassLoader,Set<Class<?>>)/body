@@ -25,7 +25,6 @@
       if (log.isTraceEnabled()) {
         log.trace("Decoded urlPath: " + urlPath + " with protocol: "+ url.getProtocol());
       }
-      boolean isLocalFileSystem="file".equals(url.getProtocol());
       if (urlPath.startsWith("file:")) {
         try {
           urlPath=new URI(url.getFile()).getPath();
@@ -35,7 +34,6 @@
         if (urlPath.startsWith("file:")) {
           urlPath=urlPath.substring(5);
         }
-        isLocalFileSystem=true;
       }
       if (url.toString().startsWith("bundle:") || urlPath.startsWith("bundle:")) {
         log.trace("It's a virtual osgi bundle, skipping");
@@ -45,7 +43,6 @@
         urlPath=urlPath.substring(0,urlPath.indexOf('!'));
       }
       if (log.isTraceEnabled()) {
-        log.trace("isLocalFileSystem: " + isLocalFileSystem);
         log.trace("Scanning for classes in [" + urlPath + "] matching criteria: "+ test);
       }
       File file=new File(urlPath);
@@ -57,7 +54,7 @@
       }
  else {
         InputStream stream;
-        if (!isLocalFileSystem) {
+        if (urlPath.startsWith("http:") || urlPath.startsWith("https:") || urlPath.startsWith("sonicfs:")) {
           if (log.isTraceEnabled()) {
             log.trace("Loading from jar using http/https: " + urlPath);
           }
