@@ -11,15 +11,26 @@
   channel.setChildDefinition(child);
   channel.initChannel(defn,routeContext);
   if (defn instanceof TryDefinition || defn instanceof CatchDefinition || defn instanceof FinallyDefinition) {
-    return channel;
   }
  else   if (defn instanceof MulticastDefinition || defn instanceof RecipientListDefinition) {
-    return channel;
   }
  else {
-    Processor output=channel.getOutput();
-    Processor errorHandler=wrapInErrorHandler(routeContext,getErrorHandlerBuilder(),output);
-    channel.setErrorHandler(errorHandler);
-    return channel;
+    if (inheritErrorHandler) {
+      if (log.isTraceEnabled()) {
+        log.trace(defn + " is configured to inheritErrorHandler");
+      }
+      Processor output=channel.getOutput();
+      Processor errorHandler=wrapInErrorHandler(routeContext,getErrorHandlerBuilder(),output);
+      channel.setErrorHandler(errorHandler);
+    }
+ else {
+      if (log.isDebugEnabled()) {
+        log.debug(defn + " is configured to not inheritErrorHandler.");
+      }
+    }
   }
+  if (log.isTraceEnabled()) {
+    log.trace(defn + " wrapped in Channel: " + channel);
+  }
+  return channel;
 }
