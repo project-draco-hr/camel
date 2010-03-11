@@ -1,13 +1,15 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("file://target/concurrent?delay=60000&initialDelay=2500").setHeader("id",simple("${file:onlyname.noext}")).beanRef("business").aggregate(header("country"),new MyBusinessTotal()).completionTimeout(2000L).to("mock:result");
+      from("file://target/concurrent?delay=60000&initialDelay=2500").setHeader("id",simple("${file:onlyname.noext}")).beanRef("business").aggregate(header("country"),new MyBusinessTotal()).completionTimeout(4000L).to("mock:result");
     }
   }
 );
+  context.start();
   long start=System.currentTimeMillis();
   MockEndpoint result=getMockEndpoint("mock:result");
   result.expectedBodiesReceivedInAnyOrder("2000","2500");
+  result.setResultWaitTime(20000);
   assertMockEndpointsSatisfied();
   long delta=System.currentTimeMillis() - start;
   LOG.debug("Time taken sequential: " + delta);
