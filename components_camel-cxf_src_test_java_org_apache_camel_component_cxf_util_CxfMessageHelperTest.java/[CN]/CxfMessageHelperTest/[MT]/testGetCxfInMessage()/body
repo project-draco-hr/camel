@@ -1,0 +1,24 @@
+{
+  HeaderFilterStrategy headerFilterStrategy=new CxfHeaderFilterStrategy();
+  org.apache.camel.Exchange exchange=new DefaultExchange(context);
+  exchange.getIn().setBody("hello world");
+  org.apache.cxf.message.Message message=CxfMessageHelper.getCxfInMessage(headerFilterStrategy,exchange,false);
+  InputStream is=message.getContent(InputStream.class);
+  assertNotNull("The input stream should not be null",is);
+  assertEquals("Don't get the right message",toString(is),"hello world");
+  URL request=this.getClass().getResource("RequestBody.xml");
+  File requestFile=new File(request.toURI());
+  FileInputStream inputStream=new FileInputStream(requestFile);
+  XMLStreamReader xmlReader=StaxUtils.createXMLStreamReader(inputStream);
+  DOMSource source=new DOMSource(StaxUtils.read(xmlReader));
+  exchange.getIn().setBody(source);
+  message=CxfMessageHelper.getCxfInMessage(headerFilterStrategy,exchange,false);
+  is=message.getContent(InputStream.class);
+  assertNotNull("The input stream should not be null",is);
+  assertEquals("Don't get the right message",toString(is),REQUEST_STRING);
+  exchange.getIn().setBody(requestFile);
+  message=CxfMessageHelper.getCxfInMessage(headerFilterStrategy,exchange,false);
+  is=message.getContent(InputStream.class);
+  assertNotNull("The input stream should not be null",is);
+  assertEquals("Don't get the right message",toString(is),REQUEST_STRING);
+}
