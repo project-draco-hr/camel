@@ -3,6 +3,7 @@
   for (  LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
     strategy.onRoutesRemove(routes);
   }
+  boolean isShutdownCamelContext=camelContext.isStopping();
   for (  Route route : routes) {
     if (LOG.isTraceEnabled()) {
       LOG.trace("Stopping route: " + route);
@@ -12,8 +13,13 @@
     for (    Service service : services) {
       doGetChildServices(list,service);
     }
-    stopChildService(route,list);
-    ServiceHelper.stopService(route);
+    stopChildService(route,list,isShutdownCamelContext);
+    if (isShutdownCamelContext) {
+      ServiceHelper.stopAndShutdownService(route);
+    }
+ else {
+      ServiceHelper.stopService(route);
+    }
     EventHelper.notifyRouteStopped(camelContext,route);
   }
   camelContext.removeRouteCollection(routes);

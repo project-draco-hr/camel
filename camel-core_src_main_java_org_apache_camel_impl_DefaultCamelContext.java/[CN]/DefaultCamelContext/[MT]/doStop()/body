@@ -1,22 +1,22 @@
 {
-  LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is stopping");
+  LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is shutting down");
   EventHelper.notifyCamelContextStopping(this);
   shutdownStrategy.shutdown(this,getRouteStartupOrder());
   getRouteStartupOrder().clear();
-  stopServices(routeServices.values());
-  stopServices(servicesToClose);
+  shutdownServices(routeServices.values());
+  shutdownServices(servicesToClose);
   servicesToClose.clear();
-  stopServices(endpoints.values());
+  shutdownServices(endpoints.values());
   endpoints.clear();
-  stopServices(components.values());
+  shutdownServices(components.values());
   components.clear();
   if (producerServicePool instanceof SharedProducerServicePool) {
     ((SharedProducerServicePool)producerServicePool).shutdown(this);
   }
  else {
-    stopServices(producerServicePool);
+    shutdownServices(producerServicePool);
   }
-  stopServices(inflightRepository);
+  shutdownServices(inflightRepository);
   try {
     for (    LifecycleStrategy strategy : lifecycleStrategies) {
       strategy.onContextStop(this);
@@ -26,6 +26,6 @@
     LOG.warn("Cannot stop lifecycle strategies: " + e.getMessage());
   }
   EventHelper.notifyCamelContextStopped(this);
-  stopServices(getManagementStrategy());
-  LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") stopped");
+  shutdownServices(getManagementStrategy());
+  LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") shutdown");
 }
