@@ -30,7 +30,18 @@
     remainder=ifStartsWithReturnRemainder("in.headers.",expression);
   }
   if (remainder != null) {
-    return ExpressionBuilder.headerExpression(remainder);
+    Matcher matcher=HEADER_MAP.matcher(remainder);
+    if (matcher.matches()) {
+      String name=matcher.group(1);
+      String key=matcher.group(2);
+      return ExpressionBuilder.headerAsMapExpression(name,key);
+    }
+ else {
+      if (remainder.contains("[") || remainder.contains("]")) {
+        throw new ExpressionIllegalSyntaxException("Valid syntax: ${header.name[key]} was: " + expression);
+      }
+      return ExpressionBuilder.headerExpression(remainder);
+    }
   }
   remainder=ifStartsWithReturnRemainder("out.header.",expression);
   if (remainder == null) {
