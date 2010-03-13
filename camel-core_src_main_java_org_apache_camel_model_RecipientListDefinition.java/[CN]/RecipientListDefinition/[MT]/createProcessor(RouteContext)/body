@@ -7,15 +7,13 @@
  else {
     answer=new RecipientList(expression);
   }
-  if (parallelProcessing != null) {
-    answer.setParallelProcessing(isParallelProcessing());
-  }
+  answer.setAggregationStrategy(createAggregationStrategy(routeContext));
+  answer.setParallelProcessing(isParallelProcessing());
   if (stopOnException != null) {
     answer.setStopOnException(isStopOnException());
   }
-  answer.setAggregationStrategy(createAggregationStrategy(routeContext));
   executorService=ExecutorServiceHelper.getConfiguredExecutorService(routeContext,this);
-  if (executorService == null) {
+  if (isParallelProcessing() && executorService == null) {
     executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(this,"RecipientList");
   }
   answer.setExecutorService(executorService);

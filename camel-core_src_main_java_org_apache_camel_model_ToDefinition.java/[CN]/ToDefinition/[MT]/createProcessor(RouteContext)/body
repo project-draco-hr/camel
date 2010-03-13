@@ -2,14 +2,11 @@
   if (async == null || !async) {
     return super.createProcessor(routeContext);
   }
-  executorService=ExecutorServiceHelper.getConfiguredExecutorService(routeContext,this);
-  if (executorService == null && poolSize != null) {
-    executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newThreadPool(this,"ToAsync[" + getLabel() + "]",poolSize,poolSize);
-  }
   Processor childProcessor=routeContext.createProcessor(this);
   UnitOfWorkProcessor uow=new UnitOfWorkProcessor(routeContext,childProcessor);
   Endpoint endpoint=resolveEndpoint(routeContext);
   SendAsyncProcessor async=new SendAsyncProcessor(endpoint,getPattern(),uow);
+  executorService=ExecutorServiceHelper.getConfiguredExecutorService(routeContext,this);
   if (executorService != null) {
     async.setExecutorService(executorService);
   }
