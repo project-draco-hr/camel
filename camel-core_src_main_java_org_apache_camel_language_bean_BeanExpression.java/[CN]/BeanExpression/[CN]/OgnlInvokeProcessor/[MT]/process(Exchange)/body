@@ -1,0 +1,35 @@
+{
+  Exchange resultExchange=exchange.copy();
+  resultExchange.setPattern(ExchangePattern.InOut);
+  Object beanToCall=bean;
+  String ognlPath="";
+  List<String> methods=OgnlHelper.splitOgnl(ognl);
+  for (  String methodName : methods) {
+    BeanHolder holder=new ConstantBeanHolder(beanToCall,exchange.getContext());
+    boolean elvis=OgnlHelper.isElvis(methodName);
+    if (startElvis) {
+      elvis=true;
+      startElvis=false;
+    }
+    ognlPath+=methodName;
+    methodName=OgnlHelper.removeLeadingOperators(methodName);
+    String key=null;
+    KeyValueHolder<String,String> index=OgnlHelper.isOgnlIndex(methodName);
+    if (index != null) {
+      methodName=index.getKey();
+      key=index.getValue();
+    }
+    if (methodName != null) {
+      InvokeProcessor invoke=new InvokeProcessor(holder,methodName);
+      invoke.process(resultExchange);
+      result=invoke.getResult();
+    }
+    if (key != null) {
+      result=lookupResult(resultExchange,key,result,elvis,ognlPath,holder.getBean());
+    }
+    if (result == null && elvis) {
+      return;
+    }
+    beanToCall=result;
+  }
+}

@@ -6,19 +6,25 @@
  else {
     holder=new ConstantBeanHolder(bean,exchange.getContext());
   }
-  BeanProcessor processor=new BeanProcessor(holder);
-  if (method != null) {
-    processor.setMethod(method);
-  }
-  try {
-    Exchange newExchange=exchange.copy();
-    if (!newExchange.getPattern().isOutCapable()) {
-      newExchange.setPattern(ExchangePattern.InOut);
+  if (OgnlHelper.isValidOgnlExpression(method)) {
+    Object beanToCall=holder.getBean();
+    OgnlInvokeProcessor ognl=new OgnlInvokeProcessor(beanToCall,method);
+    try {
+      ognl.process(exchange);
+      return ognl.getResult();
     }
-    processor.process(newExchange);
-    return newExchange.getOut().getBody();
+ catch (    Exception e) {
+      throw new RuntimeBeanExpressionException(exchange,beanName,method,e);
+    }
   }
- catch (  Exception e) {
-    throw new RuntimeBeanExpressionException(exchange,beanName,method,e);
+ else {
+    InvokeProcessor invoke=new InvokeProcessor(holder,method);
+    try {
+      invoke.process(exchange);
+      return invoke.getResult();
+    }
+ catch (    Exception e) {
+      throw new RuntimeBeanExpressionException(exchange,beanName,method,e);
+    }
   }
 }

@@ -19,27 +19,37 @@
     }
     return ExpressionBuilder.bodyExpression(type);
   }
-  remainder=ifStartsWithReturnRemainder("in.header.",expression);
+  remainder=ifStartsWithReturnRemainder("body",expression);
   if (remainder == null) {
-    remainder=ifStartsWithReturnRemainder("header.",expression);
-  }
-  if (remainder == null) {
-    remainder=ifStartsWithReturnRemainder("headers.",expression);
-  }
-  if (remainder == null) {
-    remainder=ifStartsWithReturnRemainder("in.headers.",expression);
+    remainder=ifStartsWithReturnRemainder("in.body",expression);
   }
   if (remainder != null) {
-    Matcher matcher=HEADER_MAP.matcher(remainder);
-    if (matcher.matches()) {
-      String name=matcher.group(1);
-      String key=matcher.group(2);
-      return ExpressionBuilder.headerAsMapExpression(name,key);
+    boolean invalid=OgnlHelper.isInvalidValidOgnlExpression(remainder);
+    if (invalid) {
+      throw new ExpressionIllegalSyntaxException("Valid syntax: ${body.OGNL} was: " + expression);
+    }
+    return ExpressionBuilder.bodyOgnlExpression(remainder);
+  }
+  remainder=ifStartsWithReturnRemainder("in.headers",expression);
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("in.header",expression);
+  }
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("headers",expression);
+  }
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("header",expression);
+  }
+  if (remainder != null) {
+    remainder=remainder.substring(1);
+    boolean invalid=OgnlHelper.isInvalidValidOgnlExpression(remainder);
+    if (invalid) {
+      throw new ExpressionIllegalSyntaxException("Valid syntax: ${header.name[key]} was: " + expression);
+    }
+    if (OgnlHelper.isValidOgnlExpression(remainder)) {
+      return ExpressionBuilder.headersOgnlExpression(remainder);
     }
  else {
-      if (remainder.contains("[") || remainder.contains("]")) {
-        throw new ExpressionIllegalSyntaxException("Valid syntax: ${header.name[key]} was: " + expression);
-      }
       return ExpressionBuilder.headerExpression(remainder);
     }
   }
