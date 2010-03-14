@@ -1,0 +1,15 @@
+{
+  List<OrderLine> lines=new ArrayList<OrderLine>();
+  lines.add(new OrderLine(123,"Camel in Action"));
+  lines.add(new OrderLine(456,"ActiveMQ in Action"));
+  Order order=new Order(lines);
+  exchange.getIn().setBody(order);
+  try {
+    assertExpression("${in.body.lines[3].id}",123);
+    fail("Should have thrown an exception");
+  }
+ catch (  RuntimeBeanExpressionException e) {
+    IndexOutOfBoundsException cause=assertIsInstanceOf(IndexOutOfBoundsException.class,e.getCause());
+    assertTrue(cause.getMessage().startsWith("Index: 3, Size: 2 out of bounds with List from bean"));
+  }
+}
