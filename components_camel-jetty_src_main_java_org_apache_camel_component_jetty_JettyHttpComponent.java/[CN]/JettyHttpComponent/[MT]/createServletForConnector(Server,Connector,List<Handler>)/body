@@ -18,6 +18,14 @@
   CamelServlet camelServlet=new CamelServlet();
   ServletHolder holder=new ServletHolder();
   holder.setServlet(camelServlet);
+  CamelContext camelContext=this.getCamelContext();
+  FilterHolder filterHolder=new FilterHolder();
+  filterHolder.setInitParameter("deleteFiles","true");
+  if (camelContext.getProperties().get(TMP_DIR) != null) {
+    context.setAttribute("javax.servlet.context.tempdir",camelContext.getProperties().get(TMP_DIR));
+  }
+  filterHolder.setFilter(new MultiPartFilter());
+  context.addFilter(filterHolder,"/*",0);
   context.addServlet(holder,"/*");
   return camelServlet;
 }

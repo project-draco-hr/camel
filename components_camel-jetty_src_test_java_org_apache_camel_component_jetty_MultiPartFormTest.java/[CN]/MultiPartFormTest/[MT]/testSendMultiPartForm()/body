@@ -1,0 +1,16 @@
+{
+  HttpClient httpclient=new DefaultHttpClient();
+  HttpPost httppost=new HttpPost("http://localhost:9080/test");
+  FileBody bin=new FileBody(new File("src/main/resources/META-INF/NOTICE.txt"));
+  StringBody comment=new StringBody("A binary file of some kind");
+  MultipartEntity reqEntity=new MultipartEntity();
+  reqEntity.addPart("bin",bin);
+  reqEntity.addPart("comment",comment);
+  httppost.setEntity(reqEntity);
+  HttpResponse response=httpclient.execute(httppost);
+  HttpEntity resEntity=response.getEntity();
+  assertEquals("Get a wrong response status","HTTP/1.1 200 OK",response.getStatusLine().toString());
+  assertNotNull("resEntity should not be null",resEntity);
+  String result=context.getTypeConverter().convertTo(String.class,resEntity.getContent());
+  assertEquals("Get a wrong result","A binary file of some kind",result);
+}
