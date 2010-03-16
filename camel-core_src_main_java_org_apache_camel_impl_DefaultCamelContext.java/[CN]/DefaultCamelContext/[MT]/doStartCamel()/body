@@ -1,8 +1,7 @@
 {
-  startServices(producerServicePool);
   if (isStreamCaching()) {
     if (StreamCaching.getStreamCaching(this) == null) {
-      LOG.info("StreamCaching is enabled on CamelContext" + getName());
+      LOG.info("StreamCaching is enabled on CamelContext: " + getName());
       addInterceptStrategy(new StreamCaching());
     }
   }
@@ -11,32 +10,25 @@
   }
   if (isHandleFault()) {
     if (HandleFault.getHandleFault(this) == null) {
-      LOG.info("HandleFault is enabled on CamelContext" + getName());
+      LOG.info("HandleFault is enabled on CamelContext: " + getName());
       addInterceptStrategy(new HandleFault());
     }
   }
   if (getDelayer() != null && getDelayer() > 0) {
     if (Delayer.getDelayer(this) == null) {
       long millis=getDelayer();
-      LOG.info("Delayer is enabled with: " + millis + " ms. on CamelContext"+ getName());
+      LOG.info("Delayer is enabled with: " + millis + " ms. on CamelContext: "+ getName());
       addInterceptStrategy(new Delayer(millis));
     }
   }
   getManagementStrategy().start();
-  Iterator<LifecycleStrategy> it=lifecycleStrategies.iterator();
-  while (it.hasNext()) {
-    LifecycleStrategy strategy=it.next();
-    try {
-      strategy.onContextStart(this);
-    }
- catch (    Exception e) {
-      LOG.warn("Cannot start lifecycle strategy: " + strategy + ". This strategy will be removed. Cause "+ e.getMessage(),e);
-      it.remove();
-    }
+  for (  LifecycleStrategy strategy : lifecycleStrategies) {
+    strategy.onContextStart(this);
   }
   EventHelper.notifyCamelContextStarting(this);
   forceLazyInitialization();
   addService(executorServiceStrategy);
+  addService(producerServicePool);
   addService(inflightRepository);
   addService(shutdownStrategy);
   startServices(components.values());

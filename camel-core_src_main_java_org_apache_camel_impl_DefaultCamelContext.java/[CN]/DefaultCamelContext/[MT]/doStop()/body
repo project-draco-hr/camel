@@ -8,23 +8,17 @@
   endpoints.clear();
   shutdownServices(components.values());
   components.clear();
-  if (producerServicePool instanceof SharedProducerServicePool) {
-    ((SharedProducerServicePool)producerServicePool).shutdown(this);
-  }
- else {
-    shutdownServices(producerServicePool);
-  }
-  shutdownServices(servicesToClose);
-  servicesToClose.clear();
   try {
     for (    LifecycleStrategy strategy : lifecycleStrategies) {
       strategy.onContextStop(this);
     }
   }
- catch (  Exception e) {
-    LOG.warn("Cannot stop lifecycle strategies: " + e.getMessage());
+ catch (  Throwable e) {
+    LOG.warn("Error occurred while stopping lifecycle strategies. This exception will be ignored.",e);
   }
+  shutdownServices(servicesToClose);
+  servicesToClose.clear();
   EventHelper.notifyCamelContextStopped(this);
   shutdownServices(managementStrategy);
-  LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is shutdown");
+  LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is shutdown");
 }
