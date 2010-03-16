@@ -3,18 +3,15 @@
     camelContext=CamelContextResolverHelper.getCamelContextWithId(applicationContext,camelContextId);
   }
   notNull(camelContext,"camelContext");
+  if (poolSize == null || poolSize <= 0) {
+    throw new IllegalArgumentException("PoolSize must be a positive number");
+  }
   String name=getThreadName() != null ? getThreadName() : getId();
-  ExecutorService answer;
-  if (getPoolSize() == null || getPoolSize() <= 0) {
-    answer=camelContext.getExecutorServiceStrategy().newDefaultThreadPool(getId(),name);
+  int max=getMaxPoolSize() != null ? getMaxPoolSize() : getPoolSize();
+  RejectedExecutionHandler rejected=null;
+  if (rejectedPolicy != null) {
+    rejected=rejectedPolicy.asRejectedExecutionHandler();
   }
- else {
-    int max=getMaxPoolSize() != null ? getMaxPoolSize() : getPoolSize();
-    RejectedExecutionHandler rejected=null;
-    if (rejectedPolicy != null) {
-      rejected=rejectedPolicy.asRejectedExecutionHandler();
-    }
-    answer=camelContext.getExecutorServiceStrategy().newThreadPool(getId(),name,getPoolSize(),max,getKeepAliveTime(),getUnits(),getMaxQueueSize(),rejected,isDaemon());
-  }
+  ExecutorService answer=camelContext.getExecutorServiceStrategy().newThreadPool(getId(),name,getPoolSize(),max,getKeepAliveTime(),getTimeUnit(),getMaxQueueSize(),rejected,isDaemon());
   return answer;
 }

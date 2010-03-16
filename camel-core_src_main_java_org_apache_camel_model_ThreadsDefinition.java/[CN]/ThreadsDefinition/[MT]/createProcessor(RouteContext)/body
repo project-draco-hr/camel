@@ -6,12 +6,16 @@
       executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,name);
     }
  else {
-      int max=getMaxPoolSize() != null ? getMaxPoolSize() : poolSize;
-      RejectedExecutionHandler rejected=null;
+      ThreadPoolProfile profile=routeContext.getCamelContext().getExecutorServiceStrategy().getDefaultThreadPoolProfile();
+      int max=getMaxPoolSize() != null ? getMaxPoolSize() : profile.getMaxPoolSize();
+      long keepAlive=getKeepAliveTime() != null ? getKeepAliveTime() : profile.getKeepAliveTime();
+      int maxQueue=getMaxQueueSize() != null ? getMaxQueueSize() : profile.getMaxQueueSize();
+      TimeUnit tu=getTimeUnit() != null ? getTimeUnit() : profile.getTimeUnit();
+      RejectedExecutionHandler rejected=profile.getRejectedExecutionHandler();
       if (rejectedPolicy != null) {
         rejected=rejectedPolicy.asRejectedExecutionHandler();
       }
-      executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newThreadPool(this,name,poolSize,max,getKeepAliveTime(),getUnits(),getMaxQueueSize(),rejected,true);
+      executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newThreadPool(this,name,poolSize,max,keepAlive,tu,maxQueue,rejected,true);
     }
   }
   Processor childProcessor=routeContext.createProcessor(this);
