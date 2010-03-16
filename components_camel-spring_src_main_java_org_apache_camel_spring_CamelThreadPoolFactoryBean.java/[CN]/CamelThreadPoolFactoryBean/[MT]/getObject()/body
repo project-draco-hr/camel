@@ -1,0 +1,20 @@
+{
+  if (camelContext == null && camelContextId != null) {
+    camelContext=CamelContextResolverHelper.getCamelContextWithId(applicationContext,camelContextId);
+  }
+  notNull(camelContext,"camelContext");
+  String name=getThreadName() != null ? getThreadName() : getId();
+  ExecutorService answer;
+  if (getPoolSize() == null || getPoolSize() <= 0) {
+    answer=camelContext.getExecutorServiceStrategy().newDefaultThreadPool(getId(),name);
+  }
+ else {
+    int max=getMaxPoolSize() != null ? getMaxPoolSize() : getPoolSize();
+    RejectedExecutionHandler rejected=null;
+    if (rejectedPolicy != null) {
+      rejected=rejectedPolicy.asRejectedExecutionHandler();
+    }
+    answer=camelContext.getExecutorServiceStrategy().newThreadPool(getId(),name,getPoolSize(),max,getKeepAliveTime(),getUnits(),getMaxQueueSize(),rejected,isDaemon());
+  }
+  return answer;
+}
