@@ -22,8 +22,16 @@
     }
   }
   getManagementStrategy().start();
-  for (  LifecycleStrategy strategy : lifecycleStrategies) {
-    strategy.onContextStart(this);
+  Iterator<LifecycleStrategy> it=lifecycleStrategies.iterator();
+  while (it.hasNext()) {
+    LifecycleStrategy strategy=it.next();
+    try {
+      strategy.onContextStart(this);
+    }
+ catch (    Exception e) {
+      LOG.warn("Cannot start lifecycle strategy: " + strategy + ". This strategy will be removed. Cause: "+ e.getMessage(),e);
+      it.remove();
+    }
   }
   EventHelper.notifyCamelContextStarting(this);
   forceLazyInitialization();
