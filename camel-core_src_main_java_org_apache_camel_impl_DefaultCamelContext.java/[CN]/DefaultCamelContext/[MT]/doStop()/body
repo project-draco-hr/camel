@@ -4,8 +4,6 @@
   shutdownStrategy.shutdown(this,getRouteStartupOrder());
   getRouteStartupOrder().clear();
   shutdownServices(routeServices.values());
-  shutdownServices(servicesToClose);
-  servicesToClose.clear();
   shutdownServices(endpoints.values());
   endpoints.clear();
   shutdownServices(components.values());
@@ -16,7 +14,8 @@
  else {
     shutdownServices(producerServicePool);
   }
-  shutdownServices(inflightRepository);
+  shutdownServices(servicesToClose);
+  servicesToClose.clear();
   try {
     for (    LifecycleStrategy strategy : lifecycleStrategies) {
       strategy.onContextStop(this);
@@ -26,6 +25,6 @@
     LOG.warn("Cannot stop lifecycle strategies: " + e.getMessage());
   }
   EventHelper.notifyCamelContextStopped(this);
-  shutdownServices(getManagementStrategy());
+  shutdownServices(managementStrategy);
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is shutdown");
 }
