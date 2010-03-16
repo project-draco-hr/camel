@@ -98,6 +98,21 @@
       }
     }
   }
+  Map<String,ThreadPoolProfile> threadPoolProfiles=getContext().getRegistry().lookupByType(ThreadPoolProfile.class);
+  if (threadPoolProfiles != null && !threadPoolProfiles.isEmpty()) {
+    Set<String> ids=new HashSet<String>();
+    for (    String id : threadPoolProfiles.keySet()) {
+      ThreadPoolProfile profile=threadPoolProfiles.get(id);
+      if (profile.isDefaultProfile()) {
+        LOG.info("Using custom default ThreadPoolProfile with id: " + id + " and implementation: "+ profile);
+        getContext().getExecutorServiceStrategy().setDefaultThreadPoolProfile(profile);
+        ids.add(id);
+      }
+    }
+    if (ids.size() > 1) {
+      throw new IllegalArgumentException("Only exactly one default ThreadPoolProfile is allowed, was " + ids.size() + " ids: "+ ids);
+    }
+  }
   if (beanPostProcessor != null) {
     if (beanPostProcessor instanceof ApplicationContextAware) {
       ((ApplicationContextAware)beanPostProcessor).setApplicationContext(applicationContext);
