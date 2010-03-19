@@ -1,0 +1,13 @@
+{
+  Mailbox.clearAll();
+  MailEndpoint endpoint=context.getEndpoint("smtp://sachin@mymailserver.com?password=secret&contentType=text/html; charset=UTF-8",MailEndpoint.class);
+  endpoint.getConfiguration().setAlternativeBodyHeader(MailConstants.MAIL_ALTERNATIVE_BODY);
+  Exchange exchange=endpoint.createExchange();
+  Message in=exchange.getIn();
+  in.setBody(htmlBody);
+  in.setHeader(MAIL_ALTERNATIVE_BODY,alternativeBody);
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  mock.message(0).header(MailConstants.MAIL_ALTERNATIVE_BODY).isNull();
+  context.createProducerTemplate().send(endpoint,exchange);
+}

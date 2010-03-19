@@ -1,0 +1,35 @@
+{
+  String contentType=configuration.getContentType();
+  if (exchange.getIn().getHeader("contentType") != null) {
+    contentType=exchange.getIn().getHeader("contentType",String.class);
+  }
+ else   if (exchange.getIn().getHeader(Exchange.CONTENT_TYPE) != null) {
+    contentType=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,String.class);
+  }
+  if (contentType != null && contentType.contains(";")) {
+    String after=ObjectHelper.after(contentType,";");
+    if (after != null) {
+      String charset=ObjectHelper.after(after,"=");
+      if (charset != null) {
+        boolean supported;
+        try {
+          supported=Charset.isSupported(charset);
+        }
+ catch (        IllegalCharsetNameException e) {
+          supported=false;
+        }
+        if (supported) {
+          return charset;
+        }
+ else         if (!configuration.isIgnoreUnsupportedCharset()) {
+          return charset;
+        }
+ else         if (configuration.isIgnoreUnsupportedCharset()) {
+          LOG.warn("Charset: " + charset + " is not supported, will fallback to use platform default instead.");
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
