@@ -1,5 +1,5 @@
 {
-  Set<String> ids=new HashSet<String>();
+  Set<String> defaultIds=new HashSet<String>();
   Map<String,ThreadPoolProfile> profiles=context.getRegistry().lookupByType(ThreadPoolProfile.class);
   if (profiles != null && !profiles.isEmpty()) {
     for (    String id : profiles.keySet()) {
@@ -7,7 +7,10 @@
       if (profile.isDefaultProfile()) {
         LOG.info("Using custom default ThreadPoolProfile with id: " + id + " and implementation: "+ profile);
         context.getExecutorServiceStrategy().setDefaultThreadPoolProfile(profile);
-        ids.add(id);
+        defaultIds.add(id);
+      }
+ else {
+        context.getExecutorServiceStrategy().registerThreadPoolProfile(profile);
       }
     }
   }
@@ -16,11 +19,14 @@
       if (profile.isDefaultProfile()) {
         LOG.info("Using custom default ThreadPoolProfile with id: " + profile.getId() + " and implementation: "+ profile);
         context.getExecutorServiceStrategy().setDefaultThreadPoolProfile(profile);
-        ids.add(profile.getId());
+        defaultIds.add(profile.getId());
+      }
+ else {
+        context.getExecutorServiceStrategy().registerThreadPoolProfile(profile);
       }
     }
   }
-  if (ids.size() > 1) {
-    throw new IllegalArgumentException("Only exactly one default ThreadPoolProfile is allowed, was " + ids.size() + " ids: "+ ids);
+  if (defaultIds.size() > 1) {
+    throw new IllegalArgumentException("Only exactly one default ThreadPoolProfile is allowed, was " + defaultIds.size() + " ids: "+ defaultIds);
   }
 }

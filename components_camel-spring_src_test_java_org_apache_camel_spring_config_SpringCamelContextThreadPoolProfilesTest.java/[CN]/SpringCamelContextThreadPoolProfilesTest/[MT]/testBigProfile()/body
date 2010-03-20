@@ -1,0 +1,15 @@
+{
+  CamelContext context=getMandatoryBean(CamelContext.class,"camel");
+  ThreadPoolProfile profile=context.getExecutorServiceStrategy().getThreadPoolProfile("big");
+  assertEquals(50,profile.getPoolSize().intValue());
+  assertEquals(100,profile.getMaxPoolSize().intValue());
+  assertEquals(ThreadPoolRejectedPolicy.DiscardOldest,profile.getRejectedPolicy());
+  assertEquals(null,profile.getKeepAliveTime());
+  assertEquals(null,profile.getMaxQueueSize());
+  ExecutorService executor=context.getExecutorServiceStrategy().newThreadPool(this,"MyBig","big");
+  ThreadPoolExecutor tp=assertIsInstanceOf(ThreadPoolExecutor.class,executor);
+  assertEquals(50,tp.getCorePoolSize());
+  assertEquals(100,tp.getMaximumPoolSize());
+  assertEquals(60,tp.getKeepAliveTime(TimeUnit.SECONDS));
+  assertIsInstanceOf(ThreadPoolExecutor.DiscardOldestPolicy.class,tp.getRejectedExecutionHandler());
+}
