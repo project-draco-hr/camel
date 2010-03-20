@@ -1,0 +1,13 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      ThreadPoolProfile profile=new ThreadPoolProfileSupport("myProfile");
+      profile.setPoolSize(2);
+      profile.setMaxPoolSize(8);
+      profile.setRejectedPolicy(ThreadPoolRejectedPolicy.Abort);
+      context.getExecutorServiceStrategy().registerThreadPoolProfile(profile);
+      from("direct:start").aggregate(header("id"),new BodyInAggregatingStrategy()).completionSize(3).executorServiceRef("myProfile").to("log:foo").to("mock:aggregated");
+    }
+  }
+;
+}
