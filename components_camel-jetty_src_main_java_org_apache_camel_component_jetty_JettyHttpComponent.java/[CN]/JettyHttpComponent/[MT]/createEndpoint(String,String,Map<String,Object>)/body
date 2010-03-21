@@ -1,22 +1,41 @@
 {
   uri=uri.startsWith("jetty:") ? remaining : uri;
   List<Handler> handlerList=resolveAndRemoveReferenceListParameter(parameters,"handlers",Handler.class);
-  configureParameters(parameters);
-  JettyHttpEndpoint result=new JettyHttpEndpoint(this,uri,null);
-  if (httpBinding != null) {
-    result.setBinding(httpBinding);
-  }
-  setEndpointHeaderFilterStrategy(result);
-  if (handlerList.size() > 0) {
-    result.setHandlers(handlerList);
-  }
-  setProperties(result,parameters);
+  HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
+  Boolean throwExceptionOnFailure=getAndRemoveParameter(parameters,"throwExceptionOnFailure",Boolean.class);
+  Boolean bridgeEndpoint=getAndRemoveParameter(parameters,"bridgeEndpoint",Boolean.class);
+  Boolean matchOnUriPrefix=getAndRemoveParameter(parameters,"matchOnUriPrefix",Boolean.class);
+  HttpClient client=null;
   if (IntrospectionSupport.hasProperties(parameters,"httpClient.")) {
-    result.setClient(getHttpClient());
-    IntrospectionSupport.setProperties(getHttpClient(),parameters,"httpClient.");
+    client=getHttpClient();
+    IntrospectionSupport.setProperties(client,parameters,"httpClient.");
     validateParameters(uri,parameters,"httpClient.");
   }
-  URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encode(uri)),CastUtils.cast(parameters));
-  result.setHttpUri(httpUri);
-  return result;
+  URI httpUri=URISupport.createRemainingURI(new URI(uri),CastUtils.cast(parameters));
+  uri=httpUri.toString();
+  JettyHttpEndpoint endpoint=new JettyHttpEndpoint(this,uri,httpUri);
+  setEndpointHeaderFilterStrategy(endpoint);
+  if (client != null) {
+    endpoint.setClient(client);
+  }
+  if (handlerList.size() > 0) {
+    endpoint.setHandlers(handlerList);
+  }
+  if (binding == null) {
+    binding=getHttpBinding();
+  }
+  if (binding != null) {
+    endpoint.setBinding(binding);
+  }
+  if (throwExceptionOnFailure != null) {
+    endpoint.setThrowExceptionOnFailure(throwExceptionOnFailure);
+  }
+  if (bridgeEndpoint != null) {
+    endpoint.setBridgeEndpoint(bridgeEndpoint);
+  }
+  if (matchOnUriPrefix != null) {
+    endpoint.setMatchOnUriPrefix(matchOnUriPrefix);
+  }
+  setProperties(endpoint,parameters);
+  return endpoint;
 }

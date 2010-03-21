@@ -1,14 +1,21 @@
 {
   uri=uri.startsWith("servlet:") ? remaining : uri;
   HttpParams clientParams=configureHttpParams(parameters);
-  configureParameters(parameters);
+  HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
+  Boolean matchOnUriPrefix=getAndRemoveParameter(parameters,"matchOnUriPrefix",Boolean.class);
   URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encode(uri)),CastUtils.cast(parameters));
   uri=httpUri.toString();
-  ServletEndpoint result=createServletEndpoint(uri,this,httpUri,clientParams,getClientConnectionManager(),httpClientConfigurer);
-  if (httpBinding != null) {
-    result.setBinding(httpBinding);
+  ServletEndpoint endpoint=createServletEndpoint(uri,this,httpUri,clientParams,getClientConnectionManager(),httpClientConfigurer);
+  setEndpointHeaderFilterStrategy(endpoint);
+  if (binding == null) {
+    binding=getHttpBinding();
   }
-  setEndpointHeaderFilterStrategy(result);
-  setProperties(result,parameters);
-  return result;
+  if (binding != null) {
+    endpoint.setBinding(binding);
+  }
+  if (matchOnUriPrefix != null) {
+    endpoint.setMatchOnUriPrefix(matchOnUriPrefix);
+  }
+  setProperties(endpoint,parameters);
+  return endpoint;
 }
