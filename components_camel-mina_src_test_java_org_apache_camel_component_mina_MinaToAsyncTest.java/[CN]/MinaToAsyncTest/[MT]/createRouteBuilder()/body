@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("mina:tcp://localhost:6202?textline=true&sync=true").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          Thread.sleep(2000);
+          exchange.getOut().setBody("Bye " + body);
+        }
+      }
+);
+      from("direct:start").toAsync("mina:tcp://localhost:6202?sync=true&textline=true").to("log:reply").to("mock:result");
+    }
+  }
+;
+}
