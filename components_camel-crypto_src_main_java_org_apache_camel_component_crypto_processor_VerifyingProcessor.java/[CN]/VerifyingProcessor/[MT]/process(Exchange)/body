@@ -1,0 +1,20 @@
+{
+  Signature signer=createSignatureService();
+  Certificate cert=getCertificate(exchange);
+  if (cert == null) {
+    PublicKey pk=getPublicKeyOrCertificateFromHeader(exchange,PublicKey.class,config.getPublicKey());
+    if (pk == null) {
+      throw new IllegalStateException(String.format("Cannot verify signature as no Public Key or Certificate has been supplied." + " Either supply one in the route definition or via the message header '%s'",SIGNATURE_PUBLIC_KEY_OR_CERT));
+    }
+    signer.initVerify(pk);
+  }
+ else {
+    signer.initVerify(cert);
+  }
+  calculateSignature(exchange,signer);
+  byte[] signature=getSignatureFromExchange(exchange);
+  if (!signer.verify(signature)) {
+    throw new SignatureException("Cannot verify signature of exchange");
+  }
+  clearMessageHeaders(exchange.getIn());
+}
