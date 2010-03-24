@@ -1,0 +1,21 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Confirming exchangeId [" + exchangeId + "]");
+  }
+  try {
+    final Buffer confirmKeyBuffer=marshaller.marshallConfirmKey(exchangeId);
+    hawtDBFile.execute(new Work<Buffer>(){
+      public Buffer execute(      Transaction tx){
+        Index<Buffer,Buffer> indexCompleted=hawtDBFile.getRepositoryIndex(tx,getRepositoryNameCompleted());
+        return indexCompleted.remove(confirmKeyBuffer);
+      }
+      @Override public String toString(){
+        return "Confirming exchangeId [" + exchangeId + "]";
+      }
+    }
+);
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Error confirming exchangeId " + exchangeId + " from repository "+ repositoryName,e);
+  }
+}

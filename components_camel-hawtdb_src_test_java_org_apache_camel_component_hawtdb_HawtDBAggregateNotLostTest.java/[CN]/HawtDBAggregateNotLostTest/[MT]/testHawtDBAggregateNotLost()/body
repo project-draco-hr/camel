@@ -1,0 +1,30 @@
+{
+  getMockEndpoint("mock:aggregated").expectedBodiesReceived("ABCDE");
+  getMockEndpoint("mock:result").expectedMessageCount(0);
+  template.sendBodyAndHeader("direct:start","A","id",123);
+  template.sendBodyAndHeader("direct:start","B","id",123);
+  template.sendBodyAndHeader("direct:start","C","id",123);
+  template.sendBodyAndHeader("direct:start","D","id",123);
+  template.sendBodyAndHeader("direct:start","E","id",123);
+  assertMockEndpointsSatisfied();
+  String exchangeId=getMockEndpoint("mock:aggregated").getReceivedExchanges().get(0).getExchangeId();
+  final HawtDBFile hawtDBFile=repo.getHawtDBFile();
+  final HawtDBCamelMarshaller<Object> marshaller=new HawtDBCamelMarshaller<Object>();
+  final Buffer confirmKeyBuffer=marshaller.marshallConfirmKey(exchangeId);
+  Buffer bf=hawtDBFile.execute(new Work<Buffer>(){
+    public Buffer execute(    Transaction tx){
+      Index<Buffer,Buffer> index=hawtDBFile.getRepositoryIndex(tx,"repo1-completed");
+      return index.get(confirmKeyBuffer);
+    }
+  }
+);
+  assertNotNull(bf);
+  Exchange completed=marshaller.unmarshallExchange(context,bf);
+  assertNotNull(completed);
+  assertEquals(exchangeId,completed.getExchangeId());
+  assertEquals("ABCDE",completed.getIn().getBody());
+  assertEquals(123,completed.getIn().getHeader("id"));
+  assertEquals("size",completed.getProperty(Exchange.AGGREGATED_COMPLETED_BY));
+  assertEquals(5,completed.getProperty(Exchange.AGGREGATED_SIZE));
+  assertEquals(123,completed.getProperty(Exchange.AGGREGATED_CORRELATION_KEY));
+}

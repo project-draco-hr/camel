@@ -1,0 +1,25 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Aggregation complete for correlation key " + key + " sending aggregated exchange: "+ exchange);
+  }
+  executorService.submit(new Runnable(){
+    public void run(){
+      try {
+        processor.process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+catch (      Throwable t) {
+        exchange.setException(new CamelExchangeException("Error processing aggregated exchange",exchange,t));
+      }
+ finally {
+        aggregationRepository.confirm(exchange.getContext(),exchange.getExchangeId());
+      }
+      if (exchange.getException() != null) {
+        getExceptionHandler().handleException("Error processing aggregated exchange",exchange,exchange.getException());
+      }
+    }
+  }
+);
+}
