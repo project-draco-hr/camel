@@ -1,0 +1,26 @@
+{
+  super.doParse(element,parserContext,builder);
+  String type=element.getAttribute("type");
+  if (type.equals("NoErrorHandler") || type.equals("LoggingErrorHandler")) {
+    return;
+  }
+  if (type.equals("DefaultErrorHandler") || type.equals("DeadLetterChannel")) {
+    NodeList list=element.getChildNodes();
+    int size=list.getLength();
+    for (int i=0; i < size; i++) {
+      Node child=list.item(i);
+      if (child instanceof Element) {
+        Element childElement=(Element)child;
+        String localName=child.getLocalName();
+        if (localName.equals("redeliveryPolicy")) {
+          BeanDefinition redeliveryPolicyDefinition=redeliveryPolicyParser.parse(childElement,parserContext);
+          builder.addPropertyValue(localName,redeliveryPolicyDefinition);
+        }
+        if (localName.equals("exceptionPolicyStrategy") || localName.equals("onRedelivery") || localName.equals("failureProcessor")|| localName.equals("deadLetter")) {
+          Object value=parserContext.getDelegate().parsePropertySubElement(childElement,builder.getBeanDefinition());
+          builder.addPropertyValue(localName,value);
+        }
+      }
+    }
+  }
+}
