@@ -1,0 +1,15 @@
+{
+  ExecutorService workerExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyUDPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
+  datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor);
+  connectionlessServerBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
+  connectionlessServerBootstrap.setPipelineFactory(new ServerPipelineFactory(this));
+  connectionlessServerBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+  connectionlessServerBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+  connectionlessServerBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+  connectionlessServerBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeoutMillis());
+  connectionlessServerBootstrap.setOption("child.broadcast",configuration.isBroadcast());
+  connectionlessServerBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
+  connectionlessServerBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
+  connectionlessServerBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  LOG.info("Netty UDP Consumer started and now listening on Host: " + configuration.getHost() + " Port: "+ configuration.getPort());
+}

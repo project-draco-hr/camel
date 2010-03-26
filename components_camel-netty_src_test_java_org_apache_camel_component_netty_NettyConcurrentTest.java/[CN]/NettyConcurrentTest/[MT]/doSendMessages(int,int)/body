@@ -1,0 +1,22 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  Map<Integer,Future> responses=new ConcurrentHashMap();
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    Future out=executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        return template.requestBody("netty:tcp://localhost:5150?sync=true",index,String.class);
+      }
+    }
+);
+    responses.put(index,out);
+  }
+  assertMockEndpointsSatisfied();
+  assertEquals(files,responses.size());
+  Set unique=new HashSet();
+  for (  Future future : responses.values()) {
+    unique.add(future.get());
+  }
+  assertEquals("Should be " + files + " unique responses",files,unique.size());
+}

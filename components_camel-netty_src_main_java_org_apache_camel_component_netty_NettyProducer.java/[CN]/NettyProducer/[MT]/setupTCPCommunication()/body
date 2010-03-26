@@ -1,0 +1,22 @@
+{
+  if (channelFactory == null) {
+    ExecutorService bossExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPBoss",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
+    ExecutorService workerExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
+    channelFactory=new NioClientSocketChannelFactory(bossExecutor,workerExecutor);
+  }
+  if (clientBootstrap == null) {
+    clientBootstrap=new ClientBootstrap(channelFactory);
+    clientBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+    clientBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+    clientBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+    clientBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeoutMillis());
+  }
+  if (clientPipelineFactory == null) {
+    clientPipelineFactory=new ClientPipelineFactory(this);
+    clientPipeline=clientPipelineFactory.getPipeline();
+    clientBootstrap.setPipeline(clientPipeline);
+  }
+  channelFuture=clientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  channelFuture.awaitUninterruptibly();
+  LOG.info("Netty TCP Producer started and now listening on Host: " + configuration.getHost() + "Port : "+ configuration.getPort());
+}

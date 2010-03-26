@@ -1,0 +1,15 @@
+{
+  if (configuration.isSync()) {
+    countdownLatch=new CountDownLatch(1);
+  }
+  Channel channel=channelFuture.getChannel();
+  channel.write(exchange.getIn().getBody());
+  if (configuration.isSync()) {
+    boolean success=countdownLatch.await(configuration.getReceiveTimeoutMillis(),TimeUnit.MILLISECONDS);
+    if (!success) {
+      throw new ExchangeTimedOutException(exchange,configuration.getReceiveTimeoutMillis());
+    }
+    Object response=((ClientChannelHandler)clientPipeline.get("handler")).getResponse();
+    exchange.getOut().setBody(response);
+  }
+}

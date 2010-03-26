@@ -1,0 +1,13 @@
+{
+  ExecutorService bossExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPBoss",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
+  ExecutorService workerExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
+  channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor);
+  serverBootstrap=new ServerBootstrap(channelFactory);
+  serverBootstrap.setPipelineFactory(new ServerPipelineFactory(this));
+  serverBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+  serverBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+  serverBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+  serverBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeoutMillis());
+  serverBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  LOG.info("Netty TCP Consumer started and now listening on Host: " + configuration.getHost() + " Port: "+ configuration.getPort());
+}
