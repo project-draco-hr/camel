@@ -2,23 +2,23 @@
   if (ObjectHelper.isNotEmpty(delayPattern)) {
     return calculateRedeliverDelayUsingPattern(delayPattern,redeliveryCounter);
   }
-  long redeliveryDelay;
+  long redeliveryDelayResult;
   if (previousDelay == 0) {
-    redeliveryDelay=redeliverDelay;
+    redeliveryDelayResult=redeliveryDelay;
   }
  else   if (useExponentialBackOff && backOffMultiplier > 1) {
-    redeliveryDelay=Math.round(backOffMultiplier * previousDelay);
+    redeliveryDelayResult=Math.round(backOffMultiplier * previousDelay);
   }
  else {
-    redeliveryDelay=previousDelay;
+    redeliveryDelayResult=previousDelay;
   }
   if (useCollisionAvoidance) {
     Random random=getRandomNumberGenerator();
     double variance=(random.nextBoolean() ? collisionAvoidanceFactor : -collisionAvoidanceFactor) * random.nextDouble();
-    redeliveryDelay+=redeliveryDelay * variance;
+    redeliveryDelayResult+=redeliveryDelayResult * variance;
   }
   if (maximumRedeliveryDelay > 0 && redeliveryDelay > maximumRedeliveryDelay) {
-    redeliveryDelay=maximumRedeliveryDelay;
+    redeliveryDelayResult=maximumRedeliveryDelay;
   }
-  return redeliveryDelay;
+  return redeliveryDelayResult;
 }
