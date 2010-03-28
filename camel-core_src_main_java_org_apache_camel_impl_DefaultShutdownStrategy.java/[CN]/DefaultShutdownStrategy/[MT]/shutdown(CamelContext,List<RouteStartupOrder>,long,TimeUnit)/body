@@ -1,12 +1,16 @@
 {
   long start=System.currentTimeMillis();
+  List<RouteStartupOrder> routesOrdered=new ArrayList<RouteStartupOrder>(routes);
+  if (shutdownRoutesInReverseOrder) {
+    Collections.reverse(routesOrdered);
+  }
   if (timeout > 0) {
-    LOG.info("Starting to graceful shutdown " + routes.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase()+ ")");
+    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase()+ ")");
   }
  else {
-    LOG.info("Starting to graceful shutdown " + routes.size() + " routes (no timeout)");
+    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (no timeout)");
   }
-  Future future=getExecutorService().submit(new ShutdownTask(context,routes));
+  Future future=getExecutorService().submit(new ShutdownTask(context,routesOrdered));
   try {
     if (timeout > 0) {
       future.get(timeout,timeUnit);
@@ -19,7 +23,7 @@
     future.cancel(true);
     if (shutdownNowOnTimeout) {
       LOG.warn("Timeout occurred. Now forcing the routes to be shutdown now.");
-      shutdownRoutesNow(routes);
+      shutdownRoutesNow(routesOrdered);
     }
  else {
       LOG.warn("Timeout occurred. Will ignore shutting down the remainder routes.");
@@ -30,5 +34,5 @@ catch (  ExecutionException e) {
   }
   long delta=System.currentTimeMillis() - start;
   long seconds=TimeUnit.SECONDS.convert(delta,TimeUnit.MILLISECONDS);
-  LOG.info("Graceful shutdown of " + routes.size() + " routes completed in "+ seconds+ " seconds");
+  LOG.info("Graceful shutdown of " + routesOrdered.size() + " routes completed in "+ seconds+ " seconds");
 }
