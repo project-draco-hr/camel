@@ -1,6 +1,9 @@
 {
   super.doParse(element,parserContext,builder);
-  ErrorHandlerType type=ErrorHandlerType.valueOf(element.getAttribute("type"));
+  ErrorHandlerType type=ErrorHandlerType.DefaultErrorHandler;
+  if (ObjectHelper.isNotEmpty(element.getAttribute("type"))) {
+    type=ErrorHandlerType.valueOf(element.getAttribute("type"));
+  }
   if (type.equals(ErrorHandlerType.NoErrorHandler) || type.equals(ErrorHandlerType.LoggingErrorHandler)) {
     return;
   }
@@ -16,10 +19,11 @@
           BeanDefinition redeliveryPolicyDefinition=redeliveryPolicyParser.parse(childElement,parserContext);
           builder.addPropertyValue(localName,redeliveryPolicyDefinition);
         }
-        if (localName.equals("exceptionPolicyStrategy") || localName.equals("onRedelivery") || localName.equals("failureProcessor")|| localName.equals("deadLetter")|| localName.equals("transactionTemplate")) {
-          setFirstChildAsProperty(childElement,parserContext,builder,localName);
-        }
       }
     }
+    parserRefAttribute(element,"onRedeliveryRef","onRedelivery",builder);
+  }
+  if (type.equals(ErrorHandlerType.TransactionErrorHandler)) {
+    parserRefAttribute(element,"transactionTemplateRef","transactionTemplate",builder);
   }
 }
