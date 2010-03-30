@@ -6,21 +6,29 @@
         public void process(        Exchange exchange) throws Exception {
           Message inMessage=exchange.getIn();
           String operationName=inMessage.getHeader(CxfConstants.OPERATION_NAME,String.class);
-          String id=(String)inMessage.getBody(Object[].class)[0];
           if ("getCustomer".equals(operationName)) {
             String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
             assertEquals("Get a wrong http method","GET",httpMethod);
-            String uri=inMessage.getHeader(Exchange.HTTP_URI,String.class);
-            if ("/customerservice/customers/126".equals(uri)) {
+            String path=inMessage.getHeader(Exchange.HTTP_PATH,String.class);
+            String id=(String)inMessage.getBody(String.class);
+            if ("/customerservice/customers/126".equals(path)) {
               Customer customer=new Customer();
               customer.setId(Long.parseLong(id));
               customer.setName("Willem");
               exchange.getOut().setBody(customer);
             }
  else {
-              Response r=Response.status(404).entity("Can't found the customer with uri " + uri).build();
+              Response r=Response.status(404).entity("Can't found the customer with uri " + path).build();
               throw new WebApplicationException(r);
             }
+          }
+          if ("updateCustomer".equals(operationName)) {
+            String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
+            assertEquals("Get a wrong http method","PUT",httpMethod);
+            Customer customer=inMessage.getBody(Customer.class);
+            assertNotNull("The customer should not be null.",customer);
+            assertEquals("Get a wrong customer name.","Mary",customer.getName());
+            exchange.getOut().setBody(Response.ok().build());
           }
         }
       }
