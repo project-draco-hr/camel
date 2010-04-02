@@ -1,5 +1,13 @@
 {
   int consumers=getAndRemoveParameter(parameters,"concurrentConsumers",Integer.class,1);
+  boolean limitConcurrentConsumers=getAndRemoveParameter(parameters,"limitConcurrentConsumers",Boolean.class,true);
+  if (limitConcurrentConsumers) {
+    consumers=(consumers < maxConcurrentConsumers) ? consumers : maxConcurrentConsumers;
+    if (consumers == maxConcurrentConsumers) {
+      LOG.info("The limitConcurrentConsumers flag in set to true. Concurrent Consumers cannot be set at a value greater than  " + maxConcurrentConsumers);
+      LOG.info("Concurrent Consumers set to " + maxConcurrentConsumers);
+    }
+  }
   SedaEndpoint answer=new SedaEndpoint(uri,this,createQueue(uri,parameters),consumers);
   answer.configureProperties(parameters);
   return answer;
