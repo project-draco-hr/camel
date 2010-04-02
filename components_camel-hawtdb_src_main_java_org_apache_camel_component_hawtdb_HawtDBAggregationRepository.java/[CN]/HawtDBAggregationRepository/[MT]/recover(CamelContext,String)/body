@@ -1,0 +1,26 @@
+{
+  Exchange answer=null;
+  try {
+    final Buffer confirmKeyBuffer=marshaller.marshallConfirmKey(exchangeId);
+    Buffer rc=hawtDBFile.execute(new Work<Buffer>(){
+      public Buffer execute(      Transaction tx){
+        Index<Buffer,Buffer> indexCompleted=hawtDBFile.getRepositoryIndex(tx,getRepositoryNameCompleted());
+        return indexCompleted.get(confirmKeyBuffer);
+      }
+      @Override public String toString(){
+        return "Recovering exchangeId [" + exchangeId + "]";
+      }
+    }
+);
+    if (rc != null) {
+      answer=marshaller.unmarshallExchange(camelContext,rc);
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Error recovering exchangeId " + exchangeId + " from repository "+ repositoryName,e);
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Recovering exchangeId  [" + exchangeId + "] -> "+ answer);
+  }
+  return answer;
+}

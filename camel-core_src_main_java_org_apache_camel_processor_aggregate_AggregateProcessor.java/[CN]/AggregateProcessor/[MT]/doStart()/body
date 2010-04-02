@@ -13,6 +13,22 @@
     }
   }
   ServiceHelper.startService(aggregationRepository);
+  if (aggregationRepository instanceof RecoverableAggregationRepository) {
+    RecoverableAggregationRepository<Object> recoverable=(RecoverableAggregationRepository<Object>)aggregationRepository;
+    if (recoverable.isUseRecovery()) {
+      long interval=recoverable.getCheckIntervalInMillis();
+      if (interval > 0) {
+        recoverService=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateRecoverChecker",1);
+        Runnable recoverTask=new RecoverTask(recoverable);
+        LOG.info("Scheduling recover checker to run every " + interval + " millis.");
+        recoverService.scheduleAtFixedRate(recoverTask,1000L,interval,TimeUnit.MILLISECONDS);
+      }
+ else {
+        LOG.info("Running recover checker once at startup to recover existing aggregated exchanges");
+        doRecover(recoverable);
+      }
+    }
+  }
   if (getCompletionTimeout() > 0 || getCompletionTimeoutExpression() != null) {
     ScheduledExecutorService scheduler=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateTimeoutChecker",1);
     timeoutMap=new AggregationTimeoutMap(scheduler,1000L);

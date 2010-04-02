@@ -1,0 +1,35 @@
+{
+  final Set<String> answer=new LinkedHashSet<String>();
+  hawtDBFile.execute(new Work<Buffer>(){
+    public Buffer execute(    Transaction tx){
+      if (!isRunAllowed()) {
+        return null;
+      }
+      Index<Buffer,Buffer> indexCompleted=hawtDBFile.getRepositoryIndex(tx,getRepositoryNameCompleted());
+      Iterator<Map.Entry<Buffer,Buffer>> it=indexCompleted.iterator();
+      while (it.hasNext() && isRunAllowed()) {
+        Map.Entry<Buffer,Buffer> entry=it.next();
+        Buffer keyBuffer=entry.getKey();
+        String exchangeId;
+        try {
+          exchangeId=marshaller.unmarshallConfirmKey(keyBuffer);
+        }
+ catch (        IOException e) {
+          throw new RuntimeException("Error unmarshalling confirm key: " + keyBuffer,e);
+        }
+        if (exchangeId != null) {
+          answer.add(exchangeId);
+        }
+      }
+      return null;
+    }
+    @Override public String toString(){
+      return "Scan";
+    }
+  }
+);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Scanned and found " + answer.size() + " exchanges to recover.");
+  }
+  return answer;
+}
