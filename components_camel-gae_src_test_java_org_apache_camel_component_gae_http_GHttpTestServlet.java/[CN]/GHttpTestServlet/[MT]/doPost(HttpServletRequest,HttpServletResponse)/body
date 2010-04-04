@@ -1,0 +1,22 @@
+{
+  resp.setStatus(200);
+  Enumeration<String> headerNames=req.getHeaderNames();
+  while (headerNames.hasMoreElements()) {
+    String headerName=headerNames.nextElement();
+    Enumeration<String> headers=req.getHeaders(headerName);
+    while (headers.hasMoreElements()) {
+      String headerValue=headers.nextElement();
+      resp.addHeader(headerName,headerValue);
+      if (headerName.equals("code")) {
+        resp.setStatus(Integer.parseInt(headerValue));
+      }
+    }
+  }
+  resp.addHeader("testUrl",req.getRequestURL().toString());
+  resp.addHeader("testMethod",req.getMethod().toString());
+  if (req.getQueryString() != null) {
+    resp.addHeader("testQuery",req.getQueryString());
+  }
+  resp.getWriter().println(IOUtils.toString(req.getInputStream()));
+  resp.getWriter().flush();
+}
