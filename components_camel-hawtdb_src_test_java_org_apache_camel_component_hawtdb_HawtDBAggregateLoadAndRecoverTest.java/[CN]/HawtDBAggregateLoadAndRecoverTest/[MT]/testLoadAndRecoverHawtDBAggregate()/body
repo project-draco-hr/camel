@@ -1,0 +1,23 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(SIZE / 10);
+  mock.setResultWaitTime(30 * 1000);
+  System.out.println("Staring to send " + SIZE + " messages.");
+  for (int i=0; i < SIZE; i++) {
+    final int value=1;
+    char id='A';
+    Map headers=new HashMap();
+    headers.put("id",id);
+    headers.put("seq",i);
+    template.sendBodyAndHeaders("seda:start?size=" + SIZE,value,headers);
+  }
+  System.out.println("Sending all " + SIZE + " message done. Now waiting for aggregation to complete.");
+  assertMockEndpointsSatisfied();
+  int recovered=0;
+  for (  Exchange exchange : mock.getReceivedExchanges()) {
+    if (exchange.getIn().getHeader(Exchange.REDELIVERED) != null) {
+      recovered++;
+    }
+  }
+  assertEquals("There should be 5 recovered",5,recovered);
+}
