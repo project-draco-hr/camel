@@ -14,8 +14,8 @@
     }
     boolean inProgress=inProgressCompleteExchanges.contains(exchangeId);
     if (inProgress) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Aggregated exchange with id " + exchangeId + " is already in progress.");
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Aggregated exchange with id " + exchangeId + " is already in progress.");
       }
     }
  else {
@@ -26,6 +26,13 @@
       if (exchange != null) {
         String key=exchange.getProperty(Exchange.AGGREGATED_CORRELATION_KEY,String.class);
         exchange.getIn().setHeader(Exchange.REDELIVERED,Boolean.TRUE);
+        RedeliveryData data=redeliveryState.get(exchange.getExchangeId());
+        if (data == null) {
+          data=new RedeliveryData();
+          redeliveryState.put(exchange.getExchangeId(),data);
+        }
+        data.redeliveryCounter++;
+        exchange.getIn().setHeader(Exchange.REDELIVERY_COUNTER,data.redeliveryCounter);
         onSubmitCompletion(key,exchange);
       }
     }
