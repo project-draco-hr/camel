@@ -1,0 +1,21 @@
+{
+  HawtDBAggregationRepository<String> repo=new HawtDBAggregationRepository<String>();
+  repo.setHawtDBFile(hawtDBFile);
+  repo.setRepositoryName("repo1");
+  repo.setReturnOldExchange(true);
+  repo.setUseRecovery(true);
+  Exchange exchange1=new DefaultExchange(context);
+  exchange1.getIn().setBody("counter:1");
+  Exchange actual=repo.add(context,"foo",exchange1);
+  assertEquals(null,actual);
+  repo.remove(context,"foo",exchange1);
+  String id=exchange1.getExchangeId();
+  hawtDBFile.stop();
+  Thread.sleep(1000);
+  hawtDBFile.start();
+  actual=repo.get(context,"foo");
+  assertNull(actual);
+  actual=repo.recover(context,id);
+  assertNotNull(actual);
+  assertEquals("counter:1",actual.getIn().getBody());
+}
