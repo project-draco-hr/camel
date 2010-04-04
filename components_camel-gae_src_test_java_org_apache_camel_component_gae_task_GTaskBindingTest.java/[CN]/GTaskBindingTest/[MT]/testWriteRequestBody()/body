@@ -1,5 +1,9 @@
 {
   exchange.getIn().setBody("test");
-  binding.writeRequestBody(endpoint,exchange,accessor.getTaskOptions());
-  assertEquals("test",exchange.getContext().getTypeConverter().convertTo(String.class,accessor.getPayload()));
+  TaskOptions options=withDefaults();
+  binding.writeRequestBody(endpoint,exchange,options);
+  queue.add(options);
+  TaskStateInfo info=getTaskStateInfos().get(0);
+  assertEquals("test",info.getBody());
+  assertNull("application/octet-stream",getHeader(info,Exchange.CONTENT_TYPE));
 }
