@@ -5,7 +5,10 @@
   inProgressCompleteExchanges.add(exchange.getExchangeId());
   executorService.submit(new Runnable(){
     public void run(){
-      exchange.addOnCompletion(aggregateOnCompletion);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Processing aggregated exchange: " + exchange);
+      }
+      exchange.addOnCompletion(new AggregateOnCompletion(exchange.getExchangeId()));
       try {
         processor.process(exchange);
       }
@@ -15,10 +18,7 @@
 catch (      Throwable t) {
         exchange.setException(new CamelExchangeException("Error processing aggregated exchange",exchange,t));
       }
-      if (exchange.getException() == null) {
-        aggregationRepository.confirm(exchange.getContext(),exchange.getExchangeId());
-      }
- else {
+      if (exchange.getException() != null) {
         getExceptionHandler().handleException("Error processing aggregated exchange",exchange,exchange.getException());
       }
     }
