@@ -1,4 +1,7 @@
 {
+  if (!isStarted()) {
+    throw new IllegalStateException("RoutingSlip has not been started: " + this);
+  }
   Message message=exchange.getIn();
   String[] recipients=recipients(message);
   Exchange current=exchange;
@@ -8,7 +11,7 @@
     updateRoutingSlip(current);
     copyOutToIn(copy,current);
     try {
-      getProducerCache(exchange).doInProducer(endpoint,copy,null,new ProducerCallback<Object>(){
+      producerCache.doInProducer(endpoint,copy,null,new ProducerCallback<Object>(){
         public Object doInProducer(        Producer producer,        Exchange exchange,        ExchangePattern exchangePattern) throws Exception {
           exchange.setProperty(Exchange.TO_ENDPOINT,producer.getEndpoint().getEndpointUri());
           producer.process(exchange);

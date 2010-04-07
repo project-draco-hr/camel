@@ -1,10 +1,14 @@
 {
+  ProducerTemplate myTemplate=context.createProducerTemplate();
   DirectEndpoint targetEndpoint=resolveMandatoryEndpoint("direct:sample",DirectEndpoint.class);
   for (int i=0; i < messages; i++) {
     Exchange e=targetEndpoint.createExchange();
     e.getIn().setBody("<message>" + i + "</message>");
-    template.send(targetEndpoint,e);
-    sentExchanges.add(e);
-    Thread.sleep(100);
+    if (context.getStatus().isStarted()) {
+      myTemplate.send(targetEndpoint,e);
+      sentExchanges.add(e);
+      Thread.sleep(100);
+    }
   }
+  myTemplate.stop();
 }
