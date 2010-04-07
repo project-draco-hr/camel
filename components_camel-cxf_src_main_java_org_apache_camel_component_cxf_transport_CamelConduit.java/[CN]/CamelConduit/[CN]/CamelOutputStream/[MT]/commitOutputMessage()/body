@@ -7,19 +7,24 @@
     pattern=ExchangePattern.InOut;
   }
   getLogger().log(Level.FINE,"send the message to endpoint" + targetCamelEndpointUri);
-  org.apache.camel.Exchange exchange=getCamelTemplate().send(targetCamelEndpointUri,pattern,new Processor(){
-    public void process(    org.apache.camel.Exchange ex) throws IOException {
-      CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
-      CxfHeaderHelper.propagateCxfToCamel(headerFilterStrategy,outMessage,ex.getIn().getHeaders(),ex);
-      ex.getIn().setBody(outputStream.getBytes());
-      getLogger().log(Level.FINE,"template sending request: ",ex.getIn());
-    }
+  org.apache.camel.Exchange exchange=producer.createExchange(pattern);
+  exchange.setProperty(Exchange.TO_ENDPOINT,targetCamelEndpointUri);
+  CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+  CxfHeaderHelper.propagateCxfToCamel(headerFilterStrategy,outMessage,exchange.getIn().getHeaders(),exchange);
+  exchange.getIn().setBody(outputStream.getBytes());
+  getLogger().log(Level.FINE,"template sending request: ",exchange.getIn());
+  Exception exception=null;
+  try {
+    producer.process(exchange);
   }
-);
-  exchange.setProperty(CxfConstants.CXF_EXCHANGE,outMessage.getExchange());
-  if (exchange.getException() != null) {
+ catch (  Exception ex) {
+    exception=ex;
+  }
+  exception=exchange.getException();
+  if (exception != null) {
     throw IOHelper.createIOException("Can't send the request message.",exchange.getException());
   }
+  exchange.setProperty(CxfConstants.CXF_EXCHANGE,outMessage.getExchange());
   if (!isOneWay) {
     handleResponse(exchange);
   }
