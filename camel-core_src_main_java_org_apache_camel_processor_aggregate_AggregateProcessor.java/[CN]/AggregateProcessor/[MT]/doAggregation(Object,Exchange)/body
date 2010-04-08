@@ -10,7 +10,7 @@
     size=oldExchange.getProperty(Exchange.AGGREGATED_SIZE,0,Integer.class);
     size++;
   }
-  boolean complete=false;
+  String complete=null;
   if (isEagerCheckCompletion()) {
     newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
     complete=isCompleted(key,newExchange);
@@ -22,13 +22,14 @@
   if (!isEagerCheckCompletion()) {
     complete=isCompleted(key,answer);
   }
-  if (!complete) {
+  if (complete == null) {
     if (LOG.isTraceEnabled()) {
       LOG.trace("In progress aggregated exchange: " + answer + " with correlation key:"+ key);
     }
     aggregationRepository.add(exchange.getContext(),key,answer);
   }
-  if (complete) {
+ else {
+    answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,complete);
     onCompletion(key,answer,false);
   }
   if (LOG.isTraceEnabled()) {

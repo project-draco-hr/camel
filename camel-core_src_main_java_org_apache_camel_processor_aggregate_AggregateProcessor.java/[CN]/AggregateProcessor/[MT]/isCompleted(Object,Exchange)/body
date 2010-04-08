@@ -2,8 +2,7 @@
   if (getCompletionPredicate() != null) {
     boolean answer=getCompletionPredicate().matches(exchange);
     if (answer) {
-      exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"predicate");
-      return true;
+      return "predicate";
     }
   }
   if (getCompletionSizeExpression() != null) {
@@ -11,16 +10,14 @@
     if (value != null && value > 0) {
       int size=exchange.getProperty(Exchange.AGGREGATED_SIZE,1,Integer.class);
       if (size >= value) {
-        exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"size");
-        return true;
+        return "size";
       }
     }
   }
   if (getCompletionSize() > 0) {
     int size=exchange.getProperty(Exchange.AGGREGATED_SIZE,1,Integer.class);
     if (size >= getCompletionSize()) {
-      exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"size");
-      return true;
+      return "size";
     }
   }
   boolean timeoutSet=false;
@@ -30,7 +27,7 @@
       if (LOG.isTraceEnabled()) {
         LOG.trace("Updating correlation key " + key + " to timeout after "+ value+ " ms. as exchange received: "+ exchange);
       }
-      timeoutMap.put(key,exchange,value);
+      timeoutMap.put(key,exchange.getExchangeId(),value);
       timeoutSet=true;
     }
   }
@@ -38,16 +35,15 @@
     if (LOG.isTraceEnabled()) {
       LOG.trace("Updating correlation key " + key + " to timeout after "+ getCompletionTimeout()+ " ms. as exchange received: "+ exchange);
     }
-    timeoutMap.put(key,exchange,getCompletionTimeout());
+    timeoutMap.put(key,exchange.getExchangeId(),getCompletionTimeout());
   }
   if (isCompletionFromBatchConsumer()) {
     batchConsumerCounter.incrementAndGet();
     int size=exchange.getProperty(Exchange.BATCH_SIZE,0,Integer.class);
     if (size > 0 && batchConsumerCounter.intValue() >= size) {
       batchConsumerCounter.set(0);
-      exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"consumer");
-      return true;
+      return "consumer";
     }
   }
-  return false;
+  return null;
 }
