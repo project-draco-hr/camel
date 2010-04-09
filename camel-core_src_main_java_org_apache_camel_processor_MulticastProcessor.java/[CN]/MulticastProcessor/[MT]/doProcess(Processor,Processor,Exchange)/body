@@ -1,8 +1,8 @@
 {
   TracedRouteNodes traced=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getTracedRouteNodes() : null;
-  long start=0;
+  StopWatch watch=null;
   if (processor instanceof Producer) {
-    start=System.currentTimeMillis();
+    watch=new StopWatch();
   }
   try {
     if (traced != null) {
@@ -18,7 +18,7 @@
       traced.popBlock();
     }
     if (processor instanceof Producer) {
-      long timeTaken=System.currentTimeMillis() - start;
+      long timeTaken=watch.stop();
       Endpoint endpoint=((Producer)processor).getEndpoint();
       EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
     }
