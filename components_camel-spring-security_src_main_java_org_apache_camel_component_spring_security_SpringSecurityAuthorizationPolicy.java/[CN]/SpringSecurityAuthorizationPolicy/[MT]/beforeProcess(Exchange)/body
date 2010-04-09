@@ -1,0 +1,19 @@
+{
+  ConfigAttributeDefinition attributes=accessPolicy.getConfigAttributeDefinition();
+  try {
+    Authentication authenticated=authenticateIfRequired(exchange.getProperty(Exchange.AUTHENTICATION,Authentication.class));
+    try {
+      this.accessDecisionManager.decide(authenticated,exchange,attributes);
+    }
+ catch (    AccessDeniedException accessDeniedException) {
+      AuthorizationFailureEvent event=new AuthorizationFailureEvent(exchange,attributes,authenticated,accessDeniedException);
+      publishEvent(event);
+      throw accessDeniedException;
+    }
+    publishEvent(new AuthorizedEvent(exchange,attributes,authenticated));
+  }
+ catch (  SpringSecurityException exception) {
+    CamelAuthorizationException authorizationException=new CamelAuthorizationException("Cannot access the below process",exchange,exception);
+    throw authorizationException;
+  }
+}
