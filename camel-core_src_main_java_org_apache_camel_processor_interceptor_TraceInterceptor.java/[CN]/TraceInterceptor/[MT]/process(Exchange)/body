@@ -41,18 +41,33 @@
         }
       }
     }
+    Object traceState=null;
     if (shouldLog && trace) {
       logExchange(exchange);
-      traceExchange(exchange);
+      if (tracer.isTraceOutExchanges()) {
+        traceState=traceExchangeIn(exchange);
+      }
+ else {
+        traceExchange(exchange);
+      }
     }
-    if (node.getParent() instanceof InterceptDefinition && exchange.getUnitOfWork() != null) {
-      TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
-      traceIntercept((InterceptDefinition)node.getParent(),traced,exchange);
+    try {
+      if (node.getParent() instanceof InterceptDefinition && exchange.getUnitOfWork() != null) {
+        TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
+        traceIntercept((InterceptDefinition)node.getParent(),traced,exchange);
+      }
+      try {
+        super.proceed(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
     }
-    super.proceed(exchange);
-    if (shouldLog && tracer.isTraceOutExchanges()) {
-      logExchange(exchange);
-      traceExchange(exchange);
+  finally {
+      if (shouldLog && tracer.isTraceOutExchanges()) {
+        logExchange(exchange);
+        traceExchangeOut(exchange,traceState);
+      }
     }
   }
  catch (  Exception e) {

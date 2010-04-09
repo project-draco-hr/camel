@@ -1,5 +1,8 @@
 {
-  if (tracer.getDestination() != null || tracer.getDestinationUri() != null) {
+  if (traceHandler != null) {
+    traceHandler.traceExchange(node,processor,this,exchange);
+  }
+ else   if (tracer.getDestination() != null || tracer.getDestinationUri() != null) {
     Date timestamp=new Date();
     Exchange event=new DefaultExchange(exchange);
     event.setProperty(Exchange.TRACE_EVENT_NODE_ID,node.getId());
@@ -7,10 +10,10 @@
     event.setProperty(Exchange.TRACE_EVENT_EXCHANGE,exchange);
     TraceEventMessage msg=new DefaultTraceEventMessage(timestamp,node,exchange);
     if (tracer.isUseJpa()) {
-      LOG.trace("Using class: " + JPA_TRACE_EVENT_MESSAGE + " for tracing event messages");
+      LOG.trace("Using class: " + this.jpaTraceEventMessageClassName + " for tracing event messages");
       loadJpaTraceEventMessageClass(exchange);
       Object jpa=ObjectHelper.newInstance(jpaTraceEventMessageClass);
-      Map options=new HashMap();
+      Map<String,Object> options=new HashMap<String,Object>();
       IntrospectionSupport.getProperties(msg,options,null);
       IntrospectionSupport.setProperties(jpa,options);
       IntrospectionSupport.setProperty(jpa,"timestamp",msg.getTimestamp());

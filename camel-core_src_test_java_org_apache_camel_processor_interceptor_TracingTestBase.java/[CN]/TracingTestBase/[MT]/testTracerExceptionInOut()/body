@@ -1,0 +1,16 @@
+{
+  MockEndpoint result=getMockEndpoint("mock:result");
+  ((Tracer)context.getDefaultTracer()).setTraceOutExchanges(true);
+  result.expectedMessageCount(2);
+  prepareTestTracerExceptionInOut();
+  template.sendBody("direct:start","Hello World");
+  try {
+    template.sendBody("direct:start","Kaboom");
+    fail("Should have thrown exception");
+  }
+ catch (  Exception e) {
+  }
+  template.sendBody("direct:start","Hello Camel");
+  assertMockEndpointsSatisfied();
+  validateTestTracerExceptionInOut();
+}
