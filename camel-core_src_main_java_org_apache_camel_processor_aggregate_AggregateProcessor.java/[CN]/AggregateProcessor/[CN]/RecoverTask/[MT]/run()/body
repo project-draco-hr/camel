@@ -33,7 +33,13 @@
         }
         data.redeliveryCounter++;
         exchange.getIn().setHeader(Exchange.REDELIVERY_COUNTER,data.redeliveryCounter);
-        onSubmitCompletion(key,exchange);
+        try {
+          lock.lock();
+          onSubmitCompletion(key,exchange);
+        }
+  finally {
+          lock.unlock();
+        }
       }
     }
   }
