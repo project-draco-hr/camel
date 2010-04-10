@@ -1,16 +1,12 @@
 {
-  HttpClient httpclient=new DefaultHttpClient();
-  HttpPost httppost=new HttpPost("http://localhost:9080/test");
-  FileBody bin=new FileBody(new File("src/main/resources/META-INF/NOTICE.txt"));
-  StringBody comment=new StringBody("A binary file of some kind");
-  MultipartEntity reqEntity=new MultipartEntity();
-  reqEntity.addPart("bin",bin);
-  reqEntity.addPart("comment",comment);
-  httppost.setEntity(reqEntity);
-  HttpResponse response=httpclient.execute(httppost);
-  HttpEntity resEntity=response.getEntity();
-  assertEquals("Get a wrong response status","HTTP/1.1 200 OK",response.getStatusLine().toString());
-  assertNotNull("resEntity should not be null",resEntity);
-  String result=context.getTypeConverter().convertTo(String.class,resEntity.getContent());
+  HttpClient httpclient=new HttpClient();
+  File file=new File("src/main/resources/META-INF/NOTICE.txt");
+  PostMethod httppost=new PostMethod("http://localhost:9080/test");
+  Part[] parts={new StringPart("param_name","NOTICE.txt"),new FilePart(file.getName(),file)};
+  MultipartRequestEntity reqEntity=new MultipartRequestEntity(parts,httppost.getParams());
+  httppost.setRequestEntity(reqEntity);
+  int status=httpclient.executeMethod(httppost);
+  assertEquals("Get a wrong response status",200,status);
+  String result=httppost.getResponseBodyAsString();
   assertEquals("Get a wrong result","A binary file of some kind",result);
 }
