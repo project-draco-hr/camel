@@ -1,0 +1,17 @@
+{
+  try {
+    HttpConsumer consumer=resolve(request);
+    if (consumer == null) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return;
+    }
+    DefaultExchange exchange=new DefaultExchange(consumer.getEndpoint(),ExchangePattern.InOut);
+    exchange.setIn(new HttpMessage(exchange,request,response));
+    consumer.getProcessor().process(exchange);
+    consumer.getBinding().writeResponse(exchange,response);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+    throw new ServletException(e);
+  }
+}

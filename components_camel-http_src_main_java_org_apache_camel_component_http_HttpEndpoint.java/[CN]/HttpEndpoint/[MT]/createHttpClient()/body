@@ -1,0 +1,19 @@
+{
+  ObjectHelper.notNull(clientParams,"clientParams");
+  ObjectHelper.notNull(httpConnectionManager,"httpConnectionManager");
+  HttpClient answer=new HttpClient(getClientParams());
+  if (ObjectHelper.isNotEmpty(getCamelContext().getProperties().get("http.proxyHost")) && ObjectHelper.isNotEmpty(getCamelContext().getProperties().get("http.proxyPort"))) {
+    String host=getCamelContext().getProperties().get("http.proxyHost");
+    int port=Integer.parseInt(getCamelContext().getProperties().get("http.proxyPort"));
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("CamelContext properties http.proxyHost and http.proxyPort detected. Using http proxy host: " + host + " port: "+ port);
+    }
+    answer.getHostConfiguration().setProxy(host,port);
+  }
+  answer.setHttpConnectionManager(httpConnectionManager);
+  HttpClientConfigurer configurer=getHttpClientConfigurer();
+  if (configurer != null) {
+    configurer.configureHttpClient(answer);
+  }
+  return answer;
+}

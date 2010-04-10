@@ -1,0 +1,24 @@
+{
+  if (message.getHeader(Exchange.HTTP_RESPONSE_CODE) != null) {
+    int code=message.getHeader(Exchange.HTTP_RESPONSE_CODE,Integer.class);
+    response.setStatus(code);
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (MessageHelper.getContentType(message) != null) {
+    response.setContentType(contentType);
+  }
+  for (  String key : message.getHeaders().keySet()) {
+    String value=message.getHeader(key,String.class);
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,value,exchange)) {
+      response.setHeader(key,value);
+    }
+  }
+  if (message.getBody() != null) {
+    if (GZIPHelper.isGzip(message)) {
+      doWriteGZIPResponse(message,response,exchange);
+    }
+ else {
+      doWriteDirectResponse(message,response,exchange);
+    }
+  }
+}

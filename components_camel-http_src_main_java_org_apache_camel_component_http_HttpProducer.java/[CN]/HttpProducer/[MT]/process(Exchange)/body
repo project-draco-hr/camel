@@ -1,0 +1,34 @@
+{
+  HttpMethod method=createMethod(exchange);
+  Message in=exchange.getIn();
+  HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
+  for (  String headerName : in.getHeaders().keySet()) {
+    String headerValue=in.getHeader(headerName,String.class);
+    if (strategy != null && !strategy.applyFilterToCamelHeaders(headerName,headerValue,exchange)) {
+      method.addRequestHeader(headerName,headerValue);
+    }
+  }
+  try {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing http " + method.getName() + " method: "+ method.getURI().toString());
+    }
+    int responseCode=executeMethod(method);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Http responseCode: " + responseCode);
+    }
+    if (!throwException) {
+      populateResponse(exchange,method,in,strategy,responseCode);
+    }
+ else {
+      if (responseCode >= 100 && responseCode < 300) {
+        populateResponse(exchange,method,in,strategy,responseCode);
+      }
+ else {
+        throw populateHttpOperationFailedException(exchange,method,responseCode);
+      }
+    }
+  }
+  finally {
+    method.releaseConnection();
+  }
+}

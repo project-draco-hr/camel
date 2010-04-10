@@ -1,0 +1,22 @@
+{
+  String url=HttpProducerHelper.createURL(exchange,getEndpoint());
+  RequestEntity requestEntity=createRequestEntity(exchange);
+  HttpMethods methodToUse=HttpProducerHelper.createMethod(exchange,getEndpoint(),requestEntity != null);
+  HttpMethod method=methodToUse.createMethod(url);
+  String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
+  if (queryString == null) {
+    queryString=getEndpoint().getHttpUri().getQuery();
+  }
+  if (queryString != null) {
+    method.setQueryString(queryString);
+  }
+  if (methodToUse.isEntityEnclosing()) {
+    ((EntityEnclosingMethod)method).setRequestEntity(requestEntity);
+    if (requestEntity != null && requestEntity.getContentType() == null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("No Content-Type provided for URL: " + url + " with exchange: "+ exchange);
+      }
+    }
+  }
+  return method;
+}

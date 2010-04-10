@@ -1,0 +1,34 @@
+{
+  HttpClientParams clientParams=new HttpClientParams();
+  IntrospectionSupport.setProperties(clientParams,parameters,"httpClient.");
+  validateParameters(uri,parameters,"httpClient.");
+  configureParameters(parameters);
+  Boolean throwExceptionOnFailure=getAndRemoveParameter(parameters,"throwExceptionOnFailure",Boolean.class);
+  Boolean bridgeEndpoint=getAndRemoveParameter(parameters,"bridgeEndpoint",Boolean.class);
+  Boolean matchOnUriPrefix=Boolean.parseBoolean(getAndRemoveParameter(parameters,"matchOnUriPrefix",String.class));
+  URI httpUri=URISupport.createRemainingURI(new URI(uri),CastUtils.cast(parameters));
+  uri=httpUri.toString();
+  String part=httpUri.getSchemeSpecificPart();
+  if (part != null) {
+    part=part.toLowerCase();
+    if (part.startsWith("//http//") || part.startsWith("//https//")) {
+      throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
+    }
+  }
+  HttpEndpoint endpoint=new HttpEndpoint(uri,this,httpUri,clientParams,httpConnectionManager,httpClientConfigurer);
+  if (httpBinding != null) {
+    endpoint.setBinding(httpBinding);
+  }
+  setEndpointHeaderFilterStrategy(endpoint);
+  if (throwExceptionOnFailure != null) {
+    endpoint.setThrowExceptionOnFailure(throwExceptionOnFailure);
+  }
+  if (bridgeEndpoint != null) {
+    endpoint.setBridgeEndpoint(bridgeEndpoint);
+  }
+  if (matchOnUriPrefix != null) {
+    endpoint.setMatchOnUriPrefix(matchOnUriPrefix);
+  }
+  setProperties(endpoint,parameters);
+  return endpoint;
+}

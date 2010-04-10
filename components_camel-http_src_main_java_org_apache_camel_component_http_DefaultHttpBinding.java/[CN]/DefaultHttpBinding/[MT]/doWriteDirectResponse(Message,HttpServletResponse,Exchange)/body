@@ -1,0 +1,32 @@
+{
+  InputStream is=null;
+  if (checkChucked(message,exchange)) {
+    is=message.getBody(InputStream.class);
+  }
+  if (is != null) {
+    ServletOutputStream os=response.getOutputStream();
+    try {
+      IOHelper.copy(is,os);
+    }
+  finally {
+      try {
+        os.close();
+      }
+ catch (      Exception e) {
+      }
+      try {
+        is.close();
+      }
+ catch (      Exception e) {
+      }
+    }
+  }
+ else {
+    String data=message.getBody(String.class);
+    if (data != null) {
+      response.setContentLength(data.length());
+      response.getWriter().print(data);
+      response.getWriter().flush();
+    }
+  }
+}
