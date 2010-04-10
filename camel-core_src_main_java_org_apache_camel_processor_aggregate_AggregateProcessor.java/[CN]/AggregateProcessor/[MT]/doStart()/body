@@ -24,6 +24,14 @@
       Runnable recoverTask=new RecoverTask(recoverable);
       LOG.info("Using RecoverableAggregationRepository by scheduling recover checker to run every " + interval + " millis.");
       recoverService.scheduleWithFixedDelay(recoverTask,1000L,interval,TimeUnit.MILLISECONDS);
+      if (recoverable.getDeadLetterUri() != null) {
+        int max=recoverable.getMaximumRedeliveries();
+        if (max <= 0) {
+          throw new IllegalArgumentException("Option maximumRedeliveries must be a positive number, was: " + max);
+        }
+        LOG.info("After " + max + " failed redelivery attempts Exchanges will be moved to deadLetterUri: "+ recoverable.getDeadLetterUri());
+        deadLetterProcessor=camelContext.getEndpoint(recoverable.getDeadLetterUri()).createProducer();
+      }
     }
   }
   if (getCompletionTimeout() > 0 || getCompletionTimeoutExpression() != null) {
