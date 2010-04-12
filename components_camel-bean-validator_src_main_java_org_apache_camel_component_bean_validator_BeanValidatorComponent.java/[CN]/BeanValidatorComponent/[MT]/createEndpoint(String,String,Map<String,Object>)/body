@@ -1,0 +1,23 @@
+{
+  BeanValidator beanValidator=new BeanValidator();
+  MessageInterpolator messageInterpolator=resolveAndRemoveReferenceParameter(parameters,"messageInterpolator",MessageInterpolator.class);
+  TraversableResolver traversableResolver=resolveAndRemoveReferenceParameter(parameters,"traversableResolver",TraversableResolver.class);
+  ConstraintValidatorFactory constraintValidatorFactory=resolveAndRemoveReferenceParameter(parameters,"constraintValidatorFactory",ConstraintValidatorFactory.class);
+  String group=getAndRemoveParameter(parameters,"group",String.class);
+  Configuration configuration=Validation.byDefaultProvider().configure();
+  if (messageInterpolator != null) {
+    configuration.messageInterpolator(messageInterpolator);
+  }
+  if (traversableResolver != null) {
+    configuration.traversableResolver(traversableResolver);
+  }
+  if (constraintValidatorFactory != null) {
+    configuration.constraintValidatorFactory(constraintValidatorFactory);
+  }
+  ValidatorFactory validatorFactory=configuration.buildValidatorFactory();
+  beanValidator.setValidatorFactory(validatorFactory);
+  if (group != null) {
+    beanValidator.setGroup(getCamelContext().getClassResolver().resolveMandatoryClass(group));
+  }
+  return new ProcessorEndpoint(uri,this,beanValidator);
+}
