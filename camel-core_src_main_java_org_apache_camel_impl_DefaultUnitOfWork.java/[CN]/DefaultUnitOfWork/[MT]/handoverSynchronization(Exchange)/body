@@ -2,8 +2,25 @@
   if (synchronizations == null || synchronizations.isEmpty()) {
     return;
   }
-  for (  Synchronization synchronization : synchronizations) {
-    target.addOnCompletion(synchronization);
+  Iterator<Synchronization> it=synchronizations.iterator();
+  while (it.hasNext()) {
+    Synchronization synchronization=it.next();
+    boolean handover=true;
+    if (synchronization instanceof SynchronizationVetoable) {
+      SynchronizationVetoable veto=(SynchronizationVetoable)synchronization;
+      handover=veto.allowHandover();
+    }
+    if (handover) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Handover synchronization " + synchronization + " to Exchange: "+ target);
+      }
+      target.addOnCompletion(synchronization);
+      it.remove();
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Handover not allow for synchronization " + synchronization);
+      }
+    }
   }
-  this.synchronizations.clear();
 }

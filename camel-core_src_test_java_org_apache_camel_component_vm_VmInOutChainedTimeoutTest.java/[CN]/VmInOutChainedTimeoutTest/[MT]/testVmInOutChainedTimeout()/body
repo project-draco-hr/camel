@@ -1,0 +1,14 @@
+{
+  StopWatch watch=new StopWatch();
+  try {
+    template.requestBody("vm:a?timeout=5000","Hello World");
+    fail("Should have thrown an exception");
+  }
+ catch (  CamelExecutionException e) {
+    ExchangeTimedOutException cause=assertIsInstanceOf(ExchangeTimedOutException.class,e.getCause());
+    assertEquals(2000,cause.getTimeout());
+  }
+  long delta=watch.stop();
+  assertTrue("Should be faster than 3000 millis, was: " + delta,delta < 3000);
+  Thread.sleep(2000);
+}
