@@ -9,19 +9,33 @@
     final CountDownLatch latch=new CountDownLatch(1);
     copy.addOnCompletion(new SynchronizationAdapter(){
       @Override public void onDone(      Exchange response){
-        try {
-          ExchangeHelper.copyResults(exchange,response);
+        if (latch.getCount() == 0) {
+          if (log.isTraceEnabled()) {
+            log.trace(this + ". Timeout occurred so response will be ignored: " + (response.hasOut() ? response.getOut() : response.getIn()));
+          }
+          return;
         }
+ else {
+          if (log.isTraceEnabled()) {
+            log.trace(this + " with response: " + (response.hasOut() ? response.getOut() : response.getIn()));
+          }
+          try {
+            ExchangeHelper.copyResults(exchange,response);
+          }
   finally {
-          latch.countDown();
+            latch.countDown();
+          }
         }
+      }
+      @Override public String toString(){
+        return "onDone at [" + endpoint.getEndpointUri() + "]";
       }
     }
 );
     queue.add(copy);
     if (timeout > 0) {
       if (log.isTraceEnabled()) {
-        log.trace("Waiting for task to complete using timeout (ms): " + timeout);
+        log.trace("Waiting for task to complete using timeout (ms): " + timeout + " at ["+ endpoint.getEndpointUri()+ "]");
       }
       boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
       if (!done) {
@@ -30,7 +44,7 @@
     }
  else {
       if (log.isTraceEnabled()) {
-        log.trace("Waiting for task to complete (blocking)");
+        log.trace("Waiting for task to complete (blocking) at [" + endpoint.getEndpointUri() + "]");
       }
       latch.await();
     }
