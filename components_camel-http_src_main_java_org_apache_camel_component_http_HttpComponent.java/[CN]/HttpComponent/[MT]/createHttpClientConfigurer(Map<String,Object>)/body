@@ -6,26 +6,33 @@
   if (configurer == null) {
     configurer=getHttpClientConfigurer();
   }
-  String username=getAndRemoveParameter(parameters,"username",String.class);
-  String password=getAndRemoveParameter(parameters,"password",String.class);
-  String domain=getAndRemoveParameter(parameters,"domain",String.class);
-  String host=getAndRemoveParameter(parameters,"host",String.class);
-  if (username != null && password != null) {
-    configurer=CompositeHttpConfigurer.combineConfigurers(configurer,new BasicAuthenticationHttpClientConfigurer(username,password,domain,host));
+  String authUsername=getAndRemoveParameter(parameters,"authUsername",String.class);
+  AuthMethod authMethod=getAndRemoveParameter(parameters,"authMethod",AuthMethod.class);
+  if (authUsername != null && authMethod == null) {
+    throw new IllegalArgumentException("Option authMethod must be provided to use authentication");
   }
-  String proxyHost=getAndRemoveParameter(parameters,"proxyHost",String.class);
-  Integer proxyPort=getAndRemoveParameter(parameters,"proxyPort",Integer.class);
-  if (proxyHost != null && proxyPort != null) {
-    String proxyUsername=getAndRemoveParameter(parameters,"proxyUsername",String.class);
-    String proxyPassword=getAndRemoveParameter(parameters,"proxyPassword",String.class);
-    String proxyDomain=getAndRemoveParameter(parameters,"proxyDomain",String.class);
-    String proxyNtHost=getAndRemoveParameter(parameters,"proxyNtHost",String.class);
-    if (proxyUsername != null && proxyPassword != null) {
-      configurer=CompositeHttpConfigurer.combineConfigurers(configurer,new ProxyHttpClientConfigurer(proxyHost,proxyPort,proxyUsername,proxyPassword,proxyDomain,proxyNtHost));
-    }
- else {
-      configurer=CompositeHttpConfigurer.combineConfigurers(configurer,new ProxyHttpClientConfigurer(proxyHost,proxyPort));
-    }
+  if (authMethod != null) {
+    String authPassword=getAndRemoveParameter(parameters,"authPassword",String.class);
+    String authDomain=getAndRemoveParameter(parameters,"authDomain",String.class);
+    String authHost=getAndRemoveParameter(parameters,"authHost",String.class);
+    configurer=configureAuth(configurer,authMethod,authUsername,authPassword,authDomain,authHost);
+  }
+ else   if (httpConfiguration != null) {
+    configurer=configureAuth(configurer,httpConfiguration.getAuthMethod(),httpConfiguration.getAuthUsername(),httpConfiguration.getAuthPassword(),httpConfiguration.getAuthDomain(),httpConfiguration.getAuthHost());
+  }
+  String proxyAuthUsername=getAndRemoveParameter(parameters,"proxyAuthUsername",String.class);
+  AuthMethod proxyAuthMethod=getAndRemoveParameter(parameters,"proxyAuthMethod",AuthMethod.class);
+  if (proxyAuthUsername != null && proxyAuthMethod == null) {
+    throw new IllegalArgumentException("Option proxyAuthMethod must be provided to use proxy authentication");
+  }
+  if (proxyAuthMethod != null) {
+    String proxyAuthPassword=getAndRemoveParameter(parameters,"proxyAuthPassword",String.class);
+    String proxyAuthDomain=getAndRemoveParameter(parameters,"proxyAuthDomain",String.class);
+    String proxyAuthHost=getAndRemoveParameter(parameters,"proxyAuthHost",String.class);
+    configurer=configureProxyAuth(configurer,proxyAuthMethod,proxyAuthUsername,proxyAuthPassword,proxyAuthDomain,proxyAuthHost);
+  }
+ else   if (httpConfiguration != null) {
+    configurer=configureProxyAuth(configurer,httpConfiguration.getProxyAuthMethod(),httpConfiguration.getProxyAuthUsername(),httpConfiguration.getProxyAuthPassword(),httpConfiguration.getProxyAuthDomain(),httpConfiguration.getProxyAuthHost());
   }
   return configurer;
 }
