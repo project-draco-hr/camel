@@ -1,7 +1,12 @@
 {
   ConfigAttributeDefinition attributes=accessPolicy.getConfigAttributeDefinition();
   try {
-    Authentication authenticated=authenticateIfRequired(getAuthentication(exchange));
+    Authentication authToken=getAuthentication(exchange);
+    if (authToken == null) {
+      CamelAuthorizationException authorizationException=new CamelAuthorizationException("Cannot find the Authentication instance.",exchange);
+      throw authorizationException;
+    }
+    Authentication authenticated=authenticateIfRequired(authToken);
     try {
       this.accessDecisionManager.decide(authenticated,exchange,attributes);
     }
@@ -13,7 +18,7 @@
     publishEvent(new AuthorizedEvent(exchange,attributes,authenticated));
   }
  catch (  SpringSecurityException exception) {
-    CamelAuthorizationException authorizationException=new CamelAuthorizationException("Cannot access the below process",exchange,exception);
+    CamelAuthorizationException authorizationException=new CamelAuthorizationException("Cannot access the processor which has been protected.",exchange,exception);
     throw authorizationException;
   }
 }
