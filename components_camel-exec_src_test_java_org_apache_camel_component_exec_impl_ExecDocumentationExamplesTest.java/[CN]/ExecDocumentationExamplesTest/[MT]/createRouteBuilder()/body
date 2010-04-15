@@ -1,0 +1,25 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:wordCount").to("exec:wc?args=--words /usr/share/dict/words").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertIsInstanceOf(ExecResult.class,exchange.getIn().getBody());
+          String wordCountOutput=exchange.getIn().getBody(String.class);
+          log.info(wordCountOutput);
+        }
+      }
+);
+      from("direct:javaVersion").to("exec:java?args=-version -server");
+      from("direct:javaVersionWorkingDir").to("exec:" + buildJavaExecutablePath() + "?args=-version -Duser.name=Camel&workingDir=C:/temp");
+      from("direct:execAnt").to("exec:ant.bat?args=-f " + ANT_BUILD_FILE_NAME);
+      from("direct:execAntWithOutFile").to("exec:ant.bat?args=-f " + ANT_BUILD_FILE_NAME + " -l "+ ANT_OUT_FILE_NAME+ "&outFile="+ ANT_OUT_FILE_NAME).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          InputStream outFile=exchange.getIn().getBody(InputStream.class);
+          log.info(IOUtils.toString(outFile));
+        }
+      }
+);
+    }
+  }
+;
+}

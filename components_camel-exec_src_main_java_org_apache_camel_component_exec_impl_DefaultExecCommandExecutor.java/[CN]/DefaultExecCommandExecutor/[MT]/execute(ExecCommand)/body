@@ -1,17 +1,16 @@
 {
-  ObjectHelper.notNull(command,"command");
+  notNull(command,"command");
   ByteArrayOutputStream out=new ByteArrayOutputStream();
   ByteArrayOutputStream err=new ByteArrayOutputStream();
-  ExecResult result=new ExecResult(command);
   DefaultExecutor executor=prepareDefaultExecutor(command);
   PumpStreamHandler handler=new PumpStreamHandler(out,err,command.getInput());
   executor.setStreamHandler(handler);
   CommandLine cl=toCommandLine(command);
   try {
     int exitValue=executor.execute(cl);
-    result.setExitValue(exitValue);
-    result.setStdout(new ByteArrayInputStream(out.toByteArray()));
-    result.setStderr(new ByteArrayInputStream(err.toByteArray()));
+    InputStream stdout=out.size() == 0 ? null : new ByteArrayInputStream(out.toByteArray());
+    InputStream stderr=err.size() == 0 ? null : new ByteArrayInputStream(err.toByteArray());
+    ExecResult result=new ExecResult(command,stdout,stderr,exitValue);
     return result;
   }
  catch (  ExecuteException ee) {
