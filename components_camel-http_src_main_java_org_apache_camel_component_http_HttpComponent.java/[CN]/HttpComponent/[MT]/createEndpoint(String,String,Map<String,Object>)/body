@@ -12,7 +12,8 @@
   HttpClientParams clientParams=new HttpClientParams();
   IntrospectionSupport.setProperties(clientParams,parameters,"httpClient.");
   validateParameters(uri,parameters,"httpClient.");
-  HttpClientConfigurer configurer=createHttpClientConfigurer(parameters);
+  final Set<AuthMethod> authMethods=new HashSet<AuthMethod>();
+  HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,authMethods);
   URI httpUri=URISupport.createRemainingURI(new URI(uri),CastUtils.cast(parameters));
   uri=httpUri.toString();
   String part=httpUri.getSchemeSpecificPart();
@@ -50,8 +51,14 @@
   if (authMethodPriority != null) {
     endpoint.setAuthMethodPriority(authMethodPriority);
   }
- else   if (httpConfiguration != null) {
+ else   if (httpConfiguration != null && httpConfiguration.getAuthMethodPriority() != null) {
     endpoint.setAuthMethodPriority(httpConfiguration.getAuthMethodPriority());
+  }
+ else {
+    if (!authMethods.isEmpty()) {
+      authMethodPriority=CollectionHelper.collectionAsCommaDelimitedString(authMethods);
+      endpoint.setAuthMethodPriority(authMethodPriority);
+    }
   }
   setProperties(endpoint,parameters);
   return endpoint;
