@@ -1,10 +1,17 @@
 {
-  if (!predicate.matches(exchange)) {
-    if (text == null) {
-      throw new AssertionError(predicate + " on " + exchange);
-    }
+  if (predicate instanceof BinaryEvaluablePredicate) {
+    BinaryEvaluablePredicate eval=(BinaryEvaluablePredicate)predicate;
+    if (!eval.matches(exchange)) {
+      String evalText=eval.getLeftValue() + " " + eval.getOperator()+ " "+ eval.getRightValue();
+      if (text == null) {
+        throw new AssertionError(predicate + " evaluated as " + evalText+ "  on "+ exchange);
+      }
  else {
-      throw new AssertionError(text + predicate + " on "+ exchange);
+        throw new AssertionError(text + predicate + " evaluated as: "+ evalText+ " on "+ exchange);
+      }
     }
+  }
+ else {
+    doAssertMatches(predicate,text,exchange);
   }
 }
