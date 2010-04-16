@@ -1,0 +1,34 @@
+{
+  if (type.isAssignableFrom(ProducerTemplate.class)) {
+    return createInjectionProducerTemplate(endpointUri,endpointRef,injectionPointName);
+  }
+ else   if (type.isAssignableFrom(ConsumerTemplate.class)) {
+    return createInjectionConsumerTemplate(endpointUri,endpointRef,injectionPointName);
+  }
+ else {
+    Endpoint endpoint=getEndpointInjection(endpointUri,endpointRef,injectionPointName,true);
+    if (endpoint != null) {
+      if (type.isInstance(endpoint)) {
+        return endpoint;
+      }
+ else       if (type.isAssignableFrom(Producer.class)) {
+        return createInjectionProducer(endpoint,bean,beanName);
+      }
+ else       if (type.isAssignableFrom(PollingConsumer.class)) {
+        return createInjectionPollingConsumer(endpoint,bean,beanName);
+      }
+ else       if (type.isInterface()) {
+        try {
+          return ProxyHelper.createProxy(endpoint,type);
+        }
+ catch (        Exception e) {
+          throw createProxyInstantiationRuntimeException(type,endpoint,e);
+        }
+      }
+ else {
+        throw new IllegalArgumentException("Invalid type: " + type.getName() + " which cannot be injected via @EndpointInject/@Produce for: "+ endpoint);
+      }
+    }
+    return null;
+  }
+}
