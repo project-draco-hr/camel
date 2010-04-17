@@ -1,13 +1,11 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("direct:start").aggregate(header("id"),new BodyInAggregatingStrategy()).eagerCheckCompletion().completionPredicate(body().isEqualTo("END")).to("direct:cool");
-      from("direct:cool").to("mock:cool").choice().when(body().contains("Camel")).to("mock:result").when(body().contains("Donkey")).delay(2000).to("mock:result");
+      from("direct:start").aggregate(header("id"),new BodyInAggregatingStrategy()).eagerCheckCompletion().completionPredicate(body().isEqualTo("END")).to("mock:result");
     }
   }
 );
   context.start();
-  getMockEndpoint("mock:cool").expectedBodiesReceived("A+Donkey+END","B+Camel+END");
   getMockEndpoint("mock:result").expectedBodiesReceived("A+Donkey+END","B+Camel+END");
   template.sendBodyAndHeader("direct:start","A","id",1);
   template.sendBodyAndHeader("direct:start","Donkey","id",1);
