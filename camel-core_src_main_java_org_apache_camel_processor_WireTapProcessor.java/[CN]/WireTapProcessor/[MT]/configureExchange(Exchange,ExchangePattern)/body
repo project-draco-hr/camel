@@ -1,11 +1,25 @@
 {
   Exchange answer;
-  if (newExchangeProcessor == null && newExchangeExpression == null) {
+  if (copy) {
     answer=configureCopyExchange(exchange);
   }
  else {
     answer=configureNewExchange(exchange);
   }
   answer.setProperty(Exchange.TO_ENDPOINT,destination.getEndpointUri());
+  if (newExchangeProcessor != null) {
+    try {
+      newExchangeProcessor.process(answer);
+    }
+ catch (    Exception e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+  }
+ else   if (newExchangeExpression != null) {
+    Object body=newExchangeExpression.evaluate(answer,Object.class);
+    if (body != null) {
+      answer.getIn().setBody(body);
+    }
+  }
   return answer;
 }
