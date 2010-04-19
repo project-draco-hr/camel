@@ -1,6 +1,6 @@
 {
-  if (getCompletionTimeout() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null && !isCompletionFromBatchConsumer() && getCompletionTimeoutExpression() == null && getCompletionSizeExpression() == null) {
-    throw new IllegalStateException("At least one of the completions options" + " [completionTimeout, completionSize, completionPredicate, completionFromBatchConsumer] must be set");
+  if (getCompletionTimeout() <= 0 && getCompletionInterval() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null && !isCompletionFromBatchConsumer() && getCompletionTimeoutExpression() == null && getCompletionSizeExpression() == null) {
+    throw new IllegalStateException("At least one of the completions options" + " [completionTimeout, completionInterval, completionSize, completionPredicate, completionFromBatchConsumer] must be set");
   }
   if (getCloseCorrelationKeyOnCompletion() != null) {
     if (getCloseCorrelationKeyOnCompletion() > 0) {
@@ -34,7 +34,16 @@
       }
     }
   }
+  if (getCompletionInterval() > 0 && getCompletionTimeout() > 0) {
+    throw new IllegalArgumentException("Only one of completionInterval or completionTimeout can be used, not both.");
+  }
+  if (getCompletionInterval() > 0) {
+    LOG.info("Using CompletionInterval to run every " + getCompletionInterval() + " millis.");
+    ScheduledExecutorService scheduler=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateTimeoutChecker",1);
+    scheduler.scheduleAtFixedRate(new AggregationIntervalTask(),1000L,getCompletionInterval(),TimeUnit.MILLISECONDS);
+  }
   if (getCompletionTimeout() > 0 || getCompletionTimeoutExpression() != null) {
+    LOG.info("Using CompletionTimeout to trigger after " + getCompletionInterval() + " millis of inactivity.");
     ScheduledExecutorService scheduler=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateTimeoutChecker",1);
     timeoutMap=new AggregationTimeoutMap(scheduler,1000L);
     ServiceHelper.startService(timeoutMap);

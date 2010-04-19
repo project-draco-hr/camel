@@ -1,0 +1,25 @@
+{
+  if (!camelContext.getStatus().isStarted()) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Completion interval task cannot start due CamelContext(" + camelContext.getName() + ") has not been started yet");
+    }
+    return;
+  }
+  LOG.trace("Starting completion interval task");
+  try {
+    lock.lock();
+    Set<String> keys=aggregationRepository.getKeys();
+    for (    String key : keys) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Completion interval triggered for correlation key: " + key);
+      }
+      Exchange exchange=aggregationRepository.get(camelContext,key);
+      exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"interval");
+      onCompletion(key,exchange,false);
+    }
+  }
+  finally {
+    lock.unlock();
+  }
+  LOG.trace("Completion interval task complete");
+}
