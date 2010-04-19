@@ -1,0 +1,35 @@
+{
+  final Set<String> keys=new LinkedHashSet<String>();
+  hawtDBFile.execute(new Work<Buffer>(){
+    public Buffer execute(    Transaction tx){
+      if (!isRunAllowed()) {
+        return null;
+      }
+      Index<Buffer,Buffer> indexCompleted=hawtDBFile.getRepositoryIndex(tx,getRepositoryName());
+      Iterator<Map.Entry<Buffer,Buffer>> it=indexCompleted.iterator();
+      while (it.hasNext() && isRunAllowed()) {
+        Map.Entry<Buffer,Buffer> entry=it.next();
+        Buffer keyBuffer=entry.getKey();
+        String key;
+        try {
+          key=marshaller.unmarshallKey(keyBuffer);
+        }
+ catch (        IOException e) {
+          throw new RuntimeException("Error unmarshalling key: " + keyBuffer,e);
+        }
+        if (key != null) {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("getKey [" + key + "]");
+          }
+          keys.add(key);
+        }
+      }
+      return null;
+    }
+    @Override public String toString(){
+      return "getKeys";
+    }
+  }
+);
+  return Collections.unmodifiableSet(keys);
+}
