@@ -2,7 +2,12 @@
   stopWatch.restart();
   LOG.info("Apache Camel " + getVersion() + " (CamelContext:"+ getName()+ ") is shutting down");
   EventHelper.notifyCamelContextStopping(this);
-  shutdownStrategy.shutdown(this,getRouteStartupOrder());
+  try {
+    shutdownStrategy.shutdown(this,getRouteStartupOrder());
+  }
+ catch (  Throwable e) {
+    LOG.warn("Error occurred while shutting down routes. This exception will be ignored.",e);
+  }
   getRouteStartupOrder().clear();
   shutdownServices(routeServices.values());
   shutdownServices(endpoints.values());
