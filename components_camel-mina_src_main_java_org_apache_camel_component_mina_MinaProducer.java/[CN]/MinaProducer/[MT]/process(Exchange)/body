@@ -13,6 +13,9 @@
     LOG.warn("No payload to send for exchange: " + exchange);
     return;
   }
+  if (endpoint.getConfiguration().isTextline()) {
+    body=endpoint.getCamelContext().getTypeConverter().convertTo(String.class,exchange,body);
+  }
   if (sync) {
     latch=new CountDownLatch(1);
     ResponseHandler handler=(ResponseHandler)session.getHandler();
@@ -27,14 +30,16 @@
   }
   MinaHelper.writeBody(session,body,exchange);
   if (sync) {
-    LOG.debug("Waiting for response");
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Waiting for response using timeout " + timeout + " millis.");
+    }
     boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
     if (!done) {
       throw new ExchangeTimedOutException(exchange,timeout);
     }
     ResponseHandler handler=(ResponseHandler)session.getHandler();
     if (handler.getCause() != null) {
-      throw new CamelExchangeException("Response Handler had an exception",exchange,handler.getCause());
+      throw new CamelExchangeException("Error occurred in ResponseHandler",exchange,handler.getCause());
     }
  else     if (!handler.isMessageReceived()) {
       throw new CamelExchangeException("No response received from remote server: " + endpoint.getEndpointUri(),exchange);
