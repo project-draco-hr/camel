@@ -14,8 +14,17 @@
       endpoint.getInProgressRepository().remove(absoluteFileName);
       return;
     }
-    final GenericFile<T> target=getExchangeFileProperty(exchange);
-    final String name=target.getAbsoluteFilePath();
+  }
+ catch (  Exception e) {
+    if (log.isDebugEnabled()) {
+      log.debug(endpoint + " cannot begin processing file: " + file+ " due to: "+ e.getMessage(),e);
+    }
+    endpoint.getInProgressRepository().remove(absoluteFileName);
+    return;
+  }
+  final GenericFile<T> target=getExchangeFileProperty(exchange);
+  final String name=target.getAbsoluteFilePath();
+  try {
     if (log.isTraceEnabled()) {
       log.trace("Retrieving file: " + name + " from: "+ endpoint);
     }
@@ -23,13 +32,14 @@
     if (log.isTraceEnabled()) {
       log.trace("Retrieved file: " + name + " from: "+ endpoint);
     }
+    exchange.addOnCompletion(new GenericFileOnCompletion<T>(endpoint,operations,target,absoluteFileName));
     if (log.isDebugEnabled()) {
       log.debug("About to process file: " + target + " using exchange: "+ exchange);
     }
-    exchange.addOnCompletion(new GenericFileOnCompletion<T>(endpoint,operations,target,absoluteFileName));
     getProcessor().process(exchange);
   }
  catch (  Exception e) {
+    endpoint.getInProgressRepository().remove(absoluteFileName);
     handleException(e);
   }
 }
