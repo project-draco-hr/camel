@@ -3,8 +3,12 @@
   String body=exchange.getIn().getBody(String.class);
   Form form=new Form();
   form.add(body,null);
+  MediaType mediaType=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,MediaType.class);
+  if (mediaType == null) {
+    mediaType=MediaType.APPLICATION_WWW_FORM;
+  }
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Populate Restlet request from exchange body: " + body);
+    LOG.debug("Populate Restlet request from exchange body: " + body + " using media type "+ mediaType);
   }
   String login=exchange.getIn().getHeader(RestletConstants.RESTLET_LOGIN,String.class);
   String password=exchange.getIn().getHeader(RestletConstants.RESTLET_PASSWORD,String.class);
@@ -17,16 +21,29 @@
   }
   for (  Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
     if (!headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue(),exchange)) {
-      if (entry.getKey().startsWith("org.restlet.")) {
-        request.getAttributes().put(entry.getKey(),entry.getValue());
+      if (request.getMethod() == Method.GET || (request.getMethod() == Method.POST && mediaType == MediaType.APPLICATION_WWW_FORM)) {
+        if (entry.getKey().startsWith("org.restlet.")) {
+          request.getAttributes().put(entry.getKey(),entry.getValue());
+        }
+ else {
+          form.add(entry.getKey(),entry.getValue().toString());
+        }
       }
  else {
-        form.add(entry.getKey(),entry.getValue().toString());
+        request.getAttributes().put(entry.getKey(),entry.getValue());
       }
       if (LOG.isDebugEnabled()) {
         LOG.debug("Populate Restlet request from exchange header: " + entry.getKey() + " value: "+ entry.getValue());
       }
     }
   }
-  request.setEntity(form.getWebRepresentation());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Using Content Type: " + mediaType + " for POST data:  "+ body);
+  }
+  if (request.getMethod() == Method.GET || (request.getMethod() == Method.POST && mediaType == MediaType.APPLICATION_WWW_FORM)) {
+    request.setEntity(form.getWebRepresentation());
+  }
+ else {
+    request.setEntity(body,mediaType);
+  }
 }

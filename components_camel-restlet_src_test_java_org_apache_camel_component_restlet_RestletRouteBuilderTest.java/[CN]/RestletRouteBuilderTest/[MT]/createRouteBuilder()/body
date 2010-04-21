@@ -8,6 +8,16 @@
         }
       }
 );
+      from("restlet:http://localhost:9080/ordersJSON?restletMethod=post").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          if (body.indexOf("{") == -1) {
+            throw new Exception("Inproperly formatted JSON:  " + body);
+          }
+          exchange.getOut().setBody(exchange.getIn().getBody());
+        }
+      }
+);
       from("restlet:http://localhost:9080/orders/{id}/{x}").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getOut().setBody("received GET request with id=" + exchange.getIn().getHeader("id") + " and x="+ exchange.getIn().getHeader("x"));
