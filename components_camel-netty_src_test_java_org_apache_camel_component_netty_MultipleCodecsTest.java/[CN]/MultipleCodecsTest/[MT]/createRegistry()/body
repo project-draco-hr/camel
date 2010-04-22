@@ -1,11 +1,19 @@
 {
   JndiRegistry registry=super.createRegistry();
+  LengthFieldBasedFrameDecoder lengthDecoder=new LengthFieldBasedFrameDecoder(1048576,0,4,0,4);
+  StringDecoder stringDecoder=new StringDecoder();
+  registry.bind("length-decoder",lengthDecoder);
+  registry.bind("string-decoder",stringDecoder);
+  LengthFieldPrepender lengthEncoder=new LengthFieldPrepender(4);
+  StringEncoder stringEncoder=new StringEncoder();
+  registry.bind("length-encoder",lengthEncoder);
+  registry.bind("string-encoder",stringEncoder);
   List<ChannelUpstreamHandler> decoders=new ArrayList<ChannelUpstreamHandler>();
-  decoders.add(new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
-  decoders.add(new StringDecoder());
+  decoders.add(lengthDecoder);
+  decoders.add(stringDecoder);
   List<ChannelDownstreamHandler> encoders=new ArrayList<ChannelDownstreamHandler>();
-  encoders.add(new LengthFieldPrepender(4));
-  encoders.add(new StringEncoder());
+  encoders.add(lengthEncoder);
+  encoders.add(stringEncoder);
   registry.bind("encoders",encoders);
   registry.bind("decoders",decoders);
   return registry;
