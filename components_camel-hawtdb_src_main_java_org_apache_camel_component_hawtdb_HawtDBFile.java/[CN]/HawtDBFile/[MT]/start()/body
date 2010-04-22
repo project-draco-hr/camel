@@ -1,2 +1,26 @@
 {
+  if (getFile() == null) {
+    throw new IllegalArgumentException("A file must be configured");
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Starting HawtDB using file: " + getFile());
+  }
+  open();
+  pageFile=getTxPageFile();
+  execute(new Work<Boolean>(){
+    public Boolean execute(    Transaction tx){
+      int page=tx.allocator().alloc(1);
+      if (page == 0) {
+        ROOT_INDEXES_FACTORY.create(tx,0);
+        LOG.info("Aggregation repository data store created using file: " + getFile());
+      }
+ else {
+        tx.allocator().free(page,1);
+        Index<String,Integer> indexes=ROOT_INDEXES_FACTORY.open(tx,0);
+        LOG.info("Aggregation repository data store loaded using file: " + getFile() + " containing "+ indexes.size()+ " repositories.");
+      }
+      return true;
+    }
+  }
+);
 }
