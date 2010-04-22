@@ -1,0 +1,14 @@
+{
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  getMockEndpoint("mock:foo").expectedHeaderReceived("foo","was wrapped");
+  getMockEndpoint("mock:bar").expectedMessageCount(1);
+  getMockEndpoint("mock:bar").expectedHeaderReceived("foo","was wrapped");
+  getMockEndpoint("mock:bar").expectedHeaderReceived("bar","was wrapped");
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  MyPolicy foo=context.getRegistry().lookup("foo",MyPolicy.class);
+  MyPolicy bar=context.getRegistry().lookup("bar",MyPolicy.class);
+  assertEquals("Should only be invoked 1 time",1,foo.getInvoked());
+  assertEquals("Should only be invoked 1 time",1,bar.getInvoked());
+}
