@@ -1,0 +1,35 @@
+{
+  String answer=null;
+  String guid="12345678";
+  QName serviceName=new QName("http://ode/bpel/unit-test.wsdl","HelloService");
+  String operation="hello";
+  final Future<MessageExchange.Status> running;
+  MyRoleMessageExchange role;
+  scheduler.beginTransaction();
+  try {
+    role=server.getEngine().createMessageExchange(guid,serviceName,operation);
+    Message msg=role.createMessage(null);
+    Document doc=camelContext.getTypeConverter().convertTo(Document.class,"<message><TestPart>" + name + "</TestPart></message>");
+    msg.setMessage(doc.getDocumentElement());
+    LOG.info("Sending msg " + msg);
+    running=role.invoke(msg);
+  }
+  finally {
+    scheduler.commitTransaction();
+  }
+  running.get(10000,TimeUnit.MILLISECONDS);
+  scheduler.beginTransaction();
+  try {
+    MessageExchange.Status status=role.getStatus();
+    LOG.info("Status: " + status);
+    Message response=role.getResponse();
+    LOG.info("Response: " + response);
+    String xml=camelContext.getTypeConverter().convertTo(String.class,response.getMessage());
+    LOG.info("Response XML: " + xml);
+    answer=xml;
+  }
+  finally {
+    scheduler.commitTransaction();
+  }
+  return answer;
+}

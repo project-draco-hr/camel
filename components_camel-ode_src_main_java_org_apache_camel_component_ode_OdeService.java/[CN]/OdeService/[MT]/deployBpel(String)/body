@@ -1,0 +1,14 @@
+{
+  String deployxml=dir + "/deploy.xml";
+  URL url=camelContext.getClassResolver().loadResourceAsURL(deployxml);
+  if (url == null) {
+    throw new FileNotFoundException(deployxml);
+  }
+  File file=new File(url.toURI().getPath()).getParentFile();
+  Collection<QName> procs=store.deploy(file);
+  for (  QName procName : procs) {
+    ProcessConfImpl conf=(ProcessConfImpl)store.getProcessConfiguration(procName);
+    conf.setTransient(true);
+    server.register(conf);
+  }
+}
