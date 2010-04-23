@@ -66,10 +66,7 @@
         String name=right.evaluate(exchange,String.class);
         Class<?> rightType=exchange.getContext().getClassResolver().resolveClass(name);
         if (rightType == null) {
-          rightType=exchange.getContext().getClassResolver().resolveClass("java.lang." + name);
-        }
-        if (rightType == null) {
-          throw new IllegalArgumentException("Syntax error in is operator: " + expression + " cannot find class with name: "+ name);
+          throw new IllegalArgumentException("Syntax error in " + operatorText + " operator: "+ expression+ " cannot find class with name: "+ name);
         }
         predicate=PredicateBuilder.isInstanceOf(left,rightType);
         if (operator == NOT_IS) {
@@ -86,14 +83,14 @@
           predicate=PredicateBuilder.and(predicate,PredicateBuilder.isLessThanOrEqualTo(left,to));
         }
  else {
-          throw new IllegalArgumentException("Syntax error in range operator: " + expression + " is not valid."+ " Valid syntax: from..to (where from and to are numbers).");
+          throw new IllegalArgumentException("Syntax error in " + operatorText + " operator: "+ expression+ " is not valid. Valid syntax:from..to(where from and to are numbers).");
         }
         if (operator == NOT_RANGE) {
           predicate=PredicateBuilder.not(predicate);
         }
       }
       if (predicate == null) {
-        throw new IllegalArgumentException("Unsupported operator: " + operator + " for expression: "+ expression);
+        throw new IllegalArgumentException("Unsupported operator: " + operatorText + " for expression: "+ expression);
       }
       boolean matches=predicate.matches(exchange);
       return exchange.getContext().getTypeConverter().convertTo(type,matches);
