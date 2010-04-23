@@ -1,10 +1,14 @@
 {
-  if (authMethod == null) {
+  if (username == null && authMethod == null) {
     return configurer;
   }
-  authMethods.add(authMethod);
+  if (username != null && authMethod == null) {
+    throw new IllegalArgumentException("Option authMethod must be provided to use authentication");
+  }
+  ObjectHelper.notNull(authMethod,"authMethod");
   ObjectHelper.notNull(username,"authUsername");
   ObjectHelper.notNull(password,"authPassword");
+  authMethods.add(authMethod);
   if (authMethod == AuthMethod.Basic || authMethod == AuthMethod.Digest) {
     return CompositeHttpConfigurer.combineConfigurers(configurer,new BasicAuthenticationHttpClientConfigurer(false,username,password));
   }
