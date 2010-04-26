@@ -1,0 +1,27 @@
+{
+  T answer=null;
+  boolean done=false;
+  int attempt=0;
+  while (!done) {
+    try {
+      if (attempt > 0 && LOG.isDebugEnabled()) {
+        LOG.debug("Attempt " + attempt + " to execute work "+ work);
+      }
+      attempt++;
+      answer=work.execute(tx);
+      tx.commit();
+      page.flush();
+      done=true;
+    }
+ catch (    OptimisticUpdateException e) {
+      LOG.warn("OptimisticUpdateException occurred at attempt " + attempt + " executing work "+ work+ " will do rollback and retry.");
+      tx.rollback();
+    }
+catch (    RuntimeException e) {
+      LOG.warn("Error executing work " + work + " will do rollback.",e);
+      tx.rollback();
+      throw e;
+    }
+  }
+  return answer;
+}

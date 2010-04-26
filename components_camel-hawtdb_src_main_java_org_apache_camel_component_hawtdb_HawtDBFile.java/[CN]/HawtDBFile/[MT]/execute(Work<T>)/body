@@ -2,18 +2,8 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("Executing work +++ start +++ " + work);
   }
-  T answer;
   Transaction tx=pageFile.tx();
-  try {
-    answer=work.execute(tx);
-    tx.commit();
-    pageFile.flush();
-  }
- catch (  RuntimeException e) {
-    LOG.warn("Error executing work " + work + " will do rollback.",e);
-    tx.rollback();
-    throw e;
-  }
+  T answer=doExecute(work,tx,pageFile);
   if (LOG.isTraceEnabled()) {
     LOG.trace("Executing work +++ done  +++ " + work);
   }
