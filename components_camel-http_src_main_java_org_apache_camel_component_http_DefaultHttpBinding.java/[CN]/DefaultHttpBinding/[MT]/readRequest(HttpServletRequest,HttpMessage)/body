@@ -1,28 +1,18 @@
 {
-  Map parameterMap=request.getParameterMap();
   message.getBody();
   Map<String,Object> headers=message.getHeaders();
-  String contentType="";
   Enumeration names=request.getHeaderNames();
   while (names.hasMoreElements()) {
     String name=(String)names.nextElement();
     Object value=request.getHeader(name);
     if (name.toLowerCase().equals("content-type")) {
       name=Exchange.CONTENT_TYPE;
-      contentType=(String)value;
     }
     if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
       headers.put(name,value);
     }
   }
-  names=request.getParameterNames();
-  while (names.hasMoreElements()) {
-    String name=(String)names.nextElement();
-    Object value=request.getParameter(name);
-    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
-      headers.put(name,value);
-    }
-  }
+  popluateRequestParameters(request,message);
   headers.put(Exchange.HTTP_METHOD,request.getMethod());
   headers.put(Exchange.HTTP_QUERY,request.getQueryString());
   headers.put(Exchange.HTTP_URL,request.getRequestURL());
@@ -30,13 +20,5 @@
   headers.put(Exchange.HTTP_PATH,request.getPathInfo());
   headers.put(Exchange.CONTENT_TYPE,request.getContentType());
   headers.put(Exchange.HTTP_CHARACTER_ENCODING,request.getCharacterEncoding());
-  names=request.getAttributeNames();
-  while (names.hasMoreElements()) {
-    String name=(String)names.nextElement();
-    Object object=request.getAttribute(name);
-    if (object instanceof File) {
-      String fileName=request.getParameter(name);
-      message.addAttachment(fileName,new DataHandler(new FileDataSource((File)object),FileTypeMap.getDefaultFileTypeMap().getContentType(fileName)));
-    }
-  }
+  popluateAttachments(request,message);
 }
