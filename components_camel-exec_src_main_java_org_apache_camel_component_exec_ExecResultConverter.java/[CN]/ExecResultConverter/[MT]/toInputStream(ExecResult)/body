@@ -3,13 +3,19 @@
     LOG.warn("Received a null ExecResult instance to convert!");
     return null;
   }
+  InputStream result;
   if (execResult.getCommand().getOutFile() != null) {
-    return new FileInputStream(execResult.getCommand().getOutFile());
+    result=new FileInputStream(execResult.getCommand().getOutFile());
   }
  else {
     if (execResult.getStdout() == null) {
-      LOG.warn("Received null stdout of the ExecResult for conversion!");
+      LOG.warn("ExecResult has no stdout, will fallback to use stderr.");
+      result=execResult.getStderr();
     }
-    return execResult.getStdout();
+ else {
+      result=execResult.getStdout();
+    }
   }
+  resetIfByteArrayInputStream(result);
+  return result;
 }
