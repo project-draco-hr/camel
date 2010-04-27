@@ -1,0 +1,15 @@
+{
+  ObjectHelper.notNull(camelContext,"CamelContext");
+  ObjectHelper.notNull(builder,"RouteBuilder");
+  RoutesDefinition routes=builder.configureRoutes(camelContext);
+  if (!routes.getRoutes().isEmpty()) {
+    throw new IllegalArgumentException("You can only advice from a RouteBuilder which has no existing routes." + " Remove all routes from the route builder.");
+  }
+  List<RouteDefinition> list=new ArrayList<RouteDefinition>(1);
+  list.add(this);
+  camelContext.removeRouteDefinitions(list);
+  RouteDefinition merged=routes.route(this);
+  camelContext.getRouteDefinitions().add(0,merged);
+  camelContext.startRoute(merged);
+  return merged;
+}
