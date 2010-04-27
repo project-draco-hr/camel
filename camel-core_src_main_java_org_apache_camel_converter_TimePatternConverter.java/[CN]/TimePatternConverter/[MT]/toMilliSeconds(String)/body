@@ -1,0 +1,46 @@
+{
+  long milliseconds=0;
+  boolean foundFlag=false;
+  Matcher matcher;
+  matcher=createMatcher(NUMBERS_ONLY_STRING_PATTERN,source);
+  if (matcher.find()) {
+    milliseconds=Long.valueOf(source).longValue();
+  }
+ else {
+    matcher=createMatcher(REPLACEMENT_PATTERN,source);
+    String replacedSource=matcher.replaceAll("");
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Replaced original source " + source + " to "+ replacedSource);
+    }
+    matcher=createMatcher(HOUR_REGEX_PATTERN,replacedSource);
+    if (matcher.find()) {
+      milliseconds=milliseconds + (3600000 * Long.valueOf(matcher.group(1)).longValue());
+      foundFlag=true;
+    }
+    matcher=createMatcher(MINUTES_REGEX_PATTERN,replacedSource);
+    if (matcher.find()) {
+      long minutes=Long.valueOf(matcher.group(1)).longValue();
+      if ((minutes > 59) && foundFlag) {
+        throw new IllegalArgumentException("Minutes should contain a valid value between 0 and 59: " + source);
+      }
+      foundFlag=true;
+      milliseconds=milliseconds + (60000 * minutes);
+    }
+    matcher=createMatcher(SECONDS_REGEX_PATTERN,replacedSource);
+    if (matcher.find()) {
+      long seconds=Long.valueOf(matcher.group(1)).longValue();
+      if ((seconds > 59) && foundFlag) {
+        throw new IllegalArgumentException("Seconds should contain a valid value between 0 and 59: " + source);
+      }
+      foundFlag=true;
+      milliseconds=milliseconds + (1000 * seconds);
+    }
+    if (!foundFlag) {
+      milliseconds=Long.valueOf(source).longValue();
+    }
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("source: " + source + " milliseconds: "+ milliseconds);
+  }
+  return milliseconds;
+}
