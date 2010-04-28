@@ -7,6 +7,14 @@
     return request.getReader();
   }
  else {
-    return HttpConverter.toInputStream(request);
+    InputStream is=HttpConverter.toInputStream(request);
+    try {
+      CachedOutputStream cos=new CachedOutputStream(httpMessage.getExchange());
+      IOHelper.copy(is,cos);
+      return cos.getStreamCache();
+    }
+  finally {
+      is.close();
+    }
   }
 }
