@@ -1,7 +1,7 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      errorHandler(deadLetterChannel("jms:queue:error").redeliverDelay(0));
+      errorHandler(deadLetterChannel("jms:queue:error").redeliveryDelay(0));
       onException(InvalidOrderException.class).maximumRedeliveries(0).handled(true).to("jms:queue:invalid");
       DataFormat jaxb=new JaxbDataFormat("org.apache.camel.itest.jms");
       from("jms:queue:in").unmarshal(jaxb).choice().when().method(JmsJaxbTest.class,"isWine").to("jms:queue:wine").otherwise().throwException(new InvalidOrderException("We only like wine")).end();
