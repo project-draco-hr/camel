@@ -1,7 +1,7 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      errorHandler(deadLetterChannel("mock:error").redeliverDelay(0));
+      errorHandler(deadLetterChannel("mock:error").redeliveryDelay(0));
       onException(InvalidOrderException.class).maximumRedeliveries(0).handled(true).to("mock:invalid");
       DataFormat jaxb=new JaxbDataFormat("org.apache.camel.example");
       from("direct:start").unmarshal(jaxb).choice().when().method(RouteWithErrorHandlerTest.class,"isWine").to("mock:wine").otherwise().throwException(new InvalidOrderException("We only like wine")).end();
