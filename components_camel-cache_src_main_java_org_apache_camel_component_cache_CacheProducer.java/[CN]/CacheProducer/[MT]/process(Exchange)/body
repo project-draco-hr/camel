@@ -1,5 +1,4 @@
 {
-  cacheManager=new CacheManagerFactory().instantiateCacheManager();
   if (LOG.isTraceEnabled()) {
     LOG.trace("Cache Name: " + config.getCacheName());
   }
@@ -17,13 +16,13 @@
       LOG.debug("Added a new cache: " + cache.getName());
     }
   }
-  String key=(String)exchange.getIn().getHeader("CACHE_KEY");
-  String operation=(String)exchange.getIn().getHeader("CACHE_OPERATION");
+  String key=exchange.getIn().getHeader(CacheConstants.CACHE_KEY,String.class);
+  String operation=exchange.getIn().getHeader(CacheConstants.CACHE_OPERATION,String.class);
   if (operation == null) {
-    throw new CacheException("Operation property is not specified in the incoming exchange header." + "A valid Operation property must be set to ADD, UPDATE, DELETE, DELETEALL");
+    throw new CacheException("Operation not specified in the message header [" + CacheConstants.CACHE_KEY + "]");
   }
-  if ((key == null) && (!operation.equalsIgnoreCase("DELETEALL"))) {
-    throw new CacheException("Cache Key is not specified in exchange either header or URL. Unable to add objects to the cache without a Key");
+  if ((key == null) && (!operation.equalsIgnoreCase(CacheConstants.CACHE_OPERATION_DELETEALL))) {
+    throw new CacheException("Cache Key is not specified in message header header or endpoint URL.");
   }
   performCacheOperation(exchange,operation,key);
 }

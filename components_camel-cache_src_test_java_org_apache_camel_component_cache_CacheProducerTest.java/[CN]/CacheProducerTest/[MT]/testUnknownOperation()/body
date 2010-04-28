@@ -1,0 +1,16 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      onException(CacheException.class).handled(true).to("log:*** LOGGER").to("mock:CacheProducerTest.exception");
+      from("direct:a").setHeader(CacheConstants.CACHE_OPERATION,constant("UNKNOWN")).setHeader(CacheConstants.CACHE_KEY,constant("Ralph_Waldo_Emerson")).to("cache://TestCache1").to("mock:CacheProducerTest.result");
+    }
+  }
+);
+  resultEndpoint.expectedMessageCount(0);
+  exceptionEndpoint.expectedMessageCount(1);
+  context.start();
+  LOG.debug("------------Beginning CacheProducer Query An Elements Test---------------");
+  sendUpdatedFile();
+  resultEndpoint.assertIsSatisfied();
+  exceptionEndpoint.assertIsSatisfied();
+}
