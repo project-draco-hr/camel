@@ -6,20 +6,22 @@
     return;
   }
   LOG.trace("Starting completion interval task");
-  try {
+  Set<String> keys=aggregationRepository.getKeys();
+  if (keys != null && !keys.isEmpty()) {
     lock.lock();
-    Set<String> keys=aggregationRepository.getKeys();
-    for (    String key : keys) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Completion interval triggered for correlation key: " + key);
+    try {
+      for (      String key : keys) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Completion interval triggered for correlation key: " + key);
+        }
+        Exchange exchange=aggregationRepository.get(camelContext,key);
+        exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"interval");
+        onCompletion(key,exchange,false);
       }
-      Exchange exchange=aggregationRepository.get(camelContext,key);
-      exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"interval");
-      onCompletion(key,exchange,false);
     }
-  }
   finally {
-    lock.unlock();
+      lock.unlock();
+    }
   }
   LOG.trace("Completion interval task complete");
 }

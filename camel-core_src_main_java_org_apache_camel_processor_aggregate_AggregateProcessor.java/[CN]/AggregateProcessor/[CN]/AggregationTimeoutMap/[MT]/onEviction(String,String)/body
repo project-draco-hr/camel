@@ -2,17 +2,17 @@
   if (log.isDebugEnabled()) {
     log.debug("Completion timeout triggered for correlation key: " + key);
   }
-  try {
-    lock.lock();
-    boolean inProgress=inProgressCompleteExchanges.contains(exchangeId);
-    if (inProgress) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Aggregated exchange with id: " + exchangeId + " is already in progress.");
-      }
-      return;
+  boolean inProgress=inProgressCompleteExchanges.contains(exchangeId);
+  if (inProgress) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Aggregated exchange with id: " + exchangeId + " is already in progress.");
     }
-    Exchange answer=aggregationRepository.get(camelContext,key);
-    answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"timeout");
+    return;
+  }
+  Exchange answer=aggregationRepository.get(camelContext,key);
+  answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"timeout");
+  lock.lock();
+  try {
     onCompletion(key,answer,true);
   }
   finally {
