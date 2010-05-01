@@ -22,16 +22,21 @@
       return rc;
     }
   }
-  for (  TypeConverter fallback : fallbackConverters) {
-    Object rc=fallback.convertTo(type,exchange,value);
+  for (  FallbackTypeConverter fallback : fallbackConverters) {
+    Object rc=fallback.getFallbackTypeConverter().convertTo(type,exchange,value);
     if (Void.TYPE.equals(rc)) {
       return Void.TYPE;
     }
     if (rc != null) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Adding fallback type converter as a known type converter to convert from: " + type.getCanonicalName() + " to: "+ value.getClass().getCanonicalName());
+      if (fallback.isCanPromote()) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Promoting fallback type converter as a known type converter to convert from: " + type.getCanonicalName() + " to: "+ value.getClass().getCanonicalName()+ " for the fallback converter: "+ fallback.getFallbackTypeConverter());
+        }
+        addTypeConverter(type,value.getClass(),fallback.getFallbackTypeConverter());
       }
-      addTypeConverter(type,value.getClass(),fallback);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Fallback type converter " + fallback.getFallbackTypeConverter() + " converted type from: "+ type.getCanonicalName()+ " to: "+ value.getClass().getCanonicalName());
+      }
       return rc;
     }
   }
