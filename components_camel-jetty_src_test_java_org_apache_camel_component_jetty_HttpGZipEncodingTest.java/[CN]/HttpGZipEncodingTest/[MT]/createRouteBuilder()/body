@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      errorHandler(noErrorHandler());
+      from("direct:gzip").marshal().gzip().setProperty(Exchange.SKIP_GZIP_ENCODING,ExpressionBuilder.constantExpression(Boolean.TRUE)).to("http://localhost:9081/gzip").unmarshal().gzip();
+      from("jetty:http://localhost:9081/gzip").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String request=exchange.getIn().getBody(String.class);
+          assertEquals("Get a wrong request string","<Hello>World</Hello>",request);
+          exchange.getOut().setHeader(Exchange.CONTENT_ENCODING,"gzip");
+          exchange.getOut().setBody("<b>Hello World</b>");
+        }
+      }
+);
+      from("jetty:http://localhost:9084/route?bridgeEndpoint=true").to("http://localhost:9081/gzip?bridgeEndpoint=true");
+    }
+  }
+;
+}
