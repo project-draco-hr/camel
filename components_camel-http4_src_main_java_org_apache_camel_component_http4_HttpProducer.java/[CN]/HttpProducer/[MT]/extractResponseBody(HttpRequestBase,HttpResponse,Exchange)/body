@@ -9,7 +9,9 @@
   }
   Header header=httpRequest.getFirstHeader(Exchange.CONTENT_ENCODING);
   String contentEncoding=header != null ? header.getValue() : null;
-  is=GZIPHelper.toGZIPInputStream(contentEncoding,is);
+  if (!exchange.getProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.FALSE,Boolean.class)) {
+    is=GZIPHelper.uncompressGzip(contentEncoding,is);
+  }
   header=httpRequest.getFirstHeader("content-type");
   if (header != null) {
     String contentType=header.getValue();
