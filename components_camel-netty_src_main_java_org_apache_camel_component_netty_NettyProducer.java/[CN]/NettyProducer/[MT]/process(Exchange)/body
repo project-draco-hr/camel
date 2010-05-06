@@ -3,7 +3,7 @@
     countdownLatch=new CountDownLatch(1);
   }
   Channel channel=channelFuture.getChannel();
-  NettyHelper.writeBody(channel,exchange.getIn().getBody(),exchange);
+  NettyHelper.writeBody(channel,null,exchange.getIn().getBody(),exchange);
   if (configuration.isSync()) {
     boolean success=countdownLatch.await(configuration.getReceiveTimeoutMillis(),TimeUnit.MILLISECONDS);
     if (!success) {
@@ -11,5 +11,22 @@
     }
     Object response=((ClientChannelHandler)clientPipeline.get("handler")).getResponse();
     exchange.getOut().setBody(response);
+  }
+  Boolean close;
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+  }
+ else {
+    close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+  }
+  boolean disconnect=getConfiguration().isDisconnect();
+  if (close != null) {
+    disconnect=close;
+  }
+  if (disconnect) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Closing channel when complete at address: " + getEndpoint().getConfiguration().getAddress());
+    }
+    NettyHelper.close(channel);
   }
 }

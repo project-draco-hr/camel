@@ -6,5 +6,18 @@
     }
     LOG.debug("Incoming message: " + in);
   }
-  dispatchExchange(ctx,messageEvent,in);
+  Exchange exchange=consumer.getEndpoint().createExchange(ctx,messageEvent);
+  if (consumer.getConfiguration().isSync()) {
+    exchange.setPattern(ExchangePattern.InOut);
+  }
+  exchange.getIn().setBody(in);
+  try {
+    consumer.getProcessor().process(exchange);
+  }
+ catch (  Throwable e) {
+    consumer.getExceptionHandler().handleException(e);
+  }
+  if (consumer.getConfiguration().isSync()) {
+    sendResponse(messageEvent,exchange);
+  }
 }

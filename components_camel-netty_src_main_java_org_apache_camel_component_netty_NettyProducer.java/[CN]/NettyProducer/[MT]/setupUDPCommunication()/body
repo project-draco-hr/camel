@@ -21,5 +21,8 @@
   connectionlessClientBootstrap.bind(new InetSocketAddress(0));
   channelFuture=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
   channelFuture.awaitUninterruptibly();
-  LOG.info("Netty UDP Producer started and now listening on Host: " + configuration.getHost() + "Port : "+ configuration.getPort());
+  if (!channelFuture.isSuccess()) {
+    throw new CamelException("Cannot connect to " + configuration.getAddress(),channelFuture.getCause());
+  }
+  LOG.info("Netty UDP Producer started and now listening on: " + configuration.getAddress());
 }
