@@ -1,25 +1,28 @@
 {
-  Message in=exchange.getIn();
-  Class type=getDocumentType();
   Object answer=null;
-  if (type != null) {
+  Message in=exchange.getIn();
+  if (in.getBody() instanceof GenericFile) {
+    InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,in.getBody());
+    answer=new InputSource(is);
+  }
+ else   if (in.getBody() instanceof InputStream) {
+    answer=new InputSource(in.getBody(InputStream.class));
+  }
+ else   if (in.getBody() instanceof String) {
+    answer=new InputSource(new StringReader(in.getBody(String.class)));
+  }
+  Class type=getDocumentType();
+  if (answer == null && type != null) {
     answer=in.getBody(type);
   }
   if (answer == null) {
     answer=in.getBody();
   }
-  if (answer instanceof GenericFile) {
-    InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,answer);
-    answer=new InputSource(is);
-  }
- else   if (answer instanceof BeanInvocation) {
+  if (answer instanceof BeanInvocation) {
     BeanInvocation bi=exchange.getContext().getTypeConverter().convertTo(BeanInvocation.class,answer);
     if (bi.getArgs() != null && bi.getArgs().length == 1 && bi.getArgs()[0] == null) {
       answer=null;
     }
-  }
- else   if (answer instanceof String) {
-    answer=new InputSource(new StringReader(answer.toString()));
   }
   MessageHelper.resetStreamCache(exchange.getIn());
   return answer;
