@@ -5,17 +5,42 @@
   if (channel == null || !channel.isConnected()) {
     openConnection();
   }
+  Object body=NettyPayloadHelper.getIn(getEndpoint(),exchange);
+  if (body == null) {
+    LOG.warn("No payload to send for exchange: " + exchange);
+    return;
+  }
   if (configuration.isSync()) {
     countdownLatch=new CountDownLatch(1);
   }
-  NettyHelper.writeBody(channel,null,exchange.getIn().getBody(),exchange);
+  if (LOG.isDebugEnabled()) {
+    Object out=body;
+    if (body instanceof byte[]) {
+      out=exchange.getContext().getTypeConverter().convertTo(String.class,body);
+    }
+    LOG.debug("Writing body : " + out);
+  }
+  NettyHelper.writeBody(channel,null,body,exchange);
   if (configuration.isSync()) {
     boolean success=countdownLatch.await(configuration.getReceiveTimeoutMillis(),TimeUnit.MILLISECONDS);
     if (!success) {
       throw new ExchangeTimedOutException(exchange,configuration.getReceiveTimeoutMillis());
     }
-    Object response=((ClientChannelHandler)clientPipeline.get("handler")).getResponse();
-    exchange.getOut().setBody(response);
+    ClientChannelHandler handler=(ClientChannelHandler)clientPipeline.get("handler");
+    if (handler.getCause() != null) {
+      throw new CamelExchangeException("Error occurred in ClientChannelHandler",exchange,handler.getCause());
+    }
+ else     if (!handler.isMessageReceived()) {
+      throw new CamelExchangeException("No response received from remote server: " + configuration.getAddress(),exchange);
+    }
+ else {
+      if (ExchangeHelper.isOutCapable(exchange)) {
+        NettyPayloadHelper.setOut(exchange,handler.getMessage());
+      }
+ else {
+        NettyPayloadHelper.setIn(exchange,handler.getMessage());
+      }
+    }
   }
   Boolean close;
   if (ExchangeHelper.isOutCapable(exchange)) {

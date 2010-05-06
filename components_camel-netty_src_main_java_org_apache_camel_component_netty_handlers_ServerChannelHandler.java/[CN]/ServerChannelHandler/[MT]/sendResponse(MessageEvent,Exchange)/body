@@ -1,17 +1,18 @@
 {
   Object body;
   if (ExchangeHelper.isOutCapable(exchange)) {
-    body=exchange.getOut().getBody();
+    body=NettyPayloadHelper.getOut(consumer.getEndpoint(),exchange);
   }
  else {
-    body=exchange.getIn().getBody();
+    body=NettyPayloadHelper.getIn(consumer.getEndpoint(),exchange);
   }
-  if (exchange.isFailed()) {
-    if (exchange.getException() == null) {
-      body=exchange.getOut().getBody();
+  boolean failed=exchange.isFailed();
+  if (failed && !consumer.getEndpoint().getConfiguration().isTransferExchange()) {
+    if (exchange.getException() != null) {
+      body=exchange.getException();
     }
  else {
-      body=exchange.getException();
+      body=exchange.getOut().getBody();
     }
   }
   if (body == null) {
