@@ -7,6 +7,7 @@
   Message outMessage=ep.getBinding().createMessage();
   cxfExchange.setOutMessage(outMessage);
   DataFormat dataFormat=camelExchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.class);
+  responseContext.remove(Message.REQUESTOR_ROLE);
   if (dataFormat != DataFormat.POJO) {
     outMessage.putAll(responseContext);
   }
@@ -18,7 +19,7 @@
   if (outBody != null) {
     if (dataFormat == DataFormat.PAYLOAD) {
       CxfPayload<?> payload=(CxfPayload<?>)outBody;
-      outMessage.put(List.class,payload.getBody());
+      outMessage.setContent(List.class,getResponsePayloadList(cxfExchange,payload.getBody()));
       outMessage.put(Header.HEADER_LIST,payload.getHeaders());
     }
  else {

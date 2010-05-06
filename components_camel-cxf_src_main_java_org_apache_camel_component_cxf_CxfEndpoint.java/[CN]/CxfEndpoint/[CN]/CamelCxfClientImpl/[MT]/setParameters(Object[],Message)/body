@@ -6,7 +6,16 @@
   }
   if (DataFormat.PAYLOAD == message.get(DataFormat.class)) {
     CxfPayload<?> payload=(CxfPayload<?>)params[0];
-    message.put(List.class,payload.getBody());
+    List<Element> elements=payload.getBody();
+    BindingOperationInfo boi=message.get(BindingOperationInfo.class);
+    MessageContentsList content=new MessageContentsList();
+    int i=0;
+    for (    MessagePartInfo partInfo : boi.getOperationInfo().getInput().getMessageParts()) {
+      if (elements.size() > i) {
+        content.put(partInfo,elements.get(i++));
+      }
+    }
+    message.setContent(List.class,content);
     message.put(Header.HEADER_LIST,payload.getHeaders());
   }
  else {

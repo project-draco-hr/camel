@@ -1,0 +1,45 @@
+{
+  MessageContentsList inObjects=MessageContentsList.getContentsList(message);
+  org.apache.cxf.message.Exchange exchange=message.getExchange();
+  BindingOperationInfo boi=exchange.getBindingOperationInfo();
+  OperationInfo op=boi.getOperationInfo();
+  if (boi.isUnwrapped()) {
+    op=boi.getWrappedOperation().getOperationInfo();
+  }
+  List<MessagePartInfo> partInfos=null;
+  boolean client=Boolean.TRUE.equals(message.get(Message.REQUESTOR_ROLE));
+  if (client) {
+    partInfos=op.getOutput().getMessageParts();
+  }
+ else {
+    partInfos=op.getInput().getMessageParts();
+  }
+  List<Element> answer=new ArrayList<Element>();
+  for (  MessagePartInfo partInfo : partInfos) {
+    if (!inObjects.hasValue(partInfo)) {
+      continue;
+    }
+    Object part=inObjects.get(partInfo);
+    if (part instanceof Holder) {
+      part=((Holder)part).value;
+    }
+    if (part instanceof DOMSource) {
+      Element element=getFirstElement(((DOMSource)part).getNode());
+      if (element != null) {
+        answer.add(element);
+      }
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Extract body element " + (element == null ? "null" : XMLUtils.toString(element)));
+      }
+    }
+ else     if (part instanceof Element) {
+      answer.add((Element)part);
+    }
+ else {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Unhandled part type '" + part.getClass());
+      }
+    }
+  }
+  return answer;
+}
