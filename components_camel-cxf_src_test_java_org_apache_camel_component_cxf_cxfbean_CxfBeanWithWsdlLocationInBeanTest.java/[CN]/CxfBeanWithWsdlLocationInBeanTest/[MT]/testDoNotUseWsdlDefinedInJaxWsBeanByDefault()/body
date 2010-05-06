@@ -1,0 +1,17 @@
+{
+  PostMethod post=new PostMethod("http://localhost:9090/customerservice/customers");
+  post.addRequestHeader("Accept","text/xml");
+  String body="<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" + "<soap:Body><GetPerson xmlns=\"http://camel.apache.org/wsdl-first/types\">" + "<personId>hello</personId></GetPerson></soap:Body></soap:Envelope>";
+  RequestEntity entity=new StringRequestEntity(body,"text/xml","ISO-8859-1");
+  post.setRequestEntity(entity);
+  HttpClient httpclient=new HttpClient();
+  try {
+    assertEquals(200,httpclient.executeMethod(post));
+    String response=post.getResponseBodyAsString();
+    String correct="<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body>" + "<GetPersonResponse xmlns=\"http://camel.apache.org/wsdl-first/types\">" + "<personId>hello</personId><ssn>000-000-0000</ssn><name>Bonjour</name></GetPersonResponse></soap:Body></soap:Envelope>";
+    assertEquals("Get a wrong response",correct,response);
+  }
+  finally {
+    post.releaseConnection();
+  }
+}
