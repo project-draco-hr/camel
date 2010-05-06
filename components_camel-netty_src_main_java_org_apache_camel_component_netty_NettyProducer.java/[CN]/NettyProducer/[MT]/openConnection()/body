@@ -1,0 +1,22 @@
+{
+  ChannelFuture channelFuture;
+  if (clientBootstrap != null) {
+    channelFuture=clientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  }
+ else   if (connectionlessClientBootstrap != null) {
+    connectionlessClientBootstrap.bind(new InetSocketAddress(0));
+    channelFuture=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  }
+ else {
+    throw new IllegalStateException("Should either be TCP or UDP");
+  }
+  channelFuture.awaitUninterruptibly();
+  if (!channelFuture.isSuccess()) {
+    throw new CamelException("Cannot connect to " + configuration.getAddress(),channelFuture.getCause());
+  }
+  channel=channelFuture.getChannel();
+  allChannels.add(channel);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating connector to address: " + configuration.getAddress());
+  }
+}
