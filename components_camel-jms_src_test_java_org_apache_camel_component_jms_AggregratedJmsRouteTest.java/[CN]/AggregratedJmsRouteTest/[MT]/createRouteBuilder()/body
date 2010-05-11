@@ -5,7 +5,7 @@
       from("jms:queue:test.b").aggregate(header("cheese"),new AggregationStrategy(){
         public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
           try {
-            Thread.sleep(2 * BatchProcessor.DEFAULT_BATCH_TIMEOUT);
+            Thread.sleep(2000);
           }
  catch (          InterruptedException e) {
             LOG.error("aggregration delay sleep inturrepted",e);
@@ -19,21 +19,7 @@
       from("jms:queue:point1").process(new MyProcessor()).to("jms:queue:reply");
       from("jms:queue:point2").process(new MyProcessor()).to("jms:queue:reply");
       from("jms:queue:point3").process(new MyProcessor()).to("jms:queue:reply");
-      from("jms:queue:reply").aggregate(header("cheese"),new AggregationStrategy(){
-        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
-          if (oldExchange == null) {
-            return newExchange;
-          }
-          LOG.info("try to aggregating the message ");
-          Integer old=oldExchange.getProperty("aggregated",Integer.class);
-          if (old == null) {
-            old=1;
-          }
-          oldExchange.setProperty("aggregated",old + 1);
-          return oldExchange;
-        }
-      }
-).completionPredicate(header("aggregated").isEqualTo(3)).to("mock:reply");
+      from("jms:queue:reply").aggregate(header("cheese"),new UseLatestAggregationStrategy()).completionSize(3).to("mock:reply");
     }
   }
 ;
