@@ -5,10 +5,20 @@
     List<Processor> processors=new ArrayList<Processor>();
     while (iter.hasNext()) {
       Object recipient=iter.next();
-      Endpoint endpoint=resolveEndpoint(exchange,recipient);
-      Producer producer=producerCache.acquireProducer(endpoint);
-      processors.add(producer);
-      producers.put(endpoint,producer);
+      try {
+        Endpoint endpoint=resolveEndpoint(exchange,recipient);
+        Producer producer=producerCache.acquireProducer(endpoint);
+        processors.add(producer);
+        producers.put(endpoint,producer);
+      }
+ catch (      Exception ex) {
+        if (isIgnoreInvalidEndpoints()) {
+          LOG.warn("Get a invalid endpoint with " + recipient,ex);
+        }
+ else {
+          throw ex;
+        }
+      }
     }
     MulticastProcessor mp=new MulticastProcessor(exchange.getContext(),processors,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),false,isStopOnException());
     mp.process(exchange);
