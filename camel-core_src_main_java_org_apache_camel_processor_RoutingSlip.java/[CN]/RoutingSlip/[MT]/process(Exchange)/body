@@ -6,7 +6,19 @@
   String[] recipients=recipients(message);
   Exchange current=exchange;
   for (  String nextRecipient : recipients) {
-    Endpoint endpoint=resolveEndpoint(exchange,nextRecipient);
+    Endpoint endpoint=null;
+    try {
+      endpoint=resolveEndpoint(exchange,nextRecipient.trim());
+    }
+ catch (    Exception ex) {
+      if (isIgnoreInvalidEndpoints()) {
+        LOG.info("Cannot resolve the endpoint with " + nextRecipient,ex);
+        continue;
+      }
+ else {
+        throw ex;
+      }
+    }
     Exchange copy=new DefaultExchange(current);
     updateRoutingSlip(current);
     copyOutToIn(copy,current);
@@ -21,7 +33,13 @@
 );
     }
  catch (    Exception e) {
-      copy.setException(e);
+      if (e instanceof FailedToCreateProducerException && isIgnoreInvalidEndpoints()) {
+        LOG.info("An Invalid endpoint with " + nextRecipient,e);
+        continue;
+      }
+ else {
+        copy.setException(e);
+      }
     }
  finally {
       current=copy;
