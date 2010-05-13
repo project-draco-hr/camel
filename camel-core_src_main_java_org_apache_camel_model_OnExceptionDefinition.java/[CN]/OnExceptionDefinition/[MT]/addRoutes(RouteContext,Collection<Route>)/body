@@ -2,8 +2,12 @@
   setHandledFromExpressionType(routeContext);
   setContinuedFromExpressionType(routeContext);
   setRetryUntilFromExpressionType(routeContext);
+  if (getHandledPolicy() != null && getContinuedPolicy() != null) {
+    throw new IllegalArgumentException("Only one of handled or continued is allowed to be configured on: " + this);
+  }
   if (ObjectHelper.isNotEmpty(onRedeliveryRef)) {
-    setOnRedelivery(routeContext.lookup(onRedeliveryRef,Processor.class));
+    Processor onRedelivery=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onRedeliveryRef,Processor.class);
+    setOnRedelivery(onRedelivery);
   }
   errorHandler=routeContext.createProcessor(this);
   ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
