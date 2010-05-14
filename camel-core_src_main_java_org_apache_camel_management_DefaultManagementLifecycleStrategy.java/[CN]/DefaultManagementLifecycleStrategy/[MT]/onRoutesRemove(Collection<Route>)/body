@@ -1,2 +1,24 @@
 {
+  if (!initialized) {
+    return;
+  }
+  for (  Route route : routes) {
+    ManagedRoute mr=new ManagedRoute(camelContext,route);
+    mr.init(getManagementStrategy());
+    if (!getManagementStrategy().isManaged(mr,null)) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("The route is already managed: " + route);
+      }
+      continue;
+    }
+    try {
+      getManagementStrategy().unmanageObject(mr);
+    }
+ catch (    JMException e) {
+      LOG.warn("Could not register Route MBean",e);
+    }
+catch (    Exception e) {
+      LOG.warn("Could not create Route MBean",e);
+    }
+  }
 }
