@@ -34,8 +34,13 @@
       }
     }
     if (body == null) {
-      LOG.warn("Cannot write body since its null, closing session: " + exchange);
-      session.close();
+      noReplyLogger.log("No payload to send as reply for exchange: " + exchange);
+      if (endpoint.getConfiguration().isDisconnectOnNoReply()) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Closing session as no payload to send as reply at address: " + address);
+        }
+        session.close();
+      }
     }
  else {
       if (LOG.isDebugEnabled()) {

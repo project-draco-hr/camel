@@ -16,8 +16,13 @@
     }
   }
   if (body == null) {
-    LOG.warn("Cannot write body since its null, closing channel: " + exchange);
-    NettyHelper.close(messageEvent.getChannel());
+    noReplyLogger.log("No payload to send as reply for exchange: " + exchange);
+    if (consumer.getConfiguration().isDisconnectOnNoReply()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Closing channel as no payload to send as reply at address: " + messageEvent.getRemoteAddress());
+      }
+      NettyHelper.close(messageEvent.getChannel());
+    }
   }
  else {
     if (LOG.isDebugEnabled()) {
