@@ -1,0 +1,21 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Producer " + producer + " is not an instanceof AsyncProcessor"+ ". Will fallback to simulate async behavior by transferring task to a producer thread pool for further processing.");
+  }
+  getProducerExecutorService().submit(new Callable<Exchange>(){
+    public Exchange call() throws Exception {
+      try {
+        AsyncProcessor asyncProducer=exchange.getContext().getTypeConverter().convertTo(AsyncProcessor.class,producer);
+        asyncProducer.process(exchange,callback);
+      }
+ catch (      Exception e) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Caught exception while processing: " + exchange,e);
+        }
+        exchange.setException(e);
+      }
+      return exchange;
+    }
+  }
+);
+}
