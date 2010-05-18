@@ -1,8 +1,15 @@
 {
   context.getShutdownStrategy().setTimeout(20);
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("pop3://jones@localhost?password=secret").routeId("route1").shutdownRunningTask(ShutdownRunningTask.CompleteAllTasks).delay(1000).to("seda:foo");
+      from("seda:foo").routeId("route2").to("mock:bar");
+    }
+  }
+);
+  context.start();
   MockEndpoint bar=getMockEndpoint("mock:bar");
-  bar.expectedMinimumMessageCount(1);
-  bar.setResultWaitTime(3000);
+  bar.expectedMinimumMessageCount(2);
   assertMockEndpointsSatisfied();
   context.stop();
   assertEquals("Should complete all messages",5,bar.getReceivedCounter());
