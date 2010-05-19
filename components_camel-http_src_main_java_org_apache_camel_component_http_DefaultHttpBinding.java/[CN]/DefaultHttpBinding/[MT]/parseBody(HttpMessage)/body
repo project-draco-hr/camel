@@ -11,13 +11,18 @@
     if (is == null) {
       return is;
     }
-    try {
-      CachedOutputStream cos=new CachedOutputStream(httpMessage.getExchange());
-      IOHelper.copy(is,cos);
-      return cos.getStreamCache();
+    if (httpMessage.getExchange().getProperty(Exchange.DISABLE_STREAM_CACHE,Boolean.FALSE,Boolean.class)) {
+      return is;
     }
+ else {
+      try {
+        CachedOutputStream cos=new CachedOutputStream(httpMessage.getExchange());
+        IOHelper.copy(is,cos);
+        return cos.getStreamCache();
+      }
   finally {
-      is.close();
+        is.close();
+      }
     }
   }
 }

@@ -53,6 +53,15 @@
         }
       }
 );
+      from("jetty:http://localhost:9083/noStreamCache?disableStreamCache=true").noStreamCaching().process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          InputStream is=(InputStream)exchange.getIn().getBody();
+          System.out.println(is.getClass());
+          assertTrue("It should be a raw inputstream",is instanceof org.eclipse.jetty.server.HttpInput);
+          exchange.getOut().setBody("OK");
+        }
+      }
+);
     }
   }
 ;
