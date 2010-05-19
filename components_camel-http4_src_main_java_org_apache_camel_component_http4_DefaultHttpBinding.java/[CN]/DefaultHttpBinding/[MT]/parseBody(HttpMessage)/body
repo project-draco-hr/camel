@@ -8,13 +8,21 @@
   }
  else {
     InputStream is=HttpConverter.toInputStream(request,httpMessage.getExchange());
-    try {
-      CachedOutputStream cos=new CachedOutputStream(httpMessage.getExchange());
-      IOHelper.copy(is,cos);
-      return cos.getStreamCache();
+    if (is == null) {
+      return is;
     }
+    if (httpMessage.getExchange().getProperty(Exchange.DISABLE_STREAM_CACHE,Boolean.FALSE,Boolean.class)) {
+      return is;
+    }
+ else {
+      try {
+        CachedOutputStream cos=new CachedOutputStream(httpMessage.getExchange());
+        IOHelper.copy(is,cos);
+        return cos.getStreamCache();
+      }
   finally {
-      is.close();
+        is.close();
+      }
     }
   }
 }
