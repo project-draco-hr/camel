@@ -1,0 +1,12 @@
+{
+  mySynchronization=new MySynchronization();
+  CamelPostProcessorHelper helper=new CamelPostProcessorHelper(context);
+  MyConsumeAndSynchronizationBean my=new MyConsumeAndSynchronizationBean();
+  Method method=my.getClass().getMethod("consumeSomething",String.class,Exchange.class);
+  helper.consumerInjection(method,my,"foo");
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Hello World");
+  template.sendBody("seda:foo","Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals("Should have invoked onDone",true,mySynchronization.isOnDone());
+}
