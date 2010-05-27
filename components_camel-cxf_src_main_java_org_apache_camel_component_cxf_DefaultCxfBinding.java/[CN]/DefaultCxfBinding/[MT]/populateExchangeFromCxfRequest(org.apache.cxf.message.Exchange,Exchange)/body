@@ -36,6 +36,12 @@
   }
   Message cxfMessage=cxfExchange.getInMessage();
   propagateHeadersFromCxfToCamel(cxfMessage,camelExchange.getIn(),camelExchange);
+  SecurityContext securityContext=cxfMessage.get(SecurityContext.class);
+  if (securityContext != null && securityContext.getUserPrincipal() != null) {
+    Subject subject=new Subject();
+    subject.getPrincipals().add(securityContext.getUserPrincipal());
+    camelExchange.getIn().getHeaders().put(Exchange.AUTHENTICATION,subject);
+  }
   Object value=cxfMessage.get(Client.REQUEST_CONTEXT);
   if (value != null && !headerFilterStrategy.applyFilterToExternalHeaders(Client.REQUEST_CONTEXT,value,camelExchange)) {
     camelExchange.getIn().setHeader(Client.REQUEST_CONTEXT,value);
