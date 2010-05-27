@@ -1,6 +1,18 @@
 {
-  final Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
-  copy.setPattern(ExchangePattern.InOnly);
-  copy.setProperty(Exchange.ON_COMPLETION,Boolean.TRUE);
-  return copy;
+  Exchange answer;
+  answer=ExchangeHelper.createCorrelatedCopy(exchange,false);
+  if (answer.hasOut()) {
+    answer.setIn(answer.getOut());
+    answer.setOut(null);
+  }
+  answer.setPattern(ExchangePattern.InOnly);
+  if (useOriginalBody) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Using the original IN message instead of current");
+    }
+    Message original=exchange.getUnitOfWork().getOriginalInMessage();
+    answer.setIn(original);
+  }
+  answer.setProperty(Exchange.ON_COMPLETION,Boolean.TRUE);
+  return answer;
 }
