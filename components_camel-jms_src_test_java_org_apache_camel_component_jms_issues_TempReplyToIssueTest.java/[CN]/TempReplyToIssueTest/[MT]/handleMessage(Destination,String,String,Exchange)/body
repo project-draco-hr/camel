@@ -1,0 +1,16 @@
+{
+  assertNotNull(jmsReplyTo);
+  assertTrue("Should be a temp queue",jmsReplyTo.toString().startsWith("temp-queue"));
+  ProducerTemplate producer=exchange.getContext().createProducerTemplate();
+  producer.send("activemq:queue:xxx",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("Hello Moon");
+      exchange.getIn().setHeader("JMSCorrelationID",id);
+      exchange.getIn().setHeader(JmsConstants.JMS_DESTINATION,jmsReplyTo);
+    }
+  }
+);
+  producer.stop();
+  Thread.sleep(1000);
+  return "Hello " + body;
+}
