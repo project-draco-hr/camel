@@ -1,0 +1,128 @@
+{
+  if (ObjectHelper.isEmpty(getId())) {
+    throw new IllegalArgumentException("Id must be set");
+  }
+  if (getProperties() != null) {
+    getContext().setProperties(getProperties().asMap());
+  }
+  PackageScanClassResolver packageResolver=getBeanForType(PackageScanClassResolver.class);
+  if (packageResolver != null) {
+    LOG.info("Using custom PackageScanClassResolver: " + packageResolver);
+    getContext().setPackageScanClassResolver(packageResolver);
+  }
+  ClassResolver classResolver=getBeanForType(ClassResolver.class);
+  if (classResolver != null) {
+    LOG.info("Using custom ClassResolver: " + classResolver);
+    getContext().setClassResolver(classResolver);
+  }
+  FactoryFinderResolver factoryFinderResolver=getBeanForType(FactoryFinderResolver.class);
+  if (factoryFinderResolver != null) {
+    LOG.info("Using custom FactoryFinderResolver: " + factoryFinderResolver);
+    getContext().setFactoryFinderResolver(factoryFinderResolver);
+  }
+  ExecutorServiceStrategy executorServiceStrategy=getBeanForType(ExecutorServiceStrategy.class);
+  if (executorServiceStrategy != null) {
+    LOG.info("Using custom ExecutorServiceStrategy: " + executorServiceStrategy);
+    getContext().setExecutorServiceStrategy(executorServiceStrategy);
+  }
+  initCustomRegistry(getContext());
+  initPropertyPlaceholder();
+  initJMXAgent();
+  Tracer tracer=getBeanForType(Tracer.class);
+  if (tracer != null) {
+    TraceFormatter formatter=getBeanForType(TraceFormatter.class);
+    if (formatter != null) {
+      tracer.setFormatter(formatter);
+    }
+    LOG.info("Using custom Tracer: " + tracer);
+    getContext().addInterceptStrategy(tracer);
+  }
+  HandleFault handleFault=getBeanForType(HandleFault.class);
+  if (handleFault != null) {
+    LOG.info("Using custom HandleFault: " + handleFault);
+    getContext().addInterceptStrategy(handleFault);
+  }
+  Delayer delayer=getBeanForType(Delayer.class);
+  if (delayer != null) {
+    LOG.info("Using custom Delayer: " + delayer);
+    getContext().addInterceptStrategy(delayer);
+  }
+  InflightRepository inflightRepository=getBeanForType(InflightRepository.class);
+  if (delayer != null) {
+    LOG.info("Using custom InflightRepository: " + inflightRepository);
+    getContext().setInflightRepository(inflightRepository);
+  }
+  ManagementStrategy managementStrategy=getBeanForType(ManagementStrategy.class);
+  if (managementStrategy != null) {
+    LOG.info("Using custom ManagementStrategy: " + managementStrategy);
+    getContext().setManagementStrategy(managementStrategy);
+  }
+  EventFactory eventFactory=getBeanForType(EventFactory.class);
+  if (eventFactory != null) {
+    LOG.info("Using custom EventFactory: " + eventFactory);
+    getContext().getManagementStrategy().setEventFactory(eventFactory);
+  }
+  Map<String,EventNotifier> eventNotifiers=getContext().getRegistry().lookupByType(EventNotifier.class);
+  if (eventNotifiers != null && !eventNotifiers.isEmpty()) {
+    for (    String id : eventNotifiers.keySet()) {
+      EventNotifier notifier=eventNotifiers.get(id);
+      if (!getContext().getManagementStrategy().getEventNotifiers().contains(notifier)) {
+        LOG.info("Using custom EventNotifier with id: " + id + " and implementation: "+ notifier);
+        getContext().getManagementStrategy().addEventNotifier(notifier);
+      }
+    }
+  }
+  ShutdownStrategy shutdownStrategy=getBeanForType(ShutdownStrategy.class);
+  if (shutdownStrategy != null) {
+    LOG.info("Using custom ShutdownStrategy: " + shutdownStrategy);
+    getContext().setShutdownStrategy(shutdownStrategy);
+  }
+  Map<String,InterceptStrategy> interceptStrategies=getContext().getRegistry().lookupByType(InterceptStrategy.class);
+  if (interceptStrategies != null && !interceptStrategies.isEmpty()) {
+    for (    String id : interceptStrategies.keySet()) {
+      InterceptStrategy strategy=interceptStrategies.get(id);
+      if (!getContext().getInterceptStrategies().contains(strategy)) {
+        LOG.info("Using custom InterceptStrategy with id: " + id + " and implementation: "+ strategy);
+        getContext().addInterceptStrategy(strategy);
+      }
+    }
+  }
+  Map<String,LifecycleStrategy> lifecycleStrategies=getContext().getRegistry().lookupByType(LifecycleStrategy.class);
+  if (lifecycleStrategies != null && !lifecycleStrategies.isEmpty()) {
+    for (    String id : lifecycleStrategies.keySet()) {
+      LifecycleStrategy strategy=lifecycleStrategies.get(id);
+      if (!getContext().getLifecycleStrategies().contains(strategy)) {
+        LOG.info("Using custom LifecycleStrategy with id: " + id + " and implementation: "+ strategy);
+        getContext().addLifecycleStrategy(strategy);
+      }
+    }
+  }
+  initThreadPoolProfiles(getContext());
+  initBeanPostProcessor(getContext());
+  initCamelContext(getContext());
+  initRouteRefs();
+  for (  RouteDefinition route : getRoutes()) {
+    List<ProcessorDefinition> abstracts=new ArrayList<ProcessorDefinition>();
+    List<ProcessorDefinition> upper=new ArrayList<ProcessorDefinition>();
+    List<ProcessorDefinition> lower=new ArrayList<ProcessorDefinition>();
+    prepareRouteForInit(route,abstracts,lower);
+    initToAsync(lower);
+    initInterceptors(route,upper);
+    initOnCompletions(abstracts,upper);
+    initTransacted(abstracts,lower);
+    initOnExceptions(abstracts,upper);
+    route.clearOutput();
+    route.getOutputs().addAll(upper);
+    route.getOutputs().addAll(lower);
+    initParent(route);
+  }
+  if (getDataFormats() != null) {
+    getContext().setDataFormats(getDataFormats().asMap());
+  }
+  getContext().addRouteDefinitions(getRoutes());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Found JAXB created routes: " + getRoutes());
+  }
+  findRouteBuilders();
+  installRoutes();
+}

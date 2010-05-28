@@ -1,0 +1,27 @@
+{
+  List<RouteBuilder> builders=new ArrayList<RouteBuilder>();
+  if (getBuilderRefs() != null) {
+    for (    RouteBuilderDefinition builderRef : getBuilderRefs()) {
+      RouteBuilder builder=builderRef.createRouteBuilder(getContext());
+      if (builder != null) {
+        builders.add(builder);
+      }
+ else {
+        RoutesBuilder routes=builderRef.createRoutes(getContext());
+        if (routes != null) {
+          this.builders.add(routes);
+        }
+ else {
+          throw new CamelException("Cannot find any routes with this RouteBuilder reference: " + builderRef);
+        }
+      }
+    }
+  }
+  for (  RoutesBuilder routeBuilder : this.builders) {
+    getContext().addRoutes(routeBuilder);
+  }
+  for (  RouteBuilder builder : builders) {
+    postProcessBeforeInit(builder);
+    getContext().addRoutes(builder);
+  }
+}

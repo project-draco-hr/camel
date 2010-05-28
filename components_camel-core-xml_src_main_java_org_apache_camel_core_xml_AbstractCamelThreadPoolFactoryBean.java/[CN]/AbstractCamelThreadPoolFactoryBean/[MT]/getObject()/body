@@ -1,0 +1,16 @@
+{
+  if (camelContext == null && camelContextId != null) {
+    camelContext=getCamelContextWithId(camelContextId);
+  }
+  notNull(camelContext,"camelContext");
+  if (poolSize == null || poolSize <= 0) {
+    throw new IllegalArgumentException("PoolSize must be a positive number");
+  }
+  int max=getMaxPoolSize() != null ? getMaxPoolSize() : getPoolSize();
+  RejectedExecutionHandler rejected=null;
+  if (rejectedPolicy != null) {
+    rejected=rejectedPolicy.asRejectedExecutionHandler();
+  }
+  ExecutorService answer=camelContext.getExecutorServiceStrategy().newThreadPool(getId(),getThreadName(),getPoolSize(),max,getKeepAliveTime(),getTimeUnit(),getMaxQueueSize(),rejected,isDaemon());
+  return answer;
+}
