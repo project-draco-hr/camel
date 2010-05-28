@@ -11,6 +11,18 @@
   if (oneway != null) {
     pattern=oneway.value();
   }
+  if (method.getAnnotation(org.apache.camel.RoutingSlip.class) != null && matchContext(method.getAnnotation(org.apache.camel.RoutingSlip.class).context())) {
+    org.apache.camel.RoutingSlip annotation=method.getAnnotation(org.apache.camel.RoutingSlip.class);
+    routingSlip=new RoutingSlip(camelContext);
+    routingSlip.setDelimiter(annotation.delimiter());
+    routingSlip.setIgnoreInvalidEndpoints(annotation.ignoreInvalidEndpoints());
+    try {
+      camelContext.addService(routingSlip);
+    }
+ catch (    Exception e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+  }
   if (method.getAnnotation(org.apache.camel.RecipientList.class) != null && matchContext(method.getAnnotation(org.apache.camel.RecipientList.class).context())) {
     org.apache.camel.RecipientList annotation=method.getAnnotation(org.apache.camel.RecipientList.class);
     recipientList=new RecipientList(camelContext,annotation.delimiter());

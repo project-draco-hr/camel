@@ -1,0 +1,67 @@
+{
+  Iterator<Object> iter=ObjectHelper.createIterator(routingSlip,uriDelimiter);
+  Exchange current=exchange;
+  while (iter.hasNext()) {
+    Object nextRecipient=iter.next();
+    Endpoint endpoint;
+    try {
+      endpoint=resolveEndpoint(exchange,nextRecipient);
+    }
+ catch (    Exception e) {
+      if (isIgnoreInvalidEndpoints()) {
+        LOG.info("Endpoint uri is invalid: " + nextRecipient + ". This exception will be ignored.",e);
+        continue;
+      }
+ else {
+        throw e;
+      }
+    }
+    Exchange copy=new DefaultExchange(current);
+    updateRoutingSlipHeader(current);
+    copyOutToIn(copy,current);
+    try {
+      producerCache.doInProducer(endpoint,copy,null,new ProducerCallback<Object>(){
+        public Object doInProducer(        Producer producer,        Exchange exchange,        ExchangePattern exchangePattern) throws Exception {
+          exchange.setProperty(Exchange.TO_ENDPOINT,producer.getEndpoint().getEndpointUri());
+          producer.process(exchange);
+          return exchange;
+        }
+      }
+);
+    }
+ catch (    Exception e) {
+      if (e instanceof FailedToCreateProducerException && isIgnoreInvalidEndpoints()) {
+        LOG.info("Endpoint uri is invalid: " + nextRecipient + ". This exception will be ignored.",e);
+        continue;
+      }
+ else {
+        copy.setException(e);
+      }
+    }
+ finally {
+      current=copy;
+    }
+    boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(current);
+    if (current.isFailed() || current.isRollbackOnly() || exceptionHandled) {
+      if (LOG.isDebugEnabled()) {
+        StringBuilder sb=new StringBuilder();
+        sb.append("Message exchange has failed so breaking out of the routing slip: ").append(current);
+        if (current.isRollbackOnly()) {
+          sb.append(" Marked as rollback only.");
+        }
+        if (current.getException() != null) {
+          sb.append(" Exception: ").append(current.getException());
+        }
+        if (current.hasOut() && current.getOut().isFault()) {
+          sb.append(" Fault: ").append(current.getOut());
+        }
+        if (exceptionHandled) {
+          sb.append(" Handled by the error handler.");
+        }
+        LOG.debug(sb.toString());
+      }
+      break;
+    }
+  }
+  ExchangeHelper.copyResults(exchange,current);
+}
