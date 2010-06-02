@@ -1,0 +1,20 @@
+{
+  if (onCompleteOnly) {
+    return;
+  }
+  if (onWhen != null && !onWhen.matches(exchange)) {
+    return;
+  }
+  final Exchange copy=prepareExchange(exchange);
+  copy.setException(null);
+  executorService.submit(new Callable<Exchange>(){
+    public Exchange call() throws Exception {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Processing onFailure: " + copy);
+      }
+      doProcess(processor,copy);
+      return null;
+    }
+  }
+);
+}
