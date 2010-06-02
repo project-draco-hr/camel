@@ -14,10 +14,17 @@
   boolean osgi=false;
   Class cl=CamelContextFactoryBean.class;
   try {
-    cl=Class.forName("org.apache.camel.osgi.CamelContextFactoryBean");
-    osgi=true;
+    Class c=Class.forName("org.apache.camel.core.osgi.Activator");
+    Method mth=c.getDeclaredMethod("getBundle");
+    mth.setAccessible(true);
+    Object bundle=mth.invoke(null);
+    if (bundle != null) {
+      cl=Class.forName("org.apache.camel.osgi.CamelContextFactoryBean");
+      osgi=true;
+    }
   }
  catch (  Throwable t) {
+    t.printStackTrace();
     LOG.trace("Cannot find class so assuming not running in OSGi container: " + t.getMessage());
   }
   if (osgi) {
