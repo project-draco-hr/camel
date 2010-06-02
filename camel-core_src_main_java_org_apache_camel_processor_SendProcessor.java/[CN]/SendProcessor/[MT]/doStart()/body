@@ -4,18 +4,12 @@
     camelContext.addService(producerCache);
   }
   ServiceHelper.startService(producerCache);
-  if (!init) {
-    init=true;
-    Endpoint lookup=camelContext.hasEndpoint(destination.getEndpointKey());
-    if (lookup instanceof InterceptSendToEndpoint) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("SendTo is intercepted using a interceptSendToEndpoint: " + lookup.getEndpointUri());
-      }
-      destination=lookup;
+  Endpoint lookup=camelContext.hasEndpoint(destination.getEndpointKey());
+  if (lookup instanceof InterceptSendToEndpoint) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("SendTo is intercepted using a interceptSendToEndpoint: " + lookup.getEndpointUri());
     }
+    destination=lookup;
   }
-  Producer producer=producerCache.doGetProducer(destination,true);
-  if (producer == null) {
-    throw new IllegalStateException("No producer, this processor has not been started: " + this);
-  }
+  producerCache.startProducer(destination);
 }
