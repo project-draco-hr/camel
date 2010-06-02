@@ -1,10 +1,15 @@
 {
-  try {
-    template.sendBody("direct:start","Hello");
-    fail("Should have thrown an IllegalArgumentException");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("ibatis:selectAllAccounts");
+    }
   }
- catch (  CamelExecutionException e) {
-    assertIsInstanceOf(FailedToCreateProducerException.class,e.getCause());
-    assertEquals("statementType must be specified on: Endpoint[ibatis://selectAllAccounts]",e.getCause().getCause().getMessage());
+);
+  try {
+    context.start();
+  }
+ catch (  FailedToCreateProducerException e) {
+    assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+    assertEquals("statementType must be specified on: Endpoint[ibatis://selectAllAccounts]",e.getCause().getMessage());
   }
 }
