@@ -1,15 +1,36 @@
 {
   Set<Class<?>> classes=resolver.findImplementations(RoutesBuilder.class,packages);
   for (  Class aClass : classes) {
-    if (shouldIgnoreBean(aClass)) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Found RouteBuilder class: " + aClass);
+    }
+    RouteBuilder existing=isRouteBuilderAlreadyRegisteredByComponentAnnotation(aClass);
+    if (existing != null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Adding existing @Component annotated RouteBuilder: " + aClass);
+      }
+      list.add(existing);
       continue;
     }
-    if (isValidClass(aClass)) {
-      RoutesBuilder builder=instantiateBuilder(aClass);
-      if (beanPostProcessor != null) {
-        beanPostProcessor.postProcessBeforeInitialization(builder,builder.toString());
+    if (shouldIgnoreBean(aClass)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Ignoring RouteBuilder class: " + aClass);
       }
-      list.add(builder);
+      continue;
     }
+    if (!isValidClass(aClass)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Ignoring invalid RouteBuilder class: " + aClass);
+      }
+      continue;
+    }
+    RoutesBuilder builder=instantiateBuilder(aClass);
+    if (beanPostProcessor != null) {
+      beanPostProcessor.postProcessBeforeInitialization(builder,builder.toString());
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Adding instantiated RouteBuilder: " + builder);
+    }
+    list.add(builder);
   }
 }
