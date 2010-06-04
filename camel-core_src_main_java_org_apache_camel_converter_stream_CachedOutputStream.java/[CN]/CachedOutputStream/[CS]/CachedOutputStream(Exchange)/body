@@ -7,4 +7,21 @@
   if (dir != null) {
     this.outputDir=exchange.getContext().getTypeConverter().convertTo(File.class,dir);
   }
+  exchange.addOnCompletion(new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      try {
+        exchangeOnCompleted=true;
+        if (fileInputStreamCaches.size() == 0) {
+          close();
+        }
+      }
+ catch (      Exception e) {
+        LOG.warn("Error deleting temporary cache file: " + tempFile,e);
+      }
+    }
+    @Override public String toString(){
+      return "OnCompletion[CachedOutputStream]";
+    }
+  }
+);
 }
