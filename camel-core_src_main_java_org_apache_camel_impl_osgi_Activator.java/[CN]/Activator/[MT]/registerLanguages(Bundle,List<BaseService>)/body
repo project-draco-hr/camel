@@ -1,0 +1,24 @@
+{
+  if (checkCompat(bundle,Language.class)) {
+    Map<String,String> languages=new HashMap<String,String>();
+    for (Enumeration e=bundle.getEntryPaths(META_INF_LANGUAGE); e != null && e.hasMoreElements(); ) {
+      String path=(String)e.nextElement();
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Found entry: " + path + " in bundle "+ bundle.getSymbolicName());
+      }
+      String name=path.substring(path.lastIndexOf("/") + 1);
+      languages.put(name,path);
+    }
+    if (!languages.isEmpty()) {
+      resolvers.add(new BundleLanguageResolver(bundle,languages));
+    }
+    for (Enumeration e=bundle.getEntryPaths(META_INF_LANGUAGE_RESOLVER); e != null && e.hasMoreElements(); ) {
+      String path=(String)e.nextElement();
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Found entry: " + path + " in bundle "+ bundle.getSymbolicName());
+      }
+      String name=path.substring(path.lastIndexOf("/") + 1);
+      resolvers.add(new BundleMetaLanguageResolver(bundle,name,path));
+    }
+  }
+}

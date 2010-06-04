@@ -1,0 +1,34 @@
+{
+  PackageScanFilter test=new AnnotatedWithPackageScanFilter(Converter.class,true);
+  Set<Class<?>> classes=new LinkedHashSet<Class<?>>();
+  Set<String> packages=getConverterPackages(bundle.getEntry(META_INF_TYPE_CONVERTER));
+  for (  String pkg : packages) {
+    Enumeration<URL> e=bundle.findEntries("/" + pkg.replace('.','/'),"*.class",true);
+    while (e.hasMoreElements()) {
+      String path=e.nextElement().getPath();
+      String externalName=path.substring(path.charAt(0) == '/' ? 1 : 0,path.indexOf('.')).replace('/','.');
+      try {
+        Class clazz=bundle.loadClass(externalName);
+        if (test.matches(clazz)) {
+          classes.add(bundle.loadClass(externalName));
+        }
+      }
+ catch (      Throwable t) {
+      }
+    }
+  }
+  LOG.info("Found " + classes.size() + " @Converter classes to load");
+  for (  Class type : classes) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Loading converter class: " + ObjectHelper.name(type));
+    }
+    loadConverterMethods(registry,type);
+  }
+  URL fallbackUrl=bundle.getEntry(META_INF_FALLBACK_TYPE_CONVERTER);
+  if (fallbackUrl != null) {
+    TypeConverter tc=createInstance("FallbackTypeConverter",fallbackUrl,registry.getInjector());
+    registry.addFallbackTypeConverter(tc,false);
+  }
+  visitedClasses.clear();
+  visitedURLs.clear();
+}
