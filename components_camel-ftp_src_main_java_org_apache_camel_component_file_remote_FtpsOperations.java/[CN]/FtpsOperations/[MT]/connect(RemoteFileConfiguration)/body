@@ -1,0 +1,21 @@
+{
+  boolean answer=super.connect(configuration);
+  FtpsConfiguration config=(FtpsConfiguration)configuration;
+  if (answer && config.isUseSecureDataChannel()) {
+    try {
+      ObjectHelper.notEmpty(config.getExecProt(),"execProt",config);
+      if (log.isDebugEnabled()) {
+        log.debug("Secure data channel being initialized with execPbsz=" + config.getExecPbsz() + ", execPort="+ config.getExecProt());
+      }
+      getFtpClient().execPBSZ(config.getExecPbsz());
+      getFtpClient().execPROT(config.getExecProt());
+    }
+ catch (    SSLException e) {
+      throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+    }
+catch (    IOException e) {
+      throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+    }
+  }
+  return answer;
+}
