@@ -8,25 +8,18 @@
   Class clazz=target.getClass();
   Method[] methods=clazz.getMethods();
   for (  Method method : methods) {
-    String name=method.getName();
-    Class type=method.getReturnType();
-    Class params[]=method.getParameterTypes();
-    if (name.startsWith("get") && params.length == 0 && type != null && isSettableType(type)) {
-      try {
+    if (EXCLUDED_METHODS.contains(method)) {
+      continue;
+    }
+    try {
+      if (isGetter(method) && hasSetter(target,method)) {
         Object value=method.invoke(target);
-        if (value == null) {
-          continue;
-        }
-        String strValue=convertToString(value,type);
-        if (strValue == null) {
-          continue;
-        }
-        name=name.substring(3,4).toLowerCase() + name.substring(4);
-        properties.put(optionPrefix + name,strValue);
+        String name=getGetterShorthandName(method);
+        properties.put(optionPrefix + name,value);
         rc=true;
       }
- catch (      Exception ignore) {
-      }
+    }
+ catch (    Exception e) {
     }
   }
   return rc;
