@@ -7,6 +7,14 @@
       if (processor != null) {
         processor.process(exchange);
       }
+      DefaultUnitOfWork uow=new DefaultUnitOfWork(exchange);
+      try {
+        uow.start();
+      }
+ catch (      Exception e) {
+        throw wrapRuntimeCamelException(e);
+      }
+      exchange.setUnitOfWork(uow);
       if (LOG.isDebugEnabled()) {
         LOG.debug(">>>> " + endpoint + " "+ exchange);
       }
@@ -18,6 +26,16 @@
   finally {
         long timeTaken=watch.stop();
         EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+        if (exchange.getUnitOfWork() != null) {
+          exchange.getUnitOfWork().done(exchange);
+        }
+        try {
+          uow.stop();
+        }
+ catch (        Exception e) {
+          LOG.warn("Exception occurred during stopping UnitOfWork for Exchange: " + exchange + ". This exception will be ignored.");
+        }
+        exchange.setUnitOfWork(null);
       }
       return exchange;
     }
