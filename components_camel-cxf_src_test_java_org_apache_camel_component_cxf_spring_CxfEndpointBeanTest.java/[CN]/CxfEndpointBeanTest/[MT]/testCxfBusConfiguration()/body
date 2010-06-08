@@ -1,19 +1,15 @@
 {
   CamelContext camelContext=(CamelContext)ctx.getBean("camel");
   ProducerTemplate template=camelContext.createProducerTemplate();
-  try {
-    template.send("cxf:bean:serviceEndpoint",new Processor(){
-      public void process(      final Exchange exchange){
-        final List<String> params=new ArrayList<String>();
-        params.add("hello");
-        exchange.getIn().setBody(params);
-        exchange.getIn().setHeader(CxfConstants.OPERATION_NAME,"echo");
-      }
+  Exchange reply=template.request("cxf:bean:serviceEndpoint",new Processor(){
+    public void process(    final Exchange exchange){
+      final List<String> params=new ArrayList<String>();
+      params.add("hello");
+      exchange.getIn().setBody(params);
+      exchange.getIn().setHeader(CxfConstants.OPERATION_NAME,"echo");
     }
+  }
 );
-    fail("should get the exception here");
-  }
- catch (  RuntimeCamelException ex) {
-    assertTrue("Should get the fault here ",ex.getCause() instanceof org.apache.cxf.interceptor.Fault);
-  }
+  Exception ex=reply.getException();
+  assertTrue("Should get the fault here",ex instanceof org.apache.cxf.interceptor.Fault);
 }
