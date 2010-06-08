@@ -1,21 +1,7 @@
 {
-  if (ObjectHelper.isEqualToAny(expression,"body","in.body")) {
-    return ExpressionBuilder.bodyExpression();
-  }
- else   if (ObjectHelper.equal(expression,"out.body")) {
-    return ExpressionBuilder.outBodyExpression();
-  }
- else   if (ObjectHelper.equal(expression,"id")) {
-    return ExpressionBuilder.messageIdExpression();
-  }
- else   if (ObjectHelper.equal(expression,"exchangeId")) {
-    return ExpressionBuilder.exchangeIdExpression();
-  }
- else   if (ObjectHelper.equal(expression,"exception.message")) {
-    return ExpressionBuilder.exchangeExceptionMessageExpression();
-  }
- else   if (ObjectHelper.equal(expression,"threadName")) {
-    return ExpressionBuilder.threadNameExpression();
+  Expression answer=createSimpleExpressionDirectly(expression);
+  if (answer != null) {
+    return answer;
   }
   String remainder=ifStartsWithReturnRemainder("bodyAs",expression);
   if (remainder != null) {
@@ -35,6 +21,14 @@
       throw new ExpressionIllegalSyntaxException("Valid syntax: ${body.OGNL} was: " + expression);
     }
     return ExpressionBuilder.bodyOgnlExpression(remainder);
+  }
+  remainder=ifStartsWithReturnRemainder("exception",expression);
+  if (remainder != null) {
+    boolean invalid=OgnlHelper.isInvalidValidOgnlExpression(remainder);
+    if (invalid) {
+      throw new ExpressionIllegalSyntaxException("Valid syntax: ${exception.OGNL} was: " + expression);
+    }
+    return ExpressionBuilder.exchangeExceptionOgnlExpression(remainder);
   }
   remainder=ifStartsWithReturnRemainder("in.headers",expression);
   if (remainder == null) {
