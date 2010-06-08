@@ -2,15 +2,10 @@
   final String url="bean-validator://x?group=javax.validation.groups.Default";
   final Car car=createCar("BMW",null);
   try {
-    template.request(url,new Processor(){
-      public void process(      Exchange exchange) throws Exception {
-        exchange.getIn().setBody(car);
-      }
-    }
-);
-    fail("RuntimeCamelException expected");
+    template.requestBody(url,car);
+    fail("should throw exception");
   }
- catch (  RuntimeCamelException e) {
+ catch (  CamelExecutionException e) {
     assertIsInstanceOf(BeanValidationException.class,e.getCause());
     BeanValidationException exception=(BeanValidationException)e.getCause();
     Set<ConstraintViolation<Object>> constraintViolations=exception.getConstraintViolations();
