@@ -1,12 +1,9 @@
 {
   String url="http4://" + getHostName() + ":"+ getPort()+ "/search";
   localServer.stop();
-  try {
-    template.request(url,null);
-    fail("Should have thrown an exception");
-  }
- catch (  RuntimeCamelException e) {
-    HttpHostConnectException cause=assertIsInstanceOf(HttpHostConnectException.class,e.getCause());
-    assertIsInstanceOf(ConnectException.class,cause.getCause());
-  }
+  Exchange reply=template.request(url,null);
+  Exception e=reply.getException();
+  assertNotNull("Should have thrown an exception",e);
+  HttpHostConnectException cause=assertIsInstanceOf(HttpHostConnectException.class,e);
+  assertIsInstanceOf(ConnectException.class,cause.getCause());
 }
