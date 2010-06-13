@@ -22,6 +22,9 @@ synchronized (CONNECTORS) {
       }
       server.addConnector(connector);
       connectorRef=new ConnectorRef(server,connector,createServletForConnector(server,connector,endpoint.getHandlers()));
+      if (endpoint.isSessionSupport()) {
+        enableSessionSupport(connectorRef.server,connectorKey);
+      }
       connectorRef.server.start();
       CONNECTORS.put(connectorKey,connectorRef);
     }
@@ -29,7 +32,7 @@ synchronized (CONNECTORS) {
       connectorRef.increment();
     }
     if (endpoint.isSessionSupport()) {
-      enableSessionSupport(connectorRef.server);
+      enableSessionSupport(connectorRef.server,connectorKey);
     }
     connectorRef.servlet.connect(consumer);
   }
