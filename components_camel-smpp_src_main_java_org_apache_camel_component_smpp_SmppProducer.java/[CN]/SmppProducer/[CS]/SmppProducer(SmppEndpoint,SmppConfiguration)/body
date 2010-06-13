@@ -1,4 +1,14 @@
 {
   super(endpoint);
-  this.configuration=configuration;
+  this.configuration=config;
+  this.sessionStateListener=new SessionStateListener(){
+    public void onStateChange(    SessionState newState,    SessionState oldState,    Object source){
+      if (newState.equals(SessionState.CLOSED)) {
+        LOG.warn("Loosing connection to: " + getEndpoint().getConnectionString() + " - trying to reconnect...");
+        closeSession(session);
+        reconnect(configuration.getInitialReconnectDelay());
+      }
+    }
+  }
+;
 }

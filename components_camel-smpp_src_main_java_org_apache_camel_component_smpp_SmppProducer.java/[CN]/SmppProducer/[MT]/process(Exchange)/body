@@ -2,19 +2,11 @@
   if (LOG.isDebugEnabled()) {
     LOG.debug("Sending a short message for exchange id '" + exchange.getExchangeId() + "'...");
   }
+  if (this.session == null) {
+    throw new IOException("Lost connection to " + getEndpoint().getConnectionString() + " and yet not reconnected");
+  }
   SubmitSm submitSm=getEndpoint().getBinding().createSubmitSm(exchange);
-  String messageId;
-  try {
-    messageId=doProcess(submitSm);
-  }
- catch (  Exception e) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Caught exception while trying to send short message for exchange id '" + exchange.getExchangeId() + "', retrying...",e);
-    }
-    doStop();
-    doStart();
-    messageId=doProcess(submitSm);
-  }
+  String messageId=session.submitShortMessage(submitSm.getServiceType(),TypeOfNumber.valueOf(submitSm.getSourceAddrTon()),NumberingPlanIndicator.valueOf(submitSm.getSourceAddrNpi()),submitSm.getSourceAddr(),TypeOfNumber.valueOf(submitSm.getDestAddrTon()),NumberingPlanIndicator.valueOf(submitSm.getDestAddrNpi()),submitSm.getDestAddress(),new ESMClass(),submitSm.getProtocolId(),submitSm.getPriorityFlag(),submitSm.getScheduleDeliveryTime(),submitSm.getValidityPeriod(),new RegisteredDelivery(submitSm.getRegisteredDelivery()),submitSm.getReplaceIfPresent(),new GeneralDataCoding(false,false,MessageClass.CLASS1,Alphabet.ALPHA_DEFAULT),(byte)0,submitSm.getShortMessage());
   if (LOG.isDebugEnabled()) {
     LOG.debug("Sent a short message for exchange id '" + exchange.getExchangeId() + "' and received message id '"+ messageId+ "'");
   }
