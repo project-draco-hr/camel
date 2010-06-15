@@ -1,16 +1,30 @@
 {
   boolean answer=super.connect(configuration);
   FtpsConfiguration config=(FtpsConfiguration)configuration;
-  if (answer && config.isUseSecureDataChannel()) {
+  if (answer) {
     try {
-      ObjectHelper.notEmpty(config.getExecProt(),"execProt",config);
-      if (log.isDebugEnabled()) {
-        log.debug("Secure data channel being initialized with execPbsz=" + config.getExecPbsz() + ", execPort="+ config.getExecProt());
+      String execProt=config.getExecProt();
+      Long execPbsz=config.getExecPbsz();
+      if (config.isUseSecureDataChannel()) {
+        if (ObjectHelper.isEmpty(execProt)) {
+          execProt="P";
+        }
+        if (ObjectHelper.isEmpty(execPbsz)) {
+          execPbsz=0L;
+        }
       }
-      if (config.getExecPbsz() != null) {
-        getFtpClient().execPBSZ(config.getExecPbsz());
+      if (execPbsz != null) {
+        if (log.isDebugEnabled()) {
+          log.debug("FTPClient initializing with execPbsz=" + execPbsz);
+        }
+        getFtpClient().execPBSZ(execPbsz);
       }
-      getFtpClient().execPROT(config.getExecProt());
+      if (execProt != null) {
+        if (log.isDebugEnabled()) {
+          log.debug("FTPClient initializing with execProt=" + execProt);
+        }
+        getFtpClient().execPROT(execProt);
+      }
     }
  catch (    SSLException e) {
       throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
