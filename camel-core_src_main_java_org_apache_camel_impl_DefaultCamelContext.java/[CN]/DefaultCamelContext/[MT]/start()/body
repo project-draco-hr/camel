@@ -7,76 +7,7 @@
   }
   super.start();
   LOG.debug("Starting routes...");
-synchronized (this) {
-    Map<Integer,DefaultRouteStartupOrder> inputs=new TreeMap<Integer,DefaultRouteStartupOrder>();
-    for (    RouteService routeService : routeServices.values()) {
-      Boolean autoStart=routeService.getRouteDefinition().isAutoStartup();
-      if (autoStart == null || autoStart) {
-        try {
-          Integer startupOrder=routeService.getRouteDefinition().getStartupOrder();
-          if (startupOrder == null) {
-            startupOrder=defaultRouteStartupOrder++;
-          }
-          Route route=routeService.getRoutes().iterator().next();
-          DefaultRouteStartupOrder holder=new DefaultRouteStartupOrder(startupOrder,route,routeService);
-          DefaultRouteStartupOrder other=inputs.get(startupOrder);
-          if (other != null) {
-            String otherId=other.getRoute().getId();
-            throw new FailedToStartRouteException(holder.getRoute().getId(),"startupOrder clash. Route " + otherId + " already has startupOrder "+ startupOrder+ " configured which this route have as well. Please correct startupOrder to be unique among all your routes.");
-          }
- else {
-            inputs.put(startupOrder,holder);
-          }
-        }
- catch (        FailedToStartRouteException e) {
-          throw e;
-        }
-catch (        Exception e) {
-          throw new FailedToStartRouteException(e);
-        }
-      }
- else {
-        LOG.info("Cannot start route " + routeService.getId() + " as it is configured with auto startup disabled.");
-      }
-    }
-    for (    Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
-      RouteService routeService=entry.getValue().getRouteService();
-      routeService.startInputs(false);
-      try {
-        routeService.start();
-      }
-  finally {
-        routeService.startInputs(true);
-      }
-    }
-    List<Endpoint> routeInputs=new ArrayList<Endpoint>();
-    for (    Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
-      Integer order=entry.getKey();
-      Route route=entry.getValue().getRoute();
-      RouteService routeService=entry.getValue().getRouteService();
-      for (      Consumer consumer : routeService.getInputs().values()) {
-        Endpoint endpoint=consumer.getEndpoint();
-        boolean multipleConsumersSupported=false;
-        if (endpoint instanceof MultipleConsumersSupport) {
-          multipleConsumersSupported=((MultipleConsumersSupport)endpoint).isMultipleConsumersSupported();
-        }
-        if (!multipleConsumersSupported && routeInputs.contains(endpoint)) {
-          throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
-        }
- else {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
-          }
-          for (          LifecycleStrategy strategy : lifecycleStrategies) {
-            strategy.onServiceAdd(this,consumer,route);
-          }
-          ServiceHelper.startService(consumer);
-          routeInputs.add(endpoint);
-          routeStartupOrder.add(entry.getValue());
-        }
-      }
-    }
-  }
+  safelyStartRouteServices(false,routeServices.values());
   for (int i=0; i < getRoutes().size(); i++) {
     Route route=getRoutes().get(i);
     LOG.info("Route: " + route.getId() + " started and consuming from: "+ route.getEndpoint());

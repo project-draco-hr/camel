@@ -1,0 +1,22 @@
+{
+  for (  Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
+    Integer order=entry.getKey();
+    Route route=entry.getValue().getRoute();
+    RouteService routeService=entry.getValue().getRouteService();
+    for (    Consumer consumer : routeService.getInputs().values()) {
+      Endpoint endpoint=consumer.getEndpoint();
+      if (!doCheckMultipleConsumerSupportClash(endpoint,routeInputs)) {
+        throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
+      }
+      for (      LifecycleStrategy strategy : lifecycleStrategies) {
+        strategy.onServiceAdd(this,consumer,route);
+      }
+      ServiceHelper.startService(consumer);
+      routeInputs.add(endpoint);
+      routeStartupOrder.add(entry.getValue());
+    }
+  }
+}
