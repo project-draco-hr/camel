@@ -1,5 +1,4 @@
 {
-  PackageScanClassResolver resolver=getContext().getPackageScanClassResolver();
   addPackageElementContentsToScanDefinition();
   PackageScanDefinition packageScanDef=getPackageScan();
   if (packageScanDef != null && packageScanDef.getPackages().size() > 0) {
@@ -12,8 +11,20 @@
       exclude=getContext().resolvePropertyPlaceholders(exclude);
       filter.addExcludePattern(exclude);
     }
-    resolver.addFilter(filter);
     String[] normalized=normalizePackages(getContext(),packageScanDef.getPackages());
-    findRouteBuilders(normalized,builders);
+    findRouteBuildersByPackageScan(normalized,filter,builders);
+  }
+  ContextScanDefinition contextScanDef=getContextScan();
+  if (contextScanDef != null) {
+    PatternBasedPackageScanFilter filter=new PatternBasedPackageScanFilter();
+    for (    String include : contextScanDef.getIncludes()) {
+      include=getContext().resolvePropertyPlaceholders(include);
+      filter.addIncludePattern(include);
+    }
+    for (    String exclude : contextScanDef.getExcludes()) {
+      exclude=getContext().resolvePropertyPlaceholders(exclude);
+      filter.addExcludePattern(exclude);
+    }
+    findRouteBuildersByContextScan(filter,builders);
   }
 }
