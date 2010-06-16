@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.addComponent("async",new MyAsyncComponent());
+      from("direct:start").handleFault().to("mock:before").to("log:before").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          beforeThreadName=Thread.currentThread().getName();
+        }
+      }
+).to("async:foo").to("log:after").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          afterThreadName=Thread.currentThread().getName();
+          exchange.getOut().setFault(true);
+          exchange.getOut().setBody("Faulty Bye Camel");
+        }
+      }
+).to("mock:after").to("mock:result");
+    }
+  }
+;
+}
