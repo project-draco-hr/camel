@@ -1,0 +1,46 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+  }
+  boolean sync=asyncProcessor.process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      if (sync) {
+        return;
+      }
+      Exchange nextExchange=exchange;
+      while (processors.hasNext()) {
+        AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
+        boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(nextExchange);
+        if (nextExchange.isFailed() || nextExchange.isRollbackOnly() || exceptionHandled) {
+          if (LOG.isDebugEnabled()) {
+            StringBuilder sb=new StringBuilder();
+            sb.append("Message exchange has failed so breaking out of pipeline: ").append(nextExchange);
+            if (nextExchange.isRollbackOnly()) {
+              sb.append(" Marked as rollback only.");
+            }
+            if (nextExchange.getException() != null) {
+              sb.append(" Exception: ").append(nextExchange.getException());
+            }
+            if (nextExchange.hasOut() && nextExchange.getOut().isFault()) {
+              sb.append(" Fault: ").append(nextExchange.getOut());
+            }
+            if (exceptionHandled) {
+              sb.append(" Handled by the error handler.");
+            }
+            LOG.debug(sb.toString());
+          }
+          break;
+        }
+        nextExchange=createNextExchange(nextExchange);
+        sync=process(original,nextExchange,callback,processors,processor);
+        if (!sync) {
+          return;
+        }
+      }
+      ExchangeHelper.copyResults(original,nextExchange);
+      callback.done(false);
+    }
+  }
+);
+  return sync;
+}

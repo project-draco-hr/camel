@@ -1,0 +1,23 @@
+{
+  if (!isStarted()) {
+    throw new IllegalStateException("WireTapProcessor has not been started: " + this);
+  }
+  executorService.submit(new Callable<Exchange>(){
+    public Exchange call() throws Exception {
+      return producerCache.doInProducer(destination,exchange,pattern,new ProducerCallback<Exchange>(){
+        public Exchange doInProducer(        Producer producer,        Exchange exchange,        ExchangePattern pattern) throws Exception {
+          exchange=configureExchange(exchange,pattern);
+          if (log.isDebugEnabled()) {
+            log.debug(">>>> (wiretap) " + destination + " "+ exchange);
+          }
+          producer.process(exchange);
+          return exchange;
+        }
+      }
+);
+    }
+  }
+);
+  callback.done(true);
+  return true;
+}

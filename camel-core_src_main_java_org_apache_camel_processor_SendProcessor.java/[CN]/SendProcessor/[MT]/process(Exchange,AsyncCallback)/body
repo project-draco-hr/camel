@@ -1,0 +1,15 @@
+{
+  if (!isStarted()) {
+    throw new IllegalStateException("SendProcessor has not been started: " + this);
+  }
+  return producerCache.doInAsyncProducer(destination,exchange,pattern,callback,new AsyncProducerCallback(){
+    public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    Exchange exchange,    ExchangePattern pattern,    AsyncCallback callback){
+      exchange=configureExchange(exchange,pattern);
+      if (log.isDebugEnabled()) {
+        log.debug(">>>> " + destination + " "+ exchange);
+      }
+      return asyncProducer.process(exchange,callback);
+    }
+  }
+);
+}

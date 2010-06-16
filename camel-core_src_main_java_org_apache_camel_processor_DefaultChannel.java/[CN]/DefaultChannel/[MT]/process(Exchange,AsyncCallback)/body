@@ -1,0 +1,20 @@
+{
+  Processor processor=getOutput();
+  if (processor == null || !continueProcessing(exchange)) {
+    return true;
+  }
+  if (exchange.getUnitOfWork() != null) {
+    exchange.getUnitOfWork().pushRouteContext(routeContext);
+  }
+  AsyncProcessor async=AsyncProcessorTypeConverter.convert(processor);
+  boolean sync=async.process(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (exchange.getUnitOfWork() != null) {
+        exchange.getUnitOfWork().popRouteContext();
+      }
+      callback.done(doneSync);
+    }
+  }
+);
+  return sync;
+}

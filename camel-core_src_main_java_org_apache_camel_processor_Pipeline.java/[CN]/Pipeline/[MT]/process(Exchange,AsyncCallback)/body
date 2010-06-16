@@ -1,0 +1,52 @@
+{
+  Iterator<Processor> processors=getProcessors().iterator();
+  Exchange nextExchange=exchange;
+  boolean first=true;
+  while (continueRouting(processors,nextExchange)) {
+    if (first) {
+      first=false;
+    }
+ else {
+      nextExchange=createNextExchange(nextExchange);
+    }
+    Processor processor=processors.next();
+    AsyncProcessor async=AsyncProcessorTypeConverter.convert(processor);
+    boolean sync=process(exchange,nextExchange,callback,processors,async);
+    if (!sync) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
+      }
+      return false;
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
+    }
+    boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(nextExchange);
+    if (nextExchange.isFailed() || nextExchange.isRollbackOnly() || exceptionHandled) {
+      if (LOG.isDebugEnabled()) {
+        StringBuilder sb=new StringBuilder();
+        sb.append("Message exchange has failed so breaking out of pipeline: ").append(nextExchange);
+        if (nextExchange.isRollbackOnly()) {
+          sb.append(" Marked as rollback only.");
+        }
+        if (nextExchange.getException() != null) {
+          sb.append(" Exception: ").append(nextExchange.getException());
+        }
+        if (nextExchange.hasOut() && nextExchange.getOut().isFault()) {
+          sb.append(" Fault: ").append(nextExchange.getOut());
+        }
+        if (exceptionHandled) {
+          sb.append(" Handled by the error handler.");
+        }
+        LOG.debug(sb.toString());
+      }
+      break;
+    }
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing complete for exchangeId: " + exchange.getExchangeId() + " >>> "+ nextExchange);
+  }
+  ExchangeHelper.copyResults(exchange,nextExchange);
+  callback.done(true);
+  return true;
+}

@@ -1,0 +1,37 @@
+{
+  Producer producer=doGetProducer(endpoint,true);
+  if (producer == null) {
+    if (isStopped()) {
+      LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
+      return false;
+    }
+ else {
+      throw new IllegalStateException("No producer, this processor has not been started: " + this);
+    }
+  }
+  StopWatch watch=null;
+  if (exchange != null) {
+    watch=new StopWatch();
+  }
+  try {
+    AsyncProcessor asyncProcessor=AsyncProcessorTypeConverter.convert(producer);
+    return producerCallback.doInAsyncProducer(producer,asyncProcessor,exchange,pattern,callback);
+  }
+  finally {
+    if (exchange != null) {
+      long timeTaken=watch.stop();
+      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+    }
+    if (producer instanceof ServicePoolAware) {
+      pool.release(endpoint,producer);
+    }
+ else     if (!producer.isSingleton()) {
+      try {
+        ServiceHelper.stopService(producer);
+      }
+ catch (      Exception e) {
+        LOG.warn("Error stopping producer: " + producer,e);
+      }
+    }
+  }
+}

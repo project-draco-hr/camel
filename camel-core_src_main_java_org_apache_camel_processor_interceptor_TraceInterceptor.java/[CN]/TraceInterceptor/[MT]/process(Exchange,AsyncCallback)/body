@@ -1,0 +1,80 @@
+{
+  if (!tracer.isEnabled() || (routeContext != null && !routeContext.isTracing())) {
+    return super.process(exchange,callback);
+  }
+  if (exchange.getProperty(Exchange.TRACE_EVENT,false,Boolean.class)) {
+    return super.process(exchange,callback);
+  }
+  boolean shouldLog=shouldLogNode(node) && shouldLogExchange(exchange);
+  boolean trace=true;
+  boolean sync=true;
+  try {
+    if (shouldLog) {
+      if (exchange.getUnitOfWork() != null) {
+        TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
+        if (node instanceof OnCompletionDefinition || node instanceof OnExceptionDefinition) {
+          trace=false;
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(OnCompletionDefinition.class,node)) {
+          traceOnCompletion(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(OnExceptionDefinition.class,node)) {
+          traceOnException(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(CatchDefinition.class,node)) {
+          traceDoCatch(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(FinallyDefinition.class,node)) {
+          traceDoFinally(traced,exchange);
+        }
+ else         if (ProcessorDefinitionHelper.isFirstChildOfType(AggregateDefinition.class,node)) {
+          traceAggregate(traced,exchange);
+        }
+ else {
+          traced.addTraced(new DefaultRouteNode(node,super.getProcessor()));
+        }
+      }
+ else {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Cannot trace as this Exchange does not have an UnitOfWork: " + exchange);
+        }
+      }
+    }
+    Object traceState=null;
+    if (shouldLog && trace) {
+      logExchange(exchange);
+      if (tracer.isTraceOutExchanges()) {
+        traceState=traceExchangeIn(exchange);
+      }
+ else {
+        traceExchange(exchange);
+      }
+    }
+    try {
+      if (node.getParent() instanceof InterceptDefinition && exchange.getUnitOfWork() != null) {
+        TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
+        traceIntercept((InterceptDefinition)node.getParent(),traced,exchange);
+      }
+      try {
+        sync=super.process(exchange,callback);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+    }
+  finally {
+      if (shouldLog && tracer.isTraceOutExchanges()) {
+        logExchange(exchange);
+        traceExchangeOut(exchange,traceState);
+      }
+    }
+  }
+ catch (  Exception e) {
+    if (shouldLogException(exchange)) {
+      logException(exchange,e);
+    }
+    exchange.setException(e);
+  }
+  callback.done(sync);
+  return sync;
+}

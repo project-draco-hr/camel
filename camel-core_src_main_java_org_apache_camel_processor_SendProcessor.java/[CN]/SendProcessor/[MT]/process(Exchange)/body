@@ -1,3 +1,16 @@
 {
-  doProcess(exchange);
+  if (!isStarted()) {
+    throw new IllegalStateException("SendProcessor has not been started: " + this);
+  }
+  producerCache.doInProducer(destination,exchange,pattern,new ProducerCallback<Exchange>(){
+    public Exchange doInProducer(    Producer producer,    Exchange exchange,    ExchangePattern pattern) throws Exception {
+      exchange=configureExchange(exchange,pattern);
+      if (log.isDebugEnabled()) {
+        log.debug(">>>> " + destination + " "+ exchange);
+      }
+      producer.process(exchange);
+      return exchange;
+    }
+  }
+);
 }
