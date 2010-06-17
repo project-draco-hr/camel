@@ -7,18 +7,8 @@
     boolean shouldRedeliver=shouldRedeliver(exchange,data);
     if (!shouldRedeliver) {
       Processor target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;
-      deliverToFailureProcessor(target,exchange,data);
-      prepareExchangeAfterFailure(exchange,data);
-      if (target != null) {
-        boolean deadLetterChannel=target == data.deadLetterProcessor && data.deadLetterProcessor != null;
-        EventHelper.notifyExchangeFailureHandled(exchange.getContext(),exchange,target,deadLetterChannel);
-      }
-      boolean shouldContinue=shouldContinue(exchange,data);
-      if (shouldContinue) {
-        prepareExchangeForContinue(exchange,data);
-      }
-      callback.done(data.sync);
-      return data.sync;
+      boolean sync=deliverToFailureProcessor(target,exchange,data,callback);
+      return sync;
     }
     if (shouldRedeliver && data.redeliveryCounter > 0) {
       prepareExchangeForRedelivery(exchange);
@@ -40,6 +30,7 @@
         }
         data.sync=false;
         if (!isDone(exchange)) {
+          log.debug("Not done continuing error handling asynchronously: " + exchange);
         }
  else {
           callback.done(sync);

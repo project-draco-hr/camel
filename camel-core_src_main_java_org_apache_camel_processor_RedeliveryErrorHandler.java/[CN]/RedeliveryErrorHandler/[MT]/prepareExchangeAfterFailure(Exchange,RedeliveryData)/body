@@ -15,19 +15,24 @@
     }
     return;
   }
-  Predicate handledPredicate=data.handledPredicate;
-  if (handledPredicate == null || !handledPredicate.matches(exchange)) {
-    if (log.isDebugEnabled()) {
-      log.debug("This exchange is not handled so its marked as failed: " + exchange);
-    }
-    exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.FALSE);
-    exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
-    exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
-  }
- else {
+  if (shouldHandled(exchange,data)) {
     if (log.isDebugEnabled()) {
       log.debug("This exchange is handled so its marked as not failed: " + exchange);
     }
     exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.TRUE);
+  }
+ else   if (shouldContinue(exchange,data)) {
+    if (log.isDebugEnabled()) {
+      log.debug("This exchange is continued: " + exchange);
+    }
+    prepareExchangeForContinue(exchange,data);
+  }
+ else {
+    if (log.isDebugEnabled()) {
+      log.debug("This exchange is not handled or continued so its marked as failed: " + exchange);
+    }
+    exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.FALSE);
+    exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+    exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
   }
 }
