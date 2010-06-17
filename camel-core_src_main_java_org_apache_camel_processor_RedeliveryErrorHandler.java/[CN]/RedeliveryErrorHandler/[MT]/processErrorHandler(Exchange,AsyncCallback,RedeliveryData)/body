@@ -1,5 +1,12 @@
 {
   while (true) {
+    if (!isRunAllowed()) {
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      callback.done(data.sync);
+      return data.sync;
+    }
     boolean handle=shouldHandleException(exchange);
     if (handle) {
       handleException(exchange,data);
@@ -29,12 +36,11 @@
           return;
         }
         data.sync=false;
-        if (!isDone(exchange)) {
-          log.debug("Not done continuing error handling asynchronously: " + exchange);
-        }
- else {
+        if (isDone(exchange)) {
           callback.done(sync);
+          return;
         }
+        processAsyncErrorHandler(exchange,callback,data);
       }
     }
 );

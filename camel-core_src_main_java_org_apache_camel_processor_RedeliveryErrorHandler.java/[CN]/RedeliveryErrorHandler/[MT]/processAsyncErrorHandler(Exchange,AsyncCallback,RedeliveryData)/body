@@ -1,0 +1,46 @@
+{
+  if (!isRunAllowed()) {
+    if (exchange.getException() == null) {
+      exchange.setException(new RejectedExecutionException());
+    }
+    callback.done(data.sync);
+    return;
+  }
+  boolean handle=shouldHandleException(exchange);
+  if (handle) {
+    handleException(exchange,data);
+  }
+  boolean shouldRedeliver=shouldRedeliver(exchange,data);
+  if (!shouldRedeliver) {
+    Processor target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;
+    deliverToFailureProcessor(target,exchange,data,callback);
+    return;
+  }
+  if (shouldRedeliver && data.redeliveryCounter > 0) {
+    prepareExchangeForRedelivery(exchange);
+    try {
+      data.redeliveryDelay=data.currentRedeliveryPolicy.sleep(data.redeliveryDelay,data.redeliveryCounter);
+    }
+ catch (    InterruptedException e) {
+      if (log.isDebugEnabled()) {
+        log.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
+      }
+      return;
+    }
+    deliverToRedeliveryProcessor(exchange,data);
+  }
+  outputAsync.process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      if (sync) {
+        return;
+      }
+      data.sync=false;
+      if (isDone(exchange)) {
+        callback.done(sync);
+        return;
+      }
+      processAsyncErrorHandler(exchange,callback,data);
+    }
+  }
+);
+}
