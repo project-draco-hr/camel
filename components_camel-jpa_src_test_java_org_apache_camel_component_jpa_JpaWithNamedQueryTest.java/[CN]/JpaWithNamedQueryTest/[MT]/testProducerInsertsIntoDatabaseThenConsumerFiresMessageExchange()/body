@@ -32,10 +32,7 @@
   consumer.start();
   boolean received=latch.await(50,TimeUnit.SECONDS);
   assertTrue("Did not receive the message!",received);
-  assertNotNull(receivedExchange);
-  MultiSteps result=receivedExchange.getIn().getBody(MultiSteps.class);
-  assertNotNull("Received a POJO",result);
-  assertEquals("address property","foo@bar.com",result.getAddress());
+  assertReceivedResult(receivedExchange);
   Thread.sleep(1000);
   transactionStrategy.execute(new JpaCallback(){
     @SuppressWarnings("unchecked") public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
@@ -46,7 +43,7 @@
         LOG.info("entity: " + counter++ + " = "+ row);
         if (row.getAddress().equals("foo@bar.com")) {
           LOG.info("Found updated row: " + row);
-          assertEquals("Updated row step for: " + row,2,row.getStep());
+          assertEquals("Updated row step for: " + row,getUpdatedStepValue(),row.getStep());
         }
  else {
           assertEquals("dummy row step for: " + row,4,row.getStep());
@@ -57,5 +54,5 @@
   }
 );
   JpaConsumer jpaConsumer=(JpaConsumer)consumer;
-  assertEquals("step1",jpaConsumer.getNamedQuery());
+  assertURIQueryOption(jpaConsumer);
 }
