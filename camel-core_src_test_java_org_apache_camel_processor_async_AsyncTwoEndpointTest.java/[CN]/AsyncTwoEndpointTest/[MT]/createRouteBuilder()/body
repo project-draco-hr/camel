@@ -2,12 +2,17 @@
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
       context.addComponent("async",new MyAsyncComponent());
-      from("direct:start").delayer(100).to("mock:before").to("log:before").process(new Processor(){
+      from("direct:start").to("mock:before").to("log:before").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           beforeThreadName=Thread.currentThread().getName();
         }
       }
-).to("async:Bye Camel").process(new Processor(){
+).to("async:Hi Camel").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          middleThreadName=Thread.currentThread().getName();
+        }
+      }
+).to("log:middle").to("mock:middle").to("async:Bye Camel").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           afterThreadName=Thread.currentThread().getName();
         }
