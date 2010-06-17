@@ -1,0 +1,65 @@
+{
+  int pos=1;
+  int counterMandatoryFields=0;
+  DataField dataField;
+  StringBuilder result=new StringBuilder();
+  String token;
+  int offset;
+  int length;
+  Field field;
+  String pattern;
+  Collection c=dataFields.values();
+  Iterator itr=c.iterator();
+  while (itr.hasNext()) {
+    dataField=(DataField)itr.next();
+    offset=dataField.pos();
+    length=dataField.length();
+    ObjectHelper.notNull(offset,"Position/offset is not defined for  the  field " + dataField.toString());
+    ObjectHelper.notNull(offset,"Length is not defined for the  field " + dataField.toString());
+    if (offset - 1 <= -1) {
+      throw new IllegalArgumentException("Offset / Position of the field " + dataField.toString() + " cannot be negative !");
+    }
+    token=record.substring(offset - 1,offset + length - 1);
+    if (dataField.required()) {
+      ++counterMandatoryFields;
+      if (token.equals("")) {
+        throw new IllegalArgumentException("The mandatory field defined at the position " + pos + " is empty for the line : "+ line);
+      }
+    }
+    field=annotedFields.get(offset);
+    field.setAccessible(true);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Pos/Offset : " + offset + ", Data : "+ token+ ", Field type : "+ field.getType());
+    }
+    Format<?> format;
+    pattern=dataField.pattern();
+    format=FormatFactory.getFormat(field.getType(),pattern,dataField.precision());
+    Object modelField=model.get(field.getDeclaringClass().getName());
+    Object value=null;
+    if (!token.equals("")) {
+      try {
+        value=format.parse(token);
+      }
+ catch (      FormatException ie) {
+        throw new IllegalArgumentException(ie.getMessage() + ", position : " + offset+ ", line : "+ line,ie);
+      }
+catch (      Exception e) {
+        throw new IllegalArgumentException("Parsing error detected for field defined at the position/offset : " + offset + ", line : "+ line,e);
+      }
+    }
+ else {
+      value=getDefaultValueForPrimitive(field.getType());
+    }
+    field.set(modelField,value);
+    ++pos;
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Counter mandatory fields : " + counterMandatoryFields);
+  }
+  if (pos < totalFields) {
+    throw new IllegalArgumentException("Some fields are missing (optional or mandatory), line : " + line);
+  }
+  if (counterMandatoryFields < numberMandatoryFields) {
+    throw new IllegalArgumentException("Some mandatory fields are missing, line : " + line);
+  }
+}

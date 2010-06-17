@@ -1,0 +1,26 @@
+{
+  BindyFixedLengthFactory factory=getFactory(exchange.getContext().getPackageScanClassResolver());
+  ObjectHelper.notNull(factory,"not instantiated");
+  byte[] bytesCRLF=Converter.getByteReturn(factory.getCarriageReturn());
+  List<Map<String,Object>> models;
+  if (exchange.getContext().getTypeConverter().convertTo(List.class,body) == null) {
+    models=new ArrayList<Map<String,Object>>();
+    Iterator it=ObjectHelper.createIterator(body);
+    while (it.hasNext()) {
+      Object model=it.next();
+      String name=model.getClass().getName();
+      Map<String,Object> row=new HashMap<String,Object>();
+      row.put(name,body);
+      models.add(row);
+    }
+  }
+ else {
+    models=(List<Map<String,Object>>)body;
+  }
+  for (  Map<String,Object> model : models) {
+    String result=factory.unbind(model);
+    byte[] bytes=exchange.getContext().getTypeConverter().convertTo(byte[].class,exchange,result);
+    outputStream.write(bytes);
+    outputStream.write(bytesCRLF);
+  }
+}
