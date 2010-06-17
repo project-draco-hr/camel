@@ -1,0 +1,25 @@
+{
+  prepareExchangeForRedelivery(exchange);
+  deliverToRedeliveryProcessor(exchange,data);
+  if (log.isTraceEnabled()) {
+    log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " -> "+ outputAsync+ " for Exchange: "+ exchange);
+  }
+  boolean sync=outputAsync.process(exchange,new AsyncCallback(){
+    public void done(    boolean sync){
+      if (log.isTraceEnabled()) {
+        log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " done");
+      }
+      if (sync) {
+        return;
+      }
+      data.sync=false;
+      if (isDone(exchange)) {
+        callback.done(sync);
+        return;
+      }
+      processAsyncErrorHandler(exchange,callback,data);
+    }
+  }
+);
+  return sync;
+}
