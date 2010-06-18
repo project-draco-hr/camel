@@ -1,0 +1,31 @@
+{
+  if (shouldFailOver(exchange)) {
+    attempts++;
+    if (maximumFailoverAttempts > -1 && attempts > maximumFailoverAttempts) {
+      if (log.isDebugEnabled()) {
+        log.debug("Braking out of failover after " + attempts + " failover attempts");
+      }
+      callback.done(false);
+    }
+    index++;
+    counter++;
+    if (index >= processors.size()) {
+      if (isRoundRobin()) {
+        log.debug("Failover is round robin enabled and therefore starting from the first endpoint");
+        index=0;
+        counter=0;
+      }
+ else {
+        log.debug("Braking out of failover as we reach the end of endpoints to use for failover");
+        callback.done(false);
+      }
+    }
+    prepareExchangeForFailover(exchange);
+    Processor processor=processors.get(index);
+    AsyncProcessor albp=AsyncProcessorTypeConverter.convert(processor);
+    albp.process(exchange,this);
+  }
+ else {
+    callback.done(doneSync);
+  }
+}
