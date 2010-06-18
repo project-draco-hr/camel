@@ -40,7 +40,12 @@
       if (log.isTraceEnabled()) {
         log.trace("Waiting for task to complete using timeout (ms): " + timeout + " at ["+ endpoint.getEndpointUri()+ "]");
       }
-      boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
+      boolean done=false;
+      try {
+        done=latch.await(timeout,TimeUnit.MILLISECONDS);
+      }
+ catch (      InterruptedException e) {
+      }
       if (!done) {
         exchange.setException(new ExchangeTimedOutException(exchange,timeout));
         latch.countDown();
@@ -50,10 +55,16 @@
       if (log.isTraceEnabled()) {
         log.trace("Waiting for task to complete (blocking) at [" + endpoint.getEndpointUri() + "]");
       }
-      latch.await();
+      try {
+        latch.await();
+      }
+ catch (      InterruptedException e) {
+      }
     }
   }
  else {
     queue.add(copy);
   }
+  callback.done(true);
+  return true;
 }
