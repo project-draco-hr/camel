@@ -1,0 +1,56 @@
+{
+  String result="";
+  for (  Field field : clazz.getDeclaredFields()) {
+    field.setAccessible(true);
+    DataField datafield=field.getAnnotation(DataField.class);
+    if (datafield != null) {
+      if (obj != null) {
+        Class type=field.getType();
+        String pattern=datafield.pattern();
+        int precision=datafield.precision();
+        Format format=FormatFactory.getFormat(type,pattern,precision);
+        Object value=field.get(obj);
+        result=formatString(format,value);
+        int fieldLength=datafield.length();
+        String align=datafield.align();
+        if (fieldLength > 0) {
+          StringBuilder temp=new StringBuilder();
+          if (result.length() < fieldLength) {
+            if (align.contains("R")) {
+              temp.append(generatePaddingChars(paddingChar,fieldLength,result.length()));
+              temp.append(result);
+            }
+ else             if (align.contains("L")) {
+              temp.append(result);
+              temp.append(generatePaddingChars(paddingChar,fieldLength,result.length()));
+            }
+ else {
+              throw new IllegalArgumentException("Alignement for the " + field.getName() + " must be equal to R for RIGHT or L for LEFT !");
+            }
+            result=temp.toString();
+          }
+        }
+ else {
+          throw new IllegalArgumentException("Lenght of the field : " + field.getName() + " is a mandatory field and cannot be equal to zero or to be negative !");
+        }
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Value to be formatted : " + value + ", position : "+ datafield.pos()+ ", and its formated value : "+ result);
+        }
+      }
+ else {
+        result="";
+      }
+      Integer key;
+      key=datafield.pos();
+      if (!results.containsKey(key)) {
+        List list=new LinkedList();
+        list.add(result);
+        results.put(key,list);
+      }
+ else {
+        List list=(LinkedList)results.get(key);
+        list.add(result);
+      }
+    }
+  }
+}
