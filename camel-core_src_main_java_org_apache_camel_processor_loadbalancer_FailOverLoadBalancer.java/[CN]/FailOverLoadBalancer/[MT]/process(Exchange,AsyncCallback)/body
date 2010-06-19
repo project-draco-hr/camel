@@ -4,61 +4,24 @@
   if (processors.isEmpty()) {
     throw new IllegalStateException("No processors available to process " + exchange);
   }
-  int index=0;
-  int attempts=0;
+  final AtomicInteger index=new AtomicInteger();
+  final AtomicInteger attempts=new AtomicInteger();
   if (isRoundRobin()) {
-    if (++counter >= processors.size()) {
-      counter=0;
+    if (counter.incrementAndGet() >= processors.size()) {
+      counter.set(0);
     }
-    index=counter;
+    index.set(counter.get());
   }
   if (log.isDebugEnabled()) {
     log.debug("Failover starting with endpoint index " + index);
   }
-  Processor processor=processors.get(index);
+  Processor processor=processors.get(index.get());
   sync=processExchange(processor,exchange,attempts,index,callback,processors);
   if (!sync) {
     if (log.isTraceEnabled()) {
       log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
     }
     return false;
-  }
-  if (log.isTraceEnabled()) {
-    log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
-  }
-  while (shouldFailOver(exchange)) {
-    attempts++;
-    if (maximumFailoverAttempts > -1 && attempts > maximumFailoverAttempts) {
-      if (log.isDebugEnabled()) {
-        log.debug("Braking out of failover after " + attempts + " failover attempts");
-      }
-      break;
-    }
-    index++;
-    counter++;
-    if (index >= processors.size()) {
-      if (isRoundRobin()) {
-        log.debug("Failover is round robin enabled and therefore starting from the first endpoint");
-        index=0;
-        counter=0;
-      }
- else {
-        log.debug("Braking out of failover as we reach the end of endpoints to use for failover");
-        break;
-      }
-    }
-    prepareExchangeForFailover(exchange);
-    processor=processors.get(index);
-    sync=processExchange(processor,exchange,attempts,index,callback,processors);
-    if (!sync) {
-      if (log.isTraceEnabled()) {
-        log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
-      }
-      return false;
-    }
-    if (log.isTraceEnabled()) {
-      log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
-    }
   }
   callback.done(true);
   return true;
