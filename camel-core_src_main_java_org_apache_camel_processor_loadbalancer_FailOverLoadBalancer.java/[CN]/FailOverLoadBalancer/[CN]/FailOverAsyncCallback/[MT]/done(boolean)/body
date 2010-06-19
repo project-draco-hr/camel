@@ -1,12 +1,14 @@
 {
-  if (shouldFailOver(exchange)) {
+  if (doneSync) {
+    return;
+  }
+  while (shouldFailOver(exchange)) {
     attempts.incrementAndGet();
     if (maximumFailoverAttempts > -1 && attempts.get() > maximumFailoverAttempts) {
       if (log.isDebugEnabled()) {
         log.debug("Braking out of failover after " + attempts + " failover attempts");
       }
-      callback.done(doneSync);
-      return;
+      break;
     }
     index.incrementAndGet();
     counter.incrementAndGet();
@@ -18,16 +20,18 @@
       }
  else {
         log.debug("Braking out of failover as we reach the end of endpoints to use for failover");
-        callback.done(doneSync);
-        return;
+        break;
       }
     }
     prepareExchangeForFailover(exchange);
     Processor processor=processors.get(index.get());
-    AsyncProcessor albp=AsyncProcessorTypeConverter.convert(processor);
-    albp.process(exchange,this);
+    doneSync=processExchange(processor,exchange,attempts,index,callback,processors);
+    if (!doneSync) {
+      if (log.isTraceEnabled()) {
+        log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
+      }
+      return;
+    }
   }
- else {
-    callback.done(doneSync);
-  }
+  callback.done(false);
 }
