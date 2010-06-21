@@ -6,11 +6,19 @@
   RequestEntity answer=in.getBody(RequestEntity.class);
   if (answer == null) {
     try {
-      String data=in.getBody(String.class);
+      Object data=in.getBody();
       if (data != null) {
         String contentType=ExchangeHelper.getContentType(exchange);
-        String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
-        answer=new StringRequestEntity(data,contentType,charset);
+        if (data instanceof File) {
+          answer=new FileRequestEntity((File)data,contentType);
+        }
+ else         if (data instanceof String) {
+          String charset=IOConverter.getCharsetName(exchange);
+          answer=new StringRequestEntity((String)data,contentType,charset);
+        }
+ else {
+          answer=new InputStreamRequestEntity(in.getBody(InputStream.class),contentType);
+        }
       }
     }
  catch (    UnsupportedEncodingException e) {
