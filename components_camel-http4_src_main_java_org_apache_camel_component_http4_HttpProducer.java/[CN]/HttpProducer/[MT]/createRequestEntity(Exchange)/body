@@ -6,17 +6,25 @@
   HttpEntity answer=in.getBody(HttpEntity.class);
   if (answer == null) {
     try {
-      String data=in.getBody(String.class);
+      Object data=in.getBody();
       if (data != null) {
         String contentType=ExchangeHelper.getContentType(exchange);
-        String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
-        if (charset == null) {
-          charset=HTTP.DEFAULT_CONTENT_CHARSET;
+        if (data instanceof File) {
+          answer=new FileEntity((File)data,contentType);
         }
-        answer=new StringEntity(data,charset);
-        ((StringEntity)answer).setContentEncoding(charset);
-        if (contentType != null) {
-          ((StringEntity)answer).setContentType(contentType);
+ else         if (data instanceof String) {
+          String charset=IOConverter.getCharsetName(exchange);
+          answer=new StringEntity((String)data,charset);
+          ((StringEntity)answer).setContentEncoding(charset);
+          if (contentType != null) {
+            ((StringEntity)answer).setContentType(contentType);
+          }
+        }
+ else {
+          answer=new InputStreamEntity(in.getBody(InputStream.class),-1);
+          if (contentType != null) {
+            ((InputStreamEntity)answer).setContentType(contentType);
+          }
         }
       }
     }
