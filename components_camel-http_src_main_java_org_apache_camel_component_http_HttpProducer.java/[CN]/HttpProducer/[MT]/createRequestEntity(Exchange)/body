@@ -9,15 +9,19 @@
       Object data=in.getBody();
       if (data != null) {
         String contentType=ExchangeHelper.getContentType(exchange);
-        if (data instanceof File) {
-          answer=new FileRequestEntity((File)data,contentType);
+        if (data instanceof File || data instanceof GenericFile) {
+          File file=in.getBody(File.class);
+          if (file != null) {
+            answer=new FileRequestEntity(file,contentType);
+          }
         }
  else         if (data instanceof String) {
-          String charset=IOConverter.getCharsetName(exchange);
+          String charset=IOConverter.getCharsetName(exchange,false);
           answer=new StringRequestEntity((String)data,contentType,charset);
         }
- else {
-          answer=new InputStreamRequestEntity(in.getBody(InputStream.class),contentType);
+        if (answer == null) {
+          InputStream is=in.getMandatoryBody(InputStream.class);
+          answer=new InputStreamRequestEntity(is,contentType);
         }
       }
     }

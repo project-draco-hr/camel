@@ -9,18 +9,21 @@
       Object data=in.getBody();
       if (data != null) {
         String contentType=ExchangeHelper.getContentType(exchange);
-        if (data instanceof File) {
-          answer=new FileEntity((File)data,contentType);
+        if (data instanceof File || data instanceof GenericFile) {
+          File file=in.getBody(File.class);
+          if (file != null) {
+            answer=new FileEntity(file,contentType);
+          }
         }
  else         if (data instanceof String) {
-          String charset=IOConverter.getCharsetName(exchange);
+          String charset=IOConverter.getCharsetName(exchange,false);
           answer=new StringEntity((String)data,charset);
-          ((StringEntity)answer).setContentEncoding(charset);
           if (contentType != null) {
             ((StringEntity)answer).setContentType(contentType);
           }
         }
- else {
+        if (answer == null) {
+          InputStream is=in.getMandatoryBody(InputStream.class);
           answer=new InputStreamEntity(in.getBody(InputStream.class),-1);
           if (contentType != null) {
             ((InputStreamEntity)answer).setContentType(contentType);
