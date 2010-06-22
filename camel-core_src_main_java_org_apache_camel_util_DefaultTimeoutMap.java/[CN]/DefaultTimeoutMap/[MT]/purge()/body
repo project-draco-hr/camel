@@ -27,14 +27,18 @@
         }
       }
 );
+      List<K> evicts=new ArrayList<K>(expired.size());
       try {
         for (        TimeoutMapEntry<K,V> entry : expired) {
-          onEviction(entry.getKey(),entry.getValue());
+          boolean evict=onEviction(entry.getKey(),entry.getValue());
+          if (evict) {
+            evicts.add(entry.getKey());
+          }
         }
       }
   finally {
-        for (        TimeoutMapEntry<K,V> entry : expired) {
-          map.remove(entry.getKey());
+        for (        K key : evicts) {
+          map.remove(key);
         }
       }
     }

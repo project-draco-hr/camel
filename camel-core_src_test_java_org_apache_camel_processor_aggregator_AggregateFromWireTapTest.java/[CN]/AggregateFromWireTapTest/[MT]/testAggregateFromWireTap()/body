@@ -2,8 +2,10 @@
   MockEndpoint end=getMockEndpoint("mock:end");
   end.expectedBodiesReceived("A","B");
   MockEndpoint aggregated=getMockEndpoint("mock:aggregated");
-  aggregated.expectedBodiesReceived("AB");
+  aggregated.expectedMessageCount(1);
   template.sendBody("direct:start","A");
   template.sendBody("direct:start","B");
   assertMockEndpointsSatisfied();
+  String body=aggregated.getReceivedExchanges().get(0).getIn().getBody(String.class);
+  assertTrue("Should be AB or BA, was: " + body,"AB".equals(body) || "BA".equals(body));
 }
