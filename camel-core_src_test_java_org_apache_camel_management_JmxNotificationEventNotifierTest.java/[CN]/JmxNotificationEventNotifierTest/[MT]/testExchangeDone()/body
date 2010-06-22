@@ -1,0 +1,15 @@
+{
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=eventnotifiers,name=JmxEventNotifier");
+  MyNotificationListener listener=new MyNotificationListener();
+  context.getManagementStrategy().getManagementAgent().getMBeanServer().addNotificationListener(on,listener,new NotificationFilter(){
+    public boolean isNotificationEnabled(    Notification notification){
+      return true;
+    }
+  }
+,null);
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals("Get a wrong number of events",5,listener.getEventCounter());
+  context.stop();
+}
