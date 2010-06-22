@@ -2,13 +2,6 @@
   if (log.isDebugEnabled()) {
     log.debug("Completion timeout triggered for correlation key: " + key);
   }
-  boolean arrived=arrivedCorrelationKeys.contains(key);
-  if (arrived) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("A new Exchange with correlation key: " + key + " has just arrived,"+ " which postpones the timeout condition for aggregated exchange id: "+ exchangeId);
-    }
-    return false;
-  }
   boolean inProgress=inProgressCompleteExchanges.contains(exchangeId);
   if (inProgress) {
     if (LOG.isTraceEnabled()) {
@@ -17,7 +10,9 @@
     return true;
   }
   Exchange answer=aggregationRepository.get(camelContext,key);
-  answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"timeout");
-  onCompletion(key,answer,true);
+  if (answer != null) {
+    answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"timeout");
+    onCompletion(key,answer,true);
+  }
   return true;
 }

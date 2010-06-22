@@ -4,7 +4,9 @@
   }
   long now=currentTime();
   List<TimeoutMapEntry<K,V>> expired=new ArrayList<TimeoutMapEntry<K,V>>();
-  lock.lock();
+  if (useLock) {
+    lock.lock();
+  }
   try {
     for (    Map.Entry<K,TimeoutMapEntry<K,V>> entry : map.entrySet()) {
       if (entry.getValue().getExpireTime() < now) {
@@ -44,6 +46,8 @@
     }
   }
   finally {
-    lock.unlock();
+    if (useLock) {
+      lock.unlock();
+    }
   }
 }
