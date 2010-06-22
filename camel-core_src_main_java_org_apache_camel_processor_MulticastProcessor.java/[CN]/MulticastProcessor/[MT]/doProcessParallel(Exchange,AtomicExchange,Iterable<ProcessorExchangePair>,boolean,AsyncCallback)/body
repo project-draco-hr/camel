@@ -1,0 +1,45 @@
+{
+  final CompletionService<Exchange> completion;
+  final AtomicBoolean running=new AtomicBoolean(true);
+  if (streaming) {
+    completion=new ExecutorCompletionService<Exchange>(executorService);
+  }
+ else {
+    completion=new SubmitOrderedCompletionService<Exchange>(executorService);
+  }
+  final AtomicInteger total=new AtomicInteger(0);
+  final Iterator<ProcessorExchangePair> it=pairs.iterator();
+  while (it.hasNext()) {
+    final ProcessorExchangePair pair=it.next();
+    final Exchange subExchange=pair.getExchange();
+    updateNewExchange(subExchange,total.intValue(),pairs);
+    completion.submit(new Callable<Exchange>(){
+      public Exchange call() throws Exception {
+        if (!running.get()) {
+          return subExchange;
+        }
+        doProcess(original,result,it,pair,callback);
+        if (stopOnException && subExchange.getException() != null) {
+          running.set(false);
+          throw new CamelExchangeException("Parallel processing failed for number " + total.intValue(),subExchange,subExchange.getException());
+        }
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Parallel processing complete for exchange: " + subExchange);
+        }
+        return subExchange;
+      }
+    }
+);
+    total.incrementAndGet();
+  }
+  for (int i=0; i < total.intValue(); i++) {
+    Future<Exchange> future=completion.take();
+    Exchange subExchange=future.get();
+    if (aggregationStrategy != null) {
+      doAggregate(result,subExchange);
+    }
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Done parallel processing " + total + " exchanges");
+  }
+}

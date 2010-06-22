@@ -1,0 +1,27 @@
+{
+  boolean sync=true;
+  final AtomicExchange result=new AtomicExchange();
+  final Iterable<ProcessorExchangePair> pairs;
+  try {
+    pairs=createProcessorExchangePairs(exchange);
+    if (isParallelProcessing()) {
+      ObjectHelper.notNull(executorService,"executorService",this);
+      doProcessParallel(exchange,result,pairs,isStreaming(),callback);
+    }
+ else {
+      sync=doProcessSequential(exchange,result,pairs,callback);
+    }
+    if (!sync) {
+      return false;
+    }
+    if (result.get() != null) {
+      ExchangeHelper.copyResults(exchange,result.get());
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
+    exchange.setException(e);
+  }
+  callback.done(true);
+  return true;
+}

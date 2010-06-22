@@ -1,31 +1,7 @@
 {
-  Iterator<Object> iter=ObjectHelper.createIterator(recipientList,delimiter);
-  Map<Endpoint,Producer> producers=new LinkedHashMap<Endpoint,Producer>();
-  try {
-    List<Processor> processors=new ArrayList<Processor>();
-    while (iter.hasNext()) {
-      Object recipient=iter.next();
-      try {
-        Endpoint endpoint=resolveEndpoint(exchange,recipient);
-        Producer producer=producerCache.acquireProducer(endpoint);
-        processors.add(producer);
-        producers.put(endpoint,producer);
-      }
- catch (      Exception e) {
-        if (isIgnoreInvalidEndpoints()) {
-          LOG.info("Endpoint uri is invalid: " + recipient + ". This exception will be ignored.",e);
-        }
- else {
-          throw e;
-        }
-      }
-    }
-    MulticastProcessor mp=new MulticastProcessor(exchange.getContext(),processors,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),false,isStopOnException());
-    mp.process(exchange);
-  }
-  finally {
-    for (    Map.Entry<Endpoint,Producer> entry : producers.entrySet()) {
-      producerCache.releaseProducer(entry.getKey(),entry.getValue());
+  return sendToRecipientList(exchange,routingSlip,new AsyncCallback(){
+    public void done(    boolean doneSync){
     }
   }
+);
 }

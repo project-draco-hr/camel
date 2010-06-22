@@ -1,0 +1,15 @@
+{
+  Processor prepared=producer;
+  setToEndpoint(exchange,prepared);
+  if (exchange.getUnitOfWork() != null && exchange.getUnitOfWork().getRouteContext() != null) {
+    RouteContext routeContext=exchange.getUnitOfWork().getRouteContext();
+    ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
+    try {
+      prepared=builder.createErrorHandler(routeContext,prepared);
+    }
+ catch (    Exception e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+  }
+  return new RecipientProcessorExchangePair(index,producerCache,endpoint,producer,prepared,exchange);
+}

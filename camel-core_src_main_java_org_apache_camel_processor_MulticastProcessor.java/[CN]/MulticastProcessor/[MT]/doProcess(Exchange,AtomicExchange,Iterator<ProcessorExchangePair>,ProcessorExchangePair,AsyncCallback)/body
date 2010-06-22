@@ -1,0 +1,75 @@
+{
+  boolean sync=true;
+  final Exchange exchange=pair.getExchange();
+  Processor processor=pair.getProcessor();
+  Producer producer=pair.getProducer();
+  TracedRouteNodes traced=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getTracedRouteNodes() : null;
+  StopWatch watch=null;
+  if (producer != null) {
+    watch=new StopWatch();
+  }
+  try {
+    if (traced != null) {
+      traced.pushBlock();
+    }
+    AsyncProcessor async=AsyncProcessorTypeConverter.convert(processor);
+    pair.begin();
+    sync=async.process(exchange,new AsyncCallback(){
+      public void done(      boolean doneSync){
+        pair.done();
+        if (doneSync) {
+          return;
+        }
+        Exchange subExchange=exchange;
+        int total=0;
+        while (it.hasNext()) {
+          if (stopOnException && exchange.getException() != null) {
+            exchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
+            callback.done(false);
+            return;
+          }
+          if (aggregationStrategy != null) {
+            doAggregate(result,subExchange);
+          }
+          if (it.hasNext()) {
+            ProcessorExchangePair pair=it.next();
+            subExchange=pair.getExchange();
+            updateNewExchange(subExchange,total,null);
+            boolean sync=doProcess(original,result,it,pair,callback);
+            if (!sync) {
+              if (LOG.isTraceEnabled()) {
+                LOG.trace("Processing exchangeId: " + original.getExchangeId() + " is continued being processed asynchronously");
+              }
+              return;
+            }
+            total++;
+          }
+        }
+        if (stopOnException && exchange.getException() != null) {
+          exchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
+          callback.done(false);
+          return;
+        }
+        if (aggregationStrategy != null) {
+          doAggregate(result,subExchange);
+        }
+        if (result.get() != null) {
+          ExchangeHelper.copyResults(original,result.get());
+        }
+        callback.done(false);
+      }
+    }
+);
+  }
+  finally {
+    if (traced != null) {
+      traced.popBlock();
+    }
+    if (producer != null) {
+      long timeTaken=watch.stop();
+      Endpoint endpoint=producer.getEndpoint();
+      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+    }
+  }
+  return sync;
+}

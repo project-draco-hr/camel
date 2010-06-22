@@ -1,0 +1,25 @@
+{
+  List<ProcessorExchangePair> result=new ArrayList<ProcessorExchangePair>();
+  int index=0;
+  while (iter.hasNext()) {
+    Object recipient=iter.next();
+    Endpoint endpoint;
+    Producer producer;
+    try {
+      endpoint=resolveEndpoint(exchange,recipient);
+      producer=producerCache.acquireProducer(endpoint);
+    }
+ catch (    Exception e) {
+      if (isIgnoreInvalidEndpoints()) {
+        LOG.info("Endpoint uri is invalid: " + recipient + ". This exception will be ignored.",e);
+        continue;
+      }
+ else {
+        throw e;
+      }
+    }
+    Exchange copy=exchange.copy();
+    result.add(createProcessorExchangePair(index++,endpoint,producer,copy));
+  }
+  return result;
+}
