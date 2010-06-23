@@ -23,10 +23,7 @@
         Exchange subExchange=exchange;
         if (stopOnException && subExchange.getException() != null) {
           subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
-          exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
-          original.removeProperty(Exchange.AGGREGATION_STRATEGY);
-          ExchangeHelper.copyResults(original,subExchange);
-          callback.done(false);
+          doDone(original,subExchange,callback,false);
           return;
         }
         try {
@@ -34,10 +31,7 @@
         }
  catch (        Throwable e) {
           subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,e));
-          original.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
-          original.removeProperty(Exchange.AGGREGATION_STRATEGY);
-          ExchangeHelper.copyResults(original,subExchange);
-          callback.done(false);
+          doDone(original,subExchange,callback,false);
           return;
         }
         total.incrementAndGet();
@@ -54,10 +48,7 @@
           }
           if (stopOnException && subExchange.getException() != null) {
             subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
-            original.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
-            original.removeProperty(Exchange.AGGREGATION_STRATEGY);
-            ExchangeHelper.copyResults(original,subExchange);
-            callback.done(false);
+            doDone(original,subExchange,callback,false);
             return;
           }
           try {
@@ -65,19 +56,13 @@
           }
  catch (          Throwable e) {
             subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,e));
-            original.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
-            original.removeProperty(Exchange.AGGREGATION_STRATEGY);
-            ExchangeHelper.copyResults(original,subExchange);
-            callback.done(false);
+            doDone(original,subExchange,callback,false);
             return;
           }
           total.incrementAndGet();
         }
-        original.removeProperty(Exchange.AGGREGATION_STRATEGY);
-        if (result.get() != null) {
-          ExchangeHelper.copyResults(original,result.get());
-        }
-        callback.done(false);
+        subExchange=result.get() != null ? result.get() : null;
+        doDone(original,subExchange,callback,false);
       }
     }
 );

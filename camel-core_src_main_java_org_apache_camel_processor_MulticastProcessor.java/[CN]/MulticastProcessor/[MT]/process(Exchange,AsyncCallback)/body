@@ -1,8 +1,8 @@
 {
-  boolean sync=true;
   final AtomicExchange result=new AtomicExchange();
   final Iterable<ProcessorExchangePair> pairs;
   try {
+    boolean sync=true;
     pairs=createProcessorExchangePairs(exchange);
     if (isParallelProcessing()) {
       ObjectHelper.notNull(executorService,"executorService",this);
@@ -14,15 +14,13 @@
     if (!sync) {
       return false;
     }
-    if (result.get() != null) {
-      ExchangeHelper.copyResults(exchange,result.get());
-    }
   }
  catch (  Throwable e) {
-    exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
     exchange.setException(e);
+    doDone(exchange,null,callback,true);
+    return true;
   }
-  exchange.removeProperty(Exchange.AGGREGATION_STRATEGY);
-  callback.done(true);
+  Exchange subExchange=result.get() != null ? result.get() : null;
+  doDone(exchange,subExchange,callback,true);
   return true;
 }
