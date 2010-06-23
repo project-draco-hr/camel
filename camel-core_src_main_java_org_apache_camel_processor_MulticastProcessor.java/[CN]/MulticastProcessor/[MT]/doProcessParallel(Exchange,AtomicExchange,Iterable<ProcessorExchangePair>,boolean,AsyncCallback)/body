@@ -18,7 +18,7 @@
         if (!running.get()) {
           return subExchange;
         }
-        doProcess(original,result,it,pair,callback);
+        doProcess(original,result,it,pair,callback,total);
         if (stopOnException && subExchange.getException() != null) {
           running.set(false);
           throw new CamelExchangeException("Parallel processing failed for number " + total.intValue(),subExchange,subExchange.getException());
@@ -35,9 +35,7 @@
   for (int i=0; i < total.intValue(); i++) {
     Future<Exchange> future=completion.take();
     Exchange subExchange=future.get();
-    if (aggregationStrategy != null) {
-      doAggregate(result,subExchange);
-    }
+    doAggregate(getAggregationStrategy(subExchange),result,subExchange);
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Done parallel processing " + total + " exchanges");

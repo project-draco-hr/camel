@@ -1,0 +1,17 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.addComponent("async",new MyAsyncComponent());
+      onException(Exception.class).maximumRedeliveries(2);
+      from("direct:start").to("mock:a").recipientList(header("foo")).stopOnException();
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:a").expectedMessageCount(1);
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  getMockEndpoint("mock:bar").expectedMessageCount(1);
+  getMockEndpoint("mock:baz").expectedMessageCount(1);
+  template.sendBodyAndHeader("direct:start","Hello World","foo","mock:foo,async:Bye Camel,mock:bar,mock:baz");
+  assertMockEndpointsSatisfied();
+}

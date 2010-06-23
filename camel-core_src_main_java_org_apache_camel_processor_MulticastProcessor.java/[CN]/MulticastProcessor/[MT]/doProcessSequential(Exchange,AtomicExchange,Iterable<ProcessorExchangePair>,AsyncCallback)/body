@@ -1,11 +1,11 @@
 {
-  int total=0;
+  AtomicInteger total=new AtomicInteger();
   Iterator<ProcessorExchangePair> it=pairs.iterator();
   while (it.hasNext()) {
     ProcessorExchangePair pair=it.next();
     Exchange subExchange=pair.getExchange();
-    updateNewExchange(subExchange,total,pairs);
-    boolean sync=doProcess(original,result,it,pair,callback);
+    updateNewExchange(subExchange,total.get(),pairs);
+    boolean sync=doProcess(original,result,it,pair,callback,total);
     if (!sync) {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Processing exchangeId: " + pair.getExchange().getExchangeId() + " is continued being processed asynchronously");
@@ -16,15 +16,13 @@
       LOG.trace("Processing exchangeId: " + pair.getExchange().getExchangeId() + " is continued being processed synchronously");
     }
     if (stopOnException && subExchange.getException() != null) {
-      throw new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException());
+      throw new CamelExchangeException("Sequential processing failed for number " + total.get(),subExchange,subExchange.getException());
     }
     if (LOG.isTraceEnabled()) {
       LOG.trace("Sequential processing complete for number " + total + " exchange: "+ subExchange);
     }
-    if (aggregationStrategy != null) {
-      doAggregate(result,subExchange);
-    }
-    total++;
+    doAggregate(getAggregationStrategy(subExchange),result,subExchange);
+    total.incrementAndGet();
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Done sequential processing " + total + " exchanges");
