@@ -1,8 +1,14 @@
 {
   Exchange exchange=getMandatoryEndpoint("direct:input").createExchange(ExchangePattern.InOut);
   exchange.getIn().setBody("Hello Paris");
-  Exchange result=template.send("direct:input",exchange);
-  assertTrue("Should be failed",result.isFailed());
-  assertTrue("Should be IllegalArgumentException",result.getException() instanceof IllegalArgumentException);
-  assertEquals("Forced exception",result.getException().getMessage());
+  try {
+    template.send("direct:input",exchange);
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException e) {
+    assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+  }
+  assertTrue("Should be failed",exchange.isFailed());
+  assertTrue("Should be IllegalArgumentException",exchange.getException() instanceof IllegalArgumentException);
+  assertEquals("Forced exception",exchange.getException().getMessage());
 }

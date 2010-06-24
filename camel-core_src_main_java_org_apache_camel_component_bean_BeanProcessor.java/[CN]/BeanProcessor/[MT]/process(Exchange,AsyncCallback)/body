@@ -1,0 +1,109 @@
+{
+  boolean isExplicitMethod=ObjectHelper.isNotEmpty(method);
+  Object bean=beanHolder.getBean();
+  BeanInfo beanInfo=beanHolder.getBeanInfo();
+  Processor processor=getProcessor();
+  if (!isExplicitMethod && processor != null) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Using a custom adapter as bean invocation: " + processor);
+    }
+    try {
+      processor.process(exchange);
+    }
+ catch (    Throwable e) {
+      exchange.setException(e);
+    }
+    callback.done(true);
+    return true;
+  }
+  Message in=exchange.getIn();
+  BeanInvocation beanInvoke=in.getBody(BeanInvocation.class);
+  if (beanInvoke != null) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Exchange IN body is a BeanInvocation instance: " + beanInvoke);
+    }
+    Class<?> clazz=beanInvoke.getMethod().getDeclaringClass();
+    boolean sameBean=clazz.isInstance(bean);
+    if (LOG.isTraceEnabled()) {
+      LOG.debug("BeanHolder bean: " + bean.getClass() + " and beanInvocation bean: "+ clazz+ " is same instance: "+ sameBean);
+    }
+    if (sameBean) {
+      beanInvoke.invoke(bean,exchange);
+      exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+      callback.done(true);
+      return true;
+    }
+  }
+  if (in.getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) == null) {
+    in.setHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,isMultiParameterArray());
+  }
+  String prevMethod=null;
+  MethodInvocation invocation;
+  if (methodObject != null) {
+    invocation=beanInfo.createInvocation(methodObject,bean,exchange);
+  }
+ else {
+    if (isExplicitMethod) {
+      prevMethod=in.getHeader(Exchange.BEAN_METHOD_NAME,String.class);
+      in.setHeader(Exchange.BEAN_METHOD_NAME,method);
+    }
+    try {
+      invocation=beanInfo.createInvocation(bean,exchange);
+    }
+ catch (    Throwable e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+  }
+  if (invocation == null) {
+    throw new IllegalStateException("No method invocation could be created, no matching method could be found on: " + bean);
+  }
+  in.removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
+  Object value=null;
+  try {
+    AtomicBoolean sync=new AtomicBoolean(true);
+    value=invocation.proceed(callback,sync);
+    if (!sync.get()) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
+      }
+      return false;
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
+    }
+  }
+ catch (  InvocationTargetException e) {
+    exchange.setException(e.getCause());
+    callback.done(true);
+    return true;
+  }
+catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+ finally {
+    if (isExplicitMethod) {
+      in.setHeader(Exchange.BEAN_METHOD_NAME,prevMethod);
+    }
+  }
+  if (!invocation.getMethod().getReturnType().equals(Void.TYPE) && value != Void.TYPE) {
+    if (exchange.getPattern().isOutCapable()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Setting bean invocation result on the OUT message: " + value);
+      }
+      exchange.getOut().setBody(value);
+      exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    }
+ else {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Setting bean invocation result on the IN message: " + value);
+      }
+      exchange.getIn().setBody(value);
+    }
+  }
+  callback.done(true);
+  return true;
+}

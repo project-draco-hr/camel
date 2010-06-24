@@ -1,6 +1,12 @@
 {
   MethodInvocation invocation=info.createInvocation(bean,exchange);
   assertNotNull("Should have found a method invocation!",invocation);
-  Object value=invocation.proceed();
-  LOG.info("Value: " + value);
+  AtomicBoolean sync=new AtomicBoolean(true);
+  Object value=invocation.proceed(new AsyncCallback(){
+    public void done(    boolean doneSync){
+    }
+  }
+,sync);
+  assertEquals(true,sync.get());
+  assertEquals("Hello James!",value);
 }

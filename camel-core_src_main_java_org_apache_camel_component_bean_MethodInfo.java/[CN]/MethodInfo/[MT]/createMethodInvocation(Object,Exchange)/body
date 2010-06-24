@@ -7,7 +7,7 @@
     public Object[] getArguments(){
       return arguments;
     }
-    public Object proceed() throws Exception {
+    public Object proceed(    AsyncCallback callback,    AtomicBoolean doneSync) throws Exception {
       if (LOG.isTraceEnabled()) {
         LOG.trace(">>>> invoking: " + method + " on bean: "+ pojo+ " with arguments: "+ asString(arguments)+ " for exchange: "+ exchange);
       }
@@ -16,14 +16,16 @@
         if (!recipientList.isStarted()) {
           ServiceHelper.startService(recipientList);
         }
-        recipientList.sendToRecipientList(exchange,result);
+        boolean sync=recipientList.sendToRecipientList(exchange,result,callback);
+        doneSync.set(sync);
         return Void.TYPE;
       }
       if (routingSlip != null) {
         if (!routingSlip.isStarted()) {
           ServiceHelper.startService(routingSlip);
         }
-        routingSlip.doRoutingSlip(exchange,result);
+        boolean sync=routingSlip.doRoutingSlip(exchange,result,callback);
+        doneSync.set(sync);
         return Void.TYPE;
       }
       return result;

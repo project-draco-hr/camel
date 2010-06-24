@@ -6,7 +6,7 @@
   List<String> methods=OgnlHelper.splitOgnl(ognl);
   for (  String methodName : methods) {
     BeanHolder holder=new ConstantBeanHolder(beanToCall,exchange.getContext());
-    boolean elvis=OgnlHelper.isElvis(methodName);
+    boolean nullSafe=OgnlHelper.isNullSafeOperator(methodName);
     ognlPath+=methodName;
     methodName=OgnlHelper.removeLeadingOperators(methodName);
     String key=null;
@@ -18,12 +18,15 @@
     if (methodName != null) {
       InvokeProcessor invoke=new InvokeProcessor(holder,methodName);
       invoke.process(resultExchange);
+      if (resultExchange.getException() != null) {
+        throw new RuntimeBeanExpressionException(exchange,beanName,methodName,resultExchange.getException());
+      }
       result=invoke.getResult();
     }
     if (key != null) {
-      result=lookupResult(resultExchange,key,result,elvis,ognlPath,holder.getBean());
+      result=lookupResult(resultExchange,key,result,nullSafe,ognlPath,holder.getBean());
     }
-    if (result == null && elvis) {
+    if (result == null && nullSafe) {
       return;
     }
     beanToCall=result;
