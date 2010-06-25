@@ -1,24 +1,3 @@
 {
-  final Processor output=getProcessor();
-  if (output == null) {
-    return;
-  }
-  final Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,true);
-  Callable<Exchange> task=createTask(output,copy);
-  Future<Exchange> future=executorService.submit(task);
-  WaitForTaskToComplete wait=waitForTaskToComplete;
-  if (exchange.getProperty(Exchange.ASYNC_WAIT) != null) {
-    wait=exchange.getProperty(Exchange.ASYNC_WAIT,WaitForTaskToComplete.class);
-  }
-  if (wait == WaitForTaskToComplete.Always) {
-    Exchange response=future.get();
-    ExchangeHelper.copyResults(exchange,response);
-  }
- else   if (wait == WaitForTaskToComplete.IfReplyExpected && ExchangeHelper.isOutCapable(exchange)) {
-    Exchange response=future.get();
-    ExchangeHelper.copyResults(exchange,response);
-  }
- else {
-    exchange.getOut().setBody(future);
-  }
+  AsyncProcessorHelper.process(this,exchange);
 }

@@ -39,7 +39,14 @@
     if (log.isDebugEnabled()) {
       log.debug("About to process file: " + target + " using exchange: "+ exchange);
     }
-    getProcessor().process(exchange);
+    getAsyncProcessor().process(exchange,new AsyncCallback(){
+      public void done(      boolean doneSync){
+        if (log.isTraceEnabled()) {
+          log.trace("Done processing file: " + target + (doneSync ? " synchronously" : " asynchronously"));
+        }
+      }
+    }
+);
   }
  catch (  Exception e) {
     endpoint.getInProgressRepository().remove(absoluteFileName);

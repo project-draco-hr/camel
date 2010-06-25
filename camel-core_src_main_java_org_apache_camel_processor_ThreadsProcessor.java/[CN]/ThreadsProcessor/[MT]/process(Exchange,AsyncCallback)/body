@@ -1,0 +1,19 @@
+{
+  if (shutdown.get()) {
+    throw new IllegalStateException("ThreadsProcessor is not running.");
+  }
+  ProcessCall call=new ProcessCall(exchange,callback);
+  try {
+    executorService.submit(call);
+    return false;
+  }
+ catch (  RejectedExecutionException e) {
+    if (shutdown.get()) {
+      exchange.setException(new RejectedExecutionException("ThreadsProcessor is not running.",e));
+    }
+ else {
+      exchange.setException(e);
+    }
+  }
+  return true;
+}

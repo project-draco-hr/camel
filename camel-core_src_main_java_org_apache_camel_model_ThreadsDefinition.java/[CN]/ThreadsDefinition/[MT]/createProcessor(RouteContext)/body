@@ -18,7 +18,10 @@
       executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newThreadPool(this,name,poolSize,max,keepAlive,tu,maxQueue,rejected,true);
     }
   }
-  Processor childProcessor=this.createChildProcessor(routeContext,true);
-  UnitOfWorkProcessor uow=new UnitOfWorkProcessor(routeContext,childProcessor);
-  return new ThreadsProcessor(routeContext.getCamelContext(),uow,executorService,waitForTaskToComplete);
+  ThreadsProcessor thread=new ThreadsProcessor(routeContext.getCamelContext(),executorService);
+  Processor childProcessor=createChildProcessor(routeContext,true);
+  List<Processor> pipe=new ArrayList<Processor>(2);
+  pipe.add(thread);
+  pipe.add(childProcessor);
+  return new Pipeline(routeContext.getCamelContext(),pipe);
 }
