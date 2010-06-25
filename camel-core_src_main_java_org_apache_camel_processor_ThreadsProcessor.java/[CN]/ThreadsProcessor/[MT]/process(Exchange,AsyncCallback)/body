@@ -8,12 +8,17 @@
     return false;
   }
  catch (  RejectedExecutionException e) {
-    if (shutdown.get()) {
-      exchange.setException(new RejectedExecutionException("ThreadsProcessor is not running.",e));
+    if (isCallerRunsWhenRejected()) {
+      if (shutdown.get()) {
+        exchange.setException(new RejectedExecutionException());
+      }
+ else {
+        callback.done(true);
+      }
     }
  else {
       exchange.setException(e);
     }
+    return true;
   }
-  return true;
 }

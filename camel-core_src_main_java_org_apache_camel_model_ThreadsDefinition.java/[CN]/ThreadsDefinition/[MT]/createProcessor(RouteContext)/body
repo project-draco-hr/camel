@@ -19,9 +19,11 @@
     }
   }
   ThreadsProcessor thread=new ThreadsProcessor(routeContext.getCamelContext(),executorService);
-  Processor childProcessor=createChildProcessor(routeContext,true);
+  if (getCallerRunsWhenRejected() != null) {
+    thread.setCallerRunsWhenRejected(getCallerRunsWhenRejected());
+  }
   List<Processor> pipe=new ArrayList<Processor>(2);
   pipe.add(thread);
-  pipe.add(childProcessor);
+  pipe.add(createChildProcessor(routeContext,true));
   return new Pipeline(routeContext.getCamelContext(),pipe);
 }
