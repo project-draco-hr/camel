@@ -1,18 +1,19 @@
 {
   Mailbox.clearAll();
-  String body="Hello Camel Riders!";
-  String subject="My Camel \u2122";
-  System.setProperty(Exchange.DEFAULT_CHARSET_PROPERTY,"US-ASCII");
-  try {
-    MockEndpoint mock=getMockEndpoint("mock:result");
-    mock.expectedMessageCount(1);
-    mock.expectedHeaderReceived("subject","=?US-ASCII?Q?My_Camel_=3F?=");
-    mock.expectedBodiesReceived(body);
-    template.sendBodyAndHeader("direct:a",body,"subject",subject);
-    mock.assertIsSatisfied();
-    assertFalse("Should not have attachements",mock.getExchanges().get(0).getIn().hasAttachments());
+  final String body="Hello Camel Riders!";
+  final String subject="My Camel \u2122";
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  mock.expectedHeaderReceived("subject","=?US-ASCII?Q?My_Camel_=3F?=");
+  mock.expectedBodiesReceived(body);
+  template.send("direct:a",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody(body);
+      exchange.getIn().setHeader("subject",subject);
+      exchange.setProperty(Exchange.CHARSET_NAME,"US-ASCII");
+    }
   }
-  finally {
-    System.clearProperty(Exchange.DEFAULT_CHARSET_PROPERTY);
-  }
+);
+  mock.assertIsSatisfied();
+  assertFalse("Should not have attachements",mock.getExchanges().get(0).getIn().hasAttachments());
 }
