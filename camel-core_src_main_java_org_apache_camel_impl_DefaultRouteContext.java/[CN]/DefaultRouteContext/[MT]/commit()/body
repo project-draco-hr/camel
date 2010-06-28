@@ -1,7 +1,7 @@
 {
   if (!eventDrivenProcessors.isEmpty()) {
     Processor processor=Pipeline.newInstance(getCamelContext(),eventDrivenProcessors);
-    Processor unitOfWorkProcessor=new UnitOfWorkProcessor(this,processor);
+    UnitOfWorkProcessor unitOfWorkProcessor=new UnitOfWorkProcessor(this,processor);
     Processor target=unitOfWorkProcessor;
     RoutePolicyProcessor routePolicyProcessor=null;
     RoutePolicy policy=getRoutePolicy();
@@ -21,7 +21,8 @@
     wrapper.setType("route");
     wrapper.setProcessor(target);
     Route edcr=new EventDrivenConsumerRoute(this,getEndpoint(),wrapper);
-    edcr.getProperties().put(Route.ID_PROPERTY,route.idOrCreate(getCamelContext().getNodeIdFactory()));
+    String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
+    edcr.getProperties().put(Route.ID_PROPERTY,routeId);
     edcr.getProperties().put(Route.PARENT_PROPERTY,Integer.toHexString(route.hashCode()));
     if (route.getGroup() != null) {
       edcr.getProperties().put(Route.GROUP_PROPERTY,route.getGroup());

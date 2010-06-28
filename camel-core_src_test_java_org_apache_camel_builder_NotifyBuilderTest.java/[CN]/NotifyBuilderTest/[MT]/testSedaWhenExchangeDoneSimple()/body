@@ -1,0 +1,9 @@
+{
+  NotifyBuilder notify=new NotifyBuilder(context).from("seda:beer").whenDone(1).create();
+  assertEquals("from(seda:beer).whenDone(1)",notify.toString());
+  assertEquals(false,notify.matches());
+  template.sendBody("seda:beer","A");
+  assertEquals(true,notify.matches(5,TimeUnit.SECONDS));
+  SedaEndpoint confirm=context.getEndpoint("seda:done",SedaEndpoint.class);
+  assertEquals(1,confirm.getExchanges().size());
+}
