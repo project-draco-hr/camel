@@ -1,0 +1,30 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+  }
+  boolean sync=processor.process(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (doneSync) {
+        return;
+      }
+      while (continueRouting(processors,exchange)) {
+        prepareResult(exchange);
+        AsyncProcessor processor=processors.next();
+        doneSync=process(exchange,callback,processor,processors);
+        if (!doneSync) {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
+          }
+          return;
+        }
+      }
+      prepareResult(exchange);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing complete for exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+      }
+      callback.done(false);
+    }
+  }
+);
+  return sync;
+}

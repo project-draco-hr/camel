@@ -1,0 +1,35 @@
+{
+  final Exception caught=exchange.getException();
+  if (caught == null) {
+    return true;
+  }
+  exchange.setProperty(Exchange.EXCEPTION_CAUGHT,caught);
+  exchange.setException(null);
+  final Boolean handled=catchClause.handles(exchange);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("The exception is handled: " + handled + " for the exception: "+ caught.getClass().getName()+ " caused by: "+ caught.getMessage());
+  }
+  boolean sync=super.processNext(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (doneSync) {
+        return;
+      }
+      if (!handled) {
+        if (exchange.getException() == null) {
+          exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+        }
+      }
+      prepareResult(exchange);
+      callback.done(false);
+    }
+  }
+);
+  if (sync) {
+    if (!handled) {
+      if (exchange.getException() == null) {
+        exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+      }
+    }
+  }
+  return sync;
+}

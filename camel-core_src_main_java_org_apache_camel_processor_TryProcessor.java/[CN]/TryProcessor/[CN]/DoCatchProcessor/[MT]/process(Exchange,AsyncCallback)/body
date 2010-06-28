@@ -1,0 +1,27 @@
+{
+  Exception e=exchange.getException();
+  if (catchClauses == null || e == null) {
+    return true;
+  }
+  CatchProcessor processor=null;
+  for (  CatchProcessor catchClause : catchClauses) {
+    Throwable caught=catchClause.catches(exchange,e);
+    if (caught != null) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("This TryProcessor catches the exception: " + caught.getClass().getName() + " caused by: "+ e.getMessage());
+      }
+      processor=catchClause;
+      break;
+    }
+  }
+  if (processor != null) {
+    HandleDoCatchProcessor cool=new HandleDoCatchProcessor(processor);
+    return cool.process(exchange,callback);
+  }
+ else {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("This TryProcessor does not catch the exception: " + e.getClass().getName() + " caused by: "+ e.getMessage());
+    }
+  }
+  return true;
+}

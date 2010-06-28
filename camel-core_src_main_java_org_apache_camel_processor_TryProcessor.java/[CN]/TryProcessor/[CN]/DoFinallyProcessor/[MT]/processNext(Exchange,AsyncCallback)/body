@@ -1,0 +1,28 @@
+{
+  final Exception e=exchange.getException();
+  exchange.setException(null);
+  boolean sync=super.processNext(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (doneSync) {
+        return;
+      }
+      if (e != null) {
+        exchange.setException(e);
+        exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
+      }
+      prepareResult(exchange);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing complete for exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+      }
+      callback.done(false);
+    }
+  }
+);
+  if (sync) {
+    if (e != null) {
+      exchange.setException(e);
+      exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
+    }
+  }
+  return sync;
+}
