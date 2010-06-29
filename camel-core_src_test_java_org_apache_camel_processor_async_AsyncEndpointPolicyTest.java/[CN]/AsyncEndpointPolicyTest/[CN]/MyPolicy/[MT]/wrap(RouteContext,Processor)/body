@@ -1,0 +1,29 @@
+{
+  return new AsyncProcessor(){
+    public boolean process(    final Exchange exchange,    final AsyncCallback callback){
+      invoked++;
+      exchange.getIn().setHeader(name,"was wrapped");
+      AsyncProcessor ap=AsyncProcessorTypeConverter.convert(processor);
+      boolean sync=ap.process(exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          if (doneSync) {
+            return;
+          }
+          exchange.getIn().setHeader(name,"policy finished execution");
+          callback.done(false);
+        }
+      }
+);
+      if (!sync) {
+        return false;
+      }
+      exchange.getIn().setHeader(name,"policy finished execution");
+      callback.done(true);
+      return true;
+    }
+    public void process(    Exchange exchange) throws Exception {
+      AsyncProcessorHelper.process(this,exchange);
+    }
+  }
+;
+}
