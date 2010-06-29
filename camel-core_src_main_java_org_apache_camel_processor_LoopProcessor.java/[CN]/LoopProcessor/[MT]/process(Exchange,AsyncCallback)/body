@@ -1,9 +1,20 @@
 {
-  Iterator<AsyncProcessor> processors=getProcessors().iterator();
-  while (continueRouting(processors,exchange)) {
+  AtomicInteger index=new AtomicInteger();
+  AtomicInteger count=new AtomicInteger();
+  String text=expression.evaluate(exchange,String.class);
+  try {
+    int num=ExchangeHelper.convertToMandatoryType(exchange,Integer.class,text);
+    count.set(num);
+  }
+ catch (  NoTypeConversionAvailableException e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+  exchange.setProperty(Exchange.LOOP_SIZE,count);
+  while (index.get() < count.get()) {
     ExchangeHelper.prepareOutToIn(exchange);
-    AsyncProcessor processor=processors.next();
-    boolean sync=process(exchange,callback,processor,processors);
+    boolean sync=process(exchange,callback,index,count);
     if (!sync) {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
@@ -13,6 +24,7 @@
     if (LOG.isTraceEnabled()) {
       LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
     }
+    index.getAndIncrement();
   }
   ExchangeHelper.prepareOutToIn(exchange);
   if (LOG.isTraceEnabled()) {

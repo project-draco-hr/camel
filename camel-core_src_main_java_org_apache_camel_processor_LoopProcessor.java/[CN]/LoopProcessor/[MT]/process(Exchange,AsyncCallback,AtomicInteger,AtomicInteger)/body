@@ -1,22 +1,24 @@
 {
-  if (LOG.isTraceEnabled()) {
-    LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("LoopProcessor: iteration #" + index.get());
   }
-  boolean sync=processor.process(exchange,new AsyncCallback(){
+  exchange.setProperty(Exchange.LOOP_INDEX,index.get());
+  boolean sync=processNext(exchange,new AsyncCallback(){
     public void done(    boolean doneSync){
       if (doneSync) {
         return;
       }
-      while (continueRouting(processors,exchange)) {
+      index.getAndIncrement();
+      while (index.get() < count.get()) {
         ExchangeHelper.prepareOutToIn(exchange);
-        AsyncProcessor processor=processors.next();
-        doneSync=process(exchange,callback,processor,processors);
-        if (!doneSync) {
+        boolean sync=process(exchange,callback,index,count);
+        if (!sync) {
           if (LOG.isTraceEnabled()) {
             LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
           }
           return;
         }
+        index.getAndIncrement();
       }
       ExchangeHelper.prepareOutToIn(exchange);
       if (LOG.isTraceEnabled()) {
