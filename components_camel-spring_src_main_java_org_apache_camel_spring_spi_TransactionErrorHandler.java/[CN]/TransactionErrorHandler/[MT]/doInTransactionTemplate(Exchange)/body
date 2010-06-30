@@ -1,7 +1,7 @@
 {
   transactionTemplate.execute(new TransactionCallbackWithoutResult(){
     protected void doInTransactionWithoutResult(    TransactionStatus status){
-      RuntimeCamelException rce=null;
+      RuntimeException rce=null;
       exchange.setProperty(Exchange.TRANSACTED,Boolean.TRUE);
       final CountDownLatch latch=new CountDownLatch(1);
       boolean sync=TransactionErrorHandler.super.process(exchange,new AsyncCallback(){
@@ -42,14 +42,14 @@
         if (exchange.getException() != null) {
           rce=ObjectHelper.wrapRuntimeCamelException(exchange.getException());
         }
+ else         if (exchange.isRollbackOnly()) {
+          rce=new TransactionRollbackException();
+        }
         if (!status.isRollbackOnly()) {
           status.setRollbackOnly();
         }
         if (rce != null) {
           throw rce;
-        }
- else {
-          throw new TransactionRollbackException();
         }
       }
     }

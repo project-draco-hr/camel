@@ -20,7 +20,7 @@
     JmsMessage body=null;
     Exception cause=null;
     boolean sendReply=false;
-    if (exchange.isFailed()) {
+    if (exchange.isFailed() || exchange.isRollbackOnly()) {
       if (exchange.getException() != null) {
         if (endpoint.isTransferException()) {
           body=null;
@@ -30,6 +30,9 @@
  else {
           rce=wrapRuntimeCamelException(exchange.getException());
         }
+      }
+ else       if (exchange.isRollbackOnly()) {
+        rce=wrapRuntimeCamelException(new RollbackExchangeException(exchange));
       }
  else       if (exchange.getOut().getBody() != null) {
         body=(JmsMessage)exchange.getOut();
