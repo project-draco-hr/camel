@@ -1,36 +1,7 @@
 {
-  final CountDownLatch latch=new CountDownLatch(1);
-  boolean sync=super.process(exchange,new AsyncCallback(){
+  super.process(exchange,new AsyncCallback(){
     public void done(    boolean doneSync){
-      if (!doneSync) {
-        if (log.isTraceEnabled()) {
-          log.trace("Asynchronous callback received for exchangeId: " + exchange.getExchangeId());
-        }
-        latch.countDown();
-      }
-    }
-    @Override public String toString(){
-      return "Done TransactionErrorHandler";
     }
   }
 );
-  if (!sync) {
-    if (log.isTraceEnabled()) {
-      log.trace("Waiting for asynchronous callback before continuing for exchangeId: " + exchange.getExchangeId() + " -> "+ exchange);
-    }
-    try {
-      latch.await();
-    }
- catch (    InterruptedException e) {
-      if (log.isDebugEnabled()) {
-        log.debug("Interrupted while waiting for asynchronous callback for exchangeId: " + exchange.getExchangeId(),e);
-      }
-      if (exchange.getException() == null) {
-        exchange.setException(e);
-      }
-    }
-    if (log.isTraceEnabled()) {
-      log.trace("Asynchronous callback received, will continue routing exchangeId: " + exchange.getExchangeId() + " -> "+ exchange);
-    }
-  }
 }
