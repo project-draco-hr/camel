@@ -3,15 +3,39 @@
     protected void doInTransactionWithoutResult(    TransactionStatus status){
       RuntimeCamelException rce=null;
       exchange.setProperty(Exchange.TRANSACTED,Boolean.TRUE);
-      try {
-        TransactionErrorHandler.super.process(exchange,new AsyncCallback(){
-          public void done(          boolean doneSync){
+      final CountDownLatch latch=new CountDownLatch(1);
+      boolean sync=TransactionErrorHandler.super.process(exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          if (!doneSync) {
+            if (log.isTraceEnabled()) {
+              log.trace("Asynchronous callback received for exchangeId: " + exchange.getExchangeId());
+            }
+            latch.countDown();
           }
         }
-);
+        @Override public String toString(){
+          return "Done TransactionErrorHandler";
+        }
       }
- catch (      Exception e) {
-        exchange.setException(e);
+);
+      if (!sync) {
+        if (log.isTraceEnabled()) {
+          log.trace("Waiting for asynchronous callback before continuing for exchangeId: " + exchange.getExchangeId() + " -> "+ exchange);
+        }
+        try {
+          latch.await();
+        }
+ catch (        InterruptedException e) {
+          if (log.isDebugEnabled()) {
+            log.debug("Interrupted while waiting for asynchronous callback for exchangeId: " + exchange.getExchangeId(),e);
+          }
+          if (exchange.getException() == null) {
+            exchange.setException(e);
+          }
+        }
+        if (log.isTraceEnabled()) {
+          log.trace("Asynchronous callback received, will continue routing exchangeId: " + exchange.getExchangeId() + " -> "+ exchange);
+        }
       }
       if (exchange.getException() != null || exchange.isRollbackOnly()) {
         exchange.removeProperty(Exchange.ROLLBACK_ONLY_LAST);
