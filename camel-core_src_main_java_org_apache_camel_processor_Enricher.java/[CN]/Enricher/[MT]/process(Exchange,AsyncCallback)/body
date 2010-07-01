@@ -1,0 +1,46 @@
+{
+  final Exchange resourceExchange=createResourceExchange(exchange,ExchangePattern.InOut);
+  AsyncProcessor ap=AsyncProcessorTypeConverter.convert(producer);
+  boolean sync=AsyncProcessorHelper.process(ap,resourceExchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (doneSync) {
+        return;
+      }
+      if (resourceExchange.isFailed()) {
+        copyResultsPreservePattern(exchange,resourceExchange);
+      }
+ else {
+        prepareResult(exchange);
+        ExchangeHelper.prepareAggregation(exchange,resourceExchange);
+        Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+        if (aggregatedExchange != null) {
+          copyResultsPreservePattern(exchange,aggregatedExchange);
+        }
+      }
+      callback.done(false);
+    }
+  }
+);
+  if (!sync) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
+    }
+    return false;
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
+  }
+  if (resourceExchange.isFailed()) {
+    copyResultsPreservePattern(exchange,resourceExchange);
+  }
+ else {
+    prepareResult(exchange);
+    ExchangeHelper.prepareAggregation(exchange,resourceExchange);
+    Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+    if (aggregatedExchange != null) {
+      copyResultsPreservePattern(exchange,aggregatedExchange);
+    }
+  }
+  callback.done(true);
+  return true;
+}
