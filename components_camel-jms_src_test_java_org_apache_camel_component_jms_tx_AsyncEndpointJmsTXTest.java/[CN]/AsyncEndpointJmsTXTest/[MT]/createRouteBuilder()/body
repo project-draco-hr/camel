@@ -5,11 +5,13 @@
       from("activemq:queue:inbox").transacted().to("mock:before").to("log:before").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           beforeThreadName=Thread.currentThread().getName();
+          assertTrue("Exchange should be transacted",exchange.isTransacted());
         }
       }
 ).to("async:Bye Camel").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           afterThreadName=Thread.currentThread().getName();
+          assertTrue("Exchange should be transacted",exchange.isTransacted());
         }
       }
 ).to("log:after").to("mock:after").to("mock:result");

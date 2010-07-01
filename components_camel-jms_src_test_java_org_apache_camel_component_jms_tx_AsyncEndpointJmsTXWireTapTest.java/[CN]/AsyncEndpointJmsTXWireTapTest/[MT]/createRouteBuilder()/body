@@ -2,20 +2,24 @@
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
       context.addComponent("async",new MyAsyncComponent());
-      from("activemq:queue:inbox").transacted().to("mock:before").to("log:before").process(new Processor(){
+      from("activemq:queue:inbox").transacted().process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertTrue("Exchange should be transacted",exchange.isTransacted());
+        }
+      }
+).to("async:Bye Camel").wireTap("direct:tap").to("mock:result");
+      from("direct:tap").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           beforeThreadName=Thread.currentThread().getName();
-          assertTrue("Exchange should be transacted",exchange.isTransacted());
+          assertFalse("Exchange should NOT be transacted",exchange.isTransacted());
         }
       }
 ).to("async:Hi Camel").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           afterThreadName=Thread.currentThread().getName();
-          assertTrue("Exchange should be transacted",exchange.isTransacted());
         }
       }
-).to("log:after").to("mock:after").to("direct:foo").to("log:result").to("mock:result");
-      from("direct:foo").transacted().to("async:Bye Camel");
+).to("mock:tap");
     }
   }
 ;

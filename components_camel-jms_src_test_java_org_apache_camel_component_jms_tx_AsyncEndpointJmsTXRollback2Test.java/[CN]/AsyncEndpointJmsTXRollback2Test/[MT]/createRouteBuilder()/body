@@ -5,11 +5,13 @@
       from("activemq:queue:inbox").transacted().to("mock:before").to("log:before").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           beforeThreadName=Thread.currentThread().getName();
+          assertTrue("Exchange should be transacted",exchange.isTransacted());
         }
       }
 ).to("async:Hi Camel").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           afterThreadName=Thread.currentThread().getName();
+          assertTrue("Exchange should be transacted",exchange.isTransacted());
         }
       }
 ).to("log:after").to("mock:after").to("direct:foo").to("mock:result");
@@ -19,6 +21,7 @@
           if (invoked < 2) {
             throw new IllegalArgumentException("Damn");
           }
+          assertTrue("Exchange should be transacted",exchange.isTransacted());
         }
       }
 );
