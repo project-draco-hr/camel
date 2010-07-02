@@ -3,14 +3,14 @@
     LOG.debug("Removing key [" + key + "]");
   }
   try {
-    final Buffer keyBuffer=marshaller.marshallKey(key);
-    final Buffer confirmKeyBuffer=marshaller.marshallKey(exchange.getExchangeId());
-    final Buffer exchangeBuffer=marshaller.marshallExchange(camelContext,exchange);
+    final Buffer keyBuffer=codec.marshallKey(key);
+    final Buffer confirmKeyBuffer=codec.marshallKey(exchange.getExchangeId());
+    final Buffer exchangeBuffer=codec.marshallExchange(camelContext,exchange);
     hawtDBFile.execute(new Work<Buffer>(){
       public Buffer execute(      Transaction tx){
-        Index<Buffer,Buffer> index=hawtDBFile.getRepositoryIndex(tx,repositoryName,true);
+        SortedIndex<Buffer,Buffer> index=hawtDBFile.getRepositoryIndex(tx,repositoryName,true);
         index.remove(keyBuffer);
-        Index<Buffer,Buffer> indexCompleted=hawtDBFile.getRepositoryIndex(tx,getRepositoryNameCompleted(),true);
+        SortedIndex<Buffer,Buffer> indexCompleted=hawtDBFile.getRepositoryIndex(tx,getRepositoryNameCompleted(),true);
         indexCompleted.put(confirmKeyBuffer,exchangeBuffer);
         return null;
       }

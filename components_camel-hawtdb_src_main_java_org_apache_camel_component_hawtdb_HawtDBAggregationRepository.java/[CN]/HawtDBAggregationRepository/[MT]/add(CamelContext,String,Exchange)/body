@@ -3,11 +3,11 @@
     LOG.debug("Adding key   [" + key + "] -> "+ exchange);
   }
   try {
-    final Buffer keyBuffer=marshaller.marshallKey(key);
-    final Buffer exchangeBuffer=marshaller.marshallExchange(camelContext,exchange);
+    final Buffer keyBuffer=codec.marshallKey(key);
+    final Buffer exchangeBuffer=codec.marshallExchange(camelContext,exchange);
     Buffer rc=hawtDBFile.execute(new Work<Buffer>(){
       public Buffer execute(      Transaction tx){
-        Index<Buffer,Buffer> index=hawtDBFile.getRepositoryIndex(tx,repositoryName,true);
+        SortedIndex<Buffer,Buffer> index=hawtDBFile.getRepositoryIndex(tx,repositoryName,true);
         return index.put(keyBuffer,exchangeBuffer);
       }
       @Override public String toString(){
@@ -19,7 +19,7 @@
       return null;
     }
     if (isReturnOldExchange()) {
-      return marshaller.unmarshallExchange(camelContext,rc);
+      return codec.unmarshallExchange(camelContext,rc);
     }
   }
  catch (  IOException e) {
