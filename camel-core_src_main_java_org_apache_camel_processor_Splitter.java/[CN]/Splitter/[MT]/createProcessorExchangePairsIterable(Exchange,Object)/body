@@ -4,8 +4,22 @@
     public Iterator iterator(){
       return new Iterator(){
         private int index;
+        private boolean closed;
         public boolean hasNext(){
-          return iterator.hasNext();
+          if (closed) {
+            return false;
+          }
+          boolean answer=iterator.hasNext();
+          if (!answer) {
+            closed=true;
+            if (value instanceof Closeable) {
+              IOHelper.close((Closeable)value,value.getClass().getName(),LOG);
+            }
+ else             if (value instanceof Scanner) {
+              ((Scanner)value).close();
+            }
+          }
+          return answer;
         }
         public Object next(){
           Object part=iterator.next();
