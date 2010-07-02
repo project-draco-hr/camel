@@ -18,17 +18,31 @@
       return sync;
     }
     if (data.redeliveryCounter > 0) {
-      prepareExchangeForRedelivery(exchange);
-      try {
-        data.redeliveryDelay=data.currentRedeliveryPolicy.sleep(data.redeliveryDelay,data.redeliveryCounter);
-      }
- catch (      InterruptedException e) {
-        if (log.isDebugEnabled()) {
-          log.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
+      data.redeliveryDelay=data.currentRedeliveryPolicy.calculateRedeliveryDelay(data.redeliveryDelay,data.redeliveryCounter);
+      if (data.redeliveryDelay > 0) {
+        if (data.currentRedeliveryPolicy.isAsyncDelayedRedelivery() && !exchange.isTransacted()) {
+          data.sync=false;
+          data.redeliverFromSync=true;
+          AsyncRedeliveryTask task=new AsyncRedeliveryTask(exchange,callback,data);
+          if (log.isTraceEnabled()) {
+            log.trace("Scheduling redelivery task to run in " + data.redeliveryDelay + " millis for exchangeId: "+ exchange.getExchangeId());
+          }
+          executorService.schedule(task,data.redeliveryDelay,TimeUnit.MILLISECONDS);
+          return false;
         }
-        continue;
+ else {
+          try {
+            data.currentRedeliveryPolicy.sleep(data.redeliveryDelay);
+          }
+ catch (          InterruptedException e) {
+            exchange.setException(e);
+            callback.done(data.sync);
+            return data.sync;
+          }
+        }
       }
-      deliverToRedeliveryProcessor(exchange,data);
+      prepareExchangeForRedelivery(exchange);
+      deliverToOnRedeliveryProcessor(exchange,data);
     }
     boolean sync=AsyncProcessorHelper.process(outputAsync,exchange,new AsyncCallback(){
       public void done(      boolean sync){

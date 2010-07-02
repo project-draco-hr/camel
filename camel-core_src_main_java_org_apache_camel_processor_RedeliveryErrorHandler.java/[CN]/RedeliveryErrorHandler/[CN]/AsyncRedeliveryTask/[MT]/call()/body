@@ -1,0 +1,44 @@
+{
+  prepareExchangeForRedelivery(exchange);
+  deliverToOnRedeliveryProcessor(exchange,data);
+  if (log.isTraceEnabled()) {
+    log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " -> "+ outputAsync+ " for Exchange: "+ exchange);
+  }
+  boolean sync;
+  if (data.redeliverFromSync) {
+    sync=AsyncProcessorHelper.process(outputAsync,exchange,new AsyncCallback(){
+      public void done(      boolean doneSync){
+        if (log.isTraceEnabled()) {
+          log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " done sync: "+ doneSync);
+        }
+        data.sync=false;
+        if (isDone(exchange)) {
+          callback.done(false);
+          return;
+        }
+        processAsyncErrorHandler(exchange,callback,data);
+      }
+    }
+);
+  }
+ else {
+    sync=AsyncProcessorHelper.process(outputAsync,exchange,new AsyncCallback(){
+      public void done(      boolean doneSync){
+        if (log.isTraceEnabled()) {
+          log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " done sync: "+ doneSync);
+        }
+        if (doneSync) {
+          return;
+        }
+        data.sync=false;
+        if (isDone(exchange)) {
+          callback.done(doneSync);
+          return;
+        }
+        processAsyncErrorHandler(exchange,callback,data);
+      }
+    }
+);
+  }
+  return sync;
+}
