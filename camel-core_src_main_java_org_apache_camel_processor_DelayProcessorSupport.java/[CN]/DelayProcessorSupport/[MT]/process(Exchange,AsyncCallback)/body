@@ -1,11 +1,48 @@
 {
-  try {
-    delay(exchange);
-  }
- catch (  Exception e) {
-    exchange.setException(e);
+  if (!isRunAllowed()) {
+    exchange.setException(new RejectedExecutionException("Run is not allowed"));
     callback.done(true);
     return true;
   }
-  return super.process(exchange,callback);
+  long delay=calculateDelay(exchange);
+  if (delay <= 0) {
+    return super.process(exchange,callback);
+  }
+  if (!isAsyncDelayed() || exchange.isTransacted()) {
+    try {
+      delay(delay,exchange);
+      return super.process(exchange,callback);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+  }
+ else {
+    ProcessCall call=new ProcessCall(exchange,callback);
+    try {
+      if (log.isTraceEnabled()) {
+        log.trace("Scheduling delayed task to run in " + delay + " millis for exchangeId: "+ exchange.getExchangeId());
+      }
+      executorService.schedule(call,delay,TimeUnit.MILLISECONDS);
+      return false;
+    }
+ catch (    RejectedExecutionException e) {
+      if (isCallerRunsWhenRejected()) {
+        if (!isRunAllowed()) {
+          exchange.setException(new RejectedExecutionException());
+        }
+ else {
+          delay(delay,exchange);
+          return super.process(exchange,callback);
+        }
+      }
+ else {
+        exchange.setException(e);
+      }
+      callback.done(true);
+      return true;
+    }
+  }
 }

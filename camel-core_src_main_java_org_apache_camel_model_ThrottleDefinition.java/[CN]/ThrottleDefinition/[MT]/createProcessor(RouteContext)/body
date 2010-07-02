@@ -1,4 +1,18 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,true);
-  return new Throttler(childProcessor,maximumRequestsPerPeriod,timePeriodMillis);
+  ScheduledExecutorService scheduled=null;
+  if (getAsyncDelayed() != null && getAsyncDelayed()) {
+    scheduled=ExecutorServiceHelper.getConfiguredScheduledExecutorService(routeContext,"Throttle",this);
+    if (scheduled == null) {
+      scheduled=routeContext.getCamelContext().getExecutorServiceStrategy().newScheduledThreadPool(this,"Throttle");
+    }
+  }
+  Throttler answer=new Throttler(childProcessor,maximumRequestsPerPeriod,timePeriodMillis,scheduled);
+  if (getAsyncDelayed() != null) {
+    answer.setAsyncDelayed(getAsyncDelayed());
+  }
+  if (getCallerRunsWhenRejected() != null) {
+    answer.setCallerRunsWhenRejected(getCallerRunsWhenRejected());
+  }
+  return answer;
 }

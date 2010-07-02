@@ -1,5 +1,19 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,false);
   Expression delay=createAbsoluteTimeDelayExpression(routeContext);
-  return new Delayer(childProcessor,delay);
+  ScheduledExecutorService scheduled=null;
+  if (getAsyncDelayed() != null && getAsyncDelayed()) {
+    scheduled=ExecutorServiceHelper.getConfiguredScheduledExecutorService(routeContext,"Delay",this);
+    if (scheduled == null) {
+      scheduled=routeContext.getCamelContext().getExecutorServiceStrategy().newScheduledThreadPool(this,"Delay");
+    }
+  }
+  Delayer answer=new Delayer(childProcessor,delay,scheduled);
+  if (getAsyncDelayed() != null) {
+    answer.setAsyncDelayed(getAsyncDelayed());
+  }
+  if (getCallerRunsWhenRejected() != null) {
+    answer.setCallerRunsWhenRejected(getCallerRunsWhenRejected());
+  }
+  return answer;
 }
