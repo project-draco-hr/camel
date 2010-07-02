@@ -1,0 +1,32 @@
+{
+  try {
+    Bundle[] bundles;
+    if (bundle.getBundleContext() != null) {
+      bundles=bundle.getBundleContext().getBundles();
+    }
+ else {
+      bundles=new Bundle[]{bundle};
+    }
+    Set<String> urls=new HashSet<String>();
+    for (    Bundle bd : bundles) {
+      if (log.isTraceEnabled()) {
+        log.trace("Searching in bundle:" + bd);
+      }
+      Enumeration<URL> paths=bd.findEntries("/" + packageName,"*.class",true);
+      while (paths != null && paths.hasMoreElements()) {
+        URL path=paths.nextElement();
+        String pathString=path.getPath();
+        String urlString=pathString.substring(pathString.indexOf(packageName));
+        urls.add(urlString);
+        if (log.isTraceEnabled()) {
+          log.trace("Added url: " + urlString);
+        }
+      }
+    }
+    return urls;
+  }
+ catch (  Throwable t) {
+    log.error("Could not search osgi bundles for classes matching criteria: " + test + "due to an Exception: "+ t.getMessage());
+    return null;
+  }
+}
