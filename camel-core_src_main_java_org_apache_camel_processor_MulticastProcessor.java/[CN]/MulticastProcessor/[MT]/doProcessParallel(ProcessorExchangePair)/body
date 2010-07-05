@@ -1,0 +1,29 @@
+{
+  final Exchange exchange=pair.getExchange();
+  Processor processor=pair.getProcessor();
+  Producer producer=pair.getProducer();
+  TracedRouteNodes traced=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getTracedRouteNodes() : null;
+  StopWatch watch=null;
+  if (producer != null) {
+    watch=new StopWatch();
+  }
+  try {
+    if (traced != null) {
+      traced.pushBlock();
+    }
+    AsyncProcessor async=AsyncProcessorTypeConverter.convert(processor);
+    pair.begin();
+    AsyncProcessorHelper.process(async,exchange);
+  }
+  finally {
+    pair.done();
+    if (traced != null) {
+      traced.popBlock();
+    }
+    if (producer != null) {
+      long timeTaken=watch.stop();
+      Endpoint endpoint=producer.getEndpoint();
+      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+    }
+  }
+}
