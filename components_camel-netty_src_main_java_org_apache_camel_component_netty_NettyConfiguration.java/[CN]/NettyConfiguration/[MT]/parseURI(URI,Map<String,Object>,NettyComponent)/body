@@ -17,19 +17,26 @@
   addToHandlersList(decoders,referencedDecoders,ChannelUpstreamHandler.class);
   EndpointHelper.setProperties(component.getCamelContext(),this,parameters);
   if (encoders.isEmpty() && decoders.isEmpty()) {
-    if (isTextline()) {
-      Charset charset=getEncoding() != null ? Charset.forName(getEncoding()) : CharsetUtil.UTF_8;
-      encoders.add(new StringEncoder(charset));
-      decoders.add(new StringDecoder(charset));
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Using textline encoders and decoders with charset: " + charset);
+    if (allowDefaultCodec) {
+      if (isTextline()) {
+        Charset charset=getEncoding() != null ? Charset.forName(getEncoding()) : CharsetUtil.UTF_8;
+        encoders.add(new StringEncoder(charset));
+        decoders.add(new StringDecoder(charset));
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Using textline encoders and decoders with charset: " + charset);
+        }
+      }
+ else {
+        encoders.add(new ObjectEncoder());
+        decoders.add(new ObjectDecoder());
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Using object encoders and decoders");
+        }
       }
     }
  else {
-      encoders.add(new ObjectEncoder());
-      decoders.add(new ObjectDecoder());
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Using object encoders and decoders");
+        LOG.debug("No encoders and decoders will be used");
       }
     }
   }
