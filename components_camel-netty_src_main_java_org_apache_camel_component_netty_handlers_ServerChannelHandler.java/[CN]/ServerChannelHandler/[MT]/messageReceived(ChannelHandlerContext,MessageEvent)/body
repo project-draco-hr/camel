@@ -1,14 +1,14 @@
 {
   Object in=messageEvent.getMessage();
   if (LOG.isDebugEnabled()) {
-    if (in instanceof byte[]) {
-      in=consumer.getEndpoint().getCamelContext().getTypeConverter().convertTo(String.class,in);
-    }
     LOG.debug("Incoming message: " + in);
   }
   Exchange exchange=consumer.getEndpoint().createExchange(ctx,messageEvent);
   if (consumer.getConfiguration().isSync()) {
     exchange.setPattern(ExchangePattern.InOut);
+  }
+  if (consumer.getConfiguration().getCharsetName() != null) {
+    exchange.setProperty(Exchange.CHARSET_NAME,consumer.getConfiguration().getCharsetName());
   }
   try {
     consumer.getProcessor().process(exchange);

@@ -1,9 +1,22 @@
 {
-  this.message=null;
-  this.messageReceived=false;
-  this.cause=exceptionEvent.getCause();
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Closing channel as an exception was thrown from Netty",cause);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Exception caught at Channel: " + ctx.getChannel(),exceptionEvent.getCause());
   }
-  NettyHelper.close(exceptionEvent.getChannel());
+  if (exceptionHandled) {
+    return;
+  }
+  exceptionHandled=true;
+  Throwable cause=exceptionEvent.getCause();
+  if (cause instanceof TimeoutException) {
+    exchange.setException(new ExchangeTimedOutException(exchange,producer.getConfiguration().getTimeout()));
+    callback.done(false);
+  }
+ else {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Closing channel as an exception was thrown from Netty",cause);
+    }
+    exchange.setException(cause);
+    NettyHelper.close(exceptionEvent.getChannel());
+    callback.done(false);
+  }
 }

@@ -25,14 +25,17 @@
     }
   }
  else {
+    if (consumer.getConfiguration().isTextline()) {
+      body=consumer.getContext().getTypeConverter().mandatoryConvertTo(String.class,exchange,body);
+    }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Writing body: " + body);
     }
     if (consumer.getConfiguration().getProtocol().equalsIgnoreCase("udp")) {
-      NettyHelper.writeBody(messageEvent.getChannel(),messageEvent.getRemoteAddress(),body,exchange);
+      NettyHelper.writeBodySync(messageEvent.getChannel(),messageEvent.getRemoteAddress(),body,exchange);
     }
  else {
-      NettyHelper.writeBody(messageEvent.getChannel(),null,body,exchange);
+      NettyHelper.writeBodySync(messageEvent.getChannel(),null,body,exchange);
     }
   }
   Boolean close;

@@ -1,0 +1,29 @@
+{
+  ChannelFuture answer;
+  ClientPipelineFactory clientPipelineFactory=new ClientPipelineFactory(this,exchange,callback);
+  ChannelPipeline clientPipeline=clientPipelineFactory.getPipeline();
+  if (isTcp()) {
+    ClientBootstrap clientBootstrap=new ClientBootstrap(channelFactory);
+    clientBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+    clientBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+    clientBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+    clientBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
+    clientBootstrap.setPipeline(clientPipeline);
+    answer=clientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    return answer;
+  }
+ else {
+    ConnectionlessBootstrap connectionlessClientBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
+    connectionlessClientBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+    connectionlessClientBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+    connectionlessClientBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+    connectionlessClientBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
+    connectionlessClientBootstrap.setOption("child.broadcast",configuration.isBroadcast());
+    connectionlessClientBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
+    connectionlessClientBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
+    connectionlessClientBootstrap.setPipeline(clientPipeline);
+    connectionlessClientBootstrap.bind(new InetSocketAddress(0));
+    answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    return answer;
+  }
+}

@@ -1,0 +1,81 @@
+{
+  if (!isRunAllowed()) {
+    if (exchange.getException() == null) {
+      exchange.setException(new RejectedExecutionException());
+    }
+    callback.done(true);
+    return true;
+  }
+  Object body=NettyPayloadHelper.getIn(getEndpoint(),exchange);
+  if (body == null) {
+    noReplyLogger.log("No payload to send for exchange: " + exchange);
+    callback.done(true);
+    return true;
+  }
+  if (getConfiguration().isTextline()) {
+    try {
+      body=context.getTypeConverter().mandatoryConvertTo(String.class,exchange,body);
+    }
+ catch (    NoTypeConversionAvailableException e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+  }
+  if (getConfiguration().getCharsetName() != null) {
+    exchange.setProperty(Exchange.CHARSET_NAME,getConfiguration().getCharsetName());
+  }
+  ChannelFuture channelFuture;
+  final Channel channel;
+  try {
+    channelFuture=openConnection(exchange,callback);
+    channel=openChannel(channelFuture);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Writing body: " + body);
+  }
+  ChannelFuture future=channel.write(body);
+  future.addListener(new ChannelFutureListener(){
+    public void operationComplete(    ChannelFuture channelFuture) throws Exception {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Operation complete " + channelFuture);
+      }
+      if (!channelFuture.isSuccess()) {
+        exchange.setException(channelFuture.getCause());
+        callback.done(false);
+        return;
+      }
+      if (!configuration.isSync()) {
+        try {
+          Boolean close;
+          if (ExchangeHelper.isOutCapable(exchange)) {
+            close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+          }
+ else {
+            close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+          }
+          boolean disconnect=getConfiguration().isDisconnect();
+          if (close != null) {
+            disconnect=close;
+          }
+          if (disconnect) {
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Closing channel when complete at address: " + getEndpoint().getConfiguration().getAddress());
+            }
+            NettyHelper.close(channel);
+          }
+        }
+  finally {
+          callback.done(false);
+        }
+      }
+    }
+  }
+);
+  return false;
+}

@@ -1,20 +1,15 @@
 {
-  if (channelPipeline != null) {
-    if (channelPipeline.remove("ssl") != null) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Client SSL handler re-initialized on the ChannelPipeline");
-      }
-      channelPipeline.addFirst("ssl",configureClientSSLOnDemand());
-    }
-    return channelPipeline;
-  }
-  channelPipeline=Channels.pipeline();
+  ChannelPipeline channelPipeline=Channels.pipeline();
   SslHandler sslHandler=configureClientSSLOnDemand();
   if (sslHandler != null) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Client SSL handler configured and added to the ChannelPipeline");
     }
     channelPipeline.addLast("ssl",sslHandler);
+  }
+  if (producer.getConfiguration().getTimeout() > 0) {
+    Timer timer=new HashedWheelTimer();
+    channelPipeline.addLast("timeout",new ReadTimeoutHandler(timer,producer.getConfiguration().getTimeout(),TimeUnit.MILLISECONDS));
   }
   List<ChannelUpstreamHandler> decoders=producer.getConfiguration().getDecoders();
   for (int x=0; x < decoders.size(); x++) {
@@ -24,11 +19,6 @@
   for (int x=0; x < encoders.size(); x++) {
     channelPipeline.addLast("encoder-" + x,encoders.get(x));
   }
-  if (producer.getConfiguration().getHandler() != null) {
-    channelPipeline.addLast("handler",producer.getConfiguration().getHandler());
-  }
- else {
-    channelPipeline.addLast("handler",new ClientChannelHandler(producer));
-  }
+  channelPipeline.addLast("handler",new ClientChannelHandler(producer,exchange,callback));
   return channelPipeline;
 }

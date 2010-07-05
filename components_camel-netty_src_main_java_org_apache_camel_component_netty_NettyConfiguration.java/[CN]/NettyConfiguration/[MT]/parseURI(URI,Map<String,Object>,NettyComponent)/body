@@ -15,61 +15,25 @@
   addToHandlersList(encoders,referencedEncoders,ChannelDownstreamHandler.class);
   List<ChannelUpstreamHandler> referencedDecoders=component.resolveAndRemoveReferenceListParameter(parameters,"decoders",ChannelUpstreamHandler.class,null);
   addToHandlersList(decoders,referencedDecoders,ChannelUpstreamHandler.class);
+  EndpointHelper.setProperties(component.getCamelContext(),this,parameters);
   if (encoders.isEmpty() && decoders.isEmpty()) {
-    encoders.add(component.resolveAndRemoveReferenceParameter(parameters,"encoder",ChannelDownstreamHandler.class,new ObjectEncoder()));
-    decoders.add(component.resolveAndRemoveReferenceParameter(parameters,"decoder",ChannelUpstreamHandler.class,new ObjectDecoder()));
+    if (isTextline()) {
+      Charset charset=getEncoding() != null ? Charset.forName(getEncoding()) : CharsetUtil.UTF_8;
+      encoders.add(new StringEncoder(charset));
+      decoders.add(new StringDecoder(charset));
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Using textline encoders and decoders with charset: " + charset);
+      }
+    }
+ else {
+      encoders.add(new ObjectEncoder());
+      decoders.add(new ObjectDecoder());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Using object encoders and decoders");
+      }
+    }
   }
-  handler=component.resolveAndRemoveReferenceParameter(parameters,"handler",SimpleChannelHandler.class,null);
-  Map<String,Object> settings=URISupport.parseParameters(uri);
-  if (settings.containsKey("keepAlive")) {
-    setKeepAlive(Boolean.valueOf((String)settings.get("keepAlive")));
-  }
-  if (settings.containsKey("tcpNoDelay")) {
-    setTcpNoDelay(Boolean.valueOf((String)settings.get("tcpNoDelay")));
-  }
-  if (settings.containsKey("broadcast")) {
-    setBroadcast(Boolean.valueOf((String)settings.get("broadcast")));
-  }
-  if (settings.containsKey("reuseAddress")) {
-    setReuseAddress(Boolean.valueOf((String)settings.get("reuseAddress")));
-  }
-  if (settings.containsKey("connectTimeoutMillis")) {
-    setConnectTimeout(Long.valueOf((String)settings.get("connectTimeoutMillis")));
-  }
-  if (settings.containsKey("sync")) {
-    setTcpNoDelay(Boolean.valueOf((String)settings.get("sync")));
-  }
-  if (settings.containsKey("receiveTimeoutMillis")) {
-    setTimeout(Long.valueOf((String)settings.get("receiveTimeoutMillis")));
-  }
-  if (settings.containsKey("sendBufferSize")) {
-    setSendBufferSize(Long.valueOf((String)settings.get("sendBufferSize")));
-  }
-  if (settings.containsKey("receiveBufferSize")) {
-    setReceiveBufferSize(Long.valueOf((String)settings.get("receiveBufferSize")));
-  }
-  if (settings.containsKey("ssl")) {
-    setTcpNoDelay(Boolean.valueOf((String)settings.get("ssl")));
-  }
-  if (settings.containsKey("corePoolSize")) {
-    setCorePoolSize(Integer.valueOf((String)settings.get("corePoolSize")));
-  }
-  if (settings.containsKey("maxPoolSize")) {
-    setMaxPoolSize(Integer.valueOf((String)settings.get("maxPoolSize")));
-  }
-  if (settings.containsKey("disconnect")) {
-    setDisconnect(Boolean.valueOf((String)settings.get("disconnect")));
-  }
-  if (settings.containsKey("lazyChannelCreation")) {
-    setLazyChannelCreation(Boolean.valueOf((String)settings.get("lazyChannelCreation")));
-  }
-  if (settings.containsKey("transferExchange")) {
-    setTransferExchange(Boolean.valueOf((String)settings.get("transferExchange")));
-  }
-  if (settings.containsKey("disconnectOnNoReply")) {
-    setDisconnectOnNoReply(Boolean.valueOf((String)settings.get("disconnectOnNoReply")));
-  }
-  if (settings.containsKey("noReplyLogLevel")) {
-    setNoReplyLogLevel(LoggingLevel.valueOf((String)settings.get("noReplyLogLevel")));
+ else {
+    LOG.debug("Using configured encoders and/or decoders");
   }
 }

@@ -1,9 +1,44 @@
 {
-  message=messageEvent.getMessage();
   messageReceived=true;
-  cause=null;
+  Object body=messageEvent.getMessage();
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Message received: " + message);
+    LOG.debug("Message received: " + body);
   }
-  countDown();
+  if (producer.getConfiguration().isTextline()) {
+    try {
+      body=producer.getContext().getTypeConverter().mandatoryConvertTo(String.class,exchange,body);
+    }
+ catch (    NoTypeConversionAvailableException e) {
+      exchange.setException(e);
+      callback.done(false);
+    }
+  }
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    NettyPayloadHelper.setOut(exchange,body);
+  }
+ else {
+    NettyPayloadHelper.setIn(exchange,body);
+  }
+  try {
+    Boolean close;
+    if (ExchangeHelper.isOutCapable(exchange)) {
+      close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+    }
+ else {
+      close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+    }
+    boolean disconnect=producer.getConfiguration().isDisconnect();
+    if (close != null) {
+      disconnect=close;
+    }
+    if (disconnect) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Closing channel when complete at address: " + producer.getConfiguration().getAddress());
+      }
+      NettyHelper.close(ctx.getChannel());
+    }
+  }
+  finally {
+    callback.done(false);
+  }
 }

@@ -1,8 +1,12 @@
 {
-  if (producer.getConfiguration().isSync() && !messageReceived) {
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Channel closed: " + ctx.getChannel());
+  }
+  if (producer.getConfiguration().isSync() && !messageReceived && !exceptionHandled) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Channel closed but no message received from address: " + producer.getConfiguration().getAddress());
     }
-    countDown();
+    exchange.setException(new CamelExchangeException("No response received from remote server: " + producer.getConfiguration().getAddress(),exchange));
+    callback.done(false);
   }
 }
