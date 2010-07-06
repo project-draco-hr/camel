@@ -9,7 +9,12 @@
   }
   List<GenericFile<T>> files=new ArrayList<GenericFile<T>>();
   String name=endpoint.getConfiguration().getDirectory();
-  pollDirectory(name,files);
+  boolean limitHit=!pollDirectory(name,files);
+  if (limitHit) {
+    if (log.isDebugEnabled()) {
+      log.debug("Limiting maximum messages to poll at " + maxMessagesPerPoll + " files as there was more messages in this poll.");
+    }
+  }
   if (endpoint.getSorter() != null) {
     Collections.sort(files,endpoint.getSorter());
   }

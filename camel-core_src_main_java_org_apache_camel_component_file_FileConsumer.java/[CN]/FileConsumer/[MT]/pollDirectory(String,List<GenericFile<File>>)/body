@@ -7,7 +7,7 @@
     if (log.isDebugEnabled()) {
       log.debug("Cannot poll as directory does not exists or its not a directory: " + directory);
     }
-    return;
+    return true;
   }
   if (log.isTraceEnabled()) {
     log.trace("Polling directory: " + directory.getPath());
@@ -17,7 +17,7 @@
     if (log.isTraceEnabled()) {
       log.trace("No files found in directory: " + directory.getPath());
     }
-    return;
+    return true;
   }
  else {
     if (log.isTraceEnabled()) {
@@ -25,6 +25,9 @@
     }
   }
   for (  File file : files) {
+    if (!canPollMoreFiles(fileList)) {
+      return false;
+    }
     if (log.isTraceEnabled()) {
       log.trace("Found file: " + file + " [isAbsolute: "+ file.isAbsolute()+ ", isDirectory: "+ file.isDirectory()+ ", isFile: "+ file.isFile()+ ", isHidden: "+ file.isHidden()+ "]");
     }
@@ -32,7 +35,10 @@
     if (file.isDirectory()) {
       if (endpoint.isRecursive() && isValidFile(gf,true)) {
         String subDirectory=fileName + File.separator + file.getName();
-        pollDirectory(subDirectory,fileList);
+        boolean canPollMore=pollDirectory(subDirectory,fileList);
+        if (!canPollMore) {
+          return false;
+        }
       }
     }
  else {
@@ -51,4 +57,5 @@
       }
     }
   }
+  return true;
 }

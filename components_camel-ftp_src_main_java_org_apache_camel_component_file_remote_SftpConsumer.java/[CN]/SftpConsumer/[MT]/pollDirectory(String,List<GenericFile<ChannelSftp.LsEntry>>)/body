@@ -1,18 +1,38 @@
 {
+  if (log.isTraceEnabled()) {
+    log.trace("pollDirectory from fileName: " + fileName);
+  }
   if (fileName == null) {
-    return;
+    return true;
   }
   fileName=FileUtil.stripTrailingSeparator(fileName);
   if (log.isTraceEnabled()) {
     log.trace("Polling directory: " + fileName);
   }
   List<ChannelSftp.LsEntry> files=operations.listFiles(fileName);
+  if (files == null || files.isEmpty()) {
+    if (log.isTraceEnabled()) {
+      log.trace("No files found in directory: " + fileName);
+    }
+    return true;
+  }
+ else {
+    if (log.isTraceEnabled()) {
+      log.trace("Found " + files.size() + " in directory: "+ fileName);
+    }
+  }
   for (  ChannelSftp.LsEntry file : files) {
+    if (!canPollMoreFiles(fileList)) {
+      return false;
+    }
     if (file.getAttrs().isDir()) {
       RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
       if (endpoint.isRecursive() && isValidFile(remote,true)) {
-        String directory=fileName + "/" + file.getFilename();
-        pollDirectory(directory,fileList);
+        String subDirectory=fileName + "/" + file.getFilename();
+        boolean canPollMore=pollDirectory(subDirectory,fileList);
+        if (!canPollMore) {
+          return false;
+        }
       }
     }
  else {
@@ -29,4 +49,5 @@
       }
     }
   }
+  return true;
 }

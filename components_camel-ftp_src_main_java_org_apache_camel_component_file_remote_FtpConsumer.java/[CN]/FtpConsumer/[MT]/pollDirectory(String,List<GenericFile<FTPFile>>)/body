@@ -1,18 +1,38 @@
 {
+  if (log.isTraceEnabled()) {
+    log.trace("pollDirectory from fileName: " + fileName);
+  }
   if (fileName == null) {
-    return;
+    return true;
   }
   fileName=FileUtil.stripTrailingSeparator(fileName);
   if (log.isTraceEnabled()) {
     log.trace("Polling directory: " + fileName);
   }
   List<FTPFile> files=operations.listFiles(fileName);
+  if (files == null || files.isEmpty()) {
+    if (log.isTraceEnabled()) {
+      log.trace("No files found in directory: " + fileName);
+    }
+    return true;
+  }
+ else {
+    if (log.isTraceEnabled()) {
+      log.trace("Found " + files.size() + " in directory: "+ fileName);
+    }
+  }
   for (  FTPFile file : files) {
+    if (!canPollMoreFiles(fileList)) {
+      return false;
+    }
     if (file.isDirectory()) {
       RemoteFile<FTPFile> remote=asRemoteFile(fileName,file);
       if (endpoint.isRecursive() && isValidFile(remote,true)) {
-        String directory=fileName + "/" + file.getName();
-        pollDirectory(directory,fileList);
+        String subDirectory=fileName + "/" + file.getName();
+        boolean canPollMore=pollDirectory(subDirectory,fileList);
+        if (!canPollMore) {
+          return false;
+        }
       }
     }
  else     if (file.isFile()) {
@@ -32,4 +52,5 @@
       log.debug("Ignoring unsupported remote file type: " + file);
     }
   }
+  return true;
 }
