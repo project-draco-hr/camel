@@ -1,8 +1,15 @@
 {
-  Processor childProcessor=this.createChildProcessor(routeContext,true);
+  DelegateProcessor childProcessor=new DelegateProcessor();
   Policy policy=resolvePolicy(routeContext);
   ObjectHelper.notNull(policy,"policy",this);
-  Processor target=policy.wrap(routeContext,childProcessor);
+  Processor target;
+  if (policy instanceof DefinitionAwarePolicy) {
+    target=((DefinitionAwarePolicy)policy).wrap(routeContext,childProcessor,this);
+  }
+ else {
+    target=policy.wrap(routeContext,childProcessor);
+  }
+  childProcessor.setProcessor(this.createChildProcessor(routeContext,true));
   WrapProcessor wrap=new WrapProcessor(target,childProcessor);
   return wrap;
 }
