@@ -1,7 +1,13 @@
 {
   List<Processor> list=new ArrayList<Processor>();
   for (  ProcessorDefinition<?> output : outputs) {
-    Processor processor=output.createProcessor(routeContext);
+    Processor processor=null;
+    if (routeContext.getCamelContext().getProcessorFactory() != null) {
+      processor=routeContext.getCamelContext().getProcessorFactory().createProcessor(routeContext,output);
+    }
+    if (processor == null) {
+      processor=output.createProcessor(routeContext);
+    }
     if (output instanceof Channel && processor == null) {
       continue;
     }
