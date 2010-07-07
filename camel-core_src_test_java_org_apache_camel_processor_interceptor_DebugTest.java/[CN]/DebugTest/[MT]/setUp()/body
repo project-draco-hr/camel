@@ -1,0 +1,26 @@
+{
+  super.setUp();
+  breakpoint=new BreakpointSupport(){
+    public void onExchange(    Exchange exchange,    Processor processor,    ProcessorDefinition definition){
+      String body=exchange.getIn().getBody(String.class);
+      logs.add("Breakpoint at " + definition + " with body: "+ body);
+    }
+  }
+;
+  camelCondition=new Condition(){
+    public boolean match(    Exchange exchange,    ProcessorDefinition definition){
+      return body().contains("Camel").matches(exchange);
+    }
+  }
+;
+  mockCondition=new Condition(){
+    public boolean match(    Exchange exchange,    ProcessorDefinition definition){
+      if (definition instanceof ToDefinition) {
+        ToDefinition to=(ToDefinition)definition;
+        return to.getUriOrRef().startsWith("mock");
+      }
+      return false;
+    }
+  }
+;
+}
