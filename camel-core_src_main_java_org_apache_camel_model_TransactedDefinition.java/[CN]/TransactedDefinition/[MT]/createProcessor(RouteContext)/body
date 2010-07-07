@@ -1,7 +1,11 @@
 {
-  Processor childProcessor=this.createChildProcessor(routeContext,true);
   Policy policy=resolvePolicy(routeContext);
   ObjectHelper.notNull(policy,"policy",this);
+  if (policy instanceof DefinitionAwarePolicy) {
+    DefinitionAwarePolicy aware=(DefinitionAwarePolicy)policy;
+    aware.beforeWrap(routeContext,this);
+  }
+  Processor childProcessor=this.createChildProcessor(routeContext,true);
   Processor target=policy.wrap(routeContext,childProcessor);
   WrapProcessor wrap=new WrapProcessor(target,childProcessor);
   return wrap;
