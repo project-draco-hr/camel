@@ -1,0 +1,33 @@
+{
+  Breakpoint singlestep=new Breakpoint(){
+    public State getState(){
+      return breakpoint.getState();
+    }
+    public void suspend(){
+      breakpoint.suspend();
+    }
+    public void activate(){
+      breakpoint.activate();
+    }
+    public void beforeProcess(    Exchange exchange,    Processor processor,    ProcessorDefinition definition){
+      breakpoint.beforeProcess(exchange,processor,definition);
+    }
+    public void afterProcess(    Exchange exchange,    Processor processor,    ProcessorDefinition definition,    long timeTaken){
+      breakpoint.afterProcess(exchange,processor,definition,timeTaken);
+    }
+    public void onEvent(    Exchange exchange,    EventObject event,    ProcessorDefinition definition){
+      if (event instanceof ExchangeCreatedEvent) {
+        exchange.getContext().getDebugger().startSingleStepExchange(exchange.getExchangeId(),this);
+      }
+ else       if (event instanceof ExchangeCompletedEvent) {
+        exchange.getContext().getDebugger().stopSingleStepExchange(exchange.getExchangeId());
+      }
+      breakpoint.onEvent(exchange,event,definition);
+    }
+    @Override public String toString(){
+      return breakpoint.toString();
+    }
+  }
+;
+  addBreakpoint(singlestep,conditions);
+}
