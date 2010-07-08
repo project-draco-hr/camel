@@ -1,8 +1,14 @@
 {
   return new DelegateAsyncProcessor(target){
-    @Override public boolean process(    Exchange exchange,    AsyncCallback callback){
-      debugger.onExchange(exchange,target,definition);
-      return super.process(exchange,callback);
+    @Override public boolean process(    final Exchange exchange,    final AsyncCallback callback){
+      debugger.beforeProcess(exchange,target,definition);
+      return super.process(exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          debugger.afterProcess(exchange,processor,definition);
+          callback.done(doneSync);
+        }
+      }
+);
     }
     @Override public String toString(){
       return "Debug[" + target + "]";

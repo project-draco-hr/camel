@@ -1,25 +1,35 @@
 {
   super.setUp();
   breakpoint=new BreakpointSupport(){
-    public void onExchange(    Exchange exchange,    Processor processor,    ProcessorDefinition definition){
+    public void beforeProcess(    Exchange exchange,    Processor processor,    ProcessorDefinition definition){
       String body=exchange.getIn().getBody(String.class);
       logs.add("Breakpoint at " + definition + " with body: "+ body);
     }
+    public void onEvent(    Exchange exchange,    EventObject event,    ProcessorDefinition definition){
+      String body=exchange.getIn().getBody(String.class);
+      logs.add("Breakpoint event " + event.getClass().getSimpleName() + " with body: "+ body);
+    }
   }
 ;
-  camelCondition=new Condition(){
-    public boolean match(    Exchange exchange,    ProcessorDefinition definition){
+  camelCondition=new ConditionSupport(){
+    public boolean matchProcess(    Exchange exchange,    Processor processor,    ProcessorDefinition definition){
       return body().contains("Camel").matches(exchange);
     }
   }
 ;
-  mockCondition=new Condition(){
-    public boolean match(    Exchange exchange,    ProcessorDefinition definition){
+  mockCondition=new ConditionSupport(){
+    public boolean matchProcess(    Exchange exchange,    Processor processor,    ProcessorDefinition definition){
       if (definition instanceof ToDefinition) {
         ToDefinition to=(ToDefinition)definition;
         return to.getUriOrRef().startsWith("mock");
       }
       return false;
+    }
+  }
+;
+  doneCondition=new ConditionSupport(){
+    @Override public boolean matchEvent(    Exchange exchange,    EventObject event){
+      return event instanceof ExchangeCompletedEvent;
     }
   }
 ;
