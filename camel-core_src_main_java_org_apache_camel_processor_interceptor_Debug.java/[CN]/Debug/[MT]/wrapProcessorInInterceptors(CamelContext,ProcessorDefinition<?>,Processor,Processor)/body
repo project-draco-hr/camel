@@ -2,9 +2,11 @@
   return new DelegateAsyncProcessor(target){
     @Override public boolean process(    final Exchange exchange,    final AsyncCallback callback){
       debugger.beforeProcess(exchange,target,definition);
+      final StopWatch watch=new StopWatch();
       return super.process(exchange,new AsyncCallback(){
         public void done(        boolean doneSync){
-          debugger.afterProcess(exchange,processor,definition);
+          long diff=watch.stop();
+          debugger.afterProcess(exchange,processor,definition,diff);
           callback.done(doneSync);
         }
       }
