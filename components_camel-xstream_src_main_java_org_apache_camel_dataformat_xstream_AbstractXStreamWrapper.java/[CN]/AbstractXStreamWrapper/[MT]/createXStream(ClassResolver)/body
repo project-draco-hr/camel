@@ -1,0 +1,26 @@
+{
+  xstream=new XStream();
+  try {
+    if (this.implicitCollections != null) {
+      for (      Entry<String,String[]> entry : this.implicitCollections.entrySet()) {
+        for (        String name : entry.getValue()) {
+          xstream.addImplicitCollection(resolver.resolveMandatoryClass(entry.getKey()),name);
+        }
+      }
+    }
+    if (this.aliases != null) {
+      for (      Entry<String,String> entry : this.aliases.entrySet()) {
+        xstream.alias(entry.getKey(),resolver.resolveMandatoryClass(entry.getValue()));
+      }
+    }
+    if (this.converters != null) {
+      for (      String converter : this.converters) {
+        xstream.registerConverter(resolver.resolveMandatoryClass(converter,Converter.class).newInstance());
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeException("Unable to build Xstream instance",e);
+  }
+  return xstream;
+}

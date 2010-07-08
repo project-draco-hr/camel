@@ -1,0 +1,29 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      XStreamDataFormat xstreamDefinition=new XStreamDataFormat();
+      Map<String,String> aliases=new HashMap<String,String>();
+      aliases.put("purchase-order",PurchaseOrder.class.getName());
+      xstreamDefinition.setAliases(aliases);
+      List<String> converters=new ArrayList<String>();
+      converters.add(PurchaseOrderConverter.class.getName());
+      xstreamDefinition.setConverters(converters);
+      Map<String,String[]> implicits=new HashMap<String,String[]>();
+      implicits.put(PurchaseHistory.class.getName(),new String[]{"history"});
+      xstreamDefinition.setImplicitCollection(implicits);
+      from("direct:marshal").marshal(xstreamDefinition).to("mock:result");
+      from("direct:unmarshal").unmarshal(xstreamDefinition).to("mock:result");
+      xstreamDefinition=new XStreamDataFormat();
+      xstreamDefinition.setDriver("json");
+      aliases=new HashMap<String,String>();
+      aliases.put("purchase-order",PurchaseOrder.class.getName());
+      xstreamDefinition.setAliases(aliases);
+      converters=new ArrayList<String>();
+      converters.add(PurchaseOrderConverter.class.getName());
+      xstreamDefinition.setConverters(converters);
+      from("direct:marshal-json").marshal(xstreamDefinition).to("mock:result");
+      from("direct:unmarshal-json").unmarshal(xstreamDefinition).to("mock:result");
+    }
+  }
+;
+}
