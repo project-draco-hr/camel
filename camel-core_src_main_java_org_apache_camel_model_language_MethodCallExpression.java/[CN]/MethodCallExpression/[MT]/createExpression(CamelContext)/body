@@ -1,15 +1,18 @@
 {
+  Expression answer;
   if (beanType != null) {
-    return new BeanExpression(ObjectHelper.newInstance(beanType),getMethod());
+    instance=ObjectHelper.newInstance(beanType);
+    return new BeanExpression(instance,getMethod());
   }
  else   if (instance != null) {
     return new BeanExpression(instance,getMethod());
   }
  else {
     String ref=beanName();
-    if (camelContext.getRegistry().lookup(ref) == null) {
-      throw new NoSuchBeanException(ref);
-    }
-    return new BeanExpression(ref,getMethod());
+    BeanHolder holder=new RegistryBean(camelContext,ref);
+    instance=holder.getBean();
+    answer=new BeanExpression(ref,getMethod());
   }
+  validateHasMethod(camelContext,instance,getMethod());
+  return answer;
 }

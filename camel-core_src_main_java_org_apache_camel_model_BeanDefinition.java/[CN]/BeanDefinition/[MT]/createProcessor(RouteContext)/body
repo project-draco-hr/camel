@@ -1,10 +1,9 @@
 {
   BeanProcessor answer;
   if (ObjectHelper.isNotEmpty(ref)) {
-    if (routeContext.getCamelContext().getRegistry().lookup(ref) == null) {
-      throw new NoSuchBeanException(ref);
-    }
-    answer=new BeanProcessor(new RegistryBean(routeContext.getCamelContext(),ref));
+    RegistryBean beanHolder=new RegistryBean(routeContext.getCamelContext(),ref);
+    bean=beanHolder.getBean();
+    answer=new BeanProcessor(beanHolder);
   }
  else {
     if (bean == null) {
@@ -19,6 +18,10 @@
   }
   if (method != null) {
     answer.setMethod(method);
+    BeanInfo info=new BeanInfo(routeContext.getCamelContext(),bean.getClass());
+    if (!info.hasMethod(method)) {
+      throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+    }
   }
   return answer;
 }

@@ -1,11 +1,15 @@
 {
   try {
-    template.sendBody("direct:typo","Hello World");
+    context.addRoutes(new RouteBuilder(){
+      @Override public void configure() throws Exception {
+        from("direct:typo").beanRef("myBean","ups").to("mock:result");
+      }
+    }
+);
     fail("Should throw an exception");
   }
- catch (  CamelExecutionException e) {
-    assertIsInstanceOf(MethodNotFoundException.class,e.getCause());
-    MethodNotFoundException mnfe=(MethodNotFoundException)e.getCause();
+ catch (  FailedToCreateRouteException e) {
+    MethodNotFoundException mnfe=assertIsInstanceOf(MethodNotFoundException.class,e.getCause().getCause());
     assertEquals("ups",mnfe.getMethodName());
     assertSame(bean,mnfe.getBean());
   }

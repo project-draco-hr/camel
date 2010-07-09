@@ -2,7 +2,7 @@
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
       from("direct:b").routeId("b").split().method("foo","hello").to("mock:b");
-      from("direct:b").routeId("b").split().method("bar","hello").to("mock:b");
+      from("direct:b").routeId("b").split().method("foo","bye").to("mock:b");
     }
   }
 );
@@ -12,7 +12,7 @@
   }
  catch (  FailedToCreateRouteException e) {
     assertEquals("b",e.getRouteId());
-    NoSuchBeanException cause=assertIsInstanceOf(NoSuchBeanException.class,e.getCause());
-    assertEquals("bar",cause.getName());
+    MethodNotFoundException cause=assertIsInstanceOf(MethodNotFoundException.class,e.getCause().getCause());
+    assertEquals("bye",cause.getMethodName());
   }
 }
