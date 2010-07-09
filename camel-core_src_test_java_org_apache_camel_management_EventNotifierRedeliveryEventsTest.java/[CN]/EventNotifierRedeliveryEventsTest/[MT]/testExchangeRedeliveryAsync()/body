@@ -1,0 +1,27 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:dead").maximumRedeliveries(4).asyncDelayedRedelivery().redeliveryDelay(25));
+      from("direct:start").throwException(new IllegalArgumentException("Damn"));
+    }
+  }
+);
+  context.start();
+  getMockEndpoint("mock:dead").expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals(9,events.size());
+  assertIsInstanceOf(ExchangeCreatedEvent.class,events.get(0));
+  ExchangeRedeliveryEvent e=assertIsInstanceOf(ExchangeRedeliveryEvent.class,events.get(1));
+  assertEquals(1,e.getAttempt());
+  e=assertIsInstanceOf(ExchangeRedeliveryEvent.class,events.get(2));
+  assertEquals(2,e.getAttempt());
+  e=assertIsInstanceOf(ExchangeRedeliveryEvent.class,events.get(3));
+  assertEquals(3,e.getAttempt());
+  e=assertIsInstanceOf(ExchangeRedeliveryEvent.class,events.get(4));
+  assertEquals(4,e.getAttempt());
+  assertIsInstanceOf(ExchangeFailureHandledEvent.class,events.get(5));
+  assertIsInstanceOf(ExchangeCompletedEvent.class,events.get(6));
+  assertIsInstanceOf(ExchangeSentEvent.class,events.get(7));
+  assertIsInstanceOf(ExchangeSentEvent.class,events.get(8));
+}
