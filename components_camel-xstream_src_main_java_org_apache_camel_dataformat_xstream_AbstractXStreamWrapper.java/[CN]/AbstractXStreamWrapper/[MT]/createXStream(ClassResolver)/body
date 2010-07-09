@@ -14,13 +14,35 @@
       }
     }
     if (this.converters != null) {
-      for (      String converter : this.converters) {
-        xstream.registerConverter(resolver.resolveMandatoryClass(converter,Converter.class).newInstance());
+      for (      String name : this.converters) {
+        Class<Converter> converterClass=resolver.resolveMandatoryClass(name,Converter.class);
+        Converter converter;
+        Constructor con=null;
+        try {
+          con=converterClass.getDeclaredConstructor(new Class[]{XStream.class});
+        }
+ catch (        Exception e) {
+        }
+        if (con != null) {
+          converter=(Converter)con.newInstance(xstream);
+        }
+ else {
+          converter=converterClass.newInstance();
+          try {
+            Method method=converterClass.getMethod("setXStream",new Class[]{XStream.class});
+            if (method != null) {
+              ObjectHelper.invokeMethod(method,converter,xstream);
+            }
+          }
+ catch (          Throwable e) {
+          }
+        }
+        xstream.registerConverter(converter);
       }
     }
   }
  catch (  Exception e) {
-    throw new RuntimeException("Unable to build Xstream instance",e);
+    throw new RuntimeException("Unable to build XStream instance",e);
   }
   return xstream;
 }
