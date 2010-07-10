@@ -1,11 +1,17 @@
 {
   return doInProducer(endpoint,exchange,pattern,new ProducerCallback<Exchange>(){
-    public Exchange doInProducer(    Producer producer,    Exchange exchange,    ExchangePattern pattern) throws Exception {
+    public Exchange doInProducer(    Producer producer,    Exchange exchange,    ExchangePattern pattern){
       if (exchange == null) {
         exchange=pattern != null ? producer.createExchange(pattern) : producer.createExchange();
       }
       if (processor != null) {
-        processor.process(exchange);
+        try {
+          processor.process(exchange);
+        }
+ catch (        Exception e) {
+          exchange.setException(e);
+          return exchange;
+        }
       }
       if (LOG.isDebugEnabled()) {
         LOG.debug(">>>> " + endpoint + " "+ exchange);
@@ -16,7 +22,10 @@
         Producer target=new UnitOfWorkProducer(producer);
         target.process(exchange);
       }
-  finally {
+ catch (      Throwable e) {
+        exchange.setException(e);
+      }
+ finally {
         long timeTaken=watch.stop();
         EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
       }

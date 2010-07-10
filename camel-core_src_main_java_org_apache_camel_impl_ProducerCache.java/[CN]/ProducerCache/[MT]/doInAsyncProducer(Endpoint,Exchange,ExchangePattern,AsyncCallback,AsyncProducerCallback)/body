@@ -1,4 +1,5 @@
 {
+  boolean sync=true;
   Producer producer=doGetProducer(endpoint,true);
   if (producer == null) {
     if (isStopped()) {
@@ -15,9 +16,14 @@
   }
   try {
     AsyncProcessor asyncProcessor=AsyncProcessorTypeConverter.convert(producer);
-    return producerCallback.doInAsyncProducer(producer,asyncProcessor,exchange,pattern,callback);
+    sync=producerCallback.doInAsyncProducer(producer,asyncProcessor,exchange,pattern,callback);
   }
-  finally {
+ catch (  Throwable e) {
+    if (exchange != null) {
+      exchange.setException(e);
+    }
+  }
+ finally {
     if (exchange != null) {
       long timeTaken=watch.stop();
       EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
@@ -34,4 +40,5 @@
       }
     }
   }
+  return sync;
 }
