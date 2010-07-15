@@ -1,5 +1,6 @@
 {
-  uri=uri.startsWith("jetty:") ? remaining : uri;
+  String addressUri=uri.startsWith("jetty:") ? remaining : uri;
+  Map<String,Object> httpClientParameters=new HashMap<String,Object>(parameters);
   List<Handler> handlerList=resolveAndRemoveReferenceListParameter(parameters,"handlers",Handler.class);
   HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
   Boolean throwExceptionOnFailure=getAndRemoveParameter(parameters,"throwExceptionOnFailure",Boolean.class);
@@ -12,9 +13,12 @@
     IntrospectionSupport.setProperties(client,parameters,"httpClient.");
     validateParameters(uri,parameters,"httpClient.");
   }
-  URI httpUri=URISupport.createRemainingURI(new URI(uri),CastUtils.cast(parameters));
-  uri=httpUri.toString();
-  JettyHttpEndpoint endpoint=new JettyHttpEndpoint(this,uri,httpUri);
+  for (  String key : parameters.keySet()) {
+    httpClientParameters.remove(key);
+  }
+  URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
+  URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
+  JettyHttpEndpoint endpoint=new JettyHttpEndpoint(this,endpointUri.toString(),httpUri);
   setEndpointHeaderFilterStrategy(endpoint);
   if (client != null) {
     endpoint.setClient(client);

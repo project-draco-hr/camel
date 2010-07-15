@@ -1,4 +1,9 @@
 {
+  String addressUri=uri;
+  if (!uri.startsWith("http:") && !uri.startsWith("https:")) {
+    addressUri=remaining;
+  }
+  Map<String,Object> httpClientParameters=new HashMap<String,Object>(parameters);
   HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
   if (binding == null) {
     binding=resolveAndRemoveReferenceParameter(parameters,"httpBinding",HttpBinding.class);
@@ -15,8 +20,8 @@
   validateParameters(uri,parameters,"httpClient.");
   final Set<AuthMethod> authMethods=new LinkedHashSet<AuthMethod>();
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,authMethods);
-  URI httpUri=URISupport.createRemainingURI(new URI(uri),CastUtils.cast(parameters));
-  uri=httpUri.toString();
+  URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
+  URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
   String part=httpUri.getSchemeSpecificPart();
   if (part != null) {
     part=part.toLowerCase();
@@ -24,7 +29,7 @@
       throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
     }
   }
-  HttpEndpoint endpoint=new HttpEndpoint(uri,this,httpUri,clientParams,httpConnectionManager,configurer);
+  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,httpUri,clientParams,httpConnectionManager,configurer);
   setEndpointHeaderFilterStrategy(endpoint);
   if (binding == null) {
     binding=getHttpBinding();
