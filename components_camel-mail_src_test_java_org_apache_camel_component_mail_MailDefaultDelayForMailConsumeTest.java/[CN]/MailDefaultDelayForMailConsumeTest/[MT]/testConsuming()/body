@@ -1,15 +1,15 @@
 {
-  template.sendBody("smtp://bond@localhost","Hello London");
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedBodiesReceived("Hello London");
+  template.sendBody("smtp://bond@localhost","Hello London");
   mock.setResultWaitTime(2000L);
   mock.assertIsSatisfied();
-  long start=System.currentTimeMillis();
   mock.reset();
-  template.sendBody("smtp://bond@localhost","Hello Paris");
   mock.expectedBodiesReceived("Hello Paris");
   mock.setResultWaitTime(5000L + 2000L);
+  StopWatch watch=new StopWatch();
+  template.sendBody("smtp://bond@localhost","Hello Paris");
   mock.assertIsSatisfied();
-  long delta=System.currentTimeMillis() - start;
+  long delta=watch.stop();
   assertTrue("Camel should not default poll the mailbox to often",delta > 5000 - 1000L);
 }
