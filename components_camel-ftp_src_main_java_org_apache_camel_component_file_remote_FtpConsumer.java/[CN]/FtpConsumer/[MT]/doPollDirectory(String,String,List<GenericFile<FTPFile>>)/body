@@ -1,0 +1,56 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("doPollDirectory from absolutePath: " + absolutePath + ", dirName: "+ dirName);
+  }
+  dirName=FileUtil.stripTrailingSeparator(dirName);
+  String dir=ObjectHelper.isNotEmpty(dirName) ? dirName : absolutePath;
+  operations.changeCurrentDirectory(dir);
+  if (log.isTraceEnabled()) {
+    log.trace("Polling directory: " + dir);
+  }
+  List<FTPFile> files=operations.listFiles();
+  if (files == null || files.isEmpty()) {
+    if (log.isTraceEnabled()) {
+      log.trace("No files found in directory: " + dir);
+    }
+    return true;
+  }
+ else {
+    if (log.isTraceEnabled()) {
+      log.trace("Found " + files.size() + " in directory: "+ dir);
+    }
+  }
+  for (  FTPFile file : files) {
+    if (!canPollMoreFiles(fileList)) {
+      return false;
+    }
+    if (file.isDirectory()) {
+      RemoteFile<FTPFile> remote=asRemoteFile(absolutePath,file);
+      if (endpoint.isRecursive() && isValidFile(remote,true)) {
+        String subDirectory=file.getName();
+        String path=absolutePath + "/" + subDirectory;
+        boolean canPollMore=pollDirectory(path,subDirectory,fileList);
+        if (!canPollMore) {
+          return false;
+        }
+      }
+    }
+ else     if (file.isFile()) {
+      RemoteFile<FTPFile> remote=asRemoteFile(absolutePath,file);
+      if (isValidFile(remote,false)) {
+        if (isInProgress(remote)) {
+          if (log.isTraceEnabled()) {
+            log.trace("Skipping as file is already in progress: " + remote.getFileName());
+          }
+        }
+ else {
+          fileList.add(remote);
+        }
+      }
+    }
+ else {
+      log.debug("Ignoring unsupported remote file type: " + file);
+    }
+  }
+  return true;
+}
