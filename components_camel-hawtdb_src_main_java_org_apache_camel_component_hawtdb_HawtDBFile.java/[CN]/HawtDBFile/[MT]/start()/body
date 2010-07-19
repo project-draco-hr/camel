@@ -9,14 +9,12 @@
   pageFile=getTxPageFile();
   execute(new Work<Boolean>(){
     public Boolean execute(    Transaction tx){
-      int page=tx.allocator().alloc(1);
-      if (page == 0) {
-        ROOT_INDEXES_FACTORY.create(tx,0);
+      if (!tx.allocator().isAllocated(0)) {
+        ROOT_INDEXES_FACTORY.create(tx);
         LOG.info("Aggregation repository data store created using file: " + getFile());
       }
  else {
-        tx.allocator().free(page,1);
-        SortedIndex<String,Integer> indexes=ROOT_INDEXES_FACTORY.open(tx,0);
+        SortedIndex<String,Integer> indexes=ROOT_INDEXES_FACTORY.open(tx);
         LOG.info("Aggregation repository data store loaded using file: " + getFile() + " containing "+ indexes.size()+ " repositories.");
       }
       return true;
