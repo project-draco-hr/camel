@@ -30,7 +30,11 @@
           throw new IllegalArgumentException("Option maximumRedeliveries must be a positive number, was: " + max);
         }
         LOG.info("After " + max + " failed redelivery attempts Exchanges will be moved to deadLetterUri: "+ recoverable.getDeadLetterUri());
-        deadLetterProcessor=camelContext.getEndpoint(recoverable.getDeadLetterUri()).createProducer();
+        Endpoint endpoint=camelContext.getEndpoint(recoverable.getDeadLetterUri());
+        if (endpoint == null) {
+          throw new NoSuchEndpointException(recoverable.getDeadLetterUri());
+        }
+        deadLetterProcessor=new SendProcessor(endpoint,ExchangePattern.InOnly);
         ServiceHelper.startService(deadLetterProcessor);
       }
     }
