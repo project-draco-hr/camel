@@ -1,14 +1,31 @@
 {
   SslSocketConnector answer=new SslSocketConnector();
-  answer.setPassword(sslPassword);
-  answer.setKeyPassword(sslKeyPassword);
-  if (sslKeystore != null) {
+  String keystoreProperty=System.getProperty(JETTY_SSL_KEYSTORE);
+  if (keystoreProperty != null) {
+    answer.setKeystore(keystoreProperty);
+  }
+ else   if (sslKeystore != null) {
     answer.setKeystore(sslKeystore);
   }
- else {
-    String keystoreProperty=System.getProperty(JETTY_SSL_KEYSTORE);
-    if (keystoreProperty != null) {
-      answer.setKeystore(keystoreProperty);
+  String keystorePassword=System.getProperty(JETTY_SSL_KEYPASSWORD);
+  if (keystorePassword != null) {
+    answer.setKeyPassword(keystorePassword);
+  }
+ else   if (sslKeyPassword != null) {
+    answer.setKeyPassword(sslKeyPassword);
+  }
+  String password=System.getProperty(JETTY_SSL_PASSWORD);
+  if (password != null) {
+    answer.setPassword(password);
+  }
+ else   if (sslPassword != null) {
+    answer.setPassword(sslPassword);
+  }
+  if (getSslSocketConnectorProperties() != null) {
+    Map<String,Object> properties=new HashMap<String,Object>(getSslSocketConnectorProperties());
+    IntrospectionSupport.setProperties(answer,properties);
+    if (properties.size() > 0) {
+      throw new IllegalArgumentException("There are " + properties.size() + " parameters that couldn't be set on the SslSocketConnector."+ " Check the uri if the parameters are spelt correctly and that they are properties of the SslSocketConnector."+ " Unknown parameters=["+ properties+ "]");
     }
   }
   return answer;

@@ -1,0 +1,22 @@
+{
+  final List<String> replies=new ArrayList<String>();
+  final CountDownLatch latch=new CountDownLatch(10);
+  log.info("Sending 10 messages");
+  for (int i=0; i < 10; i++) {
+    template.asyncCallbackRequestBody("http://localhost:9080/myapp/myservice","" + i,new SynchronizationAdapter(){
+      @Override public void onDone(      Exchange exchange){
+        String body=exchange.getOut().getBody(String.class);
+        replies.add(body);
+        latch.countDown();
+      }
+    }
+);
+  }
+  log.info("Waiting for all messages to be done");
+  latch.await(30,TimeUnit.SECONDS);
+  log.info("All messages done");
+  Collections.sort(replies);
+  for (int i=0; i < 10; i++) {
+    assertEquals("Bye " + i,replies.get(i));
+  }
+}

@@ -1,11 +1,15 @@
 {
   return new RouteBuilder(){
     public void configure() throws URISyntaxException {
-      Map<Integer,SslSocketConnector> connectors=new HashMap<Integer,SslSocketConnector>();
-      connectors.put(9080,createSslSocketConnector());
-      connectors.put(9090,createSslSocketConnector());
+      URL keyStoreUrl=this.getClass().getClassLoader().getResource("jsse/localhost.ks");
+      String path=keyStoreUrl.toURI().getPath();
+      Map<String,Object> properties=new HashMap<String,Object>();
+      properties.put("keyPassword",pwd);
+      properties.put("password",pwd);
+      properties.put("keystore",path);
+      properties.put("truststoreType","JKS");
       JettyHttpComponent jetty=new JettyHttpComponent();
-      jetty.setSslSocketConnectors(connectors);
+      jetty.setSslSocketConnectorProperties(properties);
       context.addComponent("jetty",jetty);
       from("jetty:https://localhost:9080/test").to("mock:a");
       Processor proc=new Processor(){

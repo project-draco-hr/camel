@@ -2,5 +2,27 @@
   Server server=new Server();
   ContextHandlerCollection collection=new ContextHandlerCollection();
   server.setHandler(collection);
+  if (minThreads != null || maxThreads != null) {
+    if (getThreadPool() != null) {
+      throw new IllegalArgumentException("You cannot configure both minThreads/maxThreads and a custom threadPool on JettyHttpComponent: " + this);
+    }
+    QueuedThreadPool qtp=new QueuedThreadPool();
+    if (minThreads != null) {
+      qtp.setMinThreads(minThreads.intValue());
+    }
+    if (maxThreads != null) {
+      qtp.setMaxThreads(maxThreads.intValue());
+    }
+    try {
+      qtp.start();
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException("Error starting JettyServer thread pool: " + qtp,e);
+    }
+    server.setThreadPool(qtp);
+  }
+  if (getThreadPool() != null) {
+    server.setThreadPool(getThreadPool());
+  }
   return server;
 }

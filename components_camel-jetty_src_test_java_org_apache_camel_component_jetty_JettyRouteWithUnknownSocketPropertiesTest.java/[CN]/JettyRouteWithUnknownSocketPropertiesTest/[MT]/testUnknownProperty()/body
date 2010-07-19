@@ -1,0 +1,23 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      Map<String,Object> properties=new HashMap<String,Object>();
+      properties.put("acceptors",4);
+      properties.put("statsOn","false");
+      properties.put("soLingerTime","5000");
+      properties.put("doesNotExist",2000);
+      JettyHttpComponent jetty=new JettyHttpComponent();
+      jetty.setSocketConnectorProperties(properties);
+      context.addComponent("jetty",jetty);
+      from("jetty:http://localhost:9080/myapp/myservice").to("log:foo");
+    }
+  }
+);
+  try {
+    context.start();
+    fail("Should have thrown exception");
+  }
+ catch (  IllegalArgumentException e) {
+    assertTrue(e.getMessage().endsWith("Unknown parameters=[{doesNotExist=2000}]"));
+  }
+}
