@@ -1,12 +1,15 @@
 {
-  if (headerFunction == null) {
-    headerFunction=new XPathFunction(){
+  if (simpleFunction == null) {
+    simpleFunction=new XPathFunction(){
       public Object evaluate(      List list) throws XPathFunctionException {
         if (exchange != null && !list.isEmpty()) {
           Object value=list.get(0);
           if (value != null) {
             String text=exchange.get().getContext().getTypeConverter().convertTo(String.class,value);
-            return exchange.get().getIn().getHeader(text);
+            Language simple=exchange.get().getContext().resolveLanguage("simple");
+            Expression exp=simple.createExpression(text);
+            Object answer=exp.evaluate(exchange.get(),Object.class);
+            return answer;
           }
         }
         return null;
@@ -14,5 +17,5 @@
     }
 ;
   }
-  return headerFunction;
+  return simpleFunction;
 }
