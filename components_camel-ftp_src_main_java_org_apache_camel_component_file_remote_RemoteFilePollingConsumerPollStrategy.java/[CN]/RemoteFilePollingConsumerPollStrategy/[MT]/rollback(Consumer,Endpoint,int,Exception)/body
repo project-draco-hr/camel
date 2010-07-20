@@ -1,6 +1,13 @@
 {
   RemoteFileConsumer rfc=(RemoteFileConsumer)consumer;
-  log.warn("Trying to recover by disconnecting from remote server forcing a re-connect at next poll: " + rfc.remoteServer());
-  rfc.disconnect();
+  if (((RemoteFileConsumer)consumer).isRunAllowed()) {
+    log.warn("Trying to recover by disconnecting from remote server forcing a re-connect at next poll: " + rfc.remoteServer());
+    try {
+      rfc.disconnect();
+    }
+ catch (    Throwable t) {
+      log.debug("Error occurred during disconnect from: " + rfc.remoteServer() + ". This example will be ignored.",t);
+    }
+  }
   return super.rollback(consumer,endpoint,retryCounter,e);
 }
