@@ -1,0 +1,21 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Process exchange: " + camelExchange);
+  }
+  try {
+    ExchangeImpl cxfExchange=new ExchangeImpl();
+    BindingOperationInfo boi=prepareBindingOperation(camelExchange,cxfExchange);
+    Map<String,Object> invocationContext=new HashMap<String,Object>();
+    Map<String,Object> responseContext=new HashMap<String,Object>();
+    invocationContext.put(Client.RESPONSE_CONTEXT,responseContext);
+    invocationContext.put(Client.REQUEST_CONTEXT,prepareRequest(camelExchange,cxfExchange));
+    CxfClientCallback cxfClientCallback=new CxfClientCallback(callback,camelExchange,cxfExchange,boi,endpoint);
+    client.invoke(cxfClientCallback,boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
+  }
+ catch (  Exception ex) {
+    camelExchange.setException(ex);
+    callback.done(true);
+    return true;
+  }
+  return false;
+}

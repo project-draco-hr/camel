@@ -1,0 +1,18 @@
+{
+  WrappedMessageContext requestContext=new WrappedMessageContext(new HashMap<String,Object>(),null,Scope.APPLICATION);
+  DataFormat dataFormat=endpoint.getDataFormat();
+  camelExchange.setProperty(CxfConstants.DATA_FORMAT_PROPERTY,dataFormat);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Set Camel Exchange property: " + DataFormat.class.getName() + "="+ dataFormat);
+  }
+  requestContext.put(DataFormat.class.getName(),dataFormat);
+  if (dataFormat == DataFormat.MESSAGE) {
+    cxfExchange.put(Client.KEEP_CONDUIT_ALIVE,true);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Set CXF Exchange property: " + Client.KEEP_CONDUIT_ALIVE + "="+ true);
+    }
+  }
+  endpoint.getCxfBinding().populateCxfRequestFromExchange(cxfExchange,camelExchange,requestContext);
+  requestContext.getScopes().remove(Message.PROTOCOL_HEADERS);
+  return requestContext.getWrappedMap();
+}
