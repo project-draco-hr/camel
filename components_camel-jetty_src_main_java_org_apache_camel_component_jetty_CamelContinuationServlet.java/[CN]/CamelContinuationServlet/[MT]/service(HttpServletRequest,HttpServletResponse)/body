@@ -5,11 +5,11 @@
       response.sendError(HttpServletResponse.SC_NOT_FOUND);
       return;
     }
-    if (consumer.isSuspended()) {
+    final Continuation continuation=ContinuationSupport.getContinuation(request);
+    if (consumer.isSuspended() && continuation.isInitial()) {
       response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
       return;
     }
-    final Continuation continuation=ContinuationSupport.getContinuation(request);
     if (continuation.isInitial()) {
       final Exchange exchange=new DefaultExchange(consumer.getEndpoint(),ExchangePattern.InOut);
       if (consumer.getEndpoint().isBridgeEndpoint()) {
@@ -19,34 +19,24 @@
         exchange.setProperty(Exchange.DISABLE_HTTP_STREAM_CACHE,Boolean.TRUE);
       }
       exchange.setIn(new HttpMessage(exchange,request,response));
-      boolean sync=consumer.getAsyncProcessor().process(exchange,new AsyncCallback(){
+      if (log.isTraceEnabled()) {
+        log.trace("Suspending continuation of exchangeId: " + exchange.getExchangeId());
+      }
+      continuation.suspend();
+      consumer.getAsyncProcessor().process(exchange,new AsyncCallback(){
         public void done(        boolean doneSync){
-          if (doneSync) {
-            return;
-          }
           if (log.isTraceEnabled()) {
             log.trace("Resuming continuation of exchangeId: " + exchange.getExchangeId());
           }
-          continuation.setAttribute("CamelExchange",exchange);
+          continuation.setAttribute(EXCHANGE_ATRRIBUTE_NAME,exchange);
           continuation.resume();
         }
       }
 );
-      if (!sync) {
-        if (log.isTraceEnabled()) {
-          log.trace("Suspending continuation of exchangeId: " + exchange.getExchangeId());
-        }
-        continuation.suspend(response);
-        return;
-      }
-      if (log.isTraceEnabled()) {
-        log.trace("Writing response of exchangeId: " + exchange.getExchangeId());
-      }
-      consumer.getBinding().writeResponse(exchange,response);
       return;
     }
     if (continuation.isResumed()) {
-      Exchange exchange=(Exchange)continuation.getAttribute("CamelExchange");
+      Exchange exchange=(Exchange)continuation.getAttribute(EXCHANGE_ATRRIBUTE_NAME);
       if (log.isTraceEnabled()) {
         log.trace("Resuming continuation of exchangeId: " + exchange.getExchangeId());
       }
@@ -54,10 +44,13 @@
         log.trace("Writing response of exchangeId: " + exchange.getExchangeId());
       }
       consumer.getBinding().writeResponse(exchange,response);
-      return;
     }
   }
- catch (  Exception e) {
+ catch (  IOException e) {
+    log.error("Error processing request",e);
+    throw e;
+  }
+catch (  Exception e) {
     log.error("Error processing request",e);
     throw new ServletException(e);
   }
