@@ -1,0 +1,16 @@
+{
+  template=camelContext.createProducerTemplate();
+  startServices(template,camelContext);
+  endpoint=camelContext.getEndpoint("jpa://" + Customer.class.getName() + "?usePersist=true",JpaEndpoint.class);
+  transactionStrategy=endpoint.createTransactionStrategy();
+  jpaTemplate=endpoint.getTemplate();
+  transactionStrategy.execute(new JpaCallback(){
+    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+      entityManager.createQuery("delete from " + Customer.class.getName()).executeUpdate();
+      return null;
+    }
+  }
+);
+  assertEntitiesInDatabase(0,Customer.class.getName());
+  assertEntitiesInDatabase(0,Address.class.getName());
+}

@@ -1,0 +1,21 @@
+{
+  final Customer customer=createDefaultCustomer();
+  transactionStrategy.execute(new JpaCallback(){
+    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+      entityManager.persist(customer);
+      entityManager.flush();
+      return null;
+    }
+  }
+);
+  assertEntitiesInDatabase(1,Customer.class.getName());
+  assertEntitiesInDatabase(1,Address.class.getName());
+  customer.setName("Max Mustermann");
+  customer.getAddress().setAddressLine1("Musterstr. 1");
+  customer.getAddress().setAddressLine2("11111 Enterhausen");
+  Exchange exchange=new DefaultExchange(camelContext);
+  exchange.getIn().setBody(customer);
+  Exchange returnedExchange=template.send(endpoint,exchange);
+  assertTrue(returnedExchange.isFailed());
+  assertNotNull(returnedExchange.getException());
+}

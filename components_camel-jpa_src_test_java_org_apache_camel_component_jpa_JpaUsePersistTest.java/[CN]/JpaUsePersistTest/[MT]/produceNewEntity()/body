@@ -1,0 +1,20 @@
+{
+  Customer customer=createDefaultCustomer();
+  Exchange exchange=new DefaultExchange(camelContext);
+  exchange.getIn().setBody(customer);
+  Exchange returnedExchange=template.send(endpoint,exchange);
+  Customer receivedCustomer=returnedExchange.getIn().getBody(Customer.class);
+  assertEquals(customer.getName(),receivedCustomer.getName());
+  assertNotNull(receivedCustomer.getId());
+  assertEquals(customer.getAddress().getAddressLine1(),receivedCustomer.getAddress().getAddressLine1());
+  assertEquals(customer.getAddress().getAddressLine2(),receivedCustomer.getAddress().getAddressLine2());
+  assertNotNull(receivedCustomer.getAddress().getId());
+  List results=jpaTemplate.find("select o from " + Customer.class.getName() + " o");
+  assertEquals(1,results.size());
+  Customer persistedCustomer=(Customer)results.get(0);
+  assertEquals(receivedCustomer.getName(),persistedCustomer.getName());
+  assertEquals(receivedCustomer.getId(),persistedCustomer.getId());
+  assertEquals(receivedCustomer.getAddress().getAddressLine1(),persistedCustomer.getAddress().getAddressLine1());
+  assertEquals(receivedCustomer.getAddress().getAddressLine2(),persistedCustomer.getAddress().getAddressLine2());
+  assertEquals(receivedCustomer.getAddress().getId(),persistedCustomer.getAddress().getId());
+}
