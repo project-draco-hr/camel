@@ -13,83 +13,34 @@
   if (destination != null) {
     destinationName=null;
   }
-  testAndSetRequestor();
-  final Destination replyTo=requestor.getReplyTo();
+  initReplyManager();
+  final Destination replyTo=replyManager.getReplyTo();
   if (replyTo == null) {
     throw new RuntimeExchangeException("Failed to resolve replyTo destination",exchange);
   }
   final boolean msgIdAsCorrId=endpoint.getConfiguration().isUseMessageIDAsCorrelationID();
-  String correlationId=in.getHeader("JMSCorrelationID",String.class);
-  if (correlationId == null && !msgIdAsCorrId) {
+  final String provisionalCorrelationId=msgIdAsCorrId ? getUuidGenerator().generateUuid() : null;
+  MessageSentCallback messageSentCallback=null;
+  if (msgIdAsCorrId) {
+    messageSentCallback=new UseMessageIdAsCorrelationIdMessageSentCallback(replyManager,provisionalCorrelationId,endpoint.getRequestTimeout());
+  }
+  final ValueHolder<MessageSentCallback> sentCallback=new ValueHolder<MessageSentCallback>(messageSentCallback);
+  final String originalCorrelationId=in.getHeader("JMSCorrelationID",String.class);
+  if (originalCorrelationId == null && !msgIdAsCorrId) {
     in.setHeader("JMSCorrelationID",getUuidGenerator().generateUuid());
   }
-  final ValueHolder<FutureTask> futureHolder=new ValueHolder<FutureTask>();
-  final DeferredMessageSentCallback jmsCallback=msgIdAsCorrId ? deferredRequestReplyMap.createDeferredMessageSentCallback() : null;
   MessageCreator messageCreator=new MessageCreator(){
     public Message createMessage(    Session session) throws JMSException {
       Message message=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
       message.setJMSReplyTo(replyTo);
-      requestor.setReplyToSelectorHeader(in,message);
-      FutureTask future;
-      future=(!msgIdAsCorrId) ? requestor.getReceiveFuture(message.getJMSCorrelationID(),endpoint.getConfiguration().getRequestTimeout()) : requestor.getReceiveFuture(jmsCallback);
-      futureHolder.set(future);
+      replyManager.setReplyToSelectorHeader(in,message);
+      String correlationId=determineCorrelationId(message,provisionalCorrelationId);
+      replyManager.registerReply(replyManager,exchange,callback,originalCorrelationId,correlationId,endpoint.getRequestTimeout());
       return message;
     }
   }
 ;
-  doSend(true,destinationName,destination,messageCreator,jmsCallback);
+  doSend(true,destinationName,destination,messageCreator,sentCallback.get());
   setMessageId(exchange);
-  long requestTimeout=endpoint.getConfiguration().getRequestTimeout();
-  try {
-    Message message=null;
-    try {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Message sent, now waiting for reply at: " + replyTo.toString());
-      }
-      if (requestTimeout <= 0) {
-        message=(Message)futureHolder.get().get();
-      }
- else {
-        message=(Message)futureHolder.get().get(requestTimeout,TimeUnit.MILLISECONDS);
-      }
-    }
- catch (    InterruptedException e) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Future interrupted: " + e,e);
-      }
-    }
-catch (    TimeoutException e) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Future timed out: " + e,e);
-      }
-    }
-    if (message != null) {
-      JmsMessage response=new JmsMessage(message,endpoint.getBinding());
-      Object body=response.getBody();
-      if (endpoint.isTransferException() && body instanceof Exception) {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Reply received. Setting reply as an Exception: " + body);
-        }
-        exchange.setException((Exception)body);
-      }
- else {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Reply received. Setting reply as OUT message: " + body);
-        }
-        exchange.setOut(response);
-      }
-      if (correlationId != null) {
-        message.setJMSCorrelationID(correlationId);
-        exchange.getOut().setHeader("JMSCorrelationID",correlationId);
-      }
-    }
- else {
-      exchange.setException(new ExchangeTimedOutException(exchange,requestTimeout));
-    }
-  }
- catch (  Exception e) {
-    exchange.setException(e);
-  }
-  callback.done(true);
-  return true;
+  return false;
 }

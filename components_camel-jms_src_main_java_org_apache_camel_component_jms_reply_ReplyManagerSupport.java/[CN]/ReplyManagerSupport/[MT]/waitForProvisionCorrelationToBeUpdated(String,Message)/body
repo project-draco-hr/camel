@@ -1,0 +1,26 @@
+{
+  if (log.isWarnEnabled()) {
+    log.warn("Early reply received with correlationID [" + correlationID + "] -> "+ message);
+  }
+  ReplyHandler answer=null;
+  boolean done=false;
+  int counter=0;
+  while (!done && counter++ < 50) {
+    if (log.isTraceEnabled()) {
+      log.trace("Early reply not found handler at attempt " + counter + ". Waiting a bit longer.");
+    }
+    try {
+      Thread.sleep(100);
+    }
+ catch (    InterruptedException e) {
+    }
+    answer=correlation.get(correlationID);
+    done=answer != null;
+    if (answer != null) {
+      if (log.isTraceEnabled()) {
+        log.trace("Early reply with correlationID [" + correlationID + "] has been matched after "+ counter+ " attempts and can be processed using handler: "+ answer);
+      }
+    }
+  }
+  return answer;
+}

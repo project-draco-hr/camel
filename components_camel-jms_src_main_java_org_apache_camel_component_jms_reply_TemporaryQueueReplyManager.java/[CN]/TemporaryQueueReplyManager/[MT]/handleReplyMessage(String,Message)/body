@@ -1,0 +1,19 @@
+{
+  ReplyHandler handler=correlation.get(correlationID);
+  if (handler == null && endpoint.isUseMessageIDAsCorrelationID()) {
+    handler=waitForProvisionCorrelationToBeUpdated(correlationID,message);
+  }
+  if (handler != null) {
+    try {
+      handler.onReply(correlationID,message);
+    }
+  finally {
+      correlation.remove(correlationID);
+    }
+  }
+ else {
+    String text="Reply received for unknown correlationID [" + correlationID + "] -> "+ message;
+    log.warn(text);
+    throw new UnknownReplyMessageException(text,message,correlationID);
+  }
+}

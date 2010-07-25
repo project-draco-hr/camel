@@ -1,0 +1,40 @@
+{
+  SimpleMessageListenerContainer answer=new SimpleMessageListenerContainer();
+  answer.setDestinationName("temporary");
+  answer.setDestinationResolver(new DestinationResolver(){
+    public Destination resolveDestinationName(    Session session,    String destinationName,    boolean pubSubDomain) throws JMSException {
+      TemporaryQueue queue=null;
+synchronized (TemporaryQueueReplyManager.this) {
+        try {
+          queue=session.createTemporaryQueue();
+          setReplyTo(queue);
+        }
+  finally {
+          TemporaryQueueReplyManager.this.notifyAll();
+        }
+      }
+      return queue;
+    }
+  }
+);
+  answer.setAutoStartup(true);
+  answer.setMessageListener(this);
+  answer.setPubSubDomain(false);
+  answer.setSubscriptionDurable(false);
+  answer.setConcurrentConsumers(endpoint.getConcurrentConsumers());
+  answer.setConnectionFactory(endpoint.getConnectionFactory());
+  String clientId=endpoint.getClientId();
+  if (clientId != null) {
+    clientId+=".CamelReplyManager";
+    answer.setClientId(clientId);
+  }
+  TaskExecutor taskExecutor=endpoint.getTaskExecutor();
+  if (taskExecutor != null) {
+    answer.setTaskExecutor(taskExecutor);
+  }
+  ExceptionListener exceptionListener=endpoint.getExceptionListener();
+  if (exceptionListener != null) {
+    answer.setExceptionListener(exceptionListener);
+  }
+  return answer;
+}

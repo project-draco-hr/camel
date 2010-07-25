@@ -1,0 +1,27 @@
+{
+  if (!started.get()) {
+synchronized (this) {
+      if (started.get()) {
+        return;
+      }
+      try {
+        if (endpoint.getReplyTo() != null) {
+          replyManager=endpoint.getReplyManager(endpoint.getReplyTo());
+          if (LOG.isInfoEnabled()) {
+            LOG.info("Using JmsReplyManager: " + replyManager + " to process replies from: "+ endpoint.getReplyTo()+ " queue with "+ endpoint.getConcurrentConsumers()+ " concurrent consumers.");
+          }
+        }
+ else {
+          replyManager=endpoint.getReplyManager();
+          if (LOG.isInfoEnabled()) {
+            LOG.info("Using JmsReplyManager: " + replyManager + " to process replies from temporary queue with "+ endpoint.getConcurrentConsumers()+ " concurrent consumers.");
+          }
+        }
+      }
+ catch (      Exception e) {
+        throw new FailedToCreateProducerException(endpoint,e);
+      }
+      started.set(true);
+    }
+  }
+}

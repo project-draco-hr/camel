@@ -1,0 +1,32 @@
+{
+  if (holder != null && isRunAllowed()) {
+    Exchange exchange=holder.getExchange();
+    Message message=holder.getMessage();
+    boolean timeout=holder.isTimeout();
+    if (timeout) {
+      exchange.setException(new ExchangeTimedOutException(exchange,holder.getRequestTimeout()));
+    }
+ else {
+      JmsMessage response=new JmsMessage(message,endpoint.getBinding());
+      Object body=response.getBody();
+      if (endpoint.isTransferException() && body instanceof Exception) {
+        if (log.isDebugEnabled()) {
+          log.debug("Reply received. Setting reply as an Exception: " + body);
+        }
+        exchange.setException((Exception)body);
+      }
+ else {
+        if (log.isDebugEnabled()) {
+          log.debug("Reply received. Setting reply as OUT message: " + body);
+        }
+        exchange.setOut(response);
+      }
+      if (holder.getOriginalCorrelationId() != null) {
+        JmsMessageHelper.setCorrelationId(message,holder.getOriginalCorrelationId());
+        exchange.getOut().setHeader("JMSCorrelationID",holder.getOriginalCorrelationId());
+      }
+    }
+    AsyncCallback callback=holder.getCallback();
+    callback.done(false);
+  }
+}
