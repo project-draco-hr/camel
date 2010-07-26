@@ -2,9 +2,20 @@
   if (object instanceof Service) {
     Service service=(Service)object;
     for (    LifecycleStrategy strategy : lifecycleStrategies) {
-      strategy.onServiceAdd(this,service,null);
+      if (service instanceof Endpoint) {
+        strategy.onEndpointAdd((Endpoint)service);
+      }
+ else {
+        strategy.onServiceAdd(this,service,null);
+      }
     }
-    servicesToClose.add(service);
+    boolean singleton=true;
+    if (service instanceof IsSingleton) {
+      singleton=((IsSingleton)service).isSingleton();
+    }
+    if (singleton) {
+      servicesToClose.add(service);
+    }
   }
   startServices(object);
 }
