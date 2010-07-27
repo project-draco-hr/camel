@@ -1,0 +1,23 @@
+{
+  final CamelClient client=new CamelClient();
+  final List<Callable<String>> callables=new ArrayList<Callable<String>>();
+  for (int count=0; count < 2000; count++) {
+    final int i=count;
+    callables.add(new Callable<String>(){
+      public String call(){
+        return client.lookup(i);
+      }
+    }
+);
+  }
+  final ExecutorService executorService=Executors.newFixedThreadPool(20);
+  final List<Future<String>> results=executorService.invokeAll(callables);
+  final Set<String> replies=new HashSet<String>();
+  for (  Future<String> future : results) {
+    String reply=future.get();
+    assertTrue(reply.startsWith("Bye "));
+    replies.add(reply);
+  }
+  client.close();
+  assertEquals(2000,replies.size());
+}
