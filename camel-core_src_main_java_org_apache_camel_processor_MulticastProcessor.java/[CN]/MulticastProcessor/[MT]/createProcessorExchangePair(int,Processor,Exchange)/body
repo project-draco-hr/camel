@@ -1,15 +1,17 @@
 {
   Processor prepared=processor;
-  setToEndpoint(exchange,prepared);
+  Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
+  setToEndpoint(copy,prepared);
   if (exchange.getUnitOfWork() != null && exchange.getUnitOfWork().getRouteContext() != null) {
     RouteContext routeContext=exchange.getUnitOfWork().getRouteContext();
     ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
     try {
       prepared=builder.createErrorHandler(routeContext,prepared);
+      prepared=new UnitOfWorkProcessor(prepared);
     }
  catch (    Exception e) {
       throw ObjectHelper.wrapRuntimeCamelException(e);
     }
   }
-  return new DefaultProcessorExchangePair(index,processor,prepared,exchange);
+  return new DefaultProcessorExchangePair(index,processor,prepared,copy);
 }

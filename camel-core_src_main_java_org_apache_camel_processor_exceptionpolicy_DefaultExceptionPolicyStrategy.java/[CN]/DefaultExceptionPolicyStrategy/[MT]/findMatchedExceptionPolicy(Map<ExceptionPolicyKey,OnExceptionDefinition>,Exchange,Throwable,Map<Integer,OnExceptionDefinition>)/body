@@ -9,6 +9,16 @@
   for (  Map.Entry<ExceptionPolicyKey,OnExceptionDefinition> entry : entries) {
     Class<?> clazz=entry.getKey().getExceptionClass();
     OnExceptionDefinition type=entry.getValue();
+    if (exchange != null && exchange.getUnitOfWork() != null) {
+      RouteDefinition route=exchange.getUnitOfWork().getRouteContext() != null ? exchange.getUnitOfWork().getRouteContext().getRoute() : null;
+      RouteDefinition typeRoute=ProcessorDefinitionHelper.getRoute(type);
+      if (route != null && typeRoute != null && route != typeRoute) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("The type is scoped for route: " + typeRoute.getId() + " however Exchange is at route: "+ route.getId());
+        }
+        continue;
+      }
+    }
     if (filter(type,clazz,exception)) {
       if (!matchesWhen(type,exchange)) {
         if (LOG.isTraceEnabled()) {
