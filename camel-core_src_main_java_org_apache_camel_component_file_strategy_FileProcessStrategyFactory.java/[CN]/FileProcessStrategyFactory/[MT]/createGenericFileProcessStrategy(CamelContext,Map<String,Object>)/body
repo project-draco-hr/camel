@@ -5,14 +5,14 @@
   boolean isNoop=params.get("noop") != null;
   boolean isDelete=params.get("delete") != null;
   boolean isMove=moveExpression != null || preMoveExpression != null || moveFailedExpression != null;
-  if (isNoop) {
-    GenericFileNoOpProcessStrategy<File> strategy=new GenericFileNoOpProcessStrategy<File>();
-    strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
-    return strategy;
-  }
- else   if (isDelete) {
+  if (isDelete) {
     GenericFileDeleteProcessStrategy<File> strategy=new GenericFileDeleteProcessStrategy<File>();
     strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
+    if (preMoveExpression != null) {
+      GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
     if (moveFailedExpression != null) {
       GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();
       renamer.setExpression(moveFailedExpression);
@@ -20,16 +20,18 @@
     }
     return strategy;
   }
- else   if (isMove) {
+ else   if (isMove || isNoop) {
     GenericFileRenameProcessStrategy<File> strategy=new GenericFileRenameProcessStrategy<File>();
     strategy.setExclusiveReadLockStrategy(getExclusiveReadLockStrategy(params));
-    if (moveExpression != null) {
-      GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();
-      renamer.setExpression(moveExpression);
-      strategy.setCommitRenamer(renamer);
-    }
+    if (!isNoop) {
+      if (moveExpression != null) {
+        GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();
+        renamer.setExpression(moveExpression);
+        strategy.setCommitRenamer(renamer);
+      }
  else {
-      strategy.setCommitRenamer(getDefaultCommitRenamer(context));
+        strategy.setCommitRenamer(getDefaultCommitRenamer(context));
+      }
     }
     if (preMoveExpression != null) {
       GenericFileExpressionRenamer<File> renamer=new GenericFileExpressionRenamer<File>();

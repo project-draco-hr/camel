@@ -5,20 +5,25 @@
   boolean isNoop=params.get("noop") != null;
   boolean isDelete=params.get("delete") != null;
   boolean isMove=moveExpression != null || preMoveExpression != null || moveFailedExpression != null;
-  if (isNoop) {
-    GenericFileNoOpProcessStrategy<T> strategy=new GenericFileNoOpProcessStrategy<T>();
-    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<T>)getExclusiveReadLockStrategy(params));
-    return strategy;
-  }
- else   if (isDelete) {
+  if (isDelete) {
     GenericFileDeleteProcessStrategy<T> strategy=new GenericFileDeleteProcessStrategy<T>();
     strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<T>)getExclusiveReadLockStrategy(params));
+    if (preMoveExpression != null) {
+      GenericFileExpressionRenamer<T> renamer=new GenericFileExpressionRenamer<T>();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
+    if (moveFailedExpression != null) {
+      GenericFileExpressionRenamer<T> renamer=new GenericFileExpressionRenamer<T>();
+      renamer.setExpression(moveFailedExpression);
+      strategy.setFailureRenamer(renamer);
+    }
     return strategy;
   }
- else   if (isMove) {
+ else   if (isMove || isNoop) {
     GenericFileRenameProcessStrategy<T> strategy=new GenericFileRenameProcessStrategy<T>();
     strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<T>)getExclusiveReadLockStrategy(params));
-    if (moveExpression != null) {
+    if (!isNoop && moveExpression != null) {
       GenericFileExpressionRenamer<T> renamer=new GenericFileExpressionRenamer<T>();
       renamer.setExpression(moveExpression);
       strategy.setCommitRenamer(renamer);
