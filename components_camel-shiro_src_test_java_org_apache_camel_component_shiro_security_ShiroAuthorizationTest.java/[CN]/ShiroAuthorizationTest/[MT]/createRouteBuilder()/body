@@ -1,0 +1,13 @@
+{
+  List<Permission> permissionsList=new ArrayList<Permission>();
+  Permission permission=new WildcardPermission("zone1:readwrite:*");
+  permissionsList.add(permission);
+  final ShiroSecurityPolicy securityPolicy=new ShiroSecurityPolicy("./src/test/resources/securityconfig.ini",passPhrase,true,permissionsList);
+  return new RouteBuilder(){
+    public void configure(){
+      onException(CamelAuthorizationException.class).to("mock:authorizationException");
+      from("direct:secureEndpoint").to("log:incoming payload").policy(securityPolicy).to("mock:success");
+    }
+  }
+;
+}

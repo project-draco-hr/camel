@@ -1,0 +1,53 @@
+{
+  return new AsyncProcessor(){
+    public boolean process(    Exchange exchange,    final AsyncCallback callback){
+      boolean sync=false;
+      try {
+        applySecurityPolicy(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+      AsyncProcessor ap=AsyncProcessorTypeConverter.convert(processor);
+      sync=ap.process(exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          if (doneSync) {
+            return;
+          }
+          callback.done(false);
+        }
+      }
+);
+      if (!sync) {
+        return false;
+      }
+      callback.done(true);
+      return true;
+    }
+    public void process(    Exchange exchange) throws Exception {
+      applySecurityPolicy(exchange);
+      processor.process(exchange);
+    }
+    private void applySecurityPolicy(    Exchange exchange) throws Exception {
+      ByteSource encryptedToken=(ByteSource)exchange.getIn().getHeader("SHIRO_SECURITY_TOKEN");
+      ByteSource decryptedToken=getCipherService().decrypt(encryptedToken.getBytes(),getPassPhrase());
+      ByteArrayInputStream byteArrayInputStream=new ByteArrayInputStream(decryptedToken.getBytes());
+      ObjectInputStream objectInputStream=new ObjectInputStream(byteArrayInputStream);
+      ShiroSecurityToken securityToken=(ShiroSecurityToken)objectInputStream.readObject();
+      objectInputStream.close();
+      byteArrayInputStream.close();
+      Subject currentUser=SecurityUtils.getSubject();
+      try {
+        authenticateUser(currentUser,securityToken);
+        authorizeUser(currentUser,exchange);
+      }
+  finally {
+        if (alwaysReauthenticate) {
+          currentUser.logout();
+          currentUser=null;
+        }
+      }
+    }
+  }
+;
+}

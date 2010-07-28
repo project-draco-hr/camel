@@ -1,0 +1,29 @@
+{
+  if (!currentUser.isAuthenticated()) {
+    UsernamePasswordToken token=new UsernamePasswordToken(securityToken.getUsername(),securityToken.getPassword());
+    if (alwaysReauthenticate) {
+      token.setRememberMe(false);
+    }
+ else {
+      token.setRememberMe(true);
+    }
+    try {
+      currentUser.login(token);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Current User " + currentUser.getPrincipal() + " successfully authenticated");
+      }
+    }
+ catch (    UnknownAccountException uae) {
+      throw new UnknownAccountException("Authentication Failed. There is no user with username of " + token.getPrincipal(),uae.getCause());
+    }
+catch (    IncorrectCredentialsException ice) {
+      throw new IncorrectCredentialsException("Authentication Failed. Password for account " + token.getPrincipal() + " was incorrect!",ice.getCause());
+    }
+catch (    LockedAccountException lae) {
+      throw new LockedAccountException("Authentication Failed. The account for username " + token.getPrincipal() + " is locked."+ "Please contact your administrator to unlock it.",lae.getCause());
+    }
+catch (    AuthenticationException ae) {
+      throw new AuthenticationException("Authentication Failed.",ae.getCause());
+    }
+  }
+}

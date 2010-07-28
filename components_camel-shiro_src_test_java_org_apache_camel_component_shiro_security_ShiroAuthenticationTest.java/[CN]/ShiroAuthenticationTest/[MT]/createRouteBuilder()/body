@@ -1,0 +1,13 @@
+{
+  final ShiroSecurityPolicy securityPolicy=new ShiroSecurityPolicy("./src/test/resources/securityconfig.ini",passPhrase);
+  return new RouteBuilder(){
+    public void configure(){
+      onException(UnknownAccountException.class).to("mock:authenticationException");
+      onException(IncorrectCredentialsException.class).to("mock:authenticationException");
+      onException(LockedAccountException.class).to("mock:authenticationException");
+      onException(AuthenticationException.class).to("mock:authenticationException");
+      from("direct:secureEndpoint").to("log:incoming payload").policy(securityPolicy).to("mock:success");
+    }
+  }
+;
+}
