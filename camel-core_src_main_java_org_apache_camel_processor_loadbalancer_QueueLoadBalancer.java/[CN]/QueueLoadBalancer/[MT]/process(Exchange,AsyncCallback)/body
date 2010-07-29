@@ -1,24 +1,28 @@
 {
-  boolean sync;
   List<Processor> list=getProcessors();
-  if (list.isEmpty()) {
-    throw new IllegalStateException("No processors available to process " + exchange);
-  }
-  Processor processor=chooseProcessor(list,exchange);
-  if (processor == null) {
-    throw new IllegalStateException("No processors could be chosen to process " + exchange);
-  }
- else {
-    AsyncProcessor albp=AsyncProcessorTypeConverter.convert(processor);
-    sync=AsyncProcessorHelper.process(albp,exchange,new AsyncCallback(){
-      public void done(      boolean doneSync){
-        if (doneSync) {
-          return;
-        }
-        callback.done(false);
-      }
+  if (!list.isEmpty()) {
+    Processor processor=chooseProcessor(list,exchange);
+    if (processor == null) {
+      throw new IllegalStateException("No processors could be chosen to process " + exchange);
     }
+ else {
+      AsyncProcessor albp=AsyncProcessorTypeConverter.convert(processor);
+      boolean sync=AsyncProcessorHelper.process(albp,exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          if (doneSync) {
+            return;
+          }
+          callback.done(false);
+        }
+      }
 );
+      if (!sync) {
+        return false;
+      }
+      callback.done(true);
+      return true;
+    }
   }
-  return sync;
+  callback.done(true);
+  return true;
 }

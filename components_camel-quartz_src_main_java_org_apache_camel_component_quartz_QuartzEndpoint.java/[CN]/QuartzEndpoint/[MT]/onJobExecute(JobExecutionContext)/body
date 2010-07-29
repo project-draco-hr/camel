@@ -1,10 +1,19 @@
 {
+  boolean run=true;
+  LoadBalancer balancer=getLoadBalancer();
+  if (balancer instanceof ServiceSupport) {
+    run=((ServiceSupport)balancer).isRunAllowed();
+  }
+  if (!run) {
+    LOG.warn("Cannot execute Quartz Job with context: " + jobExecutionContext + " because processor is not started: "+ balancer);
+    return;
+  }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Firing Quartz Job with context: " + jobExecutionContext);
   }
   Exchange exchange=createExchange(jobExecutionContext);
   try {
-    getLoadBalancer().process(exchange);
+    balancer.process(exchange);
     if (exchange.getException() != null) {
       throw new JobExecutionException(exchange.getException());
     }

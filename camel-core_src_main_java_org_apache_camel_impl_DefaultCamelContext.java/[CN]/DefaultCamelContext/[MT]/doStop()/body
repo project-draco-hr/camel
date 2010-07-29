@@ -10,6 +10,8 @@
   }
   getRouteStartupOrder().clear();
   shutdownServices(routeServices.values());
+  suspendedRouteServices.clear();
+  suspended.set(false);
   shutdownServices(endpoints.values());
   endpoints.clear();
   shutdownServices(components.values());
@@ -24,16 +26,12 @@
   }
   shutdownServices(servicesToClose);
   servicesToClose.clear();
-  startupListeners.clear();
   EventHelper.notifyCamelContextStopped(this);
   for (  EventNotifier notifier : getManagementStrategy().getEventNotifiers()) {
     shutdownServices(notifier);
   }
   shutdownServices(managementStrategy);
   forceStopLazyInitialization();
-  routeDefinitionInitiated=false;
-  firstStartDone=false;
-  defaultRouteStartupOrder=1000;
   stopWatch.stop();
   if (LOG.isInfoEnabled()) {
     LOG.info("Uptime: " + getUptime());

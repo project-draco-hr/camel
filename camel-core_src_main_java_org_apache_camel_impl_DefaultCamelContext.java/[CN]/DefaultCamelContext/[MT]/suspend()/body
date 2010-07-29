@@ -1,0 +1,27 @@
+{
+  if (!suspended.get()) {
+    if (suspending.compareAndSet(false,true)) {
+      try {
+        LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is suspending");
+        StopWatch watch=new StopWatch();
+        for (        Map.Entry<String,RouteService> entry : getRouteServices().entrySet()) {
+          if (entry.getValue().getStatus().isStarted()) {
+            suspendedRouteServices.put(entry.getKey(),entry.getValue());
+          }
+        }
+        for (        Map.Entry<String,RouteService> entry : suspendedRouteServices.entrySet()) {
+          shutdownRoute(entry.getKey());
+        }
+        watch.stop();
+        if (LOG.isInfoEnabled()) {
+          LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is suspended in "+ TimeUtils.printDuration(watch.taken()));
+        }
+      }
+  finally {
+        suspended.set(true);
+        suspending.set(false);
+        resuming.set(false);
+      }
+    }
+  }
+}
