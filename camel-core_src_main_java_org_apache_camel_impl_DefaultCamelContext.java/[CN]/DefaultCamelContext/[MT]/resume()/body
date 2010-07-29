@@ -2,6 +2,7 @@
   if (suspended.get()) {
     if (resuming.compareAndSet(false,true)) {
       try {
+        EventHelper.notifyCamelContextResuming(this);
         LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is resuming");
         StopWatch watch=new StopWatch();
         doStartRoutes(suspendedRouteServices,false);
@@ -11,8 +12,13 @@
           LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") resumed in "+ TimeUtils.printDuration(watch.taken()));
         }
         suspendedRouteServices.clear();
+        EventHelper.notifyCamelContextResumed(this);
       }
-  finally {
+ catch (      Exception e) {
+        EventHelper.notifyCamelContextResumeFailed(this,e);
+        throw e;
+      }
+ finally {
         suspended.set(false);
         suspending.set(false);
         resuming.set(false);
