@@ -1,14 +1,19 @@
 {
-  boolean doNotStart=!firstStartDone && !isAutoStartup();
+  startDate=new Date();
+  stopWatch.restart();
+  LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is starting");
+  doNotStartRoutesOnFirstStart=!firstStartDone && !isAutoStartup();
   firstStartDone=true;
-  if (doNotStart) {
-    LOG.info("Cannot start Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") as it has been configured to not auto start");
-    return;
-  }
   super.start();
   stopWatch.stop();
   if (LOG.isInfoEnabled()) {
-    LOG.info("Started " + getRoutes().size() + " routes");
+    int started=0;
+    for (    Route route : getRoutes()) {
+      if (getRouteStatus(route.getId()).isStarted()) {
+        started++;
+      }
+    }
+    LOG.info("Total " + getRoutes().size() + " routes, of which "+ started+ " is started.");
     LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") started in "+ TimeUtils.printDuration(stopWatch.taken()));
   }
   EventHelper.notifyCamelContextStarted(this);

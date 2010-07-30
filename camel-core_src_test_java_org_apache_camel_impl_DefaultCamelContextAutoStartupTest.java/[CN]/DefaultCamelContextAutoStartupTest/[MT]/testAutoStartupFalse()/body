@@ -4,16 +4,16 @@
   camel.setAutoStartup(false);
   camel.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("direct:start").to("mock:result");
+      from("direct:start").routeId("foo").to("mock:result");
     }
   }
 );
   camel.start();
-  assertEquals(false,camel.isStarted());
-  assertEquals(0,camel.getRoutes().size());
-  camel.start();
   assertEquals(true,camel.isStarted());
   assertEquals(1,camel.getRoutes().size());
+  assertEquals(true,camel.getRouteStatus("foo").isStopped());
+  camel.startRoute("foo");
+  assertEquals(true,camel.getRouteStatus("foo").isStarted());
   MockEndpoint mock=camel.getEndpoint("mock:result",MockEndpoint.class);
   mock.expectedMessageCount(1);
   camel.createProducerTemplate().sendBody("direct:start","Hello World");

@@ -1,0 +1,36 @@
+{
+  if (!started.get()) {
+    if (starting.compareAndSet(false,true)) {
+      boolean childrenStarted=false;
+      Exception ex=null;
+      try {
+        if (childServices != null && startChildren) {
+          ServiceHelper.startServices(childServices);
+        }
+        childrenStarted=true;
+        doStart();
+      }
+ catch (      Exception e) {
+        ex=e;
+      }
+ finally {
+        if (ex != null) {
+          try {
+            stop(childrenStarted);
+          }
+ catch (          Exception e) {
+          }
+          throw ex;
+        }
+ else {
+          started.set(true);
+          starting.set(false);
+          stopping.set(false);
+          stopped.set(false);
+          shutdown.set(false);
+          shuttingdown.set(false);
+        }
+      }
+    }
+  }
+}
