@@ -1,0 +1,43 @@
+{
+  StopWatch watch=new StopWatch();
+  List<RouteStartupOrder> routesOrdered=new ArrayList<RouteStartupOrder>(routes);
+  Collections.sort(routesOrdered,new Comparator<RouteStartupOrder>(){
+    public int compare(    RouteStartupOrder o1,    RouteStartupOrder o2){
+      return o1.getStartupOrder() - o2.getStartupOrder();
+    }
+  }
+);
+  if (shutdownRoutesInReverseOrder) {
+    Collections.reverse(routesOrdered);
+  }
+  if (timeout > 0) {
+    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase()+ ")");
+  }
+ else {
+    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (no timeout)");
+  }
+  Future future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,suspendOnly));
+  try {
+    if (timeout > 0) {
+      future.get(timeout,timeUnit);
+    }
+ else {
+      future.get();
+    }
+  }
+ catch (  TimeoutException e) {
+    future.cancel(true);
+    if (shutdownNowOnTimeout) {
+      LOG.warn("Timeout occurred. Now forcing the routes to be shutdown now.");
+      shutdownRoutesNow(routesOrdered);
+    }
+ else {
+      LOG.warn("Timeout occurred. Will ignore shutting down the remainder routes.");
+    }
+  }
+catch (  ExecutionException e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e.getCause());
+  }
+  long seconds=TimeUnit.SECONDS.convert(watch.stop(),TimeUnit.MILLISECONDS);
+  LOG.info("Graceful shutdown of " + routesOrdered.size() + " routes completed in "+ seconds+ " seconds");
+}

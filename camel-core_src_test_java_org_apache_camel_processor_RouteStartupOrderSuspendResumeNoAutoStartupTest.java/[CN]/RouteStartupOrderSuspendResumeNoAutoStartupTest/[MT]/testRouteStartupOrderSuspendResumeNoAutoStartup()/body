@@ -1,0 +1,15 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  context.suspend();
+  context.resume();
+  assertEquals(true,context.getRouteStatus("C").isStopped());
+  DefaultCamelContext dcc=(DefaultCamelContext)context;
+  List<RouteStartupOrder> order=dcc.getRouteStartupOrder();
+  assertEquals(3,order.size());
+  assertEquals("seda://foo",order.get(0).getRoute().getEndpoint().getEndpointUri());
+  assertEquals("direct://start",order.get(1).getRoute().getEndpoint().getEndpointUri());
+  assertEquals("direct://bar",order.get(2).getRoute().getEndpoint().getEndpointUri());
+}

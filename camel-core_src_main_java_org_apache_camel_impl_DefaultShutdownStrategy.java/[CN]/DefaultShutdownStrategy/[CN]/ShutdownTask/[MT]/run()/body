@@ -1,13 +1,13 @@
 {
   if (LOG.isDebugEnabled()) {
-    LOG.debug("There are " + routes.size() + " routes to shutdown");
+    LOG.debug("There are " + routes.size() + " routes to "+ (suspendOnly ? "suspend" : "shutdown"));
   }
   List<ShutdownDeferredConsumer> deferredConsumers=new ArrayList<ShutdownDeferredConsumer>();
   for (  RouteStartupOrder order : routes) {
     ShutdownRoute shutdownRoute=order.getRoute().getRouteContext().getShutdownRoute();
     ShutdownRunningTask shutdownRunningTask=order.getRoute().getRouteContext().getShutdownRunningTask();
     if (LOG.isTraceEnabled()) {
-      LOG.trace("Shutting down route: " + order.getRoute().getId() + " with options ["+ shutdownRoute+ ","+ shutdownRunningTask+ "]");
+      LOG.trace((suspendOnly ? "Suspending route: " : "Shutting down route: ") + order.getRoute().getId() + " with options ["+ shutdownRoute+ ","+ shutdownRunningTask+ "]");
     }
     for (    Consumer consumer : order.getInputs()) {
       boolean suspend=false;
@@ -21,7 +21,7 @@
         }
       }
       if (suspend) {
-        suspendNow((SuspendableService)consumer,consumer);
+        suspendNow(consumer);
         deferredConsumers.add(new ShutdownDeferredConsumer(order.getRoute(),consumer));
         LOG.info("Route: " + order.getRoute().getId() + " suspended and shutdown deferred, was consuming from: "+ order.getRoute().getEndpoint());
       }
@@ -31,7 +31,7 @@
       }
  else {
         deferredConsumers.add(new ShutdownDeferredConsumer(order.getRoute(),consumer));
-        LOG.info("Route: " + order.getRoute().getId() + " shutdown deferred.");
+        LOG.info("Route: " + order.getRoute().getId() + (suspendOnly ? " shutdown deferred." : " suspension deferred."));
       }
     }
   }
@@ -70,7 +70,13 @@
     }
   }
   for (  ShutdownDeferredConsumer deferred : deferredConsumers) {
-    shutdownNow(deferred.getConsumer());
-    LOG.info("Route: " + deferred.getRoute().getId() + " shutdown complete.");
+    if (suspendOnly) {
+      suspendNow(deferred.getConsumer());
+      LOG.info("Route: " + deferred.getRoute().getId() + " suspend complete.");
+    }
+ else {
+      shutdownNow(deferred.getConsumer());
+      LOG.info("Route: " + deferred.getRoute().getId() + " shutdown complete.");
+    }
   }
 }

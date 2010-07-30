@@ -1,7 +1,18 @@
 {
   Map<String,RouteService> filtered=new LinkedHashMap<String,RouteService>();
   for (  Map.Entry<String,RouteService> entry : routeServices.entrySet()) {
-    if (entry.getValue().getStatus().isStartable()) {
+    boolean startable;
+    Consumer consumer=entry.getValue().getRoutes().iterator().next().getConsumer();
+    if (consumer instanceof SuspendableService) {
+      startable=((SuspendableService)consumer).isSuspended();
+    }
+ else     if (consumer instanceof ServiceSupport) {
+      startable=((ServiceSupport)consumer).getStatus().isStartable();
+    }
+ else {
+      startable=entry.getValue().getStatus().isStartable();
+    }
+    if (startable) {
       filtered.put(entry.getKey(),entry.getValue());
     }
   }
