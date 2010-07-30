@@ -12,12 +12,19 @@
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
+    final Message mail=exchange.getIn(MailMessage.class).getOriginalMessage();
+    exchange.addOnCompletion(new Synchronization(){
+      public void onComplete(      Exchange exchange){
+        processCommit(mail,exchange);
+      }
+      public void onFailure(      Exchange exchange){
+        processRollback(mail,exchange);
+      }
+      @Override public String toString(){
+        return "MailConsumerOnCompletion";
+      }
+    }
+);
     processExchange(exchange);
-    if (!exchange.isFailed()) {
-      processCommit(exchange);
-    }
- else {
-      processRollback(exchange);
-    }
   }
 }
