@@ -1,9 +1,13 @@
 {
-  getMockEndpoint("mock:foo").expectedMessageCount(1);
-  template.sendBody("direct:foo","Hello World");
-  assertMockEndpointsSatisfied();
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:foo").routeId("foo").startupOrder(5).to("mock:foo");
+      from("direct:bar").routeId("bar").startupOrder(5).noAutoStartup().to("mock:bar");
+    }
+  }
+);
   try {
-    context.startRoute("bar");
+    context.start();
     fail("Should have thrown an exception");
   }
  catch (  FailedToStartRouteException e) {

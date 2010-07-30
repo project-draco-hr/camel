@@ -4,6 +4,11 @@
     Integer order=entry.getKey();
     Route route=entry.getValue().getRoute();
     RouteService routeService=entry.getValue().getRouteService();
+    boolean autoStartup=routeService.getRouteDefinition().isAutoStartup();
+    if (isStarting() && !autoStartup) {
+      LOG.info("Cannot start route " + routeService.getId() + " as its configured with autoStartup=false");
+      continue;
+    }
     for (    Consumer consumer : routeService.getInputs().values()) {
       Endpoint endpoint=consumer.getEndpoint();
       if (!doCheckMultipleConsumerSupportClash(endpoint,routeInputs)) {
