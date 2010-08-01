@@ -1,0 +1,28 @@
+{
+  EventHelper.notifyCamelContextSuspending(this);
+  LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is suspending");
+  StopWatch watch=new StopWatch();
+  for (  Map.Entry<String,RouteService> entry : getRouteServices().entrySet()) {
+    if (entry.getValue().getStatus().isStarted()) {
+      suspendedRouteServices.put(entry.getKey(),entry.getValue());
+    }
+  }
+  List<RouteStartupOrder> orders=new ArrayList<RouteStartupOrder>();
+  for (  Map.Entry<String,RouteService> entry : suspendedRouteServices.entrySet()) {
+    Route route=entry.getValue().getRoutes().iterator().next();
+    Integer order=entry.getValue().getRouteDefinition().getStartupOrder();
+    if (order == null) {
+      order=defaultRouteStartupOrder++;
+    }
+    orders.add(new DefaultRouteStartupOrder(order,route,entry.getValue()));
+  }
+  getShutdownStrategy().suspend(this,orders);
+  for (  RouteService service : suspendedRouteServices.values()) {
+    service.suspend();
+  }
+  watch.stop();
+  if (LOG.isInfoEnabled()) {
+    LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is suspended in "+ TimeUtils.printDuration(watch.taken()));
+  }
+  EventHelper.notifyCamelContextSuspended(this);
+}

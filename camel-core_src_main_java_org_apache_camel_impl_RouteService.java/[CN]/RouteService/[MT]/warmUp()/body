@@ -1,28 +1,29 @@
 {
-  camelContext.addRouteCollection(routes);
-  for (  LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
-    strategy.onRoutesAdd(routes);
-  }
-  for (  Route route : routes) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Starting route services: " + route);
-    }
-    List<Service> services=route.getServices();
-    route.onStartingServices(services);
-    List<Service> list=new ArrayList<Service>();
-    for (    Service service : services) {
-      doGetChildServices(list,service);
-    }
-    List<Service> childServices=new ArrayList<Service>();
-    for (    Service service : list) {
-      if (service instanceof Consumer) {
-        inputs.put(route,(Consumer)service);
+  if (warmUpDone.compareAndSet(false,true)) {
+    for (    Route route : routes) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Starting route services: " + route);
       }
+      List<Service> services=route.getServices();
+      route.onStartingServices(services);
+      Set<Service> list=new LinkedHashSet<Service>();
+      for (      Service service : services) {
+        doGetChildServices(list,service);
+      }
+      List<Service> childServices=new ArrayList<Service>();
+      for (      Service service : list) {
+        if (service instanceof Consumer) {
+          inputs.put(route,(Consumer)service);
+        }
  else {
-        childServices.add(service);
+          childServices.add(service);
+        }
       }
+      startChildService(route,childServices);
     }
-    startChildService(route,childServices);
+    for (    LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
+      strategy.onRoutesAdd(routes);
+    }
+    camelContext.addRouteCollection(routes);
   }
-  warmUpDone.set(true);
 }
