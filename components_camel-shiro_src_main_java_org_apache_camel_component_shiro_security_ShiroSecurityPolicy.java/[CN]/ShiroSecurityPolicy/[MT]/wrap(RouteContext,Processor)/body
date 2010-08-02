@@ -1,15 +1,17 @@
 {
   return new AsyncProcessor(){
     public boolean process(    Exchange exchange,    final AsyncCallback callback){
-      boolean sync=false;
+      boolean sync;
       try {
         applySecurityPolicy(exchange);
       }
  catch (      Exception e) {
         exchange.setException(e);
+        callback.done(true);
+        return true;
       }
       AsyncProcessor ap=AsyncProcessorTypeConverter.convert(processor);
-      sync=ap.process(exchange,new AsyncCallback(){
+      sync=AsyncProcessorHelper.process(ap,exchange,new AsyncCallback(){
         public void done(        boolean doneSync){
           if (doneSync) {
             return;
