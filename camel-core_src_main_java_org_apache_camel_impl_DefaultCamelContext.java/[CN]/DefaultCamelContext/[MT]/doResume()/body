@@ -3,9 +3,14 @@
     EventHelper.notifyCamelContextResuming(this);
     LOG.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is resuming");
     StopWatch watch=new StopWatch();
-    doStartRoutes(suspendedRouteServices,false,true);
+    doStartOrResumeRoutes(suspendedRouteServices,false,true,true);
     for (    RouteService service : suspendedRouteServices.values()) {
-      service.resume();
+      if (routeSupportsSuspension(service.getId())) {
+        service.resume();
+      }
+ else {
+        service.start();
+      }
     }
     watch.stop();
     if (LOG.isInfoEnabled()) {

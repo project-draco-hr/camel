@@ -1,0 +1,15 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:foo");
+  mock.expectedBodiesReceived("Hello World");
+  template.sendBody("activemq:queue:foo","Hello World");
+  assertMockEndpointsSatisfied();
+  context.suspendRoute("foo");
+  resetMocks();
+  mock.expectedMessageCount(0);
+  template.sendBody("activemq:queue:foo","Bye World");
+  assertMockEndpointsSatisfied(1,TimeUnit.SECONDS);
+  resetMocks();
+  mock.expectedBodiesReceived("Bye World");
+  context.resumeRoute("foo");
+  assertMockEndpointsSatisfied();
+}
