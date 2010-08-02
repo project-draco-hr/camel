@@ -1,0 +1,39 @@
+{
+switch (type) {
+case Text:
+{
+      TextMessage message=session.createTextMessage();
+      String payload=context.getTypeConverter().convertTo(String.class,exchange,body);
+      message.setText(payload);
+      return message;
+    }
+case Bytes:
+{
+    BytesMessage message=session.createBytesMessage();
+    byte[] payload=context.getTypeConverter().convertTo(byte[].class,exchange,body);
+    message.writeBytes(payload);
+    return message;
+  }
+case Map:
+{
+  MapMessage message=session.createMapMessage();
+  Map payload=context.getTypeConverter().convertTo(Map.class,exchange,body);
+  populateMapMessage(message,payload,context);
+  return message;
+}
+case Object:
+Serializable payload;
+try {
+payload=context.getTypeConverter().mandatoryConvertTo(Serializable.class,exchange,body);
+}
+ catch (NoTypeConversionAvailableException e) {
+JMSException cause=new MessageFormatException(e.getMessage());
+cause.initCause(e);
+throw cause;
+}
+return session.createObjectMessage(payload);
+default :
+break;
+}
+return null;
+}

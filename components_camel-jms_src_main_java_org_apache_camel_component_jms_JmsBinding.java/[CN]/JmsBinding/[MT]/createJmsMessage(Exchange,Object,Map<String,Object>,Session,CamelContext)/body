@@ -20,62 +20,16 @@
     type=endpoint.getConfiguration().getJmsMessageType();
   }
  else {
-    if (body instanceof Node || body instanceof String) {
-      type=Text;
-    }
- else     if (body instanceof byte[] || body instanceof GenericFile || body instanceof File|| body instanceof Reader|| body instanceof InputStream|| body instanceof ByteBuffer|| body instanceof StreamCache) {
-      type=Bytes;
-    }
- else     if (body instanceof Map) {
-      type=Map;
-    }
- else     if (body instanceof Serializable) {
-      type=Object;
-    }
+    type=getJMSMessageTypeForBody(exchange,body,headers,session,context);
   }
   if (type != null) {
     if (LOG.isTraceEnabled()) {
       LOG.trace("Using JmsMessageType: " + type);
     }
-switch (type) {
-case Text:
-{
-        TextMessage message=session.createTextMessage();
-        String payload=context.getTypeConverter().convertTo(String.class,exchange,body);
-        message.setText(payload);
-        return message;
-      }
-case Bytes:
-{
-      BytesMessage message=session.createBytesMessage();
-      byte[] payload=context.getTypeConverter().convertTo(byte[].class,exchange,body);
-      message.writeBytes(payload);
-      return message;
-    }
-case Map:
-{
-    MapMessage message=session.createMapMessage();
-    Map payload=context.getTypeConverter().convertTo(Map.class,exchange,body);
-    populateMapMessage(message,payload,context);
-    return message;
+    return createJmsMessageForType(exchange,body,headers,session,context,type);
   }
-case Object:
-Serializable payload;
-try {
-payload=context.getTypeConverter().mandatoryConvertTo(Serializable.class,exchange,body);
-}
- catch (NoTypeConversionAvailableException e) {
-JMSException cause=new MessageFormatException(e.getMessage());
-cause.initCause(e);
-throw cause;
-}
-return session.createObjectMessage(payload);
-default :
-break;
-}
-}
-if (body != null && LOG.isWarnEnabled()) {
-LOG.warn("Cannot determine specific JmsMessage type to use from body class." + " Will use generic JmsMessage." + " Body class: " + ObjectHelper.classCanonicalName(body) + ". If you want to send a POJO then your class might need to implement java.io.Serializable"+ ", or you can force a specific type by setting the jmsMessageType option on the JMS endpoint.");
-}
-return session.createMessage();
+  if (body != null && LOG.isWarnEnabled()) {
+    LOG.warn("Cannot determine specific JmsMessage type to use from body class." + " Will use generic JmsMessage." + " Body class: " + ObjectHelper.classCanonicalName(body) + ". If you want to send a POJO then your class might need to implement java.io.Serializable"+ ", or you can force a specific type by setting the jmsMessageType option on the JMS endpoint.");
+  }
+  return session.createMessage();
 }
