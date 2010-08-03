@@ -1,0 +1,16 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("activemq:queue:foo").transacted().to("log:foo").to("activemq:queue:bar");
+      from("activemq:queue:bar").to("mock:bar");
+    }
+  }
+);
+  context.start();
+  MockEndpoint mock=getMockEndpoint("mock:bar");
+  mock.expectedMessageCount(0);
+  template.sendBody("activemq:queue:foo","Hello World");
+  mock.assertIsSatisfied(3000);
+  String reply=consumer.receiveBody("activemq:queue:ActiveMQ.DLQ",5000,String.class);
+  assertEquals("Hello World",reply);
+}
