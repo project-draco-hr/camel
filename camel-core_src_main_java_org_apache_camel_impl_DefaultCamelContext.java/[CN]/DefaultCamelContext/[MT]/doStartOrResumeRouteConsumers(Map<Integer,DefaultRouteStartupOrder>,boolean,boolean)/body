@@ -1,0 +1,51 @@
+{
+  List<Endpoint> routeInputs=new ArrayList<Endpoint>();
+  for (  Map.Entry<Integer,DefaultRouteStartupOrder> entry : inputs.entrySet()) {
+    Integer order=entry.getKey();
+    Route route=entry.getValue().getRoute();
+    RouteService routeService=entry.getValue().getRouteService();
+    boolean autoStartup=routeService.getRouteDefinition().isAutoStartup();
+    if (addingRoute && !autoStartup) {
+      LOG.info("Cannot start route " + routeService.getId() + " as its configured with autoStartup=false");
+      continue;
+    }
+    for (    Consumer consumer : routeService.getInputs().values()) {
+      Endpoint endpoint=consumer.getEndpoint();
+      if (!doCheckMultipleConsumerSupportClash(endpoint,routeInputs)) {
+        throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Route: " + route.getId() + " >>> "+ route);
+        if (resumeOnly) {
+          LOG.debug("Resuming consumer (order: " + order + ") on route: "+ route.getId());
+        }
+ else {
+          LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
+        }
+      }
+      if (resumeOnly && route.supportsSuspension()) {
+        resumeServices(consumer);
+        LOG.info("Route: " + route.getId() + " resumed and consuming from: "+ endpoint);
+      }
+ else {
+        for (        LifecycleStrategy strategy : lifecycleStrategies) {
+          strategy.onServiceAdd(this,consumer,route);
+        }
+        startServices(consumer);
+        LOG.info("Route: " + route.getId() + " started and consuming from: "+ endpoint);
+      }
+      routeInputs.add(endpoint);
+      boolean found=false;
+      for (      RouteStartupOrder other : routeStartupOrder) {
+        if (other.getRoute().getId() == route.getId()) {
+          found=true;
+          break;
+        }
+      }
+      if (!found) {
+        routeStartupOrder.add(entry.getValue());
+      }
+    }
+    routeService.start(false);
+  }
+}
