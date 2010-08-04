@@ -9,5 +9,8 @@
   if (isParallelProcessing() && executorService == null) {
     executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"Multicast");
   }
-  return new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException());
+  if (getTimeout() > 0 && !isParallelProcessing()) {
+    throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
+  }
+  return new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),getTimeout());
 }

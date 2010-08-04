@@ -16,10 +16,16 @@
   if (ignoreInvalidEndpoints != null) {
     answer.setIgnoreInvalidEndpoints(ignoreInvalidEndpoints);
   }
+  if (getTimeout() != null) {
+    answer.setTimeout(getTimeout());
+  }
   executorService=ExecutorServiceHelper.getConfiguredExecutorService(routeContext,"RecipientList",this);
   if (isParallelProcessing() && executorService == null) {
     executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"RecipientList");
   }
   answer.setExecutorService(executorService);
+  if (getTimeout() > 0 && !isParallelProcessing()) {
+    throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
+  }
   return answer;
 }

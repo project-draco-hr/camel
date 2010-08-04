@@ -8,12 +8,13 @@
     completion=new SubmitOrderedCompletionService<Exchange>(executorService);
   }
   final AtomicInteger total=new AtomicInteger(0);
+  final List<Future<Exchange>> tasks=new ArrayList<Future<Exchange>>();
   final Iterator<ProcessorExchangePair> it=pairs.iterator();
   while (it.hasNext()) {
     final ProcessorExchangePair pair=it.next();
     final Exchange subExchange=pair.getExchange();
     updateNewExchange(subExchange,total.intValue(),pairs,it);
-    completion.submit(new Callable<Exchange>(){
+    Future<Exchange> task=completion.submit(new Callable<Exchange>(){
       public Exchange call() throws Exception {
         if (!running.get()) {
           return subExchange;
@@ -35,12 +36,47 @@
       }
     }
 );
+    tasks.add(task);
     total.incrementAndGet();
   }
+  boolean timedOut=false;
   for (int i=0; i < total.intValue(); i++) {
-    Future<Exchange> future=completion.take();
-    Exchange subExchange=future.get();
-    doAggregate(getAggregationStrategy(subExchange),result,subExchange);
+    Future<Exchange> future;
+    if (timedOut) {
+      future=completion.poll();
+    }
+ else     if (timeout > 0) {
+      future=completion.poll(timeout,TimeUnit.MILLISECONDS);
+    }
+ else {
+      future=completion.take();
+    }
+    if (future == null && timedOut) {
+      break;
+    }
+ else     if (future == null) {
+      AggregationStrategy strategy=getAggregationStrategy(null);
+      if (strategy instanceof TimeoutAwareAggregationStrategy) {
+        ((TimeoutAwareAggregationStrategy)strategy).timeout(result.get(),i,total.intValue(),timeout);
+      }
+ else {
+        LOG.warn("Parallel processing timed out after " + timeout + " millis for number "+ i+ ". Cannot aggregate");
+      }
+      timedOut=true;
+    }
+ else {
+      Exchange subExchange=future.get();
+      AggregationStrategy strategy=getAggregationStrategy(subExchange);
+      doAggregate(strategy,result,subExchange);
+    }
+  }
+  if (timedOut) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Cancelling future tasks due timeout after " + timeout + " millis.");
+    }
+    for (    Future future : tasks) {
+      future.cancel(true);
+    }
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Done parallel processing " + total + " exchanges");
