@@ -11,15 +11,19 @@
     LOG.trace("Proxied method call " + method.getName() + " invoking producer: "+ producer);
   }
   producer.process(exchange);
-  Throwable fault=exchange.getException();
-  if (fault != null) {
-    if (fault instanceof RuntimeCamelException) {
-      if (fault.getCause() instanceof RuntimeException) {
-        throw (RuntimeException)((RuntimeCamelException)fault).getCause();
-      }
-      throw (RuntimeCamelException)fault;
+  Throwable cause=exchange.getException();
+  if (cause != null) {
+    Throwable found=findSuitableException(cause,method);
+    if (found != null) {
+      throw found;
     }
-    throw fault;
+    if (cause instanceof RuntimeCamelException) {
+      if (cause.getCause() instanceof RuntimeException) {
+        throw (RuntimeException)((RuntimeCamelException)cause).getCause();
+      }
+      throw (RuntimeCamelException)cause;
+    }
+    throw cause;
   }
   Class<?> to=method.getReturnType();
   if (to == Void.TYPE || !pattern.isOutCapable()) {
