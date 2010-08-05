@@ -1,0 +1,13 @@
+{
+  setUp("jpa://" + List.class.getName() + "?usePersist=true");
+  List<Customer> customers=new ArrayList<Customer>();
+  customers.add(createDefaultCustomer());
+  customers.add(createDefaultCustomer());
+  Exchange exchange=new DefaultExchange(camelContext);
+  exchange.getIn().setBody(customers);
+  Exchange returnedExchange=template.send(endpoint,exchange);
+  List returnedCustomers=returnedExchange.getIn().getBody(List.class);
+  assertEquals(2,returnedCustomers.size());
+  assertEntitiesInDatabase(2,Customer.class.getName());
+  assertEntitiesInDatabase(2,Address.class.getName());
+}
