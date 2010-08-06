@@ -35,7 +35,11 @@
     LOG.info("Using custom Debugger: " + debugger);
     getContext().setDebugger(debugger);
   }
-  lookupUuidGenerator();
+  UuidGenerator uuidGenerator=getBeanForType(UuidGenerator.class);
+  if (uuidGenerator != null) {
+    LOG.info("Using custom UuidGenerator: " + uuidGenerator);
+    getContext().setUuidGenerator(uuidGenerator);
+  }
   initCustomRegistry(getContext());
   initPropertyPlaceholder();
   initJMXAgent();
@@ -112,24 +116,7 @@
   initBeanPostProcessor(getContext());
   initCamelContext(getContext());
   initRouteRefs();
-  for (  RouteDefinition route : getRoutes()) {
-    RouteDefinitionHelper.initParent(route);
-    List<ProcessorDefinition> abstracts=new ArrayList<ProcessorDefinition>();
-    List<ProcessorDefinition> upper=new ArrayList<ProcessorDefinition>();
-    List<ProcessorDefinition> lower=new ArrayList<ProcessorDefinition>();
-    RouteDefinitionHelper.prepareRouteForInit(route,abstracts,lower);
-    initInterceptors(route,upper);
-    initOnCompletions(abstracts,upper);
-    initTransacted(abstracts,lower);
-    initOnExceptions(abstracts,upper);
-    route.clearOutput();
-    route.getOutputs().addAll(lower);
-    route.getOutputs().addAll(0,upper);
-    route.customPrepared();
-  }
-  if (getDataFormats() != null) {
-    getContext().setDataFormats(getDataFormats().asMap());
-  }
+  prepareRoutes();
   getContext().addRouteDefinitions(getRoutes());
   if (LOG.isDebugEnabled()) {
     LOG.debug("Found JAXB created routes: " + getRoutes());
