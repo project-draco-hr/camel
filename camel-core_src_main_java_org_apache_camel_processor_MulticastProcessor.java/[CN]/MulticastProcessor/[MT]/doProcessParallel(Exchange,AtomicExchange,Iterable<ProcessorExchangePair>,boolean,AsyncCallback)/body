@@ -40,15 +40,26 @@
     total.incrementAndGet();
   }
   boolean timedOut=false;
+  final StopWatch watch=new StopWatch();
   for (int i=0; i < total.intValue(); i++) {
     Future<Exchange> future;
     if (timedOut) {
       future=completion.poll();
     }
  else     if (timeout > 0) {
-      future=completion.poll(timeout,TimeUnit.MILLISECONDS);
+      long left=timeout - watch.taken();
+      if (left < 0) {
+        left=0;
+      }
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Polling completion task #" + i + " using timeout "+ left+ " millis.");
+      }
+      future=completion.poll(left,TimeUnit.MILLISECONDS);
     }
  else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Polling completion task #" + i);
+      }
       future=completion.take();
     }
     if (future == null && timedOut) {
@@ -60,7 +71,7 @@
         ((TimeoutAwareAggregationStrategy)strategy).timeout(result.get(),i,total.intValue(),timeout);
       }
  else {
-        LOG.warn("Parallel processing timed out after " + timeout + " millis for number "+ i+ ". Cannot aggregate");
+        LOG.warn("Parallel processing timed out after " + timeout + " millis for number "+ i+ ". This task will be cancelled and will not be aggregated.");
       }
       timedOut=true;
     }
