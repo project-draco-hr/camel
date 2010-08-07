@@ -1,11 +1,42 @@
 {
+  ManagedCamelContext mc=new ManagedCamelContext(context);
+  mc.init(context.getManagementStrategy());
   try {
-    initialized=true;
-    ManagedCamelContext mc=new ManagedCamelContext(context);
-    mc.init(context.getManagementStrategy());
+    boolean done=false;
+    while (!done) {
+      ObjectName on=getManagementStrategy().getManagementNamingStrategy().getObjectNameForCamelContext(context);
+      boolean exists=getManagementStrategy().isManaged(mc,on);
+      if (!exists) {
+        done=true;
+      }
+ else {
+        boolean fixed=false;
+        if (context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
+          String name=findFreeName(mc);
+          if (name != null) {
+            LOG.warn("Reassigned auto assigned name on CamelContext from: " + context.getName() + " to: "+ name+ " due to clash with existing name already registered in MBeanServer.");
+            context.setNameStrategy(new ExplicitCamelContextNameStrategy(name));
+            fixed=true;
+            done=true;
+          }
+        }
+        if (!fixed) {
+          throw new VetoCamelContextStartException("CamelContext (" + context.getName() + ") with ObjectName["+ on+ "] is already registered."+ " Make sure to use unique names on CamelContext when using multiple CamelContexts in the same MBeanServer.",context);
+        }
+      }
+    }
+  }
+ catch (  VetoCamelContextStartException e) {
+    throw e;
+  }
+catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+  try {
     getManagementStrategy().manageObject(mc);
   }
  catch (  Exception e) {
     throw ObjectHelper.wrapRuntimeCamelException(e);
   }
+  initialized=true;
 }

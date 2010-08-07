@@ -1,0 +1,18 @@
+{
+  camel1=createCamelContext("foo");
+  camel2=createCamelContext("foo");
+  camel1.start();
+  assertTrue("Should be started",camel1.getStatus().isStarted());
+  MBeanServer mbeanServer=camel1.getManagementStrategy().getManagementAgent().getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/foo,type=context,name=\"foo\"");
+  assertTrue("Should be registered",mbeanServer.isRegistered(on));
+  try {
+    camel2.start();
+    fail("Should throw an exception");
+  }
+ catch (  VetoCamelContextStartException e) {
+    assertEquals("foo",e.getContext().getName());
+  }
+  assertFalse("Should not be started",camel2.getStatus().isStarted());
+  assertTrue("Should still be registered after name clash",mbeanServer.isRegistered(on));
+}
