@@ -37,6 +37,9 @@
       connected=true;
     }
  catch (    Exception e) {
+      if (Thread.currentThread().isInterrupted()) {
+        throw new GenericFileOperationFailedException("Interrupted during connecting",new InterruptedException("Interrupted during connecting"));
+      }
       GenericFileOperationFailedException failed=new GenericFileOperationFailedException("Cannot connect to " + configuration.remoteServerInformation(),e);
       if (LOG.isTraceEnabled()) {
         LOG.trace("Cannot connect due: " + failed.getMessage());
@@ -49,7 +52,9 @@
         try {
           Thread.sleep(endpoint.getReconnectDelay());
         }
- catch (        InterruptedException e1) {
+ catch (        InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new GenericFileOperationFailedException("Interrupted during sleeping",ie);
         }
       }
     }

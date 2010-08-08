@@ -29,6 +29,9 @@
       }
     }
  catch (    Exception e) {
+      if (Thread.currentThread().isInterrupted()) {
+        throw new GenericFileOperationFailedException("Interrupted during connecting",new InterruptedException("Interrupted during connecting"));
+      }
       GenericFileOperationFailedException failed;
       if (e instanceof GenericFileOperationFailedException) {
         failed=(GenericFileOperationFailedException)e;
@@ -48,6 +51,8 @@
           Thread.sleep(endpoint.getReconnectDelay());
         }
  catch (        InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new GenericFileOperationFailedException("Interrupted during sleeping",ie);
         }
       }
     }
