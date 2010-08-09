@@ -6,10 +6,23 @@
       endpoint=getCamelContext().getEndpoint(id);
     }
   }
+  if (endpoint == null) {
+    for (    Endpoint e : getCamelContext().getEndpoints()) {
+      if (e instanceof HasId) {
+        HasId hasId=(HasId)e;
+        String value=hasId.getId();
+        if (value != null && value.equals(id)) {
+          endpoint=e;
+          break;
+        }
+      }
+    }
+  }
   if (endpoint != null) {
     return new EndpointResource(getContextResource(),id,endpoint);
   }
  else {
+    LOG.warn("No endpoint found for id: " + id);
     return null;
   }
 }
