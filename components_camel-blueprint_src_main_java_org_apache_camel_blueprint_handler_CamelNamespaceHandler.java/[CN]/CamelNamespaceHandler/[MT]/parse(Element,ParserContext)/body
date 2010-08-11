@@ -2,9 +2,11 @@
   renameNamespaceRecursive(element);
   if (element.getNodeName().equals(CAMEL_CONTEXT)) {
     String contextId=element.getAttribute("id");
+    boolean implicitId=false;
     if (ObjectHelper.isEmpty(contextId)) {
-      contextId="camelContext";
+      contextId=DefaultCamelContextNameStrategy.getNextName();
       element.setAttribute("id",contextId);
+      implicitId=true;
     }
     Binder<Node> binder;
     try {
@@ -23,6 +25,7 @@
       ccfb.setBlueprintContainer((BlueprintContainer)ptm.getObject());
       ptm=(PassThroughMetadata)context.getComponentDefinitionRegistry().getComponentDefinition("blueprintBundleContext");
       ccfb.setBundleContext((BundleContext)ptm.getObject());
+      ccfb.setImplicitId(implicitId);
       ccfb.afterPropertiesSet();
     }
  catch (    Exception e) {
