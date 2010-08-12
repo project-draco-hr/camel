@@ -96,5 +96,21 @@
  catch (  IOException e) {
     throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
   }
+  if (endpoint.getConfiguration().getSiteCommand() != null) {
+    Iterator it=ObjectHelper.createIterator(endpoint.getConfiguration().getSiteCommand(),"\n");
+    while (it.hasNext()) {
+      Object next=it.next();
+      String command=endpoint.getCamelContext().getTypeConverter().convertTo(String.class,next);
+      if (log.isTraceEnabled()) {
+        log.trace("Site command to sent: " + command);
+      }
+      if (command != null) {
+        boolean result=sendSiteCommand(command);
+        if (!result) {
+          throw new GenericFileOperationFailedException("Site command: " + command + " returned false");
+        }
+      }
+    }
+  }
   return true;
 }
