@@ -1,0 +1,12 @@
+{
+  Thread.sleep(1000);
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  LOG.info("The MBeanServer is " + mbeanServer);
+  Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=context,*"),null);
+  assertEquals("There should have 2 camelcontext registed",2,set.size());
+  String camelContextName=context.getName();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/" + camelContextName + ",type=context,name=\""+ camelContextName+ "\"");
+  assertTrue("Should be registered",mbeanServer.isRegistered(on));
+  String name=(String)mbeanServer.getAttribute(on,"CamelId");
+  assertEquals(camelContextName,name);
+}
