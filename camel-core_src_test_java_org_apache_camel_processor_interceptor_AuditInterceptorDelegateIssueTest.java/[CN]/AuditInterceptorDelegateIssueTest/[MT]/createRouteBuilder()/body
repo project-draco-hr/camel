@@ -1,0 +1,12 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      getContext().addInterceptStrategy(strategy);
+      onException(IllegalArgumentException.class).handled(true).to("mock:handled");
+      errorHandler(deadLetterChannel("mock:dead").maximumRedeliveries(1));
+      from("direct:start").to("mock:result");
+      from("direct:iae").throwException(new IllegalArgumentException("Damn"));
+    }
+  }
+;
+}
