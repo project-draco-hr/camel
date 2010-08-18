@@ -2,7 +2,13 @@
   ExecutorService workerExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyUDPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
   datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor);
   connectionlessServerBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
-  connectionlessServerBootstrap.setPipelineFactory(new ServerPipelineFactory(this));
+  if (configuration.getServerPipelineFactory() != null) {
+    configuration.getServerPipelineFactory().setConsumer(this);
+    connectionlessServerBootstrap.setPipelineFactory(configuration.getServerPipelineFactory());
+  }
+ else {
+    connectionlessServerBootstrap.setPipelineFactory(new DefaultServerPipelineFactory(this));
+  }
   connectionlessServerBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
   connectionlessServerBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
   connectionlessServerBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());

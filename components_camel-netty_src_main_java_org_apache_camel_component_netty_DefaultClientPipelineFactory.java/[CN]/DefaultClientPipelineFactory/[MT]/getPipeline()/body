@@ -1,0 +1,23 @@
+{
+  ChannelPipeline channelPipeline=Channels.pipeline();
+  SslHandler sslHandler=configureClientSSLOnDemand();
+  if (sslHandler != null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Client SSL handler configured and added to the ChannelPipeline");
+    }
+    channelPipeline.addLast("ssl",sslHandler);
+  }
+  if (producer.getConfiguration().getTimeout() > 0) {
+    channelPipeline.addLast("timeout",new ReadTimeoutHandler(producer.getEndpoint().getTimer(),producer.getConfiguration().getTimeout(),TimeUnit.MILLISECONDS));
+  }
+  List<ChannelUpstreamHandler> decoders=producer.getConfiguration().getDecoders();
+  for (int x=0; x < decoders.size(); x++) {
+    channelPipeline.addLast("decoder-" + x,decoders.get(x));
+  }
+  List<ChannelDownstreamHandler> encoders=producer.getConfiguration().getEncoders();
+  for (int x=0; x < encoders.size(); x++) {
+    channelPipeline.addLast("encoder-" + x,encoders.get(x));
+  }
+  channelPipeline.addLast("handler",new ClientChannelHandler(producer,exchange,callback));
+  return channelPipeline;
+}

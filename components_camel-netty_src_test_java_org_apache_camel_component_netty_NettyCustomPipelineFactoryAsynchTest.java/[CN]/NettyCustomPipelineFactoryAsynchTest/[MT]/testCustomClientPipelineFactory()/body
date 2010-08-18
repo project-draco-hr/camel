@@ -1,0 +1,25 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("netty:tcp://localhost:5110?serverPipelineFactory=#spf&textline=true").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody("Forrest Gump: We was always taking long walks, and we was always looking for a guy named 'Charlie'");
+        }
+      }
+);
+    }
+  }
+);
+  context.start();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Beginning Test ---> testCustomClientPipelineFactory()");
+  }
+  sendRequest();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Completed Test ---> testCustomClientPipelineFactory()");
+  }
+  context.stop();
+  assertEquals("Forrest Gump: We was always taking long walks, and we was always looking for a guy named 'Charlie'",response);
+  assertEquals(true,clientPipelineFactory.isfactoryInvoked());
+  assertEquals(true,serverPipelineFactory.isfactoryInvoked());
+}

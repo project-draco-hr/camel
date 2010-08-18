@@ -3,7 +3,13 @@
   ExecutorService workerExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
   channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor);
   serverBootstrap=new ServerBootstrap(channelFactory);
-  serverBootstrap.setPipelineFactory(new ServerPipelineFactory(this));
+  if (configuration.getServerPipelineFactory() != null) {
+    configuration.getServerPipelineFactory().setConsumer(this);
+    serverBootstrap.setPipelineFactory(configuration.getServerPipelineFactory());
+  }
+ else {
+    serverBootstrap.setPipelineFactory(new DefaultServerPipelineFactory(this));
+  }
   serverBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
   serverBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
   serverBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());

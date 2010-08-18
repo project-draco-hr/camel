@@ -1,7 +1,16 @@
 {
   ChannelFuture answer;
-  ClientPipelineFactory clientPipelineFactory=new ClientPipelineFactory(this,exchange,callback);
-  ChannelPipeline clientPipeline=clientPipelineFactory.getPipeline();
+  ChannelPipeline clientPipeline;
+  if (configuration.getClientPipelineFactory() != null) {
+    configuration.getClientPipelineFactory().setProducer(this);
+    configuration.getClientPipelineFactory().setExchange(exchange);
+    configuration.getClientPipelineFactory().setCallback(callback);
+    clientPipeline=configuration.getClientPipelineFactory().getPipeline();
+  }
+ else {
+    ClientPipelineFactory clientPipelineFactory=new DefaultClientPipelineFactory(this,exchange,callback);
+    clientPipeline=clientPipelineFactory.getPipeline();
+  }
   if (isTcp()) {
     ClientBootstrap clientBootstrap=new ClientBootstrap(channelFactory);
     clientBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
