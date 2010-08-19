@@ -1,16 +1,19 @@
 {
   super.doStop();
   if (CONNECTORS.size() > 0) {
-    for (    ConnectorRef connectorRef : CONNECTORS.values()) {
-      connectorRef.server.removeConnector(connectorRef.connector);
-      connectorRef.connector.stop();
-      connectorRef.server.stop();
-      if (mbContainer != null) {
-        mbContainer.removeBean(connectorRef.server);
-        mbContainer.removeBean(connectorRef.connector);
+    for (    String connectorKey : CONNECTORS.keySet()) {
+      ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
+      if (connectorRef != null && connectorRef.getRefCount() == 0) {
+        connectorRef.server.removeConnector(connectorRef.connector);
+        connectorRef.connector.stop();
+        connectorRef.server.stop();
+        if (mbContainer != null) {
+          mbContainer.removeBean(connectorRef.server);
+          mbContainer.removeBean(connectorRef.connector);
+        }
+        CONNECTORS.remove(connectorKey);
       }
     }
-    CONNECTORS.clear();
   }
   if (httpClient != null) {
     httpClient.stop();
