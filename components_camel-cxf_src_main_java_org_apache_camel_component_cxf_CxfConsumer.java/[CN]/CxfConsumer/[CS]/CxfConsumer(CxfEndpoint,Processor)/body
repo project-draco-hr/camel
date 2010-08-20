@@ -50,10 +50,31 @@
       return null;
     }
     private void checkFailure(    org.apache.camel.Exchange camelExchange) throws Fault {
+      final Throwable t;
       if (camelExchange.isFailed()) {
-        Throwable t=(camelExchange.hasOut() && camelExchange.getOut().isFault()) ? camelExchange.getOut().getBody(Throwable.class) : camelExchange.getException();
-        if (t != null) {
-          throw (t instanceof Fault) ? (Fault)t : new Fault(t);
+        t=(camelExchange.hasOut() && camelExchange.getOut().isFault()) ? camelExchange.getOut().getBody(Throwable.class) : camelExchange.getException();
+        if (t instanceof Fault) {
+          throw (Fault)t;
+        }
+ else         if (t != null) {
+          Fault fault=new Fault(t);
+          if (fault.getMessage() == null) {
+            fault.setMessage(t.getClass().getSimpleName());
+          }
+          WebFault faultAnnotation=t.getClass().getAnnotation(WebFault.class);
+          Object faultInfo=null;
+          try {
+            Method method=t.getClass().getMethod("getFaultInfo",new Class[0]);
+            faultInfo=method.invoke(t,new Object[0]);
+          }
+ catch (          Exception e) {
+          }
+          if (faultAnnotation != null && faultInfo == null) {
+            Element detail=fault.getOrCreateDetail();
+            Element faultDetails=detail.getOwnerDocument().createElementNS(faultAnnotation.targetNamespace(),faultAnnotation.name());
+            detail.appendChild(faultDetails);
+          }
+          throw fault;
         }
       }
     }
