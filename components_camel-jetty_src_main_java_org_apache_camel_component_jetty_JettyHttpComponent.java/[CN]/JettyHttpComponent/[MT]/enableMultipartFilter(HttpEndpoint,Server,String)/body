@@ -1,0 +1,22 @@
+{
+  ServletContextHandler context=(ServletContextHandler)server.getChildHandlerByClass(ServletContextHandler.class);
+  CamelContext camelContext=this.getCamelContext();
+  FilterHolder filterHolder=new FilterHolder();
+  filterHolder.setInitParameter("deleteFiles","true");
+  if (ObjectHelper.isNotEmpty(camelContext.getProperties().get(TMP_DIR))) {
+    File file=new File(camelContext.getProperties().get(TMP_DIR));
+    if (!file.isDirectory()) {
+      throw new RuntimeCamelException("The temp file directory of camel-jetty is not exists, please recheck it with directory name :" + camelContext.getProperties().get(TMP_DIR));
+    }
+    context.setAttribute("javax.servlet.context.tempdir",file);
+  }
+  filterHolder.setFilter(new CamelMultipartFilter());
+  String pathSpec=endpoint.getPath();
+  if (pathSpec == null || "".equals(pathSpec)) {
+    pathSpec="/";
+  }
+  if (endpoint.isMatchOnUriPrefix()) {
+    pathSpec=pathSpec.endsWith("/") ? pathSpec + "*" : pathSpec + "/*";
+  }
+  context.addFilter(filterHolder,pathSpec,0);
+}

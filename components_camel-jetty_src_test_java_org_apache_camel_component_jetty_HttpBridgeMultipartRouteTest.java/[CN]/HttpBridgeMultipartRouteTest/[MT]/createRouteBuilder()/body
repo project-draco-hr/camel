@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      errorHandler(noErrorHandler());
+      Processor serviceProc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Message in=exchange.getIn();
+          exchange.getOut().setHeader("numAttachments",in.getAttachments().size());
+          exchange.getOut().setBody(in.getHeader("body"));
+        }
+      }
+;
+      HttpEndpoint epOut=(HttpEndpoint)getContext().getEndpoint("http://localhost:9080?bridgeEndpoint=true&throwExceptionOnFailure=false");
+      epOut.setHeaderFilterStrategy(new MultipartHeaderFilterStrategy());
+      from("jetty:http://localhost:9090/test/hello?enableMultipartFilter=false").to(epOut);
+      from("jetty://http://localhost:9080?matchOnUriPrefix=true").process(serviceProc);
+    }
+  }
+;
+}
