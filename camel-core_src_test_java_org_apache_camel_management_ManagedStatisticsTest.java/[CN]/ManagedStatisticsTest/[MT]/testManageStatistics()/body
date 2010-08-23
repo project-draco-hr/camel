@@ -1,0 +1,21 @@
+{
+  MBeanServer mbeanServer=context.getManagementStrategy().getManagementAgent().getMBeanServer();
+  Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=routes,*"),null);
+  assertEquals(1,set.size());
+  ObjectName on=set.iterator().next();
+  Long completed=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
+  assertEquals(0,completed.longValue());
+  template.sendBody("direct:start","A");
+  template.sendBody("direct:start","B");
+  template.sendBody("direct:start","C");
+  template.sendBody("direct:start","D");
+  template.sendBody("direct:start","E");
+  completed=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
+  assertEquals(5,completed.longValue());
+  ObjectName foo=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"foo\"");
+  completed=(Long)mbeanServer.getAttribute(foo,"ExchangesCompleted");
+  assertEquals(5,completed.longValue());
+  ObjectName mock=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"mock\"");
+  completed=(Long)mbeanServer.getAttribute(mock,"ExchangesCompleted");
+  assertEquals(5,completed.longValue());
+}
