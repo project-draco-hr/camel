@@ -1,7 +1,11 @@
 {
   super.rollback(operations,endpoint,exchange,file);
   if (failureRenamer != null) {
-    GenericFile<T> newName=failureRenamer.renameFile(exchange,file);
+    Exchange copy=exchange.copy();
+    file.bindToExchange(copy);
+    copy.getIn().setMessageId(exchange.getIn().getMessageId());
+    copy.setExchangeId(exchange.getExchangeId());
+    GenericFile<T> newName=failureRenamer.renameFile(copy,file);
     renameFile(operations,file,newName);
   }
 }
