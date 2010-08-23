@@ -1,0 +1,23 @@
+{
+  super.doStart();
+  Properties properties=configuration.createInitialProperties();
+  setSipStack(configuration.getSipFactory().createSipStack(properties));
+  configuration.parseURI();
+  if (sipPublishListener == null) {
+    sipPublishListener=new SipPublishListener(this);
+  }
+  configuration.setListeningPoint(sipStack.createListeningPoint(configuration.getFromHost(),Integer.valueOf(configuration.getFromPort()).intValue(),configuration.getTransport()));
+  boolean found=false;
+  if (provider != null) {
+    for (    ListeningPoint listeningPoint : provider.getListeningPoints()) {
+      if (listeningPoint.getIPAddress().equalsIgnoreCase(configuration.getListeningPoint().getIPAddress()) && (listeningPoint.getPort() == configuration.getListeningPoint().getPort())) {
+        found=true;
+      }
+    }
+  }
+  if (!found) {
+    provider=getSipStack().createSipProvider(configuration.getListeningPoint());
+    provider.addSipListener(sipPublishListener);
+    configuration.setCallIdHeader(provider.getNewCallId());
+  }
+}

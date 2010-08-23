@@ -1,0 +1,92 @@
+{
+  protocol=uri.getScheme();
+  if ((!protocol.equalsIgnoreCase("sip")) && (!protocol.equalsIgnoreCase("sips"))) {
+    throw new IllegalArgumentException("Unrecognized SIP protocol: " + protocol + " for uri: "+ uri);
+  }
+  Map<String,Object> settings=URISupport.parseParameters(uri);
+  if (settings.containsKey("stackName")) {
+    setStackName((String)settings.get("stackName"));
+  }
+  if (settings.containsKey("transport")) {
+    setTransport((String)settings.get("transport"));
+  }
+  if (settings.containsKey("maxMessageSize")) {
+    setMaxMessageSize((String)settings.get("maxMessageSize"));
+  }
+  if (settings.containsKey("cacheConnections")) {
+    setCacheConnections((String)settings.get("cacheConnections"));
+  }
+  if (settings.containsKey("contentType")) {
+    setContentType((String)settings.get("contentType"));
+  }
+  if (settings.containsKey("contentSubType")) {
+    setContentSubType((String)settings.get("contentSubType"));
+  }
+  if (settings.containsKey("maxForwards")) {
+    setMaxForwards(Integer.valueOf((String)settings.get("maxForwards")));
+  }
+  if (settings.containsKey("receiveTimeoutMillis")) {
+    setReceiveTimeoutMillis(Long.valueOf((String)settings.get("receiveTimeoutMillis")));
+  }
+  if (settings.containsKey("eventHeaderName")) {
+    setEventHeaderName((String)settings.get("eventHeaderName"));
+  }
+  if (settings.containsKey("eventId")) {
+    setEventId((String)settings.get("eventId"));
+  }
+  if (settings.containsKey("useRouterForAllUris")) {
+    setUseRouterForAllUris((String)settings.get("useRouterForAllUris"));
+  }
+  if (settings.containsKey("msgExpiration")) {
+    setMsgExpiration(Integer.valueOf((String)settings.get("msgExpiration")));
+  }
+  if (settings.containsKey("presenceAgent")) {
+    setPresenceAgent(Boolean.valueOf((String)settings.get("presenceAgent")));
+  }
+  if (!consumer) {
+    if (settings.containsKey("fromUser")) {
+      setFromUser((String)settings.get("fromUser"));
+    }
+    if (settings.containsKey("fromHost")) {
+      setFromHost((String)settings.get("fromHost"));
+    }
+    if (settings.containsKey("fromPort")) {
+      setFromPort(Integer.valueOf((String)settings.get("fromPort")));
+    }
+    setToUser(uri.getUserInfo());
+    setToHost(uri.getHost());
+    setToPort(uri.getPort());
+  }
+ else {
+    setFromUser(uri.getUserInfo());
+    setFromHost(uri.getHost());
+    setFromPort(uri.getPort());
+    if (!presenceAgent) {
+      if (settings.containsKey("toUser")) {
+        setToUser((String)settings.get("toUser"));
+      }
+      if (settings.containsKey("toHost")) {
+        setToHost((String)settings.get("toHost"));
+      }
+      if (settings.containsKey("toPort")) {
+        setToPort(Integer.valueOf((String)settings.get("toPort")));
+      }
+    }
+  }
+  nistDebugLog=component.getAndRemoveParameter(parameters,"implementationDebugLogFile",String.class,null);
+  nistServerLog=component.getAndRemoveParameter(parameters,"implementationServerLogFile",String.class,null);
+  nistTraceLevel=component.getAndRemoveParameter(parameters,"implementationTraceLevel",String.class,"0");
+  LOG.trace("Consumer:" + consumer + " StackName:"+ stackName);
+  LOG.trace("From User: " + getFromUser() + " From host: "+ getFromHost()+ " From Port: "+ getFromPort());
+  createFactoriesAndHeaders(parameters,component);
+  sipUri=component.resolveAndRemoveReferenceParameter(parameters,"sipUri",SipURI.class,null);
+  if (sipUri == null) {
+    sipUri=addressFactory.createSipURI(getToUser(),getToHost() + ":" + getToPort());
+  }
+  ObjectHelper.notNull(fromUser,"From User");
+  ObjectHelper.notNull(fromHost,"From Host");
+  ObjectHelper.notNull(fromPort,"From Port");
+  ObjectHelper.notNull(eventHeader,"Event Header");
+  ObjectHelper.notNull(eventHeaderName,"Event Header Name");
+  ObjectHelper.notNull(eventId,"Event Id");
+}

@@ -1,0 +1,45 @@
+{
+  SipProvider sipProvider=(SipProvider)requestEvent.getSource();
+  Request request=requestEvent.getRequest();
+  try {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("SipPresenceAgentListener: Received a Subscribe request, sending OK");
+      LOG.debug("SipPresenceAgentListener request: " + request);
+    }
+    EventHeader eventHeader=(EventHeader)request.getHeader(EventHeader.NAME);
+    if (eventHeader == null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Cannot find event header.... dropping request.");
+      }
+      return;
+    }
+    Response response=null;
+    ServerTransaction st=requestEvent.getServerTransaction();
+    if (st == null) {
+      st=sipProvider.getNewServerTransaction(request);
+    }
+    boolean isInitial=requestEvent.getDialog() == null;
+    if (isInitial) {
+      String toTag=UUID.randomUUID().toString();
+      response=sipPresenceAgent.getConfiguration().getMessageFactory().createResponse(202,request);
+      ToHeader toHeader=(ToHeader)response.getHeader(ToHeader.NAME);
+      toHeader.setTag(toTag);
+      this.dialog=st.getDialog();
+      this.dialog.terminateOnBye(false);
+    }
+ else {
+      response=sipPresenceAgent.getConfiguration().getMessageFactory().createResponse(200,request);
+    }
+    response.addHeader(sipPresenceAgent.getConfiguration().getContactHeader());
+    response.addHeader(sipPresenceAgent.getConfiguration().getExpiresHeader());
+    st.sendResponse(response);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("SipPresenceAgentListener: Sent OK Message");
+      LOG.debug("SipPresenceAgentListener response: " + response);
+    }
+    sendNotification(eventHeader,isInitial,request.getContent());
+  }
+ catch (  Throwable e) {
+    LOG.error("Exception thrown during Notify processing in the SipPresenceAgentListener.",e);
+  }
+}

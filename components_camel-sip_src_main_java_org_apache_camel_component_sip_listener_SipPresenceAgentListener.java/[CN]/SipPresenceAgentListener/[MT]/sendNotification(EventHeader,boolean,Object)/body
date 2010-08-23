@@ -1,0 +1,23 @@
+{
+  Request notifyRequest=dialog.createRequest("NOTIFY");
+  ((SipURI)sipPresenceAgent.getConfiguration().getContactHeader().getAddress().getURI()).setParameter(sipPresenceAgent.getConfiguration().getFromUser(),sipPresenceAgent.getConfiguration().getFromHost());
+  SubscriptionStateHeader sstate;
+  if (isInitial) {
+    sstate=sipPresenceAgent.getConfiguration().getHeaderFactory().createSubscriptionStateHeader(isInitial ? SubscriptionStateHeader.PENDING : SubscriptionStateHeader.TERMINATED);
+    if (sstate.getState().equalsIgnoreCase("terminated")) {
+      sstate.setReasonCode("deactivated");
+    }
+  }
+ else {
+    sstate=sipPresenceAgent.getConfiguration().getHeaderFactory().createSubscriptionStateHeader(SubscriptionStateHeader.ACTIVE);
+  }
+  notifyRequest.addHeader(sstate);
+  notifyRequest.setHeader(eventHeader);
+  notifyRequest.setHeader(sipPresenceAgent.getConfiguration().getContactHeader());
+  notifyRequest.setContent(body,sipPresenceAgent.getConfiguration().getContentTypeHeader());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Sending the following NOTIFY request to Subscriber: " + notifyRequest);
+  }
+  ClientTransaction clientTransactionId=sipPresenceAgent.getProvider().getNewClientTransaction(notifyRequest);
+  dialog.sendRequest(clientTransactionId);
+}

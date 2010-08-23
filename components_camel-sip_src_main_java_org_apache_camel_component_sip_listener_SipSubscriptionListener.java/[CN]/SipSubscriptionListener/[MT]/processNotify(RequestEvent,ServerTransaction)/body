@@ -1,0 +1,33 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Notification received at Subscriber");
+  }
+  SipProvider provider=(SipProvider)requestEvent.getSource();
+  Request notify=requestEvent.getRequest();
+  try {
+    if (serverTransactionId == null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.info("ServerTransaction is null. Creating new Server transaction");
+      }
+      serverTransactionId=provider.getNewServerTransaction(notify);
+    }
+    Dialog dialog=serverTransactionId.getDialog();
+    if (dialog != subscriberDialog) {
+      forkedDialog=dialog;
+    }
+    dispatchExchange(notify.getContent());
+    Response response=sipSubscriber.getConfiguration().getMessageFactory().createResponse(200,notify);
+    response.addHeader(sipSubscriber.getConfiguration().getContactHeader());
+    serverTransactionId.sendResponse(response);
+    SubscriptionStateHeader subscriptionState=(SubscriptionStateHeader)notify.getHeader(SubscriptionStateHeader.NAME);
+    if (subscriptionState.getState().equalsIgnoreCase(SubscriptionStateHeader.TERMINATED)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.info("Subscription state is terminated. Deleting the current dialog");
+      }
+      dialog.delete();
+    }
+  }
+ catch (  Exception e) {
+    LOG.error("Exception thrown during Notify processing in the SipSubscriptionListener.",e);
+  }
+}
