@@ -1,0 +1,39 @@
+{
+  Matcher matcher=ANDOR_PATTERN.matcher(expression);
+  final List<ExpressionGroup> expressions=new ArrayList<ExpressionGroup>();
+  while (matcher.find()) {
+    dumpMatcher(matcher);
+    final SimpleLanguageOperator operator=asOperator(matcher.group(1));
+    if (operator != AND && operator != OR) {
+      throw new IllegalArgumentException("Syntax error in expression: " + expression + ". Expected operator as either and/or but was: "+ operator);
+    }
+    final Expression exp=doCreateOperatorExpression(expression,matcher.group(2),matcher.group(3),matcher.group(4));
+    expressions.add(new ExpressionGroup(operator,exp));
+  }
+  return new Expression(){
+    public <T>T evaluate(    Exchange exchange,    Class<T> type){
+      boolean matches=PredicateBuilder.toPredicate(answer).matches(exchange);
+      for (      ExpressionGroup group : expressions) {
+        boolean result=PredicateBuilder.toPredicate(group.getValue()).matches(exchange);
+        if (group.getKey() == AND) {
+          matches&=result;
+        }
+ else {
+          matches|=result;
+        }
+      }
+      return exchange.getContext().getTypeConverter().convertTo(type,matches);
+    }
+    @Override public String toString(){
+      StringBuilder msg=new StringBuilder(answer.toString());
+      for (      ExpressionGroup group : expressions) {
+        msg.append(" ");
+        msg.append(group.getKey());
+        msg.append(" ");
+        msg.append(group.getValue());
+      }
+      return msg.toString();
+    }
+  }
+;
+}
