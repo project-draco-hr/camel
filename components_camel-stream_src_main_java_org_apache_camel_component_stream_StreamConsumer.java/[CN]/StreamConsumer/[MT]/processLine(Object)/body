@@ -1,7 +1,21 @@
 {
-  Exchange exchange=endpoint.createExchange();
-  Message msg=new DefaultMessage();
-  msg.setBody(line);
-  exchange.setIn(msg);
-  getProcessor().process(exchange);
+  if (endpoint.getGroupLines() > 0) {
+    lines.add(line);
+    if (lines.size() >= endpoint.getGroupLines()) {
+      Exchange exchange=endpoint.createExchange();
+      Message msg=new DefaultMessage();
+      List<Object> copy=new ArrayList<Object>(lines);
+      msg.setBody(copy);
+      exchange.setIn(msg);
+      lines.clear();
+      getProcessor().process(exchange);
+    }
+  }
+ else {
+    Exchange exchange=endpoint.createExchange();
+    Message msg=new DefaultMessage();
+    msg.setBody(line);
+    exchange.setIn(msg);
+    getProcessor().process(exchange);
+  }
 }
