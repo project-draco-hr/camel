@@ -1,0 +1,25 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("cache://TestCache1?memoryStoreEvictionPolicy=FIFO").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String operation=(String)exchange.getIn().getHeader(CacheConstants.CACHE_OPERATION);
+          String key=(String)exchange.getIn().getHeader(CacheConstants.CACHE_KEY);
+          Object body=exchange.getIn().getBody();
+          String data=exchange.getContext().getTypeConverter().convertTo(String.class,body);
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("------- Cache Event Notification ---------");
+            LOG.debug("Received notification for the following activity in cache TestCache1:");
+            LOG.debug("Operation = " + operation);
+            LOG.debug("key = " + key);
+            LOG.debug("value = " + data);
+            LOG.debug("------ End Cache Event Notification ------");
+          }
+        }
+      }
+).to("mock:result");
+      from("direct:start").to("cache://TestCache1");
+    }
+  }
+;
+}
