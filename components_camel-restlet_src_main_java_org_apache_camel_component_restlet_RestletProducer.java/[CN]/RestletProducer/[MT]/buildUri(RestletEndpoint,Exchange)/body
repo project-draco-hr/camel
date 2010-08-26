@@ -1,0 +1,23 @@
+{
+  String uri=endpoint.getProtocol() + "://" + endpoint.getHost()+ ":"+ endpoint.getPort()+ endpoint.getUriPattern();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Substituting { } placeholders in uri: " + uri);
+  }
+  Matcher matcher=PATTERN.matcher(uri);
+  while (matcher.find()) {
+    String key=matcher.group(1);
+    String header=exchange.getIn().getHeader(key,String.class);
+    if (header == null) {
+      throw new CamelExchangeException("Header with key: " + key + " not found in Exchange",exchange);
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Replacing: " + matcher.group(0) + " with header value: "+ header);
+    }
+    uri=matcher.replaceFirst(header);
+    matcher.reset(uri);
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Using uri: " + uri);
+  }
+  return uri;
+}
