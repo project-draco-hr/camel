@@ -1,0 +1,78 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("Processing exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
+  }
+  boolean sync=producerCache.doInAsyncProducer(endpoint,exchange,null,callback,new AsyncProducerCallback(){
+    public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    final Exchange exchange,    ExchangePattern exchangePattern,    final AsyncCallback callback){
+      exchange.setProperty(Exchange.TO_ENDPOINT,endpoint.getEndpointUri());
+      exchange.setProperty(Exchange.SLIP_ENDPOINT,endpoint.getEndpointUri());
+      boolean sync=AsyncProcessorHelper.process(asyncProducer,exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          if (doneSync) {
+            return;
+          }
+          Exchange current=exchange;
+          while (iter.hasNext(current)) {
+            if (isIgnoreInvalidEndpoints()) {
+              FailedToCreateProducerException e=current.getException(FailedToCreateProducerException.class);
+              if (e != null) {
+                log.info("Endpoint uri is invalid: " + endpoint + ". This exception will be ignored.",e);
+                current.setException(null);
+              }
+            }
+            boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(current);
+            if (current.isFailed() || current.isRollbackOnly() || exceptionHandled) {
+              if (log.isDebugEnabled()) {
+                StringBuilder sb=new StringBuilder();
+                sb.append("Message exchange has failed so breaking out of the routing slip: ").append(current);
+                if (current.isRollbackOnly()) {
+                  sb.append(" Marked as rollback only.");
+                }
+                if (current.getException() != null) {
+                  sb.append(" Exception: ").append(current.getException());
+                }
+                if (current.hasOut() && current.getOut().isFault()) {
+                  sb.append(" Fault: ").append(current.getOut());
+                }
+                if (exceptionHandled) {
+                  sb.append(" Handled by the error handler.");
+                }
+                log.debug(sb.toString());
+              }
+              break;
+            }
+            Endpoint endpoint;
+            try {
+              endpoint=resolveEndpoint(iter,exchange);
+              if (endpoint == null) {
+                continue;
+              }
+            }
+ catch (            Exception e) {
+              exchange.setException(e);
+              break;
+            }
+            Exchange copy=prepareExchangeForRoutingSlip(current,endpoint);
+            boolean sync=processExchange(endpoint,copy,original,callback,iter);
+            current=copy;
+            if (!sync) {
+              if (log.isTraceEnabled()) {
+                log.trace("Processing exchangeId: " + original.getExchangeId() + " is continued being processed asynchronously");
+              }
+              return;
+            }
+          }
+          if (log.isTraceEnabled()) {
+            log.trace("Processing complete for exchangeId: " + original.getExchangeId() + " >>> "+ current);
+          }
+          ExchangeHelper.copyResults(original,current);
+          callback.done(false);
+        }
+      }
+);
+      return sync;
+    }
+  }
+);
+  return sync;
+}

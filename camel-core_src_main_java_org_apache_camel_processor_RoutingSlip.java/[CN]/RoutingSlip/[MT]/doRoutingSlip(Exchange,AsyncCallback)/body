@@ -1,0 +1,66 @@
+{
+  Exchange current=exchange;
+  RoutingSlipIterator iter=createRoutingSlipIterator(exchange);
+  if (current.hasProperties()) {
+    current.setProperty(Exchange.SLIP_ENDPOINT,null);
+  }
+  while (iter.hasNext(current)) {
+    Endpoint endpoint;
+    try {
+      endpoint=resolveEndpoint(iter,exchange);
+      if (endpoint == null) {
+        continue;
+      }
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+      return true;
+    }
+    Exchange copy=prepareExchangeForRoutingSlip(current,endpoint);
+    boolean sync=processExchange(endpoint,copy,exchange,callback,iter);
+    current=copy;
+    if (!sync) {
+      if (log.isTraceEnabled()) {
+        log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
+      }
+      return false;
+    }
+    if (log.isTraceEnabled()) {
+      log.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
+    }
+    if (isIgnoreInvalidEndpoints()) {
+      FailedToCreateProducerException e=current.getException(FailedToCreateProducerException.class);
+      if (e != null) {
+        log.info("Endpoint uri is invalid: " + endpoint + ". This exception will be ignored.",e);
+        current.setException(null);
+      }
+    }
+    boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(current);
+    if (current.isFailed() || current.isRollbackOnly() || exceptionHandled) {
+      if (log.isDebugEnabled()) {
+        StringBuilder sb=new StringBuilder();
+        sb.append("Message exchange has failed so breaking out of the routing slip: ").append(current);
+        if (current.isRollbackOnly()) {
+          sb.append(" Marked as rollback only.");
+        }
+        if (current.getException() != null) {
+          sb.append(" Exception: ").append(current.getException());
+        }
+        if (current.hasOut() && current.getOut().isFault()) {
+          sb.append(" Fault: ").append(current.getOut());
+        }
+        if (exceptionHandled) {
+          sb.append(" Handled by the error handler.");
+        }
+        log.debug(sb.toString());
+      }
+      break;
+    }
+  }
+  if (log.isTraceEnabled()) {
+    log.trace("Processing complete for exchangeId: " + exchange.getExchangeId() + " >>> "+ current);
+  }
+  ExchangeHelper.copyResults(exchange,current);
+  callback.done(true);
+  return true;
+}
