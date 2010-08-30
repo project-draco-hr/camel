@@ -68,7 +68,11 @@
  else     if (future == null) {
       AggregationStrategy strategy=getAggregationStrategy(null);
       if (strategy instanceof TimeoutAwareAggregationStrategy) {
-        ((TimeoutAwareAggregationStrategy)strategy).timeout(result.get(),i,total.intValue(),timeout);
+        Exchange oldExchange=result.get();
+        if (oldExchange == null) {
+          oldExchange=original;
+        }
+        ((TimeoutAwareAggregationStrategy)strategy).timeout(oldExchange,i,total.intValue(),timeout);
       }
  else {
         LOG.warn("Parallel processing timed out after " + timeout + " millis for number "+ i+ ". This task will be cancelled and will not be aggregated.");
