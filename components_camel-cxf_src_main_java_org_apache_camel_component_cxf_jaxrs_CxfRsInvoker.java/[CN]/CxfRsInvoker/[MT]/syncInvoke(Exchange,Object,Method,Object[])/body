@@ -1,0 +1,16 @@
+{
+  ExchangePattern ep=ExchangePattern.InOut;
+  if (method.getReturnType() == Void.class) {
+    ep=ExchangePattern.InOnly;
+  }
+  org.apache.camel.Exchange camelExchange=endpoint.createExchange(ep);
+  CxfRsBinding binding=endpoint.getBinding();
+  binding.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
+  try {
+    cxfRsConsumer.getProcessor().process(camelExchange);
+  }
+ catch (  Exception exception) {
+    camelExchange.setException(exception);
+  }
+  return returnResponse(cxfExchange,camelExchange);
+}

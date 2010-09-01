@@ -4,29 +4,11 @@
   if (ori.isSubResourceLocator()) {
     return method.invoke(serviceObject,paramArray);
   }
-  ExchangePattern ep=ExchangePattern.InOut;
-  if (method.getReturnType() == Void.class) {
-    ep=ExchangePattern.InOnly;
+  Continuation continuation=getContinuation(cxfExchange);
+  if (continuation != null && !endpoint.isSynchronous()) {
+    return asyncInvoke(cxfExchange,serviceObject,method,paramArray,continuation);
   }
-  org.apache.camel.Exchange camelExchange=endpoint.createExchange(ep);
-  CxfRsBinding binding=endpoint.getBinding();
-  binding.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
-  try {
-    processor.process(camelExchange);
+ else {
+    return syncInvoke(cxfExchange,serviceObject,method,paramArray);
   }
- catch (  Exception exception) {
-    camelExchange.setException(exception);
-  }
-  if (camelExchange.getException() != null) {
-    Throwable exception=camelExchange.getException();
-    Object result=null;
-    if (exception instanceof RuntimeCamelException) {
-      exception=exception.getCause();
-    }
-    if (exception instanceof WebApplicationException) {
-      result=((WebApplicationException)exception).getResponse();
-    }
-    return result;
-  }
-  return binding.populateCxfRsResponseFromExchange(camelExchange,cxfExchange);
 }
