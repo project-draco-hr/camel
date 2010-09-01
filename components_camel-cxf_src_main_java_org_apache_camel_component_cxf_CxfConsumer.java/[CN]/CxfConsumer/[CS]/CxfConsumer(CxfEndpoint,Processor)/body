@@ -6,6 +6,68 @@
       if (LOG.isTraceEnabled()) {
         LOG.trace("Received CXF Request: " + cxfExchange);
       }
+      Continuation continuation=getContinuation(cxfExchange);
+      if (continuation != null) {
+        return asyncInvoke(cxfExchange,continuation);
+      }
+ else {
+        return syncInvoke(cxfExchange);
+      }
+    }
+    private Object asyncInvoke(    Exchange cxfExchange,    final Continuation continuation){
+      if (continuation.isNew()) {
+        final org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
+        boolean sync=getAsyncProcessor().process(camelExchange,new AsyncCallback(){
+          public void done(          boolean doneSync){
+            if (log.isTraceEnabled()) {
+              log.trace("Resuming continuation of exchangeId: " + camelExchange.getExchangeId());
+            }
+            continuation.setObject(camelExchange);
+            continuation.resume();
+          }
+        }
+);
+        if (continuation.getObject() != camelExchange && !sync) {
+          if (log.isTraceEnabled()) {
+            log.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
+          }
+          continuation.suspend(0);
+        }
+ else {
+          if (log.isTraceEnabled()) {
+            log.trace("Processed the Exchange : " + camelExchange.getExchangeId());
+          }
+          setResponseBack(cxfExchange,camelExchange);
+        }
+      }
+      if (continuation.isResumed()) {
+        org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
+        setResponseBack(cxfExchange,camelExchange);
+      }
+      return null;
+    }
+    private Continuation getContinuation(    Exchange cxfExchange){
+      ContinuationProvider provider=(ContinuationProvider)cxfExchange.getInMessage().get(ContinuationProvider.class.getName());
+      return provider.getContinuation();
+    }
+    private Object syncInvoke(    Exchange cxfExchange){
+      org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing +++ START +++");
+      }
+      try {
+        getProcessor().process(camelExchange);
+      }
+ catch (      Exception e) {
+        throw new Fault(e);
+      }
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing +++ END +++");
+      }
+      setResponseBack(cxfExchange,camelExchange);
+      return null;
+    }
+    private org.apache.camel.Exchange perpareCamelExchange(    Exchange cxfExchange){
       CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
       CxfBinding binding=endpoint.getCxfBinding();
       org.apache.camel.Exchange camelExchange=endpoint.createExchange();
@@ -29,25 +91,18 @@
       binding.populateExchangeFromCxfRequest(cxfExchange,camelExchange);
       Map<String,Object> context=new HashMap<String,Object>();
       binding.extractJaxWsContext(cxfExchange,context);
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Processing +++ START +++");
-      }
-      try {
-        getProcessor().process(camelExchange);
-      }
- catch (      Exception e) {
-        throw new Fault(e);
-      }
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Processing +++ END +++");
-      }
+      camelExchange.setProperty(CxfConstants.JAXWS_CONTEXT,context);
+      return camelExchange;
+    }
+    @SuppressWarnings("unchecked") private void setResponseBack(    Exchange cxfExchange,    org.apache.camel.Exchange camelExchange){
+      CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
+      CxfBinding binding=endpoint.getCxfBinding();
       checkFailure(camelExchange);
       if (camelExchange.getPattern().isOutCapable()) {
         binding.populateCxfResponseFromExchange(camelExchange,cxfExchange);
       }
       checkFailure(camelExchange);
-      binding.copyJaxWsContext(cxfExchange,context);
-      return null;
+      binding.copyJaxWsContext(cxfExchange,(Map<String,Object>)camelExchange.getProperty(CxfConstants.JAXWS_CONTEXT));
     }
     private void checkFailure(    org.apache.camel.Exchange camelExchange) throws Fault {
       final Throwable t;
