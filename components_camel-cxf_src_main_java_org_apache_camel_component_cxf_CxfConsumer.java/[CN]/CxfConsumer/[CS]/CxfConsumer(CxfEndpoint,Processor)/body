@@ -7,7 +7,7 @@
         LOG.trace("Received CXF Request: " + cxfExchange);
       }
       Continuation continuation=getContinuation(cxfExchange);
-      if (continuation != null) {
+      if (continuation != null && !endpoint.isSynchronous()) {
         return asyncInvoke(cxfExchange,continuation);
       }
  else {
@@ -19,8 +19,8 @@
         final org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
         boolean sync=getAsyncProcessor().process(camelExchange,new AsyncCallback(){
           public void done(          boolean doneSync){
-            if (log.isTraceEnabled()) {
-              log.trace("Resuming continuation of exchangeId: " + camelExchange.getExchangeId());
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("Resuming continuation of exchangeId: " + camelExchange.getExchangeId());
             }
             continuation.setObject(camelExchange);
             continuation.resume();
@@ -28,14 +28,14 @@
         }
 );
         if (continuation.getObject() != camelExchange && !sync) {
-          if (log.isTraceEnabled()) {
-            log.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
           }
           continuation.suspend(0);
         }
  else {
-          if (log.isTraceEnabled()) {
-            log.trace("Processed the Exchange : " + camelExchange.getExchangeId());
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Processed the Exchange : " + camelExchange.getExchangeId());
           }
           setResponseBack(cxfExchange,camelExchange);
         }
