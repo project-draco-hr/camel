@@ -14,29 +14,7 @@
  catch (  Exception e) {
     LOG.warn("Exception occurred during event notification. This exception will be ignored.",e);
   }
-  if (synchronizations != null && !synchronizations.isEmpty()) {
-    Collections.reverse(synchronizations);
-    Collections.sort(synchronizations,new OrderedComparator());
-    for (    Synchronization synchronization : synchronizations) {
-      try {
-        if (failed) {
-          if (LOG.isTraceEnabled()) {
-            LOG.trace("Invoking synchronization.onFailure: " + synchronization + " with "+ exchange);
-          }
-          synchronization.onFailure(exchange);
-        }
- else {
-          if (LOG.isTraceEnabled()) {
-            LOG.trace("Invoking synchronization.onComplete: " + synchronization + " with "+ exchange);
-          }
-          synchronization.onComplete(exchange);
-        }
-      }
- catch (      Exception e) {
-        LOG.warn("Exception occurred during onCompletion. This exception will be ignored.",e);
-      }
-    }
-  }
+  UnitOfWorkHelper.doneSynchronizations(exchange,synchronizations,LOG);
   if (exchange.getContext() != null) {
     exchange.getContext().getInflightRepository().remove(exchange);
   }

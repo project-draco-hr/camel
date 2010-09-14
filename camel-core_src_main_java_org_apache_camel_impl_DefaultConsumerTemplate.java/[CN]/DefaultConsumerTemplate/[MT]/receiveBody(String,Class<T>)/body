@@ -1,4 +1,12 @@
 {
-  Object body=receiveBody(endpointUri);
-  return context.getTypeConverter().convertTo(type,body);
+  Object answer=null;
+  Exchange exchange=receive(endpointUri);
+  try {
+    answer=extractResultBody(exchange);
+    answer=context.getTypeConverter().convertTo(type,answer);
+  }
+  finally {
+    doneUoW(exchange);
+  }
+  return (T)answer;
 }

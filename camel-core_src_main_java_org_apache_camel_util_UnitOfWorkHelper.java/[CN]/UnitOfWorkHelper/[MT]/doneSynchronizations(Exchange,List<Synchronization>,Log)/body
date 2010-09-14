@@ -1,0 +1,26 @@
+{
+  boolean failed=exchange.isFailed();
+  if (synchronizations != null && !synchronizations.isEmpty()) {
+    Collections.reverse(synchronizations);
+    Collections.sort(synchronizations,new OrderedComparator());
+    for (    Synchronization synchronization : synchronizations) {
+      try {
+        if (failed) {
+          if (log.isTraceEnabled()) {
+            log.trace("Invoking synchronization.onFailure: " + synchronization + " with "+ exchange);
+          }
+          synchronization.onFailure(exchange);
+        }
+ else {
+          if (log.isTraceEnabled()) {
+            log.trace("Invoking synchronization.onComplete: " + synchronization + " with "+ exchange);
+          }
+          synchronization.onComplete(exchange);
+        }
+      }
+ catch (      Exception e) {
+        log.warn("Exception occurred during onCompletion. This exception will be ignored.",e);
+      }
+    }
+  }
+}
