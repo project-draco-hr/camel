@@ -1,0 +1,15 @@
+{
+  int size=getConsumers().size();
+  if (size == 0) {
+    multicastExecutor.shutdown();
+    multicastExecutor=null;
+  }
+  if (size == 1 && multicastExecutor == null) {
+    multicastExecutor=getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,getEndpointUri() + "(multicast)");
+  }
+  List<Processor> processors=new ArrayList<Processor>(size);
+  for (  SedaConsumer consumer : getConsumers()) {
+    processors.add(consumer.getProcessor());
+  }
+  conumserMulticastProcessor=new MulticastProcessor(getCamelContext(),processors,null,true,multicastExecutor,false,false,0);
+}
