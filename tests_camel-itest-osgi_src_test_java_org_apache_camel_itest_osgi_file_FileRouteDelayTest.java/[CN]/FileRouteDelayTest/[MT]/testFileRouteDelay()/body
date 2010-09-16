@@ -1,0 +1,13 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceivedInAnyOrder("Hello World","Bye World");
+  mock.expectedFileExists("target/data/.camel/hello.txt");
+  mock.expectedFileExists("target/data/.camel/bye.txt");
+  StopWatch watch=new StopWatch();
+  template.sendBodyAndHeader("file:target/data","Hello World",Exchange.FILE_NAME,"hello.txt");
+  Thread.sleep(3000);
+  template.sendBodyAndHeader("file:target/data","Bye World",Exchange.FILE_NAME,"bye.txt");
+  assertMockEndpointsSatisfied();
+  long delta=watch.stop();
+  assertTrue("Should take 6 sec or longer, was " + delta,delta > 5500);
+}
