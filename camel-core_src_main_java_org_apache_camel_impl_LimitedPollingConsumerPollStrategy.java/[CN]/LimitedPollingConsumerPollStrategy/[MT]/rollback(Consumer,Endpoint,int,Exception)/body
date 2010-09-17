@@ -1,0 +1,22 @@
+{
+  Integer times=state.get(consumer);
+  if (times == null) {
+    times=1;
+  }
+ else {
+    times+=1;
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("Rollback occurred after " + times + " times when consuming "+ endpoint);
+  }
+  boolean retry=false;
+  if (times >= limit) {
+    state.remove(consumer);
+    onSuspend(consumer,endpoint);
+  }
+ else {
+    state.put(consumer,times);
+    retry=onRollback(consumer,endpoint);
+  }
+  return retry;
+}
