@@ -33,6 +33,14 @@
     channel.get(name,os);
   }
  catch (  SftpException e) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Error occurred during retrieving file: " + name + " to local directory. Deleting local work file: "+ temp);
+    }
+    IOHelper.close(os,"retrieve: " + name,LOG);
+    boolean deleted=FileUtil.deleteFile(temp);
+    if (!deleted) {
+      LOG.warn("Error occurred during retrieving file: " + name + " to local directory. Cannot delete local work file: "+ temp);
+    }
     throw new GenericFileOperationFailedException("Cannot retrieve file: " + name,e);
   }
  finally {
