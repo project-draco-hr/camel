@@ -1,44 +1,53 @@
 {
   RouteContext routeContext=new DefaultRouteContext(camelContext,this,fromType,routes);
   if (trace != null) {
-    routeContext.setTracing(isTrace());
-    if (isTrace()) {
-      if (log.isDebugEnabled()) {
-        log.debug("Tracing is enabled on route: " + this);
+    Boolean isTrace=CamelContextHelper.parseBoolean(camelContext,getTrace());
+    if (isTrace != null) {
+      routeContext.setTracing(isTrace);
+      if (isTrace) {
+        if (log.isDebugEnabled()) {
+          log.debug("Tracing is enabled on route: " + this);
+        }
       }
     }
   }
   if (streamCache != null) {
-    routeContext.setStreamCaching(isStreamCache());
-    if (isStreamCache()) {
-      if (log.isDebugEnabled()) {
-        log.debug("StreamCaching is enabled on route: " + this);
-      }
-      if (StreamCaching.getStreamCaching(camelContext) == null) {
-        addInterceptStrategy(new StreamCaching());
+    Boolean isStreamCache=CamelContextHelper.parseBoolean(camelContext,getStreamCache());
+    if (isStreamCache != null) {
+      routeContext.setStreamCaching(isStreamCache);
+      if (isStreamCache) {
+        if (log.isDebugEnabled()) {
+          log.debug("StreamCaching is enabled on route: " + this);
+        }
+        if (StreamCaching.getStreamCaching(camelContext) == null) {
+          addInterceptStrategy(new StreamCaching());
+        }
       }
     }
   }
   if (handleFault != null) {
-    routeContext.setHandleFault(isHandleFault());
-    if (isHandleFault()) {
-      if (log.isDebugEnabled()) {
-        log.debug("HandleFault is enabled on route: " + this);
-      }
-      if (HandleFault.getHandleFault(camelContext) == null) {
-        addInterceptStrategy(new HandleFault());
+    Boolean isHandleFault=CamelContextHelper.parseBoolean(camelContext,getHandleFault());
+    if (isHandleFault != null) {
+      routeContext.setHandleFault(isHandleFault);
+      if (isHandleFault) {
+        if (log.isDebugEnabled()) {
+          log.debug("HandleFault is enabled on route: " + this);
+        }
+        if (HandleFault.getHandleFault(camelContext) == null) {
+          addInterceptStrategy(new HandleFault());
+        }
       }
     }
   }
   if (delayer != null) {
-    routeContext.setDelayer(getDelayer());
-    if (getDelayer() != null) {
-      long millis=getDelayer();
-      if (millis > 0) {
+    Long delayer=CamelContextHelper.parseLong(camelContext,getDelayer());
+    if (delayer != null) {
+      routeContext.setDelayer(delayer);
+      if (delayer > 0) {
         if (log.isDebugEnabled()) {
-          log.debug("Delayer is enabled with: " + millis + " ms. on route: "+ this);
+          log.debug("Delayer is enabled with: " + delayer + " ms. on route: "+ this);
         }
-        addInterceptStrategy(new Delayer(millis));
+        addInterceptStrategy(new Delayer(delayer));
       }
  else {
         if (log.isDebugEnabled()) {
@@ -60,11 +69,12 @@
     }
     routeContext.setRoutePolicy(policy);
   }
-  if (autoStartup != null) {
+  Boolean isAutoStartup=CamelContextHelper.parseBoolean(camelContext,getAutoStartup());
+  if (isAutoStartup != null) {
     if (log.isDebugEnabled()) {
-      log.debug("Using AutoStartup " + isAutoStartup() + " on route: "+ this);
+      log.debug("Using AutoStartup " + isAutoStartup + " on route: "+ this);
     }
-    routeContext.setAutoStartup(isAutoStartup());
+    routeContext.setAutoStartup(isAutoStartup);
   }
   if (shutdownRoute != null) {
     if (log.isDebugEnabled()) {
