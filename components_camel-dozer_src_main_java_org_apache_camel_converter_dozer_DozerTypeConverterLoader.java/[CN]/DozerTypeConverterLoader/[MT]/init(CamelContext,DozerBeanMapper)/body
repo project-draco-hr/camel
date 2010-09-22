@@ -4,14 +4,20 @@
   if (mapper != null) {
     mappers.put("parameter",mapper);
   }
-  if (mappers.size() > 0) {
-    log.warn("Loaded %d dozer mappers from Camel's registry. Dozer is most efficient when there is a single mapper instance. Consider amalgamating instances.");
+  if (mappers.size() > 1) {
+    log.warn("Loaded " + mappers.size() + " Dozer mappers from Camel registry."+ " Dozer is most efficient when there is a single mapper instance. Consider amalgamating instances.");
+  }
+ else   if (mappers.size() == 0) {
+    log.warn("No Dozer mappers found in Camel registry. You should add Dozer mappers as beans to the registry of the type: " + DozerBeanMapper.class.getName());
   }
   TypeConverterRegistry registry=camelContext.getTypeConverterRegistry();
   for (  DozerBeanMapper dozer : mappers.values()) {
-    Map<String,ClassMap> all=loadMappings(dozer);
+    List<ClassMap> all=loadMappings(camelContext,dozer);
     DozerTypeConverter converter=new DozerTypeConverter(dozer);
-    for (    ClassMap map : all.values()) {
+    for (    ClassMap map : all) {
+      if (log.isInfoEnabled()) {
+        log.info("Added " + map.getSrcClassName() + " -> "+ map.getDestClassName()+ " as type converter to: "+ registry);
+      }
       registry.addTypeConverter(map.getSrcClassToMap(),map.getDestClassToMap(),converter);
       registry.addTypeConverter(map.getDestClassToMap(),map.getSrcClassToMap(),converter);
     }
