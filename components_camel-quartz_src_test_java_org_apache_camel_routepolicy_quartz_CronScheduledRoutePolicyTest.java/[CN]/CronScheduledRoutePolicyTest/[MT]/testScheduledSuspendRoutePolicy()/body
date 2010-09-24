@@ -1,0 +1,21 @@
+{
+  boolean consumerSuspended=false;
+  MockEndpoint unreachable=(MockEndpoint)context.getEndpoint("mock:unreachable");
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      CronScheduledRoutePolicy policy=new CronScheduledRoutePolicy("org/apache/camel/routepolicy/quartz/myquartz.properties");
+      policy.setRouteSuspendTime("*/3 * * * * ?");
+      from("direct:start").routeId("test").routePolicy(policy).to("mock:unreachable");
+    }
+  }
+);
+  context.start();
+  Thread.currentThread().sleep(4000);
+  try {
+    template.sendBody("direct:start","Ready or not, Here, I come");
+  }
+ catch (  CamelExecutionException e) {
+    consumerSuspended=true;
+  }
+  assertTrue(consumerSuspended);
+}

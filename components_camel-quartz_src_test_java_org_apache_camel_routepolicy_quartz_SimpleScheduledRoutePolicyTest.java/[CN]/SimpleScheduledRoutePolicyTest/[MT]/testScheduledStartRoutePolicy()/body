@@ -1,0 +1,21 @@
+{
+  MockEndpoint success=(MockEndpoint)context.getEndpoint("mock:success");
+  success.expectedMessageCount(1);
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      SimpleScheduledRoutePolicy policy=new SimpleScheduledRoutePolicy("org/apache/camel/routepolicy/quartz/myquartz.properties");
+      long startTime=System.currentTimeMillis() + 3000L;
+      policy.setRouteStartDate(new Date(startTime));
+      policy.setRouteStartRepeatCount(1);
+      policy.setRouteStartRepeatInterval(3000);
+      from("direct:start").routeId("test").routePolicy(policy).to("mock:success");
+    }
+  }
+);
+  context.start();
+  context.stopRoute("test",0,TimeUnit.MILLISECONDS);
+  Thread.currentThread().sleep(4000);
+  assertTrue(context.getRouteStatus("test") == ServiceStatus.Started);
+  template.sendBody("direct:start","Ready or not, Here, I come");
+  success.assertIsSatisfied();
+}

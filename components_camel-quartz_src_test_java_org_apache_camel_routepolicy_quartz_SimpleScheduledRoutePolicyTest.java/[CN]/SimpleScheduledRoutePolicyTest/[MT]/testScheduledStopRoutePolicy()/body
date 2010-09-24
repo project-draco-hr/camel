@@ -1,0 +1,25 @@
+{
+  boolean consumerStopped=false;
+  MockEndpoint unreachable=(MockEndpoint)context.getEndpoint("mock:unreachable");
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      SimpleScheduledRoutePolicy policy=new SimpleScheduledRoutePolicy();
+      long startTime=System.currentTimeMillis() + 3000;
+      policy.setRouteStopDate(new Date(startTime));
+      policy.setRouteStopRepeatCount(1);
+      policy.setRouteStopRepeatInterval(3000);
+      from("direct:start").routeId("test").routePolicy(policy).to("mock:unreachable");
+    }
+  }
+);
+  context.start();
+  Thread.currentThread().sleep(4000);
+  assertTrue(context.getRouteStatus("test") == ServiceStatus.Stopped);
+  try {
+    template.sendBody("direct:start","Ready or not, Here, I come");
+  }
+ catch (  CamelExecutionException e) {
+    consumerStopped=true;
+  }
+  assertTrue(consumerStopped);
+}

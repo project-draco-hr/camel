@@ -1,0 +1,39 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Scheduled Event notification received. Performing requested operation " + action + " for route "+ route.getId());
+  }
+  ServiceStatus routeStatus=route.getRouteContext().getCamelContext().getRouteStatus(route.getId());
+  if (action == Action.START) {
+    if (routeStatus == ServiceStatus.Stopped) {
+      startRoute(route);
+    }
+ else     if (routeStatus == ServiceStatus.Suspended) {
+      startConsumer(route.getConsumer());
+    }
+  }
+ else   if (action == Action.STOP) {
+    if ((routeStatus == ServiceStatus.Started) || (routeStatus == ServiceStatus.Suspended)) {
+      stopRoute(route,getRouteStopGracePeriod(),getTimeUnit());
+    }
+  }
+ else   if (action == Action.SUSPEND) {
+    if (routeStatus == ServiceStatus.Started) {
+      stopConsumer(route.getConsumer());
+    }
+ else {
+      if (LOG.isWarnEnabled()) {
+        LOG.warn("Route is not in a started state and cannot be suspended. The current route state is " + routeStatus);
+      }
+    }
+  }
+ else   if (action == Action.RESUME) {
+    if (routeStatus == ServiceStatus.Started) {
+      startConsumer(route.getConsumer());
+    }
+ else {
+      if (LOG.isWarnEnabled()) {
+        LOG.warn("Route is not in a started state and cannot be resumed. The current route state is " + routeStatus);
+      }
+    }
+  }
+}

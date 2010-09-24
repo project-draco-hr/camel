@@ -1,0 +1,18 @@
+{
+  SchedulerContext schedulerContext;
+  try {
+    schedulerContext=jobExecutionContext.getScheduler().getContext();
+  }
+ catch (  SchedulerException e) {
+    throw new JobExecutionException("Failed to obtain scheduler context for job " + jobExecutionContext.getJobDetail().getName());
+  }
+  Action storedAction=(Action)schedulerContext.get(SCHEDULED_ACTION);
+  storedRoute=(Route)schedulerContext.get(SCHEDULED_ROUTE);
+  ScheduledRoutePolicy policy=(ScheduledRoutePolicy)storedRoute.getRouteContext().getRoutePolicy();
+  try {
+    policy.onJobExecute(storedAction,storedRoute);
+  }
+ catch (  Exception e) {
+    throw new JobExecutionException("Failed to execute Scheduled Job for route " + storedRoute.getId() + " with trigger name: "+ jobExecutionContext.getTrigger().getFullName());
+  }
+}

@@ -1,0 +1,23 @@
+{
+  MockEndpoint success=(MockEndpoint)context.getEndpoint("mock:success");
+  success.expectedMessageCount(1);
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      CronScheduledRoutePolicy policy=new CronScheduledRoutePolicy("org/apache/camel/routepolicy/quartz/myquartz.properties");
+      policy.setRouteResumeTime("*/3 * * * * ?");
+      from("direct:start").routeId("test").routePolicy(policy).to("mock:success");
+    }
+  }
+);
+  context.start();
+  ServiceHelper.suspendService(context.getRoute("test").getConsumer());
+  try {
+    template.sendBody("direct:start","Ready or not, Here, I come");
+  }
+ catch (  CamelExecutionException e) {
+    LOG.debug("Consumer successfully suspended");
+  }
+  Thread.currentThread().sleep(5000);
+  template.sendBody("direct:start","Ready or not, Here, I come");
+  success.assertIsSatisfied();
+}
