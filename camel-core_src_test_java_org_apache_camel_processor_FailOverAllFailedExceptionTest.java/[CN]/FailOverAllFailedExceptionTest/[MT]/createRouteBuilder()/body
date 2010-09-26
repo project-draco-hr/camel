@@ -1,0 +1,26 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:start").loadBalance().failover(2,false,true).to("direct:x","direct:y","direct:z");
+      from("direct:x").to("mock:x").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new SocketException("Forced");
+        }
+      }
+);
+      from("direct:y").to("mock:y").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new IllegalArgumentException("Illegal");
+        }
+      }
+);
+      from("direct:z").to("mock:z").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new SocketException("Not Again");
+        }
+      }
+);
+    }
+  }
+;
+}
