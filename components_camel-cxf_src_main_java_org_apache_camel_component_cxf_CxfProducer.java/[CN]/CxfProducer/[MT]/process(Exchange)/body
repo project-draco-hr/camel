@@ -8,9 +8,13 @@
   Map<String,Object> responseContext=new HashMap<String,Object>();
   invocationContext.put(Client.RESPONSE_CONTEXT,responseContext);
   invocationContext.put(Client.REQUEST_CONTEXT,prepareRequest(camelExchange,cxfExchange));
-  client.invoke(boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
-  if (!boi.getOperationInfo().isOneWay()) {
-    camelExchange.getOut().getHeaders().putAll(camelExchange.getIn().getHeaders());
-    endpoint.getCxfBinding().populateExchangeFromCxfResponse(camelExchange,cxfExchange,responseContext);
+  try {
+    client.invoke(boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
+  }
+  finally {
+    if (!boi.getOperationInfo().isOneWay()) {
+      camelExchange.getOut().getHeaders().putAll(camelExchange.getIn().getHeaders());
+      endpoint.getCxfBinding().populateExchangeFromCxfResponse(camelExchange,cxfExchange,responseContext);
+    }
   }
 }
