@@ -1,0 +1,11 @@
+{
+  CamelContext context=startRouteWithPolicy("startPolicy");
+  MockEndpoint mock=(MockEndpoint)context.getEndpoint("mock:success");
+  mock.expectedMinimumMessageCount(1);
+  context.stopRoute("testRoute",0,TimeUnit.MILLISECONDS);
+  Thread.currentThread().sleep(4000);
+  assertTrue(context.getRouteStatus("testRoute") == ServiceStatus.Started);
+  context.createProducerTemplate().sendBody("direct:start","Ready or not, Here, I come");
+  context.stop();
+  mock.assertIsSatisfied();
+}

@@ -1,9 +1,11 @@
 {
   boolean consumerStopped=false;
   MockEndpoint unreachable=(MockEndpoint)context.getEndpoint("mock:unreachable");
+  context.getComponent("quartz",QuartzComponent.class).setPropertiesFile("org/apache/camel/routepolicy/quartz/myquartz.properties");
+  context.getComponent("quartz",QuartzComponent.class).start();
   context.addRoutes(new RouteBuilder(){
     public void configure(){
-      CronScheduledRoutePolicy policy=new CronScheduledRoutePolicy("org/apache/camel/routepolicy/quartz/myquartz.properties");
+      CronScheduledRoutePolicy policy=new CronScheduledRoutePolicy();
       policy.setRouteStopTime("*/3 * * * * ?");
       policy.setRouteStopGracePeriod(0);
       policy.setTimeUnit(TimeUnit.MILLISECONDS);
@@ -21,4 +23,5 @@
     consumerStopped=true;
   }
   assertTrue(consumerStopped);
+  context.getComponent("quartz",QuartzComponent.class).stop();
 }
