@@ -15,34 +15,38 @@
       }
     }
     private Object asyncInvoke(    Exchange cxfExchange,    final Continuation continuation){
-      if (continuation.isNew()) {
-        final org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
-        boolean sync=getAsyncProcessor().process(camelExchange,new AsyncCallback(){
-          public void done(          boolean doneSync){
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("Resuming continuation of exchangeId: " + camelExchange.getExchangeId());
+synchronized (continuation) {
+        if (continuation.isNew()) {
+          final org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
+          boolean sync=getAsyncProcessor().process(camelExchange,new AsyncCallback(){
+            public void done(            boolean doneSync){
+synchronized (continuation) {
+                if (LOG.isTraceEnabled()) {
+                  LOG.trace("Resuming continuation of exchangeId: " + camelExchange.getExchangeId());
+                }
+                continuation.setObject(camelExchange);
+                continuation.resume();
+              }
             }
-            continuation.setObject(camelExchange);
-            continuation.resume();
           }
-        }
 );
-        if (continuation.getObject() != camelExchange && !sync) {
-          if (LOG.isTraceEnabled()) {
-            LOG.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
+          if (continuation.getObject() != camelExchange && !sync) {
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
+            }
+            continuation.suspend(0);
           }
-          continuation.suspend(0);
-        }
  else {
-          if (LOG.isTraceEnabled()) {
-            LOG.trace("Processed the Exchange : " + camelExchange.getExchangeId());
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("Processed the Exchange : " + camelExchange.getExchangeId());
+            }
+            setResponseBack(cxfExchange,camelExchange);
           }
+        }
+        if (continuation.isResumed()) {
+          org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
           setResponseBack(cxfExchange,camelExchange);
         }
-      }
-      if (continuation.isResumed()) {
-        org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
-        setResponseBack(cxfExchange,camelExchange);
       }
       return null;
     }
