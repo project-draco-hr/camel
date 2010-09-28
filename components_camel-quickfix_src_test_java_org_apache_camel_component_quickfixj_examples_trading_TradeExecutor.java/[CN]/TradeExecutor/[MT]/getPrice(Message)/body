@@ -1,0 +1,22 @@
+{
+  Price price;
+  if (message.getChar(OrdType.FIELD) == OrdType.LIMIT && alwaysFillLimitOrders) {
+    price=new Price(message.getDouble(Price.FIELD));
+  }
+ else {
+    if (marketQuoteProvider == null) {
+      throw new RuntimeException("No market data provider specified for market order");
+    }
+    char side=message.getChar(Side.FIELD);
+    if (side == Side.BUY) {
+      price=new Price(marketQuoteProvider.getAsk(message.getString(Symbol.FIELD)));
+    }
+ else     if (side == Side.SELL || side == Side.SELL_SHORT) {
+      price=new Price(marketQuoteProvider.getBid(message.getString(Symbol.FIELD)));
+    }
+ else {
+      throw new RuntimeException("Invalid order side: " + side);
+    }
+  }
+  return price;
+}

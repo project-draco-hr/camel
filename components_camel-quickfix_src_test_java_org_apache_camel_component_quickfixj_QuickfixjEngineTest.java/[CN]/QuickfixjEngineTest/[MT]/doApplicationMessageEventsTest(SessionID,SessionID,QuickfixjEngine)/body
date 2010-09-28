@@ -1,0 +1,29 @@
+{
+  final List<EventRecord> events=new ArrayList<EventRecord>();
+  final CountDownLatch messageLatch=new CountDownLatch(1);
+  QuickfixjEventListener messageListener=new QuickfixjEventListener(){
+    public void onEvent(    QuickfixjEventCategory eventCategory,    SessionID sessionID,    Message message){
+      EventRecord event=new EventRecord(eventCategory,sessionID,message);
+      events.add(event);
+      if (eventCategory == QuickfixjEventCategory.AppMessageReceived) {
+        messageLatch.countDown();
+      }
+    }
+  }
+;
+  quickfixjEngine.addEventListener(messageListener);
+  Email email=TestSupport.createEmailMessage("Test");
+  Session.sendToTarget(email,initiatorSessionID);
+  assertTrue("Application message not received",messageLatch.await(5000,TimeUnit.MILLISECONDS));
+  quickfixjEngine.removeEventListener(messageListener);
+  assertThat(events.size(),is(2));
+  int n=0;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AppMessageSent));
+  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
+  assertThat(events.get(n).getMessage().getHeader().getString(MsgType.FIELD),is(MsgType.EMAIL));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AppMessageReceived));
+  assertThat(events.get(n).getSessionID(),is(acceptorSessionID));
+  assertThat(events.get(n).getMessage().getHeader().getString(MsgType.FIELD),is(MsgType.EMAIL));
+  n++;
+}

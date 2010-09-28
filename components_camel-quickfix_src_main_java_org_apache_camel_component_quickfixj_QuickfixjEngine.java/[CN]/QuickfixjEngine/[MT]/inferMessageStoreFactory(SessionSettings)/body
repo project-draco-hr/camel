@@ -1,0 +1,18 @@
+{
+  Set<MessageStoreFactory> impliedMessageStoreFactories=new HashSet<MessageStoreFactory>();
+  isJdbcStore(settings,impliedMessageStoreFactories);
+  isFileStore(settings,impliedMessageStoreFactories);
+  isSleepycatStore(settings,impliedMessageStoreFactories);
+  if (impliedMessageStoreFactories.size() > 1) {
+    throw new ConfigError("Ambiguous message store implied in configuration.");
+  }
+  MessageStoreFactory messageStoreFactory;
+  if (impliedMessageStoreFactories.size() == 1) {
+    messageStoreFactory=(MessageStoreFactory)impliedMessageStoreFactories.iterator().next();
+  }
+ else {
+    messageStoreFactory=new MemoryStoreFactory();
+  }
+  LOG.info("Inferring message store factory: " + messageStoreFactory.getClass().getName());
+  return messageStoreFactory;
+}

@@ -1,0 +1,21 @@
+{
+  QuickfixjEngine engine;
+synchronized (engineInstancesLock) {
+    QuickfixjEndpoint endpoint=endpoints.get(uri);
+    if (endpoint == null) {
+      engine=engines.get(remaining);
+      if (engine == null) {
+        LOG.info("Creating QuickFIX/J engine using settings: " + remaining);
+        engine=new QuickfixjEngine(remaining,false);
+        engines.put(remaining,engine);
+        if (isStarted()) {
+          startQuickfixjEngine(engine);
+        }
+      }
+      endpoint=new QuickfixjEndpoint(uri,getCamelContext());
+      engine.addEventListener(endpoint);
+      endpoints.put(uri,endpoint);
+    }
+    return endpoint;
+  }
+}

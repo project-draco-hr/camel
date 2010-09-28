@@ -1,0 +1,25 @@
+{
+  super(uri,TradeExecutorComponent.this.getCamelContext());
+  this.tradeExecutor=tradeExecutor;
+  tradeExecutor.addListener(new QuickfixjMessageListener(){
+    public void onMessage(    SessionID sessionID,    Message message) throws Exception {
+      Header header=message.getHeader();
+      setOptionalField(header,sessionID,SenderCompID.FIELD,sessionID.getTargetCompID());
+      setOptionalField(header,sessionID,SenderSubID.FIELD,sessionID.getTargetSubID());
+      setOptionalField(header,sessionID,SenderLocationID.FIELD,sessionID.getTargetLocationID());
+      setOptionalField(header,sessionID,TargetCompID.FIELD,sessionID.getSenderCompID());
+      setOptionalField(header,sessionID,TargetSubID.FIELD,sessionID.getSenderSubID());
+      setOptionalField(header,sessionID,TargetLocationID.FIELD,sessionID.getSenderLocationID());
+      Exchange exchange=QuickfixjConverters.toExchange(TradeExecutorEndpoint.this,sessionID,message,QuickfixjEventCategory.AppMessageReceived);
+      for (      Processor processor : processors) {
+        processor.process(exchange);
+      }
+    }
+    private void setOptionalField(    Header header,    SessionID sessionID,    int tag,    String value){
+      if (value != null && value.length() > 0) {
+        header.setString(tag,value);
+      }
+    }
+  }
+);
+}

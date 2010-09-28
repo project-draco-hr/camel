@@ -1,0 +1,58 @@
+{
+  this.forcedShutdown=forcedShutdown;
+  this.settingsResourceName=settingsResourceName;
+  InputStream inputStream=ObjectHelper.loadResourceAsStream(settingsResourceName);
+  if (inputStream == null) {
+    throw new IllegalArgumentException("Could not load " + settingsResourceName);
+  }
+  SessionSettings settings=new SessionSettings(inputStream);
+  messageFactory=new DefaultMessageFactory();
+  sessionLogFactory=inferLogFactory(settings);
+  messageStoreFactory=inferMessageStoreFactory(settings);
+  if (!settings.isSetting(Session.SETTING_START_TIME)) {
+    settings.setString(Session.SETTING_START_TIME,DEFAULT_START_TIME);
+  }
+  if (!settings.isSetting(Session.SETTING_END_TIME)) {
+    settings.setString(Session.SETTING_END_TIME,DEFAULT_END_TIME);
+  }
+  if (!settings.isSetting(Session.SETTING_HEARTBTINT)) {
+    settings.setLong(Session.SETTING_HEARTBTINT,DEFAULT_HEARTBTINT);
+  }
+  ThreadModel threadModel=ThreadModel.ThreadPerConnector;
+  if (settings.isSetting(SETTING_THREAD_MODEL)) {
+    threadModel=ThreadModel.valueOf(settings.getString(SETTING_THREAD_MODEL));
+  }
+  JmxExporter jmxExporter=null;
+  if (settings.isSetting(SETTING_USE_JMX) && settings.getBool(SETTING_USE_JMX)) {
+    LOG.info("Enabling JMX for QuickFIX/J");
+    jmxExporter=new JmxExporter();
+  }
+  ClassLoader ccl=Thread.currentThread().getContextClassLoader();
+  try {
+    Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+    if (isConnectorRole(settings,SessionFactory.ACCEPTOR_CONNECTION_TYPE)) {
+      acceptor=createAcceptor(new Dispatcher(),settings,messageStoreFactory,sessionLogFactory,messageFactory,threadModel);
+      if (jmxExporter != null) {
+        jmxExporter.export(acceptor);
+      }
+    }
+ else {
+      acceptor=null;
+    }
+    if (isConnectorRole(settings,SessionFactory.INITIATOR_CONNECTION_TYPE)) {
+      initiator=createInitiator(new Dispatcher(),settings,messageStoreFactory,sessionLogFactory,messageFactory,threadModel);
+      if (jmxExporter != null) {
+        jmxExporter.export(initiator);
+      }
+    }
+ else {
+      initiator=null;
+    }
+    if (acceptor == null && initiator == null) {
+      throw new ConfigError("No connector role");
+    }
+  }
+  finally {
+    Thread.currentThread().setContextClassLoader(ccl);
+  }
+}

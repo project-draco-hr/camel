@@ -1,0 +1,18 @@
+{
+  try {
+    validateOrder(order);
+    OrderQty orderQty=order.getOrderQty();
+    Price price=getPrice(order);
+    quickfix.fix40.ExecutionReport accept=new quickfix.fix40.ExecutionReport(genOrderID(),genExecID(),new ExecTransType(ExecTransType.NEW),new OrdStatus(OrdStatus.NEW),order.getSymbol(),order.getSide(),orderQty,new LastShares(0),new LastPx(0),new CumQty(0),new AvgPx(0));
+    accept.set(order.getClOrdID());
+    sendMessage(sessionID,accept);
+    if (isOrderExecutable(order,price)) {
+      quickfix.fix40.ExecutionReport fill=new quickfix.fix40.ExecutionReport(genOrderID(),genExecID(),new ExecTransType(ExecTransType.NEW),new OrdStatus(OrdStatus.FILLED),order.getSymbol(),order.getSide(),orderQty,new LastShares(orderQty.getValue()),new LastPx(price.getValue()),new CumQty(orderQty.getValue()),new AvgPx(price.getValue()));
+      fill.set(order.getClOrdID());
+      sendMessage(sessionID,fill);
+    }
+  }
+ catch (  RuntimeException e) {
+    LogUtil.logThrowable(sessionID,e.getMessage(),e);
+  }
+}

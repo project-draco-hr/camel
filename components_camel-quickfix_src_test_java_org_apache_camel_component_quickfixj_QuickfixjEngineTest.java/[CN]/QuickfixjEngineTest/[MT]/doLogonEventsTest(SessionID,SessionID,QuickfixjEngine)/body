@@ -1,0 +1,47 @@
+{
+  final List<EventRecord> events=new ArrayList<EventRecord>();
+  final CountDownLatch logonLatch=new CountDownLatch(2);
+  QuickfixjEventListener logonListener=new QuickfixjEventListener(){
+    public void onEvent(    QuickfixjEventCategory eventCategory,    SessionID sessionID,    Message message){
+      events.add(new EventRecord(eventCategory,sessionID,message));
+      if (eventCategory == QuickfixjEventCategory.SessionLogon) {
+        logonLatch.countDown();
+      }
+    }
+  }
+;
+  quickfixjEngine.addEventListener(logonListener);
+  quickfixjEngine.start();
+  assertTrue("Logons not completed",logonLatch.await(5000,TimeUnit.MILLISECONDS));
+  quickfixjEngine.removeEventListener(logonListener);
+  assertThat(events.size(),is(7));
+  int n=0;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.SessionCreated));
+  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
+  assertThat(events.get(n).getMessage(),is(nullValue()));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AdminMessageSent));
+  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
+  assertThat(events.get(n).getMessage(),is(notNullValue()));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AdminMessageReceived));
+  assertThat(events.get(n).getSessionID(),is(acceptorSessionID));
+  assertThat(events.get(n).getMessage(),is(notNullValue()));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AdminMessageSent));
+  assertThat(events.get(n).getSessionID(),is(acceptorSessionID));
+  assertThat(events.get(n).getMessage(),is(notNullValue()));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.SessionLogon));
+  assertThat(events.get(n).getSessionID(),is(acceptorSessionID));
+  assertThat(events.get(n).getMessage(),is(nullValue()));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AdminMessageReceived));
+  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
+  assertThat(events.get(n).getMessage(),is(notNullValue()));
+  n++;
+  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.SessionLogon));
+  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
+  assertThat(events.get(n).getMessage(),is(nullValue()));
+  n++;
+}

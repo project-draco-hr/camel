@@ -1,0 +1,36 @@
+{
+  sb.append(indent).append("\"").append(name).append("\": {\n");
+  int fieldCount=0;
+  Iterator<Field<?>> fieldIterator=fieldMap.iterator();
+  while (fieldIterator.hasNext()) {
+    if (fieldCount > 0) {
+      sb.append(",\n");
+    }
+    Field<?> field=fieldIterator.next();
+    sb.append(indent).append("  \"").append(dd.getFieldName(field.getField())).append("\": ");
+    if (dd.hasFieldValue(field.getField())) {
+      int tag=field.getField();
+      sb.append("[ \"").append(field.getObject().toString()).append("\", \"").append(dd.getValueName(tag,field.getObject().toString())).append("\" ]");
+    }
+ else {
+      FieldType fieldType=dd.getFieldTypeEnum(field.getField());
+      if (Number.class.isAssignableFrom(fieldType.getJavaType())) {
+        sb.append(field.getObject());
+      }
+ else {
+        sb.append("\"").append(field.getObject().toString()).append("\"");
+      }
+    }
+    fieldCount++;
+  }
+  sb.append("\n");
+  Iterator<Integer> groupKeys=fieldMap.groupKeyIterator();
+  while (groupKeys.hasNext()) {
+    int groupTag=groupKeys.next();
+    for (    Group group : fieldMap.getGroups(groupTag)) {
+      String groupName=dd.getFieldName(groupTag);
+      transform(groupName,group,sb,indent + "  ",dd);
+    }
+  }
+  sb.append(indent).append("}").append("\n");
+}

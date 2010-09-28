@@ -1,0 +1,16 @@
+{
+  Message message=exchange.getIn().getBody(Message.class);
+  if (log.isDebugEnabled()) {
+    log.debug("Sending FIX message: " + message.toString());
+  }
+  SessionID messageSessionID=sessionID;
+  if (messageSessionID == null) {
+    messageSessionID=MessageUtils.getSessionID(message);
+  }
+  Session session=Session.lookupSession(messageSessionID);
+  if (session == null) {
+    exchange.setException(new IllegalStateException("Unknown session: " + messageSessionID));
+    return;
+  }
+  session.send(message);
+}
