@@ -1,11 +1,10 @@
 {
   QuickfixjConsumer consumer=new QuickfixjConsumer(mockEndpoint,mockProcessor);
   Assert.assertThat("Consumer should not be automatically started",((ServiceSupport)consumer).isStarted(),CoreMatchers.is(false));
-  SessionID sessionID=new SessionID(FixVersions.BEGINSTRING_FIX44,"SENDER","TARGET");
-  consumer.onEvent(QuickfixjEventCategory.AppMessageReceived,sessionID,new Message());
+  consumer.onExchange(mockExchange);
   Mockito.verifyZeroInteractions(mockProcessor);
   consumer.start();
   Assert.assertThat(((ServiceSupport)consumer).isStarted(),CoreMatchers.is(true));
-  consumer.onEvent(QuickfixjEventCategory.AppMessageReceived,sessionID,new Message());
+  consumer.onExchange(mockExchange);
   Mockito.verify(mockProcessor).process(Matchers.isA(Exchange.class));
 }
