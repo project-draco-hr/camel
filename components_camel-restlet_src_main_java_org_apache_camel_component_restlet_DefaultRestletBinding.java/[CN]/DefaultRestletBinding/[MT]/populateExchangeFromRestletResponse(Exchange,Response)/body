@@ -7,14 +7,15 @@
       }
     }
   }
+  int responseCode=response.getStatus().getCode();
+  exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,responseCode);
+  MediaType mediaType=response.getEntity().getMediaType();
+  if (mediaType != null) {
+    exchange.getOut().setHeader(Exchange.CONTENT_TYPE,mediaType.toString());
+  }
   String text=response.getEntity().getText();
   if (LOG.isDebugEnabled()) {
     LOG.debug("Populate exchange from Restlet response: " + text);
   }
-  if (exchange.getPattern().isOutCapable()) {
-    exchange.getOut().setBody(text);
-  }
- else {
-    throw new RuntimeCamelException("Exchange is incapable of receiving response: " + exchange + " with pattern: "+ exchange.getPattern());
-  }
+  exchange.getOut().setBody(text);
 }
