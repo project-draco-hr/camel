@@ -1,5 +1,23 @@
 {
+  if (!isStarted()) {
+    if (log.isDebugEnabled()) {
+      log.debug("Cannot publish event as notifier is not started: " + event);
+    }
+    return;
+  }
+  if (!camelContext.getStatus().isStarted()) {
+    if (log.isDebugEnabled()) {
+      log.debug("Cannot publish event as CamelContext is not started: " + event);
+    }
+    return;
+  }
   Exchange exchange=producer.createExchange();
   exchange.getIn().setBody(event);
-  producer.process(exchange);
+  exchange.setProperty(Exchange.NOTIFY_EVENT,Boolean.TRUE);
+  try {
+    producer.process(exchange);
+  }
+  finally {
+    exchange.removeProperty(Exchange.NOTIFY_EVENT);
+  }
 }
