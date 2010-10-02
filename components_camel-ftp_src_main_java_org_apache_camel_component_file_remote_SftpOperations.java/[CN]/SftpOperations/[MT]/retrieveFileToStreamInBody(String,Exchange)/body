@@ -11,11 +11,15 @@
       changeCurrentDirectory(path);
     }
     String onlyName=FileUtil.stripPath(name);
-    channel.get(onlyName,os);
+    InputStream is=channel.get(onlyName);
+    IOHelper.copyAndCloseInput(is,os);
     changeCurrentDirectory(currentDir);
     return true;
   }
- catch (  SftpException e) {
+ catch (  IOException e) {
+    throw new GenericFileOperationFailedException("Cannot retrieve file: " + name,e);
+  }
+catch (  SftpException e) {
     throw new GenericFileOperationFailedException("Cannot retrieve file: " + name,e);
   }
  finally {

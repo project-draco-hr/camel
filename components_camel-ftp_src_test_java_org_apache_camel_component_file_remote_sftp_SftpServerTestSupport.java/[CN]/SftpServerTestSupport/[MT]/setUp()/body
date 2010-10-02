@@ -1,0 +1,26 @@
+{
+  deleteDirectory(FTP_ROOT_DIR);
+  canTest=false;
+  try {
+    super.setUp();
+    sshd=SshServer.setUpDefaultServer();
+    sshd.setPort(getPort());
+    sshd.setKeyPairProvider(new FileKeyPairProvider(new String[]{"src/test/resources/hostkey.pem"}));
+    sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new SftpSubsystem.Factory()));
+    sshd.setCommandFactory(new ScpCommandFactory());
+    sshd.setPasswordAuthenticator(new MyPasswordAuthenticator());
+    sshd.start();
+  }
+ catch (  Exception e) {
+    NoSuchAlgorithmException nsae=ObjectHelper.getException(NoSuchAlgorithmException.class,e);
+    if (nsae != null) {
+      canTest=false;
+      String name=System.getProperty("os.name");
+      System.out.println("SunX509 is not avail on this platform [" + name + "] Testing is skipped! Real cause: "+ nsae.getMessage());
+    }
+ else {
+      throw e;
+    }
+  }
+  canTest=true;
+}
