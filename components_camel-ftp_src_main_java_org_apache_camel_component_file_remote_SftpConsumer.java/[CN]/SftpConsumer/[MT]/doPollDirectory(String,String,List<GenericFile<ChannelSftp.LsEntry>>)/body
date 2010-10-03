@@ -8,7 +8,7 @@
   if (log.isTraceEnabled()) {
     log.trace("Polling directory: " + dir);
   }
-  List<FTPFile> files=operations.listFiles();
+  List<ChannelSftp.LsEntry> files=operations.listFiles();
   if (files == null || files.isEmpty()) {
     if (log.isTraceEnabled()) {
       log.trace("No files found in directory: " + dir);
@@ -20,14 +20,14 @@
       log.trace("Found " + files.size() + " in directory: "+ dir);
     }
   }
-  for (  FTPFile file : files) {
+  for (  ChannelSftp.LsEntry file : files) {
     if (!canPollMoreFiles(fileList)) {
       return false;
     }
-    if (file.isDirectory()) {
-      RemoteFile<FTPFile> remote=asRemoteFile(absolutePath,file);
+    if (file.getAttrs().isDir()) {
+      RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(absolutePath,file);
       if (endpoint.isRecursive() && isValidFile(remote,true)) {
-        String subDirectory=file.getName();
+        String subDirectory=file.getFilename();
         String path=absolutePath + "/" + subDirectory;
         boolean canPollMore=pollSubDirectory(path,subDirectory,fileList);
         if (!canPollMore) {
@@ -35,8 +35,8 @@
         }
       }
     }
- else     if (file.isFile()) {
-      RemoteFile<FTPFile> remote=asRemoteFile(absolutePath,file);
+ else {
+      RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(absolutePath,file);
       if (isValidFile(remote,false)) {
         if (isInProgress(remote)) {
           if (log.isTraceEnabled()) {
@@ -47,9 +47,6 @@
           fileList.add(remote);
         }
       }
-    }
- else {
-      log.debug("Ignoring unsupported remote file type: " + file);
     }
   }
   return true;

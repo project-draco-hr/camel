@@ -1,53 +1,7 @@
 {
-  if (log.isTraceEnabled()) {
-    log.trace("pollDirectory from fileName: " + fileName);
-  }
-  if (fileName == null) {
-    return true;
-  }
+  String currentDir=operations.getCurrentDirectory();
   fileName=FileUtil.stripTrailingSeparator(fileName);
-  if (log.isTraceEnabled()) {
-    log.trace("Polling directory: " + fileName);
-  }
-  List<ChannelSftp.LsEntry> files=operations.listFiles(fileName);
-  if (files == null || files.isEmpty()) {
-    if (log.isTraceEnabled()) {
-      log.trace("No files found in directory: " + fileName);
-    }
-    return true;
-  }
- else {
-    if (log.isTraceEnabled()) {
-      log.trace("Found " + files.size() + " in directory: "+ fileName);
-    }
-  }
-  for (  ChannelSftp.LsEntry file : files) {
-    if (!canPollMoreFiles(fileList)) {
-      return false;
-    }
-    if (file.getAttrs().isDir()) {
-      RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
-      if (endpoint.isRecursive() && isValidFile(remote,true)) {
-        String subDirectory=fileName + "/" + file.getFilename();
-        boolean canPollMore=pollDirectory(subDirectory,fileList);
-        if (!canPollMore) {
-          return false;
-        }
-      }
-    }
- else {
-      RemoteFile<ChannelSftp.LsEntry> remote=asRemoteFile(fileName,file);
-      if (isValidFile(remote,false)) {
-        if (isInProgress(remote)) {
-          if (log.isTraceEnabled()) {
-            log.trace("Skipping as file is already in progress: " + remote.getFileName());
-          }
-        }
- else {
-          fileList.add(remote);
-        }
-      }
-    }
-  }
-  return true;
+  boolean answer=doPollDirectory(fileName,null,fileList);
+  operations.changeCurrentDirectory(currentDir);
+  return answer;
 }
