@@ -6,9 +6,13 @@
   answer.setFileLength(file.getAttrs().getSize());
   answer.setLastModified(file.getAttrs().getMTime() * 1000L);
   answer.setHostname(((RemoteFileConfiguration)endpoint.getConfiguration()).getHost());
-  answer.setAbsolute(false);
+  boolean absolute=FileUtil.hasLeadingSeparator(absolutePath);
+  answer.setAbsolute(absolute);
   String dir=FileUtil.stripTrailingSeparator(absolutePath);
-  String absoluteFileName=dir + "/" + file.getFilename();
+  String absoluteFileName=FileUtil.stripLeadingSeparator(dir + "/" + file.getFilename());
+  if (absolute) {
+    absoluteFileName="/" + absoluteFileName;
+  }
   answer.setAbsoluteFilePath(absoluteFileName);
   String relativePath=ObjectHelper.after(absoluteFileName,endpointPath);
   relativePath=FileUtil.stripLeadingSeparator(relativePath);
