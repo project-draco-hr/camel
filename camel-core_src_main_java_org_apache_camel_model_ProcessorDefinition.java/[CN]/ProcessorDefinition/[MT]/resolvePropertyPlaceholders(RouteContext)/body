@@ -1,0 +1,26 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("Resolving property placeholders for: " + this);
+  }
+  Map<Object,Object> properties=new HashMap<Object,Object>();
+  IntrospectionSupport.getProperties(this,properties,null);
+  if (!properties.isEmpty()) {
+    if (log.isTraceEnabled()) {
+      log.trace("There are " + properties.size() + " properties on: "+ this);
+    }
+    for (    Map.Entry entry : properties.entrySet()) {
+      String name=(String)entry.getKey();
+      Object value=entry.getValue();
+      if (value instanceof String) {
+        String text=(String)value;
+        text=routeContext.getCamelContext().resolvePropertyPlaceholders(text);
+        if (text != value) {
+          IntrospectionSupport.setProperty(this,name,text);
+          if (log.isDebugEnabled()) {
+            log.debug("Changed property [" + name + "] from: "+ value+ " to: "+ text);
+          }
+        }
+      }
+    }
+  }
+}
