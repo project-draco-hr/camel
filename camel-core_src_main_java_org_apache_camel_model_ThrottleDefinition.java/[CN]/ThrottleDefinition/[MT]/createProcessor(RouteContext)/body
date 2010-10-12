@@ -7,11 +7,15 @@
       scheduled=routeContext.getCamelContext().getExecutorServiceStrategy().newScheduledThreadPool(this,"Throttle");
     }
   }
-  Throttler answer=new Throttler(childProcessor,maximumRequestsPerPeriod,timePeriodMillis,scheduled);
+  long period=getTimePeriodMillis() != null ? getTimePeriodMillis() : 1000L;
+  Throttler answer=new Throttler(childProcessor,getMaximumRequestsPerPeriod(),period,scheduled);
   if (getAsyncDelayed() != null) {
     answer.setAsyncDelayed(getAsyncDelayed());
   }
-  if (getCallerRunsWhenRejected() != null) {
+  if (getCallerRunsWhenRejected() == null) {
+    answer.setCallerRunsWhenRejected(true);
+  }
+ else {
     answer.setCallerRunsWhenRejected(getCallerRunsWhenRejected());
   }
   return answer;
