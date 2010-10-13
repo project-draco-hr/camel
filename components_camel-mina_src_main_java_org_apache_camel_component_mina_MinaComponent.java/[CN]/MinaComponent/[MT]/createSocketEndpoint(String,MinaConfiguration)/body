@@ -4,13 +4,13 @@
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
   final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
-  IoAcceptor acceptor=new SocketAcceptor(processorCount,getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(this,"MinaSocketAcceptor"));
-  IoConnector connector=new SocketConnector(processorCount,getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(this,"MinaSocketConnector"));
+  IoAcceptor acceptor=new SocketAcceptor(processorCount,getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"MinaSocketAcceptor"));
+  IoConnector connector=new SocketConnector(processorCount,getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"MinaSocketConnector"));
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
   connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureCodecFactory("MinaProducer",connectorConfig,configuration);
-  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(this,"MinaThreadPool")));
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"MinaThreadPool")));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -21,7 +21,7 @@
   configureCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setReuseAddress(true);
   acceptorConfig.setDisconnectOnUnbind(true);
-  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(this,"MinaThreadPool")));
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"MinaThreadPool")));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
