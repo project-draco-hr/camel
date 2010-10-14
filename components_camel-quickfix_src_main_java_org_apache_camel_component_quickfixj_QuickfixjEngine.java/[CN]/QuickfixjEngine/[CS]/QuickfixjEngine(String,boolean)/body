@@ -22,28 +22,24 @@
   if (settings.isSetting(SETTING_THREAD_MODEL)) {
     threadModel=ThreadModel.valueOf(settings.getString(SETTING_THREAD_MODEL));
   }
-  JmxExporter jmxExporter=null;
   if (settings.isSetting(SETTING_USE_JMX) && settings.getBool(SETTING_USE_JMX)) {
     LOG.info("Enabling JMX for QuickFIX/J");
     jmxExporter=new JmxExporter();
+  }
+ else {
+    jmxExporter=null;
   }
   ClassLoader ccl=Thread.currentThread().getContextClassLoader();
   try {
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
     if (isConnectorRole(settings,SessionFactory.ACCEPTOR_CONNECTION_TYPE)) {
       acceptor=createAcceptor(new Dispatcher(),settings,messageStoreFactory,sessionLogFactory,messageFactory,threadModel);
-      if (jmxExporter != null) {
-        jmxExporter.export(acceptor);
-      }
     }
  else {
       acceptor=null;
     }
     if (isConnectorRole(settings,SessionFactory.INITIATOR_CONNECTION_TYPE)) {
       initiator=createInitiator(new Dispatcher(),settings,messageStoreFactory,sessionLogFactory,messageFactory,threadModel);
-      if (jmxExporter != null) {
-        jmxExporter.export(initiator);
-      }
     }
  else {
       initiator=null;
