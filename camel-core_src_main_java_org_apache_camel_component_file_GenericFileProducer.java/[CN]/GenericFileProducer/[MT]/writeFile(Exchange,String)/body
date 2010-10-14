@@ -1,30 +1,24 @@
 {
-  InputStream payload=exchange.getIn().getBody(InputStream.class);
-  try {
-    if (endpoint.isAutoCreate()) {
-      File file=new File(fileName);
-      String directory=file.getParent();
-      boolean absolute=FileUtil.isAbsolute(file);
-      if (directory != null) {
-        if (!operations.buildDirectory(directory,absolute)) {
-          if (log.isDebugEnabled()) {
-            log.debug("Cannot build directory [" + directory + "] (could be because of denied permissions)");
-          }
+  if (endpoint.isAutoCreate()) {
+    File file=new File(fileName);
+    String directory=file.getParent();
+    boolean absolute=FileUtil.isAbsolute(file);
+    if (directory != null) {
+      if (!operations.buildDirectory(directory,absolute)) {
+        if (log.isDebugEnabled()) {
+          log.debug("Cannot build directory [" + directory + "] (could be because of denied permissions)");
         }
       }
     }
-    if (log.isTraceEnabled()) {
-      log.trace("About to write [" + fileName + "] to ["+ getEndpoint()+ "] from exchange ["+ exchange+ "]");
-    }
-    boolean success=operations.storeFile(fileName,exchange);
-    if (!success) {
-      throw new GenericFileOperationFailedException("Error writing file [" + fileName + "]");
-    }
-    if (log.isDebugEnabled()) {
-      log.debug("Wrote [" + fileName + "] to ["+ getEndpoint()+ "]");
-    }
   }
-  finally {
-    IOHelper.close(payload,"Closing payload",log);
+  if (log.isTraceEnabled()) {
+    log.trace("About to write [" + fileName + "] to ["+ getEndpoint()+ "] from exchange ["+ exchange+ "]");
+  }
+  boolean success=operations.storeFile(fileName,exchange);
+  if (!success) {
+    throw new GenericFileOperationFailedException("Error writing file [" + fileName + "]");
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("Wrote [" + fileName + "] to ["+ getEndpoint()+ "]");
   }
 }
