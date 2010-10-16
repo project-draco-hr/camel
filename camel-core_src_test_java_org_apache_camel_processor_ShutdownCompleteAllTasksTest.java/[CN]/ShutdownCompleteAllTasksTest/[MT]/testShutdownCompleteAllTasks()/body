@@ -1,8 +1,9 @@
 {
-  context.getShutdownStrategy().setTimeout(20);
+  context.getShutdownStrategy().setTimeout(30);
+  context.startRoute("foo");
   MockEndpoint bar=getMockEndpoint("mock:bar");
   bar.expectedMinimumMessageCount(1);
-  assertMockEndpointsSatisfied();
+  bar.await(20,TimeUnit.SECONDS);
   int batch=bar.getReceivedExchanges().get(0).getProperty(Exchange.BATCH_SIZE,int.class);
   context.stop();
   assertEquals("Should complete all messages",batch,bar.getReceivedCounter());
