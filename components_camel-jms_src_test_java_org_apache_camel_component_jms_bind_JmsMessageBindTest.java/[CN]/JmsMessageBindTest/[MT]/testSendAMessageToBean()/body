@@ -1,11 +1,15 @@
 {
   MockEndpoint endpoint=getMockEndpoint("mock:result");
   endpoint.expectedBodiesReceived("Completed");
-  template.sendBodyAndHeader("activemq:Test.BindingQueue","SomeBody","foo","bar");
+  Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put("foo","bar");
+  headers.put("binding",new JmsBinding());
+  template.sendBodyAndHeaders("activemq:Test.BindingQueue","SomeBody",headers);
   assertMockEndpointsSatisfied();
   MyBean bean=getMandatoryBean(MyBean.class,"myBean");
   assertEquals("body","SomeBody",bean.getBody());
-  Map headers=bean.getHeaders();
-  assertNotNull("No headers!",headers);
-  assertEquals("foo header","bar",headers.get("foo"));
+  Map beanHeaders=bean.getHeaders();
+  assertNotNull("No headers!",beanHeaders);
+  assertEquals("foo header","bar",beanHeaders.get("foo"));
+  assertNull("Should get a null value",beanHeaders.get("binding"));
 }
