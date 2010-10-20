@@ -1,0 +1,56 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("Converting " + (value == null ? "null" : value.getClass().getCanonicalName()) + " -> "+ type.getCanonicalName()+ " with value: "+ value);
+  }
+  if (value == null) {
+    if (boolean.class.isAssignableFrom(type)) {
+      return Boolean.FALSE;
+    }
+    return null;
+  }
+  if (type.isInstance(value)) {
+    return type.cast(value);
+  }
+  TypeMapping key=new TypeMapping(type,value.getClass());
+  if (misses.containsKey(key)) {
+    return Void.TYPE;
+  }
+  TypeConverter converter=getOrFindTypeConverter(type,value);
+  if (converter != null) {
+    if (log.isTraceEnabled()) {
+      log.trace("Using converter: " + converter + " to convert "+ key);
+    }
+    Object rc=converter.convertTo(type,exchange,value);
+    if (rc != null) {
+      return rc;
+    }
+  }
+  for (  FallbackTypeConverter fallback : fallbackConverters) {
+    Object rc=fallback.getFallbackTypeConverter().convertTo(type,exchange,value);
+    if (Void.TYPE.equals(rc)) {
+      return Void.TYPE;
+    }
+    if (rc != null) {
+      if (fallback.isCanPromote()) {
+        if (log.isDebugEnabled()) {
+          log.debug("Promoting fallback type converter as a known type converter to convert from: " + type.getCanonicalName() + " to: "+ value.getClass().getCanonicalName()+ " for the fallback converter: "+ fallback.getFallbackTypeConverter());
+        }
+        addTypeConverter(type,value.getClass(),fallback.getFallbackTypeConverter());
+      }
+      if (log.isTraceEnabled()) {
+        log.trace("Fallback type converter " + fallback.getFallbackTypeConverter() + " converted type from: "+ type.getCanonicalName()+ " to: "+ value.getClass().getCanonicalName());
+      }
+      return rc;
+    }
+  }
+  if (type.isPrimitive()) {
+    Class primitiveType=ObjectHelper.convertPrimitiveTypeToWrapperType(type);
+    if (primitiveType != type) {
+      return convertTo(primitiveType,exchange,value);
+    }
+  }
+synchronized (misses) {
+    misses.put(key,key);
+  }
+  return Void.TYPE;
+}

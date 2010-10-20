@@ -1,0 +1,25 @@
+{
+  if (!isRunAllowed()) {
+    throw new IllegalStateException(this + " is not started");
+  }
+  Object answer;
+  try {
+    answer=doConvertTo(type,exchange,value);
+  }
+ catch (  Exception e) {
+    boolean execution=ObjectHelper.getException(ExecutionException.class,e) != null || ObjectHelper.getException(CamelExecutionException.class,e) != null;
+    if (execution) {
+      throw ObjectHelper.wrapCamelExecutionException(exchange,e);
+    }
+    if (log.isDebugEnabled()) {
+      log.debug(NoTypeConversionAvailableException.createMessage(value,type) + " Caused by: " + e.getMessage()+ ". Will ignore this and continue.");
+    }
+    return null;
+  }
+  if (answer == Void.TYPE) {
+    return null;
+  }
+ else {
+    return (T)answer;
+  }
+}
