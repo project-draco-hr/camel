@@ -1,5 +1,6 @@
 {
   this.camelContext=camelContext;
+  this.mapper=mapper;
   Map<String,DozerBeanMapper> mappers=new HashMap<String,DozerBeanMapper>(camelContext.getRegistry().lookupByType(DozerBeanMapper.class));
   if (mapper != null) {
     mappers.put("parameter",mapper);
@@ -13,13 +14,6 @@
   TypeConverterRegistry registry=camelContext.getTypeConverterRegistry();
   for (  DozerBeanMapper dozer : mappers.values()) {
     List<ClassMap> all=loadMappings(camelContext,dozer);
-    DozerTypeConverter converter=new DozerTypeConverter(dozer);
-    for (    ClassMap map : all) {
-      if (log.isInfoEnabled()) {
-        log.info("Added " + map.getSrcClassName() + " -> "+ map.getDestClassName()+ " as type converter to: "+ registry);
-      }
-      registry.addTypeConverter(map.getSrcClassToMap(),map.getDestClassToMap(),converter);
-      registry.addTypeConverter(map.getDestClassToMap(),map.getSrcClassToMap(),converter);
-    }
+    registerClassMaps(registry,dozer,all);
   }
 }
