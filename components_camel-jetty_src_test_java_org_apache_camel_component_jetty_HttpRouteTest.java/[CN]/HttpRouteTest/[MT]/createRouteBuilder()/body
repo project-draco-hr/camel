@@ -1,8 +1,12 @@
 {
   return new RouteBuilder(){
     public void configure(){
+      port1=getPort();
+      port2=getNextPort();
+      port3=getNextPort();
+      port4=getNextPort();
       context.setStreamCaching(true);
-      from("jetty:http://localhost:9280/test").to("mock:a");
+      from("jetty:http://localhost:" + port1 + "/test").to("mock:a");
       Processor proc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
           try {
@@ -29,8 +33,8 @@
         }
       }
 ;
-      from("jetty:http://localhost:9281/hello?sessionSupport=true").process(proc);
-      from("jetty:http://localhost:9280/echo").process(printProcessor).process(printProcessor);
+      from("jetty:http://localhost:" + port2 + "/hello?sessionSupport=true").process(proc);
+      from("jetty:http://localhost:" + port1 + "/echo").process(printProcessor).process(printProcessor);
       Processor procParameters=new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String value=exchange.getIn().getHeader("request",String.class);
@@ -44,8 +48,8 @@
         }
       }
 ;
-      from("jetty:http://localhost:9280/parameter").process(procParameters);
-      from("jetty:http://localhost:9280/postxml").process(new Processor(){
+      from("jetty:http://localhost:" + port1 + "/parameter").process(procParameters);
+      from("jetty:http://localhost:" + port1 + "/postxml").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String value=exchange.getIn().getBody(String.class);
           assertEquals("The response message is wrong",value,POST_MESSAGE);
@@ -53,7 +57,7 @@
         }
       }
 );
-      from("jetty:http://localhost:9083/noStreamCache?disableStreamCache=true").noStreamCaching().process(new Processor(){
+      from("jetty:http://localhost:" + port3 + "/noStreamCache?disableStreamCache=true").noStreamCaching().process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           InputStream is=(InputStream)exchange.getIn().getBody();
           assertTrue("It should be a raw inputstream",is instanceof org.eclipse.jetty.server.HttpInput);
@@ -63,7 +67,7 @@
         }
       }
 );
-      from("jetty:http://localhost:9084/requestBufferSize").process(new Processor(){
+      from("jetty:http://localhost:" + port4 + "/requestBufferSize").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String string=exchange.getIn().getBody(String.class);
           exchange.getOut().setBody(string);

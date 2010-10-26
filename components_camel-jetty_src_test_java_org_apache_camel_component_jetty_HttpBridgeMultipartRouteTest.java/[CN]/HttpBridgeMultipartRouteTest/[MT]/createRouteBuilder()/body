@@ -1,6 +1,8 @@
 {
   return new RouteBuilder(){
     public void configure(){
+      port1=getPort();
+      port2=getNextPort();
       errorHandler(noErrorHandler());
       Processor serviceProc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
@@ -10,10 +12,10 @@
         }
       }
 ;
-      HttpEndpoint epOut=(HttpEndpoint)getContext().getEndpoint("http://localhost:9080?bridgeEndpoint=true&throwExceptionOnFailure=false");
+      HttpEndpoint epOut=(HttpEndpoint)getContext().getEndpoint("http://localhost:" + port1 + "?bridgeEndpoint=true&throwExceptionOnFailure=false");
       epOut.setHeaderFilterStrategy(new MultipartHeaderFilterStrategy());
-      from("jetty:http://localhost:9090/test/hello?enableMultipartFilter=false").to(epOut);
-      from("jetty://http://localhost:9080?matchOnUriPrefix=true").process(serviceProc);
+      from("jetty:http://localhost:" + port2 + "/test/hello?enableMultipartFilter=false").to(epOut);
+      from("jetty://http://localhost:" + port1 + "?matchOnUriPrefix=true").process(serviceProc);
     }
   }
 ;

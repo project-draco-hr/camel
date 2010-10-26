@@ -2,7 +2,7 @@
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
       errorHandler(noErrorHandler());
-      from("direct:start").enrich("http://localhost:8222/myserver?throwExceptionOnFailure=false&user=Camel",new AggregationStrategy(){
+      from("direct:start").enrich("http://localhost:{{port}}/myserver?throwExceptionOnFailure=false&user=Camel",new AggregationStrategy(){
         public Exchange aggregate(        Exchange original,        Exchange resource){
           Integer code=resource.getIn().getHeader(Exchange.HTTP_RESPONSE_CODE,Integer.class);
           assertEquals(404,code.intValue());
@@ -10,7 +10,7 @@
         }
       }
 ).to("mock:result");
-      from("jetty://http://localhost:8222/myserver").process(new Processor(){
+      from("jetty://http://localhost:{{port}}/myserver").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getOut().setBody("Page not found");
           exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,404);
