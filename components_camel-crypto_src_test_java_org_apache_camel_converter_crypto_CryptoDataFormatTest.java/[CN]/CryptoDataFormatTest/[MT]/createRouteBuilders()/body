@@ -1,13 +1,13 @@
 {
   return new RouteBuilder[]{new RouteBuilder(){
-    @Override public void configure() throws Exception {
+    public void configure() throws Exception {
       KeyGenerator generator=KeyGenerator.getInstance("DES");
       CryptoDataFormat cryptoFormat=new CryptoDataFormat("DES",generator.generateKey());
       from("direct:basic-encryption").marshal(cryptoFormat).to("mock:encrypted").unmarshal(cryptoFormat).to("mock:unencrypted");
     }
   }
 ,new RouteBuilder(){
-    @Override public void configure() throws Exception {
+    public void configure() throws Exception {
       KeyGenerator generator=KeyGenerator.getInstance("DES");
       byte[] initializationVector=new byte[]{0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07};
       CryptoDataFormat cryptoFormat=new CryptoDataFormat("DES/CBC/PKCS5Padding",generator.generateKey());
@@ -48,7 +48,7 @@
 ,new RouteBuilder(){
     public void configure() throws Exception {
       CryptoDataFormat cryptoFormat=new CryptoDataFormat("DES",null);
-      from("direct:key-in-header-encrypt").marshal(cryptoFormat).setHeader(CryptoDataFormat.KEY,constant(null)).setOutHeader(CryptoDataFormat.KEY,constant(null)).to("mock:encrypted");
+      from("direct:key-in-header-encrypt").marshal(cryptoFormat).removeHeader(CryptoDataFormat.KEY).to("mock:encrypted");
       from("direct:key-in-header-decrypt").unmarshal(cryptoFormat).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getIn().getHeaders().remove(CryptoDataFormat.KEY);
