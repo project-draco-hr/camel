@@ -1,0 +1,20 @@
+{
+  if (port < 21000) {
+    throw new IllegalArgumentException("Port number is not initialized in an expected range: " + getPort());
+  }
+  FtpServerFactory serverFactory=new FtpServerFactory();
+  URL url=ObjectHelper.loadResourceAsURL("users.properties");
+  PropertiesUserManagerFactory pumf=new PropertiesUserManagerFactory();
+  pumf.setUrl(url);
+  pumf.setPasswordEncryptor(new ClearTextPasswordEncryptor());
+  pumf.setAdminName("admin");
+  UserManager uman=pumf.createUserManager();
+  serverFactory.setUserManager(uman);
+  NativeFileSystemFactory fsf=new NativeFileSystemFactory();
+  fsf.setCreateHome(true);
+  serverFactory.setFileSystem(fsf);
+  ListenerFactory factory=new ListenerFactory();
+  factory.setPort(port);
+  serverFactory.addListener("default",factory.createListener());
+  ftpServer=serverFactory.createServer();
+}
