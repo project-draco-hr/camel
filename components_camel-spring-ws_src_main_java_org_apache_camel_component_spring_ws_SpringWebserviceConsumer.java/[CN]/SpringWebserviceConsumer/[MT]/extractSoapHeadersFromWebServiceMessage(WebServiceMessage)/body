@@ -1,0 +1,23 @@
+{
+  Map<String,Object> headers=new HashMap<String,Object>();
+  if (request instanceof SoapMessage) {
+    SoapMessage soapMessage=(SoapMessage)request;
+    SoapHeader soapHeader=soapMessage.getSoapHeader();
+    if (soapHeader != null) {
+      Iterator<?> attibutesIterator=soapHeader.getAllAttributes();
+      while (attibutesIterator.hasNext()) {
+        QName name=(QName)attibutesIterator.next();
+        headers.put(name.toString(),soapHeader.getAttributeValue(name));
+      }
+      Iterator<?> elementIter=soapHeader.examineAllHeaderElements();
+      while (elementIter.hasNext()) {
+        Object element=elementIter.next();
+        if (element instanceof SoapHeaderElement) {
+          QName name=((SoapHeaderElement)element).getName();
+          headers.put(name.toString(),element);
+        }
+      }
+    }
+  }
+  return headers;
+}
