@@ -1,0 +1,17 @@
+{
+  super.doStart();
+  JMXEndpoint ep=(JMXEndpoint)getEndpoint();
+  if (ep.isPlatformServer()) {
+    setServerConnection(ManagementFactory.getPlatformMBeanServer());
+  }
+ else {
+    JMXServiceURL url=new JMXServiceURL(ep.getServerURL());
+    String[] creds={ep.getUser(),ep.getPassword()};
+    Map map=Collections.singletonMap(JMXConnector.CREDENTIALS,creds);
+    JMXConnector connector=JMXConnectorFactory.connect(url,map);
+    setServerConnection(connector.getMBeanServerConnection());
+  }
+  NotificationFilter nf=ep.getNotificationFilter();
+  ObjectName objectName=ep.getJMXObjectName();
+  getServerConnection().addNotificationListener(objectName,this,nf,ep.getHandback());
+}

@@ -1,0 +1,17 @@
+{
+  ISimpleMXBean bean=getSimpleMXBean();
+  assertEquals("no notifications should have been filtered at this point",0,mRejected.size());
+  getMockEndpoint().setExpectedMessageCount(5);
+  for (int i=0; i < 10; i++) {
+    bean.touch();
+  }
+  waitForMessages();
+  assertEquals("5 notifications should have been filtered",5,mRejected.size());
+  for (  Notification rejected : mRejected) {
+    assertEquals(1,rejected.getSequenceNumber() % 2);
+  }
+  for (  Exchange received : getMockEndpoint().getReceivedExchanges()) {
+    Notification n=(Notification)received.getIn().getBody();
+    assertEquals(0,n.getSequenceNumber() % 2);
+  }
+}

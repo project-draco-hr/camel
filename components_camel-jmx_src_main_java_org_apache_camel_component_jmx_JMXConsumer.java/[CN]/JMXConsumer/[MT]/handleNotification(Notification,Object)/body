@@ -1,0 +1,21 @@
+{
+  JMXEndpoint ep=(JMXEndpoint)getEndpoint();
+  Exchange exchange=getEndpoint().createExchange(ExchangePattern.InOnly);
+  Message message=exchange.getIn();
+  message.setHeader("jmx.handback",aHandback);
+  try {
+    if (ep.isXML()) {
+      message.setBody(mFormatter.format(aNotification));
+    }
+ else {
+      message.setBody(aNotification);
+    }
+    getProcessor().process(exchange);
+  }
+ catch (  NotificationFormatException e) {
+    getExceptionHandler().handleException("Failed to marshal notification",e);
+  }
+catch (  Exception e) {
+    getExceptionHandler().handleException("Failed to process notification",e);
+  }
+}
