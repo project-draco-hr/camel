@@ -1,0 +1,16 @@
+{
+  DefaultCamelContext camelContext=new DefaultCamelContext();
+  component=new QuickfixjComponent();
+  component.setCamelContext(camelContext);
+  if (injectQfjPlugins) {
+    engineMessageFactory=new DefaultMessageFactory();
+    engineMessageStoreFactory=new MemoryStoreFactory();
+    engineLogFactory=new ScreenLogFactory();
+    component.setMessageFactory(engineMessageFactory);
+    component.setMessageStoreFactory(engineMessageStoreFactory);
+    component.setLogFactory(engineLogFactory);
+  }
+  assertThat(component.getEngines().size(),is(0));
+  Method converterMethod=QuickfixjConverters.class.getMethod("toSessionID",new Class<?>[]{String.class});
+  camelContext.getTypeConverterRegistry().addTypeConverter(SessionID.class,String.class,new StaticMethodTypeConverter(converterMethod));
+}
