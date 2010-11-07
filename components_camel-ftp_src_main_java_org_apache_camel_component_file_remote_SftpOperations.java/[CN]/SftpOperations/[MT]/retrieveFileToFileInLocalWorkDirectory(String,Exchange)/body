@@ -30,14 +30,20 @@
   }
   try {
     file.setBody(local);
-    String currentDir=getCurrentDirectory();
-    String path=FileUtil.onlyPath(name);
-    if (path != null) {
-      changeCurrentDirectory(path);
+    String remoteName=name;
+    String currentDir=null;
+    if (endpoint.getConfiguration().isStepwise()) {
+      currentDir=getCurrentDirectory();
+      String path=FileUtil.onlyPath(name);
+      if (path != null) {
+        changeCurrentDirectory(path);
+      }
+      remoteName=FileUtil.stripPath(name);
     }
-    String onlyName=FileUtil.stripPath(name);
-    channel.get(onlyName,os);
-    changeCurrentDirectory(currentDir);
+    channel.get(remoteName,os);
+    if (endpoint.getConfiguration().isStepwise()) {
+      changeCurrentDirectory(currentDir);
+    }
   }
  catch (  SftpException e) {
     if (LOG.isTraceEnabled()) {

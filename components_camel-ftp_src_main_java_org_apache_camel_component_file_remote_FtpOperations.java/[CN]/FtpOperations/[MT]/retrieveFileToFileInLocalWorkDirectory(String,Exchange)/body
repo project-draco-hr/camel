@@ -32,14 +32,20 @@
   try {
     GenericFile<FTPFile> target=(GenericFile<FTPFile>)exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);
     target.setBody(local);
-    String currentDir=getCurrentDirectory();
-    String path=FileUtil.onlyPath(name);
-    if (path != null) {
-      changeCurrentDirectory(path);
+    String remoteName=name;
+    String currentDir=null;
+    if (endpoint.getConfiguration().isStepwise()) {
+      currentDir=getCurrentDirectory();
+      String path=FileUtil.onlyPath(name);
+      if (path != null) {
+        changeCurrentDirectory(path);
+      }
+      remoteName=FileUtil.stripPath(name);
     }
-    String onlyName=FileUtil.stripPath(name);
-    result=client.retrieveFile(onlyName,os);
-    changeCurrentDirectory(currentDir);
+    result=client.retrieveFile(remoteName,os);
+    if (endpoint.getConfiguration().isStepwise()) {
+      changeCurrentDirectory(currentDir);
+    }
   }
  catch (  IOException e) {
     if (log.isTraceEnabled()) {
