@@ -14,7 +14,18 @@
     smppMessage.setHeader(FINAL_STATUS,smscDeliveryReceipt.getFinalStatus());
   }
  else {
-    smppMessage.setBody(String.valueOf(new String(deliverSm.getShortMessage(),configuration.getEncoding())));
+    if (deliverSm.getShortMessage() != null) {
+      smppMessage.setBody(String.valueOf(new String(deliverSm.getShortMessage(),configuration.getEncoding())));
+    }
+ else     if (deliverSm.getOptionalParametes() != null && deliverSm.getOptionalParametes().length > 0) {
+      List<OptionalParameter> oplist=Arrays.asList(deliverSm.getOptionalParametes());
+      for (      OptionalParameter optPara : oplist) {
+        if (OptionalParameter.Tag.MESSAGE_PAYLOAD.code() == optPara.tag && OctetString.class.isInstance(optPara)) {
+          smppMessage.setBody(((OctetString)optPara).getValueAsString());
+          break;
+        }
+      }
+    }
     smppMessage.setHeader(SEQUENCE_NUMBER,deliverSm.getSequenceNumber());
     smppMessage.setHeader(COMMAND_ID,deliverSm.getCommandId());
     smppMessage.setHeader(SOURCE_ADDR,deliverSm.getSourceAddr());
