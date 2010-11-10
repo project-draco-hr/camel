@@ -1,6 +1,7 @@
 {
   ManagedCamelContext mc=new ManagedCamelContext(context);
   mc.init(context.getManagementStrategy());
+  String managementName=context.getManagementName() != null ? context.getManagementName() : context.getName();
   try {
     boolean done=false;
     while (!done) {
@@ -11,17 +12,23 @@
       }
  else {
         boolean fixed=false;
-        if (context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
-          String name=findFreeName(mc);
-          if (name != null) {
-            LOG.warn("Reassigned auto assigned name on CamelContext from: " + context.getName() + " to: "+ name+ " due to clash with existing name already registered in MBeanServer.");
-            context.setNameStrategy(new ExplicitCamelContextNameStrategy(name));
-            fixed=true;
-            done=true;
-          }
+        String name=findFreeName(mc,context.getNameStrategy(),managementName);
+        if (name != null) {
+          fixed=true;
+          done=true;
+          managementName=name;
         }
         if (!fixed) {
           throw new VetoCamelContextStartException("CamelContext (" + context.getName() + ") with ObjectName["+ on+ "] is already registered."+ " Make sure to use unique names on CamelContext when using multiple CamelContexts in the same MBeanServer.",context);
+        }
+ else {
+          if (context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
+            LOG.warn("Reassigned auto assigned name on CamelContext from: " + context.getName() + " to: "+ name+ " due to clash with existing name already registered in MBeanServer.");
+            context.setNameStrategy(new ExplicitCamelContextNameStrategy(name));
+          }
+ else {
+            LOG.warn("This CamelContext(" + context.getName() + ") will be registered using the name: "+ managementName+ " due to clash with an existing name already registered in MBeanServer.");
+          }
         }
       }
     }
@@ -32,6 +39,7 @@
 catch (  Exception e) {
     throw ObjectHelper.wrapRuntimeCamelException(e);
   }
+  context.setManagementName(managementName);
   try {
     getManagementStrategy().manageObject(mc);
   }
