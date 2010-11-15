@@ -1,0 +1,19 @@
+{
+  Control[] responseControls=ldapContext.getResponseControls();
+  byte[] cookie=null;
+  if (responseControls != null) {
+    for (int i=0; i < responseControls.length; i++) {
+      if (responseControls[i] instanceof PagedResultsResponseControl) {
+        PagedResultsResponseControl prrc=(PagedResultsResponseControl)responseControls[i];
+        cookie=prrc.getCookie();
+      }
+    }
+  }
+  if (cookie == null) {
+    return false;
+  }
+ else {
+    ldapContext.setRequestControls(new Control[]{new PagedResultsControl(pageSize,cookie,Control.CRITICAL)});
+    return true;
+  }
+}

@@ -1,15 +1,20 @@
 {
   String filter=exchange.getIn().getBody(String.class);
-  DirContext ldapContext=(DirContext)getEndpoint().getCamelContext().getRegistry().lookup(remaining);
+  DirContext dirContext=getDirContext();
   try {
-    List<SearchResult> data=new ArrayList<SearchResult>();
-    NamingEnumeration<SearchResult> namingEnumeration=ldapContext.search(searchBase,filter,getControls());
-    while (namingEnumeration.hasMore()) {
-      data.add(namingEnumeration.next());
+    List<SearchResult> data;
+    if (pageSize == null) {
+      data=simpleSearch(dirContext,filter);
+    }
+ else {
+      if (!(dirContext instanceof LdapContext)) {
+        throw new IllegalArgumentException("When using attribute 'pageSize' for a ldap endpoint, you must provide a LdapContext (subclass of DirContext)");
+      }
+      data=pagedSearch((LdapContext)dirContext,filter);
     }
     exchange.getOut().setBody(data);
   }
   finally {
-    ldapContext.close();
+    dirContext.close();
   }
 }
