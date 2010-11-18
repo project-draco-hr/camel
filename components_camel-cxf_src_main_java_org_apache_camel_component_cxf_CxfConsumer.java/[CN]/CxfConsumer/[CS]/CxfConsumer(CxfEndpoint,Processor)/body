@@ -7,10 +7,16 @@
         LOG.trace("Received CXF Request: " + cxfExchange);
       }
       Continuation continuation=getContinuation(cxfExchange);
-      if (continuation != null && !endpoint.isSynchronous()) {
+      if (continuation != null && !endpoint.isSynchronous() && Version.getCurrentVersion().startsWith("2.3")) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Calling the Camel async processors.");
+        }
         return asyncInvoke(cxfExchange,continuation);
       }
  else {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Calling the Camel sync processors.");
+        }
         return syncInvoke(cxfExchange);
       }
     }
@@ -18,7 +24,11 @@
 synchronized (continuation) {
         if (continuation.isNew()) {
           final org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
-          boolean sync=getAsyncProcessor().process(camelExchange,new AsyncCallback(){
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
+          }
+          continuation.suspend(0);
+          getAsyncProcessor().process(camelExchange,new AsyncCallback(){
             public void done(            boolean doneSync){
 synchronized (continuation) {
                 if (LOG.isTraceEnabled()) {
@@ -30,18 +40,6 @@ synchronized (continuation) {
             }
           }
 );
-          if (continuation.getObject() != camelExchange && !sync) {
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
-            }
-            continuation.suspend(0);
-          }
- else {
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("Processed the Exchange : " + camelExchange.getExchangeId());
-            }
-            setResponseBack(cxfExchange,camelExchange);
-          }
         }
         if (continuation.isResumed()) {
           org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
