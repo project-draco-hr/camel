@@ -1,19 +1,12 @@
 {
   BlockingQueue<Exchange> queue=endpoint.getQueue();
   while (queue != null && isRunAllowed()) {
-    final Exchange exchange;
+    Exchange exchange=null;
     try {
       exchange=queue.poll(1000,TimeUnit.MILLISECONDS);
-    }
- catch (    InterruptedException e) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
-      }
-      continue;
-    }
-    if (exchange != null) {
-      if (isRunAllowed()) {
+      if (exchange != null) {
         try {
+          tasks.incrementAndGet();
           sendToConsumers(exchange);
           if (exchange.getException() != null) {
             getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
@@ -22,21 +15,27 @@
  catch (        Exception e) {
           getExceptionHandler().handleException("Error processing exchange",exchange,e);
         }
-      }
- else {
-        if (LOG.isWarnEnabled()) {
-          LOG.warn("This consumer is stopped during polling an exchange, so putting it back on the seda queue: " + exchange);
-        }
-        try {
-          queue.put(exchange);
-        }
- catch (        InterruptedException e) {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
-          }
-          continue;
+ finally {
+          tasks.decrementAndGet();
         }
       }
     }
+ catch (    InterruptedException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
+      }
+      continue;
+    }
+catch (    Throwable e) {
+      if (exchange != null) {
+        getExceptionHandler().handleException("Error processing exchange",exchange,e);
+      }
+ else {
+        getExceptionHandler().handleException(e);
+      }
+    }
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Ending this polling consumer thread, there are still " + tasks.get() + " threads left.");
   }
 }
