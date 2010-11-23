@@ -1,12 +1,15 @@
 {
+  tasks.incrementAndGet();
   BlockingQueue<Exchange> queue=endpoint.getQueue();
   while (queue != null && isRunAllowed()) {
+    if (pendingStop && endpoint.getQueue().size() == 0) {
+      break;
+    }
     Exchange exchange=null;
     try {
       exchange=queue.poll(1000,TimeUnit.MILLISECONDS);
       if (exchange != null) {
         try {
-          tasks.incrementAndGet();
           sendToConsumers(exchange);
           if (exchange.getException() != null) {
             getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
@@ -14,9 +17,6 @@
         }
  catch (        Exception e) {
           getExceptionHandler().handleException("Error processing exchange",exchange,e);
-        }
- finally {
-          tasks.decrementAndGet();
         }
       }
     }
@@ -35,6 +35,7 @@ catch (    Throwable e) {
       }
     }
   }
+  tasks.decrementAndGet();
   if (LOG.isDebugEnabled()) {
     LOG.debug("Ending this polling consumer thread, there are still " + tasks.get() + " threads left.");
   }
