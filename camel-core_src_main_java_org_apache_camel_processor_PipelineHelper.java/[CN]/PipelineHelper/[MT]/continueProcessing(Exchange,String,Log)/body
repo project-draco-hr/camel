@@ -1,0 +1,24 @@
+{
+  boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(nextExchange);
+  if (nextExchange.isFailed() || nextExchange.isRollbackOnly() || exceptionHandled) {
+    if (log.isDebugEnabled()) {
+      StringBuilder sb=new StringBuilder();
+      sb.append("Message exchange has failed " + message + " for exchange: ").append(nextExchange);
+      if (nextExchange.isRollbackOnly()) {
+        sb.append(" Marked as rollback only.");
+      }
+      if (nextExchange.getException() != null) {
+        sb.append(" Exception: ").append(nextExchange.getException());
+      }
+      if (nextExchange.hasOut() && nextExchange.getOut().isFault()) {
+        sb.append(" Fault: ").append(nextExchange.getOut());
+      }
+      if (exceptionHandled) {
+        sb.append(" Handled by the error handler.");
+      }
+      log.debug(sb.toString());
+    }
+    return false;
+  }
+  return true;
+}

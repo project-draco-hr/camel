@@ -10,25 +10,7 @@
       Exchange nextExchange=exchange;
       while (continueRouting(processors,nextExchange)) {
         AsyncProcessor processor=AsyncProcessorTypeConverter.convert(processors.next());
-        boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(nextExchange);
-        if (nextExchange.isFailed() || nextExchange.isRollbackOnly() || exceptionHandled) {
-          if (LOG.isDebugEnabled()) {
-            StringBuilder sb=new StringBuilder();
-            sb.append("Message exchange has failed so breaking out of pipeline: ").append(nextExchange);
-            if (nextExchange.isRollbackOnly()) {
-              sb.append(" Marked as rollback only.");
-            }
-            if (nextExchange.getException() != null) {
-              sb.append(" Exception: ").append(nextExchange.getException());
-            }
-            if (nextExchange.hasOut() && nextExchange.getOut().isFault()) {
-              sb.append(" Fault: ").append(nextExchange.getOut());
-            }
-            if (exceptionHandled) {
-              sb.append(" Handled by the error handler.");
-            }
-            LOG.debug(sb.toString());
-          }
+        if (!continueProcessing(nextExchange,"so breaking out of pipeline",LOG)) {
           break;
         }
         nextExchange=createNextExchange(nextExchange);
