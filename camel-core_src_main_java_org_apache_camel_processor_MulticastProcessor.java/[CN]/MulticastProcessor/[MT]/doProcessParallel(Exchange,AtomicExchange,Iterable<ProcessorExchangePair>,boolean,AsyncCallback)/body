@@ -22,12 +22,15 @@
         try {
           doProcessParallel(pair);
         }
- catch (        Exception e) {
+ catch (        Throwable e) {
           subExchange.setException(e);
         }
-        if (stopOnException && subExchange.getException() != null) {
+        boolean continueProcessing=PipelineHelper.continueProcessing(subExchange,"Parallel processing failed for number " + total.get(),LOG);
+        if (stopOnException && !continueProcessing) {
+          if (subExchange.getException() != null) {
+            throw new CamelExchangeException("Parallel processing failed for number " + total.get(),subExchange,subExchange.getException());
+          }
           running.set(false);
-          throw new CamelExchangeException("Parallel processing failed for number " + total.intValue(),subExchange,subExchange.getException());
         }
         if (LOG.isTraceEnabled()) {
           LOG.trace("Parallel processing complete for exchange: " + subExchange);
@@ -40,6 +43,7 @@
     total.incrementAndGet();
   }
   boolean timedOut=false;
+  boolean stoppedOnException=false;
   final StopWatch watch=new StopWatch();
   for (int i=0; i < total.intValue(); i++) {
     Future<Exchange> future;
@@ -81,13 +85,22 @@
     }
  else {
       Exchange subExchange=future.get();
+      boolean continueProcessing=PipelineHelper.continueProcessing(subExchange,"Parallel processing failed for number " + total.get(),LOG);
+      if (stopOnException && !continueProcessing) {
+        result.set(subExchange);
+        stoppedOnException=true;
+        break;
+      }
       AggregationStrategy strategy=getAggregationStrategy(subExchange);
       doAggregate(strategy,result,subExchange);
     }
   }
-  if (timedOut) {
-    if (LOG.isDebugEnabled()) {
+  if (timedOut || stoppedOnException) {
+    if (timedOut && LOG.isDebugEnabled()) {
       LOG.debug("Cancelling future tasks due timeout after " + timeout + " millis.");
+    }
+    if (stoppedOnException && LOG.isDebugEnabled()) {
+      LOG.debug("Cancelling future tasks due stopOnException.");
     }
     for (    Future future : tasks) {
       future.cancel(true);

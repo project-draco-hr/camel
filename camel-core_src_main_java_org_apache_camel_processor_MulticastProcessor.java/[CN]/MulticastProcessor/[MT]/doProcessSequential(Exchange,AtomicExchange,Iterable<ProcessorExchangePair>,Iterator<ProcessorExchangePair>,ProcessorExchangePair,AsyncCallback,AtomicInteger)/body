@@ -21,8 +21,14 @@
           return;
         }
         Exchange subExchange=exchange;
-        if (stopOnException && subExchange.getException() != null) {
-          subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
+        boolean continueProcessing=PipelineHelper.continueProcessing(subExchange,"Sequential processing failed for number " + total.get(),LOG);
+        if (stopOnException && !continueProcessing) {
+          if (subExchange.getException() != null) {
+            subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
+          }
+ else {
+            result.set(subExchange);
+          }
           doDone(original,subExchange,callback,false);
           return;
         }
@@ -46,8 +52,14 @@
             }
             return;
           }
-          if (stopOnException && subExchange.getException() != null) {
-            subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
+          continueProcessing=PipelineHelper.continueProcessing(subExchange,"Sequential processing failed for number " + total.get(),LOG);
+          if (stopOnException && !continueProcessing) {
+            if (subExchange.getException() != null) {
+              subExchange.setException(new CamelExchangeException("Sequential processing failed for number " + total,subExchange,subExchange.getException()));
+            }
+ else {
+              result.set(subExchange);
+            }
             doDone(original,subExchange,callback,false);
             return;
           }
