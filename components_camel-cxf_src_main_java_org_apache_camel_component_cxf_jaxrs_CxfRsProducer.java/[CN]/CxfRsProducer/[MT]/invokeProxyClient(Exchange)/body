@@ -14,6 +14,14 @@
   Object[] parameters=inMessage.getBody(Object[].class);
   Method method=findRightMethod(sfb.getResourceClasses(),methodName,getParameterTypes(parameters));
   Object response=method.invoke(target,parameters);
+  if (throwException) {
+    if (response instanceof Response) {
+      Integer respCode=((Response)response).getStatus();
+      if (respCode > 207) {
+        throw populateCxfRsProducerException(exchange,(Response)response,respCode);
+      }
+    }
+  }
   if (exchange.getPattern().isOutCapable()) {
     exchange.getOut().setBody(response);
   }

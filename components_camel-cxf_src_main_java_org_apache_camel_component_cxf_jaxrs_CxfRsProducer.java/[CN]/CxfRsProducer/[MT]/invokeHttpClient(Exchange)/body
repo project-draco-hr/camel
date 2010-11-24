@@ -36,17 +36,27 @@
   if (responseClass == null || Response.class.equals(responseClass)) {
     response=client.invoke(httpMethod,body);
   }
- else   if (Collection.class.isAssignableFrom(responseClass)) {
-    if (genericType instanceof ParameterizedType) {
-      Type[] actualTypeArguments=((ParameterizedType)genericType).getActualTypeArguments();
-      response=client.invokeAndGetCollection(httpMethod,body,(Class)actualTypeArguments[0]);
+ else {
+    if (Collection.class.isAssignableFrom(responseClass)) {
+      if (genericType instanceof ParameterizedType) {
+        Type[] actualTypeArguments=((ParameterizedType)genericType).getActualTypeArguments();
+        response=client.invokeAndGetCollection(httpMethod,body,(Class)actualTypeArguments[0]);
+      }
+ else {
+        throw new CamelException("Can't find the Collection member type");
+      }
     }
  else {
-      throw new CamelException("Can't find the Collection member type");
+      response=client.invoke(httpMethod,body,responseClass);
     }
   }
- else {
-    response=client.invoke(httpMethod,body,responseClass);
+  if (throwException) {
+    if (response instanceof Response) {
+      Integer respCode=((Response)response).getStatus();
+      if (respCode > 207) {
+        throw populateCxfRsProducerException(exchange,(Response)response,respCode);
+      }
+    }
   }
   if (exchange.getPattern().isOutCapable()) {
     if (LOG.isTraceEnabled()) {

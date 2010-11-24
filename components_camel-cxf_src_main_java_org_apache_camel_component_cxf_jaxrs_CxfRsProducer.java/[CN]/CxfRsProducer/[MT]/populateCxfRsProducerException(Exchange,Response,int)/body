@@ -1,0 +1,22 @@
+{
+  CxfOperationException exception;
+  String uri=exchange.getFromEndpoint().getEndpointUri();
+  String statusText=Response.Status.fromStatusCode(responseCode).toString();
+  Map<String,String> headers=parseResponseHeaders(response,exchange);
+  String copy=response.toString();
+  LOG.warn(headers);
+  if (responseCode >= 300 && responseCode < 400) {
+    String redirectLocation;
+    if (response.getMetadata().getFirst("Location") != null) {
+      redirectLocation=response.getMetadata().getFirst("location").toString();
+      exception=new CxfOperationException(uri,responseCode,statusText,redirectLocation,headers,copy);
+    }
+ else {
+      exception=new CxfOperationException(uri,responseCode,statusText,null,headers,copy);
+    }
+  }
+ else {
+    exception=new CxfOperationException(uri,responseCode,statusText,null,headers,copy);
+  }
+  return exception;
+}
