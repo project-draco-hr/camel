@@ -1,0 +1,37 @@
+{
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("doStoreFile(" + targetName + ")");
+  }
+  if (endpoint.getFileExist() == GenericFileExist.Ignore || endpoint.getFileExist() == GenericFileExist.Fail) {
+    boolean existFile=existsFile(targetName);
+    if (existFile && endpoint.getFileExist() == GenericFileExist.Ignore) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("An existing file already exists: " + name + ". Ignore and do not override it.");
+      }
+      return true;
+    }
+ else     if (existFile && endpoint.getFileExist() == GenericFileExist.Fail) {
+      throw new GenericFileOperationFailedException("File already exist: " + name + ". Cannot write new file.");
+    }
+  }
+  InputStream is=null;
+  try {
+    is=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
+    if (endpoint.getFileExist() == GenericFileExist.Append) {
+      channel.put(is,targetName,ChannelSftp.APPEND);
+    }
+ else {
+      channel.put(is,targetName);
+    }
+    return true;
+  }
+ catch (  SftpException e) {
+    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
+  }
+catch (  InvalidPayloadException e) {
+    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
+  }
+ finally {
+    IOHelper.close(is,"store: " + name,LOG);
+  }
+}

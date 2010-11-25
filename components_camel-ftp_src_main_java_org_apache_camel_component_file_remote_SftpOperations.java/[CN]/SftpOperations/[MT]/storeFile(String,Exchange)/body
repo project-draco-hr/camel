@@ -2,36 +2,22 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("storeFile(" + name + ")");
   }
-  if (endpoint.getFileExist() == GenericFileExist.Ignore || endpoint.getFileExist() == GenericFileExist.Fail) {
-    boolean existFile=existsFile(name);
-    if (existFile && endpoint.getFileExist() == GenericFileExist.Ignore) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("An existing file already exists: " + name + ". Ignore and do not override it.");
-      }
-      return true;
-    }
- else     if (existFile && endpoint.getFileExist() == GenericFileExist.Fail) {
-      throw new GenericFileOperationFailedException("File already exist: " + name + ". Cannot write new file.");
-    }
-  }
-  InputStream is=null;
+  boolean answer=false;
+  String currentDir=null;
+  String path=FileUtil.onlyPath(name);
+  String targetName=name;
   try {
-    is=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-    if (endpoint.getFileExist() == GenericFileExist.Append) {
-      channel.put(is,name,ChannelSftp.APPEND);
+    if (path != null && endpoint.getConfiguration().isStepwise()) {
+      currentDir=getCurrentDirectory();
+      changeCurrentDirectory(path);
+      targetName=FileUtil.stripPath(name);
     }
- else {
-      channel.put(is,name);
+    answer=doStoreFile(name,targetName,exchange);
+  }
+  finally {
+    if (currentDir != null) {
+      changeCurrentDirectory(currentDir);
     }
-    return true;
   }
- catch (  SftpException e) {
-    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
-  }
-catch (  InvalidPayloadException e) {
-    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
-  }
- finally {
-    IOHelper.close(is,"store: " + name,LOG);
-  }
+  return answer;
 }

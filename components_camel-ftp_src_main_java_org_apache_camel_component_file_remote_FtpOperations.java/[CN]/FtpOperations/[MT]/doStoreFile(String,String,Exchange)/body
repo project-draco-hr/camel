@@ -1,0 +1,36 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("doStoreFile(" + targetName + ")");
+  }
+  if (endpoint.getFileExist() == GenericFileExist.Ignore || endpoint.getFileExist() == GenericFileExist.Fail) {
+    boolean existFile=existsFile(targetName);
+    if (existFile && endpoint.getFileExist() == GenericFileExist.Ignore) {
+      if (log.isTraceEnabled()) {
+        log.trace("An existing file already exists: " + name + ". Ignore and do not override it.");
+      }
+      return true;
+    }
+ else     if (existFile && endpoint.getFileExist() == GenericFileExist.Fail) {
+      throw new GenericFileOperationFailedException("File already exist: " + name + ". Cannot write new file.");
+    }
+  }
+  InputStream is=null;
+  try {
+    is=exchange.getIn().getMandatoryBody(InputStream.class);
+    if (endpoint.getFileExist() == GenericFileExist.Append) {
+      return client.appendFile(targetName,is);
+    }
+ else {
+      return client.storeFile(targetName,is);
+    }
+  }
+ catch (  IOException e) {
+    throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
+  }
+catch (  InvalidPayloadException e) {
+    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
+  }
+ finally {
+    IOHelper.close(is,"store: " + name,log);
+  }
+}
