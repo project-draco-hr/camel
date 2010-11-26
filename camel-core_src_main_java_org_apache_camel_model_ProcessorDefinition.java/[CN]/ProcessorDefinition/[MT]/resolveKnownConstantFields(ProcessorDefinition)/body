@@ -1,0 +1,32 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("Resolving known fields for: " + definition);
+  }
+  Map<Object,Object> properties=new HashMap<Object,Object>();
+  IntrospectionSupport.getProperties(definition,properties,null);
+  if (!properties.isEmpty()) {
+    if (log.isTraceEnabled()) {
+      log.trace("There are " + properties.size() + " properties on: "+ definition);
+    }
+    for (    Map.Entry entry : properties.entrySet()) {
+      String name=(String)entry.getKey();
+      Object value=entry.getValue();
+      if (value instanceof String) {
+        String text=(String)value;
+        if (text.startsWith("Exchange.")) {
+          String field=ObjectHelper.after(text,"Exchange.");
+          String constant=ObjectHelper.lookupConstantFieldValue(Exchange.class,field);
+          if (constant != null) {
+            IntrospectionSupport.setProperty(definition,name,constant);
+            if (log.isDebugEnabled()) {
+              log.debug("Changed property [" + name + "] from: "+ value+ " to: "+ constant);
+            }
+          }
+ else {
+            throw new IllegalArgumentException("Constant field with name: " + field + " not found on Exchange.class");
+          }
+        }
+      }
+    }
+  }
+}
