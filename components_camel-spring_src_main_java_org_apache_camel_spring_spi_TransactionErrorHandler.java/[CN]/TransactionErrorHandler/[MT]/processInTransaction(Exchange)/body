@@ -12,7 +12,7 @@
   }
  catch (  TransactionRollbackException e) {
     if (log.isDebugEnabled()) {
-      log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId());
+      log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnly");
     }
   }
 catch (  Exception e) {
@@ -21,5 +21,18 @@ catch (  Exception e) {
   }
  finally {
     exchange.getUnitOfWork().endTransactedBy(transactionTemplate);
+  }
+  Boolean onlyLast=(Boolean)exchange.removeProperty(Exchange.ROLLBACK_ONLY_LAST);
+  if (onlyLast != null && onlyLast) {
+    if (log.isDebugEnabled()) {
+      Exception cause=exchange.getException();
+      if (cause != null) {
+        log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnlyLast and due exception: ",cause);
+      }
+ else {
+        log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnlyLast");
+      }
+    }
+    exchange.setException(null);
   }
 }

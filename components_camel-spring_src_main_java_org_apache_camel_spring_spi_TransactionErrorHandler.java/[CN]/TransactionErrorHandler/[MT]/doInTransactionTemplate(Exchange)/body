@@ -1,22 +1,19 @@
 {
   transactionTemplate.execute(new TransactionCallbackWithoutResult(){
     protected void doInTransactionWithoutResult(    TransactionStatus status){
-      RuntimeException rce=null;
+      RuntimeException rce;
       processByErrorHandler(exchange);
       if (exchange.getException() != null || exchange.isRollbackOnly()) {
-        exchange.removeProperty(Exchange.ROLLBACK_ONLY_LAST);
         if (exchange.getException() != null) {
           rce=ObjectHelper.wrapRuntimeCamelException(exchange.getException());
         }
- else         if (exchange.isRollbackOnly()) {
+ else {
           rce=new TransactionRollbackException();
         }
         if (!status.isRollbackOnly()) {
           status.setRollbackOnly();
         }
-        if (rce != null) {
-          throw rce;
-        }
+        throw rce;
       }
     }
   }
