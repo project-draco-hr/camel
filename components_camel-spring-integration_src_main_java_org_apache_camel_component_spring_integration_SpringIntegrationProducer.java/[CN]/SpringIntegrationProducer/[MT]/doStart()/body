@@ -1,0 +1,24 @@
+{
+  super.doStart();
+  if (getEndpoint().getMessageChannel() == null) {
+    String outputChannelName=getEndpoint().getDefaultChannel();
+    if (ObjectHelper.isEmpty(outputChannelName)) {
+      outputChannelName=getEndpoint().getInputChannel();
+    }
+    ObjectHelper.notEmpty(outputChannelName,"OutputChannelName",getEndpoint());
+    outputChannel=channelResolver.resolveChannelName(outputChannelName);
+  }
+ else {
+    outputChannel=getEndpoint().getMessageChannel();
+  }
+  if (outputChannel == null) {
+    throw new IllegalArgumentException("Cannot resolve OutputChannel on " + getEndpoint());
+  }
+  if (getEndpoint().isInOut()) {
+    ObjectHelper.notEmpty(getEndpoint().getInputChannel(),"InputChannel",getEndpoint());
+    inputChannel=(DirectChannel)channelResolver.resolveChannelName(getEndpoint().getInputChannel());
+    if (inputChannel == null) {
+      throw new IllegalArgumentException("Cannot resolve InputChannel on " + getEndpoint());
+    }
+  }
+}

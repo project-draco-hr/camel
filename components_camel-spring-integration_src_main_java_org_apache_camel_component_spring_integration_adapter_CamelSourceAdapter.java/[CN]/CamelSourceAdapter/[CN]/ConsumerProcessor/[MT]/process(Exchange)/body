@@ -2,10 +2,13 @@
   org.springframework.integration.core.Message request=SpringIntegrationBinding.createSpringIntegrationMessage(exchange);
   if (exchange.getPattern().isOutCapable()) {
     exchange.getIn().getHeaders().put(MessageHeaders.REPLY_CHANNEL,replyChannel);
+    if (replyChannel == null) {
+      throw new IllegalArgumentException("ReplyChannel has not been configured on: " + this);
+    }
     replyChannel.subscribe(new MessageHandler(){
       public void handleMessage(      Message<?> message){
         if (LOG.isDebugEnabled()) {
-          LOG.debug("set the out message with the SI response message");
+          LOG.debug("Received " + message + " from ReplyChannel: "+ replyChannel);
         }
         SpringIntegrationBinding.storeToCamelMessage(message,exchange.getOut());
       }

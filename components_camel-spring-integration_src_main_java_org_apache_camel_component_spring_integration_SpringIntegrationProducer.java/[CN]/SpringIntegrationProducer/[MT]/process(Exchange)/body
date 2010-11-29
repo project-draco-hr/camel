@@ -1,13 +1,22 @@
 {
   if (exchange.getPattern().isOutCapable()) {
+    if (inputChannel == null) {
+      throw new IllegalArgumentException("InputChannel has not been configured on " + getEndpoint());
+    }
     exchange.getIn().getHeaders().put(MessageHeaders.REPLY_CHANNEL,inputChannel);
     inputChannel.subscribe(new MessageHandler(){
       public void handleMessage(      Message<?> message){
+        if (log.isDebugEnabled()) {
+          log.debug("Received " + message + " from InputChannel: "+ inputChannel);
+        }
         SpringIntegrationBinding.storeToCamelMessage(message,exchange.getOut());
       }
     }
 );
   }
   org.springframework.integration.core.Message siOutmessage=SpringIntegrationBinding.createSpringIntegrationMessage(exchange);
+  if (log.isDebugEnabled()) {
+    log.debug("Sending " + siOutmessage + " to OutputChannel: "+ outputChannel);
+  }
   outputChannel.send(siOutmessage);
 }

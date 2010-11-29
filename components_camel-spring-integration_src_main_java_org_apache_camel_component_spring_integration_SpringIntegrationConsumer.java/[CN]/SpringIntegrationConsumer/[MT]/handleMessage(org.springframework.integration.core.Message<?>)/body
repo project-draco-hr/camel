@@ -5,11 +5,12 @@
     getProcessor().process(exchange);
   }
  catch (  Exception e) {
-    throw ObjectHelper.wrapRuntimeCamelException(e);
+    getExceptionHandler().handleException("Error processing exchange",exchange,e);
+    return;
   }
-  if (endpoint.isInOut()) {
-    Object returnAddress=siInMessage.getHeaders().getReplyChannel();
+  if (getEndpoint().isInOut()) {
     MessageChannel reply=null;
+    Object returnAddress=siInMessage.getHeaders().getReplyChannel();
     if (returnAddress != null) {
       if (returnAddress instanceof String) {
         reply=(MessageChannel)context.getApplicationContext().getBean((String)returnAddress);
@@ -19,21 +20,18 @@
       }
     }
  else {
-      if (outputChannel != null) {
-        reply=outputChannel;
-      }
- else {
-        if (ObjectHelper.isEmpty(endpoint.getOutputChannel())) {
-          outputChannel=(MessageChannel)channelResolver.resolveChannelName(endpoint.getOutputChannel());
-          ObjectHelper.notNull(inputChannel,"The outputChannel with the name [" + endpoint.getOutputChannel() + "]");
-          reply=outputChannel;
-        }
- else {
-          throw new RuntimeCamelException("Can't find the right outputChannelName");
-        }
+      reply=outputChannel;
+      if (reply == null) {
+        throw new IllegalArgumentException("OutputChannel has not been configured on " + getEndpoint());
       }
     }
+    if (reply == null) {
+      throw new IllegalArgumentException("Cannot resolve ReplyChannel from message: " + siInMessage);
+    }
     org.springframework.integration.core.Message siOutMessage=SpringIntegrationBinding.storeToSpringIntegrationMessage(exchange.getOut());
+    if (log.isDebugEnabled()) {
+      log.debug("Sending " + siOutMessage + " to ReplyChannel: "+ reply);
+    }
     reply.send(siOutMessage);
   }
 }
