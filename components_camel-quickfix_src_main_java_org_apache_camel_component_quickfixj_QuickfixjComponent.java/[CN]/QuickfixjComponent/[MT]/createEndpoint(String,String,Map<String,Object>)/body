@@ -6,7 +6,13 @@ synchronized (engineInstancesLock) {
       engine=engines.get(remaining);
       if (engine == null) {
         LOG.info("Creating QuickFIX/J engine using settings: " + remaining);
-        engine=new QuickfixjEngine(remaining,false,messageStoreFactory,logFactory,messageFactory);
+        SessionSettings settings=engineSettings.get(remaining);
+        if (settings != null) {
+          engine=new QuickfixjEngine(uri,settings,forcedShutdown,messageStoreFactory,logFactory,messageFactory);
+        }
+ else {
+          engine=new QuickfixjEngine(uri,remaining,forcedShutdown,messageStoreFactory,logFactory,messageFactory);
+        }
         engines.put(remaining,engine);
         if (isStarted()) {
           startQuickfixjEngine(engine);
