@@ -5,8 +5,8 @@
   while (shouldFailOver(exchange)) {
     attempts.incrementAndGet();
     if (maximumFailoverAttempts > -1 && attempts.get() > maximumFailoverAttempts) {
-      if (log.isDebugEnabled()) {
-        log.debug("Braking out of failover after " + attempts + " failover attempts");
+      if (log.isTraceEnabled()) {
+        log.trace("Braking out of failover after " + attempts + " failover attempts");
       }
       break;
     }
@@ -14,12 +14,12 @@
     counter.incrementAndGet();
     if (index.get() >= processors.size()) {
       if (isRoundRobin()) {
-        log.debug("Failover is round robin enabled and therefore starting from the first endpoint");
+        log.trace("Failover is round robin enabled and therefore starting from the first endpoint");
         index.set(0);
         counter.set(0);
       }
  else {
-        log.debug("Braking out of failover as we reach the end of endpoints to use for failover");
+        log.trace("Braking out of failover as we reach the end of endpoints to use for failover");
         break;
       }
     }
@@ -32,6 +32,9 @@
       }
       return;
     }
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("Failover complete for exchangeId: " + exchange.getExchangeId() + " >>> "+ exchange);
   }
   callback.done(false);
 }
