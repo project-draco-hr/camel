@@ -10,7 +10,11 @@
     }
     context.setAttribute("javax.servlet.context.tempdir",file);
   }
-  filterHolder.setFilter(new CamelMultipartFilter());
+  Filter filter=((JettyHttpEndpoint)endpoint).getMultipartFilter();
+  if (filter == null) {
+    filter=new MultiPartFilter();
+  }
+  filterHolder.setFilter(new CamelMultipartFilter(filter));
   String pathSpec=endpoint.getPath();
   if (pathSpec == null || "".equals(pathSpec)) {
     pathSpec="/";
@@ -19,4 +23,5 @@
     pathSpec=pathSpec.endsWith("/") ? pathSpec + "*" : pathSpec + "/*";
   }
   context.addFilter(filterHolder,pathSpec,0);
+  LOG.debug("using multipart filter implementation " + filter.getClass().getName() + " for path "+ pathSpec);
 }
