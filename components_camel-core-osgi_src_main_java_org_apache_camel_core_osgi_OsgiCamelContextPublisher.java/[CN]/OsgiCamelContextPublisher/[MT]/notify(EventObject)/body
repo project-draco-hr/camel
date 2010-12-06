@@ -1,0 +1,17 @@
+{
+  if (event instanceof CamelContextStartedEvent) {
+    CamelContext context=((CamelContextStartedEvent)event).getContext();
+    Properties props=new Properties();
+    props.put(CONTEXT_SYMBOLIC_NAME_PROPERTY,bundleContext.getBundle().getSymbolicName());
+    props.put(CONTEXT_VERSION_PROPERTY,getBundleVersion(bundleContext.getBundle()));
+    ServiceRegistration reg=bundleContext.registerService(CamelContext.class.getName(),context,props);
+    registrations.put(context,reg);
+  }
+ else   if (event instanceof CamelContextStoppingEvent) {
+    CamelContext context=((CamelContextStoppingEvent)event).getContext();
+    ServiceRegistration reg=registrations.get(context);
+    if (reg != null) {
+      reg.unregister();
+    }
+  }
+}

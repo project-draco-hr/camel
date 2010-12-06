@@ -1,0 +1,20 @@
+{
+  EventAdmin eventAdmin=(EventAdmin)tracker.getService();
+  if (eventAdmin == null) {
+    return;
+  }
+  Dictionary<String,Object> props=new Hashtable<String,Object>();
+  props.put(TYPE,getType(event));
+  props.put(EVENT,event);
+  props.put(TIMESTAMP,System.currentTimeMillis());
+  props.put(BUNDLE,bundleContext.getBundle());
+  props.put(BUNDLE_SYMBOLICNAME,bundleContext.getBundle().getSymbolicName());
+  props.put(BUNDLE_ID,bundleContext.getBundle().getBundleId());
+  props.put(BUNDLE_VERSION,getBundleVersion(bundleContext.getBundle()));
+  try {
+    props.put(CAUSE,event.getClass().getMethod("getCause").invoke(event));
+  }
+ catch (  Throwable t) {
+  }
+  eventAdmin.postEvent(new Event(getTopic(event),props));
+}
