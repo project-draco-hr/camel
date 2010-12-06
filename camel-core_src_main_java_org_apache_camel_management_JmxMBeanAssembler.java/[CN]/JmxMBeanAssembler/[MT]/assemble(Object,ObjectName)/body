@@ -1,0 +1,20 @@
+{
+  ModelMBeanInfo mbi;
+  if (obj instanceof ManagedCustomProcessor) {
+    Object custom=((ManagedCustomProcessor)obj).getManagedObject();
+    mbi=assembler.getMBeanInfo(custom,name.toString());
+    obj=custom;
+  }
+ else {
+    mbi=assembler.getMBeanInfo(obj,name.toString());
+  }
+  RequiredModelMBean mbean=(RequiredModelMBean)server.instantiate(RequiredModelMBean.class.getName());
+  mbean.setModelMBeanInfo(mbi);
+  try {
+    mbean.setManagedResource(obj,"ObjectReference");
+  }
+ catch (  InvalidTargetObjectTypeException itotex) {
+    throw new JMException(itotex.getMessage());
+  }
+  return mbean;
+}
