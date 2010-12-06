@@ -3,13 +3,14 @@
     LOG.trace("Process exchange: " + camelExchange + "in sync way.");
   }
   ExchangeImpl cxfExchange=new ExchangeImpl();
-  BindingOperationInfo boi=prepareBindingOperation(camelExchange,cxfExchange);
+  Client client=clientCache.get(CxfEndpointUtils.getEffectiveAddress(camelExchange,endpoint.getAddress()));
+  BindingOperationInfo boi=prepareBindingOperation(camelExchange,cxfExchange,client);
   Map<String,Object> invocationContext=new HashMap<String,Object>();
   Map<String,Object> responseContext=new HashMap<String,Object>();
   invocationContext.put(Client.RESPONSE_CONTEXT,responseContext);
   invocationContext.put(Client.REQUEST_CONTEXT,prepareRequest(camelExchange,cxfExchange));
   try {
-    client.invoke(boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
+    client.invoke(boi,getParams(endpoint,camelExchange,client),invocationContext,cxfExchange);
   }
   finally {
     if (!boi.getOperationInfo().isOneWay()) {

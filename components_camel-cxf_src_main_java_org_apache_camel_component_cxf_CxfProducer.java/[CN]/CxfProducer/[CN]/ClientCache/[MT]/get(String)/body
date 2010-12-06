@@ -1,0 +1,22 @@
+{
+  Client retval=null;
+synchronized (cache) {
+    SoftReference<Client> ref=cache.get(address);
+    if (ref != null) {
+      retval=ref.get();
+    }
+    if (retval == null) {
+      retval=((CxfEndpoint)getEndpoint()).createClient(address);
+      cache.put(address,new SoftReference<Client>(retval));
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Created CXF client and add to cache for address '" + address + "'");
+      }
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Retrieved CXF client from cache for address '" + address + "'");
+      }
+    }
+  }
+  return retval;
+}

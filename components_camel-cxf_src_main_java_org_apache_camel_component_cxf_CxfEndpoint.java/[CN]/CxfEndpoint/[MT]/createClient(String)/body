@@ -1,0 +1,19 @@
+{
+  if (getDataFormat().equals(DataFormat.POJO)) {
+    ObjectHelper.notEmpty(getServiceClass(),CxfConstants.SERVICE_CLASS);
+  }
+  Class<?> cls=null;
+  if (getServiceClass() != null) {
+    cls=ClassLoaderUtils.loadClass(getServiceClass(),getClass());
+    ClientProxyFactoryBean factoryBean=createClientFactoryBean(cls);
+    setupClientFactoryBean(factoryBean,cls,serviceAddress);
+    return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
+  }
+ else {
+    checkName(portName,"endpoint/port name");
+    checkName(serviceName,"service name");
+    ClientFactoryBean factoryBean=createClientFactoryBean();
+    setupClientFactoryBean(factoryBean,serviceAddress);
+    return factoryBean.create();
+  }
+}

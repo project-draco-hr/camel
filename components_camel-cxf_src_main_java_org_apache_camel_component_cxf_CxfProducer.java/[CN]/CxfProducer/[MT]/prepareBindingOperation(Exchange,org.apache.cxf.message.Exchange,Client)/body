@@ -1,0 +1,21 @@
+{
+  BindingOperationInfo boi=getBindingOperationInfo(camelExchange,client);
+  ObjectHelper.notNull(boi,"BindingOperationInfo");
+  if (endpoint.getDataFormat() == DataFormat.PAYLOAD && boi.isUnwrapped()) {
+    boi=boi.getWrappedOperation();
+    cxfExchange.put(BindingOperationInfo.class,boi);
+  }
+  camelExchange.setProperty(BindingOperationInfo.class.getName(),boi);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Set exchange property: BindingOperationInfo: " + boi);
+  }
+  if (endpoint.getDataFormat() != DataFormat.PAYLOAD && !endpoint.isWrapped() && boi != null) {
+    if (boi.isUnwrappedCapable()) {
+      boi=boi.getUnwrappedOperation();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Unwrapped BOI " + boi);
+      }
+    }
+  }
+  return boi;
+}

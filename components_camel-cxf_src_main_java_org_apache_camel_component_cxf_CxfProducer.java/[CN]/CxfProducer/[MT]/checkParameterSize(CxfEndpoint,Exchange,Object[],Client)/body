@@ -1,0 +1,34 @@
+{
+  BindingOperationInfo boi=getBindingOperationInfo(exchange,client);
+  if (boi == null) {
+    throw new RuntimeCamelException("Can't find the binding operation information from camel exchange");
+  }
+  if (!endpoint.isWrapped()) {
+    if (boi.isUnwrappedCapable()) {
+      boi=boi.getUnwrappedOperation();
+    }
+  }
+  int experctMessagePartsSize=boi.getInput().getMessageParts().size();
+  if (parameters.length < experctMessagePartsSize) {
+    throw new IllegalArgumentException("Get the wrong parameter size to invoke the out service, Experct size " + experctMessagePartsSize + ", Parameter size "+ parameters.length);
+  }
+  if (parameters.length > experctMessagePartsSize) {
+    int holdersSize=0;
+    for (    Object parameter : parameters) {
+      if (parameter instanceof Holder) {
+        holdersSize++;
+      }
+    }
+    int soapHeadersSize=0;
+    BindingMessageInfo bmi=boi.getInput();
+    if (bmi != null) {
+      List<SoapHeaderInfo> headers=bmi.getExtensors(SoapHeaderInfo.class);
+      if (headers != null) {
+        soapHeadersSize=headers.size();
+      }
+    }
+    if (holdersSize + experctMessagePartsSize + soapHeadersSize < parameters.length) {
+      throw new IllegalArgumentException("Get the wrong parameter size to invoke the out service, Experct size " + (experctMessagePartsSize + holdersSize + soapHeadersSize) + ", Parameter size "+ parameters.length);
+    }
+  }
+}
