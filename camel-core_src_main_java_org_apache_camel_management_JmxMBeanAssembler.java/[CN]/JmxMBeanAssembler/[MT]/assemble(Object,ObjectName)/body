@@ -1,11 +1,19 @@
 {
-  ModelMBeanInfo mbi;
-  if (obj instanceof ManagedCustomProcessor) {
-    Object custom=((ManagedCustomProcessor)obj).getManagedObject();
-    mbi=assembler.getMBeanInfo(custom,name.toString());
-    obj=custom;
+  ModelMBeanInfo mbi=null;
+  if (obj instanceof ManagedInstance) {
+    Object custom=((ManagedInstance)obj).getInstance();
+    if (ObjectHelper.hasAnnotation(custom.getClass().getAnnotations(),ManagedResource.class)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Assembling MBeanInfo for: " + name.toString() + " from custom @ManagedResource object: "+ custom);
+      }
+      mbi=assembler.getMBeanInfo(custom,name.toString());
+      obj=custom;
+    }
   }
- else {
+  if (mbi == null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Assembling MBeanInfo for: " + name.toString() + " from @ManagedResource object: "+ obj);
+    }
     mbi=assembler.getMBeanInfo(obj,name.toString());
   }
   RequiredModelMBean mbean=(RequiredModelMBean)server.instantiate(RequiredModelMBean.class.getName());
@@ -13,8 +21,8 @@
   try {
     mbean.setManagedResource(obj,"ObjectReference");
   }
- catch (  InvalidTargetObjectTypeException itotex) {
-    throw new JMException(itotex.getMessage());
+ catch (  InvalidTargetObjectTypeException e) {
+    throw new JMException(e.getMessage());
   }
   return mbean;
 }
