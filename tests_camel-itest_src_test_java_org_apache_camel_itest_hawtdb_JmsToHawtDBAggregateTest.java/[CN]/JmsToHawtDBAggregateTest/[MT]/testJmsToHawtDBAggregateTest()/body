@@ -1,0 +1,26 @@
+{
+  int count=30;
+  getMockEndpoint("mock:input").expectedMessageCount(10 * count);
+  getMockEndpoint("mock:out").expectedMessageCount(count);
+  getMockEndpoint("mock:result").expectedMessageCount(count);
+  ;
+  getMockEndpoint("mock:result").allMessages().body().isEqualTo("ABCDEFGHIJ");
+  getMockEndpoint("mock:result").expectsNoDuplicates(header("counter"));
+  for (int i=0; i < count; i++) {
+    Map map=new HashMap();
+    map.put("counter",i);
+    map.put("group","foo");
+    template.sendBodyAndHeaders("activemq:queue:foo","A",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","B",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","C",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","D",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","E",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","F",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","G",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","H",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","I",map);
+    template.sendBodyAndHeaders("activemq:queue:foo","J",map);
+    Thread.sleep(1000);
+  }
+  assertMockEndpointsSatisfied(60,TimeUnit.SECONDS);
+}
