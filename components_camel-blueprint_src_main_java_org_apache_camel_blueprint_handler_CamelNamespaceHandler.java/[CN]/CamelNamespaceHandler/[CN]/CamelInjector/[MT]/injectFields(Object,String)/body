@@ -1,0 +1,18 @@
+{
+  Class clazz=bean.getClass();
+  do {
+    Field[] fields=clazz.getDeclaredFields();
+    for (    Field field : fields) {
+      EndpointInject endpointInject=field.getAnnotation(EndpointInject.class);
+      if (endpointInject != null && matchContext(endpointInject.context())) {
+        injectField(field,endpointInject.uri(),endpointInject.ref(),bean,beanName);
+      }
+      Produce produce=field.getAnnotation(Produce.class);
+      if (produce != null && matchContext(produce.context())) {
+        injectField(field,produce.uri(),produce.ref(),bean,beanName);
+      }
+    }
+    clazz=clazz.getSuperclass();
+  }
+ while (clazz != null && clazz != Object.class);
+}

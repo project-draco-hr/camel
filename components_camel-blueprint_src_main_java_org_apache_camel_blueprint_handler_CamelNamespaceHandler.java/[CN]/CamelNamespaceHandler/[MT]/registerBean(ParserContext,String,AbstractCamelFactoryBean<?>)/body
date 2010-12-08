@@ -1,0 +1,20 @@
+{
+  String id=fact.getId();
+  fact.setCamelContextId(contextId);
+  MutablePassThroughMetadata eff=context.createMetadata(MutablePassThroughMetadata.class);
+  eff.setId(".camelBlueprint.bean.factory." + id);
+  eff.setObject(new PassThroughCallable<Object>(fact));
+  MutableBeanMetadata ef=context.createMetadata(MutableBeanMetadata.class);
+  ef.setId(".camelBlueprint.bean.factory." + contextId);
+  ef.setFactoryComponent(eff);
+  ef.setFactoryMethod("call");
+  ef.addProperty("blueprintContainer",createRef(context,"blueprintContainer"));
+  ef.setInitMethod("afterPropertiesSet");
+  ef.setDestroyMethod("destroy");
+  MutableBeanMetadata e=context.createMetadata(MutableBeanMetadata.class);
+  e.setId(id);
+  e.setRuntimeClass(fact.getObjectType());
+  e.setFactoryComponent(ef);
+  e.setFactoryMethod("getObject");
+  context.getComponentDefinitionRegistry().registerComponentDefinition(e);
+}

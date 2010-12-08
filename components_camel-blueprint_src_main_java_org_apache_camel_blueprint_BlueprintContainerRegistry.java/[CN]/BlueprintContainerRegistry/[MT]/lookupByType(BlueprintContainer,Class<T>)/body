@@ -1,13 +1,33 @@
 {
   Map<String,T> objects=new LinkedHashMap<String,T>();
-  for (  ComponentMetadata metadata : blueprintContainer.getMetadata(ComponentMetadata.class)) {
-    boolean isSingleton=metadata instanceof BeanMetadata && (BeanMetadata.SCOPE_SINGLETON.equals(((BeanMetadata)metadata).getScope()) || ((BeanMetadata)metadata).getScope() == null);
-    boolean isReference=metadata instanceof ReferenceMetadata;
-    if (isSingleton || isReference) {
-      Object o=blueprintContainer.getComponentInstance(metadata.getId());
-      if (type.isInstance(o)) {
+  for (  ExtendedBeanMetadata metadata : blueprintContainer.getMetadata(ExtendedBeanMetadata.class)) {
+    try {
+      Class cl=metadata.getRuntimeClass();
+      if (cl == null && metadata.getClassName() != null) {
+        Bundle bundle=(Bundle)blueprintContainer.getComponentInstance("blueprintBundle");
+        cl=bundle.loadClass(metadata.getClassName());
+      }
+      if (cl == null || type.isAssignableFrom(cl)) {
+        Object o=blueprintContainer.getComponentInstance(metadata.getId());
         objects.put(metadata.getId(),type.cast(o));
       }
+    }
+ catch (    Throwable t) {
+    }
+  }
+  for (  MutableReferenceMetadata metadata : blueprintContainer.getMetadata(MutableReferenceMetadata.class)) {
+    try {
+      Class cl=metadata.getRuntimeInterface();
+      if (cl == null && metadata.getInterface() != null) {
+        Bundle bundle=(Bundle)blueprintContainer.getComponentInstance("blueprintBundle");
+        cl=bundle.loadClass(metadata.getInterface());
+      }
+      if (cl == null || type.isAssignableFrom(cl)) {
+        Object o=blueprintContainer.getComponentInstance(metadata.getId());
+        objects.put(metadata.getId(),type.cast(o));
+      }
+    }
+ catch (    Throwable t) {
     }
   }
   return objects;
