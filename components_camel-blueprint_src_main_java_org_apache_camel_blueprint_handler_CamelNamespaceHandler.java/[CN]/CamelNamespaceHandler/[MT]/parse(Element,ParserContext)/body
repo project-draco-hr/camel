@@ -68,5 +68,33 @@
     context.getComponentDefinitionRegistry().registerComponentDefinition(regProcessor);
     return ctx;
   }
+  if (element.getNodeName().equals(ROUTE_CONTEXT)) {
+    Binder<Node> binder;
+    try {
+      binder=getJaxbContext().createBinder();
+    }
+ catch (    JAXBException e) {
+      throw new ComponentDefinitionException("Failed to create the JAXB binder : " + e,e);
+    }
+    Object value=parseUsingJaxb(element,context,binder);
+    if (!(value instanceof CamelRouteContextFactoryBean)) {
+      throw new ComponentDefinitionException("Expected an instance of " + CamelRouteContextFactoryBean.class);
+    }
+    CamelRouteContextFactoryBean rcfb=(CamelRouteContextFactoryBean)value;
+    String id=rcfb.getId();
+    MutablePassThroughMetadata factory=context.createMetadata(MutablePassThroughMetadata.class);
+    factory.setId(".camelBlueprint.passThrough." + id);
+    factory.setObject(new PassThroughCallable<Object>(rcfb));
+    MutableBeanMetadata factory2=context.createMetadata(MutableBeanMetadata.class);
+    factory2.setId(".camelBlueprint.factory." + id);
+    factory2.setFactoryComponent(factory);
+    factory2.setFactoryMethod("call");
+    MutableBeanMetadata ctx=context.createMetadata(MutableBeanMetadata.class);
+    ctx.setId(id);
+    ctx.setRuntimeClass(List.class);
+    ctx.setFactoryComponent(factory2);
+    ctx.setFactoryMethod("getRoutes");
+    return ctx;
+  }
   return null;
 }

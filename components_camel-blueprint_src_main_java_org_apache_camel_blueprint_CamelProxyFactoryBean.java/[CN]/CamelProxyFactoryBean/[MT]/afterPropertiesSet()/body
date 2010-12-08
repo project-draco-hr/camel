@@ -1,0 +1,29 @@
+{
+  if (endpoint == null) {
+    getCamelContext();
+    if (getServiceUrl() == null && getServiceRef() == null) {
+      throw new IllegalArgumentException("serviceUrl or serviceRef must be specified.");
+    }
+    if (getServiceInterface() == null) {
+      throw new IllegalArgumentException("serviceInterface must be specified.");
+    }
+    if (getServiceRef() != null) {
+      endpoint=getCamelContext().getRegistry().lookup(getServiceRef(),Endpoint.class);
+    }
+ else {
+      endpoint=getCamelContext().getEndpoint(getServiceUrl());
+    }
+    if (endpoint == null) {
+      throw new IllegalArgumentException("Could not resolve endpoint: " + getServiceUrl());
+    }
+  }
+  try {
+    producer=endpoint.createProducer();
+    ServiceHelper.startService(producer);
+    Class clazz=blueprintContainer.loadClass(getServiceInterface());
+    serviceProxy=ProxyHelper.createProxy(endpoint,producer,clazz);
+  }
+ catch (  Exception e) {
+    throw new FailedToCreateProducerException(endpoint,e);
+  }
+}
