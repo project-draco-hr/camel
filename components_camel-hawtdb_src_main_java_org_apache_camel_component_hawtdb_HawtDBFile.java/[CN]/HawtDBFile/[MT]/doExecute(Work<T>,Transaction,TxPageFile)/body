@@ -9,16 +9,19 @@
       }
       attempt++;
       answer=work.execute(tx);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("TX is read only: " + tx.isReadOnly() + " for executed work: "+ work);
+      }
       tx.commit();
       page.flush();
       done=true;
     }
  catch (    OptimisticUpdateException e) {
-      LOG.warn("OptimisticUpdateException occurred at attempt " + attempt + " executing work "+ work+ " will do rollback and retry.");
+      LOG.warn("OptimisticUpdateException occurred at attempt " + attempt + " executing work "+ work+ ". Will do rollback and retry.");
       tx.rollback();
     }
 catch (    RuntimeException e) {
-      LOG.warn("Error executing work " + work + " will do rollback.",e);
+      LOG.warn("Error executing work " + work + ". Will do rollback.",e);
       tx.rollback();
       throw e;
     }
