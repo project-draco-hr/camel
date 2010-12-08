@@ -8,5 +8,13 @@
     LOG.debug("Client sends a request (method: " + request.getMethod() + ", uri: "+ resourceUri+ ")");
   }
   Response response=client.handle(request);
+  if (throwException) {
+    if (response instanceof Response) {
+      Integer respCode=response.getStatus().getCode();
+      if (respCode > 207) {
+        throw populateRestletProducerException(exchange,response,respCode);
+      }
+    }
+  }
   binding.populateExchangeFromRestletResponse(exchange,response);
 }

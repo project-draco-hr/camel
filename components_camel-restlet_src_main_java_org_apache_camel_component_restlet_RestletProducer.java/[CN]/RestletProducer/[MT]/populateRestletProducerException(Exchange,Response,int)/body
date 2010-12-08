@@ -1,0 +1,22 @@
+{
+  RestletOperationException exception;
+  String uri=exchange.getFromEndpoint().getEndpointUri();
+  String statusText=response.getStatus().getDescription();
+  Map<String,String> headers=parseResponseHeaders(response,exchange);
+  String copy=response.toString();
+  LOG.warn(headers);
+  if (responseCode >= 300 && responseCode < 400) {
+    String redirectLocation;
+    if (response.getStatus().isRedirection()) {
+      redirectLocation=response.getLocationRef().getHostIdentifier();
+      exception=new RestletOperationException(uri,responseCode,statusText,redirectLocation,headers,copy);
+    }
+ else {
+      exception=new RestletOperationException(uri,responseCode,statusText,null,headers,copy);
+    }
+  }
+ else {
+    exception=new RestletOperationException(uri,responseCode,statusText,null,headers,copy);
+  }
+  return exception;
+}
