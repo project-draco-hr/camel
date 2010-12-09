@@ -3,6 +3,7 @@
     LOG.trace("UnitOfWork done for ExchangeId: " + exchange.getExchangeId() + " with "+ exchange);
   }
   boolean failed=exchange.isFailed();
+  UnitOfWorkHelper.doneSynchronizations(exchange,synchronizations,LOG);
   try {
     if (failed) {
       EventHelper.notifyExchangeFailed(exchange.getContext(),exchange);
@@ -11,11 +12,12 @@
       EventHelper.notifyExchangeDone(exchange.getContext(),exchange);
     }
   }
- catch (  Exception e) {
+ catch (  Throwable e) {
     LOG.warn("Exception occurred during event notification. This exception will be ignored.",e);
   }
-  UnitOfWorkHelper.doneSynchronizations(exchange,synchronizations,LOG);
-  if (exchange.getContext() != null) {
-    exchange.getContext().getInflightRepository().remove(exchange);
+ finally {
+    if (exchange.getContext() != null) {
+      exchange.getContext().getInflightRepository().remove(exchange);
+    }
   }
 }
