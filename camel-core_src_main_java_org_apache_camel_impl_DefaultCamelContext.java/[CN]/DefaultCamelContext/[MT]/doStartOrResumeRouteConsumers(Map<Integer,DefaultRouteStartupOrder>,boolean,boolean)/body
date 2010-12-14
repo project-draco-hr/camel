@@ -6,7 +6,7 @@
     RouteService routeService=entry.getValue().getRouteService();
     boolean autoStartup=routeService.getRouteDefinition().isAutoStartup(this);
     if (addingRoute && !autoStartup) {
-      LOG.info("Cannot start route " + routeService.getId() + " as its configured with autoStartup=false");
+      log.info("Cannot start route " + routeService.getId() + " as its configured with autoStartup=false");
       continue;
     }
     for (    Consumer consumer : routeService.getInputs().values()) {
@@ -14,25 +14,25 @@
       if (!doCheckMultipleConsumerSupportClash(endpoint,routeInputs)) {
         throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
       }
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Route: " + route.getId() + " >>> "+ route);
+      if (log.isDebugEnabled()) {
+        log.debug("Route: " + route.getId() + " >>> "+ route);
         if (resumeOnly) {
-          LOG.debug("Resuming consumer (order: " + order + ") on route: "+ route.getId());
+          log.debug("Resuming consumer (order: " + order + ") on route: "+ route.getId());
         }
  else {
-          LOG.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
+          log.debug("Starting consumer (order: " + order + ") on route: "+ route.getId());
         }
       }
       if (resumeOnly && route.supportsSuspension()) {
         resumeServices(consumer);
-        LOG.info("Route: " + route.getId() + " resumed and consuming from: "+ endpoint);
+        log.info("Route: " + route.getId() + " resumed and consuming from: "+ endpoint);
       }
  else {
         for (        LifecycleStrategy strategy : lifecycleStrategies) {
           strategy.onServiceAdd(this,consumer,route);
         }
         startServices(consumer);
-        LOG.info("Route: " + route.getId() + " started and consuming from: "+ endpoint);
+        log.info("Route: " + route.getId() + " started and consuming from: "+ endpoint);
       }
       routeInputs.add(endpoint);
       boolean found=false;
