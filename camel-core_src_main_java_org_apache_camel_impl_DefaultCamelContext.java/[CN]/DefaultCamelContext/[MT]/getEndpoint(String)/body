@@ -9,19 +9,14 @@
  catch (  Exception e) {
     throw new ResolveEndpointFailedException(uri,e);
   }
-  try {
-    uri=URISupport.normalizeUri(uri);
-  }
- catch (  Exception e) {
-    throw new ResolveEndpointFailedException(uri,e);
-  }
+  uri=normalizeEndpointUri(uri);
   if (log.isTraceEnabled()) {
     log.trace("Getting endpoint with normalized uri: " + uri);
   }
   Endpoint answer;
   String scheme=null;
 synchronized (endpoints) {
-    answer=endpoints.get(uri);
+    answer=endpoints.get(getEndpointKey(uri));
     if (answer == null) {
       try {
         String splitURI[]=ObjectHelper.splitOnCharacter(uri,":",2);
@@ -40,7 +35,7 @@ synchronized (endpoints) {
         }
         if (answer != null) {
           addService(answer);
-          answer=addEndpointToRegistry(answer);
+          answer=addEndpointToRegistry(uri,answer);
         }
       }
  catch (      Exception e) {
