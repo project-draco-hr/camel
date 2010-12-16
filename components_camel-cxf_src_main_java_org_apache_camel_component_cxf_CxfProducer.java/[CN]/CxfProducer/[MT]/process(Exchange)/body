@@ -11,10 +11,17 @@
   try {
     client.invoke(boi,getParams(endpoint,camelExchange),invocationContext,cxfExchange);
   }
-  finally {
+ catch (  Exception exception) {
+    camelExchange.setException(exception);
+  }
+ finally {
     if (!boi.getOperationInfo().isOneWay()) {
       camelExchange.getOut().getHeaders().putAll(camelExchange.getIn().getHeaders());
       endpoint.getCxfBinding().populateExchangeFromCxfResponse(camelExchange,cxfExchange,responseContext);
+      if (camelExchange.getException() != null) {
+        camelExchange.getOut().setFault(true);
+        camelExchange.getOut().setBody(camelExchange.getException());
+      }
     }
   }
 }
