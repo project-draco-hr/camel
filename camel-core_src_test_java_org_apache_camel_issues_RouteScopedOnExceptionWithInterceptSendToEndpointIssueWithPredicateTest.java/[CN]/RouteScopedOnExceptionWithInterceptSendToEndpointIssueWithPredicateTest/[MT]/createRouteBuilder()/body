@@ -1,0 +1,9 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:global").maximumRedeliveries(2).redeliveryDelay(5000));
+      from("direct:start").onException(ConnectException.class).maximumRedeliveries(5).redeliveryDelay(0).logRetryAttempted(true).retryAttemptedLogLevel(LoggingLevel.WARN).to("mock:exhausted").end().to("seda:foo");
+    }
+  }
+;
+}
