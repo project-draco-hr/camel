@@ -1,0 +1,26 @@
+{
+  executorServices.add(executorService);
+  String id=null;
+  String sourceId=null;
+  String routeId=null;
+  if (source instanceof OptionalIdentifiedDefinition) {
+    id=((OptionalIdentifiedDefinition)source).idOrCreate(camelContext.getNodeIdFactory());
+    sourceId=((OptionalIdentifiedDefinition)source).getShortName();
+  }
+ else   if (source instanceof String) {
+    id=(String)source;
+  }
+  if (source instanceof ProcessorDefinition) {
+    RouteDefinition route=ProcessorDefinitionHelper.getRoute((ProcessorDefinition)source);
+    if (route != null) {
+      routeId=route.idOrCreate(camelContext.getNodeIdFactory());
+    }
+  }
+  if (executorService instanceof ThreadPoolExecutor) {
+    ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
+    for (    LifecycleStrategy lifecycle : camelContext.getLifecycleStrategies()) {
+      lifecycle.onThreadPoolAdd(camelContext,threadPool,id,sourceId,routeId,threadPoolProfileId);
+    }
+  }
+  onNewExecutorService(executorService);
+}
