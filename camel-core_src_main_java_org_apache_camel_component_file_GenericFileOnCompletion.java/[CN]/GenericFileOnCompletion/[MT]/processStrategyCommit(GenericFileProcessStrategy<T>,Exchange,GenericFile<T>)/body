@@ -2,6 +2,22 @@
   if (endpoint.isIdempotent()) {
     endpoint.getIdempotentRepository().add(absoluteFileName);
   }
+  if (endpoint.getDoneFileName() != null) {
+    String doneFileName=endpoint.createDoneFileName(absoluteFileName);
+    ObjectHelper.notEmpty(doneFileName,"doneFileName",endpoint);
+    try {
+      boolean deleted=operations.deleteFile(doneFileName);
+      if (log.isTraceEnabled()) {
+        log.trace("Done file: " + doneFileName + " was deleted: "+ deleted);
+      }
+      if (!deleted) {
+        log.warn("Done file: " + doneFileName + " could not be deleted");
+      }
+    }
+ catch (    Exception e) {
+      handleException(e);
+    }
+  }
   try {
     if (log.isTraceEnabled()) {
       log.trace("Commit file strategy: " + processStrategy + " for file: "+ file);

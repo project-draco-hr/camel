@@ -1,0 +1,21 @@
+{
+  String pattern=getDoneFileName();
+  ObjectHelper.notEmpty(pattern,"doneFileName",pattern);
+  String path=FileUtil.onlyPath(fileName);
+  String onlyName=FileUtil.stripPath(fileName);
+  pattern=pattern.replaceFirst("\\$\\{file:name\\}",onlyName);
+  pattern=pattern.replaceFirst("\\$simple\\{file:name\\}",onlyName);
+  pattern=pattern.replaceFirst("\\$\\{file:name.noext\\}",FileUtil.stripExt(onlyName));
+  pattern=pattern.replaceFirst("\\$simple\\{file:name.noext\\}",FileUtil.stripExt(onlyName));
+  if (SimpleLanguage.hasStartToken(pattern)) {
+    throw new ExpressionIllegalSyntaxException(fileName + ". Cannot resolve reminder: " + pattern);
+  }
+  String answer=pattern;
+  if (ObjectHelper.isNotEmpty(path) && ObjectHelper.isNotEmpty(pattern)) {
+    answer=path + File.separator + pattern;
+  }
+  if (getConfiguration().needToNormalize()) {
+    answer=FileUtil.normalizePath(answer);
+  }
+  return answer;
+}
