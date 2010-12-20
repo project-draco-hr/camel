@@ -1,9 +1,16 @@
 {
   Map<Integer,OnExceptionDefinition> candidates=new TreeMap<Integer,OnExceptionDefinition>();
+  Map<ExceptionPolicyKey,OnExceptionDefinition> routeScoped=new LinkedHashMap<ExceptionPolicyKey,OnExceptionDefinition>();
+  Map<ExceptionPolicyKey,OnExceptionDefinition> contextScoped=new LinkedHashMap<ExceptionPolicyKey,OnExceptionDefinition>();
+  initRouteAndContextScopedExceptionPolicies(exceptionPolicies,routeScoped,contextScoped);
   boolean exactMatch=false;
   Iterator<Throwable> it=createExceptionIterator(exception);
   while (!exactMatch && it.hasNext()) {
-    exactMatch=findMatchedExceptionPolicy(exceptionPolicies,exchange,it.next(),candidates);
+    exactMatch=findMatchedExceptionPolicy(routeScoped,exchange,it.next(),candidates);
+  }
+  it=createExceptionIterator(exception);
+  while (!exactMatch && it.hasNext()) {
+    exactMatch=findMatchedExceptionPolicy(contextScoped,exchange,it.next(),candidates);
   }
   if (LOG.isTraceEnabled()) {
     LOG.trace("Found " + candidates.size() + " candidates");
