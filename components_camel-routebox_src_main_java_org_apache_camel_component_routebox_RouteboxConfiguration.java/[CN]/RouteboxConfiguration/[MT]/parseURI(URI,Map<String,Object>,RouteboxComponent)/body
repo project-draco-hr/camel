@@ -1,0 +1,65 @@
+{
+  String protocol=uri.getScheme();
+  if (!protocol.equalsIgnoreCase("routebox")) {
+    throw new IllegalArgumentException("Unrecognized protocol: " + protocol + " for uri: "+ uri);
+  }
+  setUri(uri);
+  setAuthority(uri.getAuthority());
+  LOG.info("Authority: " + uri.getAuthority());
+  setEndpointName(getAuthority());
+  if (parameters.containsKey("threads")) {
+    setThreads(Integer.valueOf((String)parameters.get("threads")));
+  }
+  if (parameters.containsKey("forkContext")) {
+    if (!(Boolean.valueOf((String)parameters.get("forkContext")))) {
+      setForkContext(false);
+    }
+  }
+  if (parameters.containsKey("innerProtocol")) {
+    setInnerProtocol((String)parameters.get("innerProtocol"));
+    if ((!innerProtocol.equalsIgnoreCase("seda")) && (!innerProtocol.equalsIgnoreCase("direct"))) {
+      throw new IllegalArgumentException("Unrecognized inner protocol: " + innerProtocol + " for uri: "+ uri);
+    }
+  }
+ else {
+    setInnerProtocol("direct");
+  }
+  if (parameters.containsKey("sendToConsumer")) {
+    if (!Boolean.valueOf((String)parameters.get("sendToConsumer"))) {
+      setSendToConsumer(false);
+    }
+  }
+  if (parameters.containsKey("connectionTimeout")) {
+    setConnectionTimeout(Long.parseLong((String)parameters.get("connectionTimeout")));
+  }
+  if (parameters.containsKey("pollInterval")) {
+    setConnectionTimeout(Long.parseLong((String)parameters.get("pollInterval")));
+  }
+  if (parameters.containsKey("routeBuilders")) {
+    routeBuilders=(List<RouteBuilder>)component.resolveAndRemoveReferenceParameter(parameters,"routeBuilders",List.class);
+  }
+  if (parameters.containsKey("innerRegistry")) {
+    innerRegistry=(Registry)component.resolveAndRemoveReferenceParameter(parameters,"innerRegistry",Registry.class);
+  }
+  if (isForkContext()) {
+    if (innerRegistry != null) {
+      innerContext=(CamelContext)component.resolveAndRemoveReferenceParameter(parameters,"innerContext",CamelContext.class,new DefaultCamelContext(innerRegistry));
+    }
+ else {
+      innerContext=(CamelContext)component.resolveAndRemoveReferenceParameter(parameters,"innerContext",CamelContext.class,new DefaultCamelContext());
+    }
+  }
+ else {
+    innerContext=component.getCamelContext();
+  }
+  innerProducerTemplate=new DefaultProducerTemplate(innerContext);
+  innerProducerTemplate.start();
+  setQueueSize(component.getAndRemoveParameter(parameters,"size",Integer.class,0));
+  consumerUri=component.resolveAndRemoveReferenceParameter(parameters,"consumerUri",URI.class,new URI("routebox:" + getEndpointName()));
+  producerUri=component.resolveAndRemoveReferenceParameter(parameters,"producerUri",URI.class,new URI("routebox:" + getEndpointName()));
+  dispatchStrategy=component.resolveAndRemoveReferenceParameter(parameters,"dispatchStrategy",RouteboxDispatchStrategy.class,null);
+  dispatchMap=(HashMap<String,String>)component.resolveAndRemoveReferenceParameter(parameters,"dispatchMap",HashMap.class,new HashMap<String,String>());
+  if ((dispatchStrategy == null) && (dispatchMap == null)) {
+    LOG.warn("No Routebox Dispatch Map or Strategy has been set. Routebox may not have more than one inner route");
+  }
+}

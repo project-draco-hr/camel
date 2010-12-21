@@ -1,0 +1,17 @@
+{
+  URI dispatchUri=null;
+  Exchange reply=null;
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Dispatching exchange" + exchange + "to endpoint "+ endpoint.getEndpointUri());
+  }
+  dispatchUri=selectDispatchUri(endpoint,exchange);
+  if (exchange.getPattern() == ExchangePattern.InOnly) {
+    producer.asyncSend(dispatchUri.toASCIIString(),exchange);
+    reply=exchange;
+  }
+ else {
+    Future<Exchange> future=producer.asyncCallback(dispatchUri.toASCIIString(),exchange,new SynchronizationAdapter());
+    reply=future.get(endpoint.getConfig().getConnectionTimeout(),TimeUnit.MILLISECONDS);
+  }
+  return reply;
+}

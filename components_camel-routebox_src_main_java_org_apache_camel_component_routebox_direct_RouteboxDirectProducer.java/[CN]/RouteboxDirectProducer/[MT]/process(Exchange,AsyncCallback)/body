@@ -1,0 +1,34 @@
+{
+  boolean flag=true;
+  if ((((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConsumer() == null) && (((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConfig().isSendToConsumer())) {
+    exchange.setException(new CamelExchangeException("No consumers available on endpoint: " + getRouteboxEndpoint(),exchange));
+    callback.done(true);
+    flag=true;
+  }
+ else {
+    try {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("**** Dispatching to Inner Route ****");
+      }
+      RouteboxDispatcher dispatcher=new RouteboxDispatcher(producer);
+      exchange=dispatcher.dispatchAsync(getRouteboxEndpoint(),exchange);
+      if (getRouteboxEndpoint().getConfig().isSendToConsumer()) {
+        AsyncProcessor processor=AsyncProcessorTypeConverter.convert(((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConsumer().getProcessor());
+        flag=AsyncProcessorHelper.process(processor,exchange,new AsyncCallback(){
+          public void done(          boolean doneSync){
+            if (doneSync) {
+              return;
+            }
+            callback.done(false);
+          }
+        }
+);
+      }
+      callback.done(true);
+    }
+ catch (    Exception e) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,e);
+    }
+  }
+  return flag;
+}

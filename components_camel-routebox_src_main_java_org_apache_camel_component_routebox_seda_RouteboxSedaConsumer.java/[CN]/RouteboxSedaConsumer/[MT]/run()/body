@@ -1,0 +1,15 @@
+{
+  BlockingQueue<Exchange> queue=((RouteboxSedaEndpoint)getRouteboxEndpoint()).getQueue();
+  while (queue != null && isRunAllowed()) {
+    try {
+      final Exchange exchange=queue.poll(getRouteboxEndpoint().getConfig().getPollInterval(),TimeUnit.MILLISECONDS);
+      dispatchToInnerRoute(queue,exchange);
+    }
+ catch (    InterruptedException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Sleep interrupted, are we stopping? " + (isStopping() || isStopped()));
+      }
+      continue;
+    }
+  }
+}

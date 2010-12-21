@@ -1,0 +1,28 @@
+{
+  Exchange result=null;
+  if (exchange != null) {
+    if (isRunAllowed()) {
+      try {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("**** Dispatching to Inner Route ****");
+        }
+        RouteboxDispatcher dispatcher=new RouteboxDispatcher(producer);
+        result=dispatcher.dispatchAsync(getRouteboxEndpoint(),exchange);
+        AsyncProcessorHelper.process(processor,result,new AsyncCallback(){
+          public void done(          boolean doneSync){
+          }
+        }
+);
+      }
+ catch (      Exception e) {
+        getExceptionHandler().handleException("Error processing exchange",exchange,e);
+      }
+    }
+ else {
+      if (LOG.isWarnEnabled()) {
+        LOG.warn("This consumer is stopped during polling an exchange, so putting it back on the seda queue: " + exchange);
+      }
+      queue.put(exchange);
+    }
+  }
+}

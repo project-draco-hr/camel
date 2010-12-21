@@ -1,0 +1,16 @@
+{
+  Exchange result=null;
+  if ((((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConsumer() == null) && (getRouteboxEndpoint().getConfig().isSendToConsumer())) {
+    throw new CamelExchangeException("No consumers available on endpoint: " + getRouteboxEndpoint(),exchange);
+  }
+ else {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("**** Dispatching to Inner Route ****");
+    }
+    RouteboxDispatcher dispatcher=new RouteboxDispatcher(producer);
+    result=dispatcher.dispatchSync(getRouteboxEndpoint(),exchange);
+  }
+  if (getRouteboxEndpoint().getConfig().isSendToConsumer()) {
+    ((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConsumer().getProcessor().process(result);
+  }
+}
