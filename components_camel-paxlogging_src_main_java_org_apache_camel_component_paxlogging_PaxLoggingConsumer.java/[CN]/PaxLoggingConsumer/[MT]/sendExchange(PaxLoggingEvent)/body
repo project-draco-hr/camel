@@ -1,0 +1,20 @@
+{
+  MDC.put(PaxLoggingConsumer.class.getName(),endpoint.getName());
+  if (paxLoggingEvent.getProperties().containsKey(PaxLoggingConsumer.class.getName())) {
+    return;
+  }
+  Exchange exchange=endpoint.createExchange();
+  exchange.getIn().setBody(paxLoggingEvent);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("PaxLogging " + endpoint.getName() + " is firing");
+  }
+  try {
+    getProcessor().process(exchange);
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+    }
+  }
+ catch (  Exception e) {
+    getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+  }
+}
