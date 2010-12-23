@@ -11,38 +11,49 @@
         Format format=FormatFactory.getFormat(type,pattern,getLocale(),precision);
         Object value=field.get(obj);
         result=formatString(format,value);
+        if (datafield.trim()) {
+          result=result.trim();
+        }
         int fieldLength=datafield.length();
         String align=datafield.align();
-        char paddCharField=datafield.paddingChar();
-        char paddChar;
+        char padCharField=datafield.paddingChar();
+        char padChar;
         if (fieldLength > 0) {
           StringBuilder temp=new StringBuilder();
           if (result.length() < fieldLength) {
-            if (paddCharField == 0) {
-              paddChar=paddingChar;
+            if (padCharField == 0) {
+              padChar=paddingChar;
             }
  else {
-              paddChar=paddCharField;
+              padChar=padCharField;
             }
             if (align.contains("R")) {
-              temp.append(generatePaddingChars(paddChar,fieldLength,result.length()));
+              temp.append(generatePaddingChars(padChar,fieldLength,result.length()));
               temp.append(result);
             }
  else             if (align.contains("L")) {
               temp.append(result);
-              temp.append(generatePaddingChars(paddChar,fieldLength,result.length()));
+              temp.append(generatePaddingChars(padChar,fieldLength,result.length()));
             }
  else {
-              throw new IllegalArgumentException("Alignement for the " + field.getName() + " must be equal to R for RIGHT or L for LEFT !");
+              throw new IllegalArgumentException("Alignment for the field: " + field.getName() + " must be equal to R for RIGHT or L for LEFT !");
             }
             result=temp.toString();
           }
+ else           if (result.length() > fieldLength) {
+            if (datafield.clip()) {
+              result=result.substring(0,fieldLength);
+            }
+ else {
+              throw new IllegalArgumentException("Length for the " + field.getName() + " must not be larger than allowed, was: "+ result.length()+ ", allowed: "+ fieldLength);
+            }
+          }
         }
  else {
-          throw new IllegalArgumentException("Lenght of the field : " + field.getName() + " is a mandatory field and cannot be equal to zero or to be negative !");
+          throw new IllegalArgumentException("Length of the field: " + field.getName() + " is a mandatory field and cannot be equal to zero or to be negative !");
         }
         if (LOG.isDebugEnabled()) {
-          LOG.debug("Value to be formatted : " + value + ", position : "+ datafield.pos()+ ", and its formated value : "+ result);
+          LOG.debug("Value to be formatted: " + value + ", position: "+ datafield.pos()+ ", and its formatted value: "+ result);
         }
       }
  else {
@@ -56,7 +67,7 @@
         results.put(key,list);
       }
  else {
-        List list=(LinkedList)results.get(key);
+        List list=results.get(key);
         list.add(result);
       }
     }
