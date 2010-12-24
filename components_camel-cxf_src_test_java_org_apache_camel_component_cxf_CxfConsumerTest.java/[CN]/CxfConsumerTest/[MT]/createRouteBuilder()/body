@@ -5,6 +5,11 @@
         public void process(        final Exchange exchange){
           assertEquals(DataFormat.POJO,exchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.class));
           Message in=exchange.getIn();
+          org.apache.cxf.message.Message cxfMessage=in.getHeader(CxfConstants.CAMEL_CXF_MESSAGE,org.apache.cxf.message.Message.class);
+          assertNotNull("Should get the cxfMessage instance from message header",cxfMessage);
+          ServletRequest request=(ServletRequest)cxfMessage.get("HTTP.REQUEST");
+          assertNotNull("Should get the ServletRequest",request);
+          assertNotNull("Should get the RemoteAddress" + request.getRemoteAddr());
           List<?> parameter=in.getBody(List.class);
           String operation=(String)in.getHeader(CxfConstants.OPERATION_NAME);
           Object result=operation + " " + (String)parameter.get(0);
