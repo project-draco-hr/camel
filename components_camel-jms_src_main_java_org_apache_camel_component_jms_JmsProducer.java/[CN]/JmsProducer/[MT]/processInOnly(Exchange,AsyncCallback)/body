@@ -21,38 +21,52 @@
     Object replyTo=exchange.getIn().getHeader("JMSReplyTo");
     if (replyTo != null) {
       String to=destinationName != null ? destinationName : "" + destination;
-      LOG.warn("Disabling JMSReplyTo as this Exchange is not OUT capable with JMSReplyTo: " + replyTo + " for destination: "+ to+ ". Use preserveMessageQos=true to force Camel to keep the JMSReplyTo."+ " Exchange: "+ exchange);
+      LOG.warn("Disabling JMSReplyTo as this Exchange is not OUT capable with JMSReplyTo: " + replyTo + " for destination: "+ to+ ". Use preserveMessageQos=true to force Camel to keep the JMSReplyTo on: "+ exchange);
       exchange.getIn().setHeader("JMSReplyTo",null);
     }
   }
   MessageCreator messageCreator=new MessageCreator(){
     public Message createMessage(    Session session) throws JMSException {
       Message answer=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
-      String replyTo=exchange.getIn().getHeader("JMSReplyTo",String.class);
-      if (replyTo != null && answer.getJMSReplyTo() == null) {
-        Destination destination=null;
-        if (endpoint.getDestinationResolver() != null) {
-          destination=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,endpoint.isPubSubDomain());
+      if (endpoint.isDisableReplyTo()) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("ReplyTo is disabled on endpoint: " + endpoint);
         }
-        if (destination == null) {
-          if (endpoint.isPubSubDomain()) {
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("Creating JMSReplyTo topic: " + replyTo);
-            }
-            destination=session.createTopic(replyTo);
-          }
+        answer.setJMSReplyTo(null);
+      }
  else {
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("Creating JMSReplyTo queue: " + replyTo);
+        if (answer.getJMSReplyTo() == null) {
+          String replyTo=exchange.getIn().getHeader("JMSReplyTo",String.class);
+          if (replyTo == null) {
+            replyTo=endpoint.getReplyTo();
+          }
+          if (replyTo != null) {
+            replyTo=normalizeDestinationName(replyTo);
+            Destination destination=null;
+            if (endpoint.getDestinationResolver() != null) {
+              destination=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,endpoint.isPubSubDomain());
             }
-            destination=session.createQueue(replyTo);
+            if (destination == null) {
+              if (endpoint.isPubSubDomain()) {
+                if (LOG.isDebugEnabled()) {
+                  LOG.debug("Creating JMSReplyTo topic: " + replyTo);
+                }
+                destination=session.createTopic(replyTo);
+              }
+ else {
+                if (LOG.isDebugEnabled()) {
+                  LOG.debug("Creating JMSReplyTo queue: " + replyTo);
+                }
+                destination=session.createQueue(replyTo);
+              }
+            }
+            if (destination != null) {
+              if (LOG.isDebugEnabled()) {
+                LOG.debug("Using JMSReplyTo destination: " + destination);
+              }
+              answer.setJMSReplyTo(destination);
+            }
           }
-        }
-        if (destination != null) {
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Using JMSReplyTo destination: " + destination);
-          }
-          answer.setJMSReplyTo(destination);
         }
       }
       return answer;
