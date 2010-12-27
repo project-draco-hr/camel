@@ -6,21 +6,16 @@
   }
   try {
     int responseCode=httpClient.executeMethod(method);
-    LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
-    InputStream is=method.getResponseBodyAsStream();
-    try {
-      IOHelper.copy(is,bos);
-      bos.flush();
-    }
-  finally {
-      IOHelper.close(is,"input stream",null);
-    }
-    Message message=exchange.getIn();
-    message.setBody(bos.createInputStream());
+    Object body=HttpHelper.readResponseBodyFromInputStream(method.getResponseBodyAsStream(),exchange);
+    Message message=exchange.getOut();
+    message.setBody(body);
     Header[] headers=method.getResponseHeaders();
     HeaderFilterStrategy strategy=endpoint.getHeaderFilterStrategy();
     for (    Header header : headers) {
       String name=header.getName();
+      if (name.toLowerCase().equals("content-type")) {
+        name=Exchange.CONTENT_TYPE;
+      }
       String value=header.getValue();
       if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
         message.setHeader(name,value);
