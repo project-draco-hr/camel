@@ -9,21 +9,16 @@
     HttpResponse response=httpClient.execute(method);
     int responseCode=response.getStatusLine().getStatusCode();
     responeEntity=response.getEntity();
-    LoadingByteArrayOutputStream bos=new LoadingByteArrayOutputStream();
-    InputStream is=responeEntity.getContent();
-    try {
-      IOHelper.copy(is,bos);
-      bos.flush();
-    }
-  finally {
-      IOHelper.close(is,"input stream",null);
-    }
-    Message message=exchange.getIn();
-    message.setBody(bos.createInputStream());
+    Object body=HttpHelper.readResponseBodyFromInputStream(responeEntity.getContent(),exchange);
+    Message message=exchange.getOut();
+    message.setBody(body);
     Header[] headers=response.getAllHeaders();
     HeaderFilterStrategy strategy=endpoint.getHeaderFilterStrategy();
     for (    Header header : headers) {
       String name=header.getName();
+      if (name.toLowerCase().equals("content-type")) {
+        name=Exchange.CONTENT_TYPE;
+      }
       String value=header.getValue();
       if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
         message.setHeader(name,value);
