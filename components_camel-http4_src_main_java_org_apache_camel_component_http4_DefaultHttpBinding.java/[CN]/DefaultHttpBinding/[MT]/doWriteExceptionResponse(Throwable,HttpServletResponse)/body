@@ -1,7 +1,16 @@
 {
   response.setStatus(500);
-  response.setContentType("text/plain");
-  PrintWriter pw=response.getWriter();
-  exception.printStackTrace(pw);
-  pw.flush();
+  if (endpoint != null && endpoint.isTransferException()) {
+    response.setContentType(HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT);
+    ObjectOutputStream oos=new ObjectOutputStream(response.getOutputStream());
+    oos.writeObject(exception);
+    oos.flush();
+    IOHelper.close(oos);
+  }
+ else {
+    response.setContentType("text/plain");
+    PrintWriter pw=response.getWriter();
+    exception.printStackTrace(pw);
+    pw.flush();
+  }
 }
