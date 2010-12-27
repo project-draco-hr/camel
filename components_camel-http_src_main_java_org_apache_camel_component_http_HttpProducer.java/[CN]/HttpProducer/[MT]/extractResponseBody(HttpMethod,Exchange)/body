@@ -8,10 +8,17 @@
   if (!exchange.getProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.FALSE,Boolean.class)) {
     is=GZIPHelper.uncompressGzip(contentEncoding,is);
   }
+  String contentType=null;
   header=method.getResponseHeader("content-type");
   if (header != null) {
-    String contentType=header.getValue();
+    contentType=header.getValue();
     HttpHelper.setCharsetFromContentType(contentType,exchange);
   }
-  return doExtractResponseBody(is,exchange);
+  InputStream response=doExtractResponseBodyAsStream(is,exchange);
+  if (contentType != null && contentType.equals(HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT)) {
+    return doDeserializeJavaObjectFromResponse(response);
+  }
+ else {
+    return response;
+  }
 }
