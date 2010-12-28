@@ -1,25 +1,26 @@
 {
-  URI dispatchUri=null;
+  URI dispatchUri;
   List<URI> consumerUris=getInnerContextConsumerList(endpoint.getConfig().getInnerContext());
   if (consumerUris.isEmpty()) {
-    throw new CamelException("No routes found for dispatch in Routebox");
+    throw new CamelExchangeException("No routes found to dispatch in Routebox at " + endpoint,exchange);
   }
  else   if (consumerUris.size() == 1) {
     dispatchUri=consumerUris.get(0);
   }
  else {
     if (!endpoint.getConfig().getDispatchMap().isEmpty()) {
-      if (endpoint.getConfig().getDispatchMap().containsKey(exchange.getIn().getHeader("ROUTE_DISPATCH_KEY"))) {
-        dispatchUri=new URI(endpoint.getConfig().getDispatchMap().get(exchange.getIn().getHeader("ROUTE_DISPATCH_KEY")));
+      String key=exchange.getIn().getHeader("ROUTE_DISPATCH_KEY",String.class);
+      if (endpoint.getConfig().getDispatchMap().containsKey(key)) {
+        dispatchUri=new URI(endpoint.getConfig().getDispatchMap().get(key));
       }
  else {
-        throw new CamelException("No matching entry found in Dispatch Map for ROUTE_DISPATCH_KEY: " + exchange.getIn().getHeader("ROUTE_DISPATCH_KEY"));
+        throw new CamelExchangeException("No matching entry found in Dispatch Map for ROUTE_DISPATCH_KEY: " + key,exchange);
       }
     }
  else {
       dispatchUri=endpoint.getConfig().getDispatchStrategy().selectDestinationUri(consumerUris,exchange);
       if (dispatchUri == null) {
-        throw new CamelException("No matching inner routes found for Operation");
+        throw new CamelExchangeException("No matching inner routes found for Operation",exchange);
       }
     }
   }
