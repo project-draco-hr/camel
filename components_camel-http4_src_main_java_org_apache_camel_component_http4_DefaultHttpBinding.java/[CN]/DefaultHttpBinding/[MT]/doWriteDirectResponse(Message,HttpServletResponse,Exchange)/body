@@ -1,4 +1,15 @@
 {
+  String contentType=message.getHeader(Exchange.CONTENT_TYPE,String.class);
+  if (contentType != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+    try {
+      Object object=message.getMandatoryBody(Serializable.class);
+      HttpHelper.writeObjectToServletResponse(response,object);
+      return;
+    }
+ catch (    InvalidPayloadException e) {
+      throw IOHelper.createIOException(e);
+    }
+  }
   InputStream is=null;
   if (checkChunked(message,exchange)) {
     is=message.getBody(InputStream.class);

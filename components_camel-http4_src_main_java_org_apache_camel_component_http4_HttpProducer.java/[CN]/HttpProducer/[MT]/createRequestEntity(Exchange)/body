@@ -9,7 +9,16 @@
       Object data=in.getBody();
       if (data != null) {
         String contentType=ExchangeHelper.getContentType(exchange);
-        if (data instanceof File || data instanceof GenericFile) {
+        if (contentType != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+          Serializable obj=in.getMandatoryBody(Serializable.class);
+          ByteArrayOutputStream bos=new ByteArrayOutputStream();
+          HttpHelper.writeObjectToStream(bos,obj);
+          ByteArrayEntity entity=new ByteArrayEntity(bos.toByteArray());
+          entity.setContentType(HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT);
+          IOHelper.close(bos);
+          answer=entity;
+        }
+ else         if (data instanceof File || data instanceof GenericFile) {
           File file=in.getBody(File.class);
           if (file != null) {
             answer=new FileEntity(file,contentType);
@@ -17,22 +26,23 @@
         }
  else         if (data instanceof String) {
           String charset=IOConverter.getCharsetName(exchange,false);
-          answer=new StringEntity((String)data,charset);
-          if (contentType != null) {
-            ((StringEntity)answer).setContentType(contentType);
-          }
+          StringEntity entity=new StringEntity((String)data,charset);
+          entity.setContentType(contentType);
+          answer=entity;
         }
         if (answer == null) {
-          in.getMandatoryBody(InputStream.class);
-          answer=new InputStreamEntity(in.getBody(InputStream.class),-1);
-          if (contentType != null) {
-            ((InputStreamEntity)answer).setContentType(contentType);
-          }
+          InputStream is=in.getMandatoryBody(InputStream.class);
+          InputStreamEntity entity=new InputStreamEntity(is,-1);
+          entity.setContentType(contentType);
+          answer=entity;
         }
       }
     }
  catch (    UnsupportedEncodingException e) {
-      throw new RuntimeCamelException(e);
+      throw new CamelExchangeException("Error creating RequestEntity from message body",exchange,e);
+    }
+catch (    IOException e) {
+      throw new CamelExchangeException("Error serializing message body",exchange,e);
     }
   }
   return answer;

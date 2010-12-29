@@ -22,9 +22,9 @@
  catch (  UnsupportedEncodingException e) {
     throw new RuntimeCamelException("Cannot read request parameters due " + e.getMessage(),e);
   }
-  StreamCache cache=message.getBody(StreamCache.class);
-  if (cache != null) {
-    cache.reset();
+  Object body=message.getBody();
+  if (body instanceof StreamCache) {
+    ((StreamCache)body).reset();
   }
   headers.put(Exchange.HTTP_METHOD,request.getMethod());
   headers.put(Exchange.HTTP_QUERY,request.getQueryString());
@@ -32,5 +32,17 @@
   headers.put(Exchange.HTTP_URI,request.getRequestURI());
   headers.put(Exchange.HTTP_PATH,request.getPathInfo());
   headers.put(Exchange.CONTENT_TYPE,request.getContentType());
+  if (request.getContentType() != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(request.getContentType())) {
+    try {
+      InputStream is=endpoint.getCamelContext().getTypeConverter().mandatoryConvertTo(InputStream.class,body);
+      Object object=HttpHelper.deserializeJavaObjectFromStream(is);
+      if (object != null) {
+        message.setBody(object);
+      }
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException("Cannot deserialize body to Java object",e);
+    }
+  }
   populateAttachments(request,message);
 }
