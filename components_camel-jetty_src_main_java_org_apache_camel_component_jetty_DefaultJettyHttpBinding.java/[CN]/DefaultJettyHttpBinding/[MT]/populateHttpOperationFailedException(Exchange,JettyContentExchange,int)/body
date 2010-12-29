@@ -1,19 +1,26 @@
 {
-  HttpOperationFailedException exception;
+  HttpOperationFailedException answer;
   String uri=httpExchange.getUrl();
   Map<String,String> headers=httpExchange.getHeaders();
-  String body=extractResponseBody(exchange,httpExchange);
+  Object responseBody=extractResponseBody(exchange,httpExchange);
+  if (transferException && responseBody != null && responseBody instanceof Exception) {
+    return (Exception)responseBody;
+  }
+  String copy=null;
+  if (responseBody != null) {
+    copy=exchange.getContext().getTypeConverter().convertTo(String.class,exchange,responseBody);
+  }
   if (responseCode >= 300 && responseCode < 400) {
     String locationHeader=httpExchange.getResponseFields().getStringField("location");
     if (locationHeader != null) {
-      exception=new HttpOperationFailedException(uri,responseCode,null,locationHeader,headers,body);
+      answer=new HttpOperationFailedException(uri,responseCode,null,locationHeader,headers,copy);
     }
  else {
-      exception=new HttpOperationFailedException(uri,responseCode,null,null,headers,body);
+      answer=new HttpOperationFailedException(uri,responseCode,null,null,headers,copy);
     }
   }
  else {
-    exception=new HttpOperationFailedException(uri,responseCode,null,null,headers,body);
+    answer=new HttpOperationFailedException(uri,responseCode,null,null,headers,copy);
   }
-  return exception;
+  return answer;
 }

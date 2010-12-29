@@ -1,3 +1,15 @@
 {
-  return httpExchange.getBody();
+  String contentType=httpExchange.getHeaders().get(Exchange.CONTENT_TYPE);
+  if (contentType != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+    try {
+      InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,httpExchange.getResponseContentBytes());
+      return HttpHelper.deserializeJavaObjectFromStream(is);
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException("Cannot deserialize body to Java object",e);
+    }
+  }
+ else {
+    return httpExchange.getBody();
+  }
 }

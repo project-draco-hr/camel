@@ -1,6 +1,6 @@
 {
-  String url=HttpProducerHelper.createURL(exchange,getEndpoint());
-  HttpMethods methodToUse=HttpProducerHelper.createMethod(exchange,getEndpoint(),exchange.getIn().getBody() != null);
+  String url=HttpHelper.createURL(exchange,getEndpoint());
+  HttpMethods methodToUse=HttpHelper.createMethod(exchange,getEndpoint(),exchange.getIn().getBody() != null);
   String method=methodToUse.createMethod(url).getName();
   JettyContentExchange httpExchange=new JettyContentExchange(exchange,getBinding(),client);
   httpExchange.setMethod(method);
@@ -11,19 +11,28 @@
     if (contentType != null) {
       httpExchange.setRequestContentType(contentType);
     }
-    String data=exchange.getIn().getBody(String.class);
-    if (data != null) {
-      String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
-      if (charset != null) {
-        httpExchange.setRequestContent(new ByteArrayBuffer(data,charset));
-      }
- else {
-        httpExchange.setRequestContent(new ByteArrayBuffer(data));
-      }
+    if (contentType != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+      Serializable obj=exchange.getIn().getMandatoryBody(Serializable.class);
+      ByteArrayOutputStream bos=new ByteArrayOutputStream();
+      HttpHelper.writeObjectToStream(bos,obj);
+      httpExchange.setRequestContent(new ByteArrayBuffer(bos.toByteArray()));
+      IOHelper.close(bos);
     }
  else {
-      InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,exchange,exchange.getIn().getBody());
-      httpExchange.setRequestContentSource(is);
+      String data=exchange.getIn().getBody(String.class);
+      if (data != null) {
+        String charset=exchange.getProperty(Exchange.CHARSET_NAME,String.class);
+        if (charset != null) {
+          httpExchange.setRequestContent(new ByteArrayBuffer(data,charset));
+        }
+ else {
+          httpExchange.setRequestContent(new ByteArrayBuffer(data));
+        }
+      }
+ else {
+        InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,exchange,exchange.getIn().getBody());
+        httpExchange.setRequestContentSource(is);
+      }
     }
   }
   Message in=exchange.getIn();
