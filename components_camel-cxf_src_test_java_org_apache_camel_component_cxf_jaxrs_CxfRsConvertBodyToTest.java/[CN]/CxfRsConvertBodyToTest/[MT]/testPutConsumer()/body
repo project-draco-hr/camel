@@ -1,0 +1,19 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  mock.message(0).body().isInstanceOf(Customer.class);
+  HttpPut put=new HttpPut("http://localhost:9000/rest/customerservice/customers");
+  StringEntity entity=new StringEntity(PUT_REQUEST,"ISO-8859-1");
+  entity.setContentType("text/xml; charset=ISO-8859-1");
+  put.addHeader("test","header1;header2");
+  put.setEntity(entity);
+  HttpClient httpclient=new DefaultHttpClient();
+  try {
+    HttpResponse response=httpclient.execute(put);
+    assertEquals(200,response.getStatusLine().getStatusCode());
+    assertEquals("",EntityUtils.toString(response.getEntity()));
+  }
+  finally {
+    httpclient.getConnectionManager().shutdown();
+  }
+}
