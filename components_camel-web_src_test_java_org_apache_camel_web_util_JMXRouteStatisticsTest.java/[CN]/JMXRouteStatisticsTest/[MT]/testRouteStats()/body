@@ -1,0 +1,12 @@
+{
+  CamelContextResource resource=new CamelContextResource(camelContext);
+  RoutesDefinition routes=resource.getRoutesResource().getRouteDefinitions();
+  List<RouteDefinition> list=routes.getRoutes();
+  Object exchangesCompleted=statistics.getRouteStatistic(camelContext,list.get(0).getId(),"ExchangesCompleted");
+  assertEquals("JMX value incorrect, should be 0",new Long(0),exchangesCompleted);
+  ProducerTemplate template=camelContext.createProducerTemplate();
+  template.sendBody("seda:foo","test");
+  Thread.sleep(100);
+  exchangesCompleted=statistics.getRouteStatistic(camelContext,list.get(0).getId(),"ExchangesCompleted");
+  assertEquals("JMX value incorrect, should be 1",new Long(1),exchangesCompleted);
+}
