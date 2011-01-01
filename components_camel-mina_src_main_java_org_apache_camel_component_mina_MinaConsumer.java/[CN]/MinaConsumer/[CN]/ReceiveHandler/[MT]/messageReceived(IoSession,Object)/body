@@ -2,13 +2,13 @@
   if (LOG.isDebugEnabled()) {
     Object in=object;
     if (in instanceof byte[]) {
-      in=endpoint.getCamelContext().getTypeConverter().convertTo(String.class,in);
+      in=getEndpoint().getCamelContext().getTypeConverter().convertTo(String.class,in);
     }
     LOG.debug("Received body: " + in);
   }
-  Exchange exchange=endpoint.createExchange(session,object);
-  if (endpoint.getConfiguration().getCharsetName() != null) {
-    exchange.setProperty(Exchange.CHARSET_NAME,IOConverter.normalizeCharset(endpoint.getConfiguration().getCharsetName()));
+  Exchange exchange=getEndpoint().createExchange(session,object);
+  if (getEndpoint().getConfiguration().getCharsetName() != null) {
+    exchange.setProperty(Exchange.CHARSET_NAME,IOConverter.normalizeCharset(getEndpoint().getConfiguration().getCharsetName()));
   }
   try {
     getProcessor().process(exchange);
@@ -19,13 +19,13 @@
   if (sync) {
     Object body;
     if (ExchangeHelper.isOutCapable(exchange)) {
-      body=MinaPayloadHelper.getOut(endpoint,exchange);
+      body=MinaPayloadHelper.getOut(getEndpoint(),exchange);
     }
  else {
-      body=MinaPayloadHelper.getIn(endpoint,exchange);
+      body=MinaPayloadHelper.getIn(getEndpoint(),exchange);
     }
     boolean failed=exchange.isFailed();
-    if (failed && !endpoint.getConfiguration().isTransferExchange()) {
+    if (failed && !getEndpoint().getConfiguration().isTransferExchange()) {
       if (exchange.getException() != null) {
         body=exchange.getException();
       }
@@ -35,7 +35,7 @@
     }
     if (body == null) {
       noReplyLogger.log("No payload to send as reply for exchange: " + exchange);
-      if (endpoint.getConfiguration().isDisconnectOnNoReply()) {
+      if (getEndpoint().getConfiguration().isDisconnectOnNoReply()) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Closing session as no payload to send as reply at address: " + address);
         }
@@ -56,7 +56,7 @@
  else {
     close=exchange.getIn().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
   }
-  boolean disconnect=endpoint.getConfiguration().isDisconnect();
+  boolean disconnect=getEndpoint().getConfiguration().isDisconnect();
   if (close != null) {
     disconnect=close;
   }
