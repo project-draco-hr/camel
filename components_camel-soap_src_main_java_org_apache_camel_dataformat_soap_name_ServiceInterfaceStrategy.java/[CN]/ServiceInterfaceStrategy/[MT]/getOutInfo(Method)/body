@@ -1,9 +1,11 @@
 {
   ResponseWrapper respWrap=method.getAnnotation(ResponseWrapper.class);
-  if (respWrap != null) {
-    if (respWrap.className() != null) {
-      return new TypeInfo(respWrap.className(),new QName(respWrap.targetNamespace(),respWrap.localName()));
-    }
+  if (respWrap != null && respWrap.className() != null) {
+    return new TypeInfo(respWrap.className(),new QName(respWrap.targetNamespace(),respWrap.localName()));
+  }
+  Class<?> returnType=method.getReturnType();
+  if (Void.TYPE.equals(returnType)) {
+    return new TypeInfo(null,null);
   }
  else {
     Class<?> type=method.getReturnType();
@@ -11,6 +13,8 @@
     if (webResult != null) {
       return new TypeInfo(type.getName(),new QName(webResult.targetNamespace(),webResult.name()));
     }
+ else {
+      throw new IllegalArgumentException("Result type of method " + method.getName() + " is not annotated with WebParam. This is not yet supported");
+    }
   }
-  throw new RuntimeCamelException("The method " + method.getName() + " has no ResponseWrapper and no suitable return type");
 }

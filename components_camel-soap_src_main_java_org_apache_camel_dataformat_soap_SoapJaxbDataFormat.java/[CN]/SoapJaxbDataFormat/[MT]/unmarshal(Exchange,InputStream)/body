@@ -1,10 +1,24 @@
 {
-  Object rootObject=JAXBIntrospector.getValue(super.unmarshal(exchange,stream));
+  String soapAction=getSoapActionFromExchange(exchange);
+  if (soapAction != null && elementNameStrategy instanceof ServiceInterfaceStrategy) {
+    ServiceInterfaceStrategy strategy=(ServiceInterfaceStrategy)elementNameStrategy;
+    String methodName=strategy.getMethodForSoapAction(soapAction);
+    exchange.getOut().setHeader(Exchange.BEAN_METHOD_NAME,methodName);
+  }
+  if (soapAction != null) {
+    exchange.setProperty(Exchange.SOAP_ACTION,soapAction);
+  }
+  Object unmarshalledObject=super.unmarshal(exchange,stream);
+  Object rootObject=JAXBIntrospector.getValue(unmarshalledObject);
   if (rootObject.getClass() != Envelope.class) {
     throw new RuntimeCamelException("Expected Soap Envelope but got " + rootObject.getClass());
   }
   Envelope envelope=(Envelope)rootObject;
-  Object payloadEl=envelope.getBody().getAny().get(0);
+  List<Object> anyElement=envelope.getBody().getAny();
+  if (anyElement.size() == 0) {
+    return null;
+  }
+  Object payloadEl=anyElement.get(0);
   Object payload=JAXBIntrospector.getValue(payloadEl);
   if (payload instanceof Fault) {
     Exception exception=createExceptionFromFault((Fault)payload);

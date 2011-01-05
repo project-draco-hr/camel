@@ -1,15 +1,26 @@
 {
-  Object graph;
+  Object paramObject;
   if (inputObject instanceof BeanInvocation) {
     BeanInvocation bi=(BeanInvocation)inputObject;
-    if (bi.getArgs().length > 1) {
-      throw new RuntimeCamelException("SoapDataFormat does not work with Beaninvocations that contain more than 1 parameter");
+    if (bi.getArgs() == null || bi.getArgs().length == 0) {
+      paramObject=null;
     }
-    graph=(bi.getArgs().length == 1) ? bi.getArgs()[0] : null;
+ else     if (bi.getArgs().length == 1) {
+      paramObject=bi.getArgs()[0];
+    }
+ else {
+      throw new RuntimeCamelException("SoapDataFormat does not work with " + "Beaninvocations that contain more than 1 parameter");
+    }
   }
  else {
-    graph=inputObject;
+    paramObject=inputObject;
   }
-  QName name=elementNameStrategy.findQNameForSoapActionOrType(soapAction,graph.getClass());
-  return new JAXBElement(name,graph.getClass(),graph);
+  if (paramObject == null) {
+    return null;
+  }
+  QName name=elementNameStrategy.findQNameForSoapActionOrType(soapAction,paramObject.getClass());
+  if (name == null) {
+    return null;
+  }
+  return new JAXBElement(name,paramObject.getClass(),paramObject);
 }

@@ -1,7 +1,8 @@
 {
   String jaxbPackage=GetCustomersByName.class.getPackage().getName();
-  ElementNameStrategy elNameStrat=new TypeNameStrategy();
+  ElementNameStrategy elNameStrat=new ServiceInterfaceStrategy(CustomerService.class,false);
   SoapJaxbDataFormat soapDataFormat=new SoapJaxbDataFormat(jaxbPackage,elNameStrat);
-  CustomerServiceImpl serverBean=new CustomerServiceImpl();
+  getContext().addInterceptStrategy(new Tracer());
+  getContext().setTracing(true);
   from("direct:cxfclient").onException(Exception.class).handled(true).marshal(soapDataFormat).end().unmarshal(soapDataFormat).bean(serverBean).marshal(soapDataFormat);
 }
