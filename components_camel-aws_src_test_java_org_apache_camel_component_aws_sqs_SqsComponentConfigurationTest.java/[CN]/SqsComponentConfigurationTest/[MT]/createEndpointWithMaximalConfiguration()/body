@@ -1,0 +1,15 @@
+{
+  List<String> attributeNames=new ArrayList<String>();
+  attributeNames.add("color");
+  attributeNames.add("size");
+  ((JndiRegistry)((PropertyPlaceholderDelegateRegistry)context.getRegistry()).getRegistry()).bind("attributeNames",attributeNames);
+  SqsComponent component=new SqsComponent(context);
+  SqsEndpoint endpoint=(SqsEndpoint)component.createEndpoint("sqs://MyQueue?accessKey=xxx&secretKey=yyy&attributeNames=#attributeNames" + "&DefaultVisibilityTimeout=1000&visibilityTimeout=2000");
+  assertEquals("MyQueue",endpoint.getConfiguration().getQueueName());
+  assertEquals("xxx",endpoint.getConfiguration().getAccessKey());
+  assertEquals("yyy",endpoint.getConfiguration().getSecretKey());
+  assertNull(endpoint.getConfiguration().getAmazonSQSClient());
+  assertSame(attributeNames,endpoint.getConfiguration().getAttributeNames());
+  assertEquals(new Integer(1000),endpoint.getConfiguration().getDefaultVisibilityTimeout());
+  assertEquals(new Integer(2000),endpoint.getConfiguration().getVisibilityTimeout());
+}
