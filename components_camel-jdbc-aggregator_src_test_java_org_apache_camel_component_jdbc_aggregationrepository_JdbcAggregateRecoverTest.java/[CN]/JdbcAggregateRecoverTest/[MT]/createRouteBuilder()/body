@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").aggregate(header("id"),new MyAggregationStrategy()).completionSize(5).aggregationRepository(repo).log("aggregated exchange id ${exchangeId} with ${body}").to("mock:aggregated").delay(1000).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          int count=counter.incrementAndGet();
+          if (count <= 2) {
+            throw new IllegalArgumentException("Damn");
+          }
+        }
+      }
+).to("mock:result").end();
+    }
+  }
+;
+}

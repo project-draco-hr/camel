@@ -1,0 +1,34 @@
+{
+  return (Exchange)transactionTemplate.execute(new TransactionCallback(){
+    public Exchange doInTransaction(    TransactionStatus status){
+      String sql;
+      Exchange result=null;
+      final String key=correlationId;
+      try {
+        final byte[] data=codec.marshallExchange(camelContext,exchange);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Adding exchange with key: [" + key + "]");
+        }
+        String insert="INSERT INTO " + getRepositoryName() + " ("+ EXCHANGE+ ", "+ ID+ ") VALUES (?, ?)";
+        String update="UPDATE " + getRepositoryName() + " SET "+ EXCHANGE+ " = ? WHERE "+ ID+ " = ?";
+        boolean present=jdbcTemplate.queryForInt("SELECT COUNT (*) FROM " + getRepositoryName() + " WHERE "+ ID+ " = ?",key) != 0;
+        sql=present ? update : insert;
+        if (isReturnOldExchange() && present) {
+          result=get(key,getRepositoryName(),camelContext);
+        }
+        jdbcTemplate.execute(sql,new AbstractLobCreatingPreparedStatementCallback(getLobHandler()){
+          @Override protected void setValues(          PreparedStatement ps,          LobCreator lobCreator) throws SQLException {
+            lobCreator.setBlobAsBytes(ps,1,data);
+            ps.setString(2,key);
+          }
+        }
+);
+      }
+ catch (      IOException e) {
+        throw new RuntimeException("Error adding to repository " + repositoryName + " with key "+ key,e);
+      }
+      return result;
+    }
+  }
+);
+}

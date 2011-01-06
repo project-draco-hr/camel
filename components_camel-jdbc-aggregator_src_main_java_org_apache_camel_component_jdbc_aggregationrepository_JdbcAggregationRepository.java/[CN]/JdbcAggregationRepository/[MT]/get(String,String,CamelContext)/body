@@ -1,0 +1,20 @@
+{
+  return (Exchange)transactionTemplateReadOnly.execute(new TransactionCallback(){
+    public Exchange doInTransaction(    TransactionStatus status){
+      try {
+        final byte[] data=jdbcTemplate.queryForObject("SELECT " + EXCHANGE + " FROM "+ repositoryName+ " WHERE "+ ID+ " = ?",new Object[]{key},byte[].class);
+        return codec.unmarshallExchange(camelContext,data);
+      }
+ catch (      EmptyResultDataAccessException ex) {
+        return null;
+      }
+catch (      IOException ex) {
+        throw new RuntimeException("Error getting key " + key + " from repository "+ repositoryName,ex);
+      }
+catch (      ClassNotFoundException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+  }
+);
+}
