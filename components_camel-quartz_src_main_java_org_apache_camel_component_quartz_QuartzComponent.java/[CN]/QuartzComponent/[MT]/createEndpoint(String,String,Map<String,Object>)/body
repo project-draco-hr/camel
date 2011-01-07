@@ -17,6 +17,13 @@
   Map<String,Object> triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
   Map<String,Object> jobParameters=IntrospectionSupport.extractProperties(parameters,"job.");
   Trigger trigger;
+  if (!isClustered()) {
+    trigger=getScheduler().getTrigger(name,group);
+    if (trigger != null) {
+      String msg="A Quartz job already exists with the name/group: " + name + "/"+ group;
+      throw new IllegalArgumentException(msg);
+    }
+  }
   if (ObjectHelper.isNotEmpty(cron)) {
     trigger=createCronTrigger(cron);
   }
