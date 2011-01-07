@@ -8,7 +8,6 @@
     completion=new SubmitOrderedCompletionService<Exchange>(executorService);
   }
   final AtomicInteger total=new AtomicInteger(0);
-  final List<Future<Exchange>> tasks=new ArrayList<Future<Exchange>>();
   final Iterator<ProcessorExchangePair> it=pairs.iterator();
   while (it.hasNext()) {
     final ProcessorExchangePair pair=it.next();
@@ -39,7 +38,6 @@
       }
     }
 );
-    tasks.add(task);
     total.incrementAndGet();
   }
   boolean timedOut=false;
@@ -97,14 +95,12 @@
   }
   if (timedOut || stoppedOnException) {
     if (timedOut && LOG.isDebugEnabled()) {
-      LOG.debug("Cancelling future tasks due timeout after " + timeout + " millis.");
+      LOG.debug("Cancelling tasks due timeout after " + timeout + " millis.");
     }
     if (stoppedOnException && LOG.isDebugEnabled()) {
-      LOG.debug("Cancelling future tasks due stopOnException.");
+      LOG.debug("Cancelling tasks due stopOnException.");
     }
-    for (    Future future : tasks) {
-      future.cancel(true);
-    }
+    running.set(false);
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Done parallel processing " + total + " exchanges");
