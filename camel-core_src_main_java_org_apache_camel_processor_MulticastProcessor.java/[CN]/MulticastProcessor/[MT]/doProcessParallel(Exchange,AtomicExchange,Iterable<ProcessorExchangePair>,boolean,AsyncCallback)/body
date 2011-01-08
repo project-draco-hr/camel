@@ -1,14 +1,22 @@
 {
   final CompletionService<Exchange> completion;
-  final AtomicBoolean running=new AtomicBoolean(true);
   if (streaming) {
     completion=new ExecutorCompletionService<Exchange>(executorService);
   }
  else {
     completion=new SubmitOrderedCompletionService<Exchange>(executorService);
   }
+  final AtomicBoolean running=new AtomicBoolean(true);
   final AtomicInteger total=new AtomicInteger(0);
+  final AtomicBoolean allTasksSubmitted=new AtomicBoolean();
+  final CountDownLatch aggregationOnTheFlyDone=new CountDownLatch(1);
+  final AtomicException executionException=new AtomicException();
   final Iterator<ProcessorExchangePair> it=pairs.iterator();
+  if (it.hasNext()) {
+    AggregateOnTheFlyTask task=new AggregateOnTheFlyTask(result,original,total,completion,running,aggregationOnTheFlyDone,allTasksSubmitted,executionException);
+    aggregationExecutorService.submit(task);
+  }
+  LOG.trace("Starting to submit parallel tasks");
   while (it.hasNext()) {
     final ProcessorExchangePair pair=it.next();
     final Exchange subExchange=pair.getExchange();
@@ -41,68 +49,19 @@
 );
     total.incrementAndGet();
   }
-  boolean timedOut=false;
-  boolean stoppedOnException=false;
-  final StopWatch watch=new StopWatch();
-  for (int i=0; i < total.intValue(); i++) {
-    Future<Exchange> future;
-    if (timedOut) {
-      future=completion.poll();
-    }
- else     if (timeout > 0) {
-      long left=timeout - watch.taken();
-      if (left < 0) {
-        left=0;
-      }
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Polling completion task #" + i + " using timeout "+ left+ " millis.");
-      }
-      future=completion.poll(left,TimeUnit.MILLISECONDS);
-    }
- else {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Polling completion task #" + i);
-      }
-      future=completion.take();
-    }
-    if (future == null && timedOut) {
-      break;
-    }
- else     if (future == null) {
-      AggregationStrategy strategy=getAggregationStrategy(null);
-      if (strategy instanceof TimeoutAwareAggregationStrategy) {
-        Exchange oldExchange=result.get();
-        if (oldExchange == null) {
-          oldExchange=original;
-        }
-        ((TimeoutAwareAggregationStrategy)strategy).timeout(oldExchange,i,total.intValue(),timeout);
-      }
- else {
-        LOG.warn("Parallel processing timed out after " + timeout + " millis for number "+ i+ ". This task will be cancelled and will not be aggregated.");
-      }
-      timedOut=true;
-    }
- else {
-      Exchange subExchange=future.get();
-      Integer number=getExchangeIndex(subExchange);
-      boolean continueProcessing=PipelineHelper.continueProcessing(subExchange,"Parallel processing failed for number " + number,LOG);
-      if (stopOnException && !continueProcessing) {
-        result.set(subExchange);
-        stoppedOnException=true;
-        break;
-      }
-      AggregationStrategy strategy=getAggregationStrategy(subExchange);
-      doAggregate(strategy,result,subExchange);
-    }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Signaling that all " + total.get() + " tasks has been submitted.");
   }
-  if (timedOut || stoppedOnException) {
-    if (timedOut && LOG.isDebugEnabled()) {
-      LOG.debug("Cancelling tasks due timeout after " + timeout + " millis.");
+  allTasksSubmitted.set(true);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Waiting for on-the-fly aggregation to complete aggregating " + total.get() + " responses.");
+  }
+  aggregationOnTheFlyDone.await();
+  if (executionException.get() != null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Parallel processing failed due " + executionException.get().getMessage());
     }
-    if (stoppedOnException && LOG.isDebugEnabled()) {
-      LOG.debug("Cancelling tasks due stopOnException.");
-    }
-    running.set(false);
+    throw executionException.get();
   }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Done parallel processing " + total + " exchanges");
