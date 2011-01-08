@@ -1,7 +1,6 @@
 {
-  Processor answer=processor;
-  if (exchange.getUnitOfWork() != null && exchange.getUnitOfWork().getRouteContext() != null) {
-    RouteContext routeContext=exchange.getUnitOfWork().getRouteContext();
+  Processor answer;
+  if (routeContext != null) {
     final PreparedErrorHandler key=new PreparedErrorHandler(routeContext,processor);
     answer=errorHandlers.get(key);
     if (answer != null) {
@@ -16,12 +15,15 @@
     ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
     try {
       processor=builder.createErrorHandler(routeContext,processor);
-      answer=new UnitOfWorkProcessor(processor);
     }
  catch (    Exception e) {
       throw ObjectHelper.wrapRuntimeCamelException(e);
     }
+    answer=new UnitOfWorkProcessor(processor);
     errorHandlers.putIfAbsent(key,answer);
+  }
+ else {
+    answer=new UnitOfWorkProcessor(processor);
   }
   return answer;
 }

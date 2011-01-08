@@ -2,6 +2,7 @@
   final Iterator iterator=ObjectHelper.createIterator(value);
   return new Iterable(){
     private final Exchange copy=ExchangeHelper.createCopy(exchange,true);
+    private final RouteContext routeContext=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getRouteContext() : null;
     public Iterator iterator(){
       return new Iterator(){
         private int index;
@@ -24,7 +25,7 @@
         }
         public Object next(){
           Object part=iterator.next();
-          Exchange newExchange=ExchangeHelper.createCopy(copy,true);
+          Exchange newExchange=ExchangeHelper.createCorrelatedCopy(copy,false);
           if (part instanceof Message) {
             newExchange.setIn((Message)part);
           }
@@ -32,7 +33,7 @@
             Message in=newExchange.getIn();
             in.setBody(part);
           }
-          return createProcessorExchangePair(index++,getProcessors().iterator().next(),newExchange);
+          return createProcessorExchangePair(index++,getProcessors().iterator().next(),newExchange,routeContext);
         }
         public void remove(){
           throw new UnsupportedOperationException("Remove is not supported by this iterator");
