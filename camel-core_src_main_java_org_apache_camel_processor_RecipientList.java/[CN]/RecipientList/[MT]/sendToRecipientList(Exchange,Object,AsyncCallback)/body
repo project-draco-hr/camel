@@ -2,5 +2,13 @@
   Iterator<Object> iter=ObjectHelper.createIterator(recipientList,delimiter);
   RecipientListProcessor rlp=new RecipientListProcessor(exchange.getContext(),producerCache,iter,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),isStreaming(),isStopOnException(),getTimeout());
   rlp.setIgnoreInvalidEndpoints(isIgnoreInvalidEndpoints());
+  try {
+    ServiceHelper.startService(rlp);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
   return AsyncProcessorHelper.process(rlp,exchange,callback);
 }
