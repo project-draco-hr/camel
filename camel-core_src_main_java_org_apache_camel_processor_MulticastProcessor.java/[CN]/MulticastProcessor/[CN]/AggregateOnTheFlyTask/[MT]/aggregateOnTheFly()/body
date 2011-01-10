@@ -14,6 +14,9 @@
     Future<Exchange> future;
     if (timedOut) {
       future=completion.poll();
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Polled completion task #" + aggregated + " after timeout to grab already completed tasks: "+ future);
+      }
     }
  else     if (timeout > 0) {
       long left=timeout - watch.taken();
@@ -49,7 +52,11 @@
  else {
         LOG.warn("Parallel processing timed out after " + timeout + " millis for number "+ aggregated+ ". This task will be cancelled and will not be aggregated.");
       }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Timeout occurred after " + timeout + " millis for number "+ aggregated+ " task.");
+      }
       timedOut=true;
+      ExecutorServiceHelper.timeoutTask(completion);
     }
  else {
       Exchange subExchange=future.get();
