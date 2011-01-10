@@ -1,17 +1,25 @@
 {
   boolean doSend=false;
 synchronized (calculationLock) {
-    long now=System.nanoTime();
-    if (now >= timeOfLastExchange + periodInNanos) {
-      doSend=true;
-      if (log.isTraceEnabled()) {
-        log.trace(sampled.sample());
+    if (messageFrequency > 0) {
+      currentMessageCount++;
+      if (currentMessageCount % messageFrequency == 0) {
+        doSend=true;
       }
-      timeOfLastExchange=now;
     }
  else {
-      if (log.isTraceEnabled()) {
-        log.trace(sampled.drop());
+      long now=System.nanoTime();
+      if (now >= timeOfLastExchange + periodInNanos) {
+        doSend=true;
+        if (log.isTraceEnabled()) {
+          log.trace(sampled.sample());
+        }
+        timeOfLastExchange=now;
+      }
+ else {
+        if (log.isTraceEnabled()) {
+          log.trace(sampled.drop());
+        }
       }
     }
   }
