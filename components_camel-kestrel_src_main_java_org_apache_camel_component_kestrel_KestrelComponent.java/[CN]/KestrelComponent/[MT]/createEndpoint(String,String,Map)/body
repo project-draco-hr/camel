@@ -1,0 +1,36 @@
+{
+  KestrelConfiguration config=getConfiguration().copy();
+  URI u=new URI(uri);
+  String queue;
+  String[] addresses=null;
+  if (u.getPath() == null || "".equals(u.getPath())) {
+    queue=u.getAuthority();
+  }
+ else   if (u.getAuthority() == null || "".equals(u.getAuthority())) {
+    queue=u.getPath();
+  }
+ else {
+    addresses=u.getAuthority().split(",");
+    queue=u.getPath();
+  }
+  while (queue.startsWith("/")) {
+    queue=queue.substring(1);
+  }
+  while (queue.endsWith("/")) {
+    queue=queue.substring(0,queue.length() - 1);
+  }
+  if ("".equals(queue)) {
+    throw new IllegalArgumentException("Queue not specified in endpoint URI: " + uri);
+  }
+  if (addresses != null && addresses.length > 0) {
+    config.setAddresses(addresses);
+  }
+ else {
+    if (config.getAddresses() == null) {
+      throw new IllegalArgumentException("Addresses not set in base configuration or endpoint: " + uri);
+    }
+  }
+  LOG.info("Creating endpoint for queue \"" + queue + "\" on "+ config.getAddressesAsString()+ ", parameters="+ parameters);
+  setProperties(config,parameters);
+  return new KestrelEndpoint(uri,this,config,queue);
+}

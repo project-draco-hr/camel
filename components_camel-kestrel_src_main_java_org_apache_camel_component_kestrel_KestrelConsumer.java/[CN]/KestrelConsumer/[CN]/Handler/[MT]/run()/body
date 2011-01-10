@@ -1,0 +1,53 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace(Thread.currentThread().getName() + " is starting");
+  }
+  while (isRunAllowed() && !shutdownPending) {
+    try {
+      exchangerQueue.put(exchanger);
+    }
+ catch (    InterruptedException e) {
+      if (log.isDebugEnabled()) {
+        log.debug("Interrupted, are we stopping? " + (isStopping() || isStopped()));
+      }
+      continue;
+    }
+    pendingExchangeCount.incrementAndGet();
+    try {
+      Object value;
+      try {
+        value=exchanger.exchange(this);
+      }
+ catch (      InterruptedException e) {
+        if (log.isDebugEnabled()) {
+          log.debug("Interrupted, are we stopping? " + (isStopping() || isStopped()));
+        }
+        continue;
+      }
+      if (log.isTraceEnabled()) {
+        log.trace("Got a value from the exchanger");
+      }
+      Exchange exchange=null;
+      try {
+        exchange=endpoint.createExchange();
+        exchange.getIn().setBody(value);
+        getProcessor().process(exchange);
+      }
+ catch (      Exception e) {
+        if (exchange != null) {
+          getExceptionHandler().handleException("Error processing exchange",exchange,e);
+        }
+ else {
+          getExceptionHandler().handleException(e);
+        }
+      }
+    }
+  finally {
+      pendingExchangeCount.decrementAndGet();
+    }
+  }
+  shutdownLatch.countDown();
+  if (log.isTraceEnabled()) {
+    log.trace(Thread.currentThread().getName() + " is finished");
+  }
+}

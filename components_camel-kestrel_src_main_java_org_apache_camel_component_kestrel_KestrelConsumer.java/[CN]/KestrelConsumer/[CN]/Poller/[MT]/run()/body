@@ -1,0 +1,94 @@
+{
+  if (log.isTraceEnabled()) {
+    log.trace("Kestrel poller is running");
+  }
+  String target;
+  if (endpoint.getConfiguration().getWaitTimeMs() > 0) {
+    target=endpoint.getQueue() + "/t=" + endpoint.getConfiguration().getWaitTimeMs();
+  }
+ else {
+    target=endpoint.getQueue();
+  }
+  Exchanger exchanger=null;
+  while (isRunAllowed() && !shutdownPending) {
+    if (concurrent) {
+      try {
+        exchanger=exchangerQueue.take();
+      }
+ catch (      InterruptedException e) {
+        if (log.isDebugEnabled()) {
+          log.debug("Interrupted, are we stopping? " + (isStopping() || isStopped()));
+        }
+        continue;
+      }
+    }
+    Object value=null;
+    while (isRunAllowed() && !shutdownPending) {
+      if (log.isTraceEnabled()) {
+        log.trace("Polling " + target);
+      }
+      try {
+        value=memcachedClient.get(target);
+        if (value != null) {
+          break;
+        }
+      }
+ catch (      Exception e) {
+        if (isRunAllowed() && !shutdownPending) {
+          getExceptionHandler().handleException("Failed to get object from kestrel",e);
+        }
+      }
+      if (isRunAllowed() && !shutdownPending) {
+        if (endpoint.getConfiguration().getWaitTimeMs() > 0) {
+        }
+ else {
+          try {
+            Thread.sleep(100);
+          }
+ catch (          InterruptedException ignored) {
+          }
+        }
+      }
+    }
+    if (log.isTraceEnabled()) {
+      log.trace("Got object from " + target);
+    }
+    if (concurrent) {
+      try {
+        exchanger.exchange(value);
+      }
+ catch (      InterruptedException e) {
+        if (log.isDebugEnabled()) {
+          log.debug("Interrupted, are we stopping? " + (isStopping() || isStopped()));
+        }
+        continue;
+      }
+    }
+ else {
+      pendingExchangeCount.incrementAndGet();
+      try {
+        Exchange exchange=null;
+        try {
+          exchange=endpoint.createExchange();
+          exchange.getIn().setBody(value);
+          getProcessor().process(exchange);
+        }
+ catch (        Exception e) {
+          if (exchange != null) {
+            getExceptionHandler().handleException("Error processing exchange",exchange,e);
+          }
+ else {
+            getExceptionHandler().handleException(e);
+          }
+        }
+      }
+  finally {
+        pendingExchangeCount.decrementAndGet();
+      }
+    }
+  }
+  if (log.isTraceEnabled()) {
+    log.trace("Finished polling " + target);
+  }
+  shutdownLatch.countDown();
+}

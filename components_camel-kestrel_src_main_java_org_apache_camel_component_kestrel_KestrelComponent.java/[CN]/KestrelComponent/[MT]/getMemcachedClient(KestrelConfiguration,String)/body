@@ -1,0 +1,20 @@
+{
+  String key=config.getAddressesAsString() + "/" + queue;
+  MemcachedClient memcachedClient=memcachedClientCache.get(key);
+  if (memcachedClient != null) {
+    return memcachedClient;
+  }
+synchronized (memcachedClientCache) {
+    if ((memcachedClient=memcachedClientCache.get(key)) == null) {
+      LOG.info("Creating MemcachedClient for " + key);
+      try {
+        memcachedClient=new MemcachedClient(memcachedConnectionFactory,config.getInetSocketAddresses());
+      }
+ catch (      Exception e) {
+        throw new RuntimeCamelException("Failed to connect to " + key,e);
+      }
+      memcachedClientCache.put(key,memcachedClient);
+    }
+  }
+  return memcachedClient;
+}
