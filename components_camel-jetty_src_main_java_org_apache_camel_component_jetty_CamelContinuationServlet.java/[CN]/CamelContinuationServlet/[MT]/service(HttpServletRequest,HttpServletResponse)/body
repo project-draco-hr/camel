@@ -1,4 +1,7 @@
 {
+  if (log.isTraceEnabled()) {
+    log.trace("Service: " + request);
+  }
   HttpConsumer consumer=resolve(request);
   if (consumer == null) {
     response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -7,6 +10,9 @@
   final Exchange result=(Exchange)request.getAttribute(EXCHANGE_ATTRIBUTE_NAME);
   if (result == null) {
     final Continuation continuation=ContinuationSupport.getContinuation(request);
+    if (continuationTimeout != null) {
+      continuation.setTimeout(continuationTimeout);
+    }
     if (consumer.isSuspended() && continuation.isInitial()) {
       response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
       return;
@@ -44,7 +50,7 @@
   }
   try {
     if (log.isTraceEnabled()) {
-      log.trace("Resuming continuation of exchangeId: " + result.getExchangeId());
+      log.trace("Resumed continuation and writing response for exchangeId: " + result.getExchangeId());
     }
     consumer.getBinding().writeResponse(result,response);
   }
