@@ -1,19 +1,24 @@
 {
-  if (conumserMulticastProcessor != null) {
-    ServiceHelper.stopService(conumserMulticastProcessor);
+  if (consumerMulticastProcessor != null) {
+    ServiceHelper.stopService(consumerMulticastProcessor);
   }
   int size=getConsumers().size();
   if (size == 0 && multicastExecutor != null) {
     getCamelContext().getExecutorServiceStrategy().shutdown(multicastExecutor);
     multicastExecutor=null;
   }
-  if (size == 1 && multicastExecutor == null) {
-    multicastExecutor=getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,getEndpointUri() + "(multicast)");
+  if (size > 1) {
+    if (multicastExecutor == null) {
+      multicastExecutor=getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,getEndpointUri() + "(multicast)");
+    }
+    List<Processor> processors=new ArrayList<Processor>(size);
+    for (    SedaConsumer consumer : getConsumers()) {
+      processors.add(consumer.getProcessor());
+    }
+    multicastStarted=false;
+    consumerMulticastProcessor=new MulticastProcessor(getCamelContext(),processors,null,true,multicastExecutor,false,false,0);
   }
-  List<Processor> processors=new ArrayList<Processor>(size);
-  for (  SedaConsumer consumer : getConsumers()) {
-    processors.add(consumer.getProcessor());
+ else {
+    consumerMulticastProcessor=null;
   }
-  conumserMulticastProcessor=new MulticastProcessor(getCamelContext(),processors,null,true,multicastExecutor,false,false,0);
-  ServiceHelper.startService(conumserMulticastProcessor);
 }
