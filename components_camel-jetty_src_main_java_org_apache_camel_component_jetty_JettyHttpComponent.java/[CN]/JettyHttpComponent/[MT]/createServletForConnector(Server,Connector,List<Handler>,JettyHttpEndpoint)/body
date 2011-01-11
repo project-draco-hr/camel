@@ -15,14 +15,23 @@
       }
     }
   }
-  CamelContinuationServlet camelServlet=new CamelContinuationServlet();
-  Long timeout=endpoint.getContinuationTimeout() != null ? endpoint.getContinuationTimeout() : getContinuationTimeout();
-  if (timeout != null) {
-    LOG.info("Using Jetty continuation timeout: " + timeout + " millis for: "+ endpoint);
-    camelServlet.setContinuationTimeout(timeout);
+  CamelServlet camelServlet;
+  boolean jetty=endpoint.getUseContinuation() != null ? endpoint.getUseContinuation() : isUseContinuation();
+  if (jetty) {
+    CamelContinuationServlet jettyServlet=new CamelContinuationServlet();
+    Long timeout=endpoint.getContinuationTimeout() != null ? endpoint.getContinuationTimeout() : getContinuationTimeout();
+    if (timeout != null) {
+      LOG.info("Using Jetty continuation timeout: " + timeout + " millis for: "+ endpoint);
+      jettyServlet.setContinuationTimeout(timeout);
+    }
+ else {
+      LOG.info("Using default Jetty continuation timeout for: " + endpoint);
+    }
+    camelServlet=jettyServlet;
   }
  else {
-    LOG.info("Using default Jetty continuation timeout for: " + endpoint);
+    camelServlet=new CamelServlet();
+    LOG.info("Jetty continuation is disabled for: " + endpoint);
   }
   ServletHolder holder=new ServletHolder();
   holder.setServlet(camelServlet);
