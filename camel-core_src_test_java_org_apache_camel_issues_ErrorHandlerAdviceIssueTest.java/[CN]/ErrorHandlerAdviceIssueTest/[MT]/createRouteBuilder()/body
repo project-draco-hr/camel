@@ -1,0 +1,12 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      errorHandler(deadLetterChannel("direct:error").maximumRedeliveries(2).redeliveryDelay(0));
+      from("direct:error").routeId("error").errorHandler(deadLetterChannel("log:dead?level=ERROR")).to("mock:error").to("file:error");
+      from("timer://someTimer?delay=15000&fixedRate=true&period=5000").routeId("timer").to("log:level=INFO");
+      from("direct:start").routeId("foo").to("seda:foo");
+      from("seda:foo").to("mock:foo");
+    }
+  }
+;
+}
