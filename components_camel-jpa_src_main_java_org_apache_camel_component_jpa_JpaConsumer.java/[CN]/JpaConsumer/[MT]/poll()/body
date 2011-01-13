@@ -1,7 +1,7 @@
 {
   shutdownRunningTask=null;
   pendingExchanges=0;
-  template.execute(new JpaCallback(){
+  Object messagePolled=template.execute(new JpaCallback(){
     public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
       Queue<DataHolder> answer=new LinkedList<DataHolder>();
       Query query=getQueryFactory().createQuery(entityManager);
@@ -14,15 +14,17 @@
         holder.exchange=createExchange(result);
         answer.add(holder);
       }
+      int messagePolled;
       try {
-        processBatch(CastUtils.cast(answer));
+        messagePolled=processBatch(CastUtils.cast(answer));
       }
  catch (      Exception e) {
         throw new PersistenceException(e);
       }
       entityManager.flush();
-      return null;
+      return messagePolled;
     }
   }
 );
+  return endpoint.getCamelContext().getTypeConverter().convertTo(int.class,messagePolled);
 }

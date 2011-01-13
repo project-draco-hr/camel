@@ -3,8 +3,10 @@
     feed=createFeed();
     populateList(feed);
   }
+  int polledMessages=0;
   while (hasNextEntry()) {
     Object entry=list.get(entryIndex--);
+    polledMessages++;
     boolean valid=true;
     if (entryFilter != null) {
       valid=entryFilter.isValidEntry(endpoint,feed,entry);
@@ -13,10 +15,11 @@
       Exchange exchange=endpoint.createExchange(feed,entry);
       getProcessor().process(exchange);
       if (this.throttleEntries) {
-        return;
+        return polledMessages;
       }
     }
   }
   feed=null;
   resetList();
+  return polledMessages;
 }

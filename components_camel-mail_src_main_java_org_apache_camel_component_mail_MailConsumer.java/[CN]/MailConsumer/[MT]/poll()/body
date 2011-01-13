@@ -1,6 +1,7 @@
 {
   shutdownRunningTask=null;
   pendingExchanges=0;
+  int polledMessages=0;
   ensureIsConnected();
   if (store == null || folder == null) {
     throw new IllegalStateException("MailConsumer did not connect properly to the MailStore: " + getEndpoint().getConfiguration().getMailStoreLogInformation());
@@ -10,7 +11,7 @@
   }
   if (getEndpoint().getConfiguration().getFetchSize() == 0) {
     LOG.warn("Fetch size is 0 meaning the configuration is set to poll no new messages at all. Camel will skip this poll.");
-    return;
+    return 0;
   }
   if (!folder.isOpen()) {
     folder.open(Folder.READ_WRITE);
@@ -25,7 +26,7 @@
  else {
         messages=folder.getMessages();
       }
-      processBatch(CastUtils.cast(createExchanges(messages)));
+      polledMessages=processBatch(CastUtils.cast(createExchanges(messages)));
     }
  else     if (count == -1) {
       throw new MessagingException("Folder: " + folder.getFullName() + " is closed");
@@ -44,4 +45,5 @@
       LOG.debug("Could not close mailbox folder: " + folder.getName(),e);
     }
   }
+  return polledMessages;
 }

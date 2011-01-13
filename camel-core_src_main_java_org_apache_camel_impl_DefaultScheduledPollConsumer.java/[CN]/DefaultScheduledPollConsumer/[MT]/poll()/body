@@ -1,8 +1,13 @@
 {
+  int messagesPolled=0;
   while (isPollAllowed()) {
     Exchange exchange=pollingConsumer.receiveNoWait();
     if (exchange == null) {
       break;
+    }
+    messagesPolled++;
+    if (log.isTraceEnabled()) {
+      log.trace("Polled " + messagesPolled + " "+ exchange);
     }
     if (exchange.hasOut()) {
       Exchange newExchange=getEndpoint().createExchange();
@@ -11,4 +16,5 @@
     }
     getProcessor().process(exchange);
   }
+  return messagesPolled;
 }
