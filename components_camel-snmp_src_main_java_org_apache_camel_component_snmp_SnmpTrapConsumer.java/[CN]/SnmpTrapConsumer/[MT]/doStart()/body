@@ -4,8 +4,20 @@
     LOG.info("Starting trap consumer on " + this.endpoint.getAddress());
   }
   this.listenGenericAddress=GenericAddress.parse(this.endpoint.getAddress());
-  this.transport=new DefaultUdpTransportMapping((UdpAddress)this.listenGenericAddress);
+  if ("tcp".equals(endpoint.getProtocol())) {
+    this.transport=new DefaultTcpTransportMapping((TcpAddress)this.listenGenericAddress);
+  }
+ else   if ("udp".equals(endpoint.getProtocol())) {
+    this.transport=new DefaultUdpTransportMapping((UdpAddress)this.listenGenericAddress);
+  }
+ else {
+    throw new IllegalArgumentException("Unknown protocol: " + endpoint.getProtocol());
+  }
   this.snmp=new Snmp(transport);
   this.snmp.addCommandResponder(this);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Starting trap consumer on " + endpoint.getAddress() + " using "+ endpoint.getProtocol()+ " protocol");
+  }
   this.transport.listen();
+  LOG.info("Started trap consumer on " + endpoint.getAddress() + " using "+ endpoint.getProtocol()+ " protocol");
 }

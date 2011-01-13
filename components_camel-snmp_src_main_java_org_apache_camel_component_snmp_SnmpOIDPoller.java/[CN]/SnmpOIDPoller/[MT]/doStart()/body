@@ -1,8 +1,15 @@
 {
   super.doStart();
-  LOG.debug("Activating oid poller");
   this.targetAddress=GenericAddress.parse(this.endpoint.getAddress());
-  this.transport=new DefaultUdpTransportMapping();
+  if ("tcp".equals(endpoint.getProtocol())) {
+    this.transport=new DefaultTcpTransportMapping();
+  }
+ else   if ("udp".equals(endpoint.getProtocol())) {
+    this.transport=new DefaultUdpTransportMapping();
+  }
+ else {
+    throw new IllegalArgumentException("Unknown protocol: " + endpoint.getProtocol());
+  }
   this.snmp=new Snmp(this.transport);
   this.usm=new USM(SecurityProtocols.getInstance(),new OctetString(MPv3.createLocalEngineID()),0);
   SecurityModels.getInstance().addSecurityModel(usm);
@@ -13,5 +20,9 @@
   target.setTimeout(this.endpoint.getTimeout());
   target.setVersion(this.endpoint.getSnmpVersion());
   this.pdu=new PDU();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Starting OID poller on " + endpoint.getAddress() + " using "+ endpoint.getProtocol()+ " protocol");
+  }
   this.transport.listen();
+  LOG.info("Started OID poller on " + endpoint.getAddress() + " using "+ endpoint.getProtocol()+ " protocol");
 }
