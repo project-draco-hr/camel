@@ -1,0 +1,18 @@
+{
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  template.sendBody("seda:foo","A");
+  template.sendBody("seda:foo","B");
+  template.sendBody("seda:foo","C");
+  template.sendBody("seda:foo","D");
+  template.sendBody("seda:foo","E");
+  assertMockEndpointsSatisfied();
+  foo=foo + "stop";
+  context.stopRoute("seda",2,TimeUnit.SECONDS,true);
+  assertNotSame("Should not able able to complete all pending messages","stopABCDE",foo);
+  assertEquals("bar should still be running",true,context.getRouteStatus("bar").isStarted());
+  assertEquals("Seda should still be running",true,context.getRouteStatus("seda").isStarted());
+  context.stop();
+  Thread.sleep(4000);
+  assertEquals("bar should be stopped",true,context.getRouteStatus("bar").isStopped());
+  assertEquals("Seda should be stopped",true,context.getRouteStatus("seda").isStopped());
+}
