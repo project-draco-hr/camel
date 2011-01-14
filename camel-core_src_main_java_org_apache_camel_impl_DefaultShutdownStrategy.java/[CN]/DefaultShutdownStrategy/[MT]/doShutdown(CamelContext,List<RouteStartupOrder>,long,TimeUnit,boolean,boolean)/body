@@ -27,12 +27,18 @@
   }
  catch (  TimeoutException e) {
     future.cancel(true);
-    if (shutdownNowOnTimeout) {
-      LOG.warn("Timeout occurred. Now forcing the routes to be shutdown now.");
-      shutdownRoutesNow(routesOrdered);
+    if (giveUp) {
+      LOG.warn("Timeout occurred. Giving up now.");
+      return false;
     }
  else {
-      LOG.warn("Timeout occurred. Will ignore shutting down the remainder routes.");
+      if (shutdownNowOnTimeout) {
+        LOG.warn("Timeout occurred. Now forcing the routes to be shutdown now.");
+        shutdownRoutesNow(routesOrdered);
+      }
+ else {
+        LOG.warn("Timeout occurred. Will ignore shutting down the remainder routes.");
+      }
     }
   }
 catch (  ExecutionException e) {
@@ -40,4 +46,5 @@ catch (  ExecutionException e) {
   }
   long seconds=TimeUnit.SECONDS.convert(watch.stop(),TimeUnit.MILLISECONDS);
   LOG.info("Graceful shutdown of " + routesOrdered.size() + " routes completed in "+ seconds+ " seconds");
+  return true;
 }
