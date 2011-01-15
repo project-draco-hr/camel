@@ -19,8 +19,18 @@
   if (method != null) {
     answer.setMethod(method);
     BeanInfo info=new BeanInfo(routeContext.getCamelContext(),bean.getClass());
-    if (!info.hasMethod(method)) {
-      throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+    if (parameterType != null) {
+      answer.setParameterType(parameterType);
+      List<Class> parameterTypes=new ArrayList<Class>();
+      parameterTypes.add(parameterType);
+      if (!info.hasMethod(method,parameterTypes)) {
+        throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method,parameterTypes));
+      }
+    }
+ else {
+      if (!info.hasMethod(method)) {
+        throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+      }
     }
   }
   return answer;
