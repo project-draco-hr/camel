@@ -1,0 +1,14 @@
+{
+  MockEndpoint mockEP=getMockEndpoint("mock:result");
+  for (int i=0; i < 5; i++) {
+    template.sendBody("seda:start","message-" + i);
+  }
+  boolean stopRouteResponse=context.stopRoute("start",2,TimeUnit.SECONDS,false);
+  assertTrue("stopRoute response should be True",stopRouteResponse);
+  assertEquals("route should be stopped",true,context.getRouteStatus("start").isStopped());
+  for (int i=5; i < 10; i++) {
+    template.sendBody("seda:start","message-" + i);
+  }
+  Thread.sleep(3000);
+  assertTrue("Should not have received more than 5 messages",mockEP.getExchanges().size() <= 5);
+}

@@ -16,7 +16,7 @@
  else {
     LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (no timeout)");
   }
-  Future future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,suspendOnly));
+  Future future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,suspendOnly,abortAfterTimeout));
   try {
     if (timeout > 0) {
       future.get(timeout,timeUnit);
@@ -27,8 +27,8 @@
   }
  catch (  TimeoutException e) {
     future.cancel(true);
-    if (giveUp) {
-      LOG.warn("Timeout occurred. Giving up now.");
+    if (abortAfterTimeout) {
+      LOG.warn("Timeout occurred. Aborting the shutdown now.");
       return false;
     }
  else {

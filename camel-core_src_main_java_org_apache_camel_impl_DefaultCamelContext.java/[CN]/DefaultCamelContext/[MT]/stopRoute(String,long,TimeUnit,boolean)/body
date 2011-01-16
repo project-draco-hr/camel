@@ -1,13 +1,14 @@
 {
   RouteService routeService=routeServices.get(routeId);
   if (routeService != null) {
-    List<RouteStartupOrder> routes=new ArrayList<RouteStartupOrder>(1);
-    RouteStartupOrder order=new DefaultRouteStartupOrder(1,routeService.getRoutes().iterator().next(),routeService);
-    routes.add(order);
-    boolean completed=getShutdownStrategy().shutdown(this,routes,timeout,timeUnit,giveUp);
+    RouteStartupOrder route=new DefaultRouteStartupOrder(1,routeService.getRoutes().iterator().next(),routeService);
+    boolean completed=getShutdownStrategy().shutdown(this,route,timeout,timeUnit,abortAfterTimeout);
     if (completed) {
       routeService.setRemovingRoutes(false);
       stopRouteService(routeService);
+    }
+ else {
+      startRouteService(routeService,false);
     }
     return completed;
   }
