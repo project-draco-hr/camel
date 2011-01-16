@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(IllegalArgumentException.class).handled(true).setBody().constant("Handled").to("mock:error").end();
+      errorHandler(deadLetterChannel("mock:dead").useOriginalMessage());
+      from("direct:start").routeId("foo").noAutoStartup().process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          if ("illegal".equals(body)) {
+            throw new IllegalArgumentException("I cannot do this");
+          }
+ else           if ("kabom".equals(body)) {
+            throw new RuntimeException("Kabom");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
