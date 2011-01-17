@@ -1,13 +1,17 @@
 {
+  template.start();
+  ExecutorService executor=context.getExecutorServiceStrategy().newFixedThreadPool(this,"Task",maxTasks);
+  CompletionService<Task> completionService=new ExecutorCompletionService<Task>(executor);
   final AtomicInteger counter=new AtomicInteger(-1);
-  Task[] tasks=new Task[maxTasks];
-  for (int i=0; i < maxTasks; ++i) {
+  for (int i=0; i < maxTasks; i++) {
     Task task=new Task(counter,fromUri);
-    tasks[i]=task;
-    task.start();
+    completionService.submit(task);
   }
-  for (int i=0; i < maxTasks; ++i) {
-    tasks[i].join();
-    tasks[i].assertSuccess();
+  for (int i=0; i < maxTasks; i++) {
+    Future<Task> future=completionService.take();
+    Task task=future.get(60,TimeUnit.SECONDS);
+    assertNotNull("Should complete the task",task);
+    task.assertSuccess();
   }
+  context.getExecutorServiceStrategy().shutdownNow(executor);
 }
