@@ -1,6 +1,18 @@
 {
-  String[] packageNames=findPackageNames();
+  String[] packageNames;
+  try {
+    packageNames=findPackageNames();
+    if (packageNames == null || packageNames.length == 0) {
+      throw new TypeConverterLoaderException("Cannot find package names to be used for classpath scanning for annotated type converters.");
+    }
+  }
+ catch (  Exception e) {
+    throw new TypeConverterLoaderException("Cannot find package names to be used for classpath scanning for annotated type converters.",e);
+  }
   Set<Class<?>> classes=resolver.findAnnotated(Converter.class,packageNames);
+  if (classes == null || classes.isEmpty()) {
+    throw new TypeConverterLoaderException("Cannot find any type converter classes from the following packages: " + Arrays.asList(packageNames));
+  }
   LOG.info("Found " + packageNames.length + " packages with "+ classes.size()+ " @Converter classes to load");
   for (  Class type : classes) {
     if (LOG.isDebugEnabled()) {
