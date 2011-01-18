@@ -1,12 +1,18 @@
 {
-synchronized (this) {
-    try {
-      if (replyTo == null) {
-        wait(replyToResolverTimeout);
-      }
+  if (replyTo != null) {
+    return replyTo;
+  }
+  try {
+    log.trace("Waiting for replyTo to be set");
+    boolean done=replyToLatch.await(replyToTimeout,TimeUnit.MILLISECONDS);
+    if (!done) {
+      log.warn("ReplyTo destination was not set and timeout occurred");
     }
- catch (    Throwable e) {
+ else {
+      log.trace("Waiting for replyTo to be set done");
     }
+  }
+ catch (  InterruptedException e) {
   }
   return replyTo;
 }
