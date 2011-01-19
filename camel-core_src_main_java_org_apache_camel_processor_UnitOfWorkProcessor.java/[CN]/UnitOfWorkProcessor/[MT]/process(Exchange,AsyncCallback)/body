@@ -27,12 +27,14 @@
 );
     }
  catch (    Throwable e) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Caught unhandled exception while processing ExchangeId: " + exchange.getExchangeId(),e);
-      }
-      doneUow(uow,exchange);
+      LOG.warn("Caught unhandled exception while processing ExchangeId: " + exchange.getExchangeId(),e);
       exchange.setException(e);
-      callback.done(true);
+      try {
+        callback.done(true);
+      }
+  finally {
+        doneUow(uow,exchange);
+      }
       return true;
     }
   }
