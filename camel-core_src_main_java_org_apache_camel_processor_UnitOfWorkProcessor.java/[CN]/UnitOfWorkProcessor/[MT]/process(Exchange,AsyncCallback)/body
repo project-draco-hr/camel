@@ -9,19 +9,32 @@
       uow.start();
     }
  catch (    Exception e) {
-      throw wrapRuntimeCamelException(e);
+      callback.done(true);
+      exchange.setException(e);
+      return true;
     }
-    return processor.process(exchange,new AsyncCallback(){
-      public void done(      boolean doneSync){
-        try {
-          callback.done(doneSync);
-        }
+    try {
+      return processor.process(exchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          try {
+            callback.done(doneSync);
+          }
   finally {
-          doneUow(uow,exchange);
+            doneUow(uow,exchange);
+          }
         }
       }
-    }
 );
+    }
+ catch (    Throwable e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Caught unhandled exception while processing ExchangeId: " + exchange.getExchangeId(),e);
+      }
+      doneUow(uow,exchange);
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
   }
  else {
     return processor.process(exchange,callback);
