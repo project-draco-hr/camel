@@ -10,7 +10,6 @@
     dynamicMessageSelector=new MessageSelectorCreator();
     answer=new PersistentQueueMessageListenerContainer(dynamicMessageSelector);
   }
-  answer.setConnectionFactory(endpoint.getListenerConnectionFactory());
   DestinationResolver resolver=endpoint.getDestinationResolver();
   if (resolver == null) {
     resolver=answer.getDestinationResolver();
@@ -22,6 +21,12 @@
   answer.setPubSubDomain(false);
   answer.setSubscriptionDurable(false);
   answer.setConcurrentConsumers(1);
+  answer.setConnectionFactory(endpoint.getConnectionFactory());
+  String clientId=endpoint.getClientId();
+  if (clientId != null) {
+    clientId+=".CamelReplyManager";
+    answer.setClientId(clientId);
+  }
   answer.setCacheLevel(DefaultMessageListenerContainer.CACHE_SESSION);
   answer.setSessionTransacted(false);
   if (endpoint.getExceptionListener() != null) {
@@ -36,7 +41,7 @@
   if (endpoint.getTaskExecutor() != null) {
     answer.setTaskExecutor(endpoint.getTaskExecutor());
   }
-  if (endpoint.getTaskExecutorSpring2() != null) {
+ else   if (endpoint.getTaskExecutorSpring2() != null) {
     IntrospectionSupport.setProperty(answer,"taskExecutor",endpoint.getTaskExecutorSpring2());
   }
   return answer;
