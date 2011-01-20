@@ -17,17 +17,11 @@
   if (destination != null) {
     destinationName=null;
   }
-  if (!endpoint.isPreserveMessageQos() && !endpoint.isExplicitQosEnabled()) {
-    Object replyTo=exchange.getIn().getHeader("JMSReplyTo");
-    if (replyTo != null) {
-      String to=destinationName != null ? destinationName : "" + destination;
-      LOG.warn("Disabling JMSReplyTo as this Exchange is not OUT capable with JMSReplyTo: " + replyTo + " for destination: "+ to+ ". Use preserveMessageQos=true to force Camel to keep the JMSReplyTo on: "+ exchange);
-      exchange.getIn().setHeader("JMSReplyTo",null);
-    }
-  }
+  final String to=destinationName != null ? destinationName : "" + destination;
   MessageCreator messageCreator=new MessageCreator(){
     public Message createMessage(    Session session) throws JMSException {
       Message answer=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
+      Object jmsReplyTo=answer.getJMSReplyTo();
       if (endpoint.isDisableReplyTo()) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("ReplyTo is disabled on endpoint: " + endpoint);
@@ -35,39 +29,50 @@
         answer.setJMSReplyTo(null);
       }
  else {
-        if (answer.getJMSReplyTo() == null) {
-          String replyTo=exchange.getIn().getHeader("JMSReplyTo",String.class);
-          if (replyTo == null) {
-            replyTo=endpoint.getReplyTo();
-          }
-          if (replyTo != null) {
-            replyTo=normalizeDestinationName(replyTo);
-            Destination destination=null;
-            if (endpoint.getDestinationResolver() != null) {
-              destination=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,endpoint.isPubSubDomain());
-            }
-            if (destination == null) {
-              if (endpoint.isPubSubDomain()) {
-                if (LOG.isDebugEnabled()) {
-                  LOG.debug("Creating JMSReplyTo topic: " + replyTo);
-                }
-                destination=session.createTopic(replyTo);
-              }
- else {
-                if (LOG.isDebugEnabled()) {
-                  LOG.debug("Creating JMSReplyTo queue: " + replyTo);
-                }
-                destination=session.createQueue(replyTo);
-              }
-            }
-            if (destination != null) {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Using JMSReplyTo destination: " + destination);
-              }
-              answer.setJMSReplyTo(destination);
-            }
+        if (jmsReplyTo == null) {
+          jmsReplyTo=exchange.getIn().getHeader("JMSReplyTo",String.class);
+          if (jmsReplyTo == null) {
+            jmsReplyTo=endpoint.getReplyTo();
           }
         }
+      }
+      if (jmsReplyTo != null && !(endpoint.isPreserveMessageQos() || endpoint.isExplicitQosEnabled())) {
+        LOG.warn("Disabling JMSReplyTo: " + jmsReplyTo + " for destination: "+ to+ ". Use preserveMessageQos=true to force Camel to keep the JMSReplyTo on endpoint: "+ endpoint);
+        jmsReplyTo=null;
+      }
+      if (jmsReplyTo != null && jmsReplyTo instanceof String) {
+        String replyTo=normalizeDestinationName((String)jmsReplyTo);
+        jmsReplyTo=null;
+        if (endpoint.getDestinationResolver() != null) {
+          jmsReplyTo=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,endpoint.isPubSubDomain());
+        }
+        if (jmsReplyTo == null) {
+          if (endpoint.isPubSubDomain()) {
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Creating JMSReplyTo topic: " + replyTo);
+            }
+            jmsReplyTo=session.createTopic(replyTo);
+          }
+ else {
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Creating JMSReplyTo queue: " + replyTo);
+            }
+            jmsReplyTo=session.createQueue(replyTo);
+          }
+        }
+      }
+      Destination replyTo=null;
+      if (jmsReplyTo instanceof Destination) {
+        replyTo=(Destination)jmsReplyTo;
+      }
+      if (replyTo != null) {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Using JMSReplyTo destination: " + replyTo);
+        }
+        answer.setJMSReplyTo(replyTo);
+      }
+ else {
+        answer.setJMSReplyTo(null);
       }
       return answer;
     }
