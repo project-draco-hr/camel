@@ -1,0 +1,15 @@
+{
+  final RuntimeException expectedException=new RuntimeException("We simulate an exception in CXF processing");
+  DefaultCamelContext camelContext=new DefaultCamelContext();
+  CamelDestination dest=EasyMock.createMock(CamelDestination.class);
+  dest.incoming(EasyMock.isA(org.apache.camel.Exchange.class));
+  EasyMock.expectLastCall().andThrow(expectedException);
+  EasyMock.replay(dest);
+  ConsumerProcessor consumerProcessor=dest.new ConsumerProcessor();
+  DefaultExchange exchange=new DefaultExchange(camelContext);
+  consumerProcessor.process(exchange);
+  Exception exc=exchange.getException();
+  Assert.assertNotNull(exc);
+  Assert.assertEquals(expectedException,exc);
+  EasyMock.verify(dest);
+}
