@@ -17,7 +17,7 @@
   Endpoint endpoint=component.createEndpoint(getEndpointUri(settingsFile.getName(),null));
   final CountDownLatch logonLatch=new CountDownLatch(2);
   final CountDownLatch messageLatch=new CountDownLatch(2);
-  endpoint.createConsumer(new Processor(){
+  Consumer consumer=endpoint.createConsumer(new Processor(){
     public void process(    Exchange exchange) throws Exception {
       QuickfixjEventCategory eventCategory=(QuickfixjEventCategory)exchange.getIn().getHeader(QuickfixjEndpoint.EVENT_CATEGORY_KEY);
       if (eventCategory == QuickfixjEventCategory.SessionLogon) {
@@ -29,6 +29,7 @@
     }
   }
 );
+  ServiceHelper.startService(consumer);
   component.start();
   assertTrue("Session not created",logonLatch.await(5000,TimeUnit.MILLISECONDS));
   Endpoint producerEndpoint=component.createEndpoint(getEndpointUri(settingsFile.getName(),acceptorSessionID));
