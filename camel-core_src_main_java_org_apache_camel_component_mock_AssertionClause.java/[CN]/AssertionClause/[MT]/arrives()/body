@@ -1,0 +1,33 @@
+{
+  Expression next=new Expression(){
+    public <T>T evaluate(    Exchange exchange,    Class<T> type){
+      Date answer=null;
+      if (currentIndex < mock.getReceivedCounter() - 1) {
+        answer=mock.getReceivedExchanges().get(currentIndex + 1).getProperty(Exchange.RECEIVED_TIMESTAMP,Date.class);
+      }
+      return (T)answer;
+    }
+  }
+;
+  Expression previous=new Expression(){
+    public <T>T evaluate(    Exchange exchange,    Class<T> type){
+      Date answer=null;
+      if (currentIndex > 0 && mock.getReceivedCounter() > 0) {
+        answer=mock.getReceivedExchanges().get(currentIndex - 1).getProperty(Exchange.RECEIVED_TIMESTAMP,Date.class);
+      }
+      return (T)answer;
+    }
+  }
+;
+  final TimeClause clause=new TimeClause(previous,next);
+  addPredicate(new Predicate(){
+    public boolean matches(    Exchange exchange){
+      return clause.matches(exchange);
+    }
+    @Override public String toString(){
+      return "arrives " + clause.toString() + " exchange";
+    }
+  }
+);
+  return clause;
+}

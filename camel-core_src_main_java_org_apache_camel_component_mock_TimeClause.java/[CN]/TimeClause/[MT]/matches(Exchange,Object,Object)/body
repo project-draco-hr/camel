@@ -1,0 +1,44 @@
+{
+  was=null;
+  boolean answer=true;
+  if (timeTo == null) {
+    throw new IllegalArgumentException("The time period has not been set. Ensure to include the time unit as well.");
+  }
+  Date currentDate=exchange.getProperty(Exchange.RECEIVED_TIMESTAMP,Date.class);
+  Date otherDate;
+  if (beforeNext) {
+    if (leftValue != null) {
+      otherDate=(Date)leftValue;
+    }
+ else {
+      otherDate=(Date)rightValue;
+    }
+  }
+ else {
+    if (rightValue != null) {
+      otherDate=(Date)rightValue;
+    }
+ else {
+      otherDate=(Date)leftValue;
+    }
+  }
+  if (otherDate == null) {
+    return true;
+  }
+  Time current=new Time(currentDate.getTime(),TimeUnit.MILLISECONDS);
+  Time other=new Time(otherDate.getTime(),TimeUnit.MILLISECONDS);
+  long delta=Math.abs(other.toMillis() - current.toMillis());
+  was="delta: " + delta + " millis";
+  if (timeFrom != null) {
+    long from=timeFrom.toMillis();
+    answer=delta >= from;
+  }
+  if (answer) {
+    long to=timeTo.toMillis();
+    answer=delta <= to;
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Evaluated time clause [" + toString() + "] with current: "+ currentDate+ ", other: "+ otherDate+ " -> "+ answer);
+  }
+  return answer;
+}

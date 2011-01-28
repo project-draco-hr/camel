@@ -1,32 +1,9 @@
 {
   LOG.info("Asserting: " + this + " is satisfied");
-  if (expectedCount == 0) {
-    if (timeoutForEmptyEndpoints > 0) {
-      LOG.debug("Sleeping for: " + timeoutForEmptyEndpoints + " millis to check there really are no messages received");
-      Thread.sleep(timeoutForEmptyEndpoints);
-    }
-    assertEquals("Received message count",expectedCount,getReceivedCounter());
-  }
- else   if (expectedCount > 0) {
-    if (expectedCount != getReceivedCounter()) {
-      waitForCompleteLatch();
-    }
-    assertEquals("Received message count",expectedCount,getReceivedCounter());
-  }
- else   if (expectedMinimumCount > 0 && getReceivedCounter() < expectedMinimumCount) {
-    waitForCompleteLatch();
-  }
-  if (expectedMinimumCount >= 0) {
-    int receivedCounter=getReceivedCounter();
-    assertTrue("Received message count " + receivedCounter + ", expected at least "+ expectedMinimumCount,expectedMinimumCount <= receivedCounter);
-  }
-  for (  Runnable test : tests) {
-    test.run();
-  }
-  for (  Throwable failure : failures) {
-    if (failure != null) {
-      LOG.error("Caught on " + getEndpointUri() + " Exception: "+ failure,failure);
-      fail("Failed due to caught exception: " + failure);
-    }
+  doAssertIsSatisfied(timeoutForEmptyEndpoints);
+  if (assertPeriod > 0) {
+    Thread.sleep(assertPeriod);
+    LOG.info("Re-asserting: " + this + " is satisfied after "+ assertPeriod+ " millis");
+    doAssertIsSatisfied(0);
   }
 }
