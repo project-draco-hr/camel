@@ -4,15 +4,24 @@
     UnitOfWorkProcessor unitOfWorkProcessor=new UnitOfWorkProcessor(this,processor);
     Processor target=unitOfWorkProcessor;
     RoutePolicyProcessor routePolicyProcessor=null;
-    RoutePolicy policy=getRoutePolicy();
-    if (policy != null) {
-      routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,policy);
-      if (!camelContext.hasService(policy)) {
-        try {
-          camelContext.addService(policy);
+    List<RoutePolicy> policyList=getRoutePolicyList();
+    if (!policyList.isEmpty()) {
+      boolean firstPolicy=true;
+      for (      RoutePolicy policy : policyList) {
+        if (firstPolicy) {
+          routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,policy);
+          firstPolicy=false;
         }
- catch (        Exception e) {
-          throw ObjectHelper.wrapRuntimeCamelException(e);
+ else {
+          routePolicyProcessor=new RoutePolicyProcessor(routePolicyProcessor,policy);
+        }
+        if (!camelContext.hasService(policy)) {
+          try {
+            camelContext.addService(policy);
+          }
+ catch (          Exception e) {
+            throw ObjectHelper.wrapRuntimeCamelException(e);
+          }
         }
       }
       target=routePolicyProcessor;
@@ -30,8 +39,10 @@
     if (routePolicyProcessor != null) {
       routePolicyProcessor.setRoute(edcr);
     }
-    if (policy != null) {
-      policy.onInit(edcr);
+    if (!policyList.isEmpty()) {
+      for (      RoutePolicy policy : policyList) {
+        policy.onInit(edcr);
+      }
     }
     routes.add(edcr);
   }
