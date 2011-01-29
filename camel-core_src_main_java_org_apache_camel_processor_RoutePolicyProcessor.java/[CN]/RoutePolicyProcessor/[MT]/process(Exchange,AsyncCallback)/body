@@ -1,18 +1,34 @@
 {
-  if (isRoutePolicyRunAllowed()) {
-    routePolicy.onExchangeBegin(route,exchange);
-    exchange.addOnCompletion(new SynchronizationAdapter(){
-      @Override public void onDone(      Exchange exchange){
-        if (isCamelStopping(exchange.getContext())) {
-          return;
-        }
-        routePolicy.onExchangeDone(route,exchange);
-      }
-      @Override public String toString(){
-        return "RoutePolicy";
+  for (  RoutePolicy policy : routePolicies) {
+    try {
+      if (isRoutePolicyRunAllowed(policy)) {
+        policy.onExchangeBegin(route,exchange);
       }
     }
-);
+ catch (    Exception e) {
+      LOG.warn("Error occurred during onExchangeBegin on RoutePolicy: " + policy + ". This exception will be ignored",e);
+    }
   }
+  exchange.addOnCompletion(new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      if (isCamelStopping(exchange.getContext())) {
+        return;
+      }
+      for (      RoutePolicy policy : routePolicies) {
+        try {
+          if (isRoutePolicyRunAllowed(policy)) {
+            policy.onExchangeDone(route,exchange);
+          }
+        }
+ catch (        Exception e) {
+          LOG.warn("Error occurred during onExchangeDone on RoutePolicy: " + policy + ". This exception will be ignored",e);
+        }
+      }
+    }
+    @Override public String toString(){
+      return "RoutePolicyOnCompletion";
+    }
+  }
+);
   return super.process(exchange,callback);
 }

@@ -6,7 +6,7 @@
       routeContext.setTracing(isTrace);
       if (isTrace) {
         if (log.isDebugEnabled()) {
-          log.debug("Tracing is enabled on route: " + this);
+          log.debug("Tracing is enabled on route: " + getId());
         }
       }
     }
@@ -17,7 +17,7 @@
       routeContext.setStreamCaching(isStreamCache);
       if (isStreamCache) {
         if (log.isDebugEnabled()) {
-          log.debug("StreamCaching is enabled on route: " + this);
+          log.debug("StreamCaching is enabled on route: " + getId());
         }
         if (StreamCaching.getStreamCaching(camelContext) == null) {
           addInterceptStrategy(new StreamCaching());
@@ -31,7 +31,7 @@
       routeContext.setHandleFault(isHandleFault);
       if (isHandleFault) {
         if (log.isDebugEnabled()) {
-          log.debug("HandleFault is enabled on route: " + this);
+          log.debug("HandleFault is enabled on route: " + getId());
         }
         if (HandleFault.getHandleFault(camelContext) == null) {
           addInterceptStrategy(new HandleFault());
@@ -45,29 +45,32 @@
       routeContext.setDelayer(delayer);
       if (delayer > 0) {
         if (log.isDebugEnabled()) {
-          log.debug("Delayer is enabled with: " + delayer + " ms. on route: "+ this);
+          log.debug("Delayer is enabled with: " + delayer + " ms. on route: "+ getId());
         }
         addInterceptStrategy(new Delayer(delayer));
       }
  else {
         if (log.isDebugEnabled()) {
-          log.debug("Delayer is disabled on route: " + this);
+          log.debug("Delayer is disabled on route: " + getId());
         }
       }
     }
   }
-  if (routePolicy != null) {
-    if (log.isDebugEnabled()) {
-      log.debug("RoutePolicy is enabled: " + routePolicy + " on route: "+ this);
+  if (routePolicies != null && !routePolicies.isEmpty()) {
+    for (    RoutePolicy policy : routePolicies) {
+      if (log.isDebugEnabled()) {
+        log.debug("RoutePolicy is enabled: " + policy + " on route: "+ getId());
+      }
+      routeContext.getRoutePolicyList().add(policy);
     }
-    routeContext.getRoutePolicyList().add(getRoutePolicy());
   }
- else   if (routePolicyRef != null) {
+  if (routePolicyRef != null) {
     StringTokenizer policyTokens=new StringTokenizer(routePolicyRef,",");
     while (policyTokens.hasMoreTokens()) {
-      RoutePolicy policy=CamelContextHelper.mandatoryLookup(camelContext,policyTokens.nextToken().trim(),RoutePolicy.class);
+      String ref=policyTokens.nextToken().trim();
+      RoutePolicy policy=CamelContextHelper.mandatoryLookup(camelContext,ref,RoutePolicy.class);
       if (log.isDebugEnabled()) {
-        log.debug("RoutePolicy is enabled: " + policy + " on route: "+ this);
+        log.debug("RoutePolicy is enabled: " + policy + " on route: "+ getId());
       }
       routeContext.getRoutePolicyList().add(policy);
     }
@@ -75,19 +78,19 @@
   Boolean isAutoStartup=CamelContextHelper.parseBoolean(camelContext,getAutoStartup());
   if (isAutoStartup != null) {
     if (log.isDebugEnabled()) {
-      log.debug("Using AutoStartup " + isAutoStartup + " on route: "+ this);
+      log.debug("Using AutoStartup " + isAutoStartup + " on route: "+ getId());
     }
     routeContext.setAutoStartup(isAutoStartup);
   }
   if (shutdownRoute != null) {
     if (log.isDebugEnabled()) {
-      log.debug("Using ShutdownRoute " + getShutdownRoute() + " on route: "+ this);
+      log.debug("Using ShutdownRoute " + getShutdownRoute() + " on route: "+ getId());
     }
     routeContext.setShutdownRoute(getShutdownRoute());
   }
   if (shutdownRunningTask != null) {
     if (log.isDebugEnabled()) {
-      log.debug("Using ShutdownRunningTask " + getShutdownRunningTask() + " on route: "+ this);
+      log.debug("Using ShutdownRunningTask " + getShutdownRunningTask() + " on route: "+ getId());
     }
     routeContext.setShutdownRunningTask(getShutdownRunningTask());
   }

@@ -1,30 +1,23 @@
 {
   if (!eventDrivenProcessors.isEmpty()) {
-    Processor processor=Pipeline.newInstance(getCamelContext(),eventDrivenProcessors);
-    UnitOfWorkProcessor unitOfWorkProcessor=new UnitOfWorkProcessor(this,processor);
-    Processor target=unitOfWorkProcessor;
+    Processor target=Pipeline.newInstance(getCamelContext(),eventDrivenProcessors);
+    UnitOfWorkProcessor unitOfWorkProcessor=new UnitOfWorkProcessor(this,target);
     RoutePolicyProcessor routePolicyProcessor=null;
-    List<RoutePolicy> policyList=getRoutePolicyList();
-    if (!policyList.isEmpty()) {
-      boolean firstPolicy=true;
-      for (      RoutePolicy policy : policyList) {
-        if (firstPolicy) {
-          routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,policy);
-          firstPolicy=false;
+    List<RoutePolicy> routePolicyList=getRoutePolicyList();
+    if (routePolicyList != null && !routePolicyList.isEmpty()) {
+      routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,routePolicyList);
+      if (!camelContext.hasService(routePolicyProcessor)) {
+        try {
+          camelContext.addService(routePolicyProcessor);
         }
- else {
-          routePolicyProcessor=new RoutePolicyProcessor(routePolicyProcessor,policy);
-        }
-        if (!camelContext.hasService(policy)) {
-          try {
-            camelContext.addService(policy);
-          }
- catch (          Exception e) {
-            throw ObjectHelper.wrapRuntimeCamelException(e);
-          }
+ catch (        Exception e) {
+          throw ObjectHelper.wrapRuntimeCamelException(e);
         }
       }
       target=routePolicyProcessor;
+    }
+ else {
+      target=unitOfWorkProcessor;
     }
     InstrumentationProcessor wrapper=new InstrumentationProcessor();
     wrapper.setType("route");
@@ -39,8 +32,8 @@
     if (routePolicyProcessor != null) {
       routePolicyProcessor.setRoute(edcr);
     }
-    if (!policyList.isEmpty()) {
-      for (      RoutePolicy policy : policyList) {
+    if (routePolicyList != null && !routePolicyList.isEmpty()) {
+      for (      RoutePolicy policy : routePolicyList) {
         policy.onInit(edcr);
       }
     }
