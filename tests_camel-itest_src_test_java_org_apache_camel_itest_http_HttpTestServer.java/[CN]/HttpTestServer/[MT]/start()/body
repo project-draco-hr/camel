@@ -2,11 +2,18 @@
   if (servicedSocket != null) {
     throw new IllegalStateException(this.toString() + " already running");
   }
-  ServerSocket ssock=new ServerSocket();
+  ServerSocket ssock;
+  if (sslcontext != null) {
+    SSLServerSocketFactory sf=sslcontext.getServerSocketFactory();
+    ssock=sf.createServerSocket();
+  }
+ else {
+    ssock=new ServerSocket();
+  }
   ssock.setReuseAddress(true);
   ssock.bind(TEST_SERVER_ADDR);
   servicedSocket=ssock;
-  listenerThread=new Thread(new RequestListener());
+  listenerThread=new ListenerThread();
   listenerThread.setDaemon(false);
   listenerThread.start();
 }

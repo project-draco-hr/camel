@@ -2,30 +2,11 @@
   HttpClientConfigurer configurer=resolveAndRemoveReferenceParameter(parameters,"httpClientConfigurerRef",HttpClientConfigurer.class);
   if (configurer == null) {
     configurer=resolveAndRemoveReferenceParameter(parameters,"httpClientConfigurer",HttpClientConfigurer.class);
-  }
-  if (configurer == null) {
-    configurer=getHttpClientConfigurer();
-  }
-  String username=getAndRemoveParameter(parameters,"username",String.class);
-  String password=getAndRemoveParameter(parameters,"password",String.class);
-  String domain=getAndRemoveParameter(parameters,"domain",String.class);
-  String host=getAndRemoveParameter(parameters,"host",String.class);
-  if (username != null && password != null) {
-    configurer=CompositeHttpConfigurer.combineConfigurers(configurer,new BasicAuthenticationHttpClientConfigurer(username,password,domain,host));
-  }
-  String proxyHost=getAndRemoveParameter(parameters,"proxyHost",String.class);
-  Integer proxyPort=getAndRemoveParameter(parameters,"proxyPort",Integer.class);
-  if (proxyHost != null && proxyPort != null) {
-    String proxyUsername=getAndRemoveParameter(parameters,"proxyUsername",String.class);
-    String proxyPassword=getAndRemoveParameter(parameters,"proxyPassword",String.class);
-    String proxyDomain=getAndRemoveParameter(parameters,"proxyDomain",String.class);
-    String proxyNtHost=getAndRemoveParameter(parameters,"proxyNtHost",String.class);
-    if (proxyUsername != null && proxyPassword != null) {
-      configurer=CompositeHttpConfigurer.combineConfigurers(configurer,new ProxyHttpClientConfigurer(proxyHost,proxyPort,proxyUsername,proxyPassword,proxyDomain,proxyNtHost));
-    }
- else {
-      configurer=CompositeHttpConfigurer.combineConfigurers(configurer,new ProxyHttpClientConfigurer(proxyHost,proxyPort));
+    if (configurer == null) {
+      configurer=getHttpClientConfigurer();
     }
   }
+  configurer=configureBasicAuthentication(parameters,configurer);
+  configurer=configureHttpProxy(parameters,configurer);
   return configurer;
 }

@@ -5,16 +5,16 @@
   }
   Map<String,Object> httpClientParameters=new HashMap<String,Object>(parameters);
   HttpParams clientParams=configureHttpParams(parameters);
-  HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
-  if (binding == null) {
-    binding=resolveAndRemoveReferenceParameter(parameters,"httpBinding",HttpBinding.class);
-  }
-  Boolean throwExceptionOnFailure=getAndRemoveParameter(parameters,"throwExceptionOnFailure",Boolean.class);
-  Boolean transferException=getAndRemoveParameter(parameters,"transferException",Boolean.class);
-  Boolean bridgeEndpoint=getAndRemoveParameter(parameters,"bridgeEndpoint",Boolean.class);
-  Boolean matchOnUriPrefix=getAndRemoveParameter(parameters,"matchOnUriPrefix",Boolean.class);
-  Boolean disableStreamCache=getAndRemoveParameter(parameters,"disableStreamCache",Boolean.class);
   validateParameters(uri,parameters,"httpClient.");
+  HttpBinding httpBinding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
+  if (httpBinding == null) {
+    httpBinding=resolveAndRemoveReferenceParameter(parameters,"httpBinding",HttpBinding.class);
+  }
+  HttpClientConfigurer httpClientConfigurer=resolveAndRemoveReferenceParameter(parameters,"httpClientConfigurerRef",HttpClientConfigurer.class);
+  if (httpClientConfigurer == null) {
+    httpClientConfigurer=resolveAndRemoveReferenceParameter(parameters,"httpClientConfigurer",HttpClientConfigurer.class);
+  }
+  x509HostnameVerifier=resolveAndRemoveReferenceParameter(parameters,"x509HostnameVerifier",X509HostnameVerifier.class);
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
   URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
@@ -27,30 +27,16 @@
   }
   boolean secure=isSecureConnection(uri);
   int port=getPort(httpUri);
-  registerPort(secure,port);
+  registerPort(secure,x509HostnameVerifier,port);
   HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,httpUri,clientParams,clientConnectionManager,configurer);
-  setEndpointHeaderFilterStrategy(endpoint);
-  if (binding == null) {
-    binding=getHttpBinding();
-  }
-  if (binding != null) {
-    endpoint.setBinding(binding);
-  }
-  if (throwExceptionOnFailure != null) {
-    endpoint.setThrowExceptionOnFailure(throwExceptionOnFailure);
-  }
-  if (transferException != null) {
-    endpoint.setTransferException(transferException);
-  }
-  if (bridgeEndpoint != null) {
-    endpoint.setBridgeEndpoint(bridgeEndpoint);
-  }
-  if (matchOnUriPrefix != null) {
-    endpoint.setMatchOnUriPrefix(matchOnUriPrefix);
-  }
-  if (disableStreamCache != null) {
-    endpoint.setDisableStreamCache(disableStreamCache);
-  }
   setProperties(endpoint,parameters);
+  setEndpointHeaderFilterStrategy(endpoint);
+  endpoint.setBinding(getHttpBinding());
+  if (httpBinding != null) {
+    endpoint.setHttpBinding(httpBinding);
+  }
+  if (httpClientConfigurer != null) {
+    endpoint.setHttpClientConfigurer(httpClientConfigurer);
+  }
   return endpoint;
 }

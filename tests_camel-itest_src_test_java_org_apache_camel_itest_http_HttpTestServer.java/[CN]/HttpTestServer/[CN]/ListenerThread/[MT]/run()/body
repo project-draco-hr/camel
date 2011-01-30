@@ -1,0 +1,24 @@
+{
+  try {
+    while (!interrupted()) {
+      Socket socket=servicedSocket.accept();
+      acceptedConnections.incrementAndGet();
+      DefaultHttpServerConnection conn=new DefaultHttpServerConnection();
+      conn.bind(socket,httpservice.getParams());
+      Worker worker=new Worker(conn);
+      workers.add(worker);
+      worker.setDaemon(true);
+      worker.start();
+    }
+  }
+ catch (  Exception ex) {
+    this.exception=ex;
+  }
+ finally {
+    try {
+      servicedSocket.close();
+    }
+ catch (    IOException ignore) {
+    }
+  }
+}
