@@ -1,0 +1,37 @@
+{
+  if (type.isAssignableFrom(CxfPayload.class)) {
+    TypeConverter tc=registry.lookup(NodeList.class,value.getClass());
+    if (tc != null) {
+      NodeList nodeList=tc.convertTo(NodeList.class,exchange,value);
+      return (T)nodeListToCxfPayload(nodeList,exchange);
+    }
+    tc=registry.lookup(Document.class,value.getClass());
+    if (tc != null) {
+      Document document=tc.convertTo(Document.class,exchange,value);
+      return (T)documentToCxfPayload(document,exchange);
+    }
+    CxfPayload<?> p=null;
+    p=convertVia(InputStream.class,exchange,value,registry);
+    if (p != null) {
+      return (T)p;
+    }
+    p=convertVia(String.class,exchange,value,registry);
+    if (p != null) {
+      return (T)p;
+    }
+  }
+  if (CxfPayload.class.isAssignableFrom(value.getClass())) {
+    TypeConverter tc=registry.lookup(type,NodeList.class);
+    if (tc != null) {
+      return tc.convertTo(type,cxfPayloadToNodeList((CxfPayload<?>)value,exchange));
+    }
+    tc=registry.lookup(type,Node.class);
+    if (tc != null) {
+      NodeList nodeList=cxfPayloadToNodeList((CxfPayload<?>)value,exchange);
+      if (nodeList.getLength() > 0) {
+        return tc.convertTo(type,nodeList.item(0));
+      }
+    }
+  }
+  return null;
+}
