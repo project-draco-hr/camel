@@ -1,36 +1,35 @@
 {
-  String id=ObjectHelper.getIdentityHashCode(transactionTemplate);
   try {
-    exchange.getUnitOfWork().beginTransactedBy(transactionTemplate);
+    exchange.getUnitOfWork().beginTransactedBy(transactionKey);
     if (log.isDebugEnabled()) {
-      log.debug("Transaction begin (" + id + ") for ExchangeId: "+ exchange.getExchangeId());
+      log.debug("Transaction begin (" + transactionKey + ") for ExchangeId: "+ exchange.getExchangeId());
     }
     doInTransactionTemplate(exchange);
     if (log.isDebugEnabled()) {
-      log.debug("Transaction commit (" + id + ") for ExchangeId: "+ exchange.getExchangeId());
+      log.debug("Transaction commit (" + transactionKey + ") for ExchangeId: "+ exchange.getExchangeId());
     }
   }
  catch (  TransactionRollbackException e) {
     if (log.isDebugEnabled()) {
-      log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnly");
+      log.debug("Transaction rollback (" + transactionKey + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnly");
     }
   }
 catch (  Exception e) {
-    log.warn("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exception: "+ e.getMessage());
+    log.warn("Transaction rollback (" + transactionKey + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exception: "+ e.getMessage());
     exchange.setException(e);
   }
  finally {
-    exchange.getUnitOfWork().endTransactedBy(transactionTemplate);
+    exchange.getUnitOfWork().endTransactedBy(transactionKey);
   }
   Boolean onlyLast=(Boolean)exchange.removeProperty(Exchange.ROLLBACK_ONLY_LAST);
   if (onlyLast != null && onlyLast) {
     if (log.isDebugEnabled()) {
       Exception cause=exchange.getException();
       if (cause != null) {
-        log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnlyLast and due exception: ",cause);
+        log.debug("Transaction rollback (" + transactionKey + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnlyLast and due exception: ",cause);
       }
  else {
-        log.debug("Transaction rollback (" + id + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnlyLast");
+        log.debug("Transaction rollback (" + transactionKey + ") for ExchangeId: "+ exchange.getExchangeId()+ " due exchange was marked for rollbackOnlyLast");
       }
     }
     exchange.setException(null);

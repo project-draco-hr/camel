@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.setUseMDCLogging(true);
+      from("direct:a").routeId("route-a").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("route-a",MDC.get("routeId"));
+          assertEquals(exchange.getExchangeId(),MDC.get("exchangeId"));
+        }
+      }
+).to("log:foo").to("direct:b");
+      from("direct:b").routeId("route-b").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("route-b",MDC.get("routeId"));
+          assertEquals(exchange.getExchangeId(),MDC.get("exchangeId"));
+        }
+      }
+).to("log:bar").to("mock:result");
+    }
+  }
+;
+}

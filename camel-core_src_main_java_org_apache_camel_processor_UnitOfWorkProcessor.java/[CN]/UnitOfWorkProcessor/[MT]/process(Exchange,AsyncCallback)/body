@@ -3,7 +3,14 @@
     exchange.setFromRouteId(routeId);
   }
   if (exchange.getUnitOfWork() == null) {
-    final DefaultUnitOfWork uow=new DefaultUnitOfWork(exchange);
+    UnitOfWork unitOfWork;
+    if (exchange.getContext().isUseMDCLogging()) {
+      unitOfWork=new MDCUnitOfWork(exchange);
+    }
+ else {
+      unitOfWork=new DefaultUnitOfWork(exchange);
+    }
+    final UnitOfWork uow=unitOfWork;
     exchange.setUnitOfWork(uow);
     try {
       uow.start();
