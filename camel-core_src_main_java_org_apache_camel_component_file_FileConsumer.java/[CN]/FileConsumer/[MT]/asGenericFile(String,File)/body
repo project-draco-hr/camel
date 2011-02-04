@@ -8,24 +8,19 @@
   answer.setAbsolute(FileUtil.isAbsolute(file));
   answer.setAbsoluteFilePath(file.getAbsolutePath());
   answer.setLastModified(file.lastModified());
-  if (answer.isAbsolute()) {
-    answer.setRelativeFilePath(file.getAbsolutePath());
+  File path;
+  String endpointNormalized=FileUtil.normalizePath(endpointPath);
+  if (file.getPath().startsWith(endpointNormalized)) {
+    path=new File(ObjectHelper.after(file.getPath(),endpointNormalized + File.separator));
   }
  else {
-    File path;
-    String endpointNormalized=FileUtil.normalizePath(endpointPath);
-    if (file.getPath().startsWith(endpointNormalized)) {
-      path=new File(ObjectHelper.after(file.getPath(),endpointNormalized + File.separator));
-    }
+    path=new File(file.getPath());
+  }
+  if (path.getParent() != null) {
+    answer.setRelativeFilePath(path.getParent() + File.separator + file.getName());
+  }
  else {
-      path=new File(file.getPath());
-    }
-    if (path.getParent() != null) {
-      answer.setRelativeFilePath(path.getParent() + File.separator + file.getName());
-    }
- else {
-      answer.setRelativeFilePath(path.getName());
-    }
+    answer.setRelativeFilePath(path.getName());
   }
   answer.setFileName(answer.getRelativeFilePath());
   answer.setBody(file);
