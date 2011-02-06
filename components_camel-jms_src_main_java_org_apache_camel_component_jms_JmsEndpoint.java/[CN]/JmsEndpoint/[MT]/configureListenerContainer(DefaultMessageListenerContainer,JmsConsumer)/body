@@ -15,4 +15,15 @@
     }
   }
   listenerContainer.setPubSubDomain(pubSubDomain);
+  if (configuration.getTaskExecutor() != null) {
+    if (log.isDebugEnabled()) {
+      log.debug("Using custom TaskExecutor: " + configuration.getTaskExecutor() + " on listener container: "+ listenerContainer);
+    }
+    listenerContainer.setTaskExecutor(configuration.getTaskExecutor());
+  }
+ else {
+    String name="JmsConsumer[" + getEndpointConfiguredDestinationName() + "]";
+    ExecutorService executor=getCamelContext().getExecutorServiceStrategy().newCachedThreadPool(consumer,name);
+    listenerContainer.setTaskExecutor(executor);
+  }
 }
