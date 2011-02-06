@@ -6,13 +6,15 @@
  else {
     pattern=ExchangePattern.InOut;
   }
-  getLogger().log(Level.FINE,"send the message to endpoint" + targetCamelEndpointUri);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("send the message to endpoint" + targetCamelEndpointUri);
+  }
   org.apache.camel.Exchange exchange=producer.createExchange(pattern);
   exchange.setProperty(Exchange.TO_ENDPOINT,targetCamelEndpointUri);
   CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
   CxfHeaderHelper.propagateCxfToCamel(headerFilterStrategy,outMessage,exchange.getIn().getHeaders(),exchange);
   exchange.getIn().setBody(outputStream.getBytes());
-  getLogger().log(Level.FINE,"template sending request: ",exchange.getIn());
+  LOG.debug("template sending request: ",exchange.getIn());
   Exception exception;
   try {
     producer.process(exchange);
