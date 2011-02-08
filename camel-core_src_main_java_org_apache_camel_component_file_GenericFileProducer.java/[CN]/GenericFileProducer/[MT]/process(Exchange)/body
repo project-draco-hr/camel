@@ -1,6 +1,21 @@
 {
   Exchange fileExchange=endpoint.createExchange(exchange);
   endpoint.configureExchange(fileExchange);
-  processExchange(fileExchange);
-  ExchangeHelper.copyResults(exchange,fileExchange);
+  String target=createFileName(exchange);
+  Lock lock;
+synchronized (locks) {
+    lock=locks.get(target);
+    if (lock == null) {
+      lock=new ReentrantLock();
+      locks.put(target,lock);
+    }
+  }
+  lock.lock();
+  try {
+    processExchange(fileExchange,target);
+    ExchangeHelper.copyResults(exchange,fileExchange);
+  }
+  finally {
+    lock.unlock();
+  }
 }
