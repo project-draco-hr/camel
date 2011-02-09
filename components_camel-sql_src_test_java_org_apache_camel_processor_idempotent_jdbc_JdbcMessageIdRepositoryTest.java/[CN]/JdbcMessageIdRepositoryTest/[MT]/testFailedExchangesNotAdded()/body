@@ -1,0 +1,31 @@
+{
+  RouteBuilder interceptor=new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      interceptSendToEndpoint("mock:result").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("messageId",String.class);
+          if (id.equals("2")) {
+            throw new IllegalArgumentException("Damn I cannot handle id 2");
+          }
+        }
+      }
+);
+    }
+  }
+;
+  RouteDefinition routeDefinition=context.getRouteDefinition("JdbcMessageIdRepositoryTest");
+  routeDefinition.adviceWith(context,interceptor);
+  errorEndpoint.expectedMessageCount(2);
+  resultEndpoint.expectedBodiesReceived("one","three");
+  sendMessage("1","one");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  sendMessage("3","three");
+  assertMockEndpointsSatisfied();
+  List<String> receivedMessageIds=jdbcTemplate.queryForList(SELECT_ALL_STRING,String.class,PROCESSOR_NAME);
+  assertEquals(2,receivedMessageIds.size());
+  assertTrue("Should contain message 1",receivedMessageIds.contains("1"));
+  assertTrue("Should contain message 3",receivedMessageIds.contains("3"));
+}
