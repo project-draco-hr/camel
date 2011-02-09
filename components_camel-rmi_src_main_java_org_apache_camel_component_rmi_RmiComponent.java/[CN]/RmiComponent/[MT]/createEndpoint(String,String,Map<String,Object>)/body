@@ -1,3 +1,16 @@
 {
-  return new RmiEndpoint(uri,this);
+  RmiEndpoint rmi=new RmiEndpoint(uri,this);
+  List<Class<?>> classes=new ArrayList<Class<?>>();
+  Iterator it=getAndRemoveParameter(parameters,"remoteInterfaces",Iterator.class);
+  while (it != null && it.hasNext()) {
+    Object next=it.next();
+    Class clazz=getCamelContext().getTypeConverter().mandatoryConvertTo(Class.class,next);
+    classes.add(clazz);
+  }
+  if (!classes.isEmpty()) {
+    List<Class<?>> interfaces=CastUtils.cast(classes);
+    rmi.setRemoteInterfaces(interfaces);
+  }
+  setProperties(rmi,parameters);
+  return rmi;
 }
