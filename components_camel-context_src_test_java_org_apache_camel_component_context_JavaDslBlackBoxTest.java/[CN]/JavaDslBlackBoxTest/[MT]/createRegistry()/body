@@ -1,0 +1,14 @@
+{
+  JndiRegistry registry=super.createRegistry();
+  DefaultCamelContext blackBox=new DefaultCamelContext(registry);
+  blackBox.setName("blackBox");
+  blackBox.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:purchaseOrder").setHeader("received").constant("true").to("direct:invoice");
+    }
+  }
+);
+  blackBox.start();
+  registry.bind("accounts",blackBox);
+  return registry;
+}
