@@ -1,15 +1,26 @@
 {
-  if (routeService.getStatus().isSuspended()) {
-    resumeRouteService(routeService);
+  boolean alreadyStartingRoutes=isStartingRoutes();
+  if (!alreadyStartingRoutes) {
+    isStartingRoutes.set(true);
   }
+  try {
+    if (routeService.getStatus().isSuspended()) {
+      resumeRouteService(routeService);
+    }
  else {
-    routeServices.put(routeService.getId(),routeService);
-    if (shouldStartRoutes()) {
-      safelyStartRouteServices(true,true,true,false,addingRoutes,routeService);
-      boolean autoStartup=routeService.getRouteDefinition().isAutoStartup(this);
-      if (!addingRoutes || autoStartup) {
-        routeService.start();
+      routeServices.put(routeService.getId(),routeService);
+      if (shouldStartRoutes()) {
+        safelyStartRouteServices(true,true,true,false,addingRoutes,routeService);
+        boolean autoStartup=routeService.getRouteDefinition().isAutoStartup(this);
+        if (!addingRoutes || autoStartup) {
+          routeService.start();
+        }
       }
+    }
+  }
+  finally {
+    if (!alreadyStartingRoutes) {
+      isStartingRoutes.remove();
     }
   }
 }
