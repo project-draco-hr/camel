@@ -1,0 +1,30 @@
+{
+  SqlSessionFactory client=endpoint.getSqlSessionFactory();
+  SqlSession session=client.openSession();
+  try {
+    Object result;
+    Object in=exchange.getIn().getBody();
+    if (in != null) {
+      Iterator iter=ObjectHelper.createIterator(in);
+      while (iter.hasNext()) {
+        Object value=iter.next();
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Inserting: " + value + " using statement: "+ statement);
+        }
+        result=session.insert(statement,value);
+        doProcessResult(exchange,result);
+      }
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Inserting using statement: " + statement);
+      }
+      result=session.insert(statement);
+      doProcessResult(exchange,result);
+    }
+  }
+  finally {
+    session.commit();
+    session.close();
+  }
+}
