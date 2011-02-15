@@ -1,8 +1,8 @@
 {
   if (reconnectLock.tryLock()) {
-    new Thread(){
-      @Override public void run(){
-        try {
+    try {
+      Runnable r=new Runnable(){
+        public void run(){
           boolean reconnected=false;
           LOG.info("Schedule reconnect after " + initialReconnectDelay + " millis");
           try {
@@ -31,11 +31,16 @@
             LOG.info("Reconnected to " + getEndpoint().getConnectionString());
           }
         }
-  finally {
-          reconnectLock.unlock();
-        }
       }
+;
+      Thread t=new Thread(r);
+      t.start();
+      t.join();
     }
-.start();
+ catch (    InterruptedException e) {
+    }
+ finally {
+      reconnectLock.unlock();
+    }
   }
 }

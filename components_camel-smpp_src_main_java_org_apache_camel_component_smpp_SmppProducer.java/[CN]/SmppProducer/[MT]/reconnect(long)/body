@@ -1,8 +1,9 @@
 {
   if (reconnectLock.tryLock()) {
-    new Thread(){
-      @Override public void run(){
-        try {
+    try {
+      Runnable r=new Runnable(){
+        public void run(){
+          boolean reconnected=false;
           LOG.info("Schedule reconnect after " + initialReconnectDelay + " millis");
           try {
             Thread.sleep(initialReconnectDelay);
@@ -14,6 +15,7 @@
             try {
               LOG.info("Trying to reconnect to " + getEndpoint().getConnectionString() + " - attempt #"+ (++attempt)+ "...");
               session=createSession();
+              reconnected=true;
             }
  catch (            IOException e) {
               LOG.info("Failed to reconnect to " + getEndpoint().getConnectionString());
@@ -25,13 +27,20 @@
               }
             }
           }
-          LOG.info("Reconnected to " + getEndpoint().getConnectionString());
-        }
-  finally {
-          reconnectLock.unlock();
+          if (reconnected) {
+            LOG.info("Reconnected to " + getEndpoint().getConnectionString());
+          }
         }
       }
+;
+      Thread t=new Thread(r);
+      t.start();
+      t.join();
     }
-.start();
+ catch (    InterruptedException e) {
+    }
+ finally {
+      reconnectLock.unlock();
+    }
   }
 }
