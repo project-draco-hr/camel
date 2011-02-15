@@ -1,0 +1,29 @@
+{
+  shutdownRunningTask=null;
+  pendingExchanges=0;
+  MyBatisEndpoint endpoint=getEndpoint();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Polling: " + endpoint);
+  }
+  List<Object> data=CastUtils.cast(endpoint.getProcessingStrategy().poll(this,getEndpoint()));
+  Queue<DataHolder> answer=new LinkedList<DataHolder>();
+  if (useIterator) {
+    for (    Object item : data) {
+      Exchange exchange=createExchange(item);
+      DataHolder holder=new DataHolder();
+      holder.exchange=exchange;
+      holder.data=item;
+      answer.add(holder);
+    }
+  }
+ else {
+    if (!data.isEmpty() || routeEmptyResultSet) {
+      Exchange exchange=createExchange(data);
+      DataHolder holder=new DataHolder();
+      holder.exchange=exchange;
+      holder.data=data;
+      answer.add(holder);
+    }
+  }
+  return processBatch(CastUtils.cast(answer));
+}

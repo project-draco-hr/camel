@@ -1,0 +1,25 @@
+{
+  MockEndpoint endpoint=getMockEndpoint("mock:results");
+  endpoint.expectedMinimumMessageCount(2);
+  Account account=new Account();
+  account.setId(1);
+  account.setFirstName("Bob");
+  account.setLastName("Denver");
+  account.setEmailAddress("TryGuessingGilligan@gmail.com");
+  template.sendBody("direct:start",account);
+  account=new Account();
+  account.setId(2);
+  account.setFirstName("Alan");
+  account.setLastName("Hale");
+  account.setEmailAddress("TryGuessingSkipper@gmail.com");
+  template.sendBody("direct:start",account);
+  assertMockEndpointsSatisfied();
+  Thread.sleep(1000);
+  List body=template.requestBody("mybatis:selectProcessedAccounts?statementType=SelectList",null,List.class);
+  assertEquals("Wrong size: " + body,2,body.size());
+  Account actual=assertIsInstanceOf(Account.class,body.get(0));
+  assertEquals("Account.getFirstName()","Bob",actual.getFirstName());
+  assertEquals("Account.getLastName()","Denver",actual.getLastName());
+  body=template.requestBody("mybatis:selectUnprocessedAccounts?statementType=SelectList",null,List.class);
+  assertEquals("Wrong size: " + body,0,body.size());
+}
