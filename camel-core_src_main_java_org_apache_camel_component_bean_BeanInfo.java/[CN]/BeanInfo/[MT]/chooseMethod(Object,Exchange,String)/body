@@ -1,31 +1,34 @@
 {
+  final List<MethodInfo> localOperationsWithBody=new ArrayList<MethodInfo>(operationsWithBody);
+  final List<MethodInfo> localOperationsWithCustomAnnotation=new ArrayList<MethodInfo>(operationsWithCustomAnnotation);
+  final List<MethodInfo> localOperationsWithHandlerAnnotation=new ArrayList<MethodInfo>(operationsWithHandlerAnnotation);
   if (name != null) {
-    removeNonMatchingMethods(operationsWithHandlerAnnotation,name);
-    removeNonMatchingMethods(operationsWithCustomAnnotation,name);
-    removeNonMatchingMethods(operationsWithBody,name);
+    removeNonMatchingMethods(localOperationsWithHandlerAnnotation,name);
+    removeNonMatchingMethods(localOperationsWithCustomAnnotation,name);
+    removeNonMatchingMethods(localOperationsWithBody,name);
   }
  else {
-    removeAllSetterOrGetterMethods(operationsWithHandlerAnnotation);
-    removeAllSetterOrGetterMethods(operationsWithCustomAnnotation);
-    removeAllSetterOrGetterMethods(operationsWithBody);
+    removeAllSetterOrGetterMethods(localOperationsWithHandlerAnnotation);
+    removeAllSetterOrGetterMethods(localOperationsWithCustomAnnotation);
+    removeAllSetterOrGetterMethods(localOperationsWithBody);
   }
-  if (operationsWithHandlerAnnotation.size() > 1) {
-    throw new AmbiguousMethodCallException(exchange,operationsWithHandlerAnnotation);
+  if (localOperationsWithHandlerAnnotation.size() > 1) {
+    throw new AmbiguousMethodCallException(exchange,localOperationsWithHandlerAnnotation);
   }
-  if (operationsWithHandlerAnnotation.size() == 1) {
-    return operationsWithHandlerAnnotation.get(0);
+  if (localOperationsWithHandlerAnnotation.size() == 1) {
+    return localOperationsWithHandlerAnnotation.get(0);
   }
- else   if (operationsWithCustomAnnotation.size() == 1) {
-    return operationsWithCustomAnnotation.get(0);
+ else   if (localOperationsWithCustomAnnotation.size() == 1) {
+    return localOperationsWithCustomAnnotation.get(0);
   }
- else   if (operationsWithBody.size() == 1) {
-    return operationsWithBody.get(0);
+ else   if (localOperationsWithBody.size() == 1) {
+    return localOperationsWithBody.get(0);
   }
   Collection<MethodInfo> possibleOperations=new ArrayList<MethodInfo>();
-  possibleOperations.addAll(operationsWithBody);
-  possibleOperations.addAll(operationsWithCustomAnnotation);
+  possibleOperations.addAll(localOperationsWithBody);
+  possibleOperations.addAll(localOperationsWithCustomAnnotation);
   if (!possibleOperations.isEmpty()) {
-    MethodInfo answer=chooseMethodWithMatchingBody(exchange,possibleOperations);
+    MethodInfo answer=chooseMethodWithMatchingBody(exchange,possibleOperations,localOperationsWithCustomAnnotation);
     if (answer == null) {
       throw new AmbiguousMethodCallException(exchange,possibleOperations);
     }
