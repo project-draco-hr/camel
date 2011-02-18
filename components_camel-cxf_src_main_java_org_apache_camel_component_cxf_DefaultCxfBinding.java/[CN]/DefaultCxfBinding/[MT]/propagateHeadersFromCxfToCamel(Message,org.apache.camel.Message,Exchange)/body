@@ -5,9 +5,18 @@
   if (cxfHeaders != null) {
     for (    Map.Entry<String,List<String>> entry : cxfHeaders.entrySet()) {
       if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
-        camelHeaders.put(entry.getKey(),entry.getValue().get(0));
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("Populate header from CXF header=" + entry.getKey() + " value="+ entry.getValue());
+        if ("Content-Type".compareToIgnoreCase(entry.getKey()) == 0 && entry.getValue().get(0) != null && entry.getValue().get(0).startsWith("multipart/related")) {
+          String contentType=replaceMultiPartContentType(entry.getValue().get(0));
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Find the multi-part Conent-Type, and replace it with " + contentType);
+          }
+          camelHeaders.put(entry.getKey(),contentType);
+        }
+ else {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Populate header from CXF header=" + entry.getKey() + " value="+ entry.getValue());
+          }
+          camelHeaders.put(entry.getKey(),entry.getValue().get(0));
         }
       }
     }
