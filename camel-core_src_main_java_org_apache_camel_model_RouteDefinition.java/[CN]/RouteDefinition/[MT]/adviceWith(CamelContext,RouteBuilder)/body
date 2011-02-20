@@ -1,7 +1,16 @@
 {
   ObjectHelper.notNull(camelContext,"CamelContext");
   ObjectHelper.notNull(builder,"RouteBuilder");
+  if (log.isDebugEnabled()) {
+    log.debug("AdviceWith route before: " + this);
+  }
+  if (builder instanceof AdviceWithRouteBuilder) {
+    ((AdviceWithRouteBuilder)builder).setOriginalRoute(this);
+  }
   RoutesDefinition routes=builder.configureRoutes(camelContext);
+  if (log.isDebugEnabled()) {
+    log.debug("AdviceWith routes: " + routes);
+  }
   if (!routes.getRoutes().isEmpty()) {
     throw new IllegalArgumentException("You can only advice from a RouteBuilder which has no existing routes." + " Remove all routes from the route builder.");
   }
@@ -9,8 +18,15 @@
     throw new IllegalArgumentException("You can not advice with error handlers. Remove the error handlers from the route builder.");
   }
   camelContext.removeRouteDefinition(this);
+  if (builder instanceof AdviceWithRouteBuilder) {
+    List<AdviceWithTask> tasks=((AdviceWithRouteBuilder)builder).getAdviceWithTasks();
+    for (    AdviceWithTask task : tasks) {
+      task.task();
+    }
+  }
   RouteDefinition merged=routes.route(this);
   camelContext.getRouteDefinitions().add(0,merged);
+  log.info("AdviceWith route after: " + merged);
   camelContext.startRoute(merged);
   return merged;
 }
