@@ -1,0 +1,25 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Sending a short message for exchange id '" + exchange.getExchangeId() + "'...");
+  }
+  if (this.session == null) {
+    throw new IOException("Lost connection to " + getEndpoint().getConnectionString() + " and yet not reconnected");
+  }
+  SubmitSm submitSm=getEndpoint().getBinding().createSubmitSm(exchange);
+  String messageId=session.submitShortMessage(submitSm.getServiceType(),TypeOfNumber.valueOf(submitSm.getSourceAddrTon()),NumberingPlanIndicator.valueOf(submitSm.getSourceAddrNpi()),submitSm.getSourceAddr(),TypeOfNumber.valueOf(submitSm.getDestAddrTon()),NumberingPlanIndicator.valueOf(submitSm.getDestAddrNpi()),submitSm.getDestAddress(),new ESMClass(),submitSm.getProtocolId(),submitSm.getPriorityFlag(),submitSm.getScheduleDeliveryTime(),submitSm.getValidityPeriod(),new RegisteredDelivery(submitSm.getRegisteredDelivery()),submitSm.getReplaceIfPresent(),new GeneralDataCoding(false,false,MessageClass.CLASS1,Alphabet.valueOf(submitSm.getDataCoding())),(byte)0,submitSm.getShortMessage());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Sent a short message for exchange id '" + exchange.getExchangeId() + "' and received message id '"+ messageId+ "'");
+  }
+  if (exchange.getPattern().isOutCapable()) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Exchange is out capable, setting headers on out exchange...");
+    }
+    exchange.getOut().setHeader(SmppBinding.ID,messageId);
+  }
+ else {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Exchange is not out capable, setting headers on in exchange...");
+    }
+    exchange.getIn().setHeader(SmppBinding.ID,messageId);
+  }
+}
