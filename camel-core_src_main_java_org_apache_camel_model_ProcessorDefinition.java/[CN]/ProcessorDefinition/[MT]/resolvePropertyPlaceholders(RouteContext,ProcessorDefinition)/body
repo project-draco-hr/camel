@@ -4,6 +4,26 @@
   }
   Map<Object,Object> properties=new HashMap<Object,Object>();
   IntrospectionSupport.getProperties(definition,properties,null);
+  if (definition.getOtherAttributes() != null) {
+    for (    Object key : definition.getOtherAttributes().keySet()) {
+      QName qname=(QName)key;
+      if (Constants.PLACEHOLDER_QNAME.equals(qname.getNamespaceURI())) {
+        String local=qname.getLocalPart();
+        Object value=definition.getOtherAttributes().get(key);
+        if (value != null && value instanceof String) {
+          String s=(String)value;
+          if (!s.startsWith(PropertiesComponent.PREFIX_TOKEN)) {
+            s=PropertiesComponent.PREFIX_TOKEN + s;
+          }
+          if (!s.endsWith(PropertiesComponent.SUFFIX_TOKEN)) {
+            s=s + PropertiesComponent.SUFFIX_TOKEN;
+          }
+          value=s;
+        }
+        properties.put(local,value);
+      }
+    }
+  }
   if (!properties.isEmpty()) {
     if (log.isTraceEnabled()) {
       log.trace("There are " + properties.size() + " properties on: "+ definition);
@@ -15,7 +35,10 @@
         String text=(String)value;
         text=routeContext.getCamelContext().resolvePropertyPlaceholders(text);
         if (text != value) {
-          IntrospectionSupport.setProperty(definition,name,text);
+          boolean changed=IntrospectionSupport.setProperty(routeContext.getCamelContext().getTypeConverter(),definition,name,text);
+          if (!changed) {
+            throw new IllegalArgumentException("No setter to set property: " + name + " to: "+ text+ " on: "+ definition);
+          }
           if (log.isDebugEnabled()) {
             log.debug("Changed property [" + name + "] from: "+ value+ " to: "+ text);
           }
