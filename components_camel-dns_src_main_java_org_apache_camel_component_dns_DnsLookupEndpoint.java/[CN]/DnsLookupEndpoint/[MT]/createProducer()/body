@@ -1,0 +1,41 @@
+{
+  return new DefaultProducer(this){
+    public void process(    Exchange exchange) throws Exception {
+      Object name=exchange.getIn().getHeader(DnsConstants.DNS_NAME);
+      if (name == null || "".equals(name)) {
+        throw new IllegalArgumentException("name is null or empty");
+      }
+      String dnsName=String.valueOf(name);
+      Object type=exchange.getIn().getHeader(DnsConstants.DNS_TYPE);
+      Integer dnsType=null;
+      if (type != null) {
+        dnsType=Type.value(String.valueOf(type));
+      }
+      Object dclass=exchange.getIn().getHeader(DnsConstants.DNS_CLASS);
+      Integer dnsClass=null;
+      if (dclass != null) {
+        dnsClass=DClass.value(String.valueOf(dclass));
+      }
+      Lookup lookup=null;
+      if (dnsType != null && dnsClass != null) {
+        lookup=new Lookup(dnsName,dnsType,dnsClass);
+      }
+ else {
+        if (dnsType != null) {
+          lookup=new Lookup(dnsName,dnsType);
+        }
+ else {
+          lookup=new Lookup(dnsName);
+        }
+      }
+      lookup.run();
+      if (lookup.getAnswers() != null) {
+        exchange.getOut().setBody(lookup.getAnswers());
+      }
+ else {
+        exchange.getOut().setBody(lookup.getErrorString());
+      }
+    }
+  }
+;
+}
