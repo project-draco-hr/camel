@@ -1,0 +1,25 @@
+{
+  return new DefaultProducer(this){
+    public void process(    Exchange exchange) throws Exception {
+      String server=null;
+      if (exchange.getIn().getHeader(DNS_SERVER) != null) {
+        server=String.valueOf(exchange.getIn().getHeader(DNS_SERVER));
+      }
+      SimpleResolver resolver=new SimpleResolver(server);
+      int type=Type.value(String.valueOf(exchange.getIn().getHeader(DNS_TYPE)));
+      if (type == -1) {
+        type=Type.A;
+      }
+      int dclass=DClass.value(String.valueOf(exchange.getIn().getHeader(DNS_CLASS)));
+      if (dclass == -1) {
+        dclass=DClass.IN;
+      }
+      Name name=Name.fromString(String.valueOf(exchange.getIn().getHeader(DNS_NAME)),Name.root);
+      Record rec=Record.newRecord(name,type,dclass);
+      Message query=Message.newQuery(rec);
+      Message response=resolver.send(query);
+      exchange.getOut().setBody(response);
+    }
+  }
+;
+}
