@@ -1,11 +1,9 @@
 {
   return new DefaultProducer(this){
     public void process(    Exchange exchange) throws Exception {
-      Object domain=exchange.getIn().getHeader("dns.domain");
-      if (!(domain instanceof String) || ((String)domain).length() == 0) {
-        throw new IllegalArgumentException("Invalid or null domain :" + domain);
-      }
-      InetAddress address=Address.getByName((String)domain);
+      String domain=exchange.getIn().getHeader(DnsConstants.DNS_DOMAIN,String.class);
+      ObjectHelper.notEmpty(domain,"Header " + DnsConstants.DNS_DOMAIN);
+      InetAddress address=Address.getByName(domain);
       exchange.getOut().setBody(address);
     }
   }
