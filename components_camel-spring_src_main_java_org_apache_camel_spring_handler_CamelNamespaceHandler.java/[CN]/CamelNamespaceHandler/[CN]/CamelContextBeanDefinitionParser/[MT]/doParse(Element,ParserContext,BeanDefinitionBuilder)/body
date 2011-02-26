@@ -41,7 +41,6 @@
     builder.addPropertyValue("threadPoolProfiles",factoryBean.getThreadPoolProfiles());
     addDependsOn(factoryBean,builder);
   }
-  boolean createdBeanPostProcessor=false;
   NodeList list=element.getChildNodes();
   int size=list.getLength();
   for (int i=0; i < size; i++) {
@@ -49,11 +48,7 @@
     if (child instanceof Element) {
       Element childElement=(Element)child;
       String localName=child.getLocalName();
-      if (localName.equals("beanPostProcessor")) {
-        createBeanPostProcessor(parserContext,contextId,childElement,builder);
-        createdBeanPostProcessor=true;
-      }
- else       if (localName.equals("endpoint")) {
+      if (localName.equals("endpoint")) {
         registerEndpoint(childElement,parserContext,contextId);
       }
  else       if (localName.equals("routeBuilder")) {
@@ -77,9 +72,5 @@
   registerEndpointsWithIdsDefinedInFromOrToTypes(element,parserContext,contextId,binder);
   registerTemplates(element,parserContext,contextId);
   injectNamespaces(element,binder);
-  if (!createdBeanPostProcessor) {
-    Element childElement=element.getOwnerDocument().createElement("beanPostProcessor");
-    element.appendChild(childElement);
-    createBeanPostProcessor(parserContext,contextId,childElement,builder);
-  }
+  injectBeanPostProcessor(element,parserContext,contextId,builder);
 }
