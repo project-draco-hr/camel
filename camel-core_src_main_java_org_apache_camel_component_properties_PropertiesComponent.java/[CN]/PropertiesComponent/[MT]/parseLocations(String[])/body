@@ -1,0 +1,30 @@
+{
+  String[] answer=new String[locations.length];
+  for (int i=0; i < locations.length; i++) {
+    String location=locations[i];
+    LOG.trace("Parsing location: {} ",location);
+    Matcher matcher=ENV_PATTERN.matcher(location);
+    while (matcher.find()) {
+      String key=matcher.group(1);
+      String value=System.getenv(key);
+      if (ObjectHelper.isEmpty(value)) {
+        throw new IllegalArgumentException("Cannot find system environment with key: " + key);
+      }
+      location=matcher.replaceFirst(value);
+      matcher=ENV_PATTERN.matcher(location);
+    }
+    matcher=SYS_PATTERN.matcher(location);
+    while (matcher.find()) {
+      String key=matcher.group(1);
+      String value=System.getProperty(key);
+      if (ObjectHelper.isEmpty(value)) {
+        throw new IllegalArgumentException("Cannot find JVM system property with key: " + key);
+      }
+      location=matcher.replaceFirst(value);
+      matcher=SYS_PATTERN.matcher(location);
+    }
+    LOG.debug("Parsed location: {} ",location);
+    answer[i]=location;
+  }
+  return answer;
+}
