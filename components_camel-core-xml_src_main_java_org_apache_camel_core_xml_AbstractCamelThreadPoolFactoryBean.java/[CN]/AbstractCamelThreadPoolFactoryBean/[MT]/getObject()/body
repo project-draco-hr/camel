@@ -1,12 +1,24 @@
 {
-  if (poolSize == null || poolSize <= 0) {
+  int size=CamelContextHelper.parseInteger(getCamelContext(),poolSize);
+  if (size <= 0) {
     throw new IllegalArgumentException("PoolSize must be a positive number");
   }
-  int max=getMaxPoolSize() != null ? getMaxPoolSize() : getPoolSize();
+  int max=size;
+  if (maxPoolSize != null) {
+    max=CamelContextHelper.parseInteger(getCamelContext(),maxPoolSize);
+  }
   RejectedExecutionHandler rejected=null;
   if (rejectedPolicy != null) {
     rejected=rejectedPolicy.asRejectedExecutionHandler();
   }
-  ExecutorService answer=getCamelContext().getExecutorServiceStrategy().newThreadPool(getId(),getThreadName(),getPoolSize(),max,getKeepAliveTime(),getTimeUnit(),getMaxQueueSize(),rejected,isDaemon());
+  long keepAlive=60;
+  if (keepAliveTime != null) {
+    keepAlive=CamelContextHelper.parseLong(getCamelContext(),keepAliveTime);
+  }
+  int queueSize=-1;
+  if (maxQueueSize != null) {
+    queueSize=CamelContextHelper.parseInteger(getCamelContext(),keepAliveTime);
+  }
+  ExecutorService answer=getCamelContext().getExecutorServiceStrategy().newThreadPool(getId(),getThreadName(),size,max,keepAlive,getTimeUnit(),queueSize,rejected,true);
   return answer;
 }
