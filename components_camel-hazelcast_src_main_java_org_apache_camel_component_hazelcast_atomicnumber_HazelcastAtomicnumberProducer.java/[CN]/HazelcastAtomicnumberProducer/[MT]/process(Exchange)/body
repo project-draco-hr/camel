@@ -1,0 +1,32 @@
+{
+  Map<String,Object> headers=exchange.getIn().getHeaders();
+  int operation=-1;
+  if (headers.containsKey(HazelcastConstants.OPERATION)) {
+    if (headers.get(HazelcastConstants.OPERATION) instanceof String) {
+      operation=this.helper.lookupOperationNumber((String)headers.get(HazelcastConstants.OPERATION));
+    }
+ else {
+      operation=(Integer)headers.get(HazelcastConstants.OPERATION);
+    }
+  }
+switch (operation) {
+case HazelcastConstants.INCREMENT_OPERATION:
+    this.increment(exchange);
+  break;
+case HazelcastConstants.DECREMENT_OPERATION:
+this.decrement(exchange);
+break;
+case HazelcastConstants.SETVALUE_OPERATION:
+this.set(exchange);
+break;
+case HazelcastConstants.GET_OPERATION:
+this.get(exchange);
+break;
+case HazelcastConstants.DESTROY_OPERATION:
+this.destroy();
+break;
+default :
+throw new IllegalArgumentException(String.format("The value '%s' is not allowed for parameter '%s' on the ATOMICNUMBER.",operation,HazelcastConstants.OPERATION));
+}
+HazelcastComponentHelper.copyHeaders(exchange);
+}

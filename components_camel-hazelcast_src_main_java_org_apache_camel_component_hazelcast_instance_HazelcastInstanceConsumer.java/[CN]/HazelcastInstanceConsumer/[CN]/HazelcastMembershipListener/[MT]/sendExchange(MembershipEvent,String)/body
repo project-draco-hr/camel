@@ -1,0 +1,14 @@
+{
+  Exchange exchange=getEndpoint().createExchange();
+  HazelcastComponentHelper.setListenerHeaders(exchange,HazelcastConstants.INSTANCE_LISTENER,action);
+  exchange.getOut().setHeader(HazelcastConstants.INSTANCE_HOST,event.getMember().getInetSocketAddress().getHostName());
+  exchange.getOut().setHeader(HazelcastConstants.INSTANCE_PORT,event.getMember().getInetSocketAddress().getPort());
+  try {
+    getProcessor().process(exchange);
+  }
+ catch (  Exception e) {
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange for hazelcast consumer on your Hazelcast cluster.",exchange,exchange.getException());
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  Exchange exchange=consumer.getEndpoint().createExchange();
+  exchange.getOut().setBody(value);
+  if (key != null) {
+    exchange.getOut().setHeader(HazelcastConstants.OBJECT_ID,key);
+  }
+  HazelcastComponentHelper.setListenerHeaders(exchange,HazelcastConstants.CACHE_LISTENER,operation,cacheName);
+  try {
+    consumer.getProcessor().process(exchange);
+  }
+ catch (  Exception e) {
+    if (exchange.getException() != null) {
+      consumer.getExceptionHandler().handleException(String.format("Error processing exchange for hazelcast consumer on object '%s' in cache '%s'.",key,cacheName),exchange,exchange.getException());
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  final BlockingQueue queue=endpoint.getQueue();
+  while (queue != null && isRunAllowed()) {
+    final Exchange exchange=new DefaultExchange(this.getEndpoint().getCamelContext());
+    try {
+      final Object body=queue.poll(endpoint.getConfiguration().getPollInterval(),TimeUnit.MILLISECONDS);
+      if (body != null) {
+        exchange.getIn().setBody(body);
+        try {
+          processor.process(exchange,new AsyncCallback(){
+            public void done(            final boolean sync){
+            }
+          }
+);
+          if (exchange.getException() != null) {
+            getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+          }
+        }
+ catch (        Exception e) {
+          LOG.error("Hzlq Exception caught: " + e,e);
+        }
+      }
+    }
+ catch (    InterruptedException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Hzlq Consumer Interrupted: " + e,e);
+      }
+      continue;
+    }
+catch (    Throwable e) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,e);
+    }
+  }
+}

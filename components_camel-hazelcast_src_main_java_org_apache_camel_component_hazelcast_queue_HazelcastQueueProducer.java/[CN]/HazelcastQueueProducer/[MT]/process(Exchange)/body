@@ -1,0 +1,35 @@
+{
+  Map<String,Object> headers=exchange.getIn().getHeaders();
+  int operation=-1;
+  if (headers.containsKey(HazelcastConstants.OPERATION)) {
+    if (headers.get(HazelcastConstants.OPERATION) instanceof String) {
+      operation=helper.lookupOperationNumber((String)headers.get(HazelcastConstants.OPERATION));
+    }
+ else {
+      operation=(Integer)headers.get(HazelcastConstants.OPERATION);
+    }
+  }
+switch (operation) {
+case HazelcastConstants.ADD_OPERATION:
+    this.add(exchange);
+  break;
+case HazelcastConstants.PUT_OPERATION:
+this.put(exchange);
+break;
+case HazelcastConstants.POLL_OPERATION:
+this.poll(exchange);
+break;
+case HazelcastConstants.PEEK_OPERATION:
+this.peek(exchange);
+break;
+case HazelcastConstants.OFFER_OPERATION:
+this.offer(exchange);
+break;
+case HazelcastConstants.REMOVEVALUE_OPERATION:
+this.remove(exchange);
+break;
+default :
+throw new IllegalArgumentException(String.format("The value '%s' is not allowed for parameter '%s' on the QUEUE cache.",operation,HazelcastConstants.OPERATION));
+}
+HazelcastComponentHelper.copyHeaders(exchange);
+}

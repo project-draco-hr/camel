@@ -1,0 +1,36 @@
+{
+  Map<String,Object> headers=exchange.getIn().getHeaders();
+  int operation=-1;
+  Integer pos=null;
+  if (headers.containsKey(HazelcastConstants.OBJECT_POS)) {
+    if (!(headers.get(HazelcastConstants.OBJECT_POS) instanceof Integer)) {
+      throw new IllegalArgumentException("OBJECT_POS Should be of type Integer");
+    }
+    pos=(Integer)headers.get(HazelcastConstants.OBJECT_POS);
+  }
+  if (headers.containsKey(HazelcastConstants.OPERATION)) {
+    if (headers.get(HazelcastConstants.OPERATION) instanceof String) {
+      operation=helper.lookupOperationNumber((String)headers.get(HazelcastConstants.OPERATION));
+    }
+ else {
+      operation=(Integer)headers.get(HazelcastConstants.OPERATION);
+    }
+  }
+switch (operation) {
+case HazelcastConstants.ADD_OPERATION:
+    this.add(pos,exchange);
+  break;
+case HazelcastConstants.GET_OPERATION:
+this.get(pos,exchange);
+break;
+case HazelcastConstants.SETVALUE_OPERATION:
+this.set(pos,exchange);
+break;
+case HazelcastConstants.REMOVEVALUE_OPERATION:
+this.remove(pos,exchange);
+break;
+default :
+throw new IllegalArgumentException(String.format("The value '%s' is not allowed for parameter '%s' on the LIST cache.",operation,HazelcastConstants.OPERATION));
+}
+HazelcastComponentHelper.copyHeaders(exchange);
+}
