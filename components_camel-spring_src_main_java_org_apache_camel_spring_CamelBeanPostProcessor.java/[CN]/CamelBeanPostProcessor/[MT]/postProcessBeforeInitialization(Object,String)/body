@@ -5,18 +5,16 @@
   if (!canPostProcessBean(bean,beanName)) {
     return bean;
   }
-  if (camelContext == null && applicationContext.containsBean(camelId)) {
-    setCamelContext((CamelContext)applicationContext.getBean(camelId));
-  }
   injectFields(bean,beanName);
   injectMethods(bean,beanName);
   if (bean instanceof CamelContextAware && canSetCamelContext(bean,beanName)) {
     CamelContextAware contextAware=(CamelContextAware)bean;
-    if (camelContext == null) {
+    CamelContext context=getOrLookupCamelContext();
+    if (context == null) {
       LOG.warn("No CamelContext defined yet so cannot inject into bean: " + beanName);
     }
  else {
-      contextAware.setCamelContext(camelContext);
+      contextAware.setCamelContext(context);
     }
   }
   return bean;

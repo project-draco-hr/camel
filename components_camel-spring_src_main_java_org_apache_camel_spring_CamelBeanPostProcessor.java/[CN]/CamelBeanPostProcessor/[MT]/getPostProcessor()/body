@@ -1,4 +1,33 @@
 {
-  ObjectHelper.notNull(postProcessor,"postProcessor");
+  if (postProcessor == null) {
+    postProcessor=new CamelPostProcessorHelper(){
+      @Override public CamelContext getCamelContext(){
+        return getOrLookupCamelContext();
+      }
+      @Override protected RuntimeException createProxyInstantiationRuntimeException(      Class<?> type,      Endpoint endpoint,      Exception e){
+        return new BeanInstantiationException(type,"Could not instantiate proxy of type " + type.getName() + " on endpoint "+ endpoint,e);
+      }
+      protected boolean isSingleton(      Object bean,      String beanName){
+        if (applicationContext == null || beanName == null) {
+          return super.isSingleton(bean,beanName);
+        }
+ else {
+          return applicationContext.isSingleton(beanName);
+        }
+      }
+      protected void startService(      Service service,      Object bean,      String beanName) throws Exception {
+        if (isSingleton(bean,beanName)) {
+          getCamelContext().addService(service);
+        }
+ else {
+          ServiceHelper.startService(service);
+          if (prototypeBeans.add(beanName)) {
+            LOG.warn("The bean with id [" + beanName + "] is prototype scoped and cannot stop the injected service when bean is destroyed: "+ service+ ". You may want to stop the service manually from the bean.");
+          }
+        }
+      }
+    }
+;
+  }
   return postProcessor;
 }
