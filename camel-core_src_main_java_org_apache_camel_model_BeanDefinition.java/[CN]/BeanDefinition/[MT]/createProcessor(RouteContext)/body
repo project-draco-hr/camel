@@ -8,7 +8,14 @@
  else {
     if (bean == null) {
       ObjectHelper.notNull(beanType,"bean, ref or beanType",this);
-      bean=CamelContextHelper.newInstance(routeContext.getCamelContext(),beanType);
+      Class<?> clazz;
+      try {
+        clazz=routeContext.getCamelContext().getClassResolver().resolveMandatoryClass(beanType);
+      }
+ catch (      ClassNotFoundException e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+      bean=CamelContextHelper.newInstance(routeContext.getCamelContext(),clazz);
     }
     ObjectHelper.notNull(bean,"bean",this);
     if (bean instanceof String) {
