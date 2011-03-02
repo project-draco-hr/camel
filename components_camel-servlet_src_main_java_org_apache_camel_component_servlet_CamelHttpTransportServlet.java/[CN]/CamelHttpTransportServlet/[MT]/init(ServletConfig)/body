@@ -1,10 +1,16 @@
 {
   super.init(config);
-  servletName=config.getServletName();
-  CAMEL_SERVLET_MAP.put(servletName,this);
-  String contextConfigLocation=config.getInitParameter("contextConfigLocation");
-  if (contextConfigLocation != null) {
-    applicationContext=new ClassPathXmlApplicationContext(contextConfigLocation.split(","));
-    LOG.info("Started the application context rightly");
+  this.servletName=config.getServletName();
+  CamelServletService service=CAMEL_SERVLET_MAP.get(servletName);
+  if (service == null) {
+    service=new DefaultCamelServletService(servletName,this);
+    CAMEL_SERVLET_MAP.put(servletName,service);
   }
+ else {
+    service.setCamelServlet(this);
+    for (    HttpConsumer consumer : service.getConsumers()) {
+      connect(consumer);
+    }
+  }
+  LOG.info("Initialized CamelHttpTransportServlet[" + servletName + "]");
 }

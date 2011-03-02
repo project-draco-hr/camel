@@ -1,17 +1,8 @@
 {
   return new RouteBuilder(){
-    Processor echoRequestURIProcessor=new Processor(){
-      public void process(      Exchange exchange) throws Exception {
-        String uri=exchange.getIn().getHeader(Exchange.HTTP_URI,String.class);
-        exchange.getOut().setBody(uri);
-      }
-    }
-;
     public void configure(){
-      errorHandler(noErrorHandler());
-      from("servlet:///hello").process(echoRequestURIProcessor);
-      from("servlet:///echo?servletName=CamelServlet1").process(echoRequestURIProcessor);
-      from("servlet:///echo?servletName=CamelServlet2").process(echoRequestURIProcessor);
+      from("servlet:/hello?servletName=CamelServlet1").transform(simple("Hello ${header.name}"));
+      from("servlet:/echo?servletName=CamelServlet2").transform(simple("${header.name} ${header.name}"));
     }
   }
 ;
