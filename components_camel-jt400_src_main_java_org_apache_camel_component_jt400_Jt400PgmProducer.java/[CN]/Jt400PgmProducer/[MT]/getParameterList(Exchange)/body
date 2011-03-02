@@ -1,0 +1,29 @@
+{
+  Object body=ExchangeHelper.getMandatoryInBody(exchange);
+  String[] params=(String[])body;
+  ProgramParameter[] parameterList=new ProgramParameter[params.length];
+  for (int i=0; i < params.length; i++) {
+    Object param=params[i];
+    boolean input=param != null;
+    boolean output=getISeriesEndpoint().isFieldIdxForOuput(i);
+    byte[] inputData=null;
+    int outputLength=-1;
+    if (input) {
+      String value=(String)param;
+      inputData=new AS400Text(value.length()).toBytes(value);
+    }
+    if (output) {
+      outputLength=getISeriesEndpoint().getOutputFieldLength(i);
+    }
+    if (input && output) {
+      parameterList[i]=new ProgramParameter(inputData,outputLength);
+    }
+    if (input) {
+      parameterList[i]=new ProgramParameter(inputData);
+    }
+    if (output) {
+      parameterList[i]=new ProgramParameter(outputLength);
+    }
+  }
+  return parameterList;
+}

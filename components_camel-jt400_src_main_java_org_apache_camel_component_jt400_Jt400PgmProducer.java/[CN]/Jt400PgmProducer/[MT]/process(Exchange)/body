@@ -1,0 +1,21 @@
+{
+  AS400 iSeries=getISeriesEndpoint().getiSeries();
+  String commandStr=getISeriesEndpoint().getProgramToExecute();
+  ProgramParameter[] parameterList=getParameterList(exchange);
+  ProgramCall pgmCall=new ProgramCall(iSeries);
+  pgmCall.setProgram(commandStr);
+  pgmCall.setParameterList(parameterList);
+  if (LOG.isDebugEnabled()) {
+    LOG.trace("Starting to call PGM '" + commandStr + "' in host '"+ iSeries.getSystemName()+ "' authenticatin with the user '"+ iSeries.getUserId()+ "'");
+  }
+  boolean result=pgmCall.run();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Executed PGM '" + commandStr + "' in host '"+ iSeries.getSystemName()+ "'. Success?"+ result);
+  }
+  if (result) {
+    handlePGMOutput(exchange,pgmCall,parameterList);
+  }
+ else {
+    handleMessages(pgmCall);
+  }
+}
