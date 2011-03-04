@@ -1,16 +1,9 @@
 {
   super.init(config);
-  this.servletName=config.getServletName();
-  CamelServletService service=CAMEL_SERVLET_MAP.get(servletName);
-  if (service == null) {
-    service=new DefaultCamelServletService(servletName,this);
-    CAMEL_SERVLET_MAP.put(servletName,service);
+  this.setServletName(config.getServletName());
+  if (httpRegistry == null) {
+    httpRegistry=HttpRegistryImpl.getSingletonHttpRegistry();
   }
- else {
-    service.setCamelServlet(this);
-    for (    HttpConsumer consumer : service.getConsumers()) {
-      connect(consumer);
-    }
-  }
-  LOG.info("Initialized CamelHttpTransportServlet[" + servletName + "]");
+  httpRegistry.register(this);
+  LOG.info("Initialized CamelHttpTransportServlet[" + getServletName() + "]");
 }
