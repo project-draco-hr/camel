@@ -1,23 +1,17 @@
 {
   Object element;
-  Object body=exchange.getIn().getBody();
-  if (body instanceof Serializable) {
-    element=body;
-  }
- else {
-    InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,body);
-    element=exchange.getContext().getTypeConverter().mandatoryConvertTo(byte[].class,is);
-  }
   if (operation.equalsIgnoreCase(CacheConstants.CACHE_OPERATION_ADD)) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Adding an element with key " + key + " into the Cache");
     }
+    element=createElementFromBody(exchange,CacheConstants.CACHE_OPERATION_ADD);
     cache.put(new Element(key,element),true);
   }
  else   if (operation.equalsIgnoreCase(CacheConstants.CACHE_OPERATION_UPDATE)) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Updating an element with key " + key + " into the Cache");
     }
+    element=createElementFromBody(exchange,CacheConstants.CACHE_OPERATION_UPDATE);
     cache.put(new Element(key,element),true);
   }
  else   if (operation.equalsIgnoreCase(CacheConstants.CACHE_OPERATION_DELETEALL)) {
