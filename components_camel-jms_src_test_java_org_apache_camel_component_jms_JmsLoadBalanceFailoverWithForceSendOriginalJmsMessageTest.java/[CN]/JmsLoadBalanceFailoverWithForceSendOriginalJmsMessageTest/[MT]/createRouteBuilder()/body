@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("jms:queue:start?mapJmsMessage=false").loadBalance().failover(-1,false,true).to("jms:queue:one?transferException=true&forceSendOriginalMessage=" + forceSendOriginalMessage).to("jms:queue:two?transferException=true&forceSendOriginalMessage=" + forceSendOriginalMessage).to("jms:queue:three?transferException=true&forceSendOriginalMessage=" + forceSendOriginalMessage).end().to("mock:result");
+      from("jms:queue:one?transferException=true&mapJmsMessage=false").to("mock:one").throwException(new IllegalArgumentException("Damn"));
+      from("jms:queue:two?transferException=true&mapJmsMessage=false").to("mock:two").transform().simple("Hello Back");
+      from("jms:queue:three?transferException=true&mapJmsMessage=false").to("mock:three").transform().simple("Bye World");
+    }
+  }
+;
+}
