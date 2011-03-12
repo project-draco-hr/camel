@@ -1,7 +1,5 @@
 {
-  if (log.isTraceEnabled()) {
-    log.trace("Service: " + request);
-  }
+  log.trace("Service: {}",request);
   HttpConsumer consumer=resolve(request);
   if (consumer == null) {
     response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -10,7 +8,7 @@
   final Exchange result=(Exchange)request.getAttribute(EXCHANGE_ATTRIBUTE_NAME);
   if (result == null) {
     final Continuation continuation=ContinuationSupport.getContinuation(request);
-    if (continuationTimeout != null) {
+    if (continuation.isInitial() && continuationTimeout != null) {
       continuation.setTimeout(continuationTimeout);
     }
     if (consumer.isSuspended() && continuation.isInitial()) {
@@ -19,7 +17,8 @@
     }
     if (continuation.isExpired()) {
       String id=(String)continuation.getAttribute(EXCHANGE_ATTRIBUTE_ID);
-      log.warn("Continuation expired of exchangeId: " + id);
+      expiredExchanges.put(id,id);
+      log.warn("Continuation expired of exchangeId: {}",id);
       response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
       return;
     }
@@ -32,30 +31,28 @@
     }
     HttpHelper.setCharsetFromContentType(request.getContentType(),exchange);
     exchange.setIn(new HttpMessage(exchange,request,response));
-    if (log.isTraceEnabled()) {
-      log.trace("Suspending continuation of exchangeId: " + exchange.getExchangeId());
-    }
+    log.trace("Suspending continuation of exchangeId: {}",exchange.getExchangeId());
     continuation.setAttribute(EXCHANGE_ATTRIBUTE_ID,exchange.getExchangeId());
     continuation.suspend();
-    if (log.isTraceEnabled()) {
-      log.trace("Processing request for exchangeId: " + exchange.getExchangeId());
-    }
+    log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
     consumer.getAsyncProcessor().process(exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
-        if (log.isTraceEnabled()) {
-          log.trace("Resuming continuation of exchangeId: " + exchange.getExchangeId());
+        boolean expired=expiredExchanges.remove(exchange.getExchangeId()) != null;
+        if (!expired) {
+          log.trace("Resuming continuation of exchangeId: {}",exchange.getExchangeId());
+          continuation.setAttribute(EXCHANGE_ATTRIBUTE_NAME,exchange);
+          continuation.resume();
         }
-        continuation.setAttribute(EXCHANGE_ATTRIBUTE_NAME,exchange);
-        continuation.resume();
+ else {
+          log.warn("Cannot resume expired continuation of exchangeId: {}",exchange.getExchangeId());
+        }
       }
     }
 );
     return;
   }
   try {
-    if (log.isTraceEnabled()) {
-      log.trace("Resumed continuation and writing response for exchangeId: " + result.getExchangeId());
-    }
+    log.trace("Resumed continuation and writing response for exchangeId: {}",result.getExchangeId());
     consumer.getBinding().writeResponse(result,response);
   }
  catch (  IOException e) {
