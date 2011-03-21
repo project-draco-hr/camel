@@ -13,14 +13,20 @@
     decrementRedeliveryCounter(exchange);
   }
   if (processor != null) {
-    MessageHelper.resetStreamCache(exchange.getIn());
     if (data.useOriginalInMessage) {
       if (log.isTraceEnabled()) {
         log.trace("Using the original IN message instead of current");
       }
       Message original=exchange.getUnitOfWork().getOriginalInMessage();
       exchange.setIn(original);
+      if (exchange.hasOut()) {
+        if (log.isTraceEnabled()) {
+          log.trace("Removing the out message to avoid some uncertain behavior");
+        }
+        exchange.setOut(null);
+      }
     }
+    MessageHelper.resetStreamCache(exchange.getIn());
     if (log.isTraceEnabled()) {
       log.trace("Failure processor " + processor + " is processing Exchange: "+ exchange);
     }
