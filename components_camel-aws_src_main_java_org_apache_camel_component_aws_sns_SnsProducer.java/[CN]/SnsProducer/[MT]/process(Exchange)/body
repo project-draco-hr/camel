@@ -1,0 +1,11 @@
+{
+  PublishRequest request=new PublishRequest();
+  request.setTopicArn(getConfiguration().getTopicArn());
+  request.setMessage(exchange.getIn().getBody(String.class));
+  request.setSubject(determineSubject(exchange));
+  LOG.trace("Sending request [{}] from exchange [{}]...",request,exchange);
+  PublishResult result=getEndpoint().getSNSClient().publish(request);
+  LOG.trace("Received result [{}]",result);
+  Message message=getMessageForResponse(exchange);
+  message.setHeader(SnsConstants.MESSAGE_ID,result.getMessageId());
+}
