@@ -1,0 +1,17 @@
+{
+  Exchange exchange=template.send("direct://proxy",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.setPattern(ExchangePattern.InOut);
+      Message inMessage=exchange.getIn();
+      inMessage.setHeader(Exchange.DESTINATION_OVERRIDE_URL,"http://localhost:9002");
+      inMessage.setHeader(CxfConstants.OPERATION_NAME,"getCustomers");
+      inMessage.setHeader(CxfConstants.CAMEL_CXF_RS_USING_HTTP_API,Boolean.FALSE);
+      inMessage.setBody(null);
+    }
+  }
+);
+  List<Customer> response=(List<Customer>)exchange.getOut().getBody();
+  assertNotNull("The response should not be null ",response);
+  assertEquals("Get a wrong customer id ",String.valueOf(response.get(0).getId()),"113");
+  assertEquals("Get a wrong customer name",response.get(0).getName(),"Dan");
+}
