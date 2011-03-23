@@ -1,0 +1,14 @@
+{
+  Exchange exchange=template.send("direct:producer",new Processor(){
+    public void process(    final Exchange exchange){
+      CxfPayload<SoapHeader> request=encodeRequestInPayload(oneway ? PAYLOAD_ONEWAY_TEMPLATE : PAYLOAD_TEMPLATE,name,exchange);
+      exchange.getIn().setBody(request,CxfPayload.class);
+      exchange.getIn().setHeader(CxfConstants.OPERATION_NAMESPACE,DISPATCH_NS);
+      if (oneway) {
+        exchange.getIn().setHeader(CxfConstants.OPERATION_NAME,INVOKE_ONEWAY_NAME);
+      }
+    }
+  }
+);
+  return exchange;
+}
