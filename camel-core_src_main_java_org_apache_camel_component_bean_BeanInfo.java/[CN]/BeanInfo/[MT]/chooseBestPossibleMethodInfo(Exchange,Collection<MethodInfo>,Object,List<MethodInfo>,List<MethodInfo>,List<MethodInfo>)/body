@@ -1,18 +1,14 @@
 {
   Exception exception=ExpressionBuilder.exchangeExceptionExpression().evaluate(exchange,Exception.class);
   if (exception != null && possiblesWithException.size() == 1) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Exchange has exception set so we prefer method that also has exception as parameter");
-    }
+    LOG.trace("Exchange has exception set so we prefer method that also has exception as parameter");
     return possiblesWithException.get(0);
   }
  else   if (possibles.size() == 1) {
     return possibles.get(0);
   }
  else   if (possibles.isEmpty()) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("No possible methods so now trying to convert body to parameter types");
-    }
+    LOG.trace("No possible methods so now trying to convert body to parameter types");
     Object newBody=null;
     MethodInfo matched=null;
     int matchCounter=0;
@@ -23,7 +19,7 @@
       Object value=convertToType(exchange,methodInfo.getBodyParameterType(),body);
       if (value != null) {
         if (LOG.isTraceEnabled()) {
-          LOG.trace("Converted body from: " + body.getClass().getCanonicalName() + "to: "+ methodInfo.getBodyParameterType().getCanonicalName());
+          LOG.trace("Converted body from: {} to: {}",body.getClass().getCanonicalName(),methodInfo.getBodyParameterType().getCanonicalName());
         }
         matchCounter++;
         newBody=value;
@@ -34,9 +30,7 @@
       throw new AmbiguousMethodCallException(exchange,Arrays.asList(matched,matched));
     }
     if (matched != null) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Setting converted body: " + body);
-      }
+      LOG.trace("Setting converted body: {}",body);
       Message in=exchange.getIn();
       in.setBody(newBody);
       return matched;
@@ -45,9 +39,7 @@
  else {
     if (possibleWithCustomAnnotation.size() == 1) {
       MethodInfo answer=possibleWithCustomAnnotation.get(0);
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("There are only one method with annotations so we choose it: " + answer);
-      }
+      LOG.trace("There are only one method with annotations so we choose it: {}",answer);
       return answer;
     }
     return chooseMethodWithCustomAnnotations(exchange,possibles);

@@ -6,24 +6,18 @@
   boolean hasCustomAnnotation=false;
   boolean hasHandlerAnnotation=ObjectHelper.hasAnnotation(method.getAnnotations(),Handler.class);
   int size=parameterTypes.length;
-  if (LOG.isTraceEnabled()) {
-    LOG.trace("Creating MethodInfo for class: " + clazz + " method: "+ method+ " having "+ size+ " parameters");
-  }
+  LOG.trace("Creating MethodInfo for class: {} method: {} having {} parameters",new Object[]{clazz,method,size});
   for (int i=0; i < size; i++) {
     Class parameterType=parameterTypes[i];
     Annotation[] parameterAnnotations=parametersAnnotations[i];
     Expression expression=createParameterUnmarshalExpression(clazz,method,parameterType,parameterAnnotations);
     hasCustomAnnotation|=expression != null;
     ParameterInfo parameterInfo=new ParameterInfo(i,parameterType,parameterAnnotations,expression);
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Parameter #" + i + ": "+ parameterInfo);
-    }
+    LOG.trace("Parameter #{}: {}",i,parameterInfo);
     parameters.add(parameterInfo);
     if (expression == null) {
       boolean bodyAnnotation=ObjectHelper.hasAnnotation(parameterAnnotations,Body.class);
-      if (LOG.isTraceEnabled() && bodyAnnotation) {
-        LOG.trace("Parameter #" + i + " has @Body annotation");
-      }
+      LOG.trace("Parameter #{} has @Body annotation",i);
       hasCustomAnnotation|=bodyAnnotation;
       if (bodyParameters.isEmpty()) {
         if (Exchange.class.isAssignableFrom(parameterType)) {
@@ -32,18 +26,14 @@
  else {
           expression=ExpressionBuilder.mandatoryBodyExpression(parameterType,true);
         }
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("Parameter #" + i + " is the body parameter using expression "+ expression);
-        }
+        LOG.trace("Parameter #{} is the body parameter using expression {}",i,expression);
         parameterInfo.setExpression(expression);
         bodyParameters.add(parameterInfo);
       }
  else {
       }
     }
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Parameter #" + i + " has parameter info: "+ parameterInfo);
-    }
+    LOG.trace("Parameter #{} has parameter info: ",i,parameterInfo);
   }
   return new MethodInfo(camelContext,clazz,method,parameters,bodyParameters,hasCustomAnnotation,hasHandlerAnnotation);
 }

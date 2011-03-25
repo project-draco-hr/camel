@@ -1,6 +1,6 @@
 {
   if (LOG.isTraceEnabled()) {
-    LOG.trace("Finding best suited exception policy for thrown exception " + exception.getClass().getName());
+    LOG.trace("Finding best suited exception policy for thrown exception {}",exception.getClass().getName());
   }
   int targetLevel=getInheritanceLevel(exception.getClass());
   OnExceptionDefinition candidate=null;
@@ -14,16 +14,14 @@
       RouteDefinition typeRoute=ProcessorDefinitionHelper.getRoute(type);
       if (route != null && typeRoute != null && route != typeRoute) {
         if (LOG.isTraceEnabled()) {
-          LOG.trace("The type is scoped for route: " + typeRoute.getId() + " however Exchange is at route: "+ route.getId());
+          LOG.trace("The type is scoped for route: {} however Exchange is at route: {}",typeRoute.getId(),route.getId());
         }
         continue;
       }
     }
     if (filter(type,clazz,exception)) {
       if (!matchesWhen(type,exchange)) {
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("The type did not match when: " + type);
-        }
+        LOG.trace("The type did not match when: {}",type);
         continue;
       }
       if (clazz.equals(exception.getClass())) {
@@ -41,20 +39,18 @@
   }
   if (candidate != null) {
     if (!candidates.containsKey(candidateDiff)) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Adding " + candidate + " as candidate at level "+ candidateDiff);
-      }
+      LOG.trace("Adding {} as candidate at level {}",candidate,candidateDiff);
       candidates.put(candidateDiff,candidate);
     }
  else {
       if (LOG.isTraceEnabled()) {
-        LOG.trace("Existing candidate " + candidates.get(candidateDiff) + " takes precedence over "+ candidate+ " at level "+ candidateDiff);
+        LOG.trace("Existing candidate {} takes precedence over{} at level {}",new Object[]{candidates.get(candidateDiff),candidate,candidateDiff});
       }
     }
   }
   boolean exactMatch=candidateDiff == 0;
   if (LOG.isTraceEnabled() && exactMatch) {
-    LOG.trace("Exact match found for candidate: " + candidate);
+    LOG.trace("Exact match found for candidate: {}",candidate);
   }
   return exactMatch;
 }

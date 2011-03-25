@@ -1,17 +1,13 @@
 {
   prepareExchangeForRedelivery(exchange);
   deliverToOnRedeliveryProcessor(exchange,data);
-  if (log.isTraceEnabled()) {
-    log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " -> "+ outputAsync+ " for Exchange: "+ exchange);
-  }
+  log.trace("Redelivering exchangeId: {} -> {} for Exchange: {}",new Object[]{exchange.getExchangeId(),outputAsync,exchange});
   EventHelper.notifyExchangeRedelivery(exchange.getContext(),exchange,data.redeliveryCounter);
   boolean sync;
   if (data.redeliverFromSync) {
     sync=AsyncProcessorHelper.process(outputAsync,exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
-        if (log.isTraceEnabled()) {
-          log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " done sync: "+ doneSync);
-        }
+        log.trace("Redelivering exchangeId: {} done sync: {}",exchange.getExchangeId(),doneSync);
         data.sync=false;
         if (isDone(exchange)) {
           callback.done(false);
@@ -25,9 +21,7 @@
  else {
     sync=AsyncProcessorHelper.process(outputAsync,exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
-        if (log.isTraceEnabled()) {
-          log.trace("Redelivering exchangeId: " + exchange.getExchangeId() + " done sync: "+ doneSync);
-        }
+        log.trace("Redelivering exchangeId: {} done sync: {}",exchange.getExchangeId(),doneSync);
         if (doneSync) {
           return;
         }

@@ -1,6 +1,6 @@
 {
   if (log.isTraceEnabled()) {
-    log.trace("Searching for: " + test + " in package: "+ packageName+ " using classloader: "+ loader.getClass().getName());
+    log.trace("Searching for: {} in package: {} using classloader: {}",new Object[]{test,packageName,loader.getClass().getName()});
   }
   Enumeration<URL> urls;
   try {
@@ -17,14 +17,12 @@
     URL url=null;
     try {
       url=urls.nextElement();
-      if (log.isTraceEnabled()) {
-        log.trace("URL from classloader: " + url);
-      }
+      log.trace("URL from classloader: {}",url);
       url=customResourceLocator(url);
       String urlPath=url.getFile();
       urlPath=URLDecoder.decode(urlPath,"UTF-8");
       if (log.isTraceEnabled()) {
-        log.trace("Decoded urlPath: " + urlPath + " with protocol: "+ url.getProtocol());
+        log.trace("Decoded urlPath: {} with protocol: {}",urlPath,url.getProtocol());
       }
       if (urlPath.startsWith("file:")) {
         try {
@@ -43,31 +41,23 @@
       if (urlPath.indexOf('!') > 0) {
         urlPath=urlPath.substring(0,urlPath.indexOf('!'));
       }
-      if (log.isTraceEnabled()) {
-        log.trace("Scanning for classes in [" + urlPath + "] matching criteria: "+ test);
-      }
+      log.trace("Scanning for classes in [{}] matching criteria: {}",urlPath,test);
       File file=new File(urlPath);
       if (file.isDirectory()) {
-        if (log.isTraceEnabled()) {
-          log.trace("Loading from directory using file: " + file);
-        }
+        log.trace("Loading from directory using file: {}",file);
         loadImplementationsInDirectory(test,packageName,file,classes);
       }
  else {
         InputStream stream;
         if (urlPath.startsWith("http:") || urlPath.startsWith("https:") || urlPath.startsWith("sonicfs:")|| isAcceptableScheme(urlPath)) {
-          if (log.isTraceEnabled()) {
-            log.trace("Loading from jar using url: " + urlPath);
-          }
+          log.trace("Loading from jar using url: {}",urlPath);
           URL urlStream=new URL(urlPath);
           URLConnection con=urlStream.openConnection();
           con.setUseCaches(false);
           stream=con.getInputStream();
         }
  else {
-          if (log.isTraceEnabled()) {
-            log.trace("Loading from jar using file: " + file);
-          }
+          log.trace("Loading from jar using file: {}",file);
           stream=new FileInputStream(file);
         }
         loadImplementationsInJar(test,packageName,stream,urlPath,classes);

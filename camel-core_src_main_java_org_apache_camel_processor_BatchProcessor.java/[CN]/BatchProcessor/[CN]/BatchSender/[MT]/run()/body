@@ -4,9 +4,7 @@
     do {
       try {
         if (!exchangeEnqueued) {
-          if (LOG.isTraceEnabled()) {
-            LOG.trace("Waiting for new exchange to arrive or batchTimeout to occur after " + batchTimeout + " ms.");
-          }
+          LOG.trace("Waiting for new exchange to arrive or batchTimeout to occur after {} ms.",batchTimeout);
           exchangeEnqueuedCondition.await(batchTimeout,TimeUnit.MILLISECONDS);
         }
         String id=null;
@@ -14,13 +12,11 @@
           id=completionPredicateMatched.poll();
         }
         if (id != null || !exchangeEnqueued) {
-          if (LOG.isTraceEnabled()) {
-            if (id != null) {
-              LOG.trace("Collecting exchanges to be aggregated triggered by completion predicate");
-            }
+          if (id != null) {
+            LOG.trace("Collecting exchanges to be aggregated triggered by completion predicate");
+          }
  else {
-              LOG.trace("Collecting exchanges to be aggregated triggered by batch timeout");
-            }
+            LOG.trace("Collecting exchanges to be aggregated triggered by batch timeout");
           }
           drainQueueTo(collection,batchSize,id);
         }

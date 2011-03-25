@@ -13,9 +13,7 @@
   }
   Processor processor=getProcessor();
   if (!isExplicitMethod && processor != null) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Using a custom adapter as bean invocation: " + processor);
-    }
+    LOG.trace("Using a custom adapter as bean invocation: {}",processor);
     try {
       processor.process(exchange);
     }
@@ -28,14 +26,10 @@
   Message in=exchange.getIn();
   BeanInvocation beanInvoke=in.getBody(BeanInvocation.class);
   if (beanInvoke != null) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Exchange IN body is a BeanInvocation instance: " + beanInvoke);
-    }
+    LOG.trace("Exchange IN body is a BeanInvocation instance: {}",beanInvoke);
     Class<?> clazz=beanInvoke.getMethod().getDeclaringClass();
     boolean sameBean=clazz.isInstance(bean);
-    if (LOG.isTraceEnabled()) {
-      LOG.debug("BeanHolder bean: " + bean.getClass() + " and beanInvocation bean: "+ clazz+ " is same instance: "+ sameBean);
-    }
+    LOG.debug("BeanHolder bean: {} and beanInvocation bean: {} is same instance: {}",new Object[]{bean.getClass(),clazz,sameBean});
     if (sameBean) {
       beanInvoke.invoke(bean,exchange);
       exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
@@ -74,14 +68,10 @@
     AtomicBoolean sync=new AtomicBoolean(true);
     value=invocation.proceed(callback,sync);
     if (!sync.get()) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed asynchronously");
-      }
+      LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
       return false;
     }
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Processing exchangeId: " + exchange.getExchangeId() + " is continued being processed synchronously");
-    }
+    LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
   }
  catch (  InvocationTargetException e) {
     exchange.setException(e.getCause());

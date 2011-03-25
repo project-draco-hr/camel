@@ -1,39 +1,29 @@
 {
-  if (log.isTraceEnabled()) {
-    log.trace("Processing file: " + target + " for exchange: "+ exchange);
-  }
+  log.trace("Processing file: {} for exchange: {}",target,exchange);
   try {
     preWriteCheck();
     boolean writeAsTempAndRename=ObjectHelper.isNotEmpty(endpoint.getTempFileName());
     String tempTarget=null;
     if (writeAsTempAndRename) {
       tempTarget=createTempFileName(exchange,target);
-      if (log.isTraceEnabled()) {
-        log.trace("Writing using tempNameFile: " + tempTarget);
-      }
+      log.trace("Writing using tempNameFile: {}",tempTarget);
       if (operations.existsFile(target)) {
         if (endpoint.getFileExist() == GenericFileExist.Ignore) {
-          if (log.isTraceEnabled()) {
-            log.trace("An existing file already exists: " + target + ". Ignore and do not override it.");
-          }
+          log.trace("An existing file already exists: {}. Ignore and do not override it.",target);
           return;
         }
  else         if (endpoint.getFileExist() == GenericFileExist.Fail) {
           throw new GenericFileOperationFailedException("File already exist: " + target + ". Cannot write new file.");
         }
  else         if (endpoint.isEagerDeleteTargetFile() && endpoint.getFileExist() == GenericFileExist.Override) {
-          if (log.isTraceEnabled()) {
-            log.trace("Eagerly deleting existing file: " + target);
-          }
+          log.trace("Eagerly deleting existing file: {}",target);
           if (!operations.deleteFile(target)) {
             throw new GenericFileOperationFailedException("Cannot delete file: " + target);
           }
         }
       }
       if (operations.existsFile(tempTarget)) {
-        if (log.isTraceEnabled()) {
-          log.trace("Deleting existing temp file: " + tempTarget);
-        }
+        log.trace("Deleting existing temp file: {}",tempTarget);
         if (!operations.deleteFile(tempTarget)) {
           throw new GenericFileOperationFailedException("Cannot delete file: " + tempTarget);
         }
@@ -42,16 +32,12 @@
     writeFile(exchange,tempTarget != null ? tempTarget : target);
     if (tempTarget != null) {
       if (!endpoint.isEagerDeleteTargetFile() && operations.existsFile(target) && endpoint.getFileExist() == GenericFileExist.Override) {
-        if (log.isTraceEnabled()) {
-          log.trace("Deleting existing file: " + target);
-        }
+        log.trace("Deleting existing file: {}",target);
         if (!operations.deleteFile(target)) {
           throw new GenericFileOperationFailedException("Cannot delete file: " + target);
         }
       }
-      if (log.isTraceEnabled()) {
-        log.trace("Renaming file: [" + tempTarget + "] to: ["+ target+ "]");
-      }
+      log.trace("Renaming file: [{}] to: [{}]",tempTarget,target);
       boolean renamed=operations.renameFile(tempTarget,target);
       if (!renamed) {
         throw new GenericFileOperationFailedException("Cannot rename file from: " + tempTarget + " to: "+ target);
@@ -62,9 +48,7 @@
       ObjectHelper.notEmpty(doneFileName,"doneFileName",endpoint);
       Exchange empty=new DefaultExchange(exchange);
       empty.getIn().setBody("");
-      if (log.isTraceEnabled()) {
-        log.trace("Writing done file: [" + doneFileName + "]");
-      }
+      log.trace("Writing done file: [{}]",doneFileName);
       if (operations.existsFile(doneFileName)) {
         if (!operations.deleteFile(doneFileName)) {
           throw new GenericFileOperationFailedException("Cannot delete existing done file: " + doneFileName);
