@@ -1,0 +1,17 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").bean(MyBean.class,"order(Unknown)").to("mock:result");
+    }
+  }
+);
+  context.start();
+  try {
+    template.sendBody("direct:start",new MyOrder());
+    fail("Should have thrown an exception");
+  }
+ catch (  CamelExecutionException e) {
+    AmbiguousMethodCallException cause=assertIsInstanceOf(AmbiguousMethodCallException.class,e.getCause());
+    assertEquals(2,cause.getMethods().size());
+  }
+}

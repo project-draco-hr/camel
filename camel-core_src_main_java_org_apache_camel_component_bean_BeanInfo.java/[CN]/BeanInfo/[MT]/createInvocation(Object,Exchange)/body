@@ -1,21 +1,23 @@
 {
   MethodInfo methodInfo=null;
-  String name=exchange.getIn().getHeader(Exchange.BEAN_METHOD_NAME,String.class);
-  if (name != null) {
-    if (hasMethod(name)) {
-      List<MethodInfo> methods=getOperations(name);
-      if (methods != null && methods.size() == 1) {
-        methodInfo=methods.get(0);
-      }
- else {
-        methodInfo=chooseMethod(pojo,exchange,name);
-        if (methodInfo == null || !name.equals(methodInfo.getMethod().getName())) {
-          throw new AmbiguousMethodCallException(exchange,methods);
-        }
+  String methodName=exchange.getIn().getHeader(Exchange.BEAN_METHOD_NAME,String.class);
+  if (methodName != null) {
+    String name=methodName;
+    if (methodName.contains("(")) {
+      name=ObjectHelper.before(methodName,"(");
+    }
+    List<MethodInfo> methods=getOperations(name);
+    if (methods != null && methods.size() == 1) {
+      methodInfo=methods.get(0);
+    }
+ else     if (methods != null) {
+      methodInfo=chooseMethod(pojo,exchange,methodName);
+      if (methodInfo == null || !name.equals(methodInfo.getMethod().getName())) {
+        throw new AmbiguousMethodCallException(exchange,methods);
       }
     }
  else {
-      throw new MethodNotFoundException(exchange,pojo,name);
+      throw new MethodNotFoundException(exchange,pojo,methodName);
     }
   }
   if (methodInfo == null) {

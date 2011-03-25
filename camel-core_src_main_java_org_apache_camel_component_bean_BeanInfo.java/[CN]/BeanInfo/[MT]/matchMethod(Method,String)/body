@@ -1,0 +1,41 @@
+{
+  if (methodName == null) {
+    return true;
+  }
+  if (methodName.contains("(") && !methodName.endsWith(")")) {
+    throw new IllegalArgumentException("Name must have both starting and ending parenthesis, was: " + methodName);
+  }
+  String name=methodName;
+  if (name.contains("(")) {
+    name=ObjectHelper.before(name,"(");
+  }
+  if (!name.equals(method.getName())) {
+    return false;
+  }
+  String types=ObjectHelper.between(methodName,"(",")");
+  if (types != null) {
+    Iterator it=ObjectHelper.createIterator(types);
+    for (int i=0; i < method.getParameterTypes().length; i++) {
+      if (it.hasNext()) {
+        String qualifyType=(String)it.next();
+        if ("*".equals(qualifyType)) {
+          continue;
+        }
+        String parameterType=method.getParameterTypes()[i].getSimpleName();
+        if (qualifyType.indexOf(".") > -1) {
+          parameterType=method.getParameterTypes()[i].getName();
+        }
+        if (!parameterType.equals(qualifyType)) {
+          return false;
+        }
+      }
+ else {
+        return false;
+      }
+    }
+    if (it.hasNext()) {
+      return false;
+    }
+  }
+  return true;
+}
