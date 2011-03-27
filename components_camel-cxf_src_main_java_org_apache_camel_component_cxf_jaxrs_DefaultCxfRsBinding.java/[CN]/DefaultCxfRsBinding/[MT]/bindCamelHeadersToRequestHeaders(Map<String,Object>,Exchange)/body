@@ -2,18 +2,14 @@
   MultivaluedMap<String,String> answer=new MetadataMap<String,String>();
   for (  Map.Entry<String,Object> entry : camelHeaders.entrySet()) {
     if (headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue(),camelExchange)) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Drop Camel header: " + entry.getKey() + "="+ entry.getValue());
-      }
+      LOG.trace("Drop Camel header: {}={}",entry.getKey(),entry.getValue());
       continue;
     }
     String mappedHeaderName=camelToCxfHeaderMap.get(entry.getKey());
     if (mappedHeaderName == null) {
       mappedHeaderName=entry.getKey();
     }
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Propagate Camel header: " + entry.getKey() + "="+ entry.getValue()+ " as "+ mappedHeaderName);
-    }
+    LOG.trace("Propagate Camel header: {}={} as {}",new Object[]{entry.getKey(),entry.getValue(),mappedHeaderName});
     answer.putSingle(mappedHeaderName,entry.getValue().toString());
   }
   return answer;

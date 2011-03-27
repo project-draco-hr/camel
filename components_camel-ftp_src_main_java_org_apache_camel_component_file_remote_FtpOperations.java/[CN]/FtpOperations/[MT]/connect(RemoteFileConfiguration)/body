@@ -1,23 +1,21 @@
 {
-  if (log.isTraceEnabled()) {
-    log.trace("Connecting using FTPClient: " + client);
-  }
+  log.trace("Connecting using FTPClient: {}",client);
   String host=configuration.getHost();
   int port=configuration.getPort();
   String username=configuration.getUsername();
   if (clientConfig != null) {
-    log.trace("Configuring FTPClient with config: " + clientConfig);
+    log.trace("Configuring FTPClient with config: {}",clientConfig);
     client.configure(clientConfig);
   }
   if (log.isTraceEnabled()) {
-    log.trace("Connecting to " + configuration.remoteServerInformation() + " using connection timeout: "+ client.getConnectTimeout());
+    log.trace("Connecting to {} using connection timeout: {}",configuration.remoteServerInformation(),client.getConnectTimeout());
   }
   boolean connected=false;
   int attempt=0;
   while (!connected) {
     try {
       if (log.isTraceEnabled() && attempt > 0) {
-        log.trace("Reconnect attempt #" + attempt + " connecting to + "+ configuration.remoteServerInformation());
+        log.trace("Reconnect attempt #{} connecting to {}",attempt,configuration.remoteServerInformation());
       }
       client.connect(host,port);
       int reply=client.getReplyCode();
@@ -39,9 +37,7 @@
  else {
         failed=new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
       }
-      if (log.isTraceEnabled()) {
-        log.trace("Cannot connect due: " + failed.getMessage());
-      }
+      log.trace("Cannot connect due: {}",failed.getMessage());
       attempt++;
       if (attempt > endpoint.getMaximumReconnectAttempts()) {
         throw failed;
@@ -76,18 +72,14 @@
   try {
     boolean login;
     if (username != null) {
-      if (log.isTraceEnabled()) {
-        log.trace("Attempting to login user: " + username + " using password: "+ configuration.getPassword());
-      }
+      log.trace("Attempting to login user: {} using password: {}",username,configuration.getPassword());
       login=client.login(username,configuration.getPassword());
     }
  else {
       log.trace("Attempting to login anonymous");
       login=client.login("anonymous","");
     }
-    if (log.isTraceEnabled()) {
-      log.trace("User " + (username != null ? username : "anonymous") + " logged in: "+ login);
-    }
+    log.trace("User {} logged in: {}",username != null ? username : "anonymous",login);
     if (!login) {
       throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString());
     }
@@ -101,9 +93,7 @@
     while (it.hasNext()) {
       Object next=it.next();
       String command=endpoint.getCamelContext().getTypeConverter().convertTo(String.class,next);
-      if (log.isTraceEnabled()) {
-        log.trace("Site command to send: " + command);
-      }
+      log.trace("Site command to send: {}",command);
       if (command != null) {
         boolean result=sendSiteCommand(command);
         if (!result) {

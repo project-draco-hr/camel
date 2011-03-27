@@ -8,17 +8,13 @@ synchronized (continuation) {
       final org.apache.camel.Exchange camelExchange=endpoint.createExchange(ep);
       CxfRsBinding binding=endpoint.getBinding();
       binding.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Suspending continuation of exchangeId: " + camelExchange.getExchangeId());
-      }
+      LOG.trace("Suspending continuation of exchangeId: {}",camelExchange.getExchangeId());
       continuation.suspend(0);
       cxfExchange.put(SUSPENED,Boolean.TRUE);
       cxfRsConsumer.getAsyncProcessor().process(camelExchange,new AsyncCallback(){
         public void done(        boolean doneSync){
 synchronized (continuation) {
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("Resuming continuation of exchangeId: " + camelExchange.getExchangeId());
-            }
+            LOG.trace("Resuming continuation of exchangeId: {}",camelExchange.getExchangeId());
             continuation.setObject(camelExchange);
             continuation.resume();
           }
