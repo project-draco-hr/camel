@@ -12,6 +12,13 @@
   if (exchange.getProperty(Exchange.CREATED_TIMESTAMP) == null) {
     exchange.setProperty(Exchange.CREATED_TIMESTAMP,new Date());
   }
+  if (exchange.getContext().isUseBreadcrumb()) {
+    String breadcrumbId=exchange.getIn().getHeader(Exchange.BREADCRUMB_ID,String.class);
+    if (breadcrumbId == null) {
+      breadcrumbId=exchange.getIn().getMessageId();
+      exchange.getIn().setHeader(Exchange.BREADCRUMB_ID,breadcrumbId);
+    }
+  }
   EventHelper.notifyExchangeCreated(exchange.getContext(),exchange);
   if (exchange.getContext() != null) {
     exchange.getContext().getInflightRepository().add(exchange);
