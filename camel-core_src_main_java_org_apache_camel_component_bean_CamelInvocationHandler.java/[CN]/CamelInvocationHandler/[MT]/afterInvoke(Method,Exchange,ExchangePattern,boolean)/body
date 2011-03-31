@@ -1,0 +1,39 @@
+{
+  Throwable cause=exchange.getException();
+  if (cause != null) {
+    Throwable found=findSuitableException(cause,method);
+    if (found != null) {
+      if (found instanceof Exception) {
+        throw (Exception)found;
+      }
+ else {
+        throw new CamelExchangeException("Error processing exchange",exchange,cause);
+      }
+    }
+    if (cause instanceof RuntimeCamelException) {
+      if (cause.getCause() instanceof RuntimeException) {
+        throw (RuntimeException)((RuntimeCamelException)cause).getCause();
+      }
+      throw (RuntimeCamelException)cause;
+    }
+    if (cause instanceof Exception) {
+      throw (Exception)cause;
+    }
+ else {
+      throw new CamelExchangeException("Error processing exchange",exchange,cause);
+    }
+  }
+  Class<?> to=method.getReturnType();
+  if (to == Void.TYPE) {
+    return null;
+  }
+  Object answer;
+  if (!isFuture) {
+    answer=getBody(exchange,to);
+  }
+ else {
+    Class<?> returnTo=getGenericType(exchange.getContext(),method.getGenericReturnType());
+    answer=getBody(exchange,returnTo);
+  }
+  return answer;
+}

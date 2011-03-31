@@ -1,36 +1,34 @@
 {
   BeanInvocation invocation=new BeanInvocation(method,args);
-  ExchangePattern pattern=ExchangePattern.InOut;
   MethodInfo methodInfo=methodInfoCache.getMethodInfo(method);
-  if (methodInfo != null) {
-    pattern=methodInfo.getPattern();
-  }
-  Exchange exchange=new DefaultExchange(endpoint,pattern);
+  final ExchangePattern pattern=methodInfo != null ? methodInfo.getPattern() : ExchangePattern.InOut;
+  final Exchange exchange=new DefaultExchange(endpoint,pattern);
   exchange.getIn().setBody(invocation);
-  LOG.trace("Proxied method call {} invoking producer: {}",method.getName(),producer);
-  producer.process(exchange);
-  Throwable cause=exchange.getException();
-  if (cause != null) {
-    Throwable found=findSuitableException(cause,method);
-    if (found != null) {
-      throw found;
+  final boolean isFuture=method.getReturnType() == Future.class;
+  FutureTask task=new FutureTask<Object>(new Callable<Object>(){
+    public Object call() throws Exception {
+      LOG.trace("Proxied method call {} invoking producer: {}",method.getName(),producer);
+      producer.process(exchange);
+      Object answer=afterInvoke(method,exchange,pattern,isFuture);
+      LOG.trace("Proxied method call {} returning: {}",method.getName(),answer);
+      return answer;
     }
-    if (cause instanceof RuntimeCamelException) {
-      if (cause.getCause() instanceof RuntimeException) {
-        throw (RuntimeException)((RuntimeCamelException)cause).getCause();
-      }
-      throw (RuntimeCamelException)cause;
+  }
+);
+  if (isFuture) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Submitting task for exchange id {}",exchange.getExchangeId());
     }
-    throw cause;
+    getExecutorService(exchange.getContext()).submit(task);
+    return task;
   }
-  Class<?> to=method.getReturnType();
-  if (to == Void.TYPE || !pattern.isOutCapable()) {
-    return null;
+ else {
+    try {
+      task.run();
+      return task.get();
+    }
+ catch (    ExecutionException e) {
+      throw e.getCause();
+    }
   }
-  if (!exchange.hasOut() || exchange.getOut().getBody() == null) {
-    return null;
-  }
-  Object answer=exchange.getOut().getMandatoryBody(to);
-  LOG.trace("Proxied method call {} returning: {}",method.getName(),answer);
-  return answer;
 }

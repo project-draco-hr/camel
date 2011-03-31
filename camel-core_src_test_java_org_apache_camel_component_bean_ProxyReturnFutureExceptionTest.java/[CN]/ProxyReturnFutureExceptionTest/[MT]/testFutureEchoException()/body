@@ -1,0 +1,15 @@
+{
+  Echo service=ProxyHelper.createProxy(context.getEndpoint("direct:echo"),Echo.class);
+  Future future=service.asText(4);
+  log.info("Got future");
+  assertFalse("Should not be done",future.isDone());
+  log.info("Waiting for future to be done ...");
+  try {
+    assertEquals("Four",future.get(5,TimeUnit.SECONDS));
+    fail("Should have thrown exception");
+  }
+ catch (  ExecutionException e) {
+    IllegalArgumentException cause=assertIsInstanceOf(IllegalArgumentException.class,e.getCause());
+    assertEquals("Forced",cause.getMessage());
+  }
+}
