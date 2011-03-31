@@ -1,0 +1,20 @@
+{
+  super.doStart();
+  String bucketName=getConfiguration().getBucketName();
+  LOG.trace("Quering whether bucket [{}] already exists...",bucketName);
+  List<Bucket> buckets=getS3Client().listBuckets();
+  for (  Bucket bucket : buckets) {
+    if (bucketName.equals(bucket.getName())) {
+      LOG.trace("Bucket [{}] already exist",bucketName);
+      return;
+    }
+  }
+  LOG.trace("Bucket [{}] doesn't exist yet",bucketName);
+  CreateBucketRequest createBucketRequest=new CreateBucketRequest(getConfiguration().getBucketName());
+  if (getConfiguration().getRegion() != null) {
+    createBucketRequest.setRegion(getConfiguration().getRegion());
+  }
+  LOG.trace("Creating bucket [{}] in region [{}] with request [{}]...",new Object[]{configuration.getBucketName(),configuration.getRegion(),createBucketRequest});
+  getS3Client().createBucket(createBucketRequest);
+  LOG.trace("Bucket created");
+}

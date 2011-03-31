@@ -1,0 +1,12 @@
+{
+  ObjectMetadata objectMetadata=new ObjectMetadata();
+  PutObjectRequest putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),exchange.getIn().getMandatoryBody(InputStream.class),objectMetadata);
+  LOG.trace("Put object [{}] from exchange [{}]...",putObjectRequest,exchange);
+  PutObjectResult putObjectResult=getEndpoint().getS3Client().putObject(putObjectRequest);
+  LOG.trace("Received result [{}]",putObjectResult);
+  Message message=getMessageForResponse(exchange);
+  message.setHeader(S3Constants.E_TAG,putObjectResult.getETag());
+  if (putObjectResult.getVersionId() != null) {
+    message.setHeader(S3Constants.VERSION_ID,putObjectResult.getVersionId());
+  }
+}

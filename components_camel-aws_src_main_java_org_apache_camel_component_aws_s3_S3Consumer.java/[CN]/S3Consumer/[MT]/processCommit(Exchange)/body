@@ -1,0 +1,15 @@
+{
+  try {
+    if (getConfiguration().isDeleteAfterRead()) {
+      String bucketName=exchange.getIn().getHeader(S3Constants.BUCKET_NAME,String.class);
+      String key=exchange.getIn().getHeader(S3Constants.KEY,String.class);
+      LOG.trace("Deleting object from bucket {} with key {}...",bucketName,key);
+      getAmazonS3Client().deleteObject(bucketName,key);
+      LOG.trace("Object deleted");
+    }
+  }
+ catch (  AmazonClientException e) {
+    LOG.warn("Error occurred during deleting object",e);
+    exchange.setException(e);
+  }
+}

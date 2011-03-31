@@ -1,0 +1,13 @@
+{
+  shutdownRunningTask=null;
+  pendingExchanges=0;
+  String bucketName=getConfiguration().getBucketName();
+  LOG.trace("Quering objects in bucket [{}]...",bucketName);
+  ListObjectsRequest listObjectsRequest=new ListObjectsRequest();
+  listObjectsRequest.setBucketName(bucketName);
+  listObjectsRequest.setMaxKeys(getMaxMessagesPerPoll());
+  ObjectListing listObjects=getAmazonS3Client().listObjects(listObjectsRequest);
+  LOG.trace("Found {} objects in bucket [{}]...",listObjects.getObjectSummaries().size(),bucketName);
+  Queue<Exchange> exchanges=createExchanges(listObjects.getObjectSummaries());
+  return processBatch(CastUtils.cast(exchanges));
+}
