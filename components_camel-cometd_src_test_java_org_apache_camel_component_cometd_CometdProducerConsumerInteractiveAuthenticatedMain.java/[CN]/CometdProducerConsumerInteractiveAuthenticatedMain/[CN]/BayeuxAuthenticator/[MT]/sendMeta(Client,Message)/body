@@ -1,0 +1,20 @@
+{
+  if (Bayeux.META_HANDSHAKE.equals(responseMessage.getChannel())) {
+    Message requestMessage=responseMessage.getAssociated();
+    Map<String,Object> requestExt=requestMessage.getExt(false);
+    if (requestExt != null && requestExt.get("authenticationData") != null) {
+      Object authenticationData=requestExt.get("authenticationData");
+      remote.addListener(this);
+    }
+ else {
+      Map<String,Object> responseExt=responseMessage.getExt(true);
+      Map<String,Object> authentication=new HashMap<String,Object>();
+      responseExt.put("authentication",authentication);
+      authentication.put("failed",true);
+      Map<String,Object> advice=new HashMap<String,Object>();
+      advice.put(Bayeux.RECONNECT_FIELD,Bayeux.NONE_RESPONSE);
+      responseMessage.put(Bayeux.ADVICE_FIELD,advice);
+    }
+  }
+  return responseMessage;
+}
