@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(Exception.class).handled(true).maximumRedeliveries(4).logStackTrace(false).setBody().constant("Error");
+      from("direct:start").to("mock:foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          log.info("Invoking me");
+          throw new IllegalArgumentException("Damn");
+        }
+      }
+).id("myprocessor");
+    }
+  }
+;
+}

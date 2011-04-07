@@ -1,0 +1,21 @@
+{
+  MBeanServer mbeanServer=getMBeanServer();
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  Object out=template.requestBody("direct:start","Hello World");
+  assertEquals("Error",out);
+  assertMockEndpointsSatisfied();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=routes,name=\"route1\"");
+  Long num=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
+  assertEquals(1,num.longValue());
+  num=(Long)mbeanServer.getAttribute(on,"ExchangesFailed");
+  assertEquals(0,num.longValue());
+  num=(Long)mbeanServer.getAttribute(on,"FailuresHandled");
+  assertEquals(1,num.longValue());
+  on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"myprocessor\"");
+  num=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
+  assertEquals(0,num.longValue());
+  num=(Long)mbeanServer.getAttribute(on,"ExchangesFailed");
+  assertEquals(5,num.longValue());
+  num=(Long)mbeanServer.getAttribute(on,"Redeliveries");
+  assertEquals(4,num.longValue());
+}
