@@ -7,7 +7,38 @@
     dynamicQueryContext.setContextItem(item);
   }
  else {
-    Source source=in.getMandatoryBody(Source.class);
+    Source source=in.getBody(Source.class);
+    if (source == null) {
+      Object body=in.getBody();
+      if (body instanceof GenericFile) {
+        InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,body);
+        source=converter.toDOMSource(is);
+      }
+ else       if (body instanceof BeanInvocation) {
+        BeanInvocation bi=exchange.getContext().getTypeConverter().convertTo(BeanInvocation.class,body);
+        if (bi.getArgs() != null && bi.getArgs().length == 1 && bi.getArgs()[0] == null) {
+          source=null;
+        }
+      }
+ else       if (body instanceof String) {
+        source=converter.toDOMSource(body.toString());
+      }
+ else {
+        InputStream is=in.getBody(InputStream.class);
+        if (is != null) {
+          source=converter.toDOMSource(is);
+        }
+        if (source == null) {
+          String s=in.getBody(String.class);
+          if (s != null) {
+            source=converter.toDOMSource(s);
+          }
+        }
+      }
+      if (source == null) {
+        throw new NoTypeConversionAvailableException(body,Source.class);
+      }
+    }
     DocumentInfo doc=getStaticQueryContext().buildDocument(source);
     dynamicQueryContext.setContextItem(doc);
   }
