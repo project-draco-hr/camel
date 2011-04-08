@@ -1,6 +1,14 @@
 {
   ServiceHelper.startServices(output,outputAsync,deadLetter);
   if (executorService == null || executorService.isShutdown()) {
-    executorService=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"ErrorHandlerRedeliveryTask");
+    if (executorServiceRef != null) {
+      executorService=camelContext.getExecutorServiceStrategy().lookupScheduled(this,"ErrorHandlerRedeliveryTask",executorServiceRef);
+      if (executorService == null) {
+        throw new IllegalArgumentException("ExecutorServiceRef " + executorServiceRef + " not found in registry.");
+      }
+    }
+ else {
+      executorService=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"ErrorHandlerRedeliveryTask");
+    }
   }
 }
