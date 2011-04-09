@@ -1,0 +1,25 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").bean(RecipientListBeanOnPrepareTest.class,"doSomething");
+      from("direct:a").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Animal body=exchange.getIn().getBody(Animal.class);
+          assertEquals(1,body.getId());
+          assertEquals("Tiger",body.getName());
+          body.setName("Tony the Tiger");
+        }
+      }
+).to("mock:a");
+      from("direct:b").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Animal body=exchange.getIn().getBody(Animal.class);
+          assertEquals(1,body.getId());
+          assertEquals("Tiger",body.getName());
+        }
+      }
+).to("mock:b");
+    }
+  }
+;
+}
