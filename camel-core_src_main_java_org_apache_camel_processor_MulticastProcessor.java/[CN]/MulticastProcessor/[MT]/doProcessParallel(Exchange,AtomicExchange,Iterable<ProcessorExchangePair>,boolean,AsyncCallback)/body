@@ -15,8 +15,8 @@
     final AtomicBoolean allTasksSubmitted=new AtomicBoolean();
     final CountDownLatch aggregationOnTheFlyDone=new CountDownLatch(1);
     final AtomicException executionException=new AtomicException();
-    AggregateOnTheFlyTask task=new AggregateOnTheFlyTask(result,original,total,completion,running,aggregationOnTheFlyDone,allTasksSubmitted,executionException);
-    aggregateExecutorService.submit(task);
+    final AggregateOnTheFlyTask aggregateOnTheFlyTask=new AggregateOnTheFlyTask(result,original,total,completion,running,aggregationOnTheFlyDone,allTasksSubmitted,executionException);
+    final AtomicBoolean aggregationTaskSubmitted=new AtomicBoolean();
     LOG.trace("Starting to submit parallel tasks");
     while (it.hasNext()) {
       final ProcessorExchangePair pair=it.next();
@@ -24,6 +24,9 @@
       updateNewExchange(subExchange,total.intValue(),pairs,it);
       completion.submit(new Callable<Exchange>(){
         public Exchange call() throws Exception {
+          if (aggregationTaskSubmitted.compareAndSet(false,true)) {
+            aggregateExecutorService.submit(aggregateOnTheFlyTask);
+          }
           if (!running.get()) {
             return subExchange;
           }
@@ -50,7 +53,7 @@
     }
     LOG.trace("Signaling that all {} tasks has been submitted.",total.get());
     allTasksSubmitted.set(true);
-    LOG.debug("Waiting for on-the-fly aggregation to complete aggregating {} responses.",total.get());
+    LOG.debug("Waiting for on-the-fly aggregation to complete aggregating {} responses for exchangeId: {}",total.get(),original.getExchangeId());
     aggregationOnTheFlyDone.await();
     if (executionException.get() != null) {
       if (LOG.isDebugEnabled()) {
