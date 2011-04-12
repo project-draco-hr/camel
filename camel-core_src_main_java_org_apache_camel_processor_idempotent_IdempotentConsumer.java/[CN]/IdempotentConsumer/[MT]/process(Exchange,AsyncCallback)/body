@@ -11,9 +11,15 @@
     newKey=!idempotentRepository.contains(messageId);
   }
   if (!newKey) {
+    exchange.setProperty(Exchange.DUPLICATE_MESSAGE,Boolean.TRUE);
+  }
+  if (!newKey) {
     onDuplicateMessage(exchange,messageId);
-    callback.done(true);
-    return true;
+    if (skipDuplicate) {
+      LOG.debug("Ignoring duplicate message with id: {} for exchange: {}",messageId,exchange);
+      callback.done(true);
+      return true;
+    }
   }
   exchange.addOnCompletion(new IdempotentOnCompletion(idempotentRepository,messageId,eager));
   return processor.process(exchange,callback);

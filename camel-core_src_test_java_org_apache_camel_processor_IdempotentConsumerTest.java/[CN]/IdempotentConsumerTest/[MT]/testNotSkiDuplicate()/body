@@ -1,0 +1,24 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      IdempotentRepository repo=MemoryIdempotentRepository.memoryIdempotentRepository(200);
+      from("direct:start").idempotentConsumer(header("messageId")).messageIdRepository(repo).skipDuplicate(false).to("mock:result");
+    }
+  }
+);
+  context.start();
+  resultEndpoint.expectedBodiesReceived("one","two","one","two","one","three");
+  resultEndpoint.message(0).property(Exchange.DUPLICATE_MESSAGE).isNull();
+  resultEndpoint.message(1).property(Exchange.DUPLICATE_MESSAGE).isNull();
+  resultEndpoint.message(2).property(Exchange.DUPLICATE_MESSAGE).isEqualTo(Boolean.TRUE);
+  resultEndpoint.message(3).property(Exchange.DUPLICATE_MESSAGE).isEqualTo(Boolean.TRUE);
+  resultEndpoint.message(4).property(Exchange.DUPLICATE_MESSAGE).isEqualTo(Boolean.TRUE);
+  resultEndpoint.message(5).property(Exchange.DUPLICATE_MESSAGE).isNull();
+  sendMessage("1","one");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  sendMessage("3","three");
+  assertMockEndpointsSatisfied();
+}
