@@ -9,9 +9,17 @@
   if (newExchangeProcessorRef != null) {
     newExchangeProcessor=routeContext.lookup(newExchangeProcessorRef,Processor.class);
   }
-  answer.setNewExchangeProcessor(newExchangeProcessor);
+  if (newExchangeProcessor != null) {
+    answer.addNewExchangeProcessor(newExchangeProcessor);
+  }
   if (newExchangeExpression != null) {
     answer.setNewExchangeExpression(newExchangeExpression.createExpression(routeContext));
+  }
+  if (headers != null && !headers.isEmpty()) {
+    for (    SetHeaderDefinition header : headers) {
+      Processor processor=header.createProcessor(routeContext);
+      answer.addNewExchangeProcessor(processor);
+    }
   }
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
