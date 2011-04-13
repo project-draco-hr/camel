@@ -1,7 +1,16 @@
 {
   task=new TimerTask(){
+    private final AtomicLong counter=new AtomicLong();
     @Override public void run(){
-      sendTimerExchange();
+      long count=counter.incrementAndGet();
+      boolean fire=endpoint.getRepeatCount() <= 0 || count <= endpoint.getRepeatCount();
+      if (fire) {
+        sendTimerExchange(count);
+      }
+ else {
+        LOG.debug("Cancelling {} timer as repeat count limit reached after {} counts.",endpoint.getTimerName(),endpoint.getRepeatCount());
+        cancel();
+      }
     }
   }
 ;
