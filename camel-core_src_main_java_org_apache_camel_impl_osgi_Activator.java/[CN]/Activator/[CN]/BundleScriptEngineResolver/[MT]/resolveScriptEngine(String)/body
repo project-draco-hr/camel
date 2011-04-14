@@ -1,0 +1,28 @@
+{
+  try {
+    BufferedReader in=new BufferedReader(new InputStreamReader(configFile.openStream()));
+    String className=in.readLine();
+    in.close();
+    Class cls=bundle.loadClass(className);
+    if (!ScriptEngineFactory.class.isAssignableFrom(cls)) {
+      throw new IllegalStateException("Invalid script engine factory " + cls.getName());
+    }
+    ScriptEngineFactory factory=(ScriptEngineFactory)cls.newInstance();
+    List<String> names=factory.getNames();
+    for (    String test : names) {
+      if (test.equals(name)) {
+        ClassLoader old=Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(factory.getClass().getClassLoader());
+        ScriptEngine engine=factory.getScriptEngine();
+        Thread.currentThread().setContextClassLoader(old);
+        return engine;
+      }
+    }
+    LOG.debug("Script Engine Factory for " + factory.getEngineName() + " does not match "+ name);
+    return null;
+  }
+ catch (  Exception e) {
+    LOG.warn("Unable to create script engine factory: " + e.getClass().getName(),e);
+    return null;
+  }
+}
