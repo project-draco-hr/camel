@@ -21,15 +21,15 @@
       if (suspend) {
         suspendNow(consumer);
         deferredConsumers.add(new ShutdownDeferredConsumer(order.getRoute(),consumer));
-        LOG.info("Route: " + order.getRoute().getId() + " suspended and shutdown deferred, was consuming from: "+ order.getRoute().getEndpoint());
+        LOG.debug("Route: {} suspended and shutdown deferred, was consuming from: {}",order.getRoute().getId(),order.getRoute().getEndpoint());
       }
  else       if (shutdown) {
         shutdownNow(consumer);
-        LOG.info("Route: " + order.getRoute().getId() + " shutdown complete, was consuming from: "+ order.getRoute().getEndpoint());
+        LOG.info("Route: {} shutdown complete, was consuming from: {}",order.getRoute().getId(),order.getRoute().getEndpoint());
       }
  else {
         deferredConsumers.add(new ShutdownDeferredConsumer(order.getRoute(),consumer));
-        LOG.info("Route: " + order.getRoute().getId() + (suspendOnly ? " shutdown deferred." : " suspension deferred."));
+        LOG.debug("Route: " + order.getRoute().getId() + (suspendOnly ? " shutdown deferred." : " suspension deferred."));
       }
     }
   }
@@ -46,7 +46,7 @@
         }
         if (inflight > 0) {
           size+=inflight;
-          LOG.debug("{} inflight and pending exchanges for consumer: {}",inflight,consumer);
+          LOG.trace("{} inflight and pending exchanges for consumer: {}",inflight,consumer);
         }
       }
     }
@@ -62,7 +62,6 @@
         }
  else {
           LOG.warn("Interrupted while waiting during graceful shutdown, will force shutdown now.");
-          Thread.currentThread().interrupt();
           break;
         }
       }
@@ -74,22 +73,20 @@
   for (  ShutdownDeferredConsumer deferred : deferredConsumers) {
     Consumer consumer=deferred.getConsumer();
     if (consumer instanceof ShutdownAware) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Route: {} preparing to shutdown.",deferred.getRoute().getId());
-      }
+      LOG.trace("Route: {} preparing to shutdown.",deferred.getRoute().getId());
       ((ShutdownAware)consumer).prepareShutdown();
-      LOG.info("Route: " + deferred.getRoute().getId() + " preparing to shutdown complete.");
+      LOG.debug("Route: {} preparing to shutdown complete.",deferred.getRoute().getId());
     }
   }
   for (  ShutdownDeferredConsumer deferred : deferredConsumers) {
     Consumer consumer=deferred.getConsumer();
     if (suspendOnly) {
       suspendNow(consumer);
-      LOG.info("Route: " + deferred.getRoute().getId() + " suspend complete.");
+      LOG.info("Route: {} suspend complete, was consuming from: {}",deferred.getRoute().getId(),deferred.getConsumer().getEndpoint());
     }
  else {
       shutdownNow(consumer);
-      LOG.info("Route: " + deferred.getRoute().getId() + " shutdown complete.");
+      LOG.info("Route: {} shutdown complete, was consuming from: {}",deferred.getRoute().getId(),deferred.getConsumer().getEndpoint());
     }
   }
 }
