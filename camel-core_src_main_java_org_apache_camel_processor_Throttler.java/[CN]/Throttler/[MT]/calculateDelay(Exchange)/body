@@ -1,4 +1,14 @@
 {
+  Long longValue=maxRequestsPerPeriodExpression.evaluate(exchange,Long.class);
+  if (longValue != null) {
+    if (maximumRequestsPerPeriod > 0 && longValue.longValue() != maximumRequestsPerPeriod) {
+      log.debug("Throttler changed maximum requests per period from {} to {}",maximumRequestsPerPeriod,longValue);
+    }
+    maximumRequestsPerPeriod=longValue;
+  }
+  if (maximumRequestsPerPeriod <= 0) {
+    throw new IllegalStateException("The maximumRequestsPerPeriod must be a positive number, was: " + maximumRequestsPerPeriod);
+  }
   TimeSlot slot=nextSlot();
   if (!slot.isActive()) {
     long delay=slot.startTime - currentSystemTime();
