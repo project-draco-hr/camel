@@ -1,0 +1,29 @@
+{
+  DefaultCxfBinding cxfBinding=new DefaultCxfBinding();
+  cxfBinding.setHeaderFilterStrategy(new DefaultHeaderFilterStrategy());
+  Exchange exchange=new DefaultExchange(context);
+  org.apache.cxf.message.Exchange cxfExchange=new org.apache.cxf.message.ExchangeImpl();
+  exchange.setProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.PAYLOAD);
+  org.apache.cxf.message.Message cxfMessage=new org.apache.cxf.message.MessageImpl();
+  Map<String,List<String>> headers=new TreeMap<String,List<String>>(String.CASE_INSENSITIVE_ORDER);
+  headers.put("content-type",Arrays.asList("text/xml;charset=UTF-8"));
+  headers.put("Content-Length",Arrays.asList("241"));
+  headers.put("soapAction",Arrays.asList("urn:hello:world"));
+  headers.put("myfruitheader",Arrays.asList("peach"));
+  cxfMessage.put(org.apache.cxf.message.Message.PROTOCOL_HEADERS,headers);
+  Set<Attachment> attachments=new HashSet<Attachment>();
+  attachments.add(new AttachmentImpl("att-1",new DataHandler(new FileDataSource("pom.xml"))));
+  cxfMessage.setAttachments(attachments);
+  cxfExchange.setInMessage(cxfMessage);
+  cxfBinding.populateExchangeFromCxfRequest(cxfExchange,exchange);
+  Map<String,Object> camelHeaders=exchange.getIn().getHeaders();
+  assertNotNull(camelHeaders);
+  assertEquals(camelHeaders.get("soapaction"),"urn:hello:world");
+  assertEquals(camelHeaders.get("SoapAction"),"urn:hello:world");
+  assertEquals(camelHeaders.get("content-type"),"text/xml;charset=UTF-8");
+  assertEquals(camelHeaders.get("content-length"),"241");
+  assertEquals(camelHeaders.get("MyFruitHeader"),"peach");
+  Map<String,DataHandler> camelAttachments=exchange.getIn().getAttachments();
+  assertNotNull(camelAttachments);
+  assertNotNull(camelAttachments.get("att-1"));
+}

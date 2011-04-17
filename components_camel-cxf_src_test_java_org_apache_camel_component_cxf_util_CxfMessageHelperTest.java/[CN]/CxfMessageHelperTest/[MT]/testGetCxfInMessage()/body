@@ -21,4 +21,13 @@
   is=message.getContent(InputStream.class);
   assertNotNull("The input stream should not be null",is);
   assertEquals("Don't get the right message",toString(is),REQUEST_STRING);
+  exchange.getIn().setBody("hello world");
+  exchange.getIn().setHeader("soapAction","urn:hello:world");
+  message=CxfMessageHelper.getCxfInMessage(headerFilterStrategy,exchange,false);
+  Map<String,List<String>> headers=CastUtils.cast((Map)message.get(Message.PROTOCOL_HEADERS));
+  assertNotNull("The headers must be present",headers);
+  assertTrue("There must be one header entry",headers.size() == 1);
+  verifyHeader(headers,"soapaction","urn:hello:world");
+  verifyHeader(headers,"SoapAction","urn:hello:world");
+  verifyHeader(headers,"SOAPAction","urn:hello:world");
 }
