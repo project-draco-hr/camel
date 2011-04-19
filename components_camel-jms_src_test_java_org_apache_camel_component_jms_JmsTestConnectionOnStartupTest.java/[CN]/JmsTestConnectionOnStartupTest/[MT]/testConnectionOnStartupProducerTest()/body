@@ -1,0 +1,15 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("activemq:queue:foo?testConnectionOnStartup=true");
+    }
+  }
+);
+  try {
+    context.start();
+    fail("Should have thrown an exception");
+  }
+ catch (  FailedToCreateProducerException e) {
+    assertEquals("Failed to create Producer for endpoint: Endpoint[activemq://queue:foo?testConnectionOnStartup=true]. " + "Reason: org.apache.camel.FailedToCreateProducerException: Failed to create Producer for endpoint: " + "Endpoint[activemq://queue:foo?testConnectionOnStartup=true]. Reason: javax.jms.JMSException: "+ "Could not connect to broker URL: tcp://localhost:61111. Reason: java.net.ConnectException: Connection refused",e.getMessage());
+  }
+}
