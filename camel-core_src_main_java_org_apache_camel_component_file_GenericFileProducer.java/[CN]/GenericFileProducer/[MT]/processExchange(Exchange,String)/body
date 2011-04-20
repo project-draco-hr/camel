@@ -4,10 +4,12 @@
     preWriteCheck();
     boolean writeAsTempAndRename=ObjectHelper.isNotEmpty(endpoint.getTempFileName());
     String tempTarget=null;
+    Boolean targetExists=null;
     if (writeAsTempAndRename) {
       tempTarget=createTempFileName(exchange,target);
       log.trace("Writing using tempNameFile: {}",tempTarget);
-      if (operations.existsFile(target)) {
+      targetExists=operations.existsFile(target);
+      if (targetExists) {
         if (endpoint.getFileExist() == GenericFileExist.Ignore) {
           log.trace("An existing file already exists: {}. Ignore and do not override it.",target);
           return;
@@ -31,7 +33,7 @@
     }
     writeFile(exchange,tempTarget != null ? tempTarget : target);
     if (tempTarget != null) {
-      if (!endpoint.isEagerDeleteTargetFile() && operations.existsFile(target) && endpoint.getFileExist() == GenericFileExist.Override) {
+      if (!endpoint.isEagerDeleteTargetFile() && targetExists && endpoint.getFileExist() == GenericFileExist.Override) {
         log.trace("Deleting existing file: {}",target);
         if (!operations.deleteFile(target)) {
           throw new GenericFileOperationFailedException("Cannot delete file: " + target);
