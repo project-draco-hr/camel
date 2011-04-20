@@ -1,12 +1,15 @@
 {
-  ContinuationCometdServlet servlet=new ContinuationCometdServlet();
+  CometdServlet servlet=new CometdServlet();
   ServletContextHandler context=new ServletContextHandler(server,"/",ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
   context.setConnectorNames(new String[]{connector.getName()});
   ServletHolder holder=new ServletHolder();
   holder.setServlet(servlet);
+  holder.setAsyncSupported(true);
   if (endpoint.getBaseResource() != null) {
     String[] resources=endpoint.getBaseResource().split(":");
-    LOG.debug(">>> Protocol found :" + resources[0] + ", and resource : "+ resources[1]);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(">>> Protocol found: " + resources[0] + ", and resource: "+ resources[1]);
+    }
     if (resources[0].equals("file")) {
       context.setBaseResource(Resource.newResource(resources[1]));
     }
@@ -17,6 +20,7 @@
   }
   context.addServlet(holder,"/cometd/*");
   context.addServlet("org.eclipse.jetty.servlet.DefaultServlet","/");
+  context.setSessionHandler(new SessionHandler(new HashSessionManager()));
   holder.setInitParameter("timeout",Integer.toString(endpoint.getTimeout()));
   holder.setInitParameter("interval",Integer.toString(endpoint.getInterval()));
   holder.setInitParameter("maxInterval",Integer.toString(endpoint.getMaxInterval()));

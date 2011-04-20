@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      CometdComponent component=(CometdComponent)context.getComponent("cometds");
+      component.setSslPassword(pwd);
+      component.setSslKeyPassword(pwd);
+      File file=new File("./src/test/resources/jsse/localhost.ks");
+      URI keyStoreUrl=file.toURI();
+      component.setSslKeystore(keyStoreUrl.getPath());
+      from(URI,URIS).inOut().process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Message out=new DefaultMessage();
+          out.setBody("reply: " + exchange.getIn().getBody());
+          exchange.setOut(out);
+        }
+      }
+);
+    }
+  }
+;
+}

@@ -17,7 +17,7 @@ synchronized (connectors) {
         LOG.warn("You use localhost interface! It means that no external connections will be available." + " Don't you want to use 0.0.0.0 instead (all network interfaces)?");
       }
       getServer().addConnector(connector);
-      ContinuationCometdServlet servlet=createServletForConnector(connector,endpoint);
+      CometdServlet servlet=createServletForConnector(connector,endpoint);
       connectorRef=new ConnectorRef(connector,servlet);
       getServer().start();
       connectors.put(connectorKey,connectorRef);
@@ -25,13 +25,12 @@ synchronized (connectors) {
  else {
       connectorRef.increment();
     }
-    AbstractBayeux bayeux=connectorRef.servlet.getBayeux();
-    bayeux.setJSONCommented(endpoint.isJsonCommented());
+    BayeuxServerImpl bayeux=connectorRef.servlet.getBayeux();
     if (securityPolicy != null) {
       bayeux.setSecurityPolicy(securityPolicy);
     }
     if (extensions != null) {
-      for (      Extension extension : extensions) {
+      for (      BayeuxServer.Extension extension : extensions) {
         bayeux.addExtension(extension);
       }
     }

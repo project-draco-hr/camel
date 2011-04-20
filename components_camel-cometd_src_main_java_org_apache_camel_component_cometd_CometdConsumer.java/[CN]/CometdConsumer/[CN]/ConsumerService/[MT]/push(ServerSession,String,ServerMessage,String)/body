@@ -1,0 +1,15 @@
+{
+  Object data=null;
+  if (cometdMessage != null) {
+    data=cometdMessage.getData();
+  }
+  Message message=new DefaultMessage();
+  message.setBody(data);
+  Exchange exchange=endpoint.createExchange();
+  exchange.setIn(message);
+  consumer.getProcessor().process(exchange);
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    Message camelOutMessage=exchange.getOut();
+    remote.deliver(getServerSession(),channelName,camelOutMessage.getBody(),null);
+  }
+}
