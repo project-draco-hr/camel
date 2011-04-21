@@ -1,4 +1,18 @@
 {
+  if (session == null) {
+    if (getConfiguration().isLazySessionCreation()) {
+      if (connectLock.tryLock()) {
+        try {
+          if (session == null) {
+            session=createSession();
+          }
+        }
+  finally {
+          connectLock.unlock();
+        }
+      }
+    }
+  }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Sending a short message for exchange id '" + exchange.getExchangeId() + "'...");
   }

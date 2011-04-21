@@ -1,6 +1,13 @@
 {
-  LOG.debug("Connecting to: " + getEndpoint().getConnectionString() + "...");
   super.doStart();
-  session=createSession();
-  LOG.info("Connected to: " + getEndpoint().getConnectionString());
+  if (!getConfiguration().isLazySessionCreation()) {
+    if (connectLock.tryLock()) {
+      try {
+        session=createSession();
+      }
+  finally {
+        connectLock.unlock();
+      }
+    }
+  }
 }
