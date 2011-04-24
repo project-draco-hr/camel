@@ -85,9 +85,19 @@
   if (remainder != null) {
     return ExpressionBuilder.outHeaderExpression(remainder);
   }
-  remainder=ifStartsWithReturnRemainder("property.",expression);
+  remainder=ifStartsWithReturnRemainder("property",expression);
   if (remainder != null) {
-    return ExpressionBuilder.propertyExpression(remainder);
+    remainder=remainder.substring(1);
+    boolean invalid=OgnlHelper.isInvalidValidOgnlExpression(remainder);
+    if (invalid) {
+      throw new ExpressionIllegalSyntaxException("Valid syntax: ${property.OGNL} was: " + expression);
+    }
+    if (OgnlHelper.isValidOgnlExpression(remainder)) {
+      return ExpressionBuilder.propertyOgnlExpression(remainder);
+    }
+ else {
+      return ExpressionBuilder.propertyExpression(remainder);
+    }
   }
   remainder=ifStartsWithReturnRemainder("sys.",expression);
   if (remainder != null) {

@@ -1,0 +1,21 @@
+{
+  Object property=keyedEntityRetrievalStrategy.getKeyedEntity(exchange,ognl);
+  if (property != null) {
+    return property;
+  }
+  List<String> methods;
+  if (ognl.startsWith("[") && ognl.endsWith("]")) {
+    methods=new ArrayList<String>();
+    methods.add(ognl);
+  }
+ else {
+    methods=OgnlHelper.splitOgnl(ognl);
+  }
+  String key=OgnlHelper.removeOperators(methods.get(0));
+  property=keyedEntityRetrievalStrategy.getKeyedEntity(exchange,key);
+  if (property == null) {
+    return null;
+  }
+  String remainder=ObjectHelper.after(ognl,key);
+  return new MethodCallExpression(property,remainder).evaluate(exchange);
+}

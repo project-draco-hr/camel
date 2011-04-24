@@ -1,29 +1,8 @@
 {
-  return new ExpressionAdapter(){
-    public Object evaluate(    Exchange exchange){
-      Object header=exchange.getIn().getHeader(ognl);
-      if (header != null) {
-        return header;
-      }
-      List<String> methods;
-      if (ognl.startsWith("[") && ognl.endsWith("]")) {
-        methods=new ArrayList<String>();
-        methods.add(ognl);
-      }
- else {
-        methods=OgnlHelper.splitOgnl(ognl);
-      }
-      String key=OgnlHelper.removeOperators(methods.get(0));
-      header=exchange.getIn().getHeader(key);
-      if (header == null) {
-        return null;
-      }
-      String remainder=ObjectHelper.after(ognl,key);
-      return new MethodCallExpression(header,remainder).evaluate(exchange);
-    }
-    @Override public String toString(){
-      return "headerOgnl(" + ognl + ")";
+  return new KeyedOgnlExpressionAdapter(ognl,"headerOgnl(" + ognl + ")",new KeyedOgnlExpressionAdapter.KeyedEntityRetrievalStrategy(){
+    public Object getKeyedEntity(    Exchange exchange,    String key){
+      return exchange.getIn().getHeader(key);
     }
   }
-;
+);
 }
