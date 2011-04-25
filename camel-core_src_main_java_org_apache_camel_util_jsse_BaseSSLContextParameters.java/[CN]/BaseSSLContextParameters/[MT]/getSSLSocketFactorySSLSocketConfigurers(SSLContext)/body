@@ -1,0 +1,33 @@
+{
+  final List<String> enabledCipherSuites=this.getCipherSuites() == null ? null : this.getCipherSuites().getCipherSuite();
+  final Patterns enabledCipherSuitePatterns;
+  final Patterns defaultEnabledCipherSuitePatterns=this.getDefaultCipherSuitesFilter().getPatterns();
+  if (this.getCipherSuitesFilter() != null) {
+    enabledCipherSuitePatterns=this.getCipherSuitesFilter().getPatterns();
+  }
+ else {
+    enabledCipherSuitePatterns=null;
+  }
+  final List<String> enabledSecureSocketProtocols=this.getSecureSocketProtocols() == null ? null : this.getSecureSocketProtocols().getSecureSocketProtocol();
+  final Patterns enabledSecureSocketProtocolsPatterns;
+  final Patterns defaultEnabledSecureSocketProtocolsPatterns=this.getDefaultSecureSocketProcotolFilter().getPatterns();
+  if (this.getSecureSocketProtocolsFilter() != null) {
+    enabledSecureSocketProtocolsPatterns=this.getSecureSocketProtocolsFilter().getPatterns();
+  }
+ else {
+    enabledSecureSocketProtocolsPatterns=null;
+  }
+  Configurer<SSLSocket> sslSocketConfigurer=new Configurer<SSLSocket>(){
+    @Override public SSLSocket configure(    SSLSocket socket){
+      Collection<String> filteredCipherSuites=BaseSSLContextParameters.this.filter(enabledCipherSuites,Arrays.asList(socket.getSSLParameters().getCipherSuites()),enabledCipherSuitePatterns,defaultEnabledCipherSuitePatterns);
+      socket.setEnabledCipherSuites(filteredCipherSuites.toArray(new String[filteredCipherSuites.size()]));
+      Collection<String> filteredSecureSocketProtocols=BaseSSLContextParameters.this.filter(enabledSecureSocketProtocols,Arrays.asList(socket.getSSLParameters().getProtocols()),enabledSecureSocketProtocolsPatterns,defaultEnabledSecureSocketProtocolsPatterns);
+      socket.setEnabledProtocols(filteredSecureSocketProtocols.toArray(new String[filteredSecureSocketProtocols.size()]));
+      return socket;
+    }
+  }
+;
+  List<Configurer<SSLSocket>> sslSocketConfigurers=new LinkedList<Configurer<SSLSocket>>();
+  sslSocketConfigurers.add(sslSocketConfigurer);
+  return sslSocketConfigurers;
+}

@@ -1,0 +1,33 @@
+{
+  final List<String> enabledCipherSuites=this.getCipherSuites() == null ? null : this.getCipherSuites().getCipherSuite();
+  final Patterns enabledCipherSuitePatterns;
+  final Patterns defaultEnabledCipherSuitePatterns=this.getDefaultCipherSuitesFilter().getPatterns();
+  if (this.getCipherSuitesFilter() != null) {
+    enabledCipherSuitePatterns=this.getCipherSuitesFilter().getPatterns();
+  }
+ else {
+    enabledCipherSuitePatterns=null;
+  }
+  final List<String> enabledSecureSocketProtocols=this.getSecureSocketProtocols() == null ? null : this.getSecureSocketProtocols().getSecureSocketProtocol();
+  final Patterns enabledSecureSocketProtocolsPatterns;
+  final Patterns defaultEnabledSecureSocketProtocolsPatterns=this.getDefaultSecureSocketProcotolFilter().getPatterns();
+  if (this.getSecureSocketProtocolsFilter() != null) {
+    enabledSecureSocketProtocolsPatterns=this.getSecureSocketProtocolsFilter().getPatterns();
+  }
+ else {
+    enabledSecureSocketProtocolsPatterns=null;
+  }
+  Configurer<SSLServerSocket> sslServerSocketConfigurer=new Configurer<SSLServerSocket>(){
+    @Override public SSLServerSocket configure(    SSLServerSocket socket){
+      Collection<String> filteredCipherSuites=BaseSSLContextParameters.this.filter(enabledCipherSuites,Arrays.asList(socket.getSupportedCipherSuites()),enabledCipherSuitePatterns,defaultEnabledCipherSuitePatterns);
+      socket.setEnabledCipherSuites(filteredCipherSuites.toArray(new String[filteredCipherSuites.size()]));
+      Collection<String> filteredSecureSocketProtocols=BaseSSLContextParameters.this.filter(enabledSecureSocketProtocols,Arrays.asList(socket.getSupportedProtocols()),enabledSecureSocketProtocolsPatterns,defaultEnabledSecureSocketProtocolsPatterns);
+      socket.setEnabledProtocols(filteredSecureSocketProtocols.toArray(new String[filteredSecureSocketProtocols.size()]));
+      return socket;
+    }
+  }
+;
+  List<Configurer<SSLServerSocket>> sslServerSocketConfigurers=new LinkedList<Configurer<SSLServerSocket>>();
+  sslServerSocketConfigurers.add(sslServerSocketConfigurer);
+  return sslServerSocketConfigurers;
+}

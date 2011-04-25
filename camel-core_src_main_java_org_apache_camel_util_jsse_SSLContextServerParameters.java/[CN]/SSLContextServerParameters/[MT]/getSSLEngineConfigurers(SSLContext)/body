@@ -1,0 +1,28 @@
+{
+  List<Configurer<SSLEngine>> sslEngineConfigurers=new LinkedList<Configurer<SSLEngine>>();
+  if (this.getClientAuthentication() != null) {
+    final ClientAuthentication clientAuthValue=this.getClientAuthentication();
+    Configurer<SSLEngine> sslEngineConfigurer=new Configurer<SSLEngine>(){
+      @Override public SSLEngine configure(      SSLEngine engine){
+switch (clientAuthValue) {
+case NONE:
+          engine.setWantClientAuth(false);
+        engine.setNeedClientAuth(false);
+      break;
+case WANT:
+    engine.setWantClientAuth(true);
+  break;
+case REQUIRE:
+engine.setNeedClientAuth(true);
+break;
+default :
+throw new RuntimeCamelException("Unhandled ClientAuthentication enumeration value: " + clientAuthValue);
+}
+return engine;
+}
+}
+;
+sslEngineConfigurers.add(sslEngineConfigurer);
+}
+return sslEngineConfigurers;
+}

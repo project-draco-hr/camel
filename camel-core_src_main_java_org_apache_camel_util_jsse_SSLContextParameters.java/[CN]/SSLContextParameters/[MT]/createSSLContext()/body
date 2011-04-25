@@ -1,0 +1,19 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating SSLContext from SSLContextParameters: " + this);
+  }
+  KeyManager[] keyManagers=this.keyManagers == null ? null : this.keyManagers.createKeyManagers();
+  TrustManager[] trustManagers=this.trustManagers == null ? null : this.trustManagers.createTrustManagers();
+  SecureRandom secureRandom=this.secureRandom == null ? null : this.secureRandom.createSecureRandom();
+  SSLContext context=null;
+  if (this.getProvider() == null) {
+    context=SSLContext.getInstance(this.getSecureSocketProtocol());
+  }
+ else {
+    context=SSLContext.getInstance(this.getSecureSocketProtocol(),this.getProvider());
+  }
+  context.init(keyManagers,trustManagers,secureRandom);
+  this.configureSSLContext(context);
+  context=new SSLContextDecorator(new SSLContextSpiDecorator(context,this.getSSLEngineConfigurers(context),this.getSSLSocketFactoryConfigurers(context),this.getSSLServerSocketFactoryConfigurers(context)));
+  return context;
+}

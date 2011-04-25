@@ -1,0 +1,26 @@
+{
+  super.doParse(element,builder);
+  Binder<Node> binder;
+  try {
+    binder=getJaxbContext().createBinder();
+  }
+ catch (  JAXBException e) {
+    throw new BeanDefinitionStoreException("Failed to create the JAXB binder",e);
+  }
+  Object value=parseUsingJaxb(element,parserContext,binder);
+  if (value instanceof SSLContextParametersFactoryBean) {
+    SSLContextParametersFactoryBean bean=(SSLContextParametersFactoryBean)value;
+    builder.addPropertyValue("cipherSuites",bean.getCipherSuites());
+    builder.addPropertyValue("cipherSuitesFilter",bean.getCipherSuitesFilter());
+    builder.addPropertyValue("secureSocketProtocols",bean.getSecureSocketProtocols());
+    builder.addPropertyValue("secureSocketProtocolsFilter",bean.getSecureSocketProtocolsFilter());
+    builder.addPropertyValue("keyManagers",bean.getKeyManagers());
+    builder.addPropertyValue("trustManagers",bean.getTrustManagers());
+    builder.addPropertyValue("secureRandom",bean.getSecureRandom());
+    builder.addPropertyValue("clientParameters",bean.getClientParameters());
+    builder.addPropertyValue("serverParameters",bean.getServerParameters());
+  }
+ else {
+    throw new BeanDefinitionStoreException("Parsed type is not of the expected type.  Expected " + SSLContextParametersFactoryBean.class.getName() + " but found "+ value.getClass().getName());
+  }
+}

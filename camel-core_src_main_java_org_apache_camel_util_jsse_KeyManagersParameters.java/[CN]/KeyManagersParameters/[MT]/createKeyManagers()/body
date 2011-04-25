@@ -1,0 +1,25 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating KeyManager[] from KeyManagersParameters: " + this);
+  }
+  KeyManager[] keyManagers=null;
+  String kmfAlgorithm=this.getAlgorithm();
+  if (kmfAlgorithm == null) {
+    kmfAlgorithm=KeyManagerFactory.getDefaultAlgorithm();
+  }
+  KeyManagerFactory kmf;
+  if (this.getProvider() == null) {
+    kmf=KeyManagerFactory.getInstance(kmfAlgorithm);
+  }
+ else {
+    kmf=KeyManagerFactory.getInstance(kmfAlgorithm,this.getProvider());
+  }
+  char[] kmfPassword=null;
+  if (this.getKeyPassword() != null) {
+    kmfPassword=this.getKeyPassword().toCharArray();
+  }
+  KeyStore ks=this.getKeyStore() == null ? null : this.getKeyStore().createKeyStore();
+  kmf.init(ks,kmfPassword);
+  keyManagers=kmf.getKeyManagers();
+  return keyManagers;
+}

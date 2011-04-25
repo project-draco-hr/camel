@@ -1,0 +1,33 @@
+{
+  final List<String> enabledCipherSuites=this.getCipherSuites() == null ? null : this.getCipherSuites().getCipherSuite();
+  final Patterns enabledCipherSuitePatterns;
+  final Patterns defaultEnabledCipherSuitePatterns=this.getDefaultCipherSuitesFilter().getPatterns();
+  if (this.getCipherSuitesFilter() != null) {
+    enabledCipherSuitePatterns=this.getCipherSuitesFilter().getPatterns();
+  }
+ else {
+    enabledCipherSuitePatterns=null;
+  }
+  final List<String> enabledSecureSocketProtocols=this.getSecureSocketProtocols() == null ? null : this.getSecureSocketProtocols().getSecureSocketProtocol();
+  final Patterns enabledSecureSocketProtocolsPatterns;
+  final Patterns defaultEnabledSecureSocketProtocolsPatterns=this.getDefaultSecureSocketProcotolFilter().getPatterns();
+  if (this.getSecureSocketProtocolsFilter() != null) {
+    enabledSecureSocketProtocolsPatterns=this.getSecureSocketProtocolsFilter().getPatterns();
+  }
+ else {
+    enabledSecureSocketProtocolsPatterns=null;
+  }
+  Configurer<SSLEngine> sslEngineConfigurer=new Configurer<SSLEngine>(){
+    @Override public SSLEngine configure(    SSLEngine engine){
+      Collection<String> filteredCipherSuites=BaseSSLContextParameters.this.filter(enabledCipherSuites,Arrays.asList(engine.getSSLParameters().getCipherSuites()),enabledCipherSuitePatterns,defaultEnabledCipherSuitePatterns);
+      engine.setEnabledCipherSuites(filteredCipherSuites.toArray(new String[filteredCipherSuites.size()]));
+      Collection<String> filteredSecureSocketProtocols=BaseSSLContextParameters.this.filter(enabledSecureSocketProtocols,Arrays.asList(engine.getSSLParameters().getProtocols()),enabledSecureSocketProtocolsPatterns,defaultEnabledSecureSocketProtocolsPatterns);
+      engine.setEnabledProtocols(filteredSecureSocketProtocols.toArray(new String[filteredSecureSocketProtocols.size()]));
+      return engine;
+    }
+  }
+;
+  List<Configurer<SSLEngine>> sslEngineConfigurers=new LinkedList<Configurer<SSLEngine>>();
+  sslEngineConfigurers.add(sslEngineConfigurer);
+  return sslEngineConfigurers;
+}

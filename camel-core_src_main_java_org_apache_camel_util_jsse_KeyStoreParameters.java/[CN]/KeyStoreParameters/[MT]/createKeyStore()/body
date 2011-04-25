@@ -1,0 +1,57 @@
+{
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating KeyStore instance from KeyStoreParameters: " + this);
+  }
+  String ksType=this.type;
+  if (ksType == null) {
+    ksType=KeyStore.getDefaultType();
+  }
+  char[] ksPassword=null;
+  if (this.password != null) {
+    ksPassword=this.password.toCharArray();
+  }
+  KeyStore ks=null;
+  if (this.provider == null) {
+    ks=KeyStore.getInstance(ksType);
+  }
+ else {
+    ks=KeyStore.getInstance(ksType,this.provider);
+  }
+  if (this.resource == null) {
+    ks.load(null,ksPassword);
+  }
+ else {
+    InputStream is=null;
+    try {
+      is=new FileInputStream(this.resource);
+    }
+ catch (    FileNotFoundException e) {
+      LOG.debug("Could not open resource as a file, trying as class path resource.",e);
+    }
+    if (is == null) {
+      is=this.getClass().getResourceAsStream(this.resource);
+      if (is == null) {
+        LOG.debug("Could not open resource as a class path resource using the classloader " + this.getClass().getClassLoader() + ". Trying as a class path resource with the TCCL (if set).");
+      }
+    }
+    if (is == null && Thread.currentThread().getContextClassLoader() != null) {
+      is=Thread.currentThread().getContextClassLoader().getResourceAsStream(this.resource);
+      if (is == null) {
+        LOG.debug("Could not open resource as a class path resource using the TCCL " + Thread.currentThread().getContextClassLoader() + ".  Trying as a URL.");
+      }
+    }
+    if (is == null) {
+      try {
+        is=new URL(this.resource).openStream();
+      }
+ catch (      IOException e) {
+        LOG.debug("Could not open resource as a URL.",e);
+      }
+    }
+    if (is == null) {
+      throw new IOException("Could not open " + this.resource + " as a file, class path resource, or URL.");
+    }
+    ks.load(is,ksPassword);
+  }
+  return ks;
+}
