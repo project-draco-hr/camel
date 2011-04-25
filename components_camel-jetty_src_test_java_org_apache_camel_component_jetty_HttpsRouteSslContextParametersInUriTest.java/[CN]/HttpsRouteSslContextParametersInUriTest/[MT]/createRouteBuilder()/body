@@ -1,0 +1,24 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws URISyntaxException {
+      port1=getPort();
+      port2=getNextPort();
+      JettyHttpComponent jetty=new JettyHttpComponent();
+      jetty.addSslSocketConnectorProperty("keyPassword","sadfasdfasdfas");
+      jetty.addSslSocketConnectorProperty("password","asdfasdfasdfdasfs");
+      jetty.addSslSocketConnectorProperty("keystore","");
+      jetty.addSslSocketConnectorProperty("truststoreType","JKS");
+      context.addComponent("jetty",jetty);
+      from("jetty:https://localhost:" + port1 + "/test?sslContextParametersRef=sslContextParameters").to("mock:a");
+      Processor proc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody("<b>Hello World</b>");
+        }
+      }
+;
+      from("jetty:https://localhost:" + port1 + "/hello?sslContextParametersRef=sslContextParameters").process(proc);
+      from("jetty:https://localhost:" + port2 + "/test?sslContextParametersRef=sslContextParameters").to("mock:b");
+    }
+  }
+;
+}

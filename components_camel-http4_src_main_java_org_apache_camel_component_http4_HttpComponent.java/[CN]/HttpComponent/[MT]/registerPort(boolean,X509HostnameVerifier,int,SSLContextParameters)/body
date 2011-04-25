@@ -1,0 +1,23 @@
+{
+  SchemeRegistry registry=clientConnectionManager.getSchemeRegistry();
+  if (secure) {
+    SSLSocketFactory socketFactory=null;
+    if (sslContextParams == null) {
+      socketFactory=SSLSocketFactory.getSocketFactory();
+    }
+ else {
+      socketFactory=new SSLSocketFactory(sslContextParams.createSSLContext());
+    }
+    socketFactory.setHostnameVerifier(x509HostnameVerifier);
+    registry.register(new Scheme("https",port,socketFactory));
+    LOG.info("Registering SSL scheme https on port " + port);
+    registry.register(new Scheme("https4",port,socketFactory));
+    LOG.info("Registering SSL scheme https4 on port " + port);
+  }
+ else {
+    registry.register(new Scheme("http",port,new PlainSocketFactory()));
+    LOG.info("Registering PLAIN scheme http on port " + port);
+    registry.register(new Scheme("http4",port,new PlainSocketFactory()));
+    LOG.info("Registering PLAIN scheme http4 on port " + port);
+  }
+}

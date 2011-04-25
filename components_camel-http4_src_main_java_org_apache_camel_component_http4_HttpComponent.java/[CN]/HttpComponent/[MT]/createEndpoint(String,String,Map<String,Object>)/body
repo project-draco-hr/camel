@@ -18,6 +18,10 @@
   if (x509HostnameVerifier == null) {
     x509HostnameVerifier=this.x509HostnameVerifier;
   }
+  SSLContextParameters sslContextParameters=resolveAndRemoveReferenceParameter(parameters,"sslContextParametersRef",SSLContextParameters.class);
+  if (sslContextParameters == null) {
+    sslContextParameters=this.sslContextParameters;
+  }
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
   URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
@@ -30,7 +34,7 @@
   }
   boolean secure=isSecureConnection(uri);
   int port=getPort(httpUri);
-  registerPort(secure,x509HostnameVerifier,port);
+  registerPort(secure,x509HostnameVerifier,port,sslContextParameters);
   HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,httpUri,clientParams,clientConnectionManager,configurer);
   setProperties(endpoint,parameters);
   setEndpointHeaderFilterStrategy(endpoint);

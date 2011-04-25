@@ -1,0 +1,60 @@
+{
+  SslSelectChannelConnector answer=null;
+  SSLContextParameters endpointSslContextParameters=endpoint.getSslContextParameters();
+  if (endpointSslContextParameters != null) {
+    SslContextFactory contextFact=new SslContextFactory(){
+      /** 
+ * We are going to provide the context so none of the configuration options
+ * matter in the factory.  This method does not account for this scenario so
+ * we short-circuit it here to just let things go when the context is already
+ * provided.
+ */
+      @Override public boolean checkConfig(){
+        if (getSslContext() == null) {
+          return super.checkConfig();
+        }
+ else {
+          return true;
+        }
+      }
+    }
+;
+    contextFact.setSslContext(endpointSslContextParameters.createSSLContext());
+    answer=new SslSelectChannelConnector(contextFact);
+  }
+ else {
+    answer=new SslSelectChannelConnector();
+    String keystoreProperty=System.getProperty(JETTY_SSL_KEYSTORE);
+    if (keystoreProperty != null) {
+      answer.getSslContextFactory().setKeyStore(keystoreProperty);
+    }
+ else     if (sslKeystore != null) {
+      answer.getSslContextFactory().setKeyStore(sslKeystore);
+    }
+    String keystorePassword=System.getProperty(JETTY_SSL_KEYPASSWORD);
+    if (keystorePassword != null) {
+      answer.getSslContextFactory().setKeyManagerPassword(keystorePassword);
+    }
+ else     if (sslKeyPassword != null) {
+      answer.getSslContextFactory().setKeyManagerPassword(sslKeyPassword);
+    }
+    String password=System.getProperty(JETTY_SSL_PASSWORD);
+    if (password != null) {
+      answer.getSslContextFactory().setKeyStorePassword(password);
+    }
+ else     if (sslPassword != null) {
+      answer.getSslContextFactory().setKeyStorePassword(sslPassword);
+    }
+  }
+  if (getSslSocketConnectorProperties() != null) {
+    if (endpointSslContextParameters != null) {
+      LOG.warn("An SSLContextParameters instance is configured " + "in addition to SslSocketConnectorProperties.  Any SslSocketConnector properties" + "related to the SSLContext will be ignored in favor of the settings provided through"+ "SSLContextParameters.");
+    }
+    Map<String,Object> properties=new HashMap<String,Object>(getSslSocketConnectorProperties());
+    IntrospectionSupport.setProperties(answer,properties);
+    if (properties.size() > 0) {
+      throw new IllegalArgumentException("There are " + properties.size() + " parameters that couldn't be set on the SslSocketConnector."+ " Check the uri if the parameters are spelt correctly and that they are properties of the SslSocketConnector."+ " Unknown parameters=["+ properties+ "]");
+    }
+  }
+  return answer;
+}

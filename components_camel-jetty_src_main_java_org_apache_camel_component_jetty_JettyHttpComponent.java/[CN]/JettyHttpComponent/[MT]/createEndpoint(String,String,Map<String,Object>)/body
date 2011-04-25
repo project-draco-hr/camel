@@ -13,11 +13,26 @@
   Filter multipartFilter=resolveAndRemoveReferenceParameter(parameters,"multipartFilterRef",Filter.class);
   Long continuationTimeout=getAndRemoveParameter(parameters,"continuationTimeout",Long.class);
   Boolean useContinuation=getAndRemoveParameter(parameters,"useContinuation",Boolean.class);
+  SSLContextParameters sslContextParameters=resolveAndRemoveReferenceParameter(parameters,"sslContextParametersRef",SSLContextParameters.class);
   HttpClient client=null;
-  if (IntrospectionSupport.hasProperties(parameters,"httpClient.")) {
+  if (IntrospectionSupport.hasProperties(parameters,"httpClient.") || sslContextParameters != null) {
+    client=getNewHttpClient();
+    if (IntrospectionSupport.hasProperties(parameters,"httpClient.")) {
+      if (isExplicitHttpClient) {
+        LOG.warn("The user explicitly set an HttpClient instance on the component, " + "but this endpoint provides HttpClient configuration.  Are you sure that " + "this is what was intended?  Applying endpoint configuration to a new HttpClient instance "+ "to avoid altering existing HttpClient instances.");
+      }
+      IntrospectionSupport.setProperties(client,parameters,"httpClient.");
+      validateParameters(uri,parameters,"httpClient.");
+    }
+    if (sslContextParameters != null) {
+      if (isExplicitHttpClient) {
+        LOG.warn("The user explicitly set an HttpClient instance on the component, " + "but this endpoint provides SSLContextParameters configuration.  Are you sure that " + "this is what was intended?  Applying endpoint configuration to a new HttpClient instance "+ "to avoid altering existing HttpClient instances.");
+      }
+      ((CamelHttpClient)client).setSSLContext(sslContextParameters.createSSLContext());
+    }
+  }
+ else {
     client=getHttpClient();
-    IntrospectionSupport.setProperties(client,parameters,"httpClient.");
-    validateParameters(uri,parameters,"httpClient.");
   }
   for (  String key : parameters.keySet()) {
     httpClientParameters.remove(key);
@@ -73,6 +88,10 @@
   if (useContinuation != null) {
     endpoint.setUseContinuation(useContinuation);
   }
+  if (sslContextParameters == null) {
+    sslContextParameters=this.sslContextParameters;
+  }
+  endpoint.setSslContextParameters(sslContextParameters);
   setProperties(endpoint,parameters);
   return endpoint;
 }

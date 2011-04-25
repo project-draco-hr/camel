@@ -1,32 +1,6 @@
 {
   if (httpClient == null) {
-    httpClient=new HttpClient();
-    httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
-    if (System.getProperty("http.proxyHost") != null && System.getProperty("http.proxyPort") != null) {
-      String host=System.getProperty("http.proxyHost");
-      int port=Integer.parseInt(System.getProperty("http.proxyPort"));
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Java System Property http.proxyHost and http.proxyPort detected. Using http proxy host: " + host + " port: "+ port);
-      }
-      httpClient.setProxy(new Address(host,port));
-    }
-    if (getHttpClientThreadPool() == null) {
-      QueuedThreadPool qtp=new QueuedThreadPool();
-      if (httpClientMinThreads != null) {
-        qtp.setMinThreads(httpClientMinThreads.intValue());
-      }
-      if (httpClientMaxThreads != null) {
-        qtp.setMaxThreads(httpClientMaxThreads.intValue());
-      }
-      try {
-        qtp.start();
-      }
- catch (      Exception e) {
-        throw new RuntimeCamelException("Error starting JettyHttpClient thread pool: " + qtp,e);
-      }
-      setHttpClientThreadPool(qtp);
-    }
-    httpClient.setThreadPool(getHttpClientThreadPool());
+    httpClient=this.getNewHttpClient();
   }
   return httpClient;
 }
