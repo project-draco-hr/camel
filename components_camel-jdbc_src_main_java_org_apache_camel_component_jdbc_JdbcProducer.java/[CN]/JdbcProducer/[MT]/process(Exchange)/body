@@ -5,6 +5,7 @@
   ResultSet rs=null;
   try {
     conn=dataSource.getConnection();
+    conn.setAutoCommit(false);
     stmt=conn.createStatement();
     if (parameters != null && !parameters.isEmpty()) {
       IntrospectionSupport.setProperties(stmt,parameters);
@@ -20,22 +21,21 @@
       int updateCount=stmt.getUpdateCount();
       exchange.getOut().setHeader(JdbcConstants.JDBC_UPDATE_COUNT,updateCount);
     }
+    conn.commit();
   }
-  finally {
+ catch (  Exception e) {
     try {
-      if (rs != null) {
-        rs.close();
-      }
-      if (stmt != null) {
-        stmt.close();
-      }
-      if (conn != null) {
-        conn.close();
-      }
+      conn.rollback();
     }
- catch (    SQLException e) {
-      LOG.warn("Error closing JDBC resource: " + e,e);
+ catch (    SQLException sqle) {
+      LOG.warn("Error on jdbc component rollback: " + sqle,sqle);
     }
+    throw e;
+  }
+ finally {
+    closeQuietly(rs);
+    closeQuietly(stmt);
+    closeQuietly(conn);
   }
   exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
 }

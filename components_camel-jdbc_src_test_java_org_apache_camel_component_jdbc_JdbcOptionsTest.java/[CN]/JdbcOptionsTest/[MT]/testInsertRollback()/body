@@ -1,0 +1,17 @@
+{
+  try {
+    template.sendBody("direct:startTx","insert into customer values ('cust3', 'johnsmith');insert into customer values ('cust3', 'hkesler')");
+    fail("Should have thrown a CamelExecutionException");
+  }
+ catch (  CamelExecutionException e) {
+    if (!e.getCause().getMessage().contains("Violation of unique constraint")) {
+      fail("Test did not throw the expected Constraint Violation Exception");
+    }
+  }
+  MockEndpoint mockTest=getMockEndpoint("mock:retrieve");
+  mockTest.expectedMessageCount(1);
+  template.sendBody("direct:retrieve","select * from customer");
+  mockTest.assertIsSatisfied();
+  List list=mockTest.getExchanges().get(0).getIn().getBody(ArrayList.class);
+  assertEquals(2,list.size());
+}
