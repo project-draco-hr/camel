@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(IllegalArgumentException.class).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody("OnException");
+          exchange.getOut().setFault(true);
+        }
+      }
+);
+      from("direct:start").inOut("activemq:queue:foo").throwException(new IllegalArgumentException("Forced"));
+      from("activemq:queue:foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody("Bye World");
+        }
+      }
+);
+    }
+  }
+;
+}
