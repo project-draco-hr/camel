@@ -3,8 +3,10 @@
   Connection conn=null;
   Statement stmt=null;
   ResultSet rs=null;
+  Boolean autoCommit=null;
   try {
     conn=dataSource.getConnection();
+    autoCommit=conn.getAutoCommit();
     conn.setAutoCommit(false);
     stmt=conn.createStatement();
     if (parameters != null && !parameters.isEmpty()) {
@@ -35,6 +37,7 @@
  finally {
     closeQuietly(rs);
     closeQuietly(stmt);
+    resetAutoCommit(conn,autoCommit);
     closeQuietly(conn);
   }
   exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
