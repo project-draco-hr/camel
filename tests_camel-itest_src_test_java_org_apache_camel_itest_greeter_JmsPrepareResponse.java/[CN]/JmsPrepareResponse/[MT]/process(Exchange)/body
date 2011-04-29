@@ -1,4 +1,14 @@
 {
-  String request=exchange.getIn().getBody(String.class);
-  exchange.getOut().setBody("Hello" + request);
+  Message in=exchange.getIn();
+  if ("greetMe".equals(in.getHeader(CxfConstants.OPERATION_NAME))) {
+    String request=in.getBody(String.class);
+    exchange.getOut().setBody("Hello" + request);
+  }
+ else {
+    FaultDetail faultDetail=new FaultDetail();
+    faultDetail.setMajor((short)2);
+    faultDetail.setMinor((short)1);
+    exchange.getOut().setBody(new PingMeFault("PingMeFault raised by server",faultDetail));
+    exchange.getOut().setFault(true);
+  }
 }
