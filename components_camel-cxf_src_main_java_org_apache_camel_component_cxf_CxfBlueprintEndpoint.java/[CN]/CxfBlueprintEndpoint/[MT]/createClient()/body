@@ -1,0 +1,27 @@
+{
+  if (getDataFormat().equals(DataFormat.POJO)) {
+    ObjectHelper.notEmpty(getServiceClass(),CxfConstants.SERVICE_CLASS);
+  }
+  if (getWsdlURL() == null && getServiceClass() == null) {
+    setServiceClass(org.apache.camel.component.cxf.DefaultSEI.class.getName());
+    setDefaultOperationNamespace(CxfConstants.DISPATCH_NAMESPACE);
+    setDefaultOperationName(CxfConstants.DISPATCH_DEFAULT_OPERATION_NAMESPACE);
+    if (getDataFormat().equals(DataFormat.PAYLOAD)) {
+      setSkipPayloadMessagePartCheck(true);
+    }
+  }
+  Class<?> cls=null;
+  if (getServiceClass() != null) {
+    cls=bundleContext.getBundle().loadClass(getServiceClass());
+    ClientProxyFactoryBean factoryBean=createClientFactoryBean(cls);
+    setupClientFactoryBean(factoryBean,cls);
+    return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
+  }
+ else {
+    checkName(getPortName(),"endpoint/port name");
+    checkName(getServiceName(),"service name");
+    ClientFactoryBean factoryBean=createClientFactoryBean();
+    setupClientFactoryBean(factoryBean);
+    return factoryBean.create();
+  }
+}
