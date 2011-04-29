@@ -1,0 +1,14 @@
+{
+  JndiRegistry reg=super.createRegistry();
+  ds=new SingleConnectionDataSource(url,user,password,true);
+  ((DriverManagerDataSource)ds).setDriverClassName(driverClass);
+  reg.bind("testdb",ds);
+  DataSourceTransactionManager txMgr=new DataSourceTransactionManager();
+  txMgr.setDataSource(ds);
+  reg.bind("txManager",txMgr);
+  SpringTransactionPolicy txPolicy=new SpringTransactionPolicy();
+  txPolicy.setTransactionManager(txMgr);
+  txPolicy.setPropagationBehaviorName("PROPAGATION_REQUIRED");
+  reg.bind("required",txPolicy);
+  return reg;
+}
