@@ -1,0 +1,23 @@
+{
+  Set<Map.Entry<K,V>> original=super.entrySet();
+  Set<Map.Entry<K,V>> answer=new LinkedHashSet<Map.Entry<K,V>>(original.size());
+  for (  final Map.Entry<K,V> entry : original) {
+    Map.Entry<K,V> view=new Map.Entry<K,V>(){
+      @Override public K getKey(){
+        return entry.getKey();
+      }
+      @Override @SuppressWarnings("unchecked") public V getValue(){
+        SoftReference<V> ref=(SoftReference<V>)entry.getValue();
+        return ref != null ? ref.get() : null;
+      }
+      @Override @SuppressWarnings("unchecked") public V setValue(      V v){
+        V put=(V)new SoftReference<V>(v);
+        SoftReference<V> prev=(SoftReference<V>)entry.setValue(put);
+        return prev != null ? prev.get() : null;
+      }
+    }
+;
+    answer.add(view);
+  }
+  return answer;
+}
