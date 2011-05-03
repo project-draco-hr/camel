@@ -1,9 +1,13 @@
 {
   applicationContext=ctx;
-  if (getBus() == null) {
-    BusFactory factory=new SpringBusFactory(ctx);
-    Bus bus=factory.createBus();
-    setBus(bus);
+  if (bus == null) {
+    if (Version.getCurrentVersion().startsWith("2.3")) {
+      BusFactory factory=new SpringBusFactory(ctx);
+      bus=factory.createBus();
+      BusWiringBeanFactoryPostProcessor.updateBusReferencesInContext(bus,ctx);
+    }
+ else {
+      bus=BusWiringBeanFactoryPostProcessor.addDefaultBus(ctx);
+    }
   }
-  BusWiringBeanFactoryPostProcessor.updateBusReferencesInContext(getBus(),ctx);
 }
