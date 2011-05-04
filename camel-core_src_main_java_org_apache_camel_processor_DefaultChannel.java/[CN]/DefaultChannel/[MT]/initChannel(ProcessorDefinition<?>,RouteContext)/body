@@ -7,13 +7,13 @@
   if (target instanceof CamelContextAware) {
     ((CamelContextAware)target).setCamelContext(camelContext);
   }
+  ProcessorDefinition<?> targetOutputDef=childDefinition != null ? childDefinition : outputDefinition;
   InterceptStrategy managed=routeContext.getManagedInterceptStrategy();
   if (managed != null) {
     next=target == nextProcessor ? null : nextProcessor;
-    target=managed.wrapProcessorInInterceptors(routeContext.getCamelContext(),outputDefinition,target,next);
+    target=managed.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,next);
   }
-  ProcessorDefinition<?> traceDef=childDefinition != null ? childDefinition : outputDefinition;
-  TraceInterceptor trace=(TraceInterceptor)getOrCreateTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),traceDef,target,null);
+  TraceInterceptor trace=(TraceInterceptor)getOrCreateTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,null);
   trace.setRouteContext(routeContext);
   target=trace;
   Collections.sort(interceptors,new OrderedComparator());
@@ -23,11 +23,11 @@
     if (strategy instanceof Tracer) {
       continue;
     }
-    Processor wrapped=strategy.wrapProcessorInInterceptors(routeContext.getCamelContext(),outputDefinition,target,next);
+    Processor wrapped=strategy.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,next);
     if (!(wrapped instanceof AsyncProcessor)) {
       LOG.warn("Interceptor: " + strategy + " at: "+ outputDefinition+ " does not return an AsyncProcessor instance."+ " This causes the asynchronous routing engine to not work as optimal as possible."+ " See more details at the InterceptStrategy javadoc."+ " Camel will use a bridge to adapt the interceptor to the asynchronous routing engine,"+ " but its not the most optimal solution. Please consider changing your interceptor to comply.");
       InterceptorToAsyncProcessorBridge bridge=new InterceptorToAsyncProcessorBridge(target);
-      wrapped=strategy.wrapProcessorInInterceptors(routeContext.getCamelContext(),outputDefinition,bridge,next);
+      wrapped=strategy.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,bridge,next);
       bridge.setTarget(wrapped);
       wrapped=bridge;
     }
