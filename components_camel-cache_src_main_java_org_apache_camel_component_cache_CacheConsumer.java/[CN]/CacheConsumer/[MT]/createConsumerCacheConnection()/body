@@ -1,17 +1,6 @@
 {
-  cacheManager=getEndpoint().getCacheManagerFactory().instantiateCacheManager();
-  CacheEventListener cacheEventListener=new CacheEventListenerFactory().createCacheEventListener(null);
+  CacheEventListener cacheEventListener=new CacheEventListener();
   cacheEventListener.setCacheConsumer(this);
-  if (cacheManager.cacheExists(config.getCacheName())) {
-    cache=cacheManager.getCache(config.getCacheName());
-    cache.getCacheEventNotificationService().registerListener(cacheEventListener);
-  }
- else {
-    cache=new Cache(config.getCacheName(),config.getMaxElementsInMemory(),config.getMemoryStoreEvictionPolicy(),config.isOverflowToDisk(),config.getDiskStorePath(),config.isEternal(),config.getTimeToLiveSeconds(),config.getTimeToIdleSeconds(),config.isDiskPersistent(),config.getDiskExpiryThreadIntervalSeconds(),null);
-    cache.getCacheEventNotificationService().registerListener(cacheEventListener);
-    cacheManager.addCache(cache);
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Added a new cache: " + cache.getName());
-    }
-  }
+  config.getEventListenerRegistry().addCacheEventListener(cacheEventListener);
+  getEndpoint().initializeCache();
 }
