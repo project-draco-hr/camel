@@ -1,0 +1,50 @@
+{
+  Object obj=message.getBody();
+  if (obj == null) {
+    return prepend + "[Body is null]";
+  }
+  if (obj instanceof StringSource || obj instanceof BytesSource) {
+  }
+ else   if (!allowStreams && obj instanceof StreamCache) {
+    return prepend + "[Body is instance of org.apache.camel.StreamCache]";
+  }
+ else   if (!allowStreams && obj instanceof StreamSource) {
+    return prepend + "[Body is instance of java.xml.transform.StreamSource]";
+  }
+ else   if (!allowStreams && obj instanceof InputStream) {
+    return prepend + "[Body is instance of java.io.InputStream]";
+  }
+ else   if (!allowStreams && obj instanceof OutputStream) {
+    return prepend + "[Body is instance of java.io.OutputStream]";
+  }
+ else   if (!allowStreams && obj instanceof Reader) {
+    return prepend + "[Body is instance of java.io.Reader]";
+  }
+ else   if (!allowStreams && obj instanceof Writer) {
+    return prepend + "[Body is instance of java.io.Writer]";
+  }
+  StreamCache cache;
+  if (obj instanceof StreamCache) {
+    cache=(StreamCache)obj;
+  }
+ else {
+    cache=null;
+  }
+  String body;
+  if (message.getExchange() != null) {
+    body=message.getExchange().getContext().getTypeConverter().convertTo(String.class,obj);
+  }
+ else {
+    body=obj.toString();
+  }
+  if (cache != null) {
+    cache.reset();
+  }
+  if (body == null) {
+    return prepend + "[Body is null]";
+  }
+  if (maxChars > 0 && body.length() > maxChars) {
+    body=body.substring(0,maxChars) + "... [Body clipped after " + maxChars+ " chars, total length is "+ body.length()+ "]";
+  }
+  return prepend + body;
+}
