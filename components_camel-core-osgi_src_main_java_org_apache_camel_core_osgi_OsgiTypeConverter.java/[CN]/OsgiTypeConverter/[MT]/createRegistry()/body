@@ -1,21 +1,27 @@
 {
-  DefaultTypeConverter reg=new DefaultTypeConverter(new DefaultPackageScanClassResolver(){
+  DefaultTypeConverter answer=new DefaultTypeConverter(new DefaultPackageScanClassResolver(){
     @Override public Set<ClassLoader> getClassLoaders(){
       return Collections.emptySet();
     }
   }
-,injector,null);
+,injector,factoryFinder);
   Object[] services=this.tracker.getServices();
   if (services != null) {
     for (    Object o : services) {
       try {
-        ((TypeConverterLoader)o).load(reg);
+        ((TypeConverterLoader)o).load(answer);
       }
  catch (      Throwable t) {
-        throw ObjectHelper.wrapRuntimeCamelException(t);
+        throw new RuntimeCamelException("Error loading type converters from service: " + o + " due: "+ t.getMessage(),t);
       }
     }
   }
-  LOG.trace("Created TypeConverter: {}",reg);
-  return reg;
+  try {
+    ServiceHelper.startService(answer);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException("Error staring OSGiTypeConverter due: " + e.getMessage(),e);
+  }
+  LOG.trace("Created TypeConverter: {}",answer);
+  return answer;
 }
