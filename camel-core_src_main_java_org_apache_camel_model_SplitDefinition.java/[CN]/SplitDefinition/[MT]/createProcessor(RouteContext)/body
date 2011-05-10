@@ -5,12 +5,13 @@
   if (isParallelProcessing() && executorService == null) {
     executorService=routeContext.getCamelContext().getExecutorServiceStrategy().newDefaultThreadPool(this,"Split");
   }
-  if (getTimeout() > 0 && !isParallelProcessing()) {
+  long timeout=getTimeout() != null ? getTimeout() : 0;
+  if (timeout > 0 && !isParallelProcessing()) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
   }
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
   Expression exp=getExpression().createExpression(routeContext);
-  return new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),getTimeout(),onPrepare);
+  return new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare);
 }
