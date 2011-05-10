@@ -1,95 +1,11 @@
 {
-  final Iterator<ProcessorDefinition> itAll=ProcessorDefinitionHelper.filterTypeInOutputs(route.getOutputs(),ProcessorDefinition.class);
-  final Iterator<ProcessorDefinition> itMatchBy=new Iterator<ProcessorDefinition>(){
-    private ProcessorDefinition next;
-    @Override public boolean hasNext(){
-      if (next == null) {
-        next=next();
-      }
-      return next != null;
-    }
-    @Override public ProcessorDefinition next(){
-      if (next != null) {
-        ProcessorDefinition answer=next;
-        next=null;
-        return answer;
-      }
-      boolean found=false;
-      while (!found && itAll.hasNext()) {
-        ProcessorDefinition def=itAll.next();
-        if (matchBy.match(def)) {
-          found=true;
-          next=def;
-        }
-      }
-      ProcessorDefinition answer=next;
-      next=null;
-      return answer;
-    }
-    @Override public void remove(){
+  List<ProcessorDefinition> matched=new ArrayList<ProcessorDefinition>();
+  Iterator<ProcessorDefinition> itAll=ProcessorDefinitionHelper.filterTypeInOutputs(route.getOutputs(),ProcessorDefinition.class);
+  while (itAll.hasNext()) {
+    ProcessorDefinition next=itAll.next();
+    if (matchBy.match(next)) {
+      matched.add(next);
     }
   }
-;
-  return new Iterator<ProcessorDefinition>(){
-    private int current;
-    private ProcessorDefinition next;
-    @Override public boolean hasNext(){
-      if (next == null) {
-        next=next();
-      }
-      return next != null;
-    }
-    public ProcessorDefinition next(){
-      if (next != null) {
-        ProcessorDefinition answer=next;
-        next=null;
-        return answer;
-      }
-      if (selectFrom >= 0 && current <= selectFrom) {
-        while (current <= selectFrom) {
-          current++;
-          if (itMatchBy.hasNext()) {
-            next=itMatchBy.next();
-          }
- else {
-            next=null;
-          }
-        }
-      }
- else       if (selectTo >= 0 && current <= selectTo) {
-        current++;
-        if (itMatchBy.hasNext()) {
-          next=itMatchBy.next();
-        }
- else {
-          next=null;
-        }
-      }
- else       if (selectLast) {
-        while (itMatchBy.hasNext()) {
-          current++;
-          next=itMatchBy.next();
-        }
-      }
- else       if (selectFirst) {
-        current++;
-        if (itMatchBy.hasNext() && current == 1) {
-          next=itMatchBy.next();
-        }
- else {
-          next=null;
-        }
-      }
- else       if (!selectFirst && !selectLast && selectFrom < 0 && selectTo < 0) {
-        current++;
-        if (itMatchBy.hasNext()) {
-          next=itMatchBy.next();
-        }
-      }
-      return next;
-    }
-    @Override public void remove(){
-    }
-  }
-;
+  return createSelectorIterator(matched,selectFirst,selectLast,selectFrom,selectTo);
 }
