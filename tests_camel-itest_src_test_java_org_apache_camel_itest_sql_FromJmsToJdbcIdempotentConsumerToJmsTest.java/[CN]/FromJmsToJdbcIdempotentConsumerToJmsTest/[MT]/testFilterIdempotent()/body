@@ -1,0 +1,15 @@
+{
+  assertEquals(0,jdbcTemplate.queryForInt("select count(*) from  CAMEL_MESSAGEPROCESSED"));
+  assertEquals(null,consumer.receiveBody("activemq:queue:outbox",2000));
+  NotifyBuilder notify=new NotifyBuilder(context).whenDone(3).create();
+  getMockEndpoint("mock:a").expectedMessageCount(3);
+  getMockEndpoint("mock:b").expectedMessageCount(2);
+  template.sendBodyAndHeader("activemq:queue:inbox","D","uid",111);
+  template.sendBodyAndHeader("activemq:queue:inbox","E","uid",222);
+  template.sendBodyAndHeader("activemq:queue:inbox","D","uid",111);
+  assertMockEndpointsSatisfied();
+  assertTrue("Should complete 3 messages",notify.matchesMockWaitTime());
+  assertEquals(2,jdbcTemplate.queryForInt("select count(*) from  CAMEL_MESSAGEPROCESSED"));
+  assertEquals("DONE-D",consumer.receiveBody("activemq:queue:outbox",3000));
+  assertEquals("DONE-E",consumer.receiveBody("activemq:queue:outbox",3000));
+}
