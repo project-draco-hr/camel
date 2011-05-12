@@ -1,33 +1,18 @@
 {
-  log.debug("setUp test");
-  if (!useJmx()) {
-    disableJMX();
-  }
- else {
-    enableJMX();
-  }
-  context=createCamelContext();
-  assertNotNull(context,"No context found!");
-  context.getShutdownStrategy().setTimeout(getShutdownTimeout());
-  context.setDebugger(new DefaultDebugger());
-  context.getDebugger().addBreakpoint(breakpoint);
-  template=context.createProducerTemplate();
-  template.start();
-  consumer=context.createConsumerTemplate();
-  consumer.start();
-  postProcessTest();
-  if (isUseRouteBuilder()) {
-    RouteBuilder[] builders=createRouteBuilders();
-    for (    RouteBuilder builder : builders) {
-      log.debug("Using created route builder: " + builder);
-      context.addRoutes(builder);
+  log.info("********************************************************************************");
+  log.info("Testing: " + getTestMethodName() + "("+ getClass().getName()+ ")");
+  log.info("********************************************************************************");
+  boolean first=INIT.compareAndSet(false,true);
+  if (isCreateCamelContextPerClass()) {
+    if (first) {
+      doSetUp();
     }
-    startCamelContext();
-    log.debug("Routing Rules are: " + context.getRoutes());
+ else {
+      postProcessTest();
+      resetMocks();
+    }
   }
  else {
-    log.debug("Using route builder from the created context: " + context);
+    doSetUp();
   }
-  log.debug("Routing Rules are: " + context.getRoutes());
-  assertValidContext(context);
 }
