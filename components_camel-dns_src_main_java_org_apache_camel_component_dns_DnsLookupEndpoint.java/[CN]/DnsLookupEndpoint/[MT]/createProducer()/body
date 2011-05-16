@@ -13,24 +13,13 @@
       if (dclass != null) {
         dnsClass=DClass.value(String.valueOf(dclass));
       }
-      Lookup lookup;
-      if (dnsType != null && dnsClass != null) {
-        lookup=new Lookup(dnsName,dnsType,dnsClass);
-      }
- else {
-        if (dnsType != null) {
-          lookup=new Lookup(dnsName,dnsType);
-        }
- else {
-          lookup=new Lookup(dnsName);
-        }
-      }
+      Lookup lookup=(dnsClass == null) ? (dnsType == null ? new Lookup(dnsName) : new Lookup(dnsName,dnsType)) : new Lookup(dnsName,dnsType,dnsClass);
       lookup.run();
       if (lookup.getAnswers() != null) {
         exchange.getIn().setBody(lookup.getAnswers());
       }
  else {
-        exchange.getIn().setBody(lookup.getErrorString());
+        throw new CamelException(lookup.getErrorString());
       }
     }
   }
