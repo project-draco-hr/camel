@@ -1,7 +1,8 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      errorHandler(deadLetterChannel("mock:dead").maximumRedeliveries(4).redeliveryDelay(0).handled(false));
+      errorHandler(deadLetterChannel("mock:dead").maximumRedeliveries(4).redeliveryDelay(0));
+      onException(RollbackExchangeException.class).handled(false);
       from("direct:start").choice().when(body().isNotEqualTo("ok")).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           assertFalse("Rollback flag should have been cleared on redelivery",exchange.isRollbackOnly());

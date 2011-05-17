@@ -1,21 +1,22 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      from("direct:start").errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2).redeliveryDelay(0).handled(false)).process(new Processor(){
+      onException(Exception.class).handled(false);
+      from("direct:start").errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2).redeliveryDelay(0)).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           counter++;
           throw new Exception("Forced exception by unit test");
         }
       }
 );
-      from("direct:no").errorHandler(deadLetterChannel("mock:no").maximumRedeliveries(0).handled(false)).process(new Processor(){
+      from("direct:no").errorHandler(deadLetterChannel("mock:no").maximumRedeliveries(0)).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           counter++;
           throw new Exception("Forced exception by unit test");
         }
       }
 );
-      from("direct:one").errorHandler(deadLetterChannel("mock:one").maximumRedeliveries(1).redeliveryDelay(0).handled(false)).process(new Processor(){
+      from("direct:one").errorHandler(deadLetterChannel("mock:one").maximumRedeliveries(1).redeliveryDelay(0)).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           counter++;
           throw new Exception("Forced exception by unit test");
