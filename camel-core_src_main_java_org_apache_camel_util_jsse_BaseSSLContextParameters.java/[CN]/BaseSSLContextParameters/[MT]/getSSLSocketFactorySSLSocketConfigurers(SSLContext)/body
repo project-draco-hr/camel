@@ -17,11 +17,12 @@
  else {
     enabledSecureSocketProtocolsPatterns=null;
   }
+  final boolean allowPassthrough=getAllowPassthrough();
   Configurer<SSLSocket> sslSocketConfigurer=new Configurer<SSLSocket>(){
     @Override public SSLSocket configure(    SSLSocket socket){
-      Collection<String> filteredCipherSuites=BaseSSLContextParameters.this.filter(enabledCipherSuites,Arrays.asList(socket.getSSLParameters().getCipherSuites()),enabledCipherSuitePatterns,defaultEnabledCipherSuitePatterns);
+      Collection<String> filteredCipherSuites=BaseSSLContextParameters.this.filter(enabledCipherSuites,Arrays.asList(socket.getSSLParameters().getCipherSuites()),Arrays.asList(socket.getEnabledCipherSuites()),enabledCipherSuitePatterns,defaultEnabledCipherSuitePatterns,!allowPassthrough);
       socket.setEnabledCipherSuites(filteredCipherSuites.toArray(new String[filteredCipherSuites.size()]));
-      Collection<String> filteredSecureSocketProtocols=BaseSSLContextParameters.this.filter(enabledSecureSocketProtocols,Arrays.asList(socket.getSSLParameters().getProtocols()),enabledSecureSocketProtocolsPatterns,defaultEnabledSecureSocketProtocolsPatterns);
+      Collection<String> filteredSecureSocketProtocols=BaseSSLContextParameters.this.filter(enabledSecureSocketProtocols,Arrays.asList(socket.getSSLParameters().getProtocols()),Arrays.asList(socket.getEnabledProtocols()),enabledSecureSocketProtocolsPatterns,defaultEnabledSecureSocketProtocolsPatterns,!allowPassthrough);
       socket.setEnabledProtocols(filteredSecureSocketProtocols.toArray(new String[filteredSecureSocketProtocols.size()]));
       return socket;
     }
