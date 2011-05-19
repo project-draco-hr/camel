@@ -1,3 +1,33 @@
 {
-  return new JMXConsumer(this,aProcessor);
+  if (getMonitorType() != null) {
+    if (!isPlatformServer()) {
+      throw new IllegalArgumentException(ERR_PLATFORM_SERVER);
+    }
+    if (ObjectHelper.isEmpty(getObservedAttribute())) {
+      throw new IllegalArgumentException(ERR_OBSERVED_ATTRIBUTE);
+    }
+    if (getMonitorType().equals("string")) {
+      if (ObjectHelper.isEmpty(getStringToCompare())) {
+        throw new IllegalArgumentException(ERR_STRING_TO_COMPARE);
+      }
+      if (!isNotifyDiffer() && !isNotifyMatch()) {
+        throw new IllegalArgumentException(ERR_STRING_NOTIFY);
+      }
+    }
+ else     if (getMonitorType().equals("gauge")) {
+      if (!isNotifyHigh() && !isNotifyLow()) {
+        throw new IllegalArgumentException(ERR_GAUGE_NOTIFY);
+      }
+      if (getThresholdHigh() == null) {
+        throw new IllegalArgumentException(ERR_THRESHOLD_HIGH);
+      }
+      if (getThresholdLow() == null) {
+        throw new IllegalArgumentException(ERR_THRESHOLD_LOW);
+      }
+    }
+    return new JMXMonitorConsumer(this,aProcessor);
+  }
+ else {
+    return new JMXConsumer(this,aProcessor);
+  }
 }

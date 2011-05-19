@@ -1,0 +1,22 @@
+{
+  Document noTime=XmlFixture.stripTimestamp(aActual);
+  Document noUUID=XmlFixture.stripUUID(noTime);
+  XmlFixture.assertXMLIgnorePrefix("failed to match",aExpectedDoc,noUUID);
+  XPathFactory xpf=XPathFactory.newInstance();
+  XPath xp=xpf.newXPath();
+  xp.setNamespaceContext(new NamespaceContext(){
+    public String getNamespaceURI(    String aArg0){
+      return "urn:org.apache.camel.component:jmx";
+    }
+    public String getPrefix(    String aArg0){
+      return "jmx";
+    }
+    public Iterator<Object> getPrefixes(    String aArg0){
+      return null;
+    }
+  }
+);
+  assertEquals("1",xp.evaluate("count(//jmx:timestamp)",aActual));
+  assertEquals("1",xp.evaluate("count(//jmx:dateTime)",aActual));
+  resetMockEndpoint();
+}
