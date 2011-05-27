@@ -2,7 +2,6 @@
   return new RouteBuilder(){
     public void configure() throws Exception {
       errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(2).redeliveryDelay(0).logStackTrace(false));
-      onException(RuntimeCamelException.class).handled(false);
       onException(ValidationException.class).onWhen(exceptionMessage().contains("beer")).handled(false).to("mock:beer");
       onException(ValidationException.class).handled(true).to("mock:invalid");
       from("file:target/messages/input/?delete=true").process(new MyValidatorProcessor()).to("mock:valid");
