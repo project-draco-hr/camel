@@ -1,0 +1,27 @@
+{
+  Path file=new Path("file:///tmp/test/test-camel-byte");
+  Configuration conf=new Configuration();
+  FileSystem fs1=FileSystem.get(file.toUri(),conf);
+  SequenceFile.Writer writer=createWriter(fs1,conf,file,NullWritable.class,ByteWritable.class);
+  NullWritable keyWritable=NullWritable.get();
+  ByteWritable valueWritable=new ByteWritable();
+  byte value=3;
+  valueWritable.set(value);
+  writer.append(keyWritable,valueWritable);
+  writer.sync();
+  writer.close();
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("hdfs:///tmp/test/test-camel-byte?fileSystemType=LOCAL&fileType=SEQUENCE_FILE&initialDelay=0").to("mock:result");
+    }
+  }
+);
+  context.start();
+  MockEndpoint resultEndpoint=(MockEndpoint)context.getEndpoint("mock:result");
+  resultEndpoint.expectedMessageCount(1);
+  List<Exchange> exchanges=resultEndpoint.getReceivedExchanges();
+  for (  Exchange exchange : exchanges) {
+    Assert.assertTrue(exchange.getIn(Byte.class) == value);
+  }
+  resultEndpoint.assertIsSatisfied();
+}

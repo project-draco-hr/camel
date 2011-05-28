@@ -1,0 +1,32 @@
+{
+  deleteDirectory("target/file-batch5");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("file://target/file-batch5?sortBy=file:name").to("hdfs://localhost/tmp/test/test-camel-sequence-write-file3?fileSystemType=LOCAL&fileType=SEQUENCE_FILE&splitStrategy=IDLE:100&checkIdleInterval=10");
+    }
+  }
+);
+  context.start();
+  NotifyBuilder nb=new NotifyBuilder(context).whenDone(2).create();
+  ByteBuffer bb=ByteBuffer.allocate(8 * 1024 * 1024);
+  for (int i=0; i < 8 * 1024 * 512; ++i) {
+    bb.putChar('A');
+  }
+  for (int i=0; i < 2; ++i) {
+    template.sendBodyAndHeader("file://target/file-batch5",bb,"CamelFileName","CIAO" + i);
+  }
+  nb.matchesMockWaitTime();
+  context.stop();
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///tmp/test/test-camel-sequence-write-file3/" + '/' + HdfsConstants.DEFAULT_SEGMENT_PREFIX+ 0);
+  FileSystem fs1=FileSystem.get(file1.toUri(),conf);
+  SequenceFile.Reader reader=new SequenceFile.Reader(fs1,file1,conf);
+  Writable key=(Writable)ReflectionUtils.newInstance(reader.getKeyClass(),conf);
+  BytesWritable value=(BytesWritable)ReflectionUtils.newInstance(reader.getValueClass(),conf);
+  int i=0;
+  while (reader.next(key,value)) {
+    Assert.assertEquals(value.getLength(),8 * 1024 * 1024);
+    i++;
+  }
+  Assert.assertEquals(2,i);
+}

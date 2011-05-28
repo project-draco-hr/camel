@@ -1,0 +1,26 @@
+{
+  deleteDirectory("target/file-batch1");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("file://target/file-batch1?sortBy=file:name").to("hdfs://localhost/tmp/test/test-camel-simple-write-file?fileSystemType=LOCAL");
+    }
+  }
+);
+  context.start();
+  NotifyBuilder nb=new NotifyBuilder(context).whenDone(10).create();
+  for (int i=0; i < 10; ++i) {
+    template.sendBodyAndHeader("file://target/file-batch1/","CIAO","CamelFileName","CIAO" + i);
+  }
+  nb.matchesMockWaitTime();
+  context.stop();
+  InputStream in=null;
+  try {
+    in=new URL("file:///tmp/test/test-camel-simple-write-file").openStream();
+    ByteArrayOutputStream bos=new ByteArrayOutputStream();
+    IOUtils.copyBytes(in,bos,4096,false);
+    Assert.assertEquals(40,bos.size());
+  }
+  finally {
+    IOUtils.closeStream(in);
+  }
+}

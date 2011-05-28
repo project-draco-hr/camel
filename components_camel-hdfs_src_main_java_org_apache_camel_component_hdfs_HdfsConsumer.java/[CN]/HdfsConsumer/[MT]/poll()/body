@@ -1,0 +1,45 @@
+{
+class ExcludePathFilter implements PathFilter {
+    public boolean accept(    Path path){
+      return !(path.toString().endsWith(config.getOpenedSuffix()) || path.toString().endsWith(config.getReadSuffix()));
+    }
+  }
+  int numMessages=0;
+  HdfsInfo info=new HdfsInfo(this.hdfsPath.toString());
+  FileStatus fileStatuses[];
+  if (info.getFileSystem().isFile(info.getPath())) {
+    fileStatuses=info.getFileSystem().globStatus(info.getPath());
+  }
+ else {
+    Path pattern=info.getPath().suffix("/" + this.config.getPattern());
+    fileStatuses=info.getFileSystem().globStatus(pattern,new ExcludePathFilter());
+  }
+  if (fileStatuses.length > 0) {
+    this.idle.set(false);
+  }
+  for (int i=0; i < fileStatuses.length; ++i) {
+    try {
+      this.rwlock.writeLock().lock();
+      this.istream=HdfsInputStream.createInputStream(fileStatuses[i].getPath().toString(),this.config);
+    }
+  finally {
+      this.rwlock.writeLock().unlock();
+    }
+    Holder<Object> key=new Holder<Object>();
+    Holder<Object> value=new Holder<Object>();
+    while (this.istream.next(key,value) != 0) {
+      Exchange exchange=this.getEndpoint().createExchange();
+      Message message=new DefaultMessage();
+      if (key.value != null) {
+        message.setHeader(HdfsHeader.KEY.name(),key.value);
+      }
+      message.setBody(value.value);
+      exchange.setIn(message);
+      this.processor.process(exchange);
+      numMessages++;
+    }
+    this.istream.close();
+  }
+  this.idle.set(true);
+  return numMessages;
+}

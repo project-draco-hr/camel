@@ -1,0 +1,28 @@
+{
+  deleteDirectory("target/file-batch4");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("file://target/file-batch4?sortBy=file:name").setHeader("KEY").simple("${in.header.CamelFileName}").to("hdfs://localhost/tmp/test/test-camel-map-write-file1?fileSystemType=LOCAL&keyType=TEXT&fileType=MAP_FILE");
+    }
+  }
+);
+  context.start();
+  NotifyBuilder nb=new NotifyBuilder(context).whenDone(10).create();
+  for (int i=0; i < 10; ++i) {
+    template.sendBodyAndHeader("file://target/file-batch4","CIAO" + i,"CamelFileName","CIAO" + i);
+  }
+  nb.matchesMockWaitTime();
+  context.stop();
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///tmp/test/test-camel-map-write-file1");
+  FileSystem fs1=FileSystem.get(file1.toUri(),conf);
+  MapFile.Reader reader=new MapFile.Reader(fs1,"file:///tmp/test/test-camel-map-write-file1",conf);
+  for (int i=0; i < 10; ++i) {
+    Text key=new Text("CIAO" + i);
+    BytesWritable value=new BytesWritable();
+    reader.get(key,value);
+    String str=new String(value.getBytes(),0,value.getLength());
+    Assert.assertEquals("CIAO" + i,str);
+    Assert.assertEquals("CIAO" + i,key.toString());
+  }
+}

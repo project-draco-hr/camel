@@ -1,0 +1,18 @@
+{
+  for (int i=0; i < 10; ++i) {
+    template.sendBody("direct:start1","PAPPO" + i);
+  }
+  stopCamelContext();
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///tmp/test/test-camel1");
+  FileSystem fs1=FileSystem.get(file1.toUri(),conf);
+  SequenceFile.Reader reader=new SequenceFile.Reader(fs1,file1,conf);
+  Writable key=(Writable)ReflectionUtils.newInstance(reader.getKeyClass(),conf);
+  Writable value=(Writable)ReflectionUtils.newInstance(reader.getValueClass(),conf);
+  int i=0;
+  while (reader.next(key,value)) {
+    Text txt=(Text)value;
+    Assert.assertTrue(("PAPPO" + i).equals(txt.toString()));
+    ++i;
+  }
+}

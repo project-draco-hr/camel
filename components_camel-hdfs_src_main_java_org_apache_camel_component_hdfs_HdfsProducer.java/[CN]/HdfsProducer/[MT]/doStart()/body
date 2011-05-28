@@ -1,0 +1,20 @@
+{
+  super.doStart();
+  StringBuilder actualPath=new StringBuilder(hdfsPath);
+  if (config.getSplitStrategies().size() > 0) {
+    actualPath=newFileName();
+  }
+  ostream=HdfsOutputStream.createOutputStream(actualPath.toString(),config);
+  SplitStrategy idleStrategy=null;
+  for (  SplitStrategy strategy : config.getSplitStrategies()) {
+    if (strategy.type == SplitStrategyType.IDLE) {
+      idleStrategy=strategy;
+      break;
+    }
+  }
+  if (idleStrategy != null) {
+    scheduler=getEndpoint().getCamelContext().getExecutorServiceStrategy().newScheduledThreadPool(this,"IdleCheck",1);
+    log.debug("Creating IdleCheck task scheduled to run every {} millis",config.getCheckIdleInterval());
+    scheduler.scheduleAtFixedRate(new IdleCheck(idleStrategy),1000,config.getCheckIdleInterval(),TimeUnit.MILLISECONDS);
+  }
+}

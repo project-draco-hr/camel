@@ -1,0 +1,29 @@
+{
+  HdfsOutputStream ret=new HdfsOutputStream();
+  ret.fileType=configuration.getFileType();
+  ret.actualPath=hdfsPath;
+  HdfsInfo info=new HdfsInfo(ret.actualPath);
+  ret.suffixedPath=ret.actualPath + '.' + configuration.getOpenedSuffix();
+  if (configuration.isAppend()) {
+    if (!info.getFileSystem().exists(new Path(ret.actualPath))) {
+      configuration.setAppend(false);
+    }
+ else {
+      info=new HdfsInfo(ret.suffixedPath);
+      info.getFileSystem().rename(new Path(ret.actualPath),new Path(ret.suffixedPath));
+    }
+  }
+ else {
+    if (info.getFileSystem().exists(new Path(ret.actualPath))) {
+      if (configuration.isOverwrite()) {
+        info.getFileSystem().delete(new Path(ret.actualPath),true);
+      }
+ else {
+        throw new RuntimeCamelException("The file already exists");
+      }
+    }
+  }
+  ret.out=ret.fileType.createOutputStream(ret.suffixedPath,configuration);
+  ret.opened=true;
+  return ret;
+}
