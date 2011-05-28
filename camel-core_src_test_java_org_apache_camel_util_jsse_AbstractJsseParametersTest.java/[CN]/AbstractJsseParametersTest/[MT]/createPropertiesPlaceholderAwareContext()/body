@@ -1,0 +1,36 @@
+{
+  Properties supplementalProperties=new Properties();
+  KeyStore ks=KeyStore.getInstance(KeyStore.getDefaultType());
+  KeyManagerFactory kmf=KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+  TrustManagerFactory tmf=TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+  SecureRandom sr=null;
+  try {
+    sr=SecureRandom.getInstance("SHA1PRNG");
+  }
+ catch (  NoSuchAlgorithmException e) {
+  }
+  SSLContext sslc=SSLContext.getInstance("TLS");
+  sslc.init(null,null,null);
+  SSLSocket socket=(SSLSocket)sslc.getSocketFactory().createSocket();
+  supplementalProperties.setProperty("keyStoreParameters.type",KeyStore.getDefaultType());
+  supplementalProperties.setProperty("keyStoreParameters.provider",ks.getProvider().getName());
+  supplementalProperties.setProperty("keyManagersParameters.algorithm",KeyManagerFactory.getDefaultAlgorithm());
+  supplementalProperties.setProperty("keyManagersParameters.provider",kmf.getProvider().getName());
+  supplementalProperties.setProperty("trustManagersParameters.algorithm",TrustManagerFactory.getDefaultAlgorithm());
+  supplementalProperties.setProperty("trustManagersParameters.provider",tmf.getProvider().getName());
+  if (sr != null) {
+    supplementalProperties.setProperty("secureRandomParameters.algorithm","SHA1PRNG");
+    supplementalProperties.setProperty("secureRandomParameters.provider",sr.getProvider().getName());
+  }
+  supplementalProperties.setProperty("sslContextParameters.provider",sslc.getProvider().getName());
+  supplementalProperties.setProperty("cipherSuite.0",socket.getSupportedCipherSuites()[0]);
+  String ssp="";
+  for (  String protocol : socket.getSupportedProtocols()) {
+    if (!"SSLv2Hello".equals(protocol)) {
+      ssp=protocol;
+      break;
+    }
+  }
+  supplementalProperties.setProperty("secureSocketProtocol.0",ssp);
+  return this.createPropertiesPlaceholderAwareContext(supplementalProperties);
+}
