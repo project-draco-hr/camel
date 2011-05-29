@@ -3,8 +3,9 @@
   if (answer instanceof JmsTemplate && requestTimeout > 0) {
     JmsTemplate jmsTemplate=(JmsTemplate)answer;
     jmsTemplate.setExplicitQosEnabled(true);
-    if (timeToLive < 0) {
-      jmsTemplate.setTimeToLive(requestTimeout);
+    long ttl=timeToLive > 0 ? timeToLive : requestTimeout;
+    if (ttl > 0 && !isDisableTimeToLive()) {
+      jmsTemplate.setTimeToLive(ttl);
     }
     jmsTemplate.setSessionTransacted(isTransactedInOut());
     if (isTransactedInOut()) {
