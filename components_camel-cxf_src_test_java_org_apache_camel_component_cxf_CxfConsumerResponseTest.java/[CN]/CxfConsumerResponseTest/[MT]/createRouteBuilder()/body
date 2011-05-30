@@ -1,0 +1,38 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(SIMPLE_ENDPOINT_URI).inOnly("log:test").choice().when(header(CxfConstants.OPERATION_NAME).isEqualTo(ECHO_OPERATION)).process(new Processor(){
+        public void process(        final Exchange exchange){
+          assertEquals(DataFormat.POJO,exchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.class));
+          Message in=exchange.getIn();
+          org.apache.cxf.message.Message cxfMessage=in.getHeader(CxfConstants.CAMEL_CXF_MESSAGE,org.apache.cxf.message.Message.class);
+          assertNotNull("Should get the cxfMessage instance from message header",cxfMessage);
+          ServletRequest request=(ServletRequest)cxfMessage.get("HTTP.REQUEST");
+          assertNotNull("Should get the ServletRequest",request);
+          assertNotNull("Should get the RemoteAddress" + request.getRemoteAddr());
+          List<?> parameter=in.getBody(List.class);
+          String operation=(String)in.getHeader(CxfConstants.OPERATION_NAME);
+          Object result=operation + " " + (String)parameter.get(0);
+          exchange.getIn().setBody(result);
+          Map<String,Object> map=new HashMap<String,Object>();
+          map.put("org.apache.cxf.stax.force-start-document",Boolean.TRUE);
+          exchange.getIn().setHeader(Client.RESPONSE_CONTEXT,map);
+        }
+      }
+).when(header(CxfConstants.OPERATION_NAME).isEqualTo(ECHO_BOOLEAN_OPERATION)).process(new Processor(){
+        public void process(        final Exchange exchange){
+          Message in=exchange.getIn();
+          List<?> parameter=in.getBody(List.class);
+          exchange.getOut().setBody((Boolean)parameter.get(0));
+        }
+      }
+).when(header(CxfConstants.OPERATION_NAME).isEqualTo(PING_OPERATION)).process(new Processor(){
+        public void process(        final Exchange exchange){
+          pingCounter++;
+        }
+      }
+);
+    }
+  }
+;
+}

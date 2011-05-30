@@ -1,6 +1,13 @@
 {
   Map<String,Object> responseContext=new HashMap<String,Object>();
-  Map<String,Object> camelHeaders=camelExchange.getOut().getHeaders();
+  org.apache.camel.Message response;
+  if (camelExchange.getPattern().isOutCapable()) {
+    response=camelExchange.getOut();
+  }
+ else {
+    response=camelExchange.getIn();
+  }
+  Map<String,Object> camelHeaders=response.getHeaders();
   extractInvocationContextFromCamel(camelExchange,camelHeaders,responseContext,Client.RESPONSE_CONTEXT);
   propagateHeadersFromCamelToCxf(camelExchange,camelHeaders,cxfExchange,responseContext);
   Endpoint ep=cxfExchange.get(Endpoint.class);
@@ -11,7 +18,7 @@
   outMessage.putAll(responseContext);
   outMessage.put(Client.RESPONSE_CONTEXT,responseContext);
   LOG.trace("Set out response context = {}",responseContext);
-  Object outBody=DefaultCxfBinding.getBodyFromCamel(camelExchange.getOut(),dataFormat);
+  Object outBody=DefaultCxfBinding.getBodyFromCamel(response,dataFormat);
   if (outBody != null) {
     if (dataFormat == DataFormat.PAYLOAD) {
       CxfPayload<?> payload=(CxfPayload<?>)outBody;
