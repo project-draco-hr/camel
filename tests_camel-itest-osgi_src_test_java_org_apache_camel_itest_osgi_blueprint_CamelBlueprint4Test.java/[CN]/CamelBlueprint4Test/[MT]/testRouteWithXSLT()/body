@@ -1,0 +1,12 @@
+{
+  getInstalledBundle("CamelBlueprintTestBundle19").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintTestBundle19)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintTestBundle19)",10000);
+  ProducerTemplate template=ctx.createProducerTemplate();
+  MockEndpoint mock=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedBodiesReceived("<?xml version=\"1.0\" encoding=\"UTF-8\"?><goodbye>world!</goodbye>");
+  mock.message(0).body().isInstanceOf(String.class);
+  template.sendBody("direct:start","<hello>world!</hello>");
+  mock.assertIsSatisfied();
+  template.stop();
+}
