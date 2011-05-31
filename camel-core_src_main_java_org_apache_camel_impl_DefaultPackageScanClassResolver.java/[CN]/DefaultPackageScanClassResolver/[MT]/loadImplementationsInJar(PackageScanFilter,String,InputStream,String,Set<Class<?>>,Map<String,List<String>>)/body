@@ -1,11 +1,16 @@
 {
   ObjectHelper.notNull(classes,"classes");
   ObjectHelper.notNull(jarCache,"jarCache");
-  List<String> cache=jarCache.get(urlPath);
-  if (cache == null) {
-    cache=doCacheJar(stream,urlPath);
-    jarCache.put(urlPath,cache);
-    log.debug("Cached {} JAR with {} entries",urlPath,cache.size());
+  List<String> entries=jarCache != null ? jarCache.get(urlPath) : null;
+  if (entries == null) {
+    entries=doLoadJarClassEntries(stream,urlPath);
+    if (jarCache != null) {
+      jarCache.put(urlPath,entries);
+      log.trace("Cached {} JAR with {} entries",urlPath,entries.size());
+    }
   }
-  doLoadImplementationsInJar(test,parent,cache,classes);
+ else {
+    log.trace("Using cached {} JAR with {} entries",urlPath,entries.size());
+  }
+  doLoadImplementationsInJar(test,parent,entries,classes);
 }
