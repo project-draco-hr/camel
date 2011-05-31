@@ -11,18 +11,19 @@
     callback.done(true);
     return true;
   }
+  Exchange target=exchange;
   exchange.setProperty(Exchange.LOOP_SIZE,count);
   while (index.get() < count.get()) {
-    ExchangeHelper.prepareOutToIn(exchange);
-    boolean sync=process(exchange,callback,index,count);
+    target=prepareExchange(exchange,index.get());
+    boolean sync=process(target,callback,index,count);
     if (!sync) {
-      LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
+      LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",target.getExchangeId());
       return false;
     }
-    LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
+    LOG.trace("Processing exchangeId: {} is continued being processed synchronously",target.getExchangeId());
     index.getAndIncrement();
   }
-  ExchangeHelper.prepareOutToIn(exchange);
+  ExchangeHelper.copyResults(exchange,target);
   LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
   callback.done(true);
   return true;

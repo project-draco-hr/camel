@@ -6,17 +6,18 @@
       if (doneSync) {
         return;
       }
+      Exchange target=exchange;
       index.getAndIncrement();
       while (index.get() < count.get()) {
-        ExchangeHelper.prepareOutToIn(exchange);
-        boolean sync=process(exchange,callback,index,count);
+        target=prepareExchange(exchange,index.get());
+        boolean sync=process(target,callback,index,count);
         if (!sync) {
-          LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
+          LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",target.getExchangeId());
           return;
         }
         index.getAndIncrement();
       }
-      ExchangeHelper.prepareOutToIn(exchange);
+      ExchangeHelper.copyResults(exchange,target);
       LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
       callback.done(false);
     }
