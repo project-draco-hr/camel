@@ -1,0 +1,13 @@
+{
+  Exchange camelExchange=(Exchange)outMessage.get(CamelTransportConstants.CAMEL_EXCHANGE);
+  propagateResponseHeadersToCamel(outMessage,camelExchange);
+  Exception exception=outMessage.getContent(Exception.class);
+  if (checkException && exception != null) {
+    camelExchange.setException(exception);
+  }
+  CachedOutputStream outputStream=(CachedOutputStream)outMessage.getContent(OutputStream.class);
+  camelExchange.getOut().setBody(outputStream.getInputStream());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("send the response message: " + outputStream);
+  }
+}
