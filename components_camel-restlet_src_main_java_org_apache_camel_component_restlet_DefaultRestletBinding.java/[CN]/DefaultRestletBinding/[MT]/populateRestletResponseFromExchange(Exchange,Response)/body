@@ -48,19 +48,20 @@
   if (body == null) {
     response.setEntity("",MediaType.TEXT_PLAIN);
   }
+ else   if (body instanceof Response) {
+    LOG.debug("Using existing Restlet Response from exchange body: {}",body);
+  }
  else   if (body instanceof InputStream) {
     response.setEntity(new InputRepresentation(out.getBody(InputStream.class),mediaType));
   }
  else   if (body instanceof File) {
     response.setEntity(new FileRepresentation(out.getBody(File.class),mediaType));
   }
- else   if (body != null) {
+ else {
     String text=out.getBody(String.class);
     response.setEntity(text,mediaType);
   }
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Populate Restlet response from exchange body: " + body);
-  }
+  LOG.debug("Populate Restlet response from exchange body: {}",body);
   if (exchange.getProperty(Exchange.CHARSET_NAME) != null) {
     CharacterSet cs=CharacterSet.valueOf(exchange.getProperty(Exchange.CHARSET_NAME,String.class));
     response.getEntity().setCharacterSet(cs);

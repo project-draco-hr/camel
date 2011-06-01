@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("restlet:http://localhost:9080/users/{id}/like/{beverage.beer}");
+      from("restlet:http://localhost:9080/users/{id}/like/{beer}").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Request request=exchange.getIn().getHeader(RestletConstants.RESTLET_REQUEST,Request.class);
+          assertNotNull("Restlet Request",request);
+          Response response=exchange.getIn().getHeader(RestletConstants.RESTLET_RESPONSE,Response.class);
+          assertNotNull("Restlet Response",response);
+          response.setStatus(Status.SUCCESS_OK);
+          response.setEntity("<response>Beer is Good</response>",MediaType.TEXT_XML);
+          exchange.getOut().setBody(response);
+        }
+      }
+);
+    }
+  }
+;
+}
