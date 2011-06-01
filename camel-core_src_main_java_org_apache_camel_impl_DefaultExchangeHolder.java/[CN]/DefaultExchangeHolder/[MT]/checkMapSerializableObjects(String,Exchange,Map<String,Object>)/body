@@ -6,11 +6,25 @@
   for (  Map.Entry<String,Object> entry : map.entrySet()) {
     if (entry.getValue() != null) {
       Serializable converted=exchange.getContext().getTypeConverter().convertTo(Serializable.class,exchange,entry.getValue());
+      if (converted instanceof Collection) {
+        Collection valueCol=(Collection)converted;
+        if (!collectionContainsAllSerializableObjects(valueCol,exchange)) {
+          logCannotSerializeObject(type,entry.getKey(),entry.getValue());
+          continue;
+        }
+      }
+ else       if (converted instanceof Map) {
+        Map valueMap=(Map)converted;
+        if (!mapContainsAllSerializableObjects(valueMap,exchange)) {
+          logCannotSerializeObject(type,entry.getKey(),entry.getValue());
+          continue;
+        }
+      }
       if (converted != null) {
         result.put(entry.getKey(),converted);
       }
  else {
-        LOG.warn(type + " containing object: " + entry.getValue()+ " with key: "+ entry.getKey()+ " cannot be serialized, it will be excluded by the holder.");
+        logCannotSerializeObject(type,entry.getKey(),entry.getValue());
       }
     }
   }
