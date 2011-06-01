@@ -1,8 +1,13 @@
 {
   final Processor exceptionThrower=new Processor(){
     public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setBody("<exception/>");
-      throw new IllegalArgumentException("Exception thrown intentionally.");
+      String body=exchange.getIn().getBody(String.class);
+      body=body.substring(1,body.length() - 2);
+      boolean fatal=body.equals("exception") || body.indexOf(' ') != -1;
+      String message=fatal ? "FATAL " : "";
+      body=fatal ? message + body : "exception";
+      exchange.getIn().setBody("<" + body + "/>");
+      throw new IllegalArgumentException(message + "Exception thrown");
     }
   }
 ;
@@ -16,6 +21,10 @@
  else       if (getName().endsWith("WithHandler")) {
         log.debug("Using exception handler");
         onException(IllegalArgumentException.class).to("mock:exception");
+      }
+ else       if (getName().endsWith("WithFatalException")) {
+        log.debug("Using fatal exception");
+        onException(IllegalArgumentException.class).process(exceptionThrower).to("mock:fatal");
       }
       from("direct:start").process(exceptionThrower).to("mock:result");
       from("direct:start2").to("direct:intermediate").to("mock:result");
