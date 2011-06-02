@@ -1,0 +1,15 @@
+{
+  MessagePredicate messageCriteria=(MessagePredicate)exchange.getProperty(QuickfixjProducer.CORRELATION_CRITERIA_KEY);
+  final MessageCorrelationRule correlationRule=new MessageCorrelationRule(exchange,sessionID,messageCriteria);
+  final long timeout=exchange.getProperty(QuickfixjProducer.CORRELATION_TIMEOUT_KEY,DEFAULT_CORRELATION_TIMEOUT,Long.class);
+  rules.add(correlationRule);
+  return new Callable<Message>(){
+    @Override public Message call() throws Exception {
+      if (!correlationRule.getLatch().await(timeout,TimeUnit.MILLISECONDS)) {
+        throw new ExchangeTimedOutException(correlationRule.getExchange(),timeout);
+      }
+      return correlationRule.getReplyMessage();
+    }
+  }
+;
+}

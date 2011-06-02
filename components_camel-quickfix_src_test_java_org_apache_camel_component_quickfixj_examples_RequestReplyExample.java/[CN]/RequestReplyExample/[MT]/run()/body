@@ -1,0 +1,39 @@
+{
+  DefaultCamelContext context=new DefaultCamelContext();
+  final CountDownLatch logonLatch=new CountDownLatch(1);
+  final String orderStatusServiceUrl="http://localhost:9123/order/status";
+  RouteBuilder routes=new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("quickfix:examples/inprocess.cfg?sessionID=FIX.4.2:TRADER->MARKET").filter(header(QuickfixjEndpoint.EVENT_CATEGORY_KEY).isEqualTo(QuickfixjEventCategory.SessionLogon)).bean(new CountDownLatchDecrementer("logon",logonLatch));
+      from("quickfix:examples/inprocess.cfg?sessionID=FIX.4.2:MARKET->TRADER&exchangePattern=InOut").filter(header(QuickfixjEndpoint.MESSAGE_TYPE_KEY).isEqualTo(MsgType.ORDER_STATUS_REQUEST)).bean(new MarketOrderStatusService());
+      from("jetty:" + orderStatusServiceUrl).bean(new OrderStatusRequestTransformer()).routingSlip(bean(FixSessionRouter.class,"route")).bean(new QuickfixjMessageJsonTransformer());
+    }
+  }
+;
+  context.addRoutes(routes);
+  LOG.info("Starting Camel context");
+  context.start();
+  if (!logonLatch.await(5L,TimeUnit.SECONDS)) {
+    throw new IllegalStateException("Logon did not succeed");
+  }
+  URL orderStatusUrl=new URL(orderStatusServiceUrl + "?sessionID=FIX.4.2:TRADER->MARKET&orderID=abc");
+  HttpURLConnection connection=(HttpURLConnection)orderStatusUrl.openConnection();
+  BufferedReader orderStatusReply=new BufferedReader(new InputStreamReader(connection.getInputStream()));
+  String line=orderStatusReply.readLine();
+  if (!line.equals("\"message\": {")) {
+    throw new Exception("Don't appear to be a JSON response");
+  }
+ else {
+    StringBuilder sb=new StringBuilder();
+    while (line != null) {
+      sb.append(line);
+      sb.append('\n');
+      line=orderStatusReply.readLine();
+    }
+    Log.info("Web request response:\n" + sb);
+  }
+  orderStatusReply.close();
+  LOG.info("Shutting down Camel context");
+  context.stop();
+  LOG.info("Example complete");
+}

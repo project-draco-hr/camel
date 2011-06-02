@@ -1,12 +1,7 @@
 {
-  Exchange mockExchange=Mockito.mock(Exchange.class);
-  QuickfixjEndpoint mockEndpoint=Mockito.mock(QuickfixjEndpoint.class);
-  org.apache.camel.Message mockCamelMessage=Mockito.mock(org.apache.camel.Message.class);
-  Mockito.when(mockExchange.getIn()).thenReturn(mockCamelMessage);
-  Mockito.when(mockCamelMessage.getBody(Message.class)).thenReturn(new Message());
-  SessionID sessionID=new SessionID(FixVersions.BEGINSTRING_FIX44,"SENDER","TARGET");
-  Mockito.when(mockEndpoint.getSessionID()).thenReturn(sessionID);
-  QuickfixjProducer producer=new QuickfixjProducer(mockEndpoint);
+  Session mockSession=Mockito.spy(TestSupport.createSession(sessionID));
+  Mockito.doReturn(mockSession).when(producer).getSession(MessageUtils.getSessionID(inboundFixMessage));
+  Mockito.doThrow(new TestException()).when(mockSession).send(Mockito.isA(Message.class));
   producer.process(mockExchange);
-  Mockito.verify(mockExchange).setException(Matchers.isA(IllegalStateException.class));
+  Mockito.verify(mockExchange).setException(Matchers.isA(TestException.class));
 }
