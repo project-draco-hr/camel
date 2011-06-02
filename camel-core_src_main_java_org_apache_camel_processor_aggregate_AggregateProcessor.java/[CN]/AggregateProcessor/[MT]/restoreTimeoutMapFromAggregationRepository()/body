@@ -1,0 +1,17 @@
+{
+  StopWatch watch=new StopWatch();
+  LOG.trace("Starting restoring CompletionTimeout for existing exchanges from the aggregation repository...");
+  Set<String> keys=aggregationRepository.getKeys();
+  if (keys == null || keys.isEmpty()) {
+    return;
+  }
+  for (  String key : keys) {
+    Exchange exchange=aggregationRepository.get(camelContext,key);
+    long timeout=exchange.hasProperties() ? exchange.getProperty(Exchange.AGGREGATED_TIMEOUT,0,long.class) : 0;
+    if (timeout > 0) {
+      LOG.trace("Restoring CompletionTimeout for exchangeId: {} with timeout: {} millis.",exchange.getExchangeId(),timeout);
+      addExchangeToTimeoutMap(key,exchange,timeout);
+    }
+  }
+  LOG.info("Restored {} CompletionTimeout conditions in the AggregationTimeoutChecker in {}",timeoutMap.size(),TimeUtils.printDuration(watch.stop()));
+}
