@@ -1,0 +1,54 @@
+{
+  Message in=exchange.getIn();
+  if (in.getBody() == null) {
+    return;
+  }
+  String contentType=ExchangeHelper.getContentType(exchange);
+  BodyGenerator body=in.getBody(BodyGenerator.class);
+  if (body == null) {
+    try {
+      Object data=in.getBody();
+      if (data != null) {
+        if (contentType != null && AhcConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+          Serializable obj=in.getMandatoryBody(Serializable.class);
+          ByteArrayOutputStream bos=new ByteArrayOutputStream();
+          AhcHelper.writeObjectToStream(bos,obj);
+          byte[] bytes=bos.toByteArray();
+          body=new ByteArrayBodyGenerator(bytes);
+          IOHelper.close(bos);
+        }
+ else         if (data instanceof File || data instanceof GenericFile) {
+          File file=in.getBody(File.class);
+          if (file != null) {
+            body=new FileBodyGenerator(file);
+          }
+        }
+ else         if (data instanceof String) {
+          String charset=IOConverter.getCharsetName(exchange,false);
+          if (charset != null) {
+            body=new ByteArrayBodyGenerator(((String)data).getBytes(charset));
+          }
+ else {
+            body=new ByteArrayBodyGenerator(((String)data).getBytes());
+          }
+        }
+        if (body == null) {
+          InputStream is=in.getMandatoryBody(InputStream.class);
+          body=new InputStreamBodyGenerator(is);
+        }
+      }
+    }
+ catch (    UnsupportedEncodingException e) {
+      throw new CamelExchangeException("Error creating BodyGenerator from message body",exchange,e);
+    }
+catch (    IOException e) {
+      throw new CamelExchangeException("Error serializing message body",exchange,e);
+    }
+  }
+  if (contentType != null) {
+    builder.setHeader(Exchange.CONTENT_TYPE,contentType);
+  }
+  if (body != null) {
+    builder.setBody(body);
+  }
+}

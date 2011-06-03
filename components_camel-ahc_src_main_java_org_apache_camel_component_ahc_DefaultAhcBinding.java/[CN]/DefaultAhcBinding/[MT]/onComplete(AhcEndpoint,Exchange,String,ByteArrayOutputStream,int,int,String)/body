@@ -1,0 +1,28 @@
+{
+  os.flush();
+  os.close();
+  InputStream is=new ByteArrayInputStream(os.toByteArray());
+  String contentEncoding=exchange.getOut().getHeader(Exchange.CONTENT_ENCODING,String.class);
+  if (!exchange.getProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.FALSE,Boolean.class)) {
+    is=GZIPHelper.uncompressGzip(contentEncoding,is);
+  }
+  String contentType=exchange.getOut().getHeader(Exchange.CONTENT_TYPE,String.class);
+  if (contentType != null) {
+    AhcHelper.setCharsetFromContentType(contentType,exchange);
+  }
+  Object body=is;
+  if (contentType != null && contentType.equals(AhcConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT)) {
+    body=AhcHelper.deserializeJavaObjectFromStream(is);
+  }
+  if (!endpoint.isThrowExceptionOnFailure()) {
+    populateResponse(exchange,body,contentLength,statusCode);
+  }
+ else {
+    if (statusCode >= 100 && statusCode < 300) {
+      populateResponse(exchange,body,contentLength,statusCode);
+    }
+ else {
+      throw populateHttpOperationFailedException(endpoint,exchange,url,body,contentLength,statusCode,statusText);
+    }
+  }
+}

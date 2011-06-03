@@ -1,0 +1,24 @@
+{
+  Exception answer;
+  if (endpoint.isTransferException() && body != null && body instanceof Exception) {
+    return (Exception)body;
+  }
+  String copy=null;
+  if (body != null) {
+    copy=exchange.getContext().getTypeConverter().convertTo(String.class,exchange,body);
+  }
+  Map<String,String> headers=extractResponseHeaders(exchange);
+  if (statusCode >= 300 && statusCode < 400) {
+    String redirectLocation=exchange.getOut().getHeader("Location",String.class);
+    if (redirectLocation != null) {
+      answer=new AhcOperationFailedException(url,statusCode,statusText,redirectLocation,headers,copy);
+    }
+ else {
+      answer=new AhcOperationFailedException(url,statusCode,statusText,null,headers,copy);
+    }
+  }
+ else {
+    answer=new AhcOperationFailedException(url,statusCode,statusText,null,headers,copy);
+  }
+  return answer;
+}

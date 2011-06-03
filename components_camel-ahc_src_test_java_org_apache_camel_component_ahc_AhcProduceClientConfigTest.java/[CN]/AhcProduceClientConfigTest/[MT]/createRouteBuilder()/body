@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("ahc:http://localhost:9080/foo?clientConfig=#myConfig").to("mock:result");
+      from("jetty:http://localhost:9080/foo").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,"301");
+          exchange.getOut().setHeader("Location","http://localhost:9080/bar");
+        }
+      }
+);
+      from("jetty:http://localhost:9080/bar").transform(constant("Bye World"));
+    }
+  }
+;
+}
