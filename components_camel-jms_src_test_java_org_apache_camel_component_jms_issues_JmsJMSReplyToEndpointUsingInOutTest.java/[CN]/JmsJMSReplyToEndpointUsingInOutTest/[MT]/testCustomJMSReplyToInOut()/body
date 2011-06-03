@@ -1,7 +1,8 @@
 {
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedBodiesReceived("My name is Arnio");
-  Executors.newFixedThreadPool(1).submit(new Callable<Object>(){
+  ExecutorService executor=Executors.newFixedThreadPool(1);
+  executor.submit(new Callable<Object>(){
     public Object call() throws Exception {
       JmsTemplate jms=new JmsTemplate(amq.getConfiguration().getConnectionFactory());
       final TextMessage msg=(TextMessage)jms.receive("nameRequestor");
@@ -30,4 +31,5 @@
   }
 );
   assertMockEndpointsSatisfied();
+  executor.shutdownNow();
 }
