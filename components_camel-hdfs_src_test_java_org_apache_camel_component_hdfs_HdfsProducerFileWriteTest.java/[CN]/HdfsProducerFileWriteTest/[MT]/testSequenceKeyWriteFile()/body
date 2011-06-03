@@ -1,8 +1,9 @@
 {
+  final Path file=new Path(new File("target/test/test-camel-simple-write-file2").getAbsolutePath());
   deleteDirectory("target/file-batch3");
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("file://target/file-batch3?sortBy=file:name").setHeader("KEY").simple("${in.header.CamelFileName}").to("hdfs://localhost/tmp/test/test-camel-sequence-write-file2?fileSystemType=LOCAL&keyType=TEXT&fileType=SEQUENCE_FILE");
+      from("file://target/file-batch3?sortBy=file:name").setHeader("KEY").simple("${in.header.CamelFileName}").to("hdfs://localhost/" + file.toUri() + "?fileSystemType=LOCAL&keyType=TEXT&fileType=SEQUENCE_FILE");
     }
   }
 );
@@ -14,7 +15,7 @@
   nb.matchesMockWaitTime();
   context.stop();
   Configuration conf=new Configuration();
-  Path file1=new Path("file:///tmp/test/test-camel-sequence-write-file2");
+  Path file1=new Path("file:///" + file.toUri());
   FileSystem fs1=FileSystem.get(file1.toUri(),conf);
   SequenceFile.Reader reader=new SequenceFile.Reader(fs1,file1,conf);
   Text key=(Text)ReflectionUtils.newInstance(reader.getKeyClass(),conf);

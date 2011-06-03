@@ -1,8 +1,8 @@
 {
-  Path file=new Path("file:///tmp/test/test-camel-string");
+  final Path file=new Path(new File("target/test/test-camel-string").getAbsolutePath());
   Configuration conf=new Configuration();
   FileSystem fs1=FileSystem.get(file.toUri(),conf);
-  ArrayFile.Writer writer=new ArrayFile.Writer(conf,fs1,"file:///tmp/test/test-camel-string1",Text.class,CompressionType.NONE,new Progressable(){
+  ArrayFile.Writer writer=new ArrayFile.Writer(conf,fs1,"target/test/test-camel-string1",Text.class,CompressionType.NONE,new Progressable(){
     @Override public void progress(){
     }
   }
@@ -14,7 +14,7 @@
   writer.close();
   context.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("hdfs:///tmp/test?fileSystemType=LOCAL&fileType=ARRAY_FILE&initialDelay=0").to("mock:result");
+      from("hdfs:///" + file.getParent().toUri() + "?fileSystemType=LOCAL&fileType=ARRAY_FILE&initialDelay=0").to("mock:result");
     }
   }
 );
