@@ -1,0 +1,17 @@
+{
+  final Processor exceptionThrower=new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      throw new IllegalArgumentException("Forced by unit test");
+    }
+  }
+;
+  return new RouteBuilder(){
+    public void configure(){
+      errorHandler(deadLetterChannel("mock:dlc").redeliveryDelay(0).maximumRedeliveries(3));
+      onException(IllegalArgumentException.class).process(exceptionThrower).to("mock:onexception");
+      from("direct:start").to("direct:intermediate").to("mock:result2");
+      from("direct:intermediate").setBody(constant("<some-value/>")).process(exceptionThrower).to("mock:intermediate");
+    }
+  }
+;
+}
