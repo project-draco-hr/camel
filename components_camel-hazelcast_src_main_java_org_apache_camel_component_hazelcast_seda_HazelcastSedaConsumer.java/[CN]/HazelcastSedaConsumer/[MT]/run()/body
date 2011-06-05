@@ -5,10 +5,15 @@
     try {
       final Object body=queue.poll(endpoint.getConfiguration().getPollInterval(),TimeUnit.MILLISECONDS);
       if (body != null) {
-        exchange.getIn().setBody(body);
+        if (body instanceof DefaultExchangeHolder) {
+          DefaultExchangeHolder.unmarshal(exchange,(DefaultExchangeHolder)body);
+        }
+ else {
+          exchange.getIn().setBody(body);
+        }
         try {
           processor.process(exchange,new AsyncCallback(){
-            public void done(            final boolean sync){
+            public void done(            boolean asyncDone){
             }
           }
 );

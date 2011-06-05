@@ -1,11 +1,18 @@
 {
   Object obj;
   Object body=exchange.getIn().getBody();
-  if (!(body instanceof Serializable)) {
-    obj=exchange.getIn().getBody(byte[].class);
+  final HazelcastSedaEndpoint endpoint=(HazelcastSedaEndpoint)this.getEndpoint();
+  final HazelcastSedaConfiguration configuration=endpoint.getConfiguration();
+  if (configuration.isTransferExchange()) {
+    obj=DefaultExchangeHolder.marshal(exchange);
   }
  else {
-    obj=body;
+    if (!(body instanceof Serializable)) {
+      obj=exchange.getIn().getBody(byte[].class);
+    }
+ else {
+      obj=body;
+    }
   }
   queue.add(obj);
 }
