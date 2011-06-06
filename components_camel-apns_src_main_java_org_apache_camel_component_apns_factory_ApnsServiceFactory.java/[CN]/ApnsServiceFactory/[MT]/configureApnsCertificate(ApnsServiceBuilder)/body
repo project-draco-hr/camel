@@ -1,0 +1,20 @@
+{
+  if (getSslContext() != null) {
+    builder.withSSLContext(getSslContext());
+    return;
+  }
+  ObjectHelper.notNull(getCamelContext(),"camelContext");
+  ObjectHelper.notEmpty(getCertificatePath(),"certificatePath");
+  ObjectHelper.notEmpty(getCertificatePassword(),"certificatePassword");
+  InputStream certificateInputStream=null;
+  try {
+    certificateInputStream=camelContext.getClassResolver().loadResourceAsStream(getCertificatePath());
+    if (certificateInputStream == null) {
+      throw new FileNotFoundException("Cannot load " + getCertificatePath() + " from classpath");
+    }
+    builder.withCert(certificateInputStream,getCertificatePassword()).withProductionDestination();
+  }
+  finally {
+    ResourceUtils.close(certificateInputStream);
+  }
+}
