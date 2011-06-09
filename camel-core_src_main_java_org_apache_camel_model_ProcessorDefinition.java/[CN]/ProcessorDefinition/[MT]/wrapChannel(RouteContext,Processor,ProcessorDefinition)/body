@@ -11,18 +11,20 @@
   }
  else   if (ProcessorDefinitionHelper.isParentOfType(TryDefinition.class,defn,true) || ProcessorDefinitionHelper.isParentOfType(CatchDefinition.class,defn,true) || ProcessorDefinitionHelper.isParentOfType(FinallyDefinition.class,defn,true)) {
   }
- else   if (defn instanceof MulticastDefinition || defn instanceof RecipientListDefinition) {
+ else   if (defn instanceof MulticastDefinition) {
+    MulticastDefinition def=(MulticastDefinition)defn;
+    if (def.isShareUnitOfWork() && child == null) {
+      wrapChannelInErrorHandler(channel,routeContext);
+    }
+  }
+ else   if (defn instanceof RecipientListDefinition) {
+    RecipientListDefinition def=(RecipientListDefinition)defn;
+    if (def.isShareUnitOfWork() && child == null) {
+      wrapChannelInErrorHandler(channel,routeContext);
+    }
   }
  else {
-    if (isInheritErrorHandler() == null || isInheritErrorHandler()) {
-      log.trace("{} is configured to inheritErrorHandler",defn);
-      Processor output=channel.getOutput();
-      Processor errorHandler=wrapInErrorHandler(routeContext,getErrorHandlerBuilder(),output);
-      channel.setErrorHandler(errorHandler);
-    }
- else {
-      log.debug("{} is configured to not inheritErrorHandler.",defn);
-    }
+    wrapChannelInErrorHandler(channel,routeContext);
   }
   log.trace("{} wrapped in Channel: {}",defn,channel);
   return channel;

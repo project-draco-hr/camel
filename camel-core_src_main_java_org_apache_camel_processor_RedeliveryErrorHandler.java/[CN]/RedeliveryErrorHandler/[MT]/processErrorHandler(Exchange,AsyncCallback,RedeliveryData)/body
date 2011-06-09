@@ -13,7 +13,16 @@
     }
     boolean shouldRedeliver=shouldRedeliver(exchange,data);
     if (!shouldRedeliver) {
-      Processor target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;
+      Processor target=null;
+      boolean deliver=true;
+      SubUnitOfWorkCallback uowCallback=exchange.getUnitOfWork().getSubUnitOfWorkCallback();
+      if (uowCallback != null) {
+        uowCallback.onExhausted(exchange);
+        deliver=false;
+      }
+      if (deliver) {
+        target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;
+      }
       boolean sync=deliverToFailureProcessor(target,exchange,data,callback);
       return sync;
     }

@@ -1,0 +1,25 @@
+{
+  Processor answer;
+  if (routeContext != null) {
+    final PreparedErrorHandler key=new PreparedErrorHandler(routeContext,processor);
+    answer=errorHandlers.get(key);
+    if (answer != null) {
+      LOG.trace("Using existing error handler for: {}",processor);
+      return answer;
+    }
+    LOG.trace("Creating error handler for: {}",processor);
+    ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
+    try {
+      processor=builder.createErrorHandler(routeContext,processor);
+    }
+ catch (    Exception e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+    answer=createUnitOfWorkProcessor(processor,exchange);
+    errorHandlers.putIfAbsent(key,answer);
+  }
+ else {
+    answer=createUnitOfWorkProcessor(processor,exchange);
+  }
+  return answer;
+}

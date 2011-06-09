@@ -2,35 +2,42 @@
   if (logger == null) {
     return;
   }
-  if (handled && !data.currentRedeliveryPolicy.isLogHandled()) {
-    return;
-  }
-  if (continued && !data.currentRedeliveryPolicy.isLogContinued()) {
-    return;
-  }
-  if (shouldRedeliver && !data.currentRedeliveryPolicy.isLogRetryAttempted()) {
-    return;
-  }
-  if (!shouldRedeliver && !data.currentRedeliveryPolicy.isLogExhausted()) {
-    return;
+  if (!exchange.isRollbackOnly()) {
+    if (handled && !data.currentRedeliveryPolicy.isLogHandled()) {
+      return;
+    }
+    if (continued && !data.currentRedeliveryPolicy.isLogContinued()) {
+      return;
+    }
+    if (shouldRedeliver && !data.currentRedeliveryPolicy.isLogRetryAttempted()) {
+      return;
+    }
+    if (!shouldRedeliver && !data.currentRedeliveryPolicy.isLogExhausted()) {
+      return;
+    }
   }
   LoggingLevel newLogLevel;
-  boolean logStrackTrace;
-  if (shouldRedeliver) {
+  boolean logStackTrace;
+  if (exchange.isRollbackOnly()) {
+    newLogLevel=data.currentRedeliveryPolicy.getRetriesExhaustedLogLevel();
+    logStackTrace=data.currentRedeliveryPolicy.isLogStackTrace();
+  }
+ else   if (shouldRedeliver) {
     newLogLevel=data.currentRedeliveryPolicy.getRetryAttemptedLogLevel();
-    logStrackTrace=data.currentRedeliveryPolicy.isLogRetryStackTrace();
+    logStackTrace=data.currentRedeliveryPolicy.isLogRetryStackTrace();
   }
  else {
     newLogLevel=data.currentRedeliveryPolicy.getRetriesExhaustedLogLevel();
-    logStrackTrace=data.currentRedeliveryPolicy.isLogStackTrace();
+    logStackTrace=data.currentRedeliveryPolicy.isLogStackTrace();
   }
   if (e == null) {
     e=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class);
   }
   if (exchange.isRollbackOnly()) {
-    String msg="Rollback exchange";
-    if (exchange.getException() != null) {
-      msg=msg + " due: " + exchange.getException().getMessage();
+    String msg="Rollback exchangeId: " + exchange.getExchangeId();
+    Throwable cause=exchange.getException() != null ? exchange.getException() : exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+    if (cause != null) {
+      msg=msg + " due: " + cause.getMessage();
     }
     if (newLogLevel == LoggingLevel.ERROR) {
       logger.log(msg,LoggingLevel.WARN);
@@ -39,7 +46,7 @@
       logger.log(msg,newLogLevel);
     }
   }
- else   if (e != null && logStrackTrace) {
+ else   if (e != null && logStackTrace) {
     logger.log(message,e,newLogLevel);
   }
  else {

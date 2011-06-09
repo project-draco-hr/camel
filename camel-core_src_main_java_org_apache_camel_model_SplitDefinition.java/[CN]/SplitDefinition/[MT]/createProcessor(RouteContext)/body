@@ -13,5 +13,9 @@
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
   Expression exp=getExpression().createExpression(routeContext);
-  return new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare);
+  Splitter answer=new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
+  if (isShareUnitOfWork()) {
+    return new SubUnitOfWorkProcessor(answer);
+  }
+  return answer;
 }

@@ -16,5 +16,9 @@
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
-  return new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare);
+  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
+  if (isShareUnitOfWork()) {
+    return new SubUnitOfWorkProcessor(answer);
+  }
+  return answer;
 }

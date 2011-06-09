@@ -1,6 +1,6 @@
 {
   Iterator<Object> iter=ObjectHelper.createIterator(recipientList,delimiter);
-  RecipientListProcessor rlp=new RecipientListProcessor(exchange.getContext(),producerCache,iter,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),isStreaming(),isStopOnException(),getTimeout(),getOnPrepare()){
+  RecipientListProcessor rlp=new RecipientListProcessor(exchange.getContext(),producerCache,iter,getAggregationStrategy(),isParallelProcessing(),getExecutorService(),isStreaming(),isStopOnException(),getTimeout(),getOnPrepare(),isShareUnitOfWork()){
     @Override protected synchronized ExecutorService createAggregateExecutorService(    String name){
       if (aggregateExecutorService == null) {
         aggregateExecutorService=super.createAggregateExecutorService("RecipientList-AggregateTask");
@@ -18,5 +18,9 @@
     callback.done(true);
     return true;
   }
-  return AsyncProcessorHelper.process(rlp,exchange,callback);
+  AsyncProcessor target=rlp;
+  if (isShareUnitOfWork()) {
+    target=new SubUnitOfWorkProcessor(rlp);
+  }
+  return AsyncProcessorHelper.process(target,exchange,callback);
 }

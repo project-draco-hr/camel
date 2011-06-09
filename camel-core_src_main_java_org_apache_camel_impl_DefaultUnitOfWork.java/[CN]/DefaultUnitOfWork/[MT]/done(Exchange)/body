@@ -3,6 +3,15 @@
   boolean failed=exchange.isFailed();
   UnitOfWorkHelper.doneSynchronizations(exchange,synchronizations,log);
   try {
+    SubUnitOfWorkCallback uowCallback=getSubUnitOfWorkCallback();
+    if (uowCallback != null) {
+      uowCallback.onDone(exchange);
+    }
+  }
+ catch (  Throwable e) {
+    log.warn("Exception occurred during savepoint onDone. This exception will be ignored.",e);
+  }
+  try {
     if (failed) {
       EventHelper.notifyExchangeFailed(exchange.getContext(),exchange);
     }
