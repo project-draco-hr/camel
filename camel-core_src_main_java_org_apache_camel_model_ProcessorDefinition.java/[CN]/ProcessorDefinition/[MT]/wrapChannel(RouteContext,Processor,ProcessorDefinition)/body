@@ -8,19 +8,30 @@
   channel.setChildDefinition(child);
   channel.initChannel(defn,routeContext);
   if (defn instanceof TryDefinition || defn instanceof CatchDefinition || defn instanceof FinallyDefinition) {
+    log.trace("{} is part of doTry .. doCatch .. doFinally so no error handler is applied",defn);
   }
  else   if (ProcessorDefinitionHelper.isParentOfType(TryDefinition.class,defn,true) || ProcessorDefinitionHelper.isParentOfType(CatchDefinition.class,defn,true) || ProcessorDefinitionHelper.isParentOfType(FinallyDefinition.class,defn,true)) {
+    log.trace("{} is part of doTry .. doCatch .. doFinally so no error handler is applied",defn);
+  }
+ else   if (defn instanceof OnExceptionDefinition || ProcessorDefinitionHelper.isParentOfType(OnExceptionDefinition.class,defn,true)) {
+    log.trace("{} is part of OnException so no error handler is applied",defn);
   }
  else   if (defn instanceof MulticastDefinition) {
     MulticastDefinition def=(MulticastDefinition)defn;
     if (def.isShareUnitOfWork() && child == null) {
       wrapChannelInErrorHandler(channel,routeContext);
     }
+ else {
+      log.trace("{} is part of multicast/recipientList which have special error handling so no error handler is applied",defn);
+    }
   }
  else   if (defn instanceof RecipientListDefinition) {
     RecipientListDefinition def=(RecipientListDefinition)defn;
     if (def.isShareUnitOfWork() && child == null) {
       wrapChannelInErrorHandler(channel,routeContext);
+    }
+ else {
+      log.trace("{} is part of multicast/recipientList which have special error handling so no error handler is applied",defn);
     }
   }
  else {

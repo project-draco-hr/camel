@@ -1,8 +1,14 @@
 {
-  getMockEndpoint("mock:error").expectedBodiesReceived("Bye Camel");
+  getMockEndpoint("mock:error").expectedMessageCount(0);
   getMockEndpoint("mock:result").expectedMessageCount(0);
-  String reply=template.requestBody("direct:start","Hello Camel",String.class);
-  assertEquals("Bye Camel",reply);
+  try {
+    template.requestBody("direct:start","Hello Camel",String.class);
+    fail("Should throw exception");
+  }
+ catch (  CamelExecutionException e) {
+    CamelExchangeException cause=assertIsInstanceOf(CamelExchangeException.class,e.getCause());
+    assertEquals("Simulated error at attempt 1. Exchange[Message: Hello Camel]",cause.getMessage());
+  }
   assertMockEndpointsSatisfied();
   assertFalse("Should use different threads",beforeThreadName.equalsIgnoreCase(afterThreadName));
 }

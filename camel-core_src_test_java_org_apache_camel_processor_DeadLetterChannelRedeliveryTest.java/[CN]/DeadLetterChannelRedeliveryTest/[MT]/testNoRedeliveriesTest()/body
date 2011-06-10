@@ -1,14 +1,9 @@
 {
   counter=0;
-  MockEndpoint mock=getMockEndpoint("mock:no");
-  mock.expectedMessageCount(1);
-  mock.message(0).header("CamelRedelivered").isEqualTo(Boolean.FALSE);
-  mock.message(0).header("CamelRedeliveryCounter").isEqualTo(0);
-  try {
-    template.sendBody("direct:no","Hello World");
-  }
- catch (  RuntimeCamelException e) {
-  }
+  redeliveryCounter=0;
+  getMockEndpoint("mock:error").expectedMessageCount(1);
+  template.sendBody("direct:no","Hello World");
   assertMockEndpointsSatisfied();
   assertEquals(1,counter);
+  assertEquals(0,redeliveryCounter);
 }

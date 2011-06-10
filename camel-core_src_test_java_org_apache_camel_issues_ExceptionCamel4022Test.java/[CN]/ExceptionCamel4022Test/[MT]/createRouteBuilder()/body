@@ -1,11 +1,10 @@
 {
-  final Processor exceptionThrower=new MyExceptionThrower();
   return new RouteBuilder(){
     public void configure(){
       errorHandler(deadLetterChannel("mock:dlc").redeliveryDelay(0).maximumRedeliveries(3));
-      onException(IllegalArgumentException.class).process(exceptionThrower).to("mock:onexception");
-      from("direct:start").to("direct:intermediate").to("mock:result2");
-      from("direct:intermediate").setBody(constant("<some-value/>")).process(exceptionThrower).to("mock:intermediate");
+      onException(Exception.class).logStackTrace(false).process(new MyExceptionThrower("Damn Again")).to("mock:onexception");
+      from("direct:start").to("mock:a").to("direct:intermediate").to("mock:result2");
+      from("direct:intermediate").to("mock:b").setBody(constant("<some-value/>")).process(new MyExceptionThrower("Damn")).to("mock:intermediate");
     }
   }
 ;

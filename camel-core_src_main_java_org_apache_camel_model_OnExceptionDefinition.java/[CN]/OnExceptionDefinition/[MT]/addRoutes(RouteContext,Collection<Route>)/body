@@ -1,4 +1,7 @@
 {
+  if (isInheritErrorHandler() != null && isInheritErrorHandler()) {
+    throw new IllegalArgumentException(this + " cannot have the inheritErrorHandler option set to true");
+  }
   setHandledFromExpressionType(routeContext);
   setContinuedFromExpressionType(routeContext);
   setRetryWhileFromExpressionType(routeContext);
@@ -9,7 +12,13 @@
     Processor onRedelivery=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onRedeliveryRef,Processor.class);
     setOnRedelivery(onRedelivery);
   }
-  errorHandler=routeContext.createProcessor(this);
+  Processor child=routeContext.createProcessor(this);
+  if (child != null) {
+    errorHandler=new FatalFallbackErrorHandler(child);
+  }
+ else {
+    errorHandler=null;
+  }
   ErrorHandlerBuilder builder=routeContext.getRoute().getErrorHandlerBuilder();
   builder.addErrorHandlers(this);
 }
