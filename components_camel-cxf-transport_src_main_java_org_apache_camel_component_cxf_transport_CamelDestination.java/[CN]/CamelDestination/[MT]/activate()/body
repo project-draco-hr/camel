@@ -4,10 +4,19 @@
   try {
     LOG.debug("establishing Camel connection");
     destinationEndpoint=getCamelContext().getEndpoint(camelDestinationUri);
+    if (destinationEndpoint == null) {
+      throw new NoSuchEndpointException(camelDestinationUri);
+    }
     consumer=destinationEndpoint.createConsumer(new ConsumerProcessor());
     ServiceHelper.startService(consumer);
   }
- catch (  Exception ex) {
+ catch (  NoSuchEndpointException nex) {
+    throw nex;
+  }
+catch (  Exception ex) {
+    if (destinationEndpoint == null) {
+      throw new FailedToCreateConsumerException(camelDestinationUri,ex);
+    }
     throw new FailedToCreateConsumerException(destinationEndpoint,ex);
   }
 }
