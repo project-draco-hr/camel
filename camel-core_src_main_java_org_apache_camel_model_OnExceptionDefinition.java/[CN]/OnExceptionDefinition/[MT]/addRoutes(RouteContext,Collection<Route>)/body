@@ -1,17 +1,9 @@
 {
-  if (isInheritErrorHandler() != null && isInheritErrorHandler()) {
-    throw new IllegalArgumentException(this + " cannot have the inheritErrorHandler option set to true");
-  }
   setHandledFromExpressionType(routeContext);
   setContinuedFromExpressionType(routeContext);
   setRetryWhileFromExpressionType(routeContext);
-  if (getHandledPolicy() != null && getContinuedPolicy() != null) {
-    throw new IllegalArgumentException("Only one of handled or continued is allowed to be configured on: " + this);
-  }
-  if (ObjectHelper.isNotEmpty(onRedeliveryRef)) {
-    Processor onRedelivery=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onRedeliveryRef,Processor.class);
-    setOnRedelivery(onRedelivery);
-  }
+  setOnRedeliveryFromRedeliveryRef(routeContext);
+  validateConfiguration();
   Processor child=routeContext.createProcessor(this);
   if (child != null) {
     errorHandler=new FatalFallbackErrorHandler(child);
