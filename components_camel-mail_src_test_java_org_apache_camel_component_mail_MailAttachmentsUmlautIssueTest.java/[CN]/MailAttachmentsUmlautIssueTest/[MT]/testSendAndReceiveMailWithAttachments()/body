@@ -1,0 +1,26 @@
+{
+  Mailbox.clearAll();
+  Endpoint endpoint=context.getEndpoint("smtp://james@mymailserver.com?password=secret");
+  Exchange exchange=endpoint.createExchange();
+  Message in=exchange.getIn();
+  in.setBody("Hello World");
+  String name="logo2\u00DC";
+  in.addAttachment(name,new DataHandler(new FileDataSource("src/test/data/logo.jpeg")));
+  Producer producer=endpoint.createProducer();
+  producer.start();
+  producer.process(exchange);
+  Thread.sleep(2000);
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  Exchange out=mock.assertExchangeReceived(0);
+  mock.assertIsSatisfied();
+  assertEquals("Hello World",out.getIn().getBody(String.class));
+  Map<String,DataHandler> attachments=out.getIn().getAttachments();
+  assertNotNull("Should have attachments",attachments);
+  assertEquals(1,attachments.size());
+  DataHandler handler=out.getIn().getAttachment(name);
+  assertNotNull("The " + name + " should be there",handler);
+  assertEquals("image/jpeg; name=\"" + name + "\"",handler.getContentType());
+  assertEquals("Handler name should be the file name",name,handler.getName());
+  producer.stop();
+}
