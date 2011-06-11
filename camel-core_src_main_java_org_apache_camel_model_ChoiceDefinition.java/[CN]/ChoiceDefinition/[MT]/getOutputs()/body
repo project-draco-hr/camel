@@ -1,12 +1,56 @@
 {
-  if (otherwise != null) {
-    return otherwise.getOutputs();
+  return new AbstractList<ProcessorDefinition>(){
+    public ProcessorDefinition get(    int index){
+      if (index < whenClauses.size()) {
+        return whenClauses.get(index);
+      }
+      if (index == whenClauses.size()) {
+        return otherwise;
+      }
+      throw new IndexOutOfBoundsException();
+    }
+    public boolean add(    ProcessorDefinition def){
+      if (def instanceof WhenDefinition) {
+        return whenClauses.add((WhenDefinition)def);
+      }
+ else       if (def instanceof OtherwiseDefinition) {
+        otherwise=(OtherwiseDefinition)def;
+        return true;
+      }
+      throw new IllegalArgumentException();
+    }
+    public int size(){
+      return whenClauses.size() + (otherwise == null ? 0 : 1);
+    }
+    public void clear(){
+      whenClauses.clear();
+      otherwise=null;
+    }
+    public ProcessorDefinition set(    int index,    ProcessorDefinition element){
+      if (index < whenClauses.size()) {
+        if (element instanceof WhenDefinition) {
+          return whenClauses.set(index,(WhenDefinition)element);
+        }
+        throw new IllegalArgumentException();
+      }
+ else       if (index == whenClauses.size()) {
+        ProcessorDefinition old=otherwise;
+        otherwise=(OtherwiseDefinition)element;
+        return old;
+      }
+      throw new IndexOutOfBoundsException();
+    }
+    public ProcessorDefinition remove(    int index){
+      if (index < whenClauses.size()) {
+        return whenClauses.remove(index);
+      }
+ else       if (index == whenClauses.size()) {
+        ProcessorDefinition old=otherwise;
+        otherwise=null;
+        return old;
+      }
+      throw new IndexOutOfBoundsException();
+    }
   }
- else   if (whenClauses.isEmpty()) {
-    return Collections.EMPTY_LIST;
-  }
- else {
-    WhenDefinition when=whenClauses.get(whenClauses.size() - 1);
-    return when.getOutputs();
-  }
+;
 }
