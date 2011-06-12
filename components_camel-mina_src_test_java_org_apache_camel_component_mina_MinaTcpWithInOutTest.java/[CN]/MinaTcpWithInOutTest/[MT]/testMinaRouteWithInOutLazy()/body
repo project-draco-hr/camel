@@ -1,12 +1,22 @@
 {
-  container=new DefaultCamelContext();
   latch=new CountDownLatch(1);
-  uri="mina:tcp://localhost:6321?textline=true&lazySessionCreation=true";
-  container.addRoutes(createRouteBuilder());
-  container.start();
-  ReverserServer server=new ReverserServer();
+  uri="mina:tcp://localhost:{{port}}?textline=true&lazySessionCreation=true";
+  ReverserServer server=new ReverserServer(getPort());
   server.start();
-  Endpoint endpoint=container.getEndpoint("direct:x");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:x").to(uri).process(new Processor(){
+        public void process(        Exchange e){
+          receivedExchange=e;
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  context.start();
+  Endpoint endpoint=context.getEndpoint("direct:x");
   Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
   Message message=exchange.getIn();
   message.setBody("Hello!");
@@ -19,6 +29,6 @@
   assertNotNull(receivedExchange.getIn());
   assertEquals("!olleH",receivedExchange.getIn().getBody());
   producer.stop();
-  container.stop();
+  context.stop();
   server.stop();
 }
