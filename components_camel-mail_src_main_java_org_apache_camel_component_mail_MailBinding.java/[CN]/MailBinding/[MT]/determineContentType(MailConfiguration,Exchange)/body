@@ -7,17 +7,11 @@
     contentType=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,String.class);
   }
   if (contentType != null && contentType.contains(";")) {
-    String before=ObjectHelper.before(contentType,";");
-    String charset=determineCharSet(configuration,exchange);
-    if (before != null && charset == null) {
-      contentType=before.trim();
-    }
- else     if (before != null && charset != null) {
-      contentType=before.trim() + "; charset=" + charset;
-    }
+    contentType=MailUtils.padContentType(contentType);
   }
-  if (contentType != null && !contentType.contains(";") && IOConverter.getCharsetName(exchange,false) != null) {
-    contentType=contentType.trim() + "; charset=" + IOConverter.getCharsetName(exchange,false);
+  if (contentType != null) {
+    String charset=determineCharSet(configuration,exchange);
+    contentType=MailUtils.replaceCharSet(contentType,charset);
   }
   LOG.trace("Determined Content-Type: {}",contentType);
   return contentType;
