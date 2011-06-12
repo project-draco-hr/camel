@@ -1,6 +1,8 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
+      port1=getPort();
+      port2=getNextPort();
       Processor serviceProc=new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String uri=exchange.getIn().getHeader(Exchange.HTTP_URI,String.class);
@@ -8,8 +10,8 @@
         }
       }
 ;
-      from("jetty:http://localhost:9080/test/hello").to("ahc:http://localhost:9081?throwExceptionOnFailure=false&bridgeEndpoint=true");
-      from("jetty:http://localhost:9081?matchOnUriPrefix=true").process(serviceProc);
+      from("jetty:http://localhost:" + port1 + "/test/hello").to("ahc:http://localhost:" + port2 + "?throwExceptionOnFailure=false&bridgeEndpoint=true");
+      from("jetty:http://localhost:" + port2 + "?matchOnUriPrefix=true").process(serviceProc);
     }
   }
 ;

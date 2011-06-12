@@ -2,15 +2,15 @@
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
       configureComponent();
-      from("direct:start").to("ahc:http://localhost:9080/foo").to("mock:result");
-      from("jetty:http://localhost:9080/foo").process(new Processor(){
+      from("direct:start").to("ahc:http://localhost:{{port}}/foo").to("mock:result");
+      from("jetty:http://localhost:{{port}}/foo").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,"301");
-          exchange.getOut().setHeader("Location","http://localhost:9080/bar");
+          exchange.getOut().setHeader("Location","http://localhost:" + getPort() + "/bar");
         }
       }
 );
-      from("jetty:http://localhost:9080/bar").transform(constant("Bye World"));
+      from("jetty:http://localhost:{{port}}/bar").transform(constant("Bye World"));
     }
   }
 ;
