@@ -1,0 +1,38 @@
+{
+  XMLCipher xmlCipher=XMLCipher.getInstance();
+  xmlCipher.init(XMLCipher.DECRYPT_MODE,null);
+  xmlCipher.setKEK(keyEncryptionKey);
+  if (secureTag.equalsIgnoreCase("")) {
+    encodedDocument=xmlCipher.doFinal(encodedDocument,encodedDocument.getDocumentElement());
+  }
+ else {
+    NodeIterator iter=XPathAPI.selectNodeIterator(encodedDocument,secureTag);
+    Node node;
+    while ((node=iter.nextNode()) != null) {
+      if (getSecureTagContents()) {
+        Document temp=xmlCipher.doFinal(encodedDocument,(Element)node,true);
+        encodedDocument.importNode(temp.getDocumentElement().cloneNode(true),true);
+      }
+ else {
+        NodeList childNodes=node.getChildNodes();
+        for (int i=0; i < childNodes.getLength(); i++) {
+          Node childNode=childNodes.item(i);
+          if (childNode.getLocalName().equals("EncryptedData")) {
+            Document temp=xmlCipher.doFinal(encodedDocument,(Element)childNode,false);
+            encodedDocument.importNode(temp.getDocumentElement().cloneNode(true),true);
+          }
+        }
+      }
+    }
+  }
+  ByteArrayOutputStream bos=new ByteArrayOutputStream();
+  try {
+    DOMSource source=new DOMSource(encodedDocument);
+    InputStream sis=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,source);
+    IOHelper.copy(sis,bos);
+  }
+  finally {
+    bos.close();
+  }
+  return bos.toByteArray();
+}

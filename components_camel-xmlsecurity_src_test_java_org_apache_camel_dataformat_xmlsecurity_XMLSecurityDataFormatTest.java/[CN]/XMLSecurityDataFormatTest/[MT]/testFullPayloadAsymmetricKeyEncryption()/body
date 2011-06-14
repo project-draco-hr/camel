@@ -1,0 +1,18 @@
+{
+  KeyStore trustStore=KeyStore.getInstance(KeyStore.getDefaultType());
+  URL trustStoreUrl=getClass().getClassLoader().getResource("sender.ts");
+  trustStore.load(trustStoreUrl.openStream(),"password".toCharArray());
+  final XMLSecurityDataFormat xmlEncDataFormat=new XMLSecurityDataFormat();
+  xmlEncDataFormat.setKeyCipherAlgorithm(XMLCipher.RSA_v1dot5);
+  xmlEncDataFormat.setXmlCipherAlgorithm(XMLCipher.AES_256);
+  xmlEncDataFormat.setTrustStore(trustStore);
+  xmlEncDataFormat.setTrustStorePassword("password");
+  xmlEncDataFormat.setRecipientKeyAlias("recipient");
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("direct:start").marshal(xmlEncDataFormat).to("mock:encrypted");
+    }
+  }
+);
+  testEncryption();
+}

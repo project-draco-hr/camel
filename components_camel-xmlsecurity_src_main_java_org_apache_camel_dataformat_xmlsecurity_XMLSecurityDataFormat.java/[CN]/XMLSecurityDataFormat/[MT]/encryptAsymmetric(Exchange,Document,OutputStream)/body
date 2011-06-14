@@ -1,0 +1,23 @@
+{
+  String exchangeRecipientAlias=getRecipientKeyAlias(exchange);
+  if (null == exchangeRecipientAlias) {
+    throw new IllegalStateException("The  recipient's key alias must be defined for asymmetric key encryption.");
+  }
+  if (null == trustStore) {
+    throw new IllegalStateException("A trust store must be defined for asymmetric key encryption.");
+  }
+  Key keyEncryptionKey=getPublicKey(this.trustStore,exchangeRecipientAlias,this.trustStorePassword);
+  if (null == keyEncryptionKey) {
+    throw new IllegalStateException("No key for the alias [ " + exchangeRecipientAlias + " ] exists in "+ "the configured trust store.");
+  }
+  Key dataEncryptionKey=generateDataEncryptionKey();
+  XMLCipher keyCipher;
+  if (null != this.getKeyCyperAlgorithm()) {
+    keyCipher=XMLCipher.getInstance(this.getKeyCyperAlgorithm());
+  }
+ else {
+    keyCipher=XMLCipher.getInstance(XMLCipher.RSA_v1dot5);
+  }
+  keyCipher.init(XMLCipher.WRAP_MODE,keyEncryptionKey);
+  encrypt(exchange,document,stream,dataEncryptionKey,keyCipher);
+}

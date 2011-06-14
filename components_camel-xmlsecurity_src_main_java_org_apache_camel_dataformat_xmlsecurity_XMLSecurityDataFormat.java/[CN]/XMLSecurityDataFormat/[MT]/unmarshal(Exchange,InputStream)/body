@@ -1,35 +1,9 @@
 {
-  InputStream is=ExchangeHelper.getMandatoryInBody(exchange,InputStream.class);
-  Key keyEncryptionkey;
-  if (xmlCipherAlgorithm.equals(XMLCipher.TRIPLEDES)) {
-    keyEncryptionkey=generateEncryptionKey("DESede");
+  Document encodedDocument=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,stream);
+  if (null != keyCipherAlgorithm && (keyCipherAlgorithm.equals(XMLCipher.RSA_v1dot5) || keyCipherAlgorithm.equals(XMLCipher.RSA_OAEP))) {
+    return decodeWithAsymmetricKey(exchange,encodedDocument);
   }
  else {
-    keyEncryptionkey=generateEncryptionKey("AES");
+    return decodeWithSymmetricKey(exchange,encodedDocument);
   }
-  XMLCipher xmlCipher=XMLCipher.getInstance();
-  xmlCipher.init(XMLCipher.DECRYPT_MODE,null);
-  xmlCipher.setKEK(keyEncryptionkey);
-  Document encodedDocument=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,is);
-  if (secureTag.equalsIgnoreCase("")) {
-    encodedDocument=xmlCipher.doFinal(encodedDocument,encodedDocument.getDocumentElement());
-  }
- else {
-    NodeIterator iter=XPathAPI.selectNodeIterator(encodedDocument,secureTag);
-    Node node;
-    while ((node=iter.nextNode()) != null) {
-      Document temp=xmlCipher.doFinal(encodedDocument,(Element)node,getSecureTagContents());
-      encodedDocument.importNode(temp.getDocumentElement().cloneNode(true),true);
-    }
-  }
-  ByteArrayOutputStream bos=new ByteArrayOutputStream();
-  try {
-    DOMSource source=new DOMSource(encodedDocument);
-    InputStream sis=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,source);
-    IOHelper.copy(sis,bos);
-  }
-  finally {
-    bos.close();
-  }
-  return bos.toByteArray();
 }

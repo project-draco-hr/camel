@@ -1,0 +1,25 @@
+{
+  XMLCipher xmlCipher=XMLCipher.getInstance(xmlCipherAlgorithm);
+  xmlCipher.init(XMLCipher.ENCRYPT_MODE,dataEncryptionKey);
+  if (secureTag.equalsIgnoreCase("")) {
+    embedKeyInfoInEncryptedData(document,keyCipher,xmlCipher,dataEncryptionKey);
+    document=xmlCipher.doFinal(document,document.getDocumentElement());
+  }
+ else {
+    NodeIterator iter=XPathAPI.selectNodeIterator(document,secureTag);
+    Node node;
+    while ((node=iter.nextNode()) != null) {
+      embedKeyInfoInEncryptedData(document,keyCipher,xmlCipher,dataEncryptionKey);
+      Document temp=xmlCipher.doFinal(document,(Element)node,getSecureTagContents());
+      document.importNode(temp.getDocumentElement().cloneNode(true),true);
+    }
+  }
+  try {
+    DOMSource source=new DOMSource(document);
+    InputStream sis=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,source);
+    IOHelper.copy(sis,stream);
+  }
+  finally {
+    stream.close();
+  }
+}

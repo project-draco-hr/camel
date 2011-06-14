@@ -1,0 +1,15 @@
+{
+  MockEndpoint resultEndpoint=context.getEndpoint("mock:decrypted",MockEndpoint.class);
+  resultEndpoint.setExpectedMessageCount(1);
+  testEncryption();
+  resultEndpoint.assertIsSatisfied(100);
+  Exchange exchange=resultEndpoint.getExchanges().get(0);
+  Document inDoc=getDocumentForInMessage(exchange);
+  if (log.isDebugEnabled()) {
+    logMessage(exchange,inDoc);
+  }
+  assertFalse("The XML message has encrypted data.",hasEncryptedData(inDoc));
+  XmlConverter converter=new XmlConverter();
+  String xmlStr=converter.toString(inDoc,exchange);
+  assertTrue(xmlStr.equals(XML_FRAGMENT));
+}
