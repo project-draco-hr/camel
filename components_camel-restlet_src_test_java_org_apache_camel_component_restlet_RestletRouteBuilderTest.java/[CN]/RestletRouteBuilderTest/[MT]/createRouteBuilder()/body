@@ -1,14 +1,14 @@
 {
   return new RouteBuilder(){
     public void configure(){
-      from("direct:start").setHeader("id",constant(ID)).to("restlet:http://localhost:9080/orders?restletMethod=post&foo=bar");
-      from("restlet:http://localhost:9080/orders?restletMethod=post").process(new Processor(){
+      from("direct:start").setHeader("id",constant(ID)).to("restlet:http://localhost:" + portNum + "/orders?restletMethod=post&foo=bar");
+      from("restlet:http://localhost:" + portNum + "/orders?restletMethod=post").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getOut().setBody("received [" + exchange.getIn().getBody(String.class) + "] as an order id = "+ exchange.getIn().getHeader("id"));
         }
       }
 );
-      from("restlet:http://localhost:9080/ordersJSON?restletMethod=post").process(new Processor(){
+      from("restlet:http://localhost:" + portNum + "/ordersJSON?restletMethod=post").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String body=exchange.getIn().getBody(String.class);
           if (body.indexOf("{") == -1) {
@@ -18,7 +18,7 @@
         }
       }
 );
-      from("restlet:http://localhost:9080/orders/{id}/{x}").process(new Processor(){
+      from("restlet:http://localhost:" + portNum + "/orders/{id}/{x}").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           exchange.getOut().setBody("received GET request with id=" + exchange.getIn().getHeader("id") + " and x="+ exchange.getIn().getHeader("x"));
         }
