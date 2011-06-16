@@ -1,0 +1,47 @@
+{
+  if (isSuspended()) {
+    LOG.trace("Cannot start to poll: {} as its suspended",this.getEndpoint());
+    return;
+  }
+  int retryCounter=-1;
+  boolean done=false;
+  while (!done) {
+    try {
+      done=true;
+      if (isPollAllowed()) {
+        if (retryCounter == -1) {
+          LOG.trace("Starting to poll: {}",this.getEndpoint());
+        }
+ else {
+          LOG.debug("Retrying attempt {} to poll: {}",retryCounter,this.getEndpoint());
+        }
+        boolean begin=pollStrategy.begin(this,getEndpoint());
+        if (begin) {
+          retryCounter++;
+          int polledMessages=poll();
+          pollStrategy.commit(this,getEndpoint(),polledMessages);
+        }
+ else {
+          LOG.debug("Cannot begin polling as pollStrategy returned false: {}",pollStrategy);
+        }
+      }
+      LOG.trace("Finished polling: {}",this.getEndpoint());
+    }
+ catch (    Exception e) {
+      try {
+        boolean retry=pollStrategy.rollback(this,getEndpoint(),retryCounter,e);
+        if (retry) {
+          done=false;
+        }
+      }
+ catch (      Throwable t) {
+        getExceptionHandler().handleException("Consumer " + this + " failed polling endpoint: "+ getEndpoint().getEndpointUri()+ ". Will try again at next poll",t);
+        done=true;
+      }
+    }
+catch (    Throwable t) {
+      getExceptionHandler().handleException("Consumer " + this + " failed polling endpoint: "+ getEndpoint().getEndpointUri()+ ". Will try again at next poll",t);
+      done=true;
+    }
+  }
+}
