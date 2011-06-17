@@ -1,5 +1,5 @@
 {
-  boolean isExplicitMethod=ObjectHelper.isNotEmpty(method);
+  String explicitMethodName=exchange.getIn().getHeader(Exchange.BEAN_METHOD_NAME,method,String.class);
   Object bean;
   BeanInfo beanInfo;
   try {
@@ -12,7 +12,7 @@
     return true;
   }
   Processor processor=getProcessor();
-  if (!isExplicitMethod && processor != null) {
+  if (explicitMethodName == null && processor != null) {
     LOG.trace("Using a custom adapter as bean invocation: {}",processor);
     try {
       processor.process(exchange);
@@ -45,15 +45,13 @@
   if (in.getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) == null) {
     in.setHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,isMultiParameterArray());
   }
-  String prevMethod=null;
   MethodInvocation invocation;
   if (methodObject != null) {
     invocation=beanInfo.createInvocation(methodObject,bean,exchange);
   }
  else {
-    if (isExplicitMethod) {
-      prevMethod=in.getHeader(Exchange.BEAN_METHOD_NAME,String.class);
-      in.setHeader(Exchange.BEAN_METHOD_NAME,method);
+    if (explicitMethodName != null) {
+      in.setHeader(Exchange.BEAN_METHOD_NAME,explicitMethodName);
     }
     try {
       invocation=beanInfo.createInvocation(bean,exchange);
@@ -68,6 +66,7 @@
     throw new IllegalStateException("No method invocation could be created, no matching method could be found on: " + bean);
   }
   in.removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
+  in.removeHeader(Exchange.BEAN_METHOD_NAME);
   Object value=null;
   try {
     AtomicBoolean sync=new AtomicBoolean(true);
@@ -87,11 +86,6 @@ catch (  Throwable e) {
     exchange.setException(e);
     callback.done(true);
     return true;
-  }
- finally {
-    if (isExplicitMethod) {
-      in.setHeader(Exchange.BEAN_METHOD_NAME,prevMethod);
-    }
   }
   if (!invocation.getMethod().getReturnType().equals(Void.TYPE) && value != Void.TYPE) {
     if (exchange.getPattern().isOutCapable()) {
