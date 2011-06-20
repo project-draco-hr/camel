@@ -2,11 +2,18 @@
   if (!isStarted()) {
     throw new IllegalStateException("SendProcessor has not been started: " + this);
   }
+  final ExchangePattern existingPattern=exchange.getPattern();
   return producerCache.doInAsyncProducer(destination,exchange,pattern,callback,new AsyncProducerCallback(){
-    public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    Exchange exchange,    ExchangePattern pattern,    AsyncCallback callback){
-      exchange=configureExchange(exchange,pattern);
+    public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    final Exchange exchange,    ExchangePattern pattern,    final AsyncCallback callback){
+      final Exchange target=configureExchange(exchange,pattern);
       log.debug(">>>> {} {}",destination,exchange);
-      return AsyncProcessorHelper.process(asyncProducer,exchange,callback);
+      return AsyncProcessorHelper.process(asyncProducer,target,new AsyncCallback(){
+        public void done(        boolean doneSync){
+          target.setPattern(existingPattern);
+          callback.done(doneSync);
+        }
+      }
+);
     }
   }
 );

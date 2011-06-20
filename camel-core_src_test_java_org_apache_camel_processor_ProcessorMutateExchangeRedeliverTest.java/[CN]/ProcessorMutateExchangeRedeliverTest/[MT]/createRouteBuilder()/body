@@ -1,0 +1,30 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(defaultErrorHandler().maximumRedeliveries(3).redeliveryDelay(0));
+      from("direct:a").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          assertEquals("Hello World",exchange.getIn().getBody());
+          assertFalse("Should not have OUT",exchange.hasOut());
+          assertNull(exchange.getException());
+          exchange.getIn().setBody("Bye World");
+          counter++;
+          throw new IllegalArgumentException("Forced");
+        }
+      }
+);
+      from("direct:b").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          assertEquals("Hello World",exchange.getIn().getBody());
+          assertFalse("Should not have OUT",exchange.hasOut());
+          assertNull(exchange.getException());
+          exchange.getOut().setBody("Bye World");
+          counter++;
+          throw new IllegalArgumentException("Forced");
+        }
+      }
+);
+    }
+  }
+;
+}

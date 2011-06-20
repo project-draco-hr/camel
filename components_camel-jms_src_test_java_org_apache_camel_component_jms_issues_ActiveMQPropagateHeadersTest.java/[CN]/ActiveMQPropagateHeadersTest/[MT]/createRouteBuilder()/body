@@ -3,13 +3,10 @@
     public void configure() throws Exception {
       from("activemq:test.a").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
-          assertNotNull(ExchangeHelper.getBinding(exchange,JmsBinding.class));
-          JmsMessage in=(JmsMessage)exchange.getIn();
-          assertNotNull(in);
-          Message inMessage=in.getJmsMessage();
-          inMessage.setJMSReplyTo(replyQueue);
-          inMessage.setJMSCorrelationID(correlationID);
-          inMessage.setJMSType(messageType);
+          Message in=exchange.getIn();
+          in.setHeader("JMSReplyTo",replyQueue);
+          in.setHeader("JMSCorrelationID",correlationID);
+          in.setHeader("JMSType",messageType);
         }
       }
 ).to("activemq:test.b?preserveMessageQos=true");
