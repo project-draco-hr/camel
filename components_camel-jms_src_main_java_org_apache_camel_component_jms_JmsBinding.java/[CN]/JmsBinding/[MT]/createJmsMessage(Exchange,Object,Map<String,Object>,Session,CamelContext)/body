@@ -3,7 +3,9 @@
   if (endpoint != null && endpoint.isTransferExchange()) {
     LOG.trace("Option transferExchange=true so we use JmsMessageType: Object");
     Serializable holder=DefaultExchangeHolder.marshal(exchange);
-    return session.createObjectMessage(holder);
+    Message answer=session.createObjectMessage(holder);
+    answer.setJMSDeliveryMode(Message.DEFAULT_DELIVERY_MODE);
+    return answer;
   }
   if (endpoint != null && endpoint.getMessageConverter() != null) {
     if (LOG.isTraceEnabled()) {
@@ -22,10 +24,14 @@
   }
   if (type != null) {
     LOG.trace("Using JmsMessageType: {}",type);
-    return createJmsMessageForType(exchange,body,headers,session,context,type);
+    Message answer=createJmsMessageForType(exchange,body,headers,session,context,type);
+    answer.setJMSDeliveryMode(Message.DEFAULT_DELIVERY_MODE);
+    return answer;
   }
   if (body != null && LOG.isWarnEnabled()) {
     LOG.warn("Cannot determine specific JmsMessage type to use from body class." + " Will use generic JmsMessage." + " Body class: " + ObjectHelper.classCanonicalName(body) + ". If you want to send a POJO then your class might need to implement java.io.Serializable"+ ", or you can force a specific type by setting the jmsMessageType option on the JMS endpoint.");
   }
-  return session.createMessage();
+  Message answer=session.createMessage();
+  answer.setJMSDeliveryMode(Message.DEFAULT_DELIVERY_MODE);
+  return answer;
 }
