@@ -1,8 +1,15 @@
 {
-  Thread.currentThread().setContextClassLoader(BlueprintBus.class.getClassLoader());
-  String s=element.getLocalName();
-  if ("cxfEndpoint".equals(s)) {
-    return new EndpointDefinitionParser().parse(element,context);
+  ClassLoader oldClassLoader=Thread.currentThread().getContextClassLoader();
+  Metadata answer=null;
+  try {
+    Thread.currentThread().setContextClassLoader(BlueprintBus.class.getClassLoader());
+    String s=element.getLocalName();
+    if ("cxfEndpoint".equals(s)) {
+      answer=new EndpointDefinitionParser().parse(element,context);
+    }
   }
-  return null;
+  finally {
+    Thread.currentThread().setContextClassLoader(oldClassLoader);
+  }
+  return answer;
 }
