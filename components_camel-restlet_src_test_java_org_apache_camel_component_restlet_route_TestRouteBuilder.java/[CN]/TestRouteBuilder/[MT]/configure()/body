@@ -1,9 +1,10 @@
 {
-  from("restlet:http://localhost:9080/securedOrders?restletMethod=post&restletRealm=#realm").process(new Processor(){
+  int port=AvailablePortFinder.getNextAvailable();
+  from("restlet:http://localhost:" + port + "/securedOrders?restletMethod=post&restletRealm=#realm").process(new Processor(){
     public void process(    Exchange exchange) throws Exception {
       exchange.getOut().setBody("received [" + exchange.getIn().getBody() + "] as an order id = "+ exchange.getIn().getHeader("id"));
     }
   }
 );
-  from("direct:start-auth").to("restlet:http://localhost:9080/securedOrders?restletMethod=post");
+  from("direct:start-auth").to("restlet:http://localhost:" + port + "/securedOrders?restletMethod=post");
 }
