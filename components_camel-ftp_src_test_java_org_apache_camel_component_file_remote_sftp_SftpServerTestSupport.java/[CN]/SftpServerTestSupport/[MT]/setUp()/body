@@ -1,6 +1,19 @@
 {
   deleteDirectory(FTP_ROOT_DIR);
   canTest=false;
+  for (  Provider p : Security.getProviders()) {
+    for (    Service s : p.getServices()) {
+      if ("SunX509".equalsIgnoreCase(s.getAlgorithm())) {
+        canTest=true;
+      }
+    }
+  }
+  if (!canTest) {
+    String name=System.getProperty("java.vendor");
+    System.out.println("SunX509 is not avail on this jdk [" + name + "] Testing is skipped!");
+    return;
+  }
+  canTest=false;
   try {
     super.setUp();
     sshd=SshServer.setUpDefaultServer();
