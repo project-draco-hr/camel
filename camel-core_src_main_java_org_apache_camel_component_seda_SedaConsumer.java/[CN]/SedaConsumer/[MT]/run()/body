@@ -1,38 +1,9 @@
 {
-  BlockingQueue<Exchange> queue=endpoint.getQueue();
-  while (queue != null && (isRunAllowed())) {
-    Exchange exchange=null;
-    try {
-      exchange=queue.poll(1000,TimeUnit.MILLISECONDS);
-      if (exchange != null) {
-        try {
-          sendToConsumers(exchange);
-          if (exchange.getException() != null) {
-            getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
-          }
-        }
- catch (        Exception e) {
-          getExceptionHandler().handleException("Error processing exchange",exchange,e);
-        }
-      }
- else       if (shutdownPending && queue.isEmpty()) {
-        LOG.trace("Shutdown is pending, so this consumer thread is breaking out because the task queue is empty.");
-        break;
-      }
-    }
- catch (    InterruptedException e) {
-      LOG.debug("Sleep interrupted, are we stopping? {}",isStopping() || isStopped());
-      continue;
-    }
-catch (    Throwable e) {
-      if (exchange != null) {
-        getExceptionHandler().handleException("Error processing exchange",exchange,e);
-      }
- else {
-        getExceptionHandler().handleException(e);
-      }
-    }
+  taskCount.incrementAndGet();
+  try {
+    doRun();
   }
-  latch.countDown();
-  LOG.debug("Ending this polling consumer thread, there are still {} consumer threads left.",latch.getCount());
+  finally {
+    taskCount.decrementAndGet();
+  }
 }

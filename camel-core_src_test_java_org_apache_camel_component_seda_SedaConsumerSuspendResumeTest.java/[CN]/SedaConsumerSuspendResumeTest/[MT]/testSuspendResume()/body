@@ -1,0 +1,21 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:bar");
+  mock.expectedMessageCount(1);
+  template.sendBody("seda:foo","A");
+  mock.assertIsSatisfied();
+  assertEquals("Started",context.getRouteStatus("foo").name());
+  assertEquals("Started",context.getRouteStatus("bar").name());
+  SedaConsumer consumer=(SedaConsumer)context.getRoute("bar").getConsumer();
+  ServiceHelper.suspendService(consumer);
+  assertEquals("Suspended",consumer.getStatus().name());
+  resetMocks();
+  mock.expectedMessageCount(0);
+  Thread.sleep(2000);
+  template.sendBody("seda:foo","B");
+  mock.assertIsSatisfied(2000);
+  resetMocks();
+  mock.expectedMessageCount(1);
+  ServiceHelper.resumeService(consumer);
+  assertEquals("Started",consumer.getStatus().name());
+  mock.assertIsSatisfied();
+}
