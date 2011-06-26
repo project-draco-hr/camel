@@ -2,7 +2,7 @@
   if (service instanceof Channel || service instanceof UnitOfWork || service instanceof InstrumentationProcessor) {
     return null;
   }
-  ManagedService answer=null;
+  Object answer=null;
   if (service instanceof ManagementAware) {
     return ((ManagementAware)service).getManagedObject(service);
   }
@@ -12,18 +12,13 @@
     return mt;
   }
  else   if (service instanceof EventNotifier) {
-    ManagedEventNotifier men=new ManagedEventNotifier(context,(EventNotifier)service);
-    men.init(getManagementStrategy());
-    return men;
+    answer=getManagementObjectStrategy().getManagedObjectForEventNotifier(context,(EventNotifier)service);
   }
  else   if (service instanceof Producer) {
-    answer=new ManagedProducer(context,(Producer)service);
-  }
- else   if (service instanceof ScheduledPollConsumer) {
-    answer=new ManagedScheduledPollConsumer(context,(ScheduledPollConsumer)service);
+    answer=getManagementObjectStrategy().getManagedObjectForProducer(context,(Producer)service);
   }
  else   if (service instanceof Consumer) {
-    answer=new ManagedConsumer(context,(Consumer)service);
+    answer=getManagementObjectStrategy().getManagedObjectForConsumer(context,(Consumer)service);
   }
  else   if (service instanceof Processor) {
     return getManagedObjectForProcessor(context,(Processor)service,route);
@@ -41,14 +36,15 @@
     answer=new ManagedEndpointRegistry(context,(EndpointRegistry)service);
   }
  else   if (service != null) {
-    answer=new ManagedService(context,service);
+    answer=getManagementObjectStrategy().getManagedObjectForService(context,service);
   }
-  if (answer != null) {
-    answer.setRoute(route);
-    answer.init(getManagementStrategy());
+  if (answer != null && answer instanceof ManagedService) {
+    ManagedService ms=(ManagedService)answer;
+    ms.setRoute(route);
+    ms.init(getManagementStrategy());
     return answer;
   }
  else {
-    return null;
+    return answer;
   }
 }

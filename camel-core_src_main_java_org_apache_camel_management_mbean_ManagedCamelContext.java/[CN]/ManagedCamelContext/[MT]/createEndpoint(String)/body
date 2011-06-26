@@ -2,6 +2,16 @@
   if (context.hasEndpoint(uri) != null) {
     return false;
   }
-  context.getEndpoint(uri);
-  return true;
+  Endpoint endpoint=context.getEndpoint(uri);
+  if (endpoint != null) {
+    ObjectName on=context.getManagementStrategy().getManagementNamingStrategy().getObjectNameForEndpoint(endpoint);
+    if (on != null && !context.getManagementStrategy().getManagementAgent().isRegistered(on)) {
+      Object me=context.getManagementStrategy().getManagementObjectStrategy().getManagedObjectForEndpoint(context,endpoint);
+      context.getManagementStrategy().getManagementAgent().register(me,on);
+    }
+    return true;
+  }
+ else {
+    return false;
+  }
 }
