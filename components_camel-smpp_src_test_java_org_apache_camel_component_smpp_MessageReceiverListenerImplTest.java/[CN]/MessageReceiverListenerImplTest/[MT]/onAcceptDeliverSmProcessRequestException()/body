@@ -1,0 +1,20 @@
+{
+  DeliverSm deliverSm=createMock(DeliverSm.class);
+  Exchange exchange=createMock(Exchange.class);
+  ProcessRequestException exception=new ProcessRequestException("forced exception for test",100);
+  expect(endpoint.createOnAcceptDeliverSmExchange(deliverSm)).andReturn(exchange);
+  processor.process(exchange);
+  expectLastCall().andThrow(exception);
+  exceptionHandler.handleException(exception);
+  replay(endpoint,processor,exceptionHandler,deliverSm,exchange);
+  try {
+    listener.onAcceptDeliverSm(deliverSm);
+    fail("ProcessRequestException expected");
+  }
+ catch (  ProcessRequestException e) {
+    assertEquals(100,e.getErrorCode());
+    assertEquals("forced exception for test",e.getMessage());
+    assertNull(e.getCause());
+  }
+  verify(endpoint,processor,exceptionHandler,deliverSm,exchange);
+}

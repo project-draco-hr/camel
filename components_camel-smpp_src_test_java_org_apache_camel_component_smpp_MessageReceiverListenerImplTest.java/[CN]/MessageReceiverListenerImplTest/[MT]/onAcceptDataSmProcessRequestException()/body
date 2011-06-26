@@ -1,0 +1,21 @@
+{
+  SMPPSession session=createMock(SMPPSession.class);
+  DataSm dataSm=createMock(DataSm.class);
+  Exchange exchange=createMock(Exchange.class);
+  ProcessRequestException exception=new ProcessRequestException("forced exception for test",100);
+  expect(endpoint.createOnAcceptDataSm(dataSm,"1")).andReturn(exchange);
+  processor.process(exchange);
+  expectLastCall().andThrow(exception);
+  exceptionHandler.handleException(exception);
+  replay(endpoint,processor,exceptionHandler,session,dataSm,exchange);
+  try {
+    listener.onAcceptDataSm(dataSm,session);
+    fail("ProcessRequestException expected");
+  }
+ catch (  ProcessRequestException e) {
+    assertEquals(100,e.getErrorCode());
+    assertEquals("forced exception for test",e.getMessage());
+    assertNull(e.getCause());
+  }
+  verify(endpoint,processor,exceptionHandler,session,dataSm,exchange);
+}
