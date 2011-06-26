@@ -1,0 +1,15 @@
+{
+  LOG.debug("Received a dataSm {}",dataSm);
+  MessageId newMessageId=messageIDGenerator.newMessageId();
+  try {
+    Exchange exchange=endpoint.createOnAcceptDataSm(dataSm,newMessageId.getValue());
+    LOG.trace("processing the new smpp exchange...");
+    processor.process(exchange);
+    LOG.trace("processed the new smpp exchange");
+  }
+ catch (  Exception e) {
+    exceptionHandler.handleException(e);
+    throw new ProcessRequestException(e.getMessage(),255,e);
+  }
+  return new DataSmResult(newMessageId,dataSm.getOptionalParametes());
+}
