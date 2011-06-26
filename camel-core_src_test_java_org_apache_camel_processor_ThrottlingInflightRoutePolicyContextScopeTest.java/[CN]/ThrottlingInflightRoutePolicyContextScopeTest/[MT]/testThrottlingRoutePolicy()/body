@@ -1,0 +1,14 @@
+{
+  template.sendBody("seda:bar","Hello World");
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedBodiesReceived("A");
+  result.setMinimumResultWaitTime(1000);
+  template.sendBody("direct:start","A");
+  Thread.sleep(2000);
+  template.sendBody("direct:start","B");
+  result.assertIsSatisfied();
+  result.reset();
+  result.expectedBodiesReceived("B");
+  latch.countDown();
+  result.assertIsSatisfied();
+}

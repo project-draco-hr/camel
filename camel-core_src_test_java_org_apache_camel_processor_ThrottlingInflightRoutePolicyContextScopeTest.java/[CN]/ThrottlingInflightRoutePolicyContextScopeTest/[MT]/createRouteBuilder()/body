@@ -1,0 +1,18 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      ThrottlingInflightRoutePolicy policy=new ThrottlingInflightRoutePolicy();
+      policy.setMaxInflightExchanges(1);
+      policy.setScope(ThrottlingInflightRoutePolicy.ThrottlingScope.Context);
+      from("seda:bar").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          latch.await();
+        }
+      }
+).to("mock:bar");
+      from("direct:start").to("seda:foo");
+      from("seda:foo").routePolicy(policy).to("log:foo").to("mock:result");
+    }
+  }
+;
+}
