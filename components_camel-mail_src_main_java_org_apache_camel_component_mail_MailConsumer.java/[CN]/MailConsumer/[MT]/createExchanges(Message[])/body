@@ -9,6 +9,13 @@
     Message message=messages[i];
     if (!message.getFlags().contains(Flags.Flag.DELETED)) {
       Exchange exchange=getEndpoint().createExchange(message);
+      if (getEndpoint().getConfiguration().getProtocol().startsWith("pop3")) {
+        String uid=generatePop3Uid(message);
+        if (uid != null) {
+          exchange.setProperty(POP3_UID,uid);
+          LOG.trace("POP3 mail message using uid {}",uid);
+        }
+      }
       answer.add(exchange);
     }
  else {

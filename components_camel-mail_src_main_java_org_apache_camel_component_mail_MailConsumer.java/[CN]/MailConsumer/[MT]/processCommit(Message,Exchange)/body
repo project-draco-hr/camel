@@ -3,12 +3,33 @@
     if (!folder.isOpen()) {
       folder.open(Folder.READ_WRITE);
     }
+    String uid=(String)exchange.removeProperty(POP3_UID);
+    if (uid != null) {
+      int count=folder.getMessageCount();
+      Message found=null;
+      LOG.trace("Looking for POP3Message with UID {} from folder with {} mails",uid,count);
+      for (int i=1; i <= count; ++i) {
+        Message msg=folder.getMessage(i);
+        if (uid.equals(generatePop3Uid(msg))) {
+          LOG.debug("Found POP3Message with UID {} from folder with {} mails",uid,count);
+          found=msg;
+          break;
+        }
+      }
+      if (found == null) {
+        boolean delete=getEndpoint().getConfiguration().isDelete();
+        LOG.warn("POP3message not found in folder. Message cannot be marked as " + (delete ? "DELETED" : "SEEN"));
+      }
+ else {
+        mail=found;
+      }
+    }
     if (getEndpoint().getConfiguration().isDelete()) {
-      LOG.debug("Exchange processed, so flagging message as DELETED");
+      LOG.trace("Exchange processed, so flagging message as DELETED");
       mail.setFlag(Flags.Flag.DELETED,true);
     }
  else {
-      LOG.debug("Exchange processed, so flagging message as SEEN");
+      LOG.trace("Exchange processed, so flagging message as SEEN");
       mail.setFlag(Flags.Flag.SEEN,true);
     }
   }
