@@ -1,9 +1,19 @@
 {
+  if (!isRunAllowed() || !isStarted()) {
+    throw new RejectedExecutionException(this + " is not started, but in state: " + getStatus().name());
+  }
+  if (timeout == 0 && queue.isEmpty()) {
+    return null;
+  }
   try {
+    beforePoll();
     return queue.poll(timeout,TimeUnit.MILLISECONDS);
   }
  catch (  InterruptedException e) {
     handleInterruptedException(e);
     return null;
+  }
+ finally {
+    afterPoll();
   }
 }

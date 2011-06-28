@@ -1,10 +1,17 @@
 {
+  if (!isRunAllowed() || !isStarted()) {
+    throw new RejectedExecutionException(this + " is not started, but in state: " + getStatus().name());
+  }
   while (isRunAllowed()) {
     try {
+      beforePoll();
       return queue.take();
     }
  catch (    InterruptedException e) {
       handleInterruptedException(e);
+    }
+ finally {
+      afterPoll();
     }
   }
   LOG.trace("Consumer is not running, so returning null");
