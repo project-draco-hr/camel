@@ -2,7 +2,18 @@
   boolean sync=super.processNext(exchange,new AsyncCallback(){
     public void done(    boolean doneSync){
       if (exchange.getException() != null) {
-        LOG.error("Exception occurred while processing exchangeId: " + exchange.getExchangeId() + " using: ["+ processor+ "] caused by: "+ exchange.getException().getMessage(),exchange.getException());
+        Throwable previous=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+        String msg="Exception occurred while trying to handle previously thrown exception on exchangeId: " + exchange.getExchangeId() + " using: ["+ processor+ "].";
+        if (previous != null) {
+          msg+=" The previous and the new exception will be logged in the following.";
+          LOG.error(msg);
+          LOG.error("\\--> Previous exception on exchangeId: " + exchange.getExchangeId(),previous);
+          LOG.error("\\--> New exception on exchangeId: " + exchange.getExchangeId(),exchange.getException());
+        }
+ else {
+          LOG.error(msg);
+          LOG.error("\\--> New exception on exchangeId: " + exchange.getExchangeId(),exchange.getException());
+        }
         exchange.setProperty(Exchange.EXCEPTION_CAUGHT,exchange.getException());
         exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,false);
       }
