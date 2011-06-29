@@ -1,0 +1,32 @@
+{
+  JaxwsTestHandler fromHandler=getMandatoryBean(JaxwsTestHandler.class,"fromEndpointJaxwsHandler");
+  fromHandler.reset();
+  JaxwsTestHandler toHandler=getMandatoryBean(JaxwsTestHandler.class,"toEndpointJaxwsHandler");
+  toHandler.reset();
+  URL wsdlURL=getClass().getClassLoader().getResource("person.wsdl");
+  PersonService ss=new PersonService(wsdlURL,new QName("http://camel.apache.org/wsdl-first","PersonService"));
+  Person client=ss.getSoap();
+  ((BindingProvider)client).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY,"http://localhost:" + getPort() + "/PersonService/");
+  Holder<String> personId=new Holder<String>();
+  personId.value="hello";
+  Holder<String> ssn=new Holder<String>();
+  Holder<String> name=new Holder<String>();
+  client.getPerson(personId,ssn,name);
+  assertEquals("we should get the right answer from router","Bonjour",name.value);
+  personId.value="";
+  try {
+    client.getPerson(personId,ssn,name);
+    fail("We expect to get the UnknowPersonFault here");
+  }
+ catch (  UnknownPersonFault fault) {
+  }
+  personId.value="Invoking getPerson with invalid length string, expecting exception...xxxxxxxxx";
+  try {
+    client.getPerson(personId,ssn,name);
+    fail("We expect to get the WebSerivceException here");
+  }
+ catch (  WebServiceException ex) {
+    assertTrue("Should get the xml vaildate error! " + ex.getMessage(),ex.getMessage().indexOf("MyStringType") > 0 || ex.getMessage().indexOf("Could not parse the XML stream") != -1);
+  }
+  verifyJaxwsHandlers(fromHandler,toHandler);
+}
