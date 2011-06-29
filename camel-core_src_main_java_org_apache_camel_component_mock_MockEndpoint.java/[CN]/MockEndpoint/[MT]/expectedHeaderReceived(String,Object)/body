@@ -1,21 +1,34 @@
 {
-  this.headerName=name;
-  this.headerValue=value;
+  if (expectedHeaderValues == null) {
+    expectedHeaderValues=new CaseInsensitiveMap();
+  }
+  expectedHeaderValues.put(name,value);
   expects(new Runnable(){
     public void run(){
-      assertTrue("No header with name " + headerName + " found.",actualHeader != null);
-      Object actualValue;
-      if (actualHeader instanceof Expression) {
-        actualValue=((Expression)actualHeader).evaluate(mostRecentExchange(),headerValue.getClass());
+      for (int i=0; i < getReceivedExchanges().size(); i++) {
+        Exchange exchange=getReceivedExchanges().get(i);
+        for (        Map.Entry<String,Object> entry : expectedHeaderValues.entrySet()) {
+          String key=entry.getKey();
+          Object expectedValue=entry.getValue();
+          if (expectedValue != null) {
+            assertTrue("Exchange " + i + " has no headers",exchange.getIn().hasHeaders());
+            boolean hasKey=exchange.getIn().getHeaders().containsKey(key);
+            assertTrue("No header with name " + key + " found for message: "+ i,hasKey);
+          }
+          Object actualValue=exchange.getIn().getHeader(key);
+          if (actualValue instanceof Expression) {
+            actualValue=((Expression)actualValue).evaluate(exchange,expectedValue.getClass());
+          }
+ else           if (actualValue instanceof Predicate) {
+            actualValue=((Predicate)actualValue).matches(exchange);
+          }
+ else           if (expectedValue != null) {
+            actualValue=getCamelContext().getTypeConverter().convertTo(expectedValue.getClass(),actualValue);
+            assertTrue("There is no type conversion possible from " + actualValue.getClass().getName() + " to "+ expectedValue.getClass().getName(),actualValue != null);
+          }
+          assertEquals("Header with name " + key + " for message: "+ i,expectedValue,actualValue);
+        }
       }
- else       if (actualHeader instanceof Predicate) {
-        actualValue=((Predicate)actualHeader).matches(mostRecentExchange());
-      }
- else {
-        actualValue=getCamelContext().getTypeConverter().convertTo(headerValue.getClass(),actualHeader);
-        assertTrue("There is no type conversion possible from " + actualHeader.getClass().getName() + " to "+ headerValue.getClass().getName(),actualValue != null);
-      }
-      assertEquals("Header with name " + headerName,headerValue,actualValue);
     }
   }
 );

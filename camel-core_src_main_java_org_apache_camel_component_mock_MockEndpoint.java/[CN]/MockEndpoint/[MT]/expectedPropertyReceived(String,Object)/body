@@ -1,11 +1,36 @@
 {
-  this.propertyName=name;
-  this.propertyValue=value;
+  if (expectedPropertyValues == null) {
+    expectedPropertyValues=new ConcurrentHashMap<String,Object>();
+  }
+  if (value != null) {
+    expectedPropertyValues.put(name,value);
+  }
   expects(new Runnable(){
     public void run(){
-      assertTrue("No property with name " + propertyName + " found.",actualProperty != null);
-      Object actualValue=getCamelContext().getTypeConverter().convertTo(actualProperty.getClass(),propertyValue);
-      assertEquals("Property with name " + propertyName,actualValue,actualProperty);
+      for (int i=0; i < getReceivedExchanges().size(); i++) {
+        Exchange exchange=getReceivedExchanges().get(i);
+        for (        Map.Entry<String,Object> entry : expectedPropertyValues.entrySet()) {
+          String key=entry.getKey();
+          Object expectedValue=entry.getValue();
+          if (expectedValue != null) {
+            assertTrue("Exchange " + i + " has no properties",!exchange.getProperties().isEmpty());
+            boolean hasKey=exchange.getProperties().containsKey(key);
+            assertTrue("No property with name " + key + " found for message: "+ i,hasKey);
+          }
+          Object actualValue=exchange.getProperty(key);
+          if (actualValue instanceof Expression) {
+            actualValue=((Expression)actualValue).evaluate(exchange,expectedValue.getClass());
+          }
+ else           if (actualValue instanceof Predicate) {
+            actualValue=((Predicate)actualValue).matches(exchange);
+          }
+ else           if (expectedValue != null) {
+            actualValue=getCamelContext().getTypeConverter().convertTo(expectedValue.getClass(),actualValue);
+            assertTrue("There is no type conversion possible from " + actualValue.getClass().getName() + " to "+ expectedValue.getClass().getName(),actualValue != null);
+          }
+          assertEquals("Property with name " + key + " for message: "+ i,expectedValue,actualValue);
+        }
+      }
     }
   }
 );
