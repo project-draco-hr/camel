@@ -1,0 +1,48 @@
+{
+  Expression moveExpression=(Expression)params.get("move");
+  Expression moveFailedExpression=(Expression)params.get("moveFailed");
+  Expression preMoveExpression=(Expression)params.get("preMove");
+  boolean isNoop=params.get("noop") != null;
+  boolean isDelete=params.get("delete") != null;
+  boolean isMove=moveExpression != null || preMoveExpression != null || moveFailedExpression != null;
+  if (isDelete) {
+    GenericFileDeleteProcessStrategy<LsEntry> strategy=new GenericFileDeleteProcessStrategy<LsEntry>();
+    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<LsEntry>)getExclusiveReadLockStrategy(params));
+    if (preMoveExpression != null) {
+      GenericFileExpressionRenamer<LsEntry> renamer=new GenericFileExpressionRenamer<LsEntry>();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
+    if (moveFailedExpression != null) {
+      GenericFileExpressionRenamer<LsEntry> renamer=new GenericFileExpressionRenamer<LsEntry>();
+      renamer.setExpression(moveFailedExpression);
+      strategy.setFailureRenamer(renamer);
+    }
+    return strategy;
+  }
+ else   if (isMove || isNoop) {
+    GenericFileRenameProcessStrategy<LsEntry> strategy=new GenericFileRenameProcessStrategy<LsEntry>();
+    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<LsEntry>)getExclusiveReadLockStrategy(params));
+    if (!isNoop && moveExpression != null) {
+      GenericFileExpressionRenamer<LsEntry> renamer=new GenericFileExpressionRenamer<LsEntry>();
+      renamer.setExpression(moveExpression);
+      strategy.setCommitRenamer(renamer);
+    }
+    if (moveFailedExpression != null) {
+      GenericFileExpressionRenamer<LsEntry> renamer=new GenericFileExpressionRenamer<LsEntry>();
+      renamer.setExpression(moveFailedExpression);
+      strategy.setFailureRenamer(renamer);
+    }
+    if (preMoveExpression != null) {
+      GenericFileExpressionRenamer<LsEntry> renamer=new GenericFileExpressionRenamer<LsEntry>();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
+    return strategy;
+  }
+ else {
+    GenericFileNoOpProcessStrategy<LsEntry> strategy=new GenericFileNoOpProcessStrategy<LsEntry>();
+    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<LsEntry>)getExclusiveReadLockStrategy(params));
+    return strategy;
+  }
+}

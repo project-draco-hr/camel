@@ -1,0 +1,48 @@
+{
+  Expression moveExpression=(Expression)params.get("move");
+  Expression moveFailedExpression=(Expression)params.get("moveFailed");
+  Expression preMoveExpression=(Expression)params.get("preMove");
+  boolean isNoop=params.get("noop") != null;
+  boolean isDelete=params.get("delete") != null;
+  boolean isMove=moveExpression != null || preMoveExpression != null || moveFailedExpression != null;
+  if (isDelete) {
+    GenericFileDeleteProcessStrategy<FTPFile> strategy=new GenericFileDeleteProcessStrategy<FTPFile>();
+    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<FTPFile>)getExclusiveReadLockStrategy(params));
+    if (preMoveExpression != null) {
+      GenericFileExpressionRenamer<FTPFile> renamer=new GenericFileExpressionRenamer<FTPFile>();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
+    if (moveFailedExpression != null) {
+      GenericFileExpressionRenamer<FTPFile> renamer=new GenericFileExpressionRenamer<FTPFile>();
+      renamer.setExpression(moveFailedExpression);
+      strategy.setFailureRenamer(renamer);
+    }
+    return strategy;
+  }
+ else   if (isMove || isNoop) {
+    GenericFileRenameProcessStrategy<FTPFile> strategy=new GenericFileRenameProcessStrategy<FTPFile>();
+    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<FTPFile>)getExclusiveReadLockStrategy(params));
+    if (!isNoop && moveExpression != null) {
+      GenericFileExpressionRenamer<FTPFile> renamer=new GenericFileExpressionRenamer<FTPFile>();
+      renamer.setExpression(moveExpression);
+      strategy.setCommitRenamer(renamer);
+    }
+    if (moveFailedExpression != null) {
+      GenericFileExpressionRenamer<FTPFile> renamer=new GenericFileExpressionRenamer<FTPFile>();
+      renamer.setExpression(moveFailedExpression);
+      strategy.setFailureRenamer(renamer);
+    }
+    if (preMoveExpression != null) {
+      GenericFileExpressionRenamer<FTPFile> renamer=new GenericFileExpressionRenamer<FTPFile>();
+      renamer.setExpression(preMoveExpression);
+      strategy.setBeginRenamer(renamer);
+    }
+    return strategy;
+  }
+ else {
+    GenericFileNoOpProcessStrategy<FTPFile> strategy=new GenericFileNoOpProcessStrategy<FTPFile>();
+    strategy.setExclusiveReadLockStrategy((GenericFileExclusiveReadLockStrategy<FTPFile>)getExclusiveReadLockStrategy(params));
+    return strategy;
+  }
+}

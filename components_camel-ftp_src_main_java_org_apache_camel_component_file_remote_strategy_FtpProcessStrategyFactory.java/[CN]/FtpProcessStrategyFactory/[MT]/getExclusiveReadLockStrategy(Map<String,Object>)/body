@@ -1,0 +1,33 @@
+{
+  GenericFileExclusiveReadLockStrategy<FTPFile> strategy=(GenericFileExclusiveReadLockStrategy<FTPFile>)params.get("exclusiveReadLockStrategy");
+  if (strategy != null) {
+    return strategy;
+  }
+  String readLock=(String)params.get("readLock");
+  if (ObjectHelper.isNotEmpty(readLock)) {
+    if ("none".equals(readLock) || "false".equals(readLock)) {
+      return null;
+    }
+ else     if ("rename".equals(readLock)) {
+      GenericFileRenameExclusiveReadLockStrategy<FTPFile> readLockStrategy=new GenericFileRenameExclusiveReadLockStrategy<FTPFile>();
+      Long timeout=(Long)params.get("readLockTimeout");
+      if (timeout != null) {
+        readLockStrategy.setTimeout(timeout);
+      }
+      return readLockStrategy;
+    }
+ else     if ("changed".equals(readLock)) {
+      GenericFileExclusiveReadLockStrategy readLockStrategy=new FtpChangedExclusiveReadLockStrategy();
+      Long timeout=(Long)params.get("readLockTimeout");
+      if (timeout != null) {
+        readLockStrategy.setTimeout(timeout);
+      }
+      Long checkInterval=(Long)params.get("readLockCheckInterval");
+      if (checkInterval != null) {
+        readLockStrategy.setCheckInterval(checkInterval);
+      }
+      return readLockStrategy;
+    }
+  }
+  return null;
+}
