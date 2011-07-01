@@ -1,7 +1,7 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      onException(MyFunctionalException.class).handled(true).transform().simple("Error reported: ${exception.message} - cannot process this message.");
+      onException(MyFunctionalException.class).handled(false).transform().simple("Error reported: ${exception.message} - cannot process this message.");
       from("direct:start").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           throw new MyFunctionalException("Out of order");
@@ -11,6 +11,12 @@
     }
   }
 );
-  Object out=template.requestBody("direct:start","Hello World");
+  Exchange exch=template.request("direct:start",new Processor(){
+    public void process(    Exchange exchange){
+      exchange.getIn().setBody("Hello World");
+    }
+  }
+);
+  Object out=exch.getOut().getBody();
   assertEquals("Error reported: Out of order - cannot process this message.",out);
 }
