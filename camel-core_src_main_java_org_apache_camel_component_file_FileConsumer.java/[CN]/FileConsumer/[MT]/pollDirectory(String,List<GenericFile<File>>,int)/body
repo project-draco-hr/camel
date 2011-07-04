@@ -1,5 +1,6 @@
 {
   log.trace("pollDirectory from fileName: {}",fileName);
+  depth++;
   File directory=new File(fileName);
   if (!directory.exists() || !directory.isDirectory()) {
     log.debug("Cannot poll as directory does not exists or its not a directory: {}",directory);
@@ -30,16 +31,16 @@
     }
     GenericFile<File> gf=asGenericFile(endpointPath,file);
     if (file.isDirectory()) {
-      if (endpoint.isRecursive() && isValidFile(gf,true)) {
+      if (endpoint.isRecursive() && isValidFile(gf,true) && depth < endpoint.getMaxDepth()) {
         String subDirectory=fileName + File.separator + file.getName();
-        boolean canPollMore=pollDirectory(subDirectory,fileList);
+        boolean canPollMore=pollDirectory(subDirectory,fileList,depth);
         if (!canPollMore) {
           return false;
         }
       }
     }
  else {
-      if (isValidFile(gf,false)) {
+      if (isValidFile(gf,false) && depth >= endpoint.minDepth) {
         if (isInProgress(gf)) {
           if (log.isTraceEnabled()) {
             log.trace("Skipping as file is already in progress: {}",gf.getFileName());
