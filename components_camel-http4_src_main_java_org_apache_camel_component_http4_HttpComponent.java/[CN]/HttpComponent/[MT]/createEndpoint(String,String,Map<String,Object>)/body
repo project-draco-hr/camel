@@ -22,7 +22,8 @@
   if (sslContextParameters == null) {
     sslContextParameters=this.sslContextParameters;
   }
-  HttpClientConfigurer configurer=createHttpClientConfigurer(parameters);
+  boolean secure=isSecureConnection(uri);
+  HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,secure);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
   URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
   String part=httpUri.getSchemeSpecificPart();
@@ -32,7 +33,6 @@
       throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
     }
   }
-  boolean secure=isSecureConnection(uri);
   int port=getPort(httpUri);
   registerPort(secure,x509HostnameVerifier,port,sslContextParameters);
   HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,httpUri,clientParams,clientConnectionManager,configurer);
