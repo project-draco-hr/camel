@@ -1,0 +1,29 @@
+{
+  QuartzComponent quartz=route.getRouteContext().getCamelContext().getComponent("quartz",QuartzComponent.class);
+  setScheduler(quartz.getScheduler());
+  if (getRouteStopGracePeriod() == 0) {
+    setRouteStopGracePeriod(10000);
+  }
+  if (getTimeUnit() == null) {
+    setTimeUnit(TimeUnit.MILLISECONDS);
+  }
+  if ((getRouteStartTime() == null) && (getRouteStopTime() == null) && (getRouteSuspendTime() == null)&& (getRouteResumeTime() == null)) {
+    throw new IllegalArgumentException("Scheduled Route Policy for route {} has no stop/stop/suspend/resume times specified");
+  }
+  if (scheduledRouteDetails == null) {
+    scheduledRouteDetails=new ScheduledRouteDetails();
+    scheduledRouteDetails.setRoute(route);
+    if (getRouteStartTime() != null) {
+      scheduleRoute(Action.START);
+    }
+    if (getRouteStopTime() != null) {
+      scheduleRoute(Action.STOP);
+    }
+    if (getRouteSuspendTime() != null) {
+      scheduleRoute(Action.SUSPEND);
+    }
+    if (getRouteResumeTime() != null) {
+      scheduleRoute(Action.RESUME);
+    }
+  }
+}
