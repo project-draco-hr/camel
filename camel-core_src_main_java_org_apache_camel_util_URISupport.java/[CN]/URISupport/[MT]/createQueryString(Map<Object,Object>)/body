@@ -11,11 +11,20 @@
           rc.append("&");
         }
         String key=(String)o;
-        String value=(String)options.get(key);
-        rc.append(URLEncoder.encode(key,CHARSET));
-        if (value != null) {
-          rc.append("=");
-          rc.append(URLEncoder.encode(value,CHARSET));
+        Object value=options.get(key);
+        if (value instanceof List) {
+          List<String> list=(List<String>)value;
+          for (Iterator<String> it=list.iterator(); it.hasNext(); ) {
+            String s=it.next();
+            appendQueryStringParameter(key,s,rc);
+            if (it.hasNext()) {
+              rc.append("&");
+            }
+          }
+        }
+ else {
+          String s=value != null ? value.toString() : null;
+          appendQueryStringParameter(key,s,rc);
         }
       }
       return rc.toString();

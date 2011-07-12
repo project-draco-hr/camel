@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("jetty://http://localhost:{{port}}/myapp").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String from=exchange.getIn().getHeader("from",String.class);
+          assertEquals("me",from);
+          HttpServletRequest req=exchange.getIn(HttpMessage.class).getRequest();
+          String[] values=req.getParameterValues("to");
+          assertNotNull(values);
+          assertEquals(2,values.length);
+          assertEquals("foo",values[0]);
+          assertEquals("bar",values[1]);
+          exchange.getOut().setBody("OK");
+        }
+      }
+);
+    }
+  }
+;
+}
