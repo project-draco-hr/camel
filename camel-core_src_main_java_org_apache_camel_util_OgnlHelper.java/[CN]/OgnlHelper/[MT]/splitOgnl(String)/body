@@ -1,13 +1,19 @@
 {
   List<String> methods=new ArrayList<String>();
   StringBuilder sb=new StringBuilder();
+  int j=0;
+  boolean squareBracket=false;
   for (int i=0; i < ognl.length(); i++) {
     char ch=ognl.charAt(i);
-    if (i == 0 || (i == 1 && ognl.charAt(0) == '?') || (ch != '.' && ch != '?')) {
+    if (j == 0 || (j == 1 && ognl.charAt(i - 1) == '?') || (ch != '.' && ch != '?' && ch != ']')) {
       sb.append(ch);
+      if (ch == '[') {
+        squareBracket=true;
+      }
+      j++;
     }
  else {
-      if (ch == '.') {
+      if (ch == '.' && !squareBracket) {
         String s=sb.toString();
         sb.setLength(0);
         if (s.endsWith("?")) {
@@ -15,8 +21,22 @@
           s=s.substring(0,s.length() - 1);
         }
         methods.add(s);
+        j=0;
       }
-      sb.append(ch);
+ else       if (ch == ']') {
+        sb.append(ch);
+        String s=sb.toString();
+        sb.setLength(0);
+        methods.add(s);
+        j=0;
+        squareBracket=false;
+      }
+      if (ch != ']') {
+        sb.append(ch);
+      }
+      if (j > 0) {
+        j++;
+      }
     }
   }
   if (sb.length() > 0) {
