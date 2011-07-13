@@ -1,9 +1,27 @@
 {
   log.debug("Deleting file: {}",name);
+  boolean result;
+  String target=name;
+  String currentDir=null;
   try {
-    return this.client.deleteFile(name);
+    if (endpoint.getConfiguration().isStepwise()) {
+      currentDir=getCurrentDirectory();
+      target=FileUtil.stripPath(name);
+      try {
+        changeCurrentDirectory(FileUtil.onlyPath(name));
+      }
+ catch (      GenericFileOperationFailedException e) {
+        changeCurrentDirectory(currentDir);
+        throw e;
+      }
+    }
+    result=client.deleteFile(target);
+    if (currentDir != null) {
+      changeCurrentDirectory(currentDir);
+    }
   }
  catch (  IOException e) {
     throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
   }
+  return result;
 }
