@@ -1,6 +1,11 @@
 {
+  Map<String,Object> skipRequestHeaders=null;
   if (getEndpoint().isBridgeEndpoint()) {
     exchange.setProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.TRUE);
+    String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
+    if (queryString != null) {
+      skipRequestHeaders=URISupport.parseQuery(queryString);
+    }
   }
   HttpMethod method=createMethod(exchange);
   Message in=exchange.getIn();
@@ -11,9 +16,27 @@
   }
   HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
   for (  Map.Entry<String,Object> entry : in.getHeaders().entrySet()) {
-    String headerValue=in.getHeader(entry.getKey(),String.class);
-    if (strategy != null && !strategy.applyFilterToCamelHeaders(entry.getKey(),headerValue,exchange)) {
-      method.addRequestHeader(entry.getKey(),headerValue);
+    String key=entry.getKey();
+    Object headerValue=in.getHeader(key);
+    if (headerValue != null) {
+      final Iterator it=ObjectHelper.createIterator(headerValue,null);
+      final List<String> values=new ArrayList<String>();
+      while (it.hasNext()) {
+        String value=exchange.getContext().getTypeConverter().convertTo(String.class,it.next());
+        if (skipRequestHeaders != null && skipRequestHeaders.containsKey(key)) {
+          Object skipValue=skipRequestHeaders.get(key);
+          if (ObjectHelper.equal(skipValue,value)) {
+            continue;
+          }
+        }
+        if (value != null && strategy != null && !strategy.applyFilterToCamelHeaders(key,value,exchange)) {
+          values.add(value);
+        }
+      }
+      if (values.size() > 0) {
+        String s=values.size() > 1 ? values.toString() : values.get(0);
+        method.addRequestHeader(key,s);
+      }
     }
   }
   try {

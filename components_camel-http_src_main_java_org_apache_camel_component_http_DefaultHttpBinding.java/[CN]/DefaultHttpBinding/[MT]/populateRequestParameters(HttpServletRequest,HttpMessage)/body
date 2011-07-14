@@ -3,10 +3,14 @@
   Enumeration names=request.getParameterNames();
   while (names.hasMoreElements()) {
     String name=(String)names.nextElement();
-    Object value=request.getParameter(name);
-    LOG.trace("HTTP header {} = {}",name,value);
-    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
-      headers.put(name,value);
+    String[] values=request.getParameterValues(name);
+    LOG.trace("HTTP parameter {} = {}",name,values);
+    if (values != null) {
+      for (      String value : values) {
+        if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
+          HttpHelper.appendHeader(headers,name,value);
+        }
+      }
     }
   }
   LOG.trace("HTTP method {} with Content-Type {}",request.getMethod(),request.getContentType());
@@ -22,7 +26,7 @@
         String name=URLDecoder.decode(pair[0],charset);
         String value=URLDecoder.decode(pair[1],charset);
         if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
-          headers.put(name,value);
+          HttpHelper.appendHeader(headers,name,value);
         }
       }
  else {

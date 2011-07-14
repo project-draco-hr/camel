@@ -5,13 +5,17 @@
         public void process(        Exchange exchange) throws Exception {
           String from=exchange.getIn().getHeader("from",String.class);
           assertEquals("me",from);
-          HttpServletRequest req=exchange.getIn(HttpMessage.class).getRequest();
-          String[] values=req.getParameterValues("to");
+          List values=exchange.getIn().getHeader("to",List.class);
           assertNotNull(values);
-          assertEquals(2,values.length);
-          assertEquals("foo",values[0]);
-          assertEquals("bar",values[1]);
+          assertEquals(2,values.size());
+          assertEquals("foo",values.get(0));
+          assertEquals("bar",values.get(1));
           exchange.getOut().setBody("OK");
+          List list=new ArrayList();
+          list.add(123);
+          list.add(456);
+          exchange.getOut().setHeader("foo",list);
+          exchange.getOut().setHeader("bar","yes");
         }
       }
 );

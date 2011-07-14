@@ -1,16 +1,20 @@
 {
   Message answer=exchange.getOut();
-  answer.setHeaders(in.getHeaders());
   answer.setHeader(Exchange.HTTP_RESPONSE_CODE,responseCode);
-  for (  Map.Entry<String,String> entry : httpExchange.getHeaders().entrySet()) {
-    String name=entry.getKey();
-    String value=entry.getValue();
-    if (name.toLowerCase().equals("content-type")) {
-      name=Exchange.CONTENT_TYPE;
-    }
-    if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
-      answer.setHeader(name,value);
+  Enumeration<String> names=httpExchange.getResponseFields().getFieldNames();
+  while (names.hasMoreElements()) {
+    String name=names.nextElement();
+    Enumeration<String> values=httpExchange.getResponseFields().getValues(name);
+    while (values.hasMoreElements()) {
+      String value=values.nextElement();
+      if (name.toLowerCase().equals("content-type")) {
+        name=Exchange.CONTENT_TYPE;
+      }
+      if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
+        HttpHelper.appendHeader(answer.getHeaders(),name,value);
+      }
     }
   }
+  MessageHelper.copyHeaders(exchange.getIn(),answer,false);
   answer.setBody(extractResponseBody(exchange,httpExchange));
 }

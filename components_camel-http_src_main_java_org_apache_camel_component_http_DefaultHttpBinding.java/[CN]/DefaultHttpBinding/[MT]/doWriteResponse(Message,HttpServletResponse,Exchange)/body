@@ -10,8 +10,12 @@
   for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
     String key=entry.getKey();
     Object value=entry.getValue();
-    if (value != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,value,exchange)) {
-      response.setHeader(key,value.toString());
+    final Iterator it=ObjectHelper.createIterator(value,null);
+    while (it.hasNext()) {
+      String headerValue=exchange.getContext().getTypeConverter().convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,exchange)) {
+        response.addHeader(key,headerValue);
+      }
     }
   }
   if (message.getBody() != null) {

@@ -3,9 +3,14 @@
   Enumeration names=request.getParameterNames();
   while (names.hasMoreElements()) {
     String name=(String)names.nextElement();
-    Object value=request.getParameter(name);
-    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
-      headers.put(name,value);
+    String[] values=request.getParameterValues(name);
+    LOG.trace("HTTP parameter {} = {}",name,values);
+    if (values != null) {
+      for (      String value : values) {
+        if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
+          HttpHelper.appendHeader(headers,name,value);
+        }
+      }
     }
   }
   if (request.getMethod().equals("POST") && request.getContentType() != null && request.getContentType().startsWith(HttpConstants.CONTENT_TYPE_WWW_FORM_URLENCODED)) {

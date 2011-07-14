@@ -35,12 +35,38 @@
       }
     }
   }
+  Map<String,Object> skipRequestHeaders=null;
+  if (getEndpoint().isBridgeEndpoint()) {
+    exchange.setProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.TRUE);
+    String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
+    if (queryString != null) {
+      skipRequestHeaders=URISupport.parseQuery(queryString);
+    }
+  }
   Message in=exchange.getIn();
   HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
-  for (  String headerName : in.getHeaders().keySet()) {
-    String headerValue=in.getHeader(headerName,String.class);
-    if (strategy != null && !strategy.applyFilterToCamelHeaders(headerName,headerValue,exchange)) {
-      httpExchange.addRequestHeader(headerName,headerValue);
+  for (  Map.Entry<String,Object> entry : in.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object headerValue=in.getHeader(key);
+    if (headerValue != null) {
+      final Iterator it=ObjectHelper.createIterator(headerValue,null);
+      final List<String> values=new ArrayList<String>();
+      while (it.hasNext()) {
+        String value=exchange.getContext().getTypeConverter().convertTo(String.class,it.next());
+        if (skipRequestHeaders != null && skipRequestHeaders.containsKey(key)) {
+          Object skipValue=skipRequestHeaders.get(key);
+          if (ObjectHelper.equal(skipValue,value)) {
+            continue;
+          }
+        }
+        if (value != null && strategy != null && !strategy.applyFilterToCamelHeaders(key,value,exchange)) {
+          values.add(value);
+        }
+      }
+      if (values.size() > 0) {
+        String s=values.size() > 1 ? values.toString() : values.get(0);
+        httpExchange.addRequestHeader(key,s);
+      }
     }
   }
   httpExchange.setCallback(callback);

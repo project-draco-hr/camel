@@ -5,12 +5,13 @@
   Enumeration names=request.getHeaderNames();
   while (names.hasMoreElements()) {
     String name=(String)names.nextElement();
-    Object value=request.getHeader(name);
+    String value=request.getHeader(name);
+    Object extracted=HttpHelper.extractHttpParameterValue(value);
     if (name.toLowerCase().equals("content-type")) {
       name=Exchange.CONTENT_TYPE;
     }
-    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,message.getExchange())) {
-      headers.put(name,value);
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,message.getExchange())) {
+      HttpHelper.appendHeader(headers,name,extracted);
     }
   }
   if (request.getCharacterEncoding() != null) {

@@ -1,7 +1,6 @@
 {
   Object response=extractResponseBody(httpRequest,httpResponse,exchange);
   Message answer=exchange.getOut();
-  answer.setHeaders(in.getHeaders());
   answer.setHeader(Exchange.HTTP_RESPONSE_CODE,responseCode);
   answer.setBody(response);
   Header[] headers=httpResponse.getAllHeaders();
@@ -11,8 +10,10 @@
     if (name.toLowerCase().equals("content-type")) {
       name=Exchange.CONTENT_TYPE;
     }
-    if (strategy != null && !strategy.applyFilterToExternalHeaders(name,value,exchange)) {
-      answer.setHeader(name,value);
+    Object extracted=HttpHelper.extractHttpParameterValue(value);
+    if (strategy != null && !strategy.applyFilterToExternalHeaders(name,extracted,exchange)) {
+      HttpHelper.appendHeader(answer.getHeaders(),name,extracted);
     }
   }
+  MessageHelper.copyHeaders(exchange.getIn(),answer,false);
 }
