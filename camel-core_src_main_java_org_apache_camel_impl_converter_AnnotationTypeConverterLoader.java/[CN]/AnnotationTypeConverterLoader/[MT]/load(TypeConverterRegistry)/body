@@ -14,12 +14,21 @@
     LOG.debug("No additional package names found in classpath for annotated type converters.");
     return;
   }
-  LOG.trace("Found converter packages to scan: {}",packageNames);
-  Set<Class<?>> classes=resolver.findAnnotated(Converter.class,packageNames);
-  if (classes == null || classes.isEmpty()) {
-    throw new TypeConverterLoaderException("Cannot find any type converter classes from the following packages: " + Arrays.asList(packageNames));
+  packageNames=filterUnwantedPackage("org.apache.camel.core",packageNames);
+  Set<Class<?>> classes=new HashSet<Class<?>>();
+  packageNames=filterPackageNamesOnly(resolver,packageNames,classes);
+  if (!classes.isEmpty()) {
+    LOG.info("Loaded " + classes.size() + " @Converter classes");
   }
-  LOG.info("Found " + packageNames.length + " packages with "+ classes.size()+ " @Converter classes to load");
+  if (packageNames != null && packageNames.length > 0) {
+    LOG.trace("Found converter packages to scan: {}",packageNames);
+    Set<Class<?>> scannedClasses=resolver.findAnnotated(Converter.class,packageNames);
+    if (scannedClasses.isEmpty()) {
+      throw new TypeConverterLoaderException("Cannot find any type converter classes from the following packages: " + Arrays.asList(packageNames));
+    }
+    LOG.info("Found " + packageNames.length + " packages with "+ scannedClasses.size()+ " @Converter classes to load");
+    classes.addAll(scannedClasses);
+  }
   for (  Class type : classes) {
     if (LOG.isTraceEnabled()) {
       LOG.trace("Loading converter class: {}",ObjectHelper.name(type));
