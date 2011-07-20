@@ -14,10 +14,7 @@
     name=expression.evaluate(exchange,String.class);
   }
   if (name != null && endpoint.isFlatten()) {
-    int pos=name.lastIndexOf(getFileSeparator());
-    if (pos == -1) {
-      pos=name.lastIndexOf('/');
-    }
+    int pos=Math.max(name.lastIndexOf("/"),name.lastIndexOf("\\"));
     if (pos != -1) {
       name=name.substring(pos + 1);
     }
@@ -25,7 +22,11 @@
   String endpointPath=endpoint.getConfiguration().getDirectory();
   String baseDir="";
   if (endpointPath.length() > 0) {
-    baseDir=endpointPath + (endpointPath.endsWith(getFileSeparator()) ? "" : getFileSeparator());
+    baseDir=endpointPath;
+    boolean trailingSlash=endpointPath.endsWith("/") || endpointPath.endsWith("\\");
+    if (!trailingSlash) {
+      baseDir+=getFileSeparator();
+    }
   }
   if (name != null) {
     answer=baseDir + name;

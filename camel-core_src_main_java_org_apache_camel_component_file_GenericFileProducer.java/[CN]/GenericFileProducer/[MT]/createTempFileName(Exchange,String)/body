@@ -1,5 +1,5 @@
 {
-  fileName=normalizePath(fileName);
+  String answer=fileName;
   String tempName;
   if (exchange.getIn().getHeader(Exchange.FILE_NAME) == null) {
     exchange.getIn().setHeader(Exchange.FILE_NAME,FileUtil.stripPath(fileName));
@@ -9,13 +9,17 @@
  else {
     tempName=endpoint.getTempFileName().evaluate(exchange,String.class);
   }
-  int path=fileName.lastIndexOf(getFileSeparator());
-  if (path == -1) {
-    return tempName;
+  int pos=Math.max(answer.lastIndexOf("/"),answer.lastIndexOf("\\"));
+  if (pos == -1) {
+    answer=tempName;
   }
  else {
-    StringBuilder sb=new StringBuilder(fileName.substring(0,path + 1));
+    StringBuilder sb=new StringBuilder(answer.substring(0,pos + 1));
     sb.append(tempName);
-    return sb.toString();
+    answer=sb.toString();
   }
+  if (endpoint.getConfiguration().needToNormalize()) {
+    answer=normalizePath(answer);
+  }
+  return answer;
 }
