@@ -5,7 +5,7 @@
   if (exchange.getProperty(Exchange.TRACE_EVENT,false,Boolean.class)) {
     return super.process(exchange,callback);
   }
-  boolean shouldLog=shouldLogNode(node) && shouldLogExchange(exchange);
+  final boolean shouldLog=shouldLogNode(node) && shouldLogExchange(exchange);
   boolean trace=true;
   boolean sync=true;
   try {
@@ -38,34 +38,41 @@
         LOG.trace("Cannot trace as this Exchange does not have an UnitOfWork: {}",exchange);
       }
     }
-    Object traceState=null;
+    Object state=null;
     if (shouldLog && trace) {
       logExchange(exchange);
       if (tracer.isTraceOutExchanges()) {
-        traceState=traceExchangeIn(exchange);
+        state=traceExchangeIn(exchange);
       }
  else {
         traceExchange(exchange);
       }
     }
-    try {
-      if (node.getParent() instanceof InterceptDefinition && exchange.getUnitOfWork() != null) {
-        TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
-        traceIntercept((InterceptDefinition)node.getParent(),traced,exchange);
-      }
-      try {
-        sync=super.process(exchange,callback);
-      }
- catch (      Throwable e) {
-        exchange.setException(e);
+    final Object traceState=state;
+    if (node.getParent() instanceof InterceptDefinition && exchange.getUnitOfWork() != null) {
+      TracedRouteNodes traced=exchange.getUnitOfWork().getTracedRouteNodes();
+      traceIntercept((InterceptDefinition)node.getParent(),traced,exchange);
+    }
+    sync=super.process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        try {
+          if (shouldLog && tracer.isTraceOutExchanges()) {
+            logExchange(exchange);
+            traceExchangeOut(exchange,traceState);
+          }
+        }
+ catch (        Throwable e) {
+          if (shouldLogException(exchange)) {
+            logException(exchange,e);
+          }
+          exchange.setException(e);
+        }
+ finally {
+          callback.done(doneSync);
+        }
       }
     }
-  finally {
-      if (shouldLog && tracer.isTraceOutExchanges()) {
-        logExchange(exchange);
-        traceExchangeOut(exchange,traceState);
-      }
-    }
+);
   }
  catch (  Throwable e) {
     if (shouldLogException(exchange)) {
