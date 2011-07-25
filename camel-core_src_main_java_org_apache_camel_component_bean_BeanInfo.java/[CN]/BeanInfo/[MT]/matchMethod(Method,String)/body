@@ -18,15 +18,25 @@
     for (int i=0; i < method.getParameterTypes().length; i++) {
       if (it.hasNext()) {
         String qualifyType=(String)it.next();
+        if (ObjectHelper.isEmpty(qualifyType)) {
+          continue;
+        }
+        qualifyType=qualifyType.trim();
         if ("*".equals(qualifyType)) {
           continue;
         }
-        String parameterType=method.getParameterTypes()[i].getSimpleName();
-        if (qualifyType.indexOf(".") > -1) {
-          parameterType=method.getParameterTypes()[i].getName();
+        if (qualifyType.startsWith("'") || qualifyType.startsWith("\"")) {
+          continue;
         }
-        if (!parameterType.equals(qualifyType)) {
-          return false;
+        Class<?> qualifyClass=getCamelContext().getClassResolver().resolveClass(qualifyType);
+        if (qualifyClass != null) {
+          Class<?> parameterClass=method.getParameterTypes()[i];
+          if (!parameterClass.isAssignableFrom(qualifyClass)) {
+            return false;
+          }
+        }
+        if (qualifyType.equals(method.getParameterTypes()[i].getSimpleName())) {
+          continue;
         }
       }
  else {

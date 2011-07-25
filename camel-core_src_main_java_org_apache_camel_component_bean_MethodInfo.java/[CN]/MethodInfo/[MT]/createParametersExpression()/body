@@ -15,34 +15,94 @@
       if (exchange.getIn().getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) != null) {
         multiParameterArray=exchange.getIn().getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,Boolean.class);
       }
+      String methodName=exchange.getIn().getHeader(Exchange.BEAN_METHOD_NAME,"",String.class);
+      String methodParameters=ObjectHelper.between(methodName,"(",")");
+      Iterator it=null;
+      if (methodParameters != null) {
+        it=ObjectHelper.createIterator(methodParameters);
+      }
       for (int i=0; i < size; i++) {
+        Object parameterValue=it != null && it.hasNext() ? it.next() : null;
+        Class<?> parameterType=parameters.get(i).getType();
         Object value=null;
         if (multiParameterArray) {
           value=((Object[])body)[i];
         }
  else {
+          if (parameterValue != null && !parameterValue.equals("*")) {
+            value=evaluateParameterValue(exchange,i,parameterValue,parameterType);
+          }
           Expression expression=expressions[i];
-          if (expression != null) {
-            Object result=expression.evaluate(exchange,Object.class);
-            if (result != null) {
-              try {
-                value=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameters.get(i).getType(),result);
-                if (LOG.isTraceEnabled()) {
-                  LOG.trace("Parameter #{} evaluated as: {} type: ",new Object[]{i,value,ObjectHelper.type(value)});
-                }
-              }
- catch (              NoTypeConversionAvailableException e) {
-                throw ObjectHelper.wrapCamelExecutionException(exchange,e);
-              }
-            }
- else {
-              LOG.trace("Parameter #{} evaluated as null",i);
-            }
+          if (value == null && expression != null) {
+            value=evaluateParameterBinding(exchange,expression,i,parameterType);
           }
         }
         answer[i]=value;
       }
       return (T)answer;
+    }
+    /** 
+ * Evaluate using parameter values where the values can be provided in the method name syntax.
+ * @since 2.9
+ */
+    private Object evaluateParameterValue(    Exchange exchange,    int index,    Object parameterValue,    Class<?> parameterType){
+      Object answer=null;
+      String exp=exchange.getContext().getTypeConverter().convertTo(String.class,parameterValue);
+      if (exp != null) {
+        exp=exp.trim();
+        boolean isClass=false;
+        if (exp.startsWith("'") || exp.startsWith("\"")) {
+          exp=StringHelper.removeLeadingAndEndingQuotes(exp);
+        }
+ else {
+          Class<?> expClass=exchange.getContext().getClassResolver().resolveClass(exp);
+          if (expClass != null) {
+            isClass=true;
+          }
+ else {
+            if (exp.equals(parameterType.getSimpleName())) {
+              isClass=true;
+            }
+          }
+        }
+        if (!isClass) {
+          parameterValue=exchange.getContext().resolveLanguage("simple").createExpression(exp).evaluate(exchange,Object.class);
+          if (parameterValue != null) {
+            try {
+              answer=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterType,parameterValue);
+              if (LOG.isTraceEnabled()) {
+                LOG.trace("Parameter #{} evaluated as: {} type: ",new Object[]{index,answer,ObjectHelper.type(answer)});
+              }
+            }
+ catch (            NoTypeConversionAvailableException e) {
+              throw ObjectHelper.wrapCamelExecutionException(exchange,e);
+            }
+          }
+        }
+      }
+      return answer;
+    }
+    /** 
+ * Evaluate using classic parameter binding using the pre compute expression
+ */
+    private Object evaluateParameterBinding(    Exchange exchange,    Expression expression,    int index,    Class<?> parameterType){
+      Object answer=null;
+      Object result=expression.evaluate(exchange,Object.class);
+      if (result != null) {
+        try {
+          answer=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterType,result);
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Parameter #{} evaluated as: {} type: ",new Object[]{index,answer,ObjectHelper.type(answer)});
+          }
+        }
+ catch (        NoTypeConversionAvailableException e) {
+          throw ObjectHelper.wrapCamelExecutionException(exchange,e);
+        }
+      }
+ else {
+        LOG.trace("Parameter #{} evaluated as null",index);
+      }
+      return answer;
     }
     @Override public String toString(){
       return "ParametersExpression: " + Arrays.asList(expressions);
