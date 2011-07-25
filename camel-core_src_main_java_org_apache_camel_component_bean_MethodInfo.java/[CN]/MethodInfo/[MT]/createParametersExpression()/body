@@ -50,24 +50,23 @@
       String exp=exchange.getContext().getTypeConverter().convertTo(String.class,parameterValue);
       if (exp != null) {
         exp=exp.trim();
-        boolean isClass=false;
-        if (exp.startsWith("'") || exp.startsWith("\"")) {
-          exp=StringHelper.removeLeadingAndEndingQuotes(exp);
-        }
- else {
-          Class<?> expClass=exchange.getContext().getClassResolver().resolveClass(exp);
-          if (expClass != null) {
-            isClass=true;
+        boolean valid=BeanHelper.isValidParameterValue(exp);
+        if (!valid) {
+          Boolean isClass=BeanHelper.isAssignableToExpectedType(exchange.getContext().getClassResolver(),exp,parameterType);
+          if (isClass != null) {
+            return null;
           }
- else {
-            if (exp.equals(parameterType.getSimpleName())) {
-              isClass=true;
+        }
+        parameterValue=exchange.getContext().resolveLanguage("simple").createExpression(exp).evaluate(exchange,Object.class);
+        if (parameterValue != null) {
+          exp=exchange.getContext().getTypeConverter().convertTo(String.class,parameterValue);
+          if (!valid) {
+            valid=parameterValue instanceof String || BeanHelper.isValidParameterValue(exp);
+          }
+          if (valid) {
+            if (parameterValue instanceof String) {
+              parameterValue=StringHelper.removeLeadingAndEndingQuotes((String)parameterValue);
             }
-          }
-        }
-        if (!isClass) {
-          parameterValue=exchange.getContext().resolveLanguage("simple").createExpression(exp).evaluate(exchange,Object.class);
-          if (parameterValue != null) {
             try {
               answer=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterType,parameterValue);
               if (LOG.isTraceEnabled()) {
