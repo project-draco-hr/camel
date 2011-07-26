@@ -37,12 +37,21 @@
             value=evaluateParameterBinding(exchange,expression,i,parameterType);
           }
         }
-        answer[i]=value;
+        if (value != Void.TYPE) {
+          answer[i]=value;
+        }
       }
       return (T)answer;
     }
     /** 
  * Evaluate using parameter values where the values can be provided in the method name syntax.
+ * <p/>
+ * This methods returns accordingly:
+ * <ul>
+ * <li><tt>null</tt> - if not a parameter value</li>
+ * <li><tt>Void.TYPE</tt> - if an explicit null, forcing Camel to pass in <tt>null</tt> for that given parameter</li>
+ * <li>a non <tt>null</tt> value - if the parameter was a parameter value, and to be used</li>
+ * </ul>
  * @since 2.9
  */
     private Object evaluateParameterValue(    Exchange exchange,    int index,    Object parameterValue,    Class<?> parameterType){
@@ -57,8 +66,18 @@
             return null;
           }
         }
-        parameterValue=exchange.getContext().resolveLanguage("simple").createExpression(exp).evaluate(exchange,Object.class);
+        Expression expression=null;
+        try {
+          expression=exchange.getContext().resolveLanguage("simple").createExpression(exp);
+          parameterValue=expression.evaluate(exchange,Object.class);
+        }
+ catch (        Exception e) {
+          throw new ExpressionEvaluationException(expression,"Cannot create/evaluate simple expression: " + exp + " to be bound to parameter at index: "+ index+ " on method: "+ getMethod(),exchange,e);
+        }
         if (parameterValue != null) {
+          if ("null".equals(parameterValue)) {
+            return Void.TYPE;
+          }
           exp=exchange.getContext().getTypeConverter().convertTo(String.class,parameterValue);
           if (!valid) {
             valid=parameterValue instanceof String || BeanHelper.isValidParameterValue(exp);
