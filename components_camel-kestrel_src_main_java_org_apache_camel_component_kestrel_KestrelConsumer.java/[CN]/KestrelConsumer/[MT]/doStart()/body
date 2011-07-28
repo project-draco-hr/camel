@@ -4,7 +4,7 @@
   shutdownPending=false;
   if (poolSize > 1) {
     shutdownLatch=new CountDownLatch(poolSize + 1);
-    handlerExecutor=endpoint.getCamelContext().getExecutorServiceStrategy().newFixedThreadPool(this,"Handlers-" + endpoint.getEndpointUri(),poolSize);
+    handlerExecutor=endpoint.getCamelContext().getExecutorServiceManager().getExecutorService(ThreadPoolBuilder.fixedThreadExecutor("Handlers-" + endpoint.getEndpointUri(),poolSize),this);
     for (int k=0; k < poolSize; ++k) {
       handlerExecutor.execute(new Handler());
     }
@@ -12,7 +12,7 @@
  else {
     shutdownLatch=new CountDownLatch(1);
   }
-  pollerExecutor=endpoint.getCamelContext().getExecutorServiceStrategy().newSingleThreadExecutor(this,"Poller-" + endpoint.getEndpointUri());
+  pollerExecutor=endpoint.getCamelContext().getExecutorServiceManager().getExecutorService(ThreadPoolBuilder.singleThreadExecutor("Poller-" + endpoint.getEndpointUri()),this);
   pollerExecutor.submit(new Poller(poolSize > 1));
   super.doStart();
 }

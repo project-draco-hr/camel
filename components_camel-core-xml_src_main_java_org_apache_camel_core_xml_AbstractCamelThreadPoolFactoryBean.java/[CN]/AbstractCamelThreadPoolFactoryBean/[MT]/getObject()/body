@@ -7,10 +7,6 @@
   if (maxPoolSize != null) {
     max=CamelContextHelper.parseInteger(getCamelContext(),maxPoolSize);
   }
-  RejectedExecutionHandler rejected=null;
-  if (rejectedPolicy != null) {
-    rejected=rejectedPolicy.asRejectedExecutionHandler();
-  }
   long keepAlive=60;
   if (keepAliveTime != null) {
     keepAlive=CamelContextHelper.parseLong(getCamelContext(),keepAliveTime);
@@ -19,6 +15,7 @@
   if (maxQueueSize != null) {
     queueSize=CamelContextHelper.parseInteger(getCamelContext(),maxQueueSize);
   }
-  ExecutorService answer=getCamelContext().getExecutorServiceStrategy().newThreadPool(getId(),getThreadName(),size,max,keepAlive,getTimeUnit(),queueSize,rejected,true);
+  ThreadPoolProfile profile=new ThreadPoolBuilder(getId()).threadName(getThreadName()).poolSize(size).maxPoolSize(max).keepAliveTime(keepAlive,getTimeUnit()).maxQueueSize(queueSize).rejectedPolicy(rejectedPolicy).build();
+  ExecutorService answer=getCamelContext().getExecutorServiceManager().createExecutorService(profile,getId());
   return answer;
 }

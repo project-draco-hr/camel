@@ -20,7 +20,7 @@
       if (interval <= 0) {
         throw new IllegalArgumentException("AggregationRepository has recovery enabled and the RecoveryInterval option must be a positive number, was: " + interval);
       }
-      recoverService=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateRecoverChecker",1);
+      recoverService=camelContext.getExecutorServiceManager().getScheduledExecutorService("AggregateRecoverChecker",this);
       Runnable recoverTask=new RecoverTask(recoverable);
       LOG.info("Using RecoverableAggregationRepository by scheduling recover checker to run every " + interval + " millis.");
       recoverService.scheduleWithFixedDelay(recoverTask,1000L,interval,TimeUnit.MILLISECONDS);
@@ -44,12 +44,12 @@
   }
   if (getCompletionInterval() > 0) {
     LOG.info("Using CompletionInterval to run every " + getCompletionInterval() + " millis.");
-    ScheduledExecutorService scheduler=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateTimeoutChecker",1);
+    ScheduledExecutorService scheduler=camelContext.getExecutorServiceManager().getScheduledExecutorService("AggregateTimeoutChecker",this);
     scheduler.scheduleAtFixedRate(new AggregationIntervalTask(),1000L,getCompletionInterval(),TimeUnit.MILLISECONDS);
   }
   if (getCompletionTimeout() > 0 || getCompletionTimeoutExpression() != null) {
     LOG.info("Using CompletionTimeout to trigger after " + getCompletionTimeout() + " millis of inactivity.");
-    ScheduledExecutorService scheduler=camelContext.getExecutorServiceStrategy().newScheduledThreadPool(this,"AggregateTimeoutChecker",1);
+    ScheduledExecutorService scheduler=camelContext.getExecutorServiceManager().getScheduledExecutorService("AggregateTimeoutChecker",this);
     timeoutMap=new AggregationTimeoutMap(scheduler,1000L);
     restoreTimeoutMapFromAggregationRepository();
     ServiceHelper.startService(timeoutMap);

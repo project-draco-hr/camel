@@ -1,7 +1,9 @@
 {
   if (channelFactory == null) {
-    ExecutorService bossExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPBoss",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
-    ExecutorService workerExecutor=context.getExecutorServiceStrategy().newThreadPool(this,"NettyTCPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
+    ThreadPoolProfile bossProfile=new ThreadPoolBuilder("NettyTCPBoss").poolSize(configuration.getCorePoolSize()).maxPoolSize(configuration.getMaxPoolSize()).build();
+    ThreadPoolProfile workerProfile=new ThreadPoolBuilder("NettyTCPWorker").poolSize(configuration.getCorePoolSize()).maxPoolSize(configuration.getMaxPoolSize()).build();
+    ExecutorService bossExecutor=context.getExecutorServiceManager().getExecutorService(bossProfile,this);
+    ExecutorService workerExecutor=context.getExecutorServiceManager().getExecutorService(workerProfile,this);
     channelFactory=new NioClientSocketChannelFactory(bossExecutor,workerExecutor);
   }
 }
