@@ -1,11 +1,26 @@
 {
   super.doStart();
   if (client == null) {
+    AsyncHttpClientConfig config=null;
     if (clientConfig != null) {
-      client=new AsyncHttpClient(clientConfig);
+      AsyncHttpClientConfig.Builder builder=AhcComponent.cloneConfig(clientConfig);
+      if (sslContextParameters != null) {
+        builder.setSSLContext(sslContextParameters.createSSLContext());
+      }
+      config=builder.build();
     }
  else {
+      if (sslContextParameters != null) {
+        AsyncHttpClientConfig.Builder builder=new AsyncHttpClientConfig.Builder();
+        builder.setSSLContext(sslContextParameters.createSSLContext());
+        config=builder.build();
+      }
+    }
+    if (config == null) {
       client=new AsyncHttpClient();
+    }
+ else {
+      client=new AsyncHttpClient(config);
     }
   }
 }

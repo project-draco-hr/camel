@@ -1,7 +1,7 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("jetty:http://localhost:{{port}}/myapp/myservice").process(new Processor(){
+      from(getTestServerEndpointUri()).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           MyCoolBean cool=exchange.getIn().getBody(MyCoolBean.class);
           assertNotNull(cool);
@@ -18,7 +18,7 @@
 );
   context.start();
   MyCoolBean cool=new MyCoolBean(123,"Camel");
-  MyCoolBean reply=template.requestBodyAndHeader("ahc:http://localhost:{{port}}/myapp/myservice",cool,Exchange.CONTENT_TYPE,AhcConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT,MyCoolBean.class);
+  MyCoolBean reply=template.requestBodyAndHeader(getAhcEndpointUri(),cool,Exchange.CONTENT_TYPE,AhcConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT,MyCoolBean.class);
   assertEquals(456,reply.getId());
   assertEquals("Camel rocks",reply.getName());
 }
