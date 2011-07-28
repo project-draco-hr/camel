@@ -3,20 +3,20 @@
   int counterMandatoryFields=0;
   for (  String data : tokens) {
     DataField dataField=dataFields.get(pos);
-    ObjectHelper.notNull(dataField,"No position " + pos + " defined for the field : "+ data+ ", line : "+ line);
+    ObjectHelper.notNull(dataField,"No position " + pos + " defined for the field: "+ data+ ", line: "+ line);
     if (dataField.trim()) {
       data=data.trim();
     }
     if (dataField.required()) {
       ++counterMandatoryFields;
       if (data.equals("")) {
-        throw new IllegalArgumentException("The mandatory field defined at the position " + pos + " is empty for the line : "+ line);
+        throw new IllegalArgumentException("The mandatory field defined at the position " + pos + " is empty for the line: "+ line);
       }
     }
-    Field field=annotedFields.get(pos);
+    Field field=annotatedFields.get(pos);
     field.setAccessible(true);
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Pos : {}, Data : {}, Field type : {}",new Object[]{pos,data,field.getType()});
+      LOG.debug("Pos: {}, Data: {}, Field type: {}",new Object[]{pos,data,field.getType()});
     }
     Format<?> format;
     String pattern=dataField.pattern();
@@ -28,10 +28,10 @@
         value=format.parse(data);
       }
  catch (      FormatException ie) {
-        throw new IllegalArgumentException(ie.getMessage() + ", position : " + pos+ ", line : "+ line,ie);
+        throw new IllegalArgumentException(ie.getMessage() + ", position: " + pos+ ", line: "+ line,ie);
       }
 catch (      Exception e) {
-        throw new IllegalArgumentException("Parsing error detected for field defined at the position : " + pos + ", line : "+ line,e);
+        throw new IllegalArgumentException("Parsing error detected for field defined at the position: " + pos + ", line: "+ line,e);
       }
     }
  else {
@@ -40,11 +40,11 @@ catch (      Exception e) {
     field.set(modelField,value);
     ++pos;
   }
-  LOG.debug("Counter mandatory fields : {}",counterMandatoryFields);
+  LOG.debug("Counter mandatory fields: {}",counterMandatoryFields);
   if (pos < totalFields) {
-    throw new IllegalArgumentException("Some fields are missing (optional or mandatory), line : " + line);
+    throw new IllegalArgumentException("Some fields are missing (optional or mandatory), line: " + line);
   }
   if (counterMandatoryFields < numberMandatoryFields) {
-    throw new IllegalArgumentException("Some mandatory fields are missing, line : " + line);
+    throw new IllegalArgumentException("Some mandatory fields are missing, line: " + line);
   }
 }
