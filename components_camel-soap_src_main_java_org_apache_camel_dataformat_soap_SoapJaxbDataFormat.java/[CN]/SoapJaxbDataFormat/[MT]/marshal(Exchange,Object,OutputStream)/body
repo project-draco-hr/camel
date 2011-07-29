@@ -9,19 +9,30 @@
     }
   }
   Body body=new Body();
+  Header header=new Header();
   Throwable exception=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
   if (exception == null) {
     exception=exchange.getIn().getHeader(Exchange.EXCEPTION_CAUGHT,Throwable.class);
   }
-  final JAXBElement<?> content;
+  final List<JAXBElement<?>> bodyContent;
+  List<JAXBElement<?>> headerContent=new ArrayList<JAXBElement<?>>();
   if (exception != null) {
-    content=createFaultFromException(exception);
+    bodyContent=new ArrayList<JAXBElement<?>>();
+    bodyContent.add(createFaultFromException(exception));
   }
  else {
-    content=createBodyContentFromObject(inputObject,soapAction);
+    bodyContent=createContentFromObject(inputObject,soapAction,headerContent);
   }
-  body.getAny().add(content);
+  for (  JAXBElement<?> elem : bodyContent) {
+    body.getAny().add(elem);
+  }
+  for (  JAXBElement<?> elem : headerContent) {
+    header.getAny().add(elem);
+  }
   Envelope envelope=new Envelope();
+  if (headerContent.size() > 0) {
+    envelope.setHeader(header);
+  }
   envelope.setBody(body);
   JAXBElement<Envelope> envelopeEl=new ObjectFactory().createEnvelope(envelope);
   super.marshal(exchange,envelopeEl,stream);

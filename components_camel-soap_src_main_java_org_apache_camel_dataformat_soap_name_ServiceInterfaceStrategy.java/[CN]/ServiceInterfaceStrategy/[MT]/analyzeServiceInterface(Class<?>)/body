@@ -2,8 +2,12 @@
   Method[] methods=serviceInterface.getMethods();
   for (  Method method : methods) {
     MethodInfo info=analyzeMethod(method);
-    if (info.getIn() != null) {
-      inTypeNameToQName.put(info.getIn().getTypeName(),info.getIn().getElName());
+    for (int i=0; i < info.getIn().length; i++) {
+      TypeInfo ti=info.getIn()[i];
+      if (inTypeNameToQName.containsKey(ti.getTypeName()) && (!(ti.getTypeName().equals("javax.xml.ws.Holder"))) && (!(inTypeNameToQName.get(ti.getTypeName()).equals(ti.getElName())))) {
+        throw new RuntimeCamelException("Ambiguous parameter mapping. The type [ " + ti.getTypeName() + " ] is already mapped to a QName in this context.");
+      }
+      inTypeNameToQName.put(ti.getTypeName(),ti.getElName());
     }
     if (info.getSoapAction() != null && !"".equals(info.getSoapAction())) {
       soapActionToMethodInfo.put(info.getSoapAction(),info);
