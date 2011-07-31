@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(noErrorHandler());
+      from("vm:start1?timeout=4000").to("log:AFTER_START1").to("vm:end?timeout=2000").to("log:AFTER_END");
+      from("vm:start2?timeout=4000").to("log:AFTER_START2").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          throw new ExchangeTimedOutException(exchange,2000);
+        }
+      }
+).to("log:AFTER_PROCESSOR");
+    }
+  }
+;
+}
