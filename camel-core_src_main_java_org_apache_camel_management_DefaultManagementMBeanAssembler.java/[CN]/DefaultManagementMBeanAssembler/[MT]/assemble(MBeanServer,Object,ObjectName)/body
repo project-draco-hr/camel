@@ -1,0 +1,24 @@
+{
+  ModelMBeanInfo mbi=null;
+  if (obj instanceof ManagedInstance) {
+    Object custom=((ManagedInstance)obj).getInstance();
+    if (custom != null && ObjectHelper.hasAnnotation(custom.getClass().getAnnotations(),ManagedResource.class)) {
+      log.trace("Assembling MBeanInfo for: {} from custom @ManagedResource object: {}",name,custom);
+      mbi=assembler.getMBeanInfo(custom,name.toString());
+      obj=custom;
+    }
+  }
+  if (mbi == null) {
+    log.trace("Assembling MBeanInfo for: {} from @ManagedResource object: {}",name,obj);
+    mbi=assembler.getMBeanInfo(obj,name.toString());
+  }
+  RequiredModelMBean mbean=(RequiredModelMBean)mBeanServer.instantiate(RequiredModelMBean.class.getName());
+  mbean.setModelMBeanInfo(mbi);
+  try {
+    mbean.setManagedResource(obj,"ObjectReference");
+  }
+ catch (  InvalidTargetObjectTypeException e) {
+    throw new JMException(e.getMessage());
+  }
+  return mbean;
+}
