@@ -1,0 +1,40 @@
+{
+  for (  Method method : managedBean.getClass().getMethods()) {
+    ManagedAttribute ma=method.getAnnotation(ManagedAttribute.class);
+    if (ma != null) {
+      String key;
+      String desc=ma.description();
+      Method getter=null;
+      Method setter=null;
+      if (IntrospectionSupport.isGetter(method)) {
+        key=IntrospectionSupport.getGetterShorthandName(method);
+        getter=method;
+      }
+ else       if (IntrospectionSupport.isSetter(method)) {
+        key=IntrospectionSupport.getSetterShorthandName(method);
+        setter=method;
+      }
+ else {
+        throw new IllegalArgumentException("@ManagedAttribute can only be used on Java bean methods, was: " + method + " on bean: "+ managedBean);
+      }
+      key=ObjectHelper.capitalize(key);
+      ManagedAttributeInfo info=attributes.get(key);
+      if (info == null) {
+        info=new ManagedAttributeInfo(key,desc);
+      }
+      if (getter != null) {
+        info.setGetter(getter);
+      }
+      if (setter != null) {
+        info.setSetter(setter);
+      }
+      attributes.put(key,info);
+    }
+    ManagedOperation mo=method.getAnnotation(ManagedOperation.class);
+    if (mo != null) {
+      String desc=mo.description();
+      Method operation=method;
+      operations.add(new ManagedOperationInfo(desc,operation));
+    }
+  }
+}
