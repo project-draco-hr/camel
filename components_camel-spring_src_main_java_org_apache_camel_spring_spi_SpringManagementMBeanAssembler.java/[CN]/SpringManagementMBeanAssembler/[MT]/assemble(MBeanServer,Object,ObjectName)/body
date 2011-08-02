@@ -1,8 +1,4 @@
 {
-  ModelMBean mbean=super.assemble(mBeanServer,obj,name);
-  if (mbean != null) {
-    return mbean;
-  }
   ModelMBeanInfo mbi=null;
   if (obj instanceof ManagedInstance) {
     Object custom=((ManagedInstance)obj).getInstance();
@@ -13,10 +9,16 @@
     }
   }
   if (mbi == null) {
-    log.trace("Assembling MBeanInfo for: {} from @ManagedResource object: {}",name,obj);
-    mbi=assembler.getMBeanInfo(obj,name.toString());
+    if (ObjectHelper.hasAnnotation(obj.getClass().getAnnotations(),ManagedResource.class)) {
+      log.trace("Assembling MBeanInfo for: {} from @ManagedResource object: {}",name,obj);
+      mbi=assembler.getMBeanInfo(obj,name.toString());
+    }
+ else {
+      return super.assemble(mBeanServer,obj,name);
+    }
   }
-  mbean=(RequiredModelMBean)mBeanServer.instantiate(RequiredModelMBean.class.getName());
+  log.trace("Assembled MBeanInfo {}",mbi);
+  ModelMBean mbean=(RequiredModelMBean)mBeanServer.instantiate(RequiredModelMBean.class.getName());
   mbean.setModelMBeanInfo(mbi);
   try {
     mbean.setManagedResource(obj,"ObjectReference");
