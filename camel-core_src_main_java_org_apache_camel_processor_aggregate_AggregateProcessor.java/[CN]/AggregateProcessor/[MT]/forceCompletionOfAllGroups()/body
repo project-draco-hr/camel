@@ -1,0 +1,25 @@
+{
+  if (!camelContext.getStatus().isStarted()) {
+    LOG.warn("cannot start force completion because CamelContext({}) has not been started yet",camelContext.getName());
+    return;
+  }
+  LOG.trace("Starting force completion of all groups task");
+  Set<String> keys=aggregationRepository.getKeys();
+  if (keys != null && !keys.isEmpty()) {
+    lock.lock();
+    try {
+      for (      String key : keys) {
+        Exchange exchange=aggregationRepository.get(camelContext,key);
+        if (exchange != null) {
+          LOG.trace("force completion triggered for correlation key: {}",key);
+          exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"forceCompletion");
+          onCompletion(key,exchange,false);
+        }
+      }
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+  LOG.trace("Completed force completion of all groups task");
+}
