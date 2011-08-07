@@ -1,13 +1,12 @@
 {
   if (isFixed()) {
-    Resource resource=getDefinition();
-    ObjectHelper.notNull(resource,"resource");
-    FixedWriterFactory factory=new FixedWriterFactory(new InputStreamReader(resource.getInputStream(),IOConverter.getCharsetName(exchange)));
+    InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext().getClassResolver(),getDefinition());
+    InputStreamReader reader=new InputStreamReader(is,IOConverter.getCharsetName(exchange));
+    FixedWriterFactory factory=new FixedWriterFactory(reader);
     return factory.createWriter(new OutputStreamWriter(stream,IOConverter.getCharsetName(exchange)));
   }
  else {
-    Resource resource=getDefinition();
-    if (resource == null) {
+    if (getDefinition() == null) {
       DelimiterWriterFactory factory=new DelimiterWriterFactory(delimiter,textQualifier);
       for (      String key : firstRow.keySet()) {
         factory.addColumnTitle(key);
@@ -15,7 +14,9 @@
       return factory.createWriter(new OutputStreamWriter(stream,IOConverter.getCharsetName(exchange)));
     }
  else {
-      DelimiterWriterFactory factory=new DelimiterWriterFactory(new InputStreamReader(resource.getInputStream(),IOConverter.getCharsetName(exchange)),delimiter,textQualifier);
+      InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext().getClassResolver(),getDefinition());
+      InputStreamReader reader=new InputStreamReader(is,IOConverter.getCharsetName(exchange));
+      DelimiterWriterFactory factory=new DelimiterWriterFactory(reader,delimiter,textQualifier);
       return factory.createWriter(new OutputStreamWriter(stream,IOConverter.getCharsetName(exchange)));
     }
   }

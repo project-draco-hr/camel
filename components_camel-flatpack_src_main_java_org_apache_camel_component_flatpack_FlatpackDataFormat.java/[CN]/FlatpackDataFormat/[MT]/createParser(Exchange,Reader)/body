@@ -1,16 +1,17 @@
 {
   if (isFixed()) {
-    Resource resource=getDefinition();
-    ObjectHelper.notNull(resource,"resource");
-    return getParserFactory().newFixedLengthParser(new InputStreamReader(resource.getInputStream(),IOConverter.getCharsetName(exchange)),bodyReader);
+    InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext().getClassResolver(),getDefinition());
+    InputStreamReader reader=new InputStreamReader(is,IOConverter.getCharsetName(exchange));
+    return getParserFactory().newFixedLengthParser(reader,bodyReader);
   }
  else {
-    Resource resource=getDefinition();
-    if (resource == null) {
+    if (ObjectHelper.isEmpty(getDefinition())) {
       return getParserFactory().newDelimitedParser(bodyReader,delimiter,textQualifier);
     }
  else {
-      return getParserFactory().newDelimitedParser(new InputStreamReader(resource.getInputStream(),IOConverter.getCharsetName(exchange)),bodyReader,delimiter,textQualifier,ignoreFirstRecord);
+      InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext().getClassResolver(),getDefinition());
+      InputStreamReader reader=new InputStreamReader(is,IOConverter.getCharsetName(exchange));
+      return getParserFactory().newDelimitedParser(reader,bodyReader,delimiter,textQualifier,ignoreFirstRecord);
     }
   }
 }

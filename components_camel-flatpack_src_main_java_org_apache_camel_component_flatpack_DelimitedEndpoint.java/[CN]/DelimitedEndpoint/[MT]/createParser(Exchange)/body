@@ -1,10 +1,11 @@
 {
   Reader bodyReader=ExchangeHelper.getMandatoryInBody(exchange,Reader.class);
-  Resource resource=getResource();
-  if (resource == null) {
+  if (ObjectHelper.isEmpty(getDefinition())) {
     return getParserFactory().newDelimitedParser(bodyReader,delimiter,textQualifier);
   }
  else {
-    return getParserFactory().newDelimitedParser(new InputStreamReader(resource.getInputStream()),bodyReader,delimiter,textQualifier,ignoreFirstRecord);
+    InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext().getClassResolver(),definition);
+    InputStreamReader reader=new InputStreamReader(is,IOConverter.getCharsetName(exchange));
+    return getParserFactory().newDelimitedParser(reader,bodyReader,delimiter,textQualifier,ignoreFirstRecord);
   }
 }

@@ -3,10 +3,14 @@
     velocityEngine=new VelocityEngine();
     Properties properties=new Properties();
     if (ObjectHelper.isNotEmpty(getPropertiesFile())) {
-      Resource resource=getResourceLoader().getResource(getPropertiesFile());
-      InputStream reader=resource.getInputStream();
-      properties.load(reader);
-      log.info("Loaded the velocity configuration file " + getPropertiesFile());
+      InputStream reader=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext().getClassResolver(),getPropertiesFile());
+      try {
+        properties.load(reader);
+        log.info("Loaded the velocity configuration file " + getPropertiesFile());
+      }
+  finally {
+        IOHelper.close(reader,getPropertiesFile(),log);
+      }
     }
     velocityEngine.addProperty("CamelClassResolver",getCamelContext().getClassResolver());
     properties.setProperty(Velocity.FILE_RESOURCE_LOADER_CACHE,isLoaderCache() ? "true" : "false");
