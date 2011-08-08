@@ -3,6 +3,20 @@
     uri=ObjectHelper.after(uri,"file:");
     return new FileInputStream(uri);
   }
+ else   if (uri.startsWith("http:")) {
+    URL url=new URL(uri);
+    URLConnection con=url.openConnection();
+    con.setUseCaches(false);
+    try {
+      return con.getInputStream();
+    }
+ catch (    IOException e) {
+      if (con instanceof HttpURLConnection) {
+        ((HttpURLConnection)con).disconnect();
+      }
+      throw e;
+    }
+  }
  else   if (uri.startsWith("classpath:")) {
     uri=ObjectHelper.after(uri,"classpath:");
   }
