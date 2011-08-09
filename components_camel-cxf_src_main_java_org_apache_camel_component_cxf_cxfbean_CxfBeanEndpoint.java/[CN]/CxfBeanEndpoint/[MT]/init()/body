@@ -9,7 +9,14 @@
     serviceBeans.add(obj);
   }
   if (bus == null) {
-    bus=BusFactory.newInstance().createBus();
+    ClassLoader oldCL=Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader(BusFactory.class.getClassLoader());
+      bus=BusFactory.newInstance().createBus();
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(oldCL);
+    }
   }
   if (isSetDefaultBus) {
     BusFactory.setDefaultBus(bus);
