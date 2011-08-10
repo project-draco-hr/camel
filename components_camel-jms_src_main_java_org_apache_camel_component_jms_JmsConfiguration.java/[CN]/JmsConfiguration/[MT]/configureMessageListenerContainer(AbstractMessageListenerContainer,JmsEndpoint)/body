@@ -1,0 +1,48 @@
+{
+  container.setConnectionFactory(getListenerConnectionFactory());
+  if (endpoint instanceof DestinationEndpoint) {
+    container.setDestinationResolver(createDestinationResolver((DestinationEndpoint)endpoint));
+  }
+ else   if (destinationResolver != null) {
+    container.setDestinationResolver(destinationResolver);
+  }
+  container.setAutoStartup(autoStartup);
+  if (durableSubscriptionName != null) {
+    container.setDurableSubscriptionName(durableSubscriptionName);
+    container.setSubscriptionDurable(true);
+  }
+  if (clientId != null) {
+    container.setClientId(clientId);
+  }
+  if (exceptionListener != null) {
+    container.setExceptionListener(exceptionListener);
+  }
+  if (errorHandler != null) {
+    container.setErrorHandler(errorHandler);
+  }
+  container.setAcceptMessagesWhileStopping(acceptMessagesWhileStopping);
+  container.setExposeListenerSession(exposeListenerSession);
+  container.setSessionTransacted(transacted);
+  if (transacted) {
+    container.setSessionAcknowledgeMode(Session.SESSION_TRANSACTED);
+  }
+ else {
+    if (acknowledgementMode >= 0) {
+      container.setSessionAcknowledgeMode(acknowledgementMode);
+    }
+ else     if (acknowledgementModeName != null) {
+      container.setSessionAcknowledgeModeName(acknowledgementModeName);
+    }
+  }
+  if (endpoint.getSelector() != null && endpoint.getSelector().length() != 0) {
+    container.setMessageSelector(endpoint.getSelector());
+  }
+  if (container instanceof DefaultMessageListenerContainer) {
+    DefaultMessageListenerContainer listenerContainer=(DefaultMessageListenerContainer)container;
+    configureDefaultMessageListenerContainer(endpoint,listenerContainer);
+  }
+ else   if (container instanceof SimpleMessageListenerContainer) {
+    SimpleMessageListenerContainer listenerContainer=(SimpleMessageListenerContainer)container;
+    configureSimpleMessageListenerContainer(listenerContainer);
+  }
+}
