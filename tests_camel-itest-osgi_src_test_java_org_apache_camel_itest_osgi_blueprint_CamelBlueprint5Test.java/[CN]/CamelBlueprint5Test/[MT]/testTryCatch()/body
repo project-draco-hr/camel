@@ -1,0 +1,15 @@
+{
+  getInstalledBundle("CamelBlueprintTestBundle23").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintTestBundle23)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintTestBundle23)",10000);
+  ProducerTemplate template=ctx.createProducerTemplate();
+  MockEndpoint mock=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(1);
+  MockEndpoint error=ctx.getEndpoint("mock:error",MockEndpoint.class);
+  error.expectedMessageCount(1);
+  template.sendBody("direct:start","Hello World");
+  template.sendBody("direct:start","Kaboom");
+  mock.assertIsSatisfied();
+  error.assertIsSatisfied();
+  template.stop();
+}
