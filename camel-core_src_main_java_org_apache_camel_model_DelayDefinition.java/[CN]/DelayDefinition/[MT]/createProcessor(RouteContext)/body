@@ -3,9 +3,10 @@
   Expression delay=createAbsoluteTimeDelayExpression(routeContext);
   ScheduledExecutorService scheduled=null;
   if (getAsyncDelayed() != null && getAsyncDelayed()) {
-    String ref=executorServiceRef != null ? executorServiceRef : "Delay";
-    ExecutorServiceManager manager=routeContext.getCamelContext().getExecutorServiceManager();
-    scheduled=manager.getScheduledExecutorService(ref,this);
+    scheduled=ProcessorDefinitionHelper.getConfiguredScheduledExecutorService(routeContext,"Delay",this);
+    if (scheduled == null) {
+      scheduled=routeContext.getCamelContext().getExecutorServiceManager().newSingleThreadScheduledExecutor(this,"Delay");
+    }
   }
   Delayer answer=new Delayer(childProcessor,delay,scheduled);
   if (getAsyncDelayed() != null) {

@@ -4,8 +4,8 @@
   boolean transferExchange=configuration.isTransferExchange();
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
-  IoAcceptor acceptor=new DatagramAcceptor(getCamelContext().getExecutorServiceManager().getDefaultExecutorService("MinaDatagramAcceptor",this));
-  IoConnector connector=new DatagramConnector(getCamelContext().getExecutorServiceManager().getDefaultExecutorService("MinaDatagramConnector",this));
+  IoAcceptor acceptor=new DatagramAcceptor(getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaDatagramAcceptor"));
+  IoConnector connector=new DatagramConnector(getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaDatagramConnector"));
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   if (transferExchange) {
     throw new IllegalArgumentException("transferExchange=true is not supported for datagram protocol");
@@ -13,7 +13,7 @@
   DatagramConnectorConfig connectorConfig=new DatagramConnectorConfig();
   connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureDataGramCodecFactory("MinaProducer",connectorConfig,configuration);
-  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceManager().getDefaultExecutorService("MinaThreadPool",this)));
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaThreadPool")));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -23,7 +23,7 @@
   acceptorConfig.setThreadModel(ThreadModel.MANUAL);
   configureDataGramCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setDisconnectOnUnbind(true);
-  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceManager().getDefaultExecutorService("MinaThreadPool",this)));
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaThreadPool")));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }

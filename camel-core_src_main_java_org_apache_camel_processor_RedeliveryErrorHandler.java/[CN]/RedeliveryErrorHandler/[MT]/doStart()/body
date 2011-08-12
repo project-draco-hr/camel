@@ -1,6 +1,16 @@
 {
   ServiceHelper.startServices(output,outputAsync,deadLetter);
-  executorService=camelContext.getExecutorServiceManager().getScheduledExecutorService(executorServiceRef,this);
+  if (executorService == null || executorService.isShutdown()) {
+    if (executorServiceRef != null) {
+      executorService=camelContext.getRegistry().lookup(executorServiceRef,ScheduledExecutorService.class);
+      if (executorService == null) {
+        throw new IllegalArgumentException("ExecutorServiceRef " + executorServiceRef + " not found in registry.");
+      }
+    }
+ else {
+      executorService=camelContext.getExecutorServiceManager().newDefaultScheduledThreadPool(this,"ErrorHandlerRedeliveryTask");
+    }
+  }
   redeliveryEnabled=determineIfRedeliveryIsEnabled();
   if (log.isDebugEnabled()) {
     log.debug("Redelivery enabled: {} on error handler: {}",redeliveryEnabled,this);

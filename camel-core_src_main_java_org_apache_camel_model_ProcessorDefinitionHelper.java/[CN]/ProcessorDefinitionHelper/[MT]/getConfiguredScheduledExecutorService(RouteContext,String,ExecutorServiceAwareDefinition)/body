@@ -1,0 +1,19 @@
+{
+  ExecutorServiceManager manager=routeContext.getCamelContext().getExecutorServiceManager();
+  ObjectHelper.notNull(manager,"ExecutorServiceManager",routeContext.getCamelContext());
+  if (definition.getExecutorService() != null) {
+    ExecutorService executorService=definition.getExecutorService();
+    if (executorService instanceof ScheduledExecutorService) {
+      return (ScheduledExecutorService)executorService;
+    }
+    throw new IllegalArgumentException("ExecutorServiceRef " + definition.getExecutorServiceRef() + " is not an ScheduledExecutorService instance");
+  }
+ else   if (definition.getExecutorServiceRef() != null) {
+    ScheduledExecutorService answer=manager.lookupScheduled(definition,name,definition.getExecutorServiceRef());
+    if (answer == null) {
+      throw new NoSuchBeanException(definition.getExecutorServiceRef(),"ScheduledExecutorService");
+    }
+    return answer;
+  }
+  return null;
+}

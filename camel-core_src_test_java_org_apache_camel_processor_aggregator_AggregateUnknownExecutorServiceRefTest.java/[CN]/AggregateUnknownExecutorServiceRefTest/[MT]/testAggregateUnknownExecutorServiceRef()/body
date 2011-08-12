@@ -1,0 +1,16 @@
+{
+  try {
+    context.addRoutes(new RouteBuilder(){
+      @Override public void configure() throws Exception {
+        from("direct:start").aggregate(header("id"),new BodyInAggregatingStrategy()).completionSize(3).executorServiceRef("myUnknownProfile").to("log:foo").to("mock:aggregated");
+      }
+    }
+);
+    context.start();
+    fail("Should have thrown exception");
+  }
+ catch (  FailedToCreateRouteException e) {
+    NoSuchBeanException cause=assertIsInstanceOf(NoSuchBeanException.class,e.getCause());
+    assertEquals("myUnknownProfile",cause.getName());
+  }
+}
