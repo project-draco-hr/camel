@@ -9,7 +9,17 @@
     throw new IllegalArgumentException("ExecutorServiceRef " + definition.getExecutorServiceRef() + " is not an ScheduledExecutorService instance");
   }
  else   if (definition.getExecutorServiceRef() != null) {
-    ScheduledExecutorService answer=manager.lookupScheduled(definition,name,definition.getExecutorServiceRef());
+    ScheduledExecutorService answer=routeContext.getCamelContext().getRegistry().lookup(definition.getExecutorServiceRef(),ScheduledExecutorService.class);
+    if (answer == null) {
+      ThreadPoolProfile profile=manager.getThreadPoolProfile(definition.getExecutorServiceRef());
+      if (profile != null) {
+        Integer poolSize=profile.getPoolSize();
+        if (poolSize == null) {
+          poolSize=manager.getDefaultThreadPoolProfile().getPoolSize();
+        }
+        answer=manager.newScheduledThreadPool(definition,name,poolSize);
+      }
+    }
     if (answer == null) {
       throw new NoSuchBeanException(definition.getExecutorServiceRef(),"ScheduledExecutorService");
     }

@@ -5,7 +5,10 @@
     return definition.getExecutorService();
   }
  else   if (definition.getExecutorServiceRef() != null) {
-    ExecutorService answer=manager.lookup(definition,name,definition.getExecutorServiceRef());
+    ExecutorService answer=routeContext.getCamelContext().getRegistry().lookup(definition.getExecutorServiceRef(),ExecutorService.class);
+    if (answer == null) {
+      answer=manager.newThreadPool(definition,name,definition.getExecutorServiceRef());
+    }
     if (answer == null) {
       throw new NoSuchBeanException(definition.getExecutorServiceRef(),"ExecutorService");
     }
