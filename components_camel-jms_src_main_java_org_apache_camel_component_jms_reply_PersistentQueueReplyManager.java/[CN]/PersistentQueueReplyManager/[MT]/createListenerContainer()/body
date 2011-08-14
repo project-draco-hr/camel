@@ -1,14 +1,29 @@
 {
   DefaultMessageListenerContainer answer;
-  String replyToSelectorName=endpoint.getReplyToDestinationSelectorName();
-  if (replyToSelectorName != null) {
-    replyToSelectorValue="ID:" + new BigInteger(24 * 8,new Random()).toString(16);
-    String fixedMessageSelector=replyToSelectorName + "='" + replyToSelectorValue+ "'";
-    answer=new PersistentQueueMessageListenerContainer(fixedMessageSelector);
+  ReplyToType type=endpoint.getConfiguration().getReplyToType();
+  if (type == null) {
+    type=ReplyToType.Shared;
+  }
+  if (ReplyToType.Shared == type) {
+    String replyToSelectorName=endpoint.getReplyToDestinationSelectorName();
+    if (replyToSelectorName != null) {
+      replyToSelectorValue="ID:" + new BigInteger(24 * 8,new Random()).toString(16);
+      String fixedMessageSelector=replyToSelectorName + "='" + replyToSelectorValue+ "'";
+      answer=new SharedPersistentQueueMessageListenerContainer(fixedMessageSelector);
+      log.debug("Using shared queue: " + endpoint.getReplyTo() + " with fixed message selector ["+ fixedMessageSelector+ "] as reply listener: "+ answer);
+    }
+ else {
+      dynamicMessageSelector=new MessageSelectorCreator();
+      answer=new SharedPersistentQueueMessageListenerContainer(dynamicMessageSelector);
+      log.debug("Using shared queue: " + endpoint.getReplyTo() + " with dynamic message selector as reply listener: "+ answer);
+    }
+  }
+ else   if (ReplyToType.Exclusive == type) {
+    answer=new ExclusivePersistentQueueMessageListenerContainer();
+    log.debug("Using exclusive queue:" + endpoint.getReplyTo() + " as reply listener: "+ answer);
   }
  else {
-    dynamicMessageSelector=new MessageSelectorCreator();
-    answer=new PersistentQueueMessageListenerContainer(dynamicMessageSelector);
+    throw new IllegalArgumentException("ReplyToType " + type + " is not supported for persistent reply queues");
   }
   DestinationResolver resolver=endpoint.getDestinationResolver();
   if (resolver == null) {
