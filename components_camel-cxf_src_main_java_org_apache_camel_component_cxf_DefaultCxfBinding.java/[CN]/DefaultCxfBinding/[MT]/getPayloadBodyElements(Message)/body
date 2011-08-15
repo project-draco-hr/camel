@@ -1,4 +1,15 @@
 {
+  Document soapEnv=(Document)message.getContent(Node.class);
+  Map<String,String> nsMap=new HashMap<String,String>();
+  if (soapEnv != null) {
+    NamedNodeMap attrs=soapEnv.getFirstChild().getAttributes();
+    for (int i=0; i < attrs.getLength(); i++) {
+      Node node=attrs.item(i);
+      if (!node.getNodeValue().equals(Soap11.SOAP_NAMESPACE) && !node.getNodeValue().equals(Soap12.SOAP_NAMESPACE)) {
+        nsMap.put(node.getLocalName(),node.getNodeValue());
+      }
+    }
+  }
   MessageContentsList inObjects=MessageContentsList.getContentsList(message);
   if (inObjects == null) {
     return null;
@@ -35,6 +46,7 @@
         element=getFirstElement((Source)part);
       }
       if (element != null) {
+        addNamespace(element,nsMap);
         answer.add(element);
       }
       if (LOG.isTraceEnabled()) {
@@ -42,6 +54,7 @@
       }
     }
  else     if (part instanceof Element) {
+      addNamespace((Element)part,nsMap);
       answer.add((Element)part);
     }
  else {

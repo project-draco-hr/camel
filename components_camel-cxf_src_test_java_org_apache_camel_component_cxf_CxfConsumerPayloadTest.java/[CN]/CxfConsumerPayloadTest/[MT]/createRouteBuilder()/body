@@ -9,12 +9,16 @@
           String request=exchange.getIn().getBody(String.class);
           XmlConverter converter=new XmlConverter();
           String documentString=ECHO_RESPONSE;
+          if (!inElements.get(0).getNamespaceURI().equals(ELEMENT_NAMESPACE)) {
+            throw new IllegalArgumentException("Wrong element namespace");
+          }
           if (inElements.get(0).getLocalName().equals("echoBoolean")) {
             documentString=ECHO_BOOLEAN_RESPONSE;
-            assertEquals("Get a wrong request",ECHO_BOOLEAN_REQUEST,request);
+            checkRequest("ECHO_BOOLEAN_REQUEST",request);
           }
  else {
-            assertEquals("Get a wrong request",ECHO_REQUEST,request);
+            documentString=ECHO_RESPONSE;
+            checkRequest("ECHO_REQUEST",request);
           }
           Document outDocument=converter.toDOMDocument(documentString);
           outElements.add(outDocument.getDocumentElement());
