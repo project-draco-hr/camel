@@ -1,12 +1,13 @@
 {
+  port=AvailablePortFinder.getNextAvailable(8000);
   errorHandler(transactionErrorHandler(required));
-  from(data).policy(required).to("http://localhost:9091/sender").convertBodyTo(String.class).choice().when().xpath("/reply/status != 'ok'").to("mock:rollback").process(new Processor(){
+  from(data).policy(required).to("http://localhost:" + port + "/sender").convertBodyTo(String.class).choice().when().xpath("/reply/status != 'ok'").to("mock:rollback").process(new Processor(){
     public void process(    Exchange exchange) throws Exception {
       throw new IllegalArgumentException("Rollback please");
     }
   }
 ).otherwise().end();
-  from("jetty:http://localhost:9091/sender").process(new Processor(){
+  from("jetty:http://localhost:" + port + "/sender").process(new Processor(){
     public void process(    Exchange exchange) throws Exception {
       if (counter++ < 2) {
         exchange.getOut().setBody(nok);

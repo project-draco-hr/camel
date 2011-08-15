@@ -1,4 +1,5 @@
 {
+  port=AvailablePortFinder.getNextAvailable(8000);
   errorHandler(transactionErrorHandler(required));
   onException(HttpOperationFailedException.class).onWhen(new Predicate(){
     public boolean matches(    Exchange exchange){
@@ -7,8 +8,8 @@
     }
   }
 ).handled(true).to("mock:404").transform(constant(noAccess));
-  from("activemq:queue:data").policy(required).to("http://localhost:8080/sender").convertBodyTo(String.class).choice().when().xpath("/reply/status != 'ok'").to("mock:rollback").rollback().otherwise().end();
-  from("jetty:http://localhost:8080/sender").process(new Processor(){
+  from("activemq:queue:data").policy(required).to("http://localhost:" + port + "/sender").convertBodyTo(String.class).choice().when().xpath("/reply/status != 'ok'").to("mock:rollback").rollback().otherwise().end();
+  from("jetty:http://localhost:" + port + "/sender").process(new Processor(){
     public void process(    Exchange exchange) throws Exception {
       if (counter++ < 1) {
         exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,500);
