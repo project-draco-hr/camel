@@ -11,8 +11,17 @@
   }
 );
   assertMockEndpointsSatisfied();
-  for (  Exchange exchange : resultEndpoint.getReceivedExchanges()) {
-    assertNotNull(exchange.getProperty(Exchange.SPLIT_INDEX));
-    assertNull(exchange.getProperty(Exchange.SPLIT_SIZE));
+  int size=resultEndpoint.getReceivedExchanges().size();
+  for (int i=0; i < size; i++) {
+    Exchange exchange=resultEndpoint.getReceivedExchanges().get(i);
+    assertEquals(i,exchange.getProperty(Exchange.SPLIT_INDEX));
+    if (i < (size - 1)) {
+      assertEquals(Boolean.FALSE,exchange.getProperty(Exchange.SPLIT_COMPLETE));
+      assertNull(exchange.getProperty(Exchange.SPLIT_SIZE));
+    }
+ else {
+      assertEquals(Boolean.TRUE,exchange.getProperty(Exchange.SPLIT_COMPLETE));
+      assertEquals(size,exchange.getProperty(Exchange.SPLIT_SIZE));
+    }
   }
 }
