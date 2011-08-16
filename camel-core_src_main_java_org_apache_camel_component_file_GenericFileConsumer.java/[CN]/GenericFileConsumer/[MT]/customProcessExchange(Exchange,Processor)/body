@@ -1,0 +1,16 @@
+{
+  GenericFile<T> file=getExchangeFileProperty(exchange);
+  log.trace("Custom processing file: {}",file);
+  String absoluteFileName=file.getAbsoluteFilePath();
+  try {
+    processor.process(exchange);
+  }
+ catch (  Exception e) {
+    if (log.isDebugEnabled()) {
+      log.debug(endpoint + " error custom processing: " + file+ " due to: "+ e.getMessage()+ ". This exception will be ignored.",e);
+    }
+  }
+ finally {
+    endpoint.getInProgressRepository().remove(absoluteFileName);
+  }
+}

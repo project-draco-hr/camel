@@ -1,0 +1,28 @@
+{
+  final List<Exchange> answer=new ArrayList<Exchange>();
+  GenericFileConsumer consumer=null;
+  try {
+    consumer=createConsumer(null);
+    consumer.setCustomProcessor(new Processor(){
+      @Override public void process(      Exchange exchange) throws Exception {
+        answer.add(exchange);
+      }
+    }
+);
+    consumer.setStartScheduler(false);
+    ServiceHelper.startService(consumer);
+    consumer.poll();
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+ finally {
+    try {
+      ServiceHelper.stopService(consumer);
+    }
+ catch (    Exception e) {
+      log.debug("Error stopping consumer used for browsing exchanges. This exception will be ignored",e);
+    }
+  }
+  return answer;
+}
