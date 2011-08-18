@@ -2,14 +2,9 @@
   String name=getThreadName() != null ? getThreadName() : "Threads";
   executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,name,this);
   if (executorService == null) {
-    ThreadPoolProfile profile=routeContext.getCamelContext().getExecutorServiceManager().getDefaultThreadPoolProfile();
-    int core=getPoolSize() != null ? getPoolSize() : profile.getPoolSize();
-    int max=getMaxPoolSize() != null ? getMaxPoolSize() : profile.getMaxPoolSize();
-    long keepAlive=getKeepAliveTime() != null ? getKeepAliveTime() : profile.getKeepAliveTime();
-    int maxQueue=getMaxQueueSize() != null ? getMaxQueueSize() : profile.getMaxQueueSize();
-    TimeUnit tu=getTimeUnit() != null ? getTimeUnit() : profile.getTimeUnit();
-    ThreadPoolRejectedPolicy rejected=getRejectedPolicy() != null ? getRejectedPolicy() : profile.getRejectedPolicy();
-    executorService=new ThreadPoolBuilder(routeContext.getCamelContext()).poolSize(core).maxPoolSize(max).keepAliveTime(keepAlive,tu).maxQueueSize(maxQueue).rejectedPolicy(rejected).build(this,name);
+    ExecutorServiceManager manager=routeContext.getCamelContext().getExecutorServiceManager();
+    ThreadPoolProfile profile=new ThreadPoolProfileBuilder(name).poolSize(getPoolSize()).maxPoolSize(getMaxPoolSize()).keepAliveTime(getKeepAliveTime(),getTimeUnit()).maxQueueSize(getMaxQueueSize()).rejectedPolicy(getRejectedPolicy()).build();
+    executorService=manager.newThreadPool(this,name,profile);
   }
   ThreadsProcessor thread=new ThreadsProcessor(routeContext.getCamelContext(),executorService);
   if (getCallerRunsWhenRejected() == null) {

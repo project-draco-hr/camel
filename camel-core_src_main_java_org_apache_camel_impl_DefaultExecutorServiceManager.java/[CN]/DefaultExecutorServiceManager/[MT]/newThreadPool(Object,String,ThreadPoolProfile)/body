@@ -1,14 +1,12 @@
 {
   ObjectHelper.notNull(profile,"ThreadPoolProfile");
   ThreadPoolProfile defaultProfile=getDefaultThreadPoolProfile();
-  Integer poolSize=profile.getPoolSize() != null ? profile.getPoolSize() : defaultProfile.getPoolSize();
-  Integer maxPoolSize=profile.getMaxPoolSize() != null ? profile.getMaxPoolSize() : defaultProfile.getMaxPoolSize();
-  Long keepAliveTime=profile.getKeepAliveTime() != null ? profile.getKeepAliveTime() : defaultProfile.getKeepAliveTime();
-  TimeUnit timeUnit=profile.getTimeUnit() != null ? profile.getTimeUnit() : defaultProfile.getTimeUnit();
-  Integer maxQueueSize=profile.getMaxQueueSize() != null ? profile.getMaxQueueSize() : defaultProfile.getMaxQueueSize();
-  RejectedExecutionHandler handler=profile.getRejectedExecutionHandler() != null ? profile.getRejectedExecutionHandler() : defaultProfile.getRejectedExecutionHandler();
+  profile.addDefaults(defaultProfile);
   ThreadFactory threadFactory=createThreadFactory(name,true);
-  ExecutorService executorService=threadPoolFactory.newThreadPool(poolSize,maxPoolSize,keepAliveTime,timeUnit,maxQueueSize,handler,threadFactory);
+  ExecutorService executorService=threadPoolFactory.newThreadPool(profile,threadFactory);
   onThreadPoolCreated(executorService,source,profile.getId());
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Created new ThreadPool for source: {} with name: {}. -> {}",new Object[]{source,name,executorService});
+  }
   return executorService;
 }
