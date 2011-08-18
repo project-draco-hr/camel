@@ -1,0 +1,14 @@
+{
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintTcclTestBundle)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintTcclTestBundle)",10000);
+  assertBundleDelegatingClassLoader(ctx.getApplicationContextClassLoader());
+  ProducerTemplate template=ctx.createProducerTemplate();
+  MockEndpoint mock=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(1);
+  template.sendBody("direct:start","<hello>world!</hello>");
+  mock.assertIsSatisfied();
+  ClassLoader tccl=mock.getExchanges().get(0).getProperty(ThreadContextClassLoaderBean.THREAD_CONTEXT_CLASS_LOADER,ClassLoader.class);
+  assertNotNull("Exchange property containing TCCL should have been set",tccl);
+  assertBundleDelegatingClassLoader(tccl);
+  template.stop();
+}
