@@ -2,11 +2,14 @@
   super.doStart();
   String bucketName=getConfiguration().getBucketName();
   LOG.trace("Quering whether bucket [{}] already exists...",bucketName);
-  List<Bucket> buckets=getS3Client().listBuckets();
-  for (  Bucket bucket : buckets) {
-    if (bucketName.equals(bucket.getName())) {
-      LOG.trace("Bucket [{}] already exist",bucketName);
-      return;
+  try {
+    getS3Client().listObjects(new ListObjectsRequest(bucketName,null,null,null,0));
+    LOG.trace("Bucket [{}] already exists",bucketName);
+    return;
+  }
+ catch (  AmazonServiceException ase) {
+    if (ase.getStatusCode() != 404) {
+      throw ase;
     }
   }
   LOG.trace("Bucket [{}] doesn't exist yet",bucketName);
