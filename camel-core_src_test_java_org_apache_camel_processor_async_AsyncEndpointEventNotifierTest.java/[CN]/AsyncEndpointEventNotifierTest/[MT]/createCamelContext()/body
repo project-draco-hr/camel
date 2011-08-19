@@ -1,0 +1,27 @@
+{
+  DefaultCamelContext context=new DefaultCamelContext(createRegistry());
+  context.getManagementStrategy().addEventNotifier(new EventNotifierSupport(){
+    public void notify(    EventObject event) throws Exception {
+      try {
+        ExchangeSentEvent sent=(ExchangeSentEvent)event;
+        time.set(sent.getTimeTaken());
+      }
+  finally {
+        latch.countDown();
+      }
+    }
+    public boolean isEnabled(    EventObject event){
+      if (event instanceof ExchangeSentEvent) {
+        ExchangeSentEvent sent=(ExchangeSentEvent)event;
+        return sent.getEndpoint().getEndpointUri().startsWith("async");
+      }
+      return false;
+    }
+    @Override protected void doStart() throws Exception {
+    }
+    @Override protected void doStop() throws Exception {
+    }
+  }
+);
+  return context;
+}
