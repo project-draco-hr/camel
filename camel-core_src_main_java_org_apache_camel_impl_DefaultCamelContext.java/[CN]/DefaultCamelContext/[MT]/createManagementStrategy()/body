@@ -1,28 +1,3 @@
 {
-  ManagementStrategy answer;
-  if (disableJMX || Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-    log.info("JMX is disabled. Using DefaultManagementStrategy.");
-    answer=new DefaultManagementStrategy();
-  }
- else {
-    try {
-      log.info("JMX enabled. Using ManagedManagementStrategy.");
-      answer=new ManagedManagementStrategy(new DefaultManagementAgent(this));
-      startServices(answer);
-      lifecycleStrategies.add(0,new DefaultManagementLifecycleStrategy(this));
-    }
- catch (    Exception e) {
-      answer=null;
-      log.warn("Cannot create JMX lifecycle strategy. Fallback to using DefaultManagementStrategy (non JMX).",e);
-    }
-  }
-  if (answer == null) {
-    log.warn("Cannot use JMX. Fallback to using DefaultManagementStrategy (non JMX).");
-    answer=new DefaultManagementStrategy();
-  }
-  if (answer instanceof CamelContextAware) {
-    CamelContextAware aware=(CamelContextAware)answer;
-    aware.setCamelContext(this);
-  }
-  return answer;
+  return new ManagementStrategyFactory().create(this,disableJMX || Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED));
 }
