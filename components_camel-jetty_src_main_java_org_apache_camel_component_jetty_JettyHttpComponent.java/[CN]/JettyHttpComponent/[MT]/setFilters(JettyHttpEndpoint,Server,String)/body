@@ -1,0 +1,16 @@
+{
+  ServletContextHandler context=(ServletContextHandler)server.getChildHandlerByClass(ServletContextHandler.class);
+  List<Filter> filters=endpoint.getFilters();
+  for (  Filter filter : filters) {
+    FilterHolder filterHolder=new FilterHolder();
+    filterHolder.setFilter(new CamelFilterWrapper(filter));
+    String pathSpec=endpoint.getPath();
+    if (pathSpec == null || "".equals(pathSpec)) {
+      pathSpec="/";
+    }
+    if (endpoint.isMatchOnUriPrefix()) {
+      pathSpec=pathSpec.endsWith("/") ? pathSpec + "*" : pathSpec + "/*";
+    }
+    context.addFilter(filterHolder,pathSpec,0);
+  }
+}
