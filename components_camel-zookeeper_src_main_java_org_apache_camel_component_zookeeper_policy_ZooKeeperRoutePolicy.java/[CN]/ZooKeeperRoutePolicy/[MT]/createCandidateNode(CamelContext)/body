@@ -1,0 +1,31 @@
+{
+  this.template=camelContext.createProducerTemplate();
+  if (log.isInfoEnabled()) {
+    log.info(format("Initializing ZookeeperRoutePolicy with uri '%s'",uri));
+  }
+  ZooKeeperEndpoint zep=(ZooKeeperEndpoint)camelContext.getEndpoint(uri);
+  zep.getConfiguration().setCreate(true);
+  String fullpath=createFullPathToCandidate(zep);
+  Exchange e=zep.createExchange();
+  e.setPattern(ExchangePattern.InOut);
+  e.getIn().setHeader(ZooKeeperMessage.ZOOKEEPER_NODE,fullpath);
+  e.getIn().setHeader(ZooKeeperMessage.ZOOKEEPER_CREATE_MODE,CreateMode.EPHEMERAL_SEQUENTIAL);
+  template.send(zep,e);
+  if (e.isFailed()) {
+    log.error("Error setting up election node " + fullpath,e.getException());
+  }
+ else {
+    if (log.isInfoEnabled()) {
+      log.info(format("Candidate node '%s' has been created",fullpath));
+    }
+    try {
+      if (zep != null) {
+        camelContext.addRoutes(new ElectoralMonitorRoute(zep));
+      }
+    }
+ catch (    Exception ex) {
+      log.error("Error configuring ZookeeperRoutePolicy",ex);
+    }
+  }
+  return zep;
+}

@@ -1,0 +1,20 @@
+{
+  from(zep).sort(body(),comparator).process(new Processor(){
+    @SuppressWarnings("unchecked") public void process(    Exchange e) throws Exception {
+      List<String> candidates=(List<String>)ExchangeHelper.getMandatoryInBody(e);
+      int location=Math.abs(Collections.binarySearch(candidates,candidateName));
+      if (isOurCandidateAtLocationInCandidatesList(candidates,location)) {
+        shouldProcessExchanges.set(location <= enabledCount);
+        if (log.isDebugEnabled()) {
+          log.debug(format("This node is number '%d' on the candidate list, route is configured for the top '%d'. Exchange processing will be %s",location,enabledCount,shouldProcessExchanges.get() ? "enabled" : "disabled"));
+        }
+        startAllStoppedConsumers();
+      }
+      electionComplete.countDown();
+    }
+    private boolean isOurCandidateAtLocationInCandidatesList(    List<String> candidates,    int location){
+      return location <= candidates.size() && candidates.get(location - 1).startsWith(candidateName);
+    }
+  }
+);
+}

@@ -1,0 +1,21 @@
+{
+  if (zookeeper != null) {
+    return zookeeper;
+  }
+  if (configuration.getConnectString() == null) {
+    throw new RuntimeCamelException("Cannot create ZooKeeper connection as connection string is null. Have servers been configured?");
+  }
+  try {
+    if (configuration.getSessionId() > 0 && configuration.getSessionPassword() != null) {
+      zookeeper=new ZooKeeper(configuration.getConnectString(),configuration.getTimeout(),this,configuration.getSessionId(),configuration.getSessionPassword());
+    }
+ else {
+      zookeeper=new ZooKeeper(configuration.getConnectString(),configuration.getTimeout(),this);
+    }
+  }
+ catch (  Exception e) {
+    ObjectHelper.wrapRuntimeCamelException(e);
+  }
+  awaitConnection();
+  return zookeeper;
+}

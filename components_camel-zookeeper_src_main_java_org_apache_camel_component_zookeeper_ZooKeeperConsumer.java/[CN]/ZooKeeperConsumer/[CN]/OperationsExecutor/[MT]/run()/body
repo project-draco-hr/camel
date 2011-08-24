@@ -1,0 +1,35 @@
+{
+  while (isRunAllowed()) {
+    try {
+      current=operations.take();
+      if (log.isTraceEnabled()) {
+        log.trace(format("Processing '%s' operation",current.getClass().getSimpleName()));
+      }
+    }
+ catch (    InterruptedException e) {
+      continue;
+    }
+    String node=current.getNode();
+    try {
+      OperationResult result=current.get();
+      if (result != null && current.shouldProduceExchange()) {
+        getProcessor().process(createExchange(node,result));
+      }
+    }
+ catch (    Exception e) {
+      handleException(e);
+      backoffAndThenRestart();
+    }
+ finally {
+      if (configuration.shouldRepeat()) {
+        try {
+          operations.offer(current.createCopy());
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+          backoffAndThenRestart();
+        }
+      }
+    }
+  }
+}

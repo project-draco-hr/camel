@@ -1,0 +1,19 @@
+{
+  CreateOperation create=new CreateOperation(ctx.connection,ctx.node);
+  create.setPermissions(getAclListFromMessage(ctx.exchange.getIn()));
+  CreateMode mode=null;
+  String modeString=configuration.getCreateMode();
+  if (modeString != null) {
+    try {
+      mode=getCreateModeFromString(modeString,CreateMode.EPHEMERAL);
+    }
+ catch (    Exception e) {
+    }
+  }
+ else {
+    mode=getCreateMode(ctx.exchange.getIn(),CreateMode.EPHEMERAL);
+  }
+  create.setCreateMode(mode == null ? CreateMode.EPHEMERAL : mode);
+  create.setData(ctx.payload);
+  return create.get();
+}

@@ -1,0 +1,23 @@
+{
+  this.event=event;
+  EventType received=event.getType();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug(format("Recieved event of type %s for node '%s'",received,event.getPath()));
+  }
+  for (  EventType watched : awaitedTypes) {
+    if (watched.equals(received)) {
+      result=getResult();
+      waitForAnyWatchedType.countDown();
+    }
+  }
+  if (LOG.isTraceEnabled() && waitForAnyWatchedType.getCount() > 0) {
+    StringBuilder b=new StringBuilder();
+    for (    EventType type : awaitedTypes) {
+      b.append(type).append(", ");
+    }
+    if (b.length() > 0) {
+      b.setLength(b.length() - 2);
+    }
+    LOG.trace(String.format("Recieved event of type %s did not match any watched types %s",received,awaitedTypes));
+  }
+}
