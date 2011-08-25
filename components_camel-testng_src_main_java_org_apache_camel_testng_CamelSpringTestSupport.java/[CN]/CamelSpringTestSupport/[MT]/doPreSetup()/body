@@ -1,0 +1,22 @@
+{
+  if (!"true".equalsIgnoreCase(System.getProperty("skipStartingCamelContext"))) {
+synchronized (lock) {
+      SpringCamelContext.setNoStart(true);
+      if (isCreateCamelContextPerClass()) {
+        applicationContext=threadAppContext.get();
+        if (applicationContext == null) {
+          applicationContext=createApplicationContext();
+          threadAppContext.set(applicationContext);
+        }
+      }
+ else {
+        applicationContext=createApplicationContext();
+      }
+      assertNotNull(applicationContext,"Should have created a valid spring context");
+      SpringCamelContext.setNoStart(false);
+    }
+  }
+ else {
+    log.info("Skipping starting CamelContext as system property skipStartingCamelContext is set to be true.");
+  }
+}
