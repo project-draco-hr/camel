@@ -1,0 +1,14 @@
+{
+  getInstalledBundle("CamelBlueprintTestBundle1").start();
+  getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintTestBundle1)",10000);
+  CamelContext camelContext=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintTestBundle1)",10000);
+  deleteDirectory("target/data");
+  MockEndpoint mock=camelContext.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedBodiesReceived("Hello World");
+  mock.expectedFileExists("target/data/.camel/hello.txt");
+  ProducerTemplate producerTemplate=camelContext.createProducerTemplate();
+  producerTemplate.start();
+  producerTemplate.sendBodyAndHeader("file:target/data","Hello World",Exchange.FILE_NAME,"hello.txt");
+  producerTemplate.stop();
+  mock.assertIsSatisfied();
+}
