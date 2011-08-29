@@ -1,25 +1,11 @@
 {
   LOG.trace("existsFile({})",name);
-  String directory=FileUtil.onlyPath(name);
-  if (directory == null) {
-    directory=".";
-  }
-  String onlyName=FileUtil.stripPath(name);
   try {
-    Vector files=channel.ls(directory);
+    Vector files=channel.ls(name);
     if (files == null) {
       return false;
     }
-    for (    Object file : files) {
-      ChannelSftp.LsEntry entry=(ChannelSftp.LsEntry)file;
-      String existing=entry.getFilename();
-      LOG.trace("Existing file: {}, target file: {}",existing,name);
-      existing=FileUtil.stripPath(existing);
-      if (existing != null && existing.equals(onlyName)) {
-        return true;
-      }
-    }
-    return false;
+    return (files.size() >= 1);
   }
  catch (  SftpException e) {
     if (ChannelSftp.SSH_FX_NO_SUCH_FILE == e.id) {
