@@ -1,11 +1,28 @@
 {
   LOG.trace("existsFile({})",name);
+  if (endpoint.isFastExist()) {
+    return fastExistsFile(name);
+  }
+  String directory=FileUtil.onlyPath(name);
+  if (directory == null) {
+    directory=".";
+  }
+  String onlyName=FileUtil.stripPath(name);
   try {
-    Vector files=channel.ls(name);
+    Vector files=channel.ls(directory);
     if (files == null) {
       return false;
     }
-    return (files.size() >= 1);
+    for (    Object file : files) {
+      ChannelSftp.LsEntry entry=(ChannelSftp.LsEntry)file;
+      String existing=entry.getFilename();
+      LOG.trace("Existing file: {}, target file: {}",existing,name);
+      existing=FileUtil.stripPath(existing);
+      if (existing != null && existing.equals(onlyName)) {
+        return true;
+      }
+    }
+    return false;
   }
  catch (  SftpException e) {
     if (ChannelSftp.SSH_FX_NO_SUCH_FILE == e.id) {
