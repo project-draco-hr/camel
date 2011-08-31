@@ -1,0 +1,31 @@
+{
+  String split[]=hp.split(":");
+  String host=split[0];
+  int port;
+  try {
+    port=Integer.parseInt(split[1]);
+  }
+ catch (  RuntimeException e) {
+    throw new RuntimeException("Problem parsing " + hp + e.toString());
+  }
+  Socket sock=new Socket(host,port);
+  BufferedReader reader=null;
+  try {
+    OutputStream outstream=sock.getOutputStream();
+    outstream.write(cmd.getBytes());
+    outstream.flush();
+    reader=new BufferedReader(new InputStreamReader(sock.getInputStream()));
+    StringBuffer sb=new StringBuffer();
+    String line;
+    while ((line=reader.readLine()) != null) {
+      sb.append(line + "\n");
+    }
+    return sb.toString();
+  }
+  finally {
+    sock.close();
+    if (reader != null) {
+      reader.close();
+    }
+  }
+}
