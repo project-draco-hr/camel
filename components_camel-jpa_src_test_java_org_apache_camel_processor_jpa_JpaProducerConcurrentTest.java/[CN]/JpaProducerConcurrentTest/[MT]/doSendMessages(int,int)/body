@@ -2,10 +2,10 @@
   getMockEndpoint("mock:result").expectedMessageCount(files);
   getMockEndpoint("mock:result").assertNoDuplicates(body());
   ExecutorService executor=Executors.newFixedThreadPool(poolSize);
-  Map<Integer,Future> responses=new ConcurrentHashMap<Integer,Future>();
+  Map<Integer,Future<Object>> responses=new ConcurrentHashMap<Integer,Future<Object>>();
   for (int i=0; i < files; i++) {
     final int index=i;
-    Future out=executor.submit(new Callable<Object>(){
+    Future<Object> out=executor.submit(new Callable<Object>(){
       public Object call() throws Exception {
         template.sendBody("direct:start",new SendEmail("user" + index + "@somewhere.org"));
         return null;
@@ -16,7 +16,7 @@
   }
   assertMockEndpointsSatisfied();
   assertEquals(files,responses.size());
-  for (  Future future : responses.values()) {
+  for (  Future<Object> future : responses.values()) {
     future.get();
   }
   assertEntityInDB(files);

@@ -1,5 +1,5 @@
 {
-  transactionStrategy.execute(new JpaCallback(){
+  transactionStrategy.execute(new JpaCallback<Object>(){
     public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
       entityManager.createQuery("delete from " + entityName).executeUpdate();
       MultiSteps dummy=new MultiSteps("cheese");
@@ -9,7 +9,7 @@
     }
   }
 );
-  List results=jpaTemplate.find(queryText);
+  List<?> results=jpaTemplate.find(queryText);
   assertEquals("Should have no results: " + results,0,results.size());
   template.send(endpoint,new Processor(){
     public void process(    Exchange exchange){
@@ -34,12 +34,14 @@
   assertTrue("Did not receive the message!",received);
   assertReceivedResult(receivedExchange);
   Thread.sleep(1000);
-  transactionStrategy.execute(new JpaCallback(){
-    @SuppressWarnings("unchecked") public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
-      List<MultiSteps> rows=entityManager.createQuery("select x from MultiSteps x").getResultList();
+  transactionStrategy.execute(new JpaCallback<Object>(){
+    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+      List<?> rows=entityManager.createQuery("select x from MultiSteps x").getResultList();
       assertEquals("Number of entities: " + rows,2,rows.size());
       int counter=1;
-      for (      MultiSteps row : rows) {
+      for (      Object rowObj : rows) {
+        assertTrue("Rows are not instances of MultiSteps",rowObj instanceof MultiSteps);
+        final MultiSteps row=(MultiSteps)rowObj;
         LOG.info("entity: " + counter++ + " = "+ row);
         if (row.getAddress().equals("foo@bar.com")) {
           LOG.info("Found updated row: " + row);
