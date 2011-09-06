@@ -1,6 +1,10 @@
 {
   ObjectHelper.notNull(getCamelContext(),"camelContext");
-  URI u=new URI(UnsafeUriCharactersEncoder.encode(uri));
+  String encodedUri=UnsafeUriCharactersEncoder.encode(uri);
+  if (!encodedUri.equals(uri)) {
+    LOG.warn("Supplied URI '{}' contains unsafe characters, please check encoding",uri);
+  }
+  URI u=new URI(encodedUri);
   String path=u.getSchemeSpecificPart();
   if (path.startsWith("//")) {
     path=path.substring(2);
@@ -24,9 +28,9 @@
       setProperties(endpoint,parameters);
     }
     if (!endpoint.isLenientProperties()) {
-      validateParameters(uri,parameters,null);
+      validateParameters(encodedUri,parameters,null);
     }
   }
-  afterConfiguration(uri,path,endpoint,parameters);
+  afterConfiguration(encodedUri,path,endpoint,parameters);
   return endpoint;
 }
