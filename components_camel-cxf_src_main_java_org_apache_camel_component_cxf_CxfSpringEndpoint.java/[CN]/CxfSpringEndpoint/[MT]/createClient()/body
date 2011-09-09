@@ -13,7 +13,7 @@
     cls=getSEIClass();
   }
   if (cls != null) {
-    ClientProxyFactoryBean factoryBean=createClientFactoryBean(cls);
+    ClientFactoryBean factoryBean=createClientFactoryBean(cls);
     setupClientFactoryBean(factoryBean,cls);
     QName serviceQName=null;
     try {
@@ -27,11 +27,13 @@
     if (factoryBean.getEndpointName() == null && getEndpointLocalName() != null) {
       factoryBean.setEndpointName(new QName(getEndpointNamespace(),getEndpointLocalName()));
     }
-    return ((ClientProxy)Proxy.getInvocationHandler(factoryBean.create())).getClient();
+    Client client=factoryBean.create();
+    setupHandlers(factoryBean,client);
+    return client;
   }
  else {
     ClientFactoryBean factoryBean=createClientFactoryBean();
-    setupClientFactoryBean(factoryBean);
+    setupClientFactoryBean(factoryBean,null);
     QName serviceQName=null;
     try {
       serviceQName=factoryBean.getServiceName();
