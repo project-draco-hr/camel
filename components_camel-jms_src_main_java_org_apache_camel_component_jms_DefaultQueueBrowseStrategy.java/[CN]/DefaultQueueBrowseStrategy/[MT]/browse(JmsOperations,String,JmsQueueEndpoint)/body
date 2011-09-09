@@ -1,9 +1,13 @@
 {
   return template.browse(queue,new BrowserCallback<List<Exchange>>(){
     public List<Exchange> doInJms(    Session session,    QueueBrowser browser) throws JMSException {
+      int size=endpoint.getMaximumBrowseSize();
+      if (size <= 0) {
+        size=Integer.MAX_VALUE;
+      }
       List<Exchange> answer=new ArrayList<Exchange>();
       Enumeration iter=browser.getEnumeration();
-      while (iter.hasMoreElements()) {
+      for (int i=0; i < size && iter.hasMoreElements(); i++) {
         Message message=(Message)iter.nextElement();
         Exchange exchange=endpoint.createExchange(message);
         answer.add(exchange);
