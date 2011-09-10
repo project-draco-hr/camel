@@ -5,7 +5,14 @@
       if (num != null) {
         long val=num.longValue();
         val--;
-        return exchange.getContext().getTypeConverter().convertTo(type,val);
+        Object left=leftExp.evaluate(exchange,Object.class);
+        try {
+          left=exchange.getContext().getTypeConverter().mandatoryConvertTo(left.getClass(),exchange,val);
+        }
+ catch (        NoTypeConversionAvailableException e) {
+          throw ObjectHelper.wrapRuntimeCamelException(e);
+        }
+        return exchange.getContext().getTypeConverter().convertTo(type,left);
       }
       Exception cause=new CamelExchangeException("Cannot evaluate " + leftExp + " as a number",exchange);
       throw ObjectHelper.wrapRuntimeCamelException(cause);
