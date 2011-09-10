@@ -1,0 +1,53 @@
+{
+  if (token.getType().isFunctionStart()) {
+    startFunction.set(true);
+    return new SimpleFunctionStart(token);
+  }
+ else   if (token.getType().isFunctionEnd()) {
+    startFunction.set(false);
+    return new SimpleFunctionEnd(token);
+  }
+  if (startFunction.get()) {
+    return null;
+  }
+  if (token.getType().isSingleQuote()) {
+    SimpleNode answer;
+    boolean start=startSingle.get();
+    if (!start) {
+      answer=new SingleQuoteStart(token);
+    }
+ else {
+      answer=new SingleQuoteEnd(token);
+    }
+    startSingle.set(!start);
+    return answer;
+  }
+ else   if (token.getType().isDoubleQuote()) {
+    SimpleNode answer;
+    boolean start=startDouble.get();
+    if (!start) {
+      answer=new DoubleQuoteStart(token);
+    }
+ else {
+      answer=new DoubleQuoteEnd(token);
+    }
+    startDouble.set(!start);
+    return answer;
+  }
+  if (startSingle.get() || startDouble.get()) {
+    return null;
+  }
+  if (token.getType().isUnary()) {
+    return new UnaryExpression(token);
+  }
+ else   if (token.getType().isBinary()) {
+    return new BinaryExpression(token);
+  }
+ else   if (token.getType().isLogical()) {
+    return new LogicalExpression(token);
+  }
+ else   if (token.getType().isNullValue()) {
+    return new NullExpression(token);
+  }
+  return null;
+}

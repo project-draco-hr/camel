@@ -1,0 +1,43 @@
+{
+  if (accept(TokenType.binaryOperator)) {
+    BinaryOperatorType operatorType=BinaryOperatorType.asOperator(token.getText());
+    nextToken();
+    expectAndAcceptMore(TokenType.whiteSpace);
+    BinaryOperatorType.ParameterType[] types=BinaryOperatorType.supportedParameterTypes(operatorType);
+    boolean literalWithFunctionsSupported=false;
+    boolean literalSupported=false;
+    boolean functionSupported=false;
+    boolean numericSupported=false;
+    boolean booleanSupported=false;
+    boolean nullSupported=false;
+    if (types == null || types.length == 0) {
+      literalWithFunctionsSupported=true;
+      literalSupported=false;
+      functionSupported=true;
+      numericSupported=true;
+      booleanSupported=true;
+      nullSupported=true;
+    }
+ else {
+      for (      BinaryOperatorType.ParameterType parameterType : types) {
+        literalSupported|=parameterType.isLiteralSupported();
+        literalWithFunctionsSupported|=parameterType.isLiteralWithFunctionSupport();
+        functionSupported|=parameterType.isFunctionSupport();
+        nullSupported|=parameterType.isNumericValueSupported();
+        booleanSupported|=parameterType.isBooleanValueSupported();
+        nullSupported|=parameterType.isNullValueSupported();
+      }
+    }
+    if ((literalWithFunctionsSupported && singleQuotedLiteralWithFunctionsText()) || (literalWithFunctionsSupported && doubleQuotedLiteralWithFunctionsText()) || (literalSupported && singleQuotedLiteralText())|| (literalSupported && doubleQuotedLiteralText())|| (functionSupported && functionText())|| (numericSupported && numericValue())|| (booleanSupported && booleanValue())|| (nullSupported && nullValue())) {
+      nextToken();
+      if (!token.getType().isEol()) {
+        expect(TokenType.whiteSpace);
+      }
+    }
+ else {
+      throw new SimpleParserException("Binary operator " + operatorType + " does not support token "+ token,token.getIndex());
+    }
+    return true;
+  }
+  return false;
+}

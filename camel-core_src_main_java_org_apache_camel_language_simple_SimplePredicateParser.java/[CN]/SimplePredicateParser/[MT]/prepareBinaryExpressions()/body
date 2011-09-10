@@ -1,0 +1,37 @@
+{
+  Stack<SimpleNode> stack=new Stack<SimpleNode>();
+  SimpleNode left=null;
+  for (int i=0; i < nodes.size(); i++) {
+    if (left == null) {
+      left=i > 0 ? nodes.get(i - 1) : null;
+    }
+    SimpleNode token=nodes.get(i);
+    SimpleNode right=i < nodes.size() - 1 ? nodes.get(i + 1) : null;
+    if (token instanceof BinaryExpression) {
+      BinaryExpression binary=(BinaryExpression)token;
+      String operator=binary.getOperator().toString();
+      if (left == null) {
+        throw new SimpleParserException("Binary operator " + operator + " has no left hand side token",token.getToken().getIndex());
+      }
+      if (!binary.acceptLeftNode(left)) {
+        throw new SimpleParserException("Binary operator " + operator + " does not support left hand side token "+ left.getToken(),token.getToken().getIndex());
+      }
+      if (right == null) {
+        throw new SimpleParserException("Binary operator " + operator + " has no right hand side token",token.getToken().getIndex());
+      }
+      if (!binary.acceptRightNode(right)) {
+        throw new SimpleParserException("Binary operator " + operator + " does not support right hand side token "+ right.getToken(),token.getToken().getIndex());
+      }
+      stack.pop();
+      stack.push(token);
+      i++;
+      left=token;
+    }
+ else {
+      left=null;
+      stack.push(token);
+    }
+  }
+  nodes.clear();
+  nodes.addAll(stack);
+}

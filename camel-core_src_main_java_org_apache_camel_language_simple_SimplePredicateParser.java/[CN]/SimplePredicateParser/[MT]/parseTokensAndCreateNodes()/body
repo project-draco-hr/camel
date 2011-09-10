@@ -1,0 +1,51 @@
+{
+  SimpleNode lastSingle=null;
+  SimpleNode lastDouble=null;
+  SimpleNode lastFunction=null;
+  AtomicBoolean startSingle=new AtomicBoolean(false);
+  AtomicBoolean startDouble=new AtomicBoolean(false);
+  AtomicBoolean startFunction=new AtomicBoolean(false);
+  LiteralNode imageToken=null;
+  for (  SimpleToken token : tokens) {
+    if (token.getType().isEol()) {
+      break;
+    }
+    SimpleNode node=createNode(token,startSingle,startDouble,startFunction);
+    if (node != null) {
+      if (node instanceof SingleQuoteStart) {
+        lastSingle=node;
+      }
+ else       if (node instanceof DoubleQuoteStart) {
+        lastDouble=node;
+      }
+ else       if (node instanceof SimpleFunctionStart) {
+        lastFunction=node;
+      }
+      if (imageToken != null) {
+        nodes.add(imageToken);
+        imageToken=null;
+      }
+      nodes.add(node);
+      continue;
+    }
+    if (imageToken == null) {
+      imageToken=new LiteralExpression(token);
+    }
+    imageToken.addText(token.getText());
+  }
+  if (imageToken != null) {
+    nodes.add(imageToken);
+  }
+  if (startSingle.get()) {
+    int index=lastSingle != null ? lastSingle.getToken().getIndex() : 0;
+    throw new SimpleParserException("single quote has no ending quote",index);
+  }
+  if (startDouble.get()) {
+    int index=lastDouble != null ? lastDouble.getToken().getIndex() : 0;
+    throw new SimpleParserException("double quote has no ending quote",index);
+  }
+  if (startFunction.get()) {
+    int index=lastFunction != null ? lastFunction.getToken().getIndex() : 0;
+    throw new SimpleParserException("function has no ending token",index);
+  }
+}

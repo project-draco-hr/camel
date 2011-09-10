@@ -1,0 +1,36 @@
+{
+  boolean escapedAllowed=acceptType(TokenType.escapedValue,filters);
+  if (escapedAllowed) {
+    if (expression.charAt(index) == '\\' && index < expression.length() - 1) {
+      String text="" + expression.charAt(index + 1);
+      return new SimpleToken(new SimpleTokenType(TokenType.escapedValue,text),index,2);
+    }
+  }
+  boolean numericAllowed=acceptType(TokenType.numericValue,filters);
+  if (numericAllowed) {
+    StringBuilder sb=new StringBuilder();
+    boolean digit=true;
+    while (digit && index < expression.length()) {
+      digit=Character.isDigit(expression.charAt(index));
+      if (digit) {
+        char ch=expression.charAt(index);
+        sb.append(ch);
+        index++;
+      }
+    }
+    if (sb.length() > 0) {
+      return new SimpleToken(new SimpleTokenType(TokenType.numericValue,sb.toString()),index);
+    }
+  }
+  String text=expression.substring(index);
+  for (  SimpleTokenType token : KNOWN_TOKENS) {
+    if (acceptType(token.getType(),filters)) {
+      if (text.startsWith(token.getValue())) {
+        return new SimpleToken(token,index);
+      }
+    }
+  }
+  char ch=expression.charAt(index);
+  SimpleToken token=new SimpleToken(new SimpleTokenType(TokenType.character,"" + ch),index);
+  return token;
+}

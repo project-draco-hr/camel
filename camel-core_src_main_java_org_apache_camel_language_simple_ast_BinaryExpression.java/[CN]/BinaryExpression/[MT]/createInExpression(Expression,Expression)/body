@@ -1,0 +1,22 @@
+{
+  return new Expression(){
+    @Override public <T>T evaluate(    Exchange exchange,    Class<T> type){
+      Iterator<Object> it=ObjectHelper.createIterator(rightExp.evaluate(exchange,Object.class));
+      List<Object> values=new ArrayList<Object>();
+      while (it.hasNext()) {
+        values.add(it.next());
+      }
+      ValueBuilder vb=new ValueBuilder(leftExp);
+      Predicate predicate=vb.in(values.toArray());
+      if (operator == BinaryOperatorType.NOT_IN) {
+        predicate=PredicateBuilder.not(predicate);
+      }
+      boolean answer=predicate.matches(exchange);
+      return exchange.getContext().getTypeConverter().convertTo(type,answer);
+    }
+    @Override public String toString(){
+      return left + " " + token.getText()+ " "+ right;
+    }
+  }
+;
+}

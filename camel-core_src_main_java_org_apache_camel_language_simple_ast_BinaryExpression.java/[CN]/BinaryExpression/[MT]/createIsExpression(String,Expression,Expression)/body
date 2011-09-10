@@ -1,0 +1,25 @@
+{
+  return new Expression(){
+    @Override public <T>T evaluate(    Exchange exchange,    Class<T> type){
+      Predicate predicate;
+      String name=rightExp.evaluate(exchange,String.class);
+      if (name == null || "null".equals(name)) {
+        throw new SimpleIllegalSyntaxException(expression,right.getToken().getIndex(),operator + " operator cannot accept null. A class type must be provided.");
+      }
+      Class<?> rightType=exchange.getContext().getClassResolver().resolveClass(name);
+      if (rightType == null) {
+        throw new SimpleIllegalSyntaxException(expression,right.getToken().getIndex(),operator + " operator cannot find class with name: " + name);
+      }
+      predicate=PredicateBuilder.isInstanceOf(leftExp,rightType);
+      if (operator == BinaryOperatorType.NOT_IS) {
+        predicate=PredicateBuilder.not(predicate);
+      }
+      boolean answer=predicate.matches(exchange);
+      return exchange.getContext().getTypeConverter().convertTo(type,answer);
+    }
+    @Override public String toString(){
+      return left + " " + token.getText()+ " "+ right;
+    }
+  }
+;
+}

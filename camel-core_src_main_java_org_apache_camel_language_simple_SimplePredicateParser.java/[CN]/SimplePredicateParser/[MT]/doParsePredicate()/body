@@ -1,0 +1,25 @@
+{
+  nextToken();
+  while (!token.getType().isEol()) {
+    if (!singleQuotedLiteralWithFunctionsText() && !doubleQuotedLiteralWithFunctionsText() && !functionText()&& !unaryOperator()&& !binaryOperator()&& !logicalOperator()&& !token.getType().isWhitespace()&& !token.getType().isEol()) {
+      throw new SimpleParserException("Unexpected token " + token,previousIndex);
+    }
+    nextToken();
+  }
+  removeIgnorableWhiteSpaceTokens();
+  parseTokensAndCreateNodes();
+  prepareBlocks();
+  prepareUnaryExpressions();
+  prepareBinaryExpressions();
+  prepareLogicalExpressions();
+  List<Predicate> predicates=createPredicates();
+  if (predicates.isEmpty()) {
+    return null;
+  }
+ else   if (predicates.size() == 1) {
+    return predicates.get(0);
+  }
+ else {
+    return PredicateBuilder.and(predicates);
+  }
+}
