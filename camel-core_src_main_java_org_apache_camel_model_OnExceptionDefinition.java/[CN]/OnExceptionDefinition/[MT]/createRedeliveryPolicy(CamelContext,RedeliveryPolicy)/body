@@ -1,14 +1,16 @@
 {
   if (redeliveryPolicyRef != null) {
-    parentPolicy=CamelContextHelper.mandatoryLookup(context,redeliveryPolicyRef,RedeliveryPolicy.class);
+    return CamelContextHelper.mandatoryLookup(context,redeliveryPolicyRef,RedeliveryPolicy.class);
   }
-  if (redeliveryPolicy != null) {
+ else   if (redeliveryPolicy != null) {
     return redeliveryPolicy.createRedeliveryPolicy(context,parentPolicy);
   }
- else   if (errorHandler != null) {
+ else   if (!outputs.isEmpty() && parentPolicy.getMaximumRedeliveries() > 0) {
     RedeliveryPolicy answer=parentPolicy.copy();
     answer.setMaximumRedeliveries(0);
     return answer;
   }
-  return parentPolicy;
+ else {
+    return parentPolicy;
+  }
 }
