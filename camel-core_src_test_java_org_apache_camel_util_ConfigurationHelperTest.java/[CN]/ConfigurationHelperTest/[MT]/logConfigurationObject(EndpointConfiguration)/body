@@ -1,0 +1,30 @@
+{
+  if (config == null) {
+    return;
+  }
+  LOG.info("{} [",config.getClass().getCanonicalName());
+  LOG.info("  uri={}",config.getURI().toASCIIString());
+  LOG.info("  fields:");
+  Class<?> clazz=config.getClass();
+  Field[] fields=clazz.getDeclaredFields();
+  Map<String,Field> map=new HashMap<String,Field>();
+  URIField anno=null;
+  for (  final Field field : fields) {
+    anno=field.getAnnotation(URIField.class);
+    String key=anno == null ? field.getName() : (EndpointConfiguration.URI_QUERY.equals(anno.parameter()) ? anno.parameter() : anno.component());
+    map.put(key,field);
+  }
+  logConfigurationField(config,map,EndpointConfiguration.URI_SCHEME,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_SCHEME_SPECIFIC_PART,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_AUTHORITY,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_USER_INFO,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_HOST,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_PORT,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_PATH,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_QUERY,true);
+  logConfigurationField(config,map,EndpointConfiguration.URI_FRAGMENT,true);
+  for (  Field f : map.values()) {
+    logConfigurationField(config,f);
+  }
+  LOG.info("]");
+}

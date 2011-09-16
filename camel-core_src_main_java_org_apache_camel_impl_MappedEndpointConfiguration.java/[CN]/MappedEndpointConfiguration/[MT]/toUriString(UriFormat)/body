@@ -1,0 +1,74 @@
+{
+  Set<Map.Entry<String,Object>> entries=params.entrySet();
+  List<String> queryParams=new ArrayList<String>();
+  String scheme=null;
+  String schemeSpecificPart=null;
+  String authority=null;
+  String path=null;
+  String fragment=null;
+  for (  Map.Entry<String,Object> entry : entries) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    if (key.equals(EndpointConfiguration.URI_SCHEME)) {
+      scheme=CONVERTER.convertTo(String.class,value);
+    }
+ else     if (key.equals(EndpointConfiguration.URI_SCHEME_SPECIFIC_PART)) {
+      schemeSpecificPart=CONVERTER.convertTo(String.class,value);
+    }
+ else     if (key.equals(EndpointConfiguration.URI_AUTHORITY)) {
+      authority=CONVERTER.convertTo(String.class,value);
+    }
+ else     if (key.equals(EndpointConfiguration.URI_USER_INFO)) {
+    }
+ else     if (key.equals(EndpointConfiguration.URI_HOST)) {
+    }
+ else     if (key.equals(EndpointConfiguration.URI_PORT)) {
+    }
+ else     if (key.equals(EndpointConfiguration.URI_PATH)) {
+      path=CONVERTER.convertTo(String.class,value);
+    }
+ else     if (key.equals(EndpointConfiguration.URI_QUERY)) {
+    }
+ else     if (key.equals(EndpointConfiguration.URI_FRAGMENT)) {
+      fragment=CONVERTER.convertTo(String.class,value);
+    }
+ else {
+      if (value instanceof List) {
+        for (        Object item : (List<?>)value) {
+          queryParams.add(key + "=" + UnsafeUriCharactersEncoder.encode(item.toString()));
+        }
+      }
+ else {
+        queryParams.add(key + "=" + UnsafeUriCharactersEncoder.encode(value.toString()));
+      }
+    }
+  }
+  Collections.sort(queryParams);
+  String q="";
+  for (  String entry : queryParams) {
+    q+=q.length() == 0 ? "" : "&";
+    q+=entry;
+  }
+  StringBuffer u=new StringBuffer(1024);
+  if (scheme != null) {
+    u.append(scheme);
+    u.append(":");
+  }
+  if (authority != null) {
+    u.append("//");
+    u.append(authority);
+    u.append(path);
+    if (q.length() > 0) {
+      u.append("?");
+      u.append(q);
+    }
+    if (fragment != null) {
+      u.append("#");
+      u.append(fragment);
+    }
+  }
+ else {
+    u.append(schemeSpecificPart);
+  }
+  return u.toString();
+}
