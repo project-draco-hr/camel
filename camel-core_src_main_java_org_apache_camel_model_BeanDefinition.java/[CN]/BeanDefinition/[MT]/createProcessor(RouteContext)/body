@@ -1,5 +1,7 @@
 {
   BeanProcessor answer;
+  Class<?> clazz=bean != null ? bean.getClass() : null;
+  BeanInfo beanInfo=null;
   if (ObjectHelper.isNotEmpty(ref)) {
     RegistryBean beanHolder=new RegistryBean(routeContext.getCamelContext(),ref);
     bean=beanHolder.getBean();
@@ -8,26 +10,40 @@
  else {
     if (bean == null) {
       ObjectHelper.notNull(beanType,"bean, ref or beanType",this);
-      Class<?> clazz;
       try {
         clazz=routeContext.getCamelContext().getClassResolver().resolveMandatoryClass(beanType);
       }
  catch (      ClassNotFoundException e) {
         throw ObjectHelper.wrapRuntimeCamelException(e);
       }
-      bean=CamelContextHelper.newInstance(routeContext.getCamelContext(),clazz);
+      if (ObjectHelper.hasDefaultPublicNoArgConstructor(clazz)) {
+        bean=CamelContextHelper.newInstance(routeContext.getCamelContext(),clazz);
+        ObjectHelper.notNull(bean,"bean",this);
+      }
     }
-    ObjectHelper.notNull(bean,"bean",this);
     if (bean instanceof String) {
       throw new IllegalArgumentException("The bean instance is a java.lang.String type: " + bean + ". We suppose you want to refer to a bean instance by its id instead. Please use beanRef.");
     }
-    answer=new BeanProcessor(bean,routeContext.getCamelContext());
+    beanInfo=new BeanInfo(routeContext.getCamelContext(),clazz);
+    answer=new BeanProcessor(new ConstantBeanHolder(bean,beanInfo));
   }
   if (method != null) {
     answer.setMethod(method);
-    BeanInfo info=new BeanInfo(routeContext.getCamelContext(),bean.getClass());
-    if (!info.hasMethod(method)) {
-      throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+    if (bean != null) {
+      clazz=bean.getClass();
+    }
+    if (beanInfo == null) {
+      beanInfo=new BeanInfo(routeContext.getCamelContext(),clazz);
+    }
+    if (bean != null) {
+      if (!beanInfo.hasMethod(method)) {
+        throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+      }
+    }
+ else {
+      if (!beanInfo.hasStaticMethod(method)) {
+        throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,clazz,method,true));
+      }
     }
   }
   return answer;
