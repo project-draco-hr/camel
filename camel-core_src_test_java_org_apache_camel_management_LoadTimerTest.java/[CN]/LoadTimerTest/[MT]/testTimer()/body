@@ -1,0 +1,20 @@
+{
+  ScheduledExecutorService executorService=Executors.newScheduledThreadPool(1);
+  TimerListenerManager myTimer=new TimerListenerManager();
+  myTimer.setExecutorService(executorService);
+  myTimer.start();
+  TestLoadAware test=new TestLoadAware();
+  myTimer.addTimerListener(test);
+  try {
+    Thread.sleep(1000 * (SAMPLES + 1));
+    assertTrue(test.counter >= SAMPLES);
+    assertFalse(Double.isNaN(test.load.getLoad1()));
+    assertTrue(test.load.getLoad1() > 0.0d);
+    assertTrue(test.load.getLoad1() < SAMPLES);
+  }
+  finally {
+    myTimer.removeTimerListener(test);
+  }
+  myTimer.stop();
+  executorService.shutdown();
+}
