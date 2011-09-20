@@ -6,11 +6,14 @@
     document=xmlCipher.doFinal(document,document.getDocumentElement());
   }
  else {
-    NodeIterator iter=XPathAPI.selectNodeIterator(document,secureTag);
-    Node node;
-    while ((node=iter.nextNode()) != null) {
-      embedKeyInfoInEncryptedData(document,keyCipher,xmlCipher,dataEncryptionKey);
-      Document temp=xmlCipher.doFinal(document,(Element)node,getSecureTagContents());
+    XPathBuilder xpathBuilder=new XPathBuilder(secureTag);
+    xpathBuilder.setNamespaceContext(getNamespaceContext());
+    NodeList nodeList=xpathBuilder.evaluate(exchange,NodeList.class);
+    for (int i=0; i < nodeList.getLength(); i++) {
+      Node node=nodeList.item(i);
+      document=node.getOwnerDocument();
+      embedKeyInfoInEncryptedData(node.getOwnerDocument(),keyCipher,xmlCipher,dataEncryptionKey);
+      Document temp=xmlCipher.doFinal(node.getOwnerDocument(),(Element)node,getSecureTagContents());
       document.importNode(temp.getDocumentElement().cloneNode(true),true);
     }
   }

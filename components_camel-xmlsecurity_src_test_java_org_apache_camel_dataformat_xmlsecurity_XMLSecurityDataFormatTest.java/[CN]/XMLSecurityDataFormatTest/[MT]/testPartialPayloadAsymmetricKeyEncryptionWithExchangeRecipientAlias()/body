@@ -1,9 +1,11 @@
 {
   MockEndpoint resultEndpoint=context.getEndpoint("mock:foo",MockEndpoint.class);
   resultEndpoint.setExpectedMessageCount(1);
+  final KeyStoreParameters tsParameters=new KeyStoreParameters();
+  tsParameters.setPassword("password");
+  tsParameters.setResource("sender.ts");
+  String tsParametersId="testTrustStoreParameters";
   Map<String,String> contextProps=context.getProperties();
-  contextProps.put(XMLSecurityDataFormat.XML_ENC_TRUST_STORE_URL,getClass().getClassLoader().getResource("sender.ts").toString());
-  contextProps.put(XMLSecurityDataFormat.XML_ENC_TRUST_STORE_PASSWORD,"password");
   context.addRoutes(new RouteBuilder(){
     public void configure(){
       from("direct:start").process(new Processor(){
@@ -11,9 +13,9 @@
           exchange.getIn().setHeader(XMLSecurityDataFormat.XML_ENC_RECIPIENT_ALIAS,"recipient");
         }
       }
-).marshal().secureXML("//cheesesites/italy/cheese",true,null,testCypherAlgorithm,XMLCipher.RSA_v1dot5).to("mock:encrypted");
+).marshal().secureXML("//cheesesites/italy/cheese",true,null,testCypherAlgorithm,XMLCipher.RSA_v1dot5,tsParameters).to("mock:encrypted");
     }
   }
 );
-  testEncryption();
+  xmlsecTestHelper.testEncryption(context);
 }

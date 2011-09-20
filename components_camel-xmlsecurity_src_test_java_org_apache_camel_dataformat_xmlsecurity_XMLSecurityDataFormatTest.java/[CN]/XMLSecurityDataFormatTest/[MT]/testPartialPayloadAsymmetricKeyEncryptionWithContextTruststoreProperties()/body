@@ -1,12 +1,14 @@
 {
+  final KeyStoreParameters tsParameters=new KeyStoreParameters();
+  tsParameters.setPassword("password");
+  tsParameters.setResource("sender.ts");
   Map<String,String> contextProps=context.getProperties();
-  contextProps.put(XMLSecurityDataFormat.XML_ENC_TRUST_STORE_URL,getClass().getClassLoader().getResource("sender.ts").toString());
   contextProps.put(XMLSecurityDataFormat.XML_ENC_TRUST_STORE_PASSWORD,"password");
   context.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("direct:start").marshal().secureXML("//cheesesites/italy/cheese",true,"recipient",testCypherAlgorithm,XMLCipher.RSA_v1dot5).to("mock:encrypted");
+      from("direct:start").marshal().secureXML("//cheesesites/italy/cheese",true,"recipient",testCypherAlgorithm,XMLCipher.RSA_v1dot5,tsParameters).to("mock:encrypted");
     }
   }
 );
-  testEncryption();
+  xmlsecTestHelper.testEncryption(context);
 }
