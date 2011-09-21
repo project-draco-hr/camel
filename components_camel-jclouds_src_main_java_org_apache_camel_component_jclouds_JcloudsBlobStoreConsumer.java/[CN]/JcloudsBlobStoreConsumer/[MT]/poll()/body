@@ -1,0 +1,18 @@
+{
+  int messages=0;
+  shutdownRunningTask=null;
+  pendingExchanges=0;
+  Queue<Exchange> queue=new LinkedList<Exchange>();
+  ListContainerOptions opt=new ListContainerOptions();
+  for (  StorageMetadata md : blobStore.list(container,opt.maxResults(maxMessagesPerPoll))) {
+    messages++;
+    String blobName=md.getName();
+    Object body=readBlob(container,blobName);
+    Exchange exchange=endpoint.createExchange();
+    exchange.getIn().setBody(body);
+    exchange.setProperty(JcloudsConstants.BLOB_NAME,blobName);
+    queue.add(exchange);
+  }
+  if (!queue.isEmpty())   return processBatch(CastUtils.cast(queue));
+ else   return 0;
+}
