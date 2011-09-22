@@ -1,9 +1,9 @@
 {
   BeanProcessor answer;
   Class<?> clazz=bean != null ? bean.getClass() : null;
-  BeanInfo beanInfo=null;
+  BeanHolder beanHolder;
   if (ObjectHelper.isNotEmpty(ref)) {
-    RegistryBean beanHolder=new RegistryBean(routeContext.getCamelContext(),ref);
+    beanHolder=new RegistryBean(routeContext.getCamelContext(),ref);
     bean=beanHolder.getBean();
     answer=new BeanProcessor(beanHolder);
   }
@@ -24,23 +24,18 @@
     if (bean instanceof String) {
       throw new IllegalArgumentException("The bean instance is a java.lang.String type: " + bean + ". We suppose you want to refer to a bean instance by its id instead. Please use beanRef.");
     }
-    beanInfo=new BeanInfo(routeContext.getCamelContext(),clazz);
-    answer=new BeanProcessor(new ConstantBeanHolder(bean,beanInfo));
+    beanHolder=bean != null ? new ConstantBeanHolder(bean,routeContext.getCamelContext()) : new ConstantTypeBeanHolder(clazz,routeContext.getCamelContext());
+    answer=new BeanProcessor(beanHolder);
   }
   if (method != null) {
     answer.setMethod(method);
-    if (bean != null) {
-      clazz=bean.getClass();
-    }
-    if (beanInfo == null) {
-      beanInfo=new BeanInfo(routeContext.getCamelContext(),clazz);
-    }
+    BeanInfo beanInfo=beanHolder.getBeanInfo();
     if (bean != null) {
       if (!beanInfo.hasMethod(method)) {
         throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
       }
     }
- else {
+ else     if (clazz != null) {
       if (!beanInfo.hasStaticMethod(method)) {
         throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,clazz,method,true));
       }

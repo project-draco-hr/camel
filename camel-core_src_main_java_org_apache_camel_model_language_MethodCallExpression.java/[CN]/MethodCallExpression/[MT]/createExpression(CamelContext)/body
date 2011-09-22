@@ -9,8 +9,13 @@
     }
   }
   if (beanType != null) {
-    instance=camelContext.getInjector().newInstance(beanType);
-    answer=new BeanExpression(instance,getMethod());
+    if (ObjectHelper.hasDefaultPublicNoArgConstructor(beanType)) {
+      instance=camelContext.getInjector().newInstance(beanType);
+      answer=new BeanExpression(instance,getMethod());
+    }
+ else {
+      answer=new BeanExpression(beanType,getMethod());
+    }
   }
  else   if (instance != null) {
     answer=new BeanExpression(instance,getMethod());
@@ -21,6 +26,6 @@
     instance=holder.getBean();
     answer=new BeanExpression(ref,getMethod());
   }
-  validateHasMethod(camelContext,instance,getMethod());
+  validateHasMethod(camelContext,instance,beanType,getMethod());
   return answer;
 }
