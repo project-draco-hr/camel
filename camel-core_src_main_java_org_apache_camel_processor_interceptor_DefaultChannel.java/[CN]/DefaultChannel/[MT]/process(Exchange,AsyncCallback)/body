@@ -10,10 +10,18 @@
   AsyncProcessor async=AsyncProcessorConverterHelper.convert(processor);
   boolean sync=async.process(exchange,new AsyncCallback(){
     public void done(    boolean doneSync){
-      if (exchange.getUnitOfWork() != null) {
-        exchange.getUnitOfWork().popRouteContext();
+      try {
+        UnitOfWork uow=exchange.getUnitOfWork();
+        if (uow != null) {
+          uow.popRouteContext();
+        }
       }
-      callback.done(doneSync);
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+ finally {
+        callback.done(doneSync);
+      }
     }
   }
 );
