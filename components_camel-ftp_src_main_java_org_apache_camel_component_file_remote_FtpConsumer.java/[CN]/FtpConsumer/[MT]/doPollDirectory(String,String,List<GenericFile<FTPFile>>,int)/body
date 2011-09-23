@@ -1,5 +1,6 @@
 {
   log.trace("doPollDirectory from absolutePath: {}, dirName: {}",absolutePath,dirName);
+  depth++;
   dirName=FileUtil.stripTrailingSeparator(dirName);
   String dir;
   if (isStepwise()) {
@@ -30,10 +31,10 @@
     }
     if (file.isDirectory()) {
       RemoteFile<FTPFile> remote=asRemoteFile(absolutePath,file);
-      if (endpoint.isRecursive() && isValidFile(remote,true)) {
+      if (endpoint.isRecursive() && isValidFile(remote,true) && depth < endpoint.getMaxDepth()) {
         String subDirectory=file.getName();
         String path=absolutePath + "/" + subDirectory;
-        boolean canPollMore=pollSubDirectory(path,subDirectory,fileList);
+        boolean canPollMore=pollSubDirectory(path,subDirectory,fileList,depth);
         if (!canPollMore) {
           return false;
         }
@@ -41,7 +42,7 @@
     }
  else     if (file.isFile()) {
       RemoteFile<FTPFile> remote=asRemoteFile(absolutePath,file);
-      if (isValidFile(remote,false)) {
+      if (isValidFile(remote,false) && depth >= endpoint.getMinDepth()) {
         if (isInProgress(remote)) {
           log.trace("Skipping as file is already in progress: {}",remote.getFileName());
         }
