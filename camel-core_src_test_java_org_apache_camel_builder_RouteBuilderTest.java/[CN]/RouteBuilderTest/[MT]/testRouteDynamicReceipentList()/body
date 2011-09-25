@@ -7,6 +7,12 @@
     assertEquals("From endpoint","seda://a",key.getEndpointUri());
     EventDrivenConsumerRoute consumer=assertIsInstanceOf(EventDrivenConsumerRoute.class,route);
     Channel channel=unwrapChannel(consumer.getProcessor());
-    assertIsInstanceOf(RecipientList.class,channel.getNextProcessor());
+    Pipeline line=assertIsInstanceOf(Pipeline.class,channel.getNextProcessor());
+    Iterator it=line.getProcessors().iterator();
+    Object first=it.next();
+    first=assertIsInstanceOf(DeadLetterChannel.class,first).getOutput();
+    assertIsInstanceOf(EvaluateExpressionProcessor.class,first);
+    Object second=it.next();
+    assertIsInstanceOf(RecipientList.class,second);
   }
 }

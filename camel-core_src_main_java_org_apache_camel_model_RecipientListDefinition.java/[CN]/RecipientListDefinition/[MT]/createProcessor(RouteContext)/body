@@ -1,5 +1,5 @@
 {
-  Expression expression=getExpression().createExpression(routeContext);
+  final Expression expression=getExpression().createExpression(routeContext);
   RecipientList answer;
   if (delimiter != null) {
     answer=new RecipientList(routeContext.getCamelContext(),expression,delimiter);
@@ -36,5 +36,15 @@
   if (timeout > 0 && !isParallelProcessing()) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
   }
-  return answer;
+  List<Processor> pipe=new ArrayList<Processor>(2);
+  Processor evalProcessor=new EvaluateExpressionProcessor(expression);
+  evalProcessor=super.wrapInErrorHandler(routeContext,evalProcessor);
+  pipe.add(evalProcessor);
+  pipe.add(answer);
+  return new Pipeline(routeContext.getCamelContext(),pipe){
+    @Override public String toString(){
+      return "RecipientList[" + expression + "]";
+    }
+  }
+;
 }
