@@ -1,0 +1,24 @@
+{
+  String script=exchange.getIn().getBody(String.class);
+  String nodeId=getNodeId(exchange);
+  String user=getUser(exchange);
+  Credentials credentials=null;
+  if (user != null) {
+    credentials=new Credentials(user,null);
+  }
+  ExecResponse execResponse=null;
+  if (credentials == null) {
+    execResponse=computeService.runScriptOnNode(nodeId,script);
+  }
+ else {
+    execResponse=computeService.runScriptOnNode(nodeId,script,RunScriptOptions.Builder.overrideCredentialsWith(credentials).runAsRoot(false));
+  }
+  if (execResponse == null) {
+    throw new CamelException("Failed to receive response for run script operation.");
+  }
+  exchange.setProperty(JcloudsConstants.RUN_SCRIPT_ERROR,execResponse.getError());
+  exchange.setProperty(JcloudsConstants.RUN_SCRIPT_EXIT_CODE,execResponse.getExitCode());
+  if (execResponse != null) {
+    exchange.getOut().setBody(execResponse.getOutput());
+  }
+}

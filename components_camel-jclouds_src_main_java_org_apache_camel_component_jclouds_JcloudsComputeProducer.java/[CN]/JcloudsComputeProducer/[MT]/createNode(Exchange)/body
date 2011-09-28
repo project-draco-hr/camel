@@ -1,0 +1,28 @@
+{
+  String group=getGroup(exchange);
+  String imageId=getImageId(exchange);
+  String locationId=getLocationId(exchange);
+  String hardwareId=getHardwareId(exchange);
+  if (group == null) {
+    throw new CamelException("Group must be specific in the URI or as exchange property for the destroy node operation.");
+  }
+  TemplateBuilder builder=computeService.templateBuilder();
+  builder.any();
+  if (locationId != null) {
+    builder.locationId(locationId);
+  }
+  if (imageId != null) {
+    builder.imageId(imageId);
+  }
+  if (hardwareId != null) {
+    builder.hardwareId(hardwareId);
+  }
+  try {
+    Set<? extends NodeMetadata> nodeMetadatas=computeService.createNodesInGroup(group,1,builder.build());
+    exchange.getOut().setBody(nodeMetadatas);
+    exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+  }
+ catch (  RunNodesException e) {
+    throw new CamelException("Error creating jclouds node.",e);
+  }
+}

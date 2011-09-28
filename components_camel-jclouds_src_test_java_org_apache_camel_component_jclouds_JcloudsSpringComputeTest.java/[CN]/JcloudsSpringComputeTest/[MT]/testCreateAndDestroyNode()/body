@@ -1,0 +1,23 @@
+{
+  Map<String,Object> createHeaders=new HashMap<String,Object>();
+  createHeaders.put(JcloudsConstants.OPERATION,JcloudsConstants.CREATE_NODE);
+  createHeaders.put(JcloudsConstants.IMAGE_ID,"1");
+  createHeaders.put(JcloudsConstants.GROUP,"default");
+  Map<String,Object> destroyHeaders=new HashMap<String,Object>();
+  destroyHeaders.put(JcloudsConstants.OPERATION,JcloudsConstants.DESTROY_NODE);
+  template.sendBodyAndHeaders("direct:start","Some message",createHeaders);
+  result.expectedMessageCount(1);
+  result.assertIsSatisfied();
+  List<Exchange> exchanges=result.getExchanges();
+  if (exchanges != null && !exchanges.isEmpty()) {
+    for (    Exchange exchange : exchanges) {
+      Set nodeMetadatas=(Set)exchange.getIn().getBody();
+      assertEquals("There should be no node running",1,nodeMetadatas.size());
+      for (      Object obj : nodeMetadatas) {
+        NodeMetadata nodeMetadata=(NodeMetadata)obj;
+        destroyHeaders.put(JcloudsConstants.NODE_ID,nodeMetadata.getId());
+        template.sendBodyAndHeaders("direct:start","Some message",destroyHeaders);
+      }
+    }
+  }
+}

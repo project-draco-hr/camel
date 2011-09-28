@@ -1,0 +1,12 @@
+{
+  blobStore.createContainerInLocation(null,TEST_CONTAINER);
+  jcloudsComponent.setBlobStores(Lists.newArrayList(blobStore));
+  return new RouteBuilder(){
+    public void configure(){
+      getContext().addComponent("jclouds",jcloudsComponent);
+      from("direct:put").setHeader(JcloudsConstants.BLOB_NAME,constant(TEST_BLOB)).setHeader(JcloudsConstants.CONTAINER_NAME,constant(TEST_CONTAINER)).to("jclouds:blobstore:transient").to("mock:results");
+      from("direct:put-and-get").setHeader(JcloudsConstants.BLOB_NAME,constant(TEST_BLOB)).setHeader(JcloudsConstants.CONTAINER_NAME,constant(TEST_CONTAINER)).to("jclouds:blobstore:transient");
+    }
+  }
+;
+}

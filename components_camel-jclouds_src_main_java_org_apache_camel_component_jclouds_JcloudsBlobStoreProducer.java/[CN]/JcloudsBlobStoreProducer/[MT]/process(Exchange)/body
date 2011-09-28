@@ -1,35 +1,12 @@
 {
-  String blobName=extractBlobName(exchange);
-  if (blobName != null && exchange.getIn() != null && exchange.getIn().getBody() != null) {
-    Object body=exchange.getIn().getBody();
-    BlobStore blobStore=blobStoreContext.getBlobStore();
-    Blob blob=blobStore.blobBuilder(blobName).build();
-    ByteArrayOutputStream baos=new ByteArrayOutputStream();
-    ObjectOutputStream oos=null;
-    try {
-      oos=new ObjectOutputStream(baos);
-      oos.writeObject(body);
-      blob.setPayload(baos.toByteArray());
-      blobStore.putBlob(container,blob);
-    }
- catch (    IOException e) {
-      LOG.error("Error while writing blob",e);
-    }
- finally {
-      if (oos != null) {
-        try {
-          oos.close();
-        }
- catch (        IOException e) {
-        }
-      }
-      if (baos != null) {
-        try {
-          baos.close();
-        }
- catch (        IOException e) {
-        }
-      }
-    }
+  String container=getContainerName(exchange);
+  String blobName=getBlobName(exchange);
+  String operation=getOperation(exchange);
+  Object body=exchange.getIn().getBody();
+  if (JcloudsConstants.GET.equals(operation)) {
+    exchange.getOut().setBody(JcloudsBlobStoreHelper.readBlob(blobStore,container,blobName,Thread.currentThread().getContextClassLoader()));
+  }
+ else {
+    JcloudsBlobStoreHelper.writeBlob(blobStore,container,blobName,body);
   }
 }

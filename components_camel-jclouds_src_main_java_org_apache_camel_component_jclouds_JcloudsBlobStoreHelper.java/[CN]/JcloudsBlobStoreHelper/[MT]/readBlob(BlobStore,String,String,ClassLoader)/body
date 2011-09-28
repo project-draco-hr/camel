@@ -1,0 +1,43 @@
+{
+  Object result=null;
+  ObjectInputStream ois=null;
+  blobStore.createContainerInLocation(null,container);
+  InputStream is=blobStore.getBlob(container,blobName).getPayload().getInput();
+  try {
+    ois=new ObjectInputStream(is){
+      @Override public Class<?> resolveClass(      ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+        try {
+          return classLoader.loadClass(desc.getName());
+        }
+ catch (        Exception e) {
+        }
+        return super.resolveClass(desc);
+      }
+    }
+;
+    result=ois.readObject();
+  }
+ catch (  IOException e) {
+    e.printStackTrace();
+  }
+catch (  ClassNotFoundException e) {
+    e.printStackTrace();
+  }
+ finally {
+    if (ois != null) {
+      try {
+        ois.close();
+      }
+ catch (      IOException e) {
+      }
+    }
+    if (is != null) {
+      try {
+        is.close();
+      }
+ catch (      IOException e) {
+      }
+    }
+  }
+  return result;
+}
