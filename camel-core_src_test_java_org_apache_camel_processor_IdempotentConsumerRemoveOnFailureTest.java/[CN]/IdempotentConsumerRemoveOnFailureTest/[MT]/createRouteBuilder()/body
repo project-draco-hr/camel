@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").idempotentConsumer(header("messageId"),MemoryIdempotentRepository.memoryIdempotentRepository(200)).removeOnFailure(false).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("messageId",String.class);
+          if (id.equals("2")) {
+            throw new IllegalArgumentException("Damn I cannot handle id 2");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
