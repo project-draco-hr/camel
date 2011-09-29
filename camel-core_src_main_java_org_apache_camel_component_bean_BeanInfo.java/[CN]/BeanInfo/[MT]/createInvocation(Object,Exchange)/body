@@ -6,18 +6,29 @@
     if (methodName.contains("(")) {
       name=ObjectHelper.before(methodName,"(");
     }
-    List<MethodInfo> methods=getOperations(name);
-    if (methods != null && methods.size() == 1) {
-      methodInfo=methods.get(0);
-    }
- else     if (methods != null) {
-      methodInfo=chooseMethod(pojo,exchange,methodName);
-      if (methodInfo == null || !name.equals(methodInfo.getMethod().getName())) {
-        throw new AmbiguousMethodCallException(exchange,methods);
+    if ("class".equals(name) || "getClass".equals(name)) {
+      try {
+        Method method=pojo.getClass().getMethod("getClass");
+        methodInfo=new MethodInfo(exchange.getContext(),pojo.getClass(),method,Collections.EMPTY_LIST,Collections.EMPTY_LIST,false,false);
+      }
+ catch (      NoSuchMethodException e) {
+        throw new MethodNotFoundException(exchange,pojo,"getClass");
       }
     }
  else {
-      throw new MethodNotFoundException(exchange,pojo,methodName);
+      List<MethodInfo> methods=getOperations(name);
+      if (methods != null && methods.size() == 1) {
+        methodInfo=methods.get(0);
+      }
+ else       if (methods != null) {
+        methodInfo=chooseMethod(pojo,exchange,methodName);
+        if (methodInfo == null || !name.equals(methodInfo.getMethod().getName())) {
+          throw new AmbiguousMethodCallException(exchange,methods);
+        }
+      }
+ else {
+        throw new MethodNotFoundException(exchange,pojo,methodName);
+      }
     }
   }
   if (methodInfo == null) {
