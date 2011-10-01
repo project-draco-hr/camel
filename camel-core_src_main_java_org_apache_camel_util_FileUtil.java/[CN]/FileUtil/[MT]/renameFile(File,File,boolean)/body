@@ -18,18 +18,14 @@
     }
     count++;
   }
-  if (!renamed) {
-    try {
-      LOG.debug("Cannot rename file from: {} to: {}, will now use a copy/delete approach instead",from,to);
-      copyFile(from,to);
-      if (!deleteFile(from)) {
-        LOG.warn("Renaming file from: {} to: {} failed due cannot delete from file: {} after copy succeeded",new Object[]{from,to,from});
-        renamed=false;
-      }
-      renamed=true;
+  if (!renamed && copyAndDeleteOnRenameFail) {
+    LOG.debug("Cannot rename file from: {} to: {}, will now use a copy/delete approach instead",from,to);
+    copyFile(from,to);
+    if (!deleteFile(from)) {
+      throw new IOException("Renaming file from: " + from + " to: "+ to+ " failed due cannot delete from file: "+ from+ " after copy succeeded");
     }
- catch (    IOException e) {
-      LOG.debug("Error renaming file from: " + from + " to: "+ to+ " using copy/delete",e);
+ else {
+      renamed=true;
     }
   }
   if (LOG.isDebugEnabled() && count > 0) {
