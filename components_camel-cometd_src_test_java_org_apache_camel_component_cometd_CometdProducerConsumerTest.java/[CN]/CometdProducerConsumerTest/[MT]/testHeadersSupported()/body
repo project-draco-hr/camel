@@ -1,0 +1,13 @@
+{
+  String headerName="testHeading";
+  String headerValue="value";
+  template.requestBodyAndHeader("direct:input","message",headerName,headerValue);
+  MockEndpoint ep=(MockEndpoint)context.getEndpoint("mock:test");
+  List<Exchange> exchanges=ep.getReceivedExchanges();
+  assertTrue(exchanges.size() > 0);
+  for (  Exchange exchange : exchanges) {
+    Message message=exchange.getIn();
+    assertEquals(headerValue,message.getHeader(headerName));
+    assertNotNull(message.getHeader(CometdBinding.COMETD_CLIENT_ID_HEADER_NAME));
+  }
+}
