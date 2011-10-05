@@ -1,0 +1,13 @@
+{
+  Exchange exchange=new DefaultExchange(new DefaultCamelContext(),ExchangePattern.InOut);
+  exchange.getIn().setHeader(SmppConstants.COMMAND,"SubmitMulti");
+  exchange.getIn().setHeader(SmppConstants.ID,"1");
+  exchange.getIn().setBody("short message body");
+  expect(session.submitMultiple(eq("CMT"),eq(TypeOfNumber.UNKNOWN),eq(NumberingPlanIndicator.UNKNOWN),eq("1616"),aryEq(new Address[]{new Address(TypeOfNumber.UNKNOWN,NumberingPlanIndicator.UNKNOWN,"1717")}),eq(new ESMClass()),eq((byte)0),eq((byte)1),(String)isNull(),(String)isNull(),eq(new RegisteredDelivery(SMSCDeliveryReceipt.SUCCESS_FAILURE)),eq(ReplaceIfPresentFlag.DEFAULT),eq(new GeneralDataCoding(false,true,MessageClass.CLASS1,Alphabet.ALPHA_DEFAULT)),eq((byte)0),aryEq("short message body".getBytes()),aryEq(new OptionalParameter[0]))).andReturn(new SubmitMultiResult("1",new UnsuccessDelivery(new Address(TypeOfNumber.UNKNOWN,NumberingPlanIndicator.UNKNOWN,"1717"),0)));
+  replay(session);
+  command.execute(exchange);
+  verify(session);
+  assertEquals(Arrays.asList("1"),exchange.getOut().getHeader(SmppConstants.ID));
+  assertEquals(1,exchange.getOut().getHeader(SmppConstants.SENT_MESSAGE_COUNT));
+  assertNotNull(exchange.getOut().getHeader(SmppConstants.ERROR));
+}

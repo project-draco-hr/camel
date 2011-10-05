@@ -1,0 +1,87 @@
+{
+  Message in=exchange.getIn();
+  SubmitMulti submitMulti=new SubmitMulti();
+  byte destAddrTon;
+  if (in.getHeaders().containsKey(SmppConstants.DEST_ADDR_TON)) {
+    destAddrTon=in.getHeader(SmppConstants.DEST_ADDR_TON,Byte.class);
+  }
+ else {
+    destAddrTon=config.getDestAddrTon();
+  }
+  byte destAddrNpi;
+  if (in.getHeaders().containsKey(SmppConstants.DEST_ADDR_NPI)) {
+    destAddrNpi=in.getHeader(SmppConstants.DEST_ADDR_NPI,Byte.class);
+  }
+ else {
+    destAddrNpi=config.getDestAddrNpi();
+  }
+  List<String> destAddresses;
+  if (in.getHeaders().containsKey(SmppConstants.DEST_ADDR)) {
+    destAddresses=in.getHeader(SmppConstants.DEST_ADDR,List.class);
+  }
+ else {
+    destAddresses=Arrays.asList(config.getDestAddr());
+  }
+  Address[] addresses=new Address[destAddresses.size()];
+  int addrNum=0;
+  for (  String destAddr : destAddresses) {
+    Address addr=new Address(destAddrTon,destAddrNpi,destAddr);
+    addresses[addrNum++]=addr;
+  }
+  submitMulti.setDestAddresses(addresses);
+  if (in.getHeaders().containsKey(SmppConstants.SOURCE_ADDR)) {
+    submitMulti.setSourceAddr(in.getHeader(SmppConstants.SOURCE_ADDR,String.class));
+  }
+ else {
+    submitMulti.setSourceAddr(config.getSourceAddr());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.SOURCE_ADDR_TON)) {
+    submitMulti.setSourceAddrTon(in.getHeader(SmppConstants.SOURCE_ADDR_TON,Byte.class));
+  }
+ else {
+    submitMulti.setSourceAddrTon(config.getSourceAddrTon());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.SOURCE_ADDR_NPI)) {
+    submitMulti.setSourceAddrNpi(in.getHeader(SmppConstants.SOURCE_ADDR_NPI,Byte.class));
+  }
+ else {
+    submitMulti.setSourceAddrNpi(config.getSourceAddrNpi());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.SERVICE_TYPE)) {
+    submitMulti.setServiceType(in.getHeader(SmppConstants.SERVICE_TYPE,String.class));
+  }
+ else {
+    submitMulti.setServiceType(config.getServiceType());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.REGISTERED_DELIVERY)) {
+    submitMulti.setRegisteredDelivery(in.getHeader(SmppConstants.REGISTERED_DELIVERY,Byte.class));
+  }
+ else {
+    submitMulti.setRegisteredDelivery(config.getRegisteredDelivery());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.PROTOCOL_ID)) {
+    submitMulti.setProtocolId(in.getHeader(SmppConstants.PROTOCOL_ID,Byte.class));
+  }
+ else {
+    submitMulti.setProtocolId(config.getProtocolId());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.PRIORITY_FLAG)) {
+    submitMulti.setPriorityFlag(in.getHeader(SmppConstants.PRIORITY_FLAG,Byte.class));
+  }
+ else {
+    submitMulti.setPriorityFlag(config.getPriorityFlag());
+  }
+  if (in.getHeaders().containsKey(SmppConstants.SCHEDULE_DELIVERY_TIME)) {
+    submitMulti.setScheduleDeliveryTime(SmppUtils.formatTime(in.getHeader(SmppConstants.SCHEDULE_DELIVERY_TIME,Date.class)));
+  }
+  if (in.getHeaders().containsKey(SmppConstants.VALIDITY_PERIOD)) {
+    submitMulti.setValidityPeriod(SmppUtils.formatTime(in.getHeader(SmppConstants.VALIDITY_PERIOD,Date.class)));
+  }
+  if (in.getHeaders().containsKey(SmppConstants.REPLACE_IF_PRESENT_FLAG)) {
+    submitMulti.setReplaceIfPresentFlag(in.getHeader(SmppConstants.REPLACE_IF_PRESENT_FLAG,Byte.class));
+  }
+ else {
+    submitMulti.setReplaceIfPresentFlag(config.getReplaceIfPresentFlag());
+  }
+  return submitMulti;
+}

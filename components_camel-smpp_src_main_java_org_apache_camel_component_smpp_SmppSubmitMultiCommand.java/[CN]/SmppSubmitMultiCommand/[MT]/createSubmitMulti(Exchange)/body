@@ -1,0 +1,26 @@
+{
+  String body=exchange.getIn().getBody(String.class);
+  byte providedAlphabet=getProvidedAlphabet(exchange);
+  Alphabet determinedAlphabet=determineAlphabet(exchange);
+  SmppSplitter splitter=createSplitter(exchange);
+  Charset charset=determineCharset(providedAlphabet,determinedAlphabet.value());
+  byte[][] segments=splitter.split(body.getBytes(charset));
+  DataCoding dataCoding=new GeneralDataCoding(false,true,MessageClass.CLASS1,determinedAlphabet);
+  ESMClass esmClass;
+  if (segments.length > 1) {
+    esmClass=new ESMClass(MessageMode.DEFAULT,MessageType.DEFAULT,GSMSpecificFeature.UDHI);
+  }
+ else {
+    esmClass=new ESMClass();
+  }
+  SubmitMulti template=createSubmitMultiTemplate(exchange);
+  SubmitMulti[] submitMulties=new SubmitMulti[segments.length];
+  for (int i=0; i < segments.length; i++) {
+    SubmitMulti submitMulti=SmppUtils.copySubmitMulti(template);
+    submitMulti.setEsmClass(esmClass.value());
+    submitMulti.setDataCoding(dataCoding.value());
+    submitMulti.setShortMessage(segments[i]);
+    submitMulties[i]=submitMulti;
+  }
+  return submitMulties;
+}

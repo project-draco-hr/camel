@@ -1,0 +1,20 @@
+{
+  SubmitSm[] submitSms=createSubmitSm(exchange);
+  List<String> messageIDs=new ArrayList<String>(submitSms.length);
+  for (int i=0; i < submitSms.length; i++) {
+    SubmitSm submitSm=submitSms[i];
+    String messageID;
+    log.debug("Sending short message {} for exchange id '{}'...",i,exchange.getExchangeId());
+    try {
+      messageID=session.submitShortMessage(submitSm.getServiceType(),TypeOfNumber.valueOf(submitSm.getSourceAddrTon()),NumberingPlanIndicator.valueOf(submitSm.getSourceAddrNpi()),submitSm.getSourceAddr(),TypeOfNumber.valueOf(submitSm.getDestAddrTon()),NumberingPlanIndicator.valueOf(submitSm.getDestAddrNpi()),submitSm.getDestAddress(),new ESMClass(submitSm.getEsmClass()),submitSm.getProtocolId(),submitSm.getPriorityFlag(),submitSm.getScheduleDeliveryTime(),submitSm.getValidityPeriod(),new RegisteredDelivery(submitSm.getRegisteredDelivery()),submitSm.getReplaceIfPresent(),new GeneralDataCoding(submitSm.getDataCoding()),(byte)0,submitSm.getShortMessage(),submitSm.getOptionalParametes());
+    }
+ catch (    Exception e) {
+      throw new SmppException(e);
+    }
+    messageIDs.add(messageID);
+  }
+  log.debug("Sent short message for exchange id '{}' and received message ids '{}'",exchange.getExchangeId(),messageIDs);
+  Message message=getResponseMessage(exchange);
+  message.setHeader(SmppConstants.ID,messageIDs);
+  message.setHeader(SmppConstants.SENT_MESSAGE_COUNT,messageIDs.size());
+}

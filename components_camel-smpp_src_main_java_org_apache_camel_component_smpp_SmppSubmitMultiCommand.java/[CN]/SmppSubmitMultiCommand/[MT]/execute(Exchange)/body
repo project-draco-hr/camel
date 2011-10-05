@@ -1,0 +1,41 @@
+{
+  SubmitMulti[] submitMulties=createSubmitMulti(exchange);
+  List<SubmitMultiResult> results=new ArrayList<SubmitMultiResult>(submitMulties.length);
+  for (int i=0; i < submitMulties.length; i++) {
+    SubmitMulti submitMulti=submitMulties[i];
+    SubmitMultiResult result;
+    log.debug("Sending multiple short messages for exchange id '{}'...",exchange.getExchangeId());
+    try {
+      result=session.submitMultiple(submitMulti.getServiceType(),TypeOfNumber.valueOf(submitMulti.getSourceAddrTon()),NumberingPlanIndicator.valueOf(submitMulti.getSourceAddrNpi()),submitMulti.getSourceAddr(),(Address[])submitMulti.getDestAddresses(),new ESMClass(submitMulti.getEsmClass()),submitMulti.getProtocolId(),submitMulti.getPriorityFlag(),submitMulti.getScheduleDeliveryTime(),submitMulti.getValidityPeriod(),new RegisteredDelivery(submitMulti.getRegisteredDelivery()),new ReplaceIfPresentFlag(submitMulti.getReplaceIfPresentFlag()),new GeneralDataCoding(submitMulti.getDataCoding()),submitMulti.getSmDefaultMsgId(),submitMulti.getShortMessage(),new OptionalParameter[0]);
+      results.add(result);
+    }
+ catch (    Exception e) {
+      throw new SmppException(e);
+    }
+  }
+  log.debug("Sent multiple short messages for exchange id '{}' and received results '{}'",exchange.getExchangeId(),results);
+  List<String> messageIDs=new ArrayList<String>(results.size());
+  Map<String,List<Map<String,Object>>> errors=new HashMap<String,List<Map<String,Object>>>();
+  for (  SubmitMultiResult result : results) {
+    UnsuccessDelivery[] deliveries=result.getUnsuccessDeliveries();
+    if (deliveries != null) {
+      List<Map<String,Object>> undelivered=new ArrayList<Map<String,Object>>();
+      for (      UnsuccessDelivery delivery : deliveries) {
+        Map<String,Object> error=new HashMap<String,Object>();
+        error.put(SmppConstants.DEST_ADDR,delivery.getDestinationAddress().getAddress());
+        error.put(SmppConstants.ERROR,delivery.getErrorStatusCode());
+        undelivered.add(error);
+      }
+      if (!undelivered.isEmpty()) {
+        errors.put(result.getMessageId(),undelivered);
+      }
+    }
+    messageIDs.add(result.getMessageId());
+  }
+  Message message=getResponseMessage(exchange);
+  message.setHeader(SmppConstants.ID,messageIDs);
+  message.setHeader(SmppConstants.SENT_MESSAGE_COUNT,messageIDs.size());
+  if (!errors.isEmpty()) {
+    message.setHeader(SmppConstants.ERROR,errors);
+  }
+}

@@ -1,0 +1,38 @@
+{
+  if (!isSplitRequired()) {
+    return new byte[][]{message};
+  }
+  int segmentLength=getSegmentLength();
+  int segmentNum=message.length / segmentLength;
+  int messageLength=message.length;
+  if (segmentNum > MAX_SEG_COUNT) {
+    segmentNum=MAX_SEG_COUNT;
+    messageLength=segmentNum * segmentLength;
+  }
+  if ((messageLength % segmentLength) > 0) {
+    segmentNum++;
+  }
+  byte[][] segments=new byte[segmentNum][];
+  int lengthOfData;
+  byte refNum=getReferenceNumber();
+  for (int i=0; i < segmentNum; i++) {
+    LOG.debug("segment number = {}",i);
+    if (segmentNum - i == 1) {
+      lengthOfData=messageLength - i * segmentLength;
+    }
+ else {
+      lengthOfData=segmentLength;
+    }
+    LOG.debug("Length of data = {}",lengthOfData);
+    segments[i]=new byte[UDHIE_HEADER_REAL_LENGTH + lengthOfData];
+    LOG.debug("segments[{}].length = {}",i,segments[i].length);
+    segments[i][0]=UDHIE_HEADER_LENGTH;
+    segments[i][1]=UDHIE_IDENTIFIER_SAR;
+    segments[i][2]=UDHIE_SAR_LENGTH;
+    segments[i][3]=refNum;
+    segments[i][4]=(byte)segmentNum;
+    segments[i][5]=(byte)(i + 1);
+    System.arraycopy(message,i * segmentLength,segments[i],UDHIE_HEADER_REAL_LENGTH,lengthOfData);
+  }
+  return segments;
+}
