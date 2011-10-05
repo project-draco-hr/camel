@@ -7,9 +7,14 @@
     return ((ManagementAware)service).getManagedObject(service);
   }
  else   if (service instanceof Tracer) {
-    ManagedTracer mt=new ManagedTracer(context,(Tracer)service);
-    mt.init(getManagementStrategy());
-    return mt;
+    Object mo=this.managedTracers.get(service);
+    if (mo == null) {
+      ManagedTracer mt=new ManagedTracer(context,(Tracer)service);
+      mt.init(getManagementStrategy());
+      this.managedTracers.put(service,mt);
+      mo=mt;
+    }
+    return mo;
   }
  else   if (service instanceof EventNotifier) {
     answer=getManagementObjectStrategy().getManagedObjectForEventNotifier(context,(EventNotifier)service);
