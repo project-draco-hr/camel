@@ -1,16 +1,14 @@
 {
-  if (text != null && !text.startsWith("properties:") && text.contains(PropertiesComponent.PREFIX_TOKEN)) {
-    Component component=hasComponent("properties");
-    if (component == null) {
-      component=getRegistry().lookup("properties",Component.class);
-    }
-    if (component == null) {
+  PropertiesComponent pc=getPropertiesComponent();
+  if (text != null && !text.startsWith("properties:")) {
+    if (pc == null && text.contains(PropertiesComponent.DEFAULT_PREFIX_TOKEN)) {
       throw new IllegalArgumentException("PropertiesComponent with name properties must be defined" + " in CamelContext to support property placeholders.");
     }
-    PropertiesComponent pc=getComponent("properties",PropertiesComponent.class);
-    String answer=pc.parseUri(text);
-    log.debug("Resolved text: {} -> {}",text,answer);
-    return answer;
+ else     if (pc != null && text.contains(pc.getPrefixToken())) {
+      String answer=pc.parseUri(text);
+      log.debug("Resolved text: {} -> {}",text,answer);
+      return answer;
+    }
   }
   return text;
 }
