@@ -1,5 +1,16 @@
 {
   String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
+  String uriString=exchange.getIn().getHeader(Exchange.HTTP_URI,String.class);
+  try {
+    uriString=exchange.getContext().resolvePropertyPlaceholders(uriString);
+  }
+ catch (  Exception e) {
+    throw new RuntimeExchangeException("Cannot resolve property placeholders with uri: " + uriString,exchange,e);
+  }
+  if (uriString != null) {
+    URI uri=new URI(uriString);
+    queryString=uri.getQuery();
+  }
   if (queryString == null) {
     queryString=endpoint.getHttpUri().getRawQuery();
   }
