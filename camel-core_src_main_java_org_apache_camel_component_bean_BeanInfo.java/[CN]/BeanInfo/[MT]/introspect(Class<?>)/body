@@ -2,7 +2,13 @@
   clazz=getTargetClass(clazz);
   ObjectHelper.notNull(clazz,"clazz",this);
   LOG.trace("Introspecting class: {}",clazz);
-  Method[] methods=clazz.getDeclaredMethods();
+  List<Method> methods=Arrays.asList(clazz.getDeclaredMethods());
+  if (!Modifier.isPublic(clazz.getModifiers())) {
+    LOG.trace("Preferring interface methods as class: {} is not public accessible",clazz);
+    List<Method> interfaceMethods=getInterfaceMethods(clazz);
+    interfaceMethods.addAll(methods);
+    methods=interfaceMethods;
+  }
   for (  Method method : methods) {
     boolean valid=isValidMethod(clazz,method);
     LOG.trace("Method: {} is valid: {}",method,valid);
