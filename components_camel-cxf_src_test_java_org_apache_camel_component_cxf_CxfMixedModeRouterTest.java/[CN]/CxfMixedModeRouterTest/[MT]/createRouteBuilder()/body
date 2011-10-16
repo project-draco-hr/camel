@@ -7,7 +7,7 @@
           CxfPayload<?> message=exchange.getIn().getBody(CxfPayload.class);
           List<String> params=new ArrayList<String>();
           if (message != null) {
-            Element element=message.getBody().get(0);
+            Element element=new XmlConverter().toDOMElement(message.getBody().get(0));
             params.add(element.getFirstChild().getTextContent());
           }
           exchange.getIn().setBody(params);
@@ -19,8 +19,8 @@
           CxfPayload<SoapHeader> message=null;
           if (list != null) {
             String s="<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "<ns1:echoResponse xmlns:ns1=\"http://cxf.component.camel.apache.org/\">" + "<return xmlns=\"http://cxf.component.camel.apache.org/\">" + list.get(0) + "</return></ns1:echoResponse>";
-            List<Element> body=new ArrayList<Element>();
-            body.add(XMLUtils.parse(s).getDocumentElement());
+            List<Source> body=new ArrayList<Source>();
+            body.add(new DOMSource(XMLUtils.parse(s).getDocumentElement()));
             message=new CxfPayload<SoapHeader>(new ArrayList<SoapHeader>(),body);
           }
           exchange.getIn().setBody(message);

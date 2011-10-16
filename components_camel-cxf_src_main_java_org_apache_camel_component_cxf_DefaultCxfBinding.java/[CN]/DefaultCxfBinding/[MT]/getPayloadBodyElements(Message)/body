@@ -28,7 +28,7 @@
  else {
     partInfos=op.getInput().getMessageParts();
   }
-  List<Element> answer=new ArrayList<Element>();
+  List<Source> answer=new ArrayList<Source>();
   for (  MessagePartInfo partInfo : partInfos) {
     if (!inObjects.hasValue(partInfo)) {
       continue;
@@ -38,16 +38,16 @@
       part=((Holder)part).value;
     }
     if (part instanceof Source) {
-      Element element;
+      Element element=null;
       if (part instanceof DOMSource) {
         element=getFirstElement(((DOMSource)part).getNode());
       }
- else {
-        element=getFirstElement((Source)part);
-      }
       if (element != null) {
         addNamespace(element,nsMap);
-        answer.add(element);
+        answer.add(new DOMSource(element));
+      }
+ else {
+        answer.add((Source)part);
       }
       if (LOG.isTraceEnabled()) {
         LOG.trace("Extract body element {}",element == null ? "null" : XMLUtils.toString(element));
@@ -55,7 +55,7 @@
     }
  else     if (part instanceof Element) {
       addNamespace((Element)part,nsMap);
-      answer.add((Element)part);
+      answer.add(new DOMSource((Element)part));
     }
  else {
       if (LOG.isDebugEnabled()) {

@@ -1,6 +1,25 @@
 {
   if (cls == XMLStreamWriter.class) {
-    return (DataWriter<T>)new XMLStreamDataWriter();
+    return (DataWriter<T>)new XMLStreamDataWriter(){
+      public void write(      Object obj,      MessagePartInfo part,      XMLStreamWriter output){
+        if (obj == null) {
+          return;
+        }
+        if (obj instanceof StaxSource || obj instanceof StAXSource) {
+          XMLStreamReader reader=StaxUtils.createXMLStreamReader((Source)obj);
+          try {
+            StaxUtils.copy(reader,output);
+            reader.close();
+          }
+ catch (          XMLStreamException e) {
+            throw new Fault(new Message("COULD_NOT_READ_XML_STREAM",LOG),e);
+          }
+          return;
+        }
+        super.write(obj,part,output);
+      }
+    }
+;
   }
  else   if (cls == Node.class) {
     return (DataWriter<T>)new NodeDataWriter();
