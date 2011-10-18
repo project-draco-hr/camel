@@ -1,0 +1,20 @@
+{
+  getInstalledBundle("CamelBlueprintSqlTestBundle").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintSqlTestBundle)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintSqlTestBundle)",10000);
+  MockEndpoint mock=(MockEndpoint)ctx.getEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  List<Object> body=new ArrayList<Object>();
+  body.add("ASF");
+  body.add("Camel");
+  ProducerTemplate template=ctx.createProducerTemplate();
+  template.sendBody("direct:list",body);
+  mock.assertIsSatisfied();
+  List<?> received=assertIsInstanceOf(List.class,mock.getReceivedExchanges().get(0).getIn().getBody());
+  Map<?,?> firstRow=assertIsInstanceOf(Map.class,received.get(0));
+  assertEquals(1,firstRow.get("ID"));
+  for (  Object obj : received) {
+    Map<?,?> row=assertIsInstanceOf(Map.class,obj);
+    assertTrue("not preserving key ordering for a given row keys: " + row.keySet(),isOrdered(row.keySet()));
+  }
+}

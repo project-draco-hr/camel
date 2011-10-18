@@ -1,0 +1,14 @@
+{
+  getInstalledBundle("CamelBlueprintSqlTestBundle").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintSqlTestBundle)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintSqlTestBundle)",10000);
+  MockEndpoint mock=(MockEndpoint)ctx.getEndpoint("mock:result");
+  try {
+    ProducerTemplate template=ctx.createProducerTemplate();
+    template.sendBody("direct:list","ASF");
+    fail();
+  }
+ catch (  RuntimeCamelException e) {
+    assertTrue("Exception thrown is wrong",e.getCause() instanceof DataAccessException);
+  }
+}
