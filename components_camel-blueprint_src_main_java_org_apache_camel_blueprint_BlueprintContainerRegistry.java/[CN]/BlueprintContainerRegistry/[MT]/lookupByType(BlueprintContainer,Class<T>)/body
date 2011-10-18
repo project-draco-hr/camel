@@ -1,30 +1,20 @@
 {
+  Bundle bundle=(Bundle)blueprintContainer.getComponentInstance("blueprintBundle");
   Map<String,T> objects=new LinkedHashMap<String,T>();
-  for (  Object metadataObject : blueprintContainer.getMetadata(ExtendedBeanMetadata.class)) {
-    ExtendedBeanMetadata metadata=(ExtendedBeanMetadata)metadataObject;
+  @SuppressWarnings("unchecked") Set<String> ids=blueprintContainer.getComponentIds();
+  for (  String id : ids) {
     try {
-      Class cl=metadata.getRuntimeClass();
-      if (cl == null && metadata.getClassName() != null) {
-        Bundle bundle=(Bundle)blueprintContainer.getComponentInstance("blueprintBundle");
-        cl=bundle.loadClass(metadata.getClassName());
+      ComponentMetadata metadata=blueprintContainer.getComponentMetadata(id);
+      Class cl=null;
+      if (metadata instanceof BeanMetadata) {
+        BeanMetadata beanMetadata=(BeanMetadata)metadata;
+        cl=bundle.loadClass(beanMetadata.getClassName());
       }
-      if (cl == null || type.isAssignableFrom(cl)) {
-        Object o=blueprintContainer.getComponentInstance(metadata.getId());
-        objects.put(metadata.getId(),type.cast(o));
+ else       if (metadata instanceof ReferenceMetadata) {
+        ReferenceMetadata referenceMetadata=(ReferenceMetadata)metadata;
+        cl=bundle.loadClass(referenceMetadata.getInterface());
       }
-    }
- catch (    Throwable t) {
-    }
-  }
-  for (  Object metadataObject : blueprintContainer.getMetadata(MutableReferenceMetadata.class)) {
-    MutableReferenceMetadata metadata=(MutableReferenceMetadata)metadataObject;
-    try {
-      Class cl=metadata.getRuntimeInterface();
-      if (cl == null && metadata.getInterface() != null) {
-        Bundle bundle=(Bundle)blueprintContainer.getComponentInstance("blueprintBundle");
-        cl=bundle.loadClass(metadata.getInterface());
-      }
-      if (cl == null || type.isAssignableFrom(cl)) {
+      if (cl != null && type.isAssignableFrom(cl)) {
         Object o=blueprintContainer.getComponentInstance(metadata.getId());
         objects.put(metadata.getId(),type.cast(o));
       }
