@@ -11,14 +11,15 @@
     transportHeaders.putAll(headers);
   }
   for (  Map.Entry<String,Object> entry : camelHeaders.entrySet()) {
+    if (Message.RESPONSE_CODE.equals(entry.getKey()) || Exchange.HTTP_RESPONSE_CODE.equals(entry.getKey())) {
+      LOG.debug("Propagate to CXF header: {} value: {}",Message.RESPONSE_CODE,entry.getValue());
+      cxfContext.put(Message.RESPONSE_CODE,entry.getValue());
+      continue;
+    }
     if (headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue(),camelExchange)) {
       continue;
     }
-    LOG.trace("Propagate to CXF header: {} value: {}",entry.getKey(),entry.getValue());
-    if (Message.RESPONSE_CODE.equals(entry.getKey())) {
-      cxfContext.put(entry.getKey(),entry.getValue());
-      continue;
-    }
+    LOG.debug("Propagate to CXF header: {} value: {}",entry.getKey(),entry.getValue());
     if (Header.HEADER_LIST.equals(entry.getKey())) {
       List<Header> headerList=(List<Header>)entry.getValue();
       for (      Header header : headerList) {
