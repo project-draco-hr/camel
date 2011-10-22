@@ -18,6 +18,10 @@ class ExcludePathFilter implements PathFilter {
     this.idle.set(false);
   }
   for (int i=0; i < fileStatuses.length; ++i) {
+    FileStatus status=fileStatuses[i];
+    if (normalFileIsDirectoryNoSuccessFile(status,info)) {
+      continue;
+    }
     try {
       this.rwlock.writeLock().lock();
       this.istream=HdfsInputStream.createInputStream(fileStatuses[i].getPath().toString(),this.config);
@@ -30,6 +34,7 @@ class ExcludePathFilter implements PathFilter {
     while (this.istream.next(key,value) != 0) {
       Exchange exchange=this.getEndpoint().createExchange();
       Message message=new DefaultMessage();
+      message.setHeader(Exchange.FILE_NAME,StringUtils.substringAfterLast(status.getPath().toString(),"/"));
       if (key.value != null) {
         message.setHeader(HdfsHeader.KEY.name(),key.value);
       }
