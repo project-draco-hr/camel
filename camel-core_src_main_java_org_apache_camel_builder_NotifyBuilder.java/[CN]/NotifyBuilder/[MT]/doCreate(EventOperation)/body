@@ -3,9 +3,21 @@
     operation=newOperation == EventOperation.or ? EventOperation.or : EventOperation.and;
   }
   if (!stack.isEmpty()) {
+    fromRoutesOnly();
+    boolean found=false;
+    for (    EventPredicate predicate : stack) {
+      if (!predicate.isAbstract()) {
+        found=true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new IllegalArgumentException("NotifyBuilder must contain at least one non-abstract predicate (such as whenDone)");
+    }
     CompoundEventPredicate compound=new CompoundEventPredicate(stack);
     stack.clear();
     predicates.add(new EventPredicateHolder(operation,compound));
   }
   operation=newOperation;
+  wereSentToIndex=0;
 }

@@ -1,17 +1,27 @@
 {
-  stack.push(new EventPredicateSupport(){
-    private boolean matches;
-    @Override public boolean onExchangeSent(    Exchange exchange,    Endpoint endpoint,    long timeTaken){
-      if (EndpointHelper.matchEndpoint(endpoint.getEndpointUri(),endpointUri)) {
-        matches=true;
-      }
+  stack.add(wereSentToIndex++,new EventPredicateSupport(){
+    private boolean sentTo;
+    @Override public boolean isAbstract(){
       return true;
     }
+    @Override public boolean onExchangeCreated(    Exchange exchange){
+      sentTo=false;
+      return onExchange(exchange);
+    }
+    @Override public boolean onExchangeSent(    Exchange exchange,    Endpoint endpoint,    long timeTaken){
+      if (EndpointHelper.matchEndpoint(endpoint.getEndpointUri(),endpointUri)) {
+        sentTo=true;
+      }
+      return onExchange(exchange);
+    }
+    @Override public boolean onExchange(    Exchange exchange){
+      return sentTo;
+    }
     public boolean matches(){
-      return matches;
+      return true;
     }
     @Override public void reset(){
-      matches=false;
+      sentTo=false;
     }
     @Override public String toString(){
       return "wereSentTo(" + endpointUri + ")";
