@@ -1,0 +1,15 @@
+{
+  shutdownRunningTask=null;
+  pendingExchanges=0;
+  Queue<Exchange> queue=new LinkedList<Exchange>();
+  Iterator keyIterator=dataStore.keyIterator();
+  while (keyIterator.hasNext()) {
+    Object key=keyIterator.next();
+    Object value=dataStore.get(key);
+    Exchange exchange=endpoint.createExchange();
+    exchange.setProperty(KratiConstants.KEY,key);
+    exchange.getIn().setBody(value);
+    queue.add(exchange);
+  }
+  return queue.isEmpty() ? 0 : processBatch(CastUtils.cast(queue));
+}

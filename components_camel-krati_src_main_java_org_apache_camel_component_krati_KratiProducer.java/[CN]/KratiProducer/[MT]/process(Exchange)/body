@@ -1,0 +1,37 @@
+{
+  String operation=getOperation(exchange);
+  String key=getKey(exchange);
+  LOG.trace("Processing {} operation on '[{}]'",operation,exchange);
+  if (KratiConstants.KRATI_OPERATION_GET.equals(operation) && key != null) {
+    exchange.getOut().setBody(dataStore.get(key));
+  }
+ else   if (KratiConstants.KRATI_OPERATION_DELETE.equals(operation) && key != null) {
+    boolean status;
+synchronized (dataStore) {
+      status=dataStore.delete(key);
+      dataStore.persist();
+    }
+    if (status) {
+      exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_SUCESSFUL);
+    }
+ else {
+      exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_FAILURE);
+    }
+  }
+ else   if (KratiConstants.KRATI_OPERATION_DELETEALL.equals(operation)) {
+    try {
+      dataStore.clear();
+      exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_SUCESSFUL);
+    }
+ catch (    Exception e) {
+      LOG.warn("Error clearing all entries from store",e);
+      exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_FAILURE);
+    }
+  }
+ else {
+    Object value=getValue(exchange);
+synchronized (endpoint.getPath().intern()) {
+      dataStore.put(key,value);
+    }
+  }
+}
