@@ -23,17 +23,9 @@
       throw new CamelExchangeException("Error processing exchange",exchange,cause);
     }
   }
-  Class<?> to=method.getReturnType();
+  Class<?> to=isFuture ? getGenericType(exchange.getContext(),method.getGenericReturnType()) : method.getReturnType();
   if (to == Void.TYPE) {
     return null;
   }
-  Object answer;
-  if (!isFuture) {
-    answer=getBody(exchange,to);
-  }
- else {
-    Class<?> returnTo=getGenericType(exchange.getContext(),method.getGenericReturnType());
-    answer=getBody(exchange,returnTo);
-  }
-  return answer;
+  return getBody(exchange,to);
 }

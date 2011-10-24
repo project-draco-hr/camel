@@ -1,0 +1,31 @@
+{
+  final Exchange exchange=new DefaultExchange(endpoint,pattern);
+  exchange.getIn().setBody(body);
+  final boolean isFuture=method.getReturnType() == Future.class;
+  FutureTask<Object> task=new FutureTask<Object>(new Callable<Object>(){
+    public Object call() throws Exception {
+      LOG.trace("Proxied method call {} invoking producer: {}",method.getName(),producer);
+      producer.process(exchange);
+      Object answer=afterInvoke(method,exchange,pattern,isFuture);
+      LOG.trace("Proxied method call {} returning: {}",method.getName(),answer);
+      return answer;
+    }
+  }
+);
+  if (isFuture) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Submitting task for exchange id {}",exchange.getExchangeId());
+    }
+    getExecutorService(exchange.getContext()).submit(task);
+    return task;
+  }
+ else {
+    try {
+      task.run();
+      return task.get();
+    }
+ catch (    ExecutionException e) {
+      throw e.getCause();
+    }
+  }
+}

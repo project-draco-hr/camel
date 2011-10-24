@@ -2,33 +2,5 @@
   BeanInvocation invocation=new BeanInvocation(method,args);
   MethodInfo methodInfo=methodInfoCache.getMethodInfo(method);
   final ExchangePattern pattern=methodInfo != null ? methodInfo.getPattern() : ExchangePattern.InOut;
-  final Exchange exchange=endpoint.createExchange(pattern);
-  exchange.getIn().setBody(invocation);
-  final boolean isFuture=method.getReturnType() == Future.class;
-  FutureTask task=new FutureTask<Object>(new Callable<Object>(){
-    public Object call() throws Exception {
-      LOG.trace("Proxied method call {} invoking producer: {}",method.getName(),producer);
-      producer.process(exchange);
-      Object answer=afterInvoke(method,exchange,pattern,isFuture);
-      LOG.trace("Proxied method call {} returning: {}",method.getName(),answer);
-      return answer;
-    }
-  }
-);
-  if (isFuture) {
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Submitting task for exchange id {}",exchange.getExchangeId());
-    }
-    getExecutorService(exchange.getContext()).submit(task);
-    return task;
-  }
- else {
-    try {
-      task.run();
-      return task.get();
-    }
- catch (    ExecutionException e) {
-      throw e.getCause();
-    }
-  }
+  return invokeWithbody(method,invocation,pattern);
 }
