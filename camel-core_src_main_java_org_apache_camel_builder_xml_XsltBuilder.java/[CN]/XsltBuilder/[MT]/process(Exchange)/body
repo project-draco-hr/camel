@@ -13,8 +13,15 @@
   out.copyFrom(exchange.getIn());
   InputStream is=null;
   try {
-    is=exchange.getIn().getBody(InputStream.class);
-    Source source=getSource(exchange,is);
+    Source source;
+    if (isInputStreamNeeded(exchange)) {
+      is=exchange.getIn().getBody(InputStream.class);
+      source=getSource(exchange,is);
+    }
+ else {
+      Object body=exchange.getIn().getBody();
+      source=getSource(exchange,body);
+    }
     LOG.trace("Using {} as source",source);
     transformer.transform(source,result);
     LOG.trace("Transform complete with result {}",result);
