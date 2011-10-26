@@ -1,0 +1,12 @@
+{
+  getInstalledBundle("CamelBlueprintKratiTestBundle").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintKratiTestBundle)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintKratiTestBundle)",10000);
+  MockEndpoint mock=(MockEndpoint)ctx.getEndpoint("mock:results");
+  ProducerTemplate template=ctx.createProducerTemplate();
+  mock.expectedMessageCount(2);
+  template.sendBodyAndHeader("direct:put",new SomeObject("1","Test 1"),KratiConstants.KEY,"1");
+  template.sendBodyAndHeader("direct:put",new SomeObject("2","Test 2"),KratiConstants.KEY,"2");
+  template.sendBodyAndHeader("direct:put",new SomeObject("3","Test 3"),KratiConstants.KEY,"1");
+  assertMockEndpointsSatisfied();
+}
