@@ -20,7 +20,15 @@
     properties.setProperty(Velocity.RUNTIME_LOG_LOGSYSTEM_CLASS,CommonsLogLogChute.class.getName());
     properties.setProperty(CommonsLogLogChute.LOGCHUTE_COMMONS_LOG_NAME,VelocityEndpoint.class.getName());
     log.debug("Initializing VelocityEngine with properties {}",properties);
-    velocityEngine.init(properties);
+    ClassLoader old=Thread.currentThread().getContextClassLoader();
+    try {
+      ClassLoader delegate=new CamelVelocityDelegateClassLoader(old);
+      Thread.currentThread().setContextClassLoader(delegate);
+      velocityEngine.init(properties);
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(old);
+    }
   }
   return velocityEngine;
 }
