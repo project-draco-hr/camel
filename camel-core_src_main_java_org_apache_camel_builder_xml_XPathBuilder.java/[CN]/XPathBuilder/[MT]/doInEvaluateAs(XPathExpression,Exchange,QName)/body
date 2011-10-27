@@ -2,8 +2,17 @@
   LOG.trace("Evaluating exchange: {} as: {}",exchange,resultQName);
   Object answer;
   this.exchange.set(exchange);
+  InputStream is=null;
   try {
-    Object document=getDocument(exchange);
+    Object document;
+    if (isInputStreamNeeded(exchange)) {
+      is=exchange.getIn().getBody(InputStream.class);
+      document=getDocument(exchange,is);
+    }
+ else {
+      Object body=exchange.getIn().getBody();
+      document=getDocument(exchange,body);
+    }
     if (resultQName != null) {
       if (document instanceof InputSource) {
         InputSource inputSource=(InputSource)document;
@@ -33,6 +42,9 @@
   }
  catch (  XPathExpressionException e) {
     throw new InvalidXPathExpression(getText(),e);
+  }
+ finally {
+    IOHelper.close(is);
   }
   if (LOG.isTraceEnabled()) {
     LOG.trace("Done evaluating exchange: {} as: {} with result: {}",new Object[]{exchange,resultQName,answer});
