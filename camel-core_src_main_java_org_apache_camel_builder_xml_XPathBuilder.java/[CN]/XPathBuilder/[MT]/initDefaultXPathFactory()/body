@@ -1,0 +1,23 @@
+{
+  if (defaultXPathFactory == null) {
+    if (objectModelUri != null) {
+      defaultXPathFactory=XPathFactory.newInstance(objectModelUri);
+      LOG.info("Using objectModelUri " + objectModelUri + " when created XPathFactory {}",defaultXPathFactory);
+    }
+    if (defaultXPathFactory == null) {
+      Properties properties=System.getProperties();
+      for (      Map.Entry prop : properties.entrySet()) {
+        String key=(String)prop.getKey();
+        if (key.startsWith(XPathFactory.DEFAULT_PROPERTY_NAME)) {
+          String uri=ObjectHelper.after(key,":");
+          if (uri != null) {
+            defaultXPathFactory=XPathFactory.newInstance(uri);
+            LOG.info("Using system property {} with value {} when created XPathFactory {}",new Object[]{key,uri,defaultXPathFactory});
+          }
+        }
+      }
+    }
+    defaultXPathFactory=XPathFactory.newInstance();
+    LOG.info("Created default XPathFactory {}",defaultXPathFactory);
+  }
+}
