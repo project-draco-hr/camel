@@ -1,4 +1,12 @@
 {
   InputStream in=new URL(uri).openStream();
-  return getAtomParser().parse(in);
+  Parser parser=getAtomParser();
+  ClassLoader old=Thread.currentThread().getContextClassLoader();
+  try {
+    Thread.currentThread().setContextClassLoader(parser.getClass().getClassLoader());
+    return parser.parse(in);
+  }
+  finally {
+    Thread.currentThread().setContextClassLoader(old);
+  }
 }
