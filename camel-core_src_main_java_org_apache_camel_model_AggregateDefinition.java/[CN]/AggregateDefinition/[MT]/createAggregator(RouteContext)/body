@@ -13,10 +13,16 @@
       executorService=new SynchronousExecutorService();
     }
   }
+  if (timeoutCheckerExecutorServiceRef != null && timeoutCheckerExecutorService == null) {
+    timeoutCheckerExecutorService=getConfiguredScheduledExecutorService(routeContext);
+  }
   AggregateProcessor answer=new AggregateProcessor(routeContext.getCamelContext(),processor,correlation,strategy,executorService);
   AggregationRepository repository=createAggregationRepository(routeContext);
   if (repository != null) {
     answer.setAggregationRepository(repository);
+  }
+  if (getTimeoutCheckerExecutorService() != null) {
+    answer.setTimeoutCheckerExecutorService(timeoutCheckerExecutorService);
   }
   answer.setParallelProcessing(isParallelProcessing());
   if (getCompletionPredicate() != null) {

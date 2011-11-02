@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      ThreadPoolProfile profile=new ThreadPoolProfile("MyThreadPool");
+      profile.setPoolSize(8);
+      profile.setMaxPoolSize(8);
+      profile.setRejectedPolicy(ThreadPoolRejectedPolicy.Abort);
+      context.getExecutorServiceManager().registerThreadPoolProfile(profile);
+      for (int i=0; i < NUM_AGGREGATORS; ++i) {
+        from("direct:start" + i).aggregate(header("id"),new UseLatestAggregationStrategy()).completionTimeout(3000).timeoutCheckerExecutorServiceRef("MyThreadPool").to("mock:result" + i);
+      }
+    }
+  }
+;
+}
