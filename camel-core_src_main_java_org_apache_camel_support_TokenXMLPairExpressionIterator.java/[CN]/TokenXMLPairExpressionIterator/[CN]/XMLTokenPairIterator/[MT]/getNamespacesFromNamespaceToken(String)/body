@@ -1,0 +1,40 @@
+{
+  if (text == null) {
+    return null;
+  }
+  Matcher mat=inheritNamespaceTokenPattern.matcher(text);
+  if (mat.find()) {
+    text=mat.group(0);
+  }
+ else {
+    return null;
+  }
+  Map<String,String> namespaces=new LinkedHashMap<String,String>();
+  Matcher matcher=NAMESPACE_PATTERN.matcher(text);
+  while (matcher.find()) {
+    String prefix=matcher.group(1);
+    String url=matcher.group(2);
+    if (ObjectHelper.isEmpty(prefix)) {
+      prefix="_DEFAULT_";
+    }
+ else {
+      prefix=prefix.substring(1);
+    }
+    namespaces.put(prefix,url);
+  }
+  if (namespaces.isEmpty()) {
+    return null;
+  }
+  StringBuilder sb=new StringBuilder();
+  for (  Map.Entry<String,String> entry : namespaces.entrySet()) {
+    String key=entry.getKey();
+    String value=entry.getValue();
+    if ("_DEFAULT_".equals(key)) {
+      sb.append(" xmlns=\"").append(value).append("\"");
+    }
+ else {
+      sb.append(" xmlns:").append(key).append("=\"").append(value).append("\"");
+    }
+  }
+  return sb.toString();
+}
