@@ -1,0 +1,27 @@
+{
+  if (encryptedStream == null) {
+    return null;
+  }
+  PGPPrivateKey key=getPrivateKey(exchange);
+  if (key == null) {
+    throw new IllegalArgumentException("Private key is null, cannot proceed");
+  }
+  InputStream in=new ByteArrayInputStream(IOUtils.toByteArray(encryptedStream));
+  in=PGPUtil.getDecoderStream(in);
+  PGPObjectFactory pgpF=new PGPObjectFactory(in);
+  PGPEncryptedDataList enc;
+  Object o=pgpF.nextObject();
+  if (o instanceof PGPEncryptedDataList) {
+    enc=(PGPEncryptedDataList)o;
+  }
+ else {
+    enc=(PGPEncryptedDataList)pgpF.nextObject();
+  }
+  PGPPublicKeyEncryptedData pbe=(PGPPublicKeyEncryptedData)enc.get(0);
+  InputStream clear=pbe.getDataStream(key,"BC");
+  PGPObjectFactory pgpFact=new PGPObjectFactory(clear);
+  PGPCompressedData cData=(PGPCompressedData)pgpFact.nextObject();
+  pgpFact=new PGPObjectFactory(cData.getDataStream());
+  PGPLiteralData ld=(PGPLiteralData)pgpFact.nextObject();
+  return Streams.readAll(ld.getInputStream());
+}

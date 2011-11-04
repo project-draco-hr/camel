@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      PGPDataFormat cryptoFormat=new PGPDataFormat();
+      PGPPublicKey pKey=PGPDataFormatUtil.findPublicKey(keyFileName,keyUserid);
+      PGPPrivateKey sKey=PGPDataFormatUtil.findPrivateKey(keyFileNameSec,keyUserid,keyPassword);
+      cryptoFormat.setPublicKey(pKey);
+      cryptoFormat.setPrivateKey(sKey);
+      from("direct:inline").marshal(cryptoFormat).to("mock:encrypted").unmarshal(cryptoFormat).to("mock:unencrypted");
+      PGPDataFormat cryptoFormatNoKey=new PGPDataFormat();
+      cryptoFormat.setPublicKey(pKey);
+      cryptoFormat.setPrivateKey(sKey);
+      from("direct:inlineHeaders").setHeader(PGPDataFormat.KEY_PUB).constant(pKey).setHeader(PGPDataFormat.KEY_PRI).constant(sKey).marshal(cryptoFormatNoKey).to("mock:encrypted").unmarshal(cryptoFormatNoKey).to("mock:unencrypted");
+    }
+  }
+;
+}
