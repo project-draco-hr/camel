@@ -1,0 +1,25 @@
+{
+  Map<String,ManagedAttributeInfo> attributes=new HashMap<String,ManagedAttributeInfo>();
+  Set<ManagedOperationInfo> operations=new LinkedHashSet<ManagedOperationInfo>();
+  Set<ModelMBeanAttributeInfo> mBeanAttributes=new LinkedHashSet<ModelMBeanAttributeInfo>();
+  Set<ModelMBeanOperationInfo> mBeanOperations=new LinkedHashSet<ModelMBeanOperationInfo>();
+  Set<ModelMBeanNotificationInfo> mBeanNotifications=new LinkedHashSet<ModelMBeanNotificationInfo>();
+  extractAttributesAndOperations(defaultManagedBean,attributes,operations);
+  extractMbeanAttributes(defaultManagedBean,attributes,mBeanAttributes,mBeanOperations);
+  extractMbeanOperations(defaultManagedBean,operations,mBeanOperations);
+  extractMbeanNotifications(defaultManagedBean,mBeanNotifications);
+  if (customManagedBean != null) {
+    extractAttributesAndOperations(customManagedBean,attributes,operations);
+    extractMbeanAttributes(customManagedBean,attributes,mBeanAttributes,mBeanOperations);
+    extractMbeanOperations(customManagedBean,operations,mBeanOperations);
+    extractMbeanNotifications(customManagedBean,mBeanNotifications);
+  }
+  String name=getName(customManagedBean != null ? customManagedBean : defaultManagedBean,objectName);
+  String description=getDescription(customManagedBean != null ? customManagedBean : defaultManagedBean,objectName);
+  ModelMBeanAttributeInfo[] arrayAttributes=mBeanAttributes.toArray(new ModelMBeanAttributeInfo[mBeanAttributes.size()]);
+  ModelMBeanOperationInfo[] arrayOperations=mBeanOperations.toArray(new ModelMBeanOperationInfo[mBeanOperations.size()]);
+  ModelMBeanNotificationInfo[] arrayNotifications=mBeanNotifications.toArray(new ModelMBeanNotificationInfo[mBeanNotifications.size()]);
+  ModelMBeanInfo info=new ModelMBeanInfoSupport(name,description,arrayAttributes,null,arrayOperations,arrayNotifications);
+  LOG.trace("Created ModelMBeanInfo {}",info);
+  return info;
+}

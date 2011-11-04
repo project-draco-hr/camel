@@ -1,0 +1,18 @@
+{
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName name=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=endpoints,name=\"activemq://queue:start\"");
+  String uri=(String)mbeanServer.getAttribute(name,"EndpointUri");
+  assertEquals("activemq://queue:start",uri);
+  Boolean singleton=(Boolean)mbeanServer.getAttribute(name,"Singleton");
+  assertTrue(singleton.booleanValue());
+  Long size=(Long)mbeanServer.invoke(name,"queueSize",null,null);
+  assertEquals(0,size.intValue());
+  getMockEndpoint("mock:result").expectedMessageCount(2);
+  template.sendBody("activemq:queue:start","Hello World");
+  template.sendBody("activemq:queue:start","Bye World");
+  assertMockEndpointsSatisfied();
+  context.stopRoute("foo");
+  template.sendBody("activemq:queue:start","Hi World");
+  size=(Long)mbeanServer.invoke(name,"queueSize",null,null);
+  assertEquals(1,size.intValue());
+}
