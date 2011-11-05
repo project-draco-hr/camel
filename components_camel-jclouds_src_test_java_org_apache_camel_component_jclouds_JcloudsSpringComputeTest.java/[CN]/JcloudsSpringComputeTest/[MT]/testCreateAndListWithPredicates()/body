@@ -1,0 +1,28 @@
+{
+  template.sendBodyAndHeaders("direct:start",null,createHeaders("1","default"));
+  template.sendBodyAndHeaders("direct:start",null,createHeaders("1","other"));
+  template.sendBodyAndHeaders("direct:start",null,createHeaders("2","other"));
+  template.sendBodyAndHeaders("direct:start",null,listNodeHeaders(null,"other",null));
+  template.sendBodyAndHeaders("direct:start",null,listNodeHeaders("3","other",null));
+  template.sendBodyAndHeaders("direct:start",null,listNodeHeaders("3","other","RUNNING"));
+  result.expectedMessageCount(6);
+  result.assertIsSatisfied();
+  List<Exchange> exchanges=result.getExchanges();
+  Exchange exchange=exchanges.get(3);
+  Set<NodeMetadata> nodeMetadatas=(Set<NodeMetadata>)exchange.getIn().getBody();
+  assertEquals("Nodes should be 2",2,nodeMetadatas.size());
+  NodeMetadata nodeMetadata=nodeMetadatas.toArray(new NodeMetadata[0])[0];
+  assertEquals("other",nodeMetadata.getGroup());
+  exchange=exchanges.get(4);
+  nodeMetadatas=(Set<NodeMetadata>)exchange.getIn().getBody();
+  assertEquals("Nodes should be 1",1,nodeMetadatas.size());
+  nodeMetadata=nodeMetadatas.toArray(new NodeMetadata[0])[0];
+  assertEquals("other",nodeMetadata.getGroup());
+  assertEquals("3",nodeMetadata.getId());
+  exchange=exchanges.get(5);
+  nodeMetadatas=(Set<NodeMetadata>)exchange.getIn().getBody();
+  assertEquals("Nodes should be 1",1,nodeMetadatas.size());
+  nodeMetadata=nodeMetadatas.toArray(new NodeMetadata[0])[0];
+  assertEquals("other",nodeMetadata.getGroup());
+  assertEquals("3",nodeMetadata.getId());
+}
