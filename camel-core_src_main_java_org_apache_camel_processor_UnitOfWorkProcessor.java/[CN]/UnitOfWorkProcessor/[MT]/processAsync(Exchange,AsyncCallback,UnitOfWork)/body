@@ -1,0 +1,27 @@
+{
+  LOG.trace("Processing exchange asynchronously: {}",exchange);
+  try {
+    return processor.process(exchange,new AsyncCallback(){
+      public void done(      boolean doneSync){
+        try {
+          callback.done(doneSync);
+        }
+  finally {
+          doneUow(uow,exchange);
+        }
+      }
+    }
+);
+  }
+ catch (  Throwable e) {
+    LOG.warn("Caught unhandled exception while processing ExchangeId: " + exchange.getExchangeId(),e);
+    exchange.setException(e);
+    try {
+      callback.done(true);
+    }
+  finally {
+      doneUow(uow,exchange);
+    }
+    return true;
+  }
+}

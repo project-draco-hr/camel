@@ -13,29 +13,12 @@
       exchange.setException(e);
       return true;
     }
-    try {
-      return processor.process(exchange,new AsyncCallback(){
-        public void done(        boolean doneSync){
-          try {
-            callback.done(doneSync);
-          }
-  finally {
-            doneUow(uow,exchange);
-          }
-        }
-      }
-);
+    Object synchronous=exchange.removeProperty(Exchange.UNIT_OF_WORK_PROCESS_SYNC);
+    if (synchronous != null) {
+      return processSync(exchange,callback,uow);
     }
- catch (    Throwable e) {
-      LOG.warn("Caught unhandled exception while processing ExchangeId: " + exchange.getExchangeId(),e);
-      exchange.setException(e);
-      try {
-        callback.done(true);
-      }
-  finally {
-        doneUow(uow,exchange);
-      }
-      return true;
+ else {
+      return processAsync(exchange,callback,uow);
     }
   }
  else {
