@@ -3,11 +3,31 @@
   if (exp == null) {
     String script=exchange.getIn().getHeader(Exchange.LANGUAGE_SCRIPT,String.class);
     if (script != null) {
+      script=getEndpoint().resolveScript(script);
       exp=getEndpoint().getLanguage().createExpression(script);
     }
   }
   if (exp == null) {
     exp=getEndpoint().getExpression();
+  }
+  if (exp == null) {
+    if (getEndpoint().getResourceUri() != null) {
+      String script;
+      InputStream is=getEndpoint().getResourceAsInputStream();
+      try {
+        script=getEndpoint().getCamelContext().getTypeConverter().convertTo(String.class,is);
+      }
+  finally {
+        IOHelper.close(is);
+      }
+      exp=getEndpoint().getLanguage().createExpression(script);
+      if (getEndpoint().isContentCache()) {
+        getEndpoint().setExpression(exp);
+      }
+    }
+ else {
+      throw new CamelExchangeException("No script to evaluate",exchange);
+    }
   }
   ObjectHelper.notNull(exp,"expression");
   Object result=exp.evaluate(exchange,Object.class);
