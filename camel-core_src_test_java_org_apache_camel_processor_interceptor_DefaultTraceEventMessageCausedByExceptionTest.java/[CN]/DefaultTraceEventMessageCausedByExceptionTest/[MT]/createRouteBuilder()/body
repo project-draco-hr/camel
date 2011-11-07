@@ -1,0 +1,12 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      Tracer tracer=Tracer.createTracer(context);
+      tracer.setDestinationUri("mock:traced");
+      context.addInterceptStrategy(tracer);
+      onException(Exception.class).handled(true).to("mock:handled");
+      from("direct:start").to("mock:foo").throwException(new IllegalArgumentException("Forced"));
+    }
+  }
+;
+}
