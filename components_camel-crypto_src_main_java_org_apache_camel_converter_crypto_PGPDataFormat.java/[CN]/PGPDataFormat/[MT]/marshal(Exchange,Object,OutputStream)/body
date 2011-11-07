@@ -1,11 +1,11 @@
 {
-  PGPPublicKey key=getPublicKey(exchange);
+  PGPPublicKey key=PGPDataFormatUtil.findPublicKey(exchange.getContext(),this.keyFileName,this.keyUserid);
   if (key == null) {
     throw new IllegalArgumentException("Public key is null, cannot proceed");
   }
   InputStream plaintextStream=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
-  byte[] compressedData=compress(IOUtils.toByteArray(plaintextStream),PGPLiteralData.CONSOLE,CompressionAlgorithmTags.ZIP);
-  if (armor) {
+  byte[] compressedData=PGPDataFormatUtil.compress(IOUtils.toByteArray(plaintextStream),PGPLiteralData.CONSOLE,CompressionAlgorithmTags.ZIP);
+  if (armored) {
     outputStream=new ArmoredOutputStream(outputStream);
   }
   PGPEncryptedDataGenerator encGen=new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5,integrity,new SecureRandom(),"BC");
@@ -16,8 +16,6 @@
   }
   finally {
     IOHelper.close(encOut);
-    if (armor) {
-      IOHelper.close(outputStream);
-    }
+    IOHelper.close(outputStream);
   }
 }
