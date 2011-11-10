@@ -10,16 +10,19 @@
       replyToSelectorValue="ID:" + new BigInteger(24 * 8,new Random()).toString(16);
       String fixedMessageSelector=replyToSelectorName + "='" + replyToSelectorValue+ "'";
       answer=new SharedPersistentQueueMessageListenerContainer(fixedMessageSelector);
+      answer.setCacheLevel(DefaultMessageListenerContainer.CACHE_CONSUMER);
       log.debug("Using shared queue: " + endpoint.getReplyTo() + " with fixed message selector ["+ fixedMessageSelector+ "] as reply listener: "+ answer);
     }
  else {
       dynamicMessageSelector=new MessageSelectorCreator(correlation);
       answer=new SharedPersistentQueueMessageListenerContainer(dynamicMessageSelector);
+      answer.setCacheLevel(DefaultMessageListenerContainer.CACHE_SESSION);
       log.debug("Using shared queue: " + endpoint.getReplyTo() + " with dynamic message selector as reply listener: "+ answer);
     }
   }
  else   if (ReplyToType.Exclusive == type) {
     answer=new ExclusivePersistentQueueMessageListenerContainer();
+    answer.setCacheLevel(DefaultMessageListenerContainer.CACHE_CONSUMER);
     log.debug("Using exclusive queue:" + endpoint.getReplyTo() + " as reply listener: "+ answer);
   }
  else {
@@ -43,7 +46,6 @@
     clientId+=".CamelReplyManager";
     answer.setClientId(clientId);
   }
-  answer.setCacheLevel(DefaultMessageListenerContainer.CACHE_SESSION);
   answer.setSessionTransacted(false);
   if (endpoint.getExceptionListener() != null) {
     answer.setExceptionListener(endpoint.getExceptionListener());
