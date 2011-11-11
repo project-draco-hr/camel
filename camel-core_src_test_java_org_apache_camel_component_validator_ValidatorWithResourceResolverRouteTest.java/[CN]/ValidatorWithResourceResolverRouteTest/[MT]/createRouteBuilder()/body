@@ -1,0 +1,15 @@
+{
+  CatalogManager.getStaticManager().setIgnoreMissingProperties(true);
+  CatalogResolver catalogResolver=new CatalogResolver(true);
+  URL catalogUrl=ResourceHelper.resolveMandatoryResourceAsUrl(context.getClassResolver(),"org/apache/camel/component/validator/catalog.cat");
+  catalogResolver.getCatalog().parseCatalog(catalogUrl);
+  LSResourceResolver resourceResolver=new CatalogLSResourceResolver(catalogResolver);
+  JndiRegistry registry=(JndiRegistry)((PropertyPlaceholderDelegateRegistry)context.getRegistry()).getRegistry();
+  registry.bind("resourceResolver",resourceResolver);
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").doTry().to("validator:org/apache/camel/component/validator/report.xsd?resourceResolver=#resourceResolver").to("mock:valid").doCatch(ValidationException.class).to("mock:invalid").doFinally().to("mock:finally").end();
+    }
+  }
+;
+}
