@@ -15,11 +15,9 @@
     pendingExchanges=total - index - 1;
     if (lockEntity(result,entityManager)) {
       LOG.debug("Processing exchange: {}",exchange);
-      try {
-        getProcessor().process(exchange);
-      }
- catch (      Exception e) {
-        throw new PersistenceException(e);
+      getProcessor().process(exchange);
+      if (exchange.getException() != null) {
+        throw exchange.getException();
       }
       getDeleteHandler().deleteObject(entityManager,result);
     }
