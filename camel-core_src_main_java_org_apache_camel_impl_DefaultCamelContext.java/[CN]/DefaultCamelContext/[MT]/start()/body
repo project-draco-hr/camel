@@ -4,7 +4,19 @@
   log.info("Apache Camel " + getVersion() + " (CamelContext: "+ getName()+ ") is starting");
   doNotStartRoutesOnFirstStart=!firstStartDone && !isAutoStartup();
   firstStartDone=true;
-  super.start();
+  try {
+    super.start();
+  }
+ catch (  VetoCamelContextStartException e) {
+    if (e.isRethrowException()) {
+      throw e;
+    }
+ else {
+      log.info("CamelContext ({}) vetoed to not start due {}",getName(),e.getMessage());
+      stop();
+      return;
+    }
+  }
   stopWatch.stop();
   if (log.isInfoEnabled()) {
     int started=0;
