@@ -1,10 +1,14 @@
 {
   int size=endpoint.getConsumers().size();
   if (size > 1) {
+    if (!endpoint.isMultipleConsumersSupported()) {
+      throw new IllegalStateException("Multiple consumers for the same endpoint is not allowed: " + endpoint);
+    }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Multicasting to {} consumers for Exchange: {}",endpoint.getConsumers().size(),exchange);
     }
     MulticastProcessor mp=endpoint.getConsumerMulticastProcessor();
+    ObjectHelper.notNull(mp,"ConsumerMulticastProcessor",this);
     AsyncProcessorHelper.process(mp,exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
       }
