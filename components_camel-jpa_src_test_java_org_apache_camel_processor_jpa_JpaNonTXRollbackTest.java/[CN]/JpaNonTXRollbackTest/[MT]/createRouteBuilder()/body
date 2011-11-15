@@ -1,10 +1,11 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("jpa://" + SendEmail.class.getName() + "?consumer.transacted=true&delay=1000").routeId("foo").noAutoStartup().process(new Processor(){
+      from("jpa://" + SendEmail.class.getName() + "?consumer.transacted=false&delay=1000").routeId("foo").noAutoStartup().to("mock:start").process(new Processor(){
         @Override public void process(        Exchange exchange) throws Exception {
           SendEmail send=exchange.getIn().getBody(SendEmail.class);
           if ("kaboom@beer.org".equals(send.getAddress())) {
+            kaboom.incrementAndGet();
             throw new IllegalArgumentException("Forced");
           }
           if ("foo@beer.org".equals(send.getAddress())) {
