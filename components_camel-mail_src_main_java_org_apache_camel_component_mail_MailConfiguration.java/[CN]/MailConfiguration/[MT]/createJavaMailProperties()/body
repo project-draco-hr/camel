@@ -18,7 +18,17 @@
   if (debugMode) {
     properties.put("javax.net.debug","all");
   }
-  if (dummyTrustManager && isSecureProtocol()) {
+  if (sslContextParameters != null && isSecureProtocol()) {
+    SSLContext sslContext;
+    try {
+      sslContext=sslContextParameters.createSSLContext();
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException("Error initializing SSLContext.",e);
+    }
+    properties.put("mail." + protocol + ".socketFactory",sslContext.getSocketFactory());
+  }
+ else   if (dummyTrustManager && isSecureProtocol()) {
     properties.put("mail." + protocol + ".socketFactory.class","org.apache.camel.component.mail.security.DummySSLSocketFactory");
     properties.put("mail." + protocol + ".socketFactory.fallback","false");
     properties.put("mail." + protocol + ".socketFactory.port","" + port);
