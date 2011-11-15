@@ -1,10 +1,22 @@
 {
-  if (sslSocketConnector == null) {
-    sslSocketConnector=new SslSocketConnector();
-    sslSocketConnector.getSslContextFactory().setKeyManagerPassword(sslPassword);
-    sslSocketConnector.getSslContextFactory().setKeyStorePassword(sslKeyPassword);
-    if (sslKeystore != null) {
-      sslSocketConnector.getSslContextFactory().setKeyStore(sslKeystore);
+  if (sslContextParameters != null && sslSocketConnector == null) {
+    SslContextFactory sslContextFactory=new CometdComponentSslContextFactory();
+    try {
+      sslContextFactory.setSslContext(sslContextParameters.createSSLContext());
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException("Error initiating SSLContext.",e);
+    }
+    sslSocketConnector=new SslSocketConnector(sslContextFactory);
+  }
+ else {
+    if (sslSocketConnector == null) {
+      sslSocketConnector=new SslSocketConnector();
+      sslSocketConnector.getSslContextFactory().setKeyManagerPassword(sslPassword);
+      sslSocketConnector.getSslContextFactory().setKeyStorePassword(sslKeyPassword);
+      if (sslKeystore != null) {
+        sslSocketConnector.getSslContextFactory().setKeyStore(sslKeystore);
+      }
     }
   }
   return sslSocketConnector;
