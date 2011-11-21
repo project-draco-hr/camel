@@ -1,12 +1,10 @@
 {
   try {
-    RouteBuilder builder=createRouteBuilder();
-    CamelContext context=new DefaultCamelContext();
-    context.addRoutes(builder);
-    context.start();
+    template.requestBody("seda:a","foo");
     fail("Should have thrown an exception due XSL compilation error");
   }
- catch (  FailedToCreateRouteException e) {
-    assertIsInstanceOf(ResolveEndpointFailedException.class,e.getCause());
+ catch (  CamelExecutionException e) {
+    Class<?> clazz=e.getCause().getClass();
+    assertTrue("Not an expected exception type",clazz == TransformerConfigurationException.class || clazz == FileNotFoundException.class);
   }
 }
