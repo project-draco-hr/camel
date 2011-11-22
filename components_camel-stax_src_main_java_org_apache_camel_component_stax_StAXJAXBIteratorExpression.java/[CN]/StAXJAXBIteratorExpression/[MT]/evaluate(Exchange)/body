@@ -1,13 +1,21 @@
 {
   try {
     XMLEventReader reader=exchange.getIn().getMandatoryBody(XMLEventReader.class);
-    return createIterator(reader,handled);
+    Class<T> clazz=handled;
+    if (clazz == null && handledName != null) {
+      clazz=(Class<T>)exchange.getContext().getClassResolver().resolveMandatoryClass(handledName);
+    }
+    return createIterator(reader,clazz);
   }
  catch (  InvalidPayloadException e) {
     exchange.setException(e);
     return null;
   }
 catch (  JAXBException e) {
+    exchange.setException(e);
+    return null;
+  }
+catch (  ClassNotFoundException e) {
     exchange.setException(e);
     return null;
   }
