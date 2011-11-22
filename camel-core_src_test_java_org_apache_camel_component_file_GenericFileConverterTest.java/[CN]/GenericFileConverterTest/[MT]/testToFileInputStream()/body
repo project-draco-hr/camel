@@ -4,7 +4,7 @@
       from("file://target/gf").convertBodyTo(InputStream.class).process(new Processor(){
         @Override public void process(        Exchange exchange) throws Exception {
           Object body=exchange.getIn().getBody();
-          assertIsInstanceOf(FileInputStream.class,body);
+          assertIsInstanceOf(BufferedInputStream.class,body);
         }
       }
 ).to("mock:result");
@@ -14,7 +14,7 @@
   context.start();
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedMessageCount(1);
-  mock.message(0).body().isInstanceOf(FileInputStream.class);
+  mock.message(0).body().isInstanceOf(BufferedInputStream.class);
   mock.message(0).body(String.class).isEqualTo("Hello World");
   template.sendBodyAndHeader("file://target/gf","Hello World",Exchange.FILE_NAME,"hello.txt");
   assertMockEndpointsSatisfied();

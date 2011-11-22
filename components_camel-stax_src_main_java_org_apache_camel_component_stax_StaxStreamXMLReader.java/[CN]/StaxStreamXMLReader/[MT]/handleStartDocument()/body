@@ -1,0 +1,37 @@
+{
+  if (XMLStreamConstants.START_DOCUMENT == reader.getEventType()) {
+    String xmlVersion=reader.getVersion();
+    if (ObjectHelper.isNotEmpty(xmlVersion)) {
+      this.xmlVersion=xmlVersion;
+    }
+    this.encoding=reader.getCharacterEncodingScheme();
+  }
+  if (getContentHandler() != null) {
+    final Location location=reader.getLocation();
+    getContentHandler().setDocumentLocator(new Locator2(){
+      public int getColumnNumber(){
+        return location != null ? location.getColumnNumber() : -1;
+      }
+      public int getLineNumber(){
+        return location != null ? location.getLineNumber() : -1;
+      }
+      public String getPublicId(){
+        return location != null ? location.getPublicId() : null;
+      }
+      public String getSystemId(){
+        return location != null ? location.getSystemId() : null;
+      }
+      public String getXMLVersion(){
+        return xmlVersion;
+      }
+      public String getEncoding(){
+        return encoding;
+      }
+    }
+);
+    getContentHandler().startDocument();
+    if (reader.standaloneSet()) {
+      setStandalone(reader.isStandalone());
+    }
+  }
+}

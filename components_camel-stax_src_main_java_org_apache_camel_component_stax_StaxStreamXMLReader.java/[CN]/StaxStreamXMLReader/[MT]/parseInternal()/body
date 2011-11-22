@@ -1,0 +1,58 @@
+{
+  boolean documentStarted=false;
+  boolean documentEnded=false;
+  int elementDepth=0;
+  int eventType=reader.getEventType();
+  while (true) {
+    if (eventType != XMLStreamConstants.START_DOCUMENT && eventType != XMLStreamConstants.END_DOCUMENT && !documentStarted) {
+      handleStartDocument();
+      documentStarted=true;
+    }
+switch (eventType) {
+case XMLStreamConstants.START_ELEMENT:
+      elementDepth++;
+    handleStartElement();
+  break;
+case XMLStreamConstants.END_ELEMENT:
+elementDepth--;
+if (elementDepth >= 0) {
+handleEndElement();
+}
+break;
+case XMLStreamConstants.PROCESSING_INSTRUCTION:
+handleProcessingInstruction();
+break;
+case XMLStreamConstants.CHARACTERS:
+case XMLStreamConstants.SPACE:
+case XMLStreamConstants.CDATA:
+handleCharacters();
+break;
+case XMLStreamConstants.START_DOCUMENT:
+handleStartDocument();
+documentStarted=true;
+break;
+case XMLStreamConstants.END_DOCUMENT:
+handleEndDocument();
+documentEnded=true;
+break;
+case XMLStreamConstants.COMMENT:
+handleComment();
+break;
+case XMLStreamConstants.DTD:
+handleDtd();
+break;
+case XMLStreamConstants.ENTITY_REFERENCE:
+handleEntityReference();
+break;
+}
+if (reader.hasNext() && elementDepth >= 0) {
+eventType=reader.next();
+}
+ else {
+break;
+}
+}
+if (!documentEnded) {
+handleEndDocument();
+}
+}

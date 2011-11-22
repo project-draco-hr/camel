@@ -1,0 +1,29 @@
+{
+  AttributesImpl attributes=new AttributesImpl();
+  for (int i=0; i < reader.getAttributeCount(); i++) {
+    String namespace=reader.getAttributeNamespace(i);
+    if (namespace == null || !hasNamespacesFeature()) {
+      namespace="";
+    }
+    String type=reader.getAttributeType(i);
+    if (type == null) {
+      type="CDATA";
+    }
+    attributes.addAttribute(namespace,reader.getAttributeLocalName(i),toQualifiedName(reader.getAttributeName(i)),type,reader.getAttributeValue(i));
+  }
+  if (hasNamespacePrefixesFeature()) {
+    for (int i=0; i < reader.getNamespaceCount(); i++) {
+      String prefix=reader.getNamespacePrefix(i);
+      String namespaceUri=reader.getNamespaceURI(i);
+      String qName;
+      if (ObjectHelper.isNotEmpty(prefix)) {
+        qName="xmlns:" + prefix;
+      }
+ else {
+        qName="xmlns";
+      }
+      attributes.addAttribute("","",qName,"CDATA",namespaceUri);
+    }
+  }
+  return attributes;
+}

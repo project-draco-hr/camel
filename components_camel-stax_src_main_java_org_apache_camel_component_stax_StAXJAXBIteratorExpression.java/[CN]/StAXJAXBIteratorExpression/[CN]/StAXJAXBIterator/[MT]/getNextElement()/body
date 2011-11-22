@@ -1,0 +1,33 @@
+{
+  XMLEvent xmlEvent;
+  boolean found=false;
+  while (!found && reader.hasNext()) {
+    try {
+      xmlEvent=reader.peek();
+      if (xmlEvent != null && xmlEvent.isStartElement() && name.equals(xmlEvent.asStartElement().getName().getLocalPart())) {
+        found=true;
+      }
+ else {
+        reader.nextEvent();
+      }
+    }
+ catch (    XMLStreamException e) {
+      throw new RuntimeCamelException(e);
+    }
+  }
+  if (!found) {
+    return null;
+  }
+  Object answer;
+  try {
+    answer=unmarshaller.unmarshal(reader,clazz);
+    if (answer != null && answer.getClass() == JAXBElement.class) {
+      JAXBElement jbe=(JAXBElement)answer;
+      answer=jbe.getValue();
+    }
+  }
+ catch (  JAXBException e) {
+    throw new RuntimeCamelException(e);
+  }
+  return (T)answer;
+}

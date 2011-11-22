@@ -1,0 +1,15 @@
+{
+  InputSource is=exchange.getIn().getMandatoryBody(InputSource.class);
+  XMLStreamReader stream=exchange.getIn().getMandatoryBody(XMLStreamReader.class);
+  XMLReader reader=new StaxStreamXMLReader(stream);
+  ContentHandler handler=contentHandlerClass.newInstance();
+  reader.setContentHandler(handler);
+  reader.parse(is);
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+    exchange.getOut().setBody(handler);
+  }
+ else {
+    exchange.getIn().setBody(handler);
+  }
+}
