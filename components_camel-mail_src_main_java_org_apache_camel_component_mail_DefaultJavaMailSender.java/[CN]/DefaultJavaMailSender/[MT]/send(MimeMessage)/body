@@ -1,0 +1,25 @@
+{
+  Transport transport=getTransport(getSession());
+  LOG.debug("Connecting to {}:{}",host,port);
+  transport.connect(getHost(),getPort(),getUsername(),getPassword());
+  try {
+    if (mimeMessage.getSentDate() == null) {
+      mimeMessage.setSentDate(new Date());
+    }
+    String messageId=mimeMessage.getMessageID();
+    mimeMessage.saveChanges();
+    if (messageId != null) {
+      mimeMessage.setHeader("Message-ID",messageId);
+    }
+    LOG.debug("Sending MimMessage: {} using host: {}",mimeMessage,host);
+    transport.sendMessage(mimeMessage,mimeMessage.getAllRecipients());
+  }
+  finally {
+    try {
+      transport.close();
+    }
+ catch (    MessagingException e) {
+      LOG.warn("Error closing transport to host " + host + ". This exception will be ignored.",e);
+    }
+  }
+}
