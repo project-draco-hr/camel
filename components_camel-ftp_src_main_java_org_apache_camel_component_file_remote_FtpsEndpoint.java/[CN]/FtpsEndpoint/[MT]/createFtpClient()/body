@@ -1,40 +1,53 @@
 {
-  FTPSClient client=new FTPSClient(getFtpsConfiguration().getSecurityProtocol(),getFtpsConfiguration().isImplicit());
-  if (ftpClientKeyStoreParameters != null) {
-    String type=(ftpClientKeyStoreParameters.containsKey("type")) ? (String)ftpClientKeyStoreParameters.get("type") : KeyStore.getDefaultType();
-    String file=(String)ftpClientKeyStoreParameters.get("file");
-    String password=(String)ftpClientKeyStoreParameters.get("password");
-    String algorithm=(ftpClientKeyStoreParameters.containsKey("algorithm")) ? (String)ftpClientKeyStoreParameters.get("algorithm") : KeyManagerFactory.getDefaultAlgorithm();
-    String keyPassword=(String)ftpClientKeyStoreParameters.get("keyPassword");
-    KeyStore keyStore=KeyStore.getInstance(type);
-    FileInputStream keyStoreFileInputStream=new FileInputStream(new File(file));
-    try {
-      keyStore.load(keyStoreFileInputStream,password.toCharArray());
-    }
-  finally {
-      IOHelper.close(keyStoreFileInputStream,"keyStore",log);
-    }
-    KeyManagerFactory keyMgrFactory=KeyManagerFactory.getInstance(algorithm);
-    keyMgrFactory.init(keyStore,keyPassword.toCharArray());
-    client.setNeedClientAuth(true);
-    client.setKeyManager(keyMgrFactory.getKeyManagers()[0]);
+  FTPSClient client=null;
+  if (sslContextParameters != null) {
+    SSLContext context=sslContextParameters.createSSLContext();
+    client=new FTPSClient(getFtpsConfiguration().isImplicit(),context);
+    SSLSocket socket=(SSLSocket)context.getSocketFactory().createSocket();
+    client.setEnabledCipherSuites(socket.getEnabledCipherSuites());
+    client.setEnabledProtocols(socket.getEnabledProtocols());
+    client.setNeedClientAuth(socket.getNeedClientAuth());
+    client.setWantClientAuth(socket.getWantClientAuth());
+    client.setEnabledSessionCreation(socket.getEnableSessionCreation());
   }
-  if (ftpClientTrustStoreParameters != null) {
-    String type=(ftpClientTrustStoreParameters.containsKey("type")) ? (String)ftpClientTrustStoreParameters.get("type") : KeyStore.getDefaultType();
-    String file=(String)ftpClientTrustStoreParameters.get("file");
-    String password=(String)ftpClientTrustStoreParameters.get("password");
-    String algorithm=(ftpClientTrustStoreParameters.containsKey("algorithm")) ? (String)ftpClientTrustStoreParameters.get("algorithm") : TrustManagerFactory.getDefaultAlgorithm();
-    KeyStore trustStore=KeyStore.getInstance(type);
-    FileInputStream trustStoreFileInputStream=new FileInputStream(new File(file));
-    try {
-      trustStore.load(trustStoreFileInputStream,password.toCharArray());
-    }
+ else {
+    client=new FTPSClient(getFtpsConfiguration().getSecurityProtocol(),getFtpsConfiguration().isImplicit());
+    if (ftpClientKeyStoreParameters != null) {
+      String type=(ftpClientKeyStoreParameters.containsKey("type")) ? (String)ftpClientKeyStoreParameters.get("type") : KeyStore.getDefaultType();
+      String file=(String)ftpClientKeyStoreParameters.get("file");
+      String password=(String)ftpClientKeyStoreParameters.get("password");
+      String algorithm=(ftpClientKeyStoreParameters.containsKey("algorithm")) ? (String)ftpClientKeyStoreParameters.get("algorithm") : KeyManagerFactory.getDefaultAlgorithm();
+      String keyPassword=(String)ftpClientKeyStoreParameters.get("keyPassword");
+      KeyStore keyStore=KeyStore.getInstance(type);
+      FileInputStream keyStoreFileInputStream=new FileInputStream(new File(file));
+      try {
+        keyStore.load(keyStoreFileInputStream,password.toCharArray());
+      }
   finally {
-      IOHelper.close(trustStoreFileInputStream,"trustStore",log);
+        IOHelper.close(keyStoreFileInputStream,"keyStore",log);
+      }
+      KeyManagerFactory keyMgrFactory=KeyManagerFactory.getInstance(algorithm);
+      keyMgrFactory.init(keyStore,keyPassword.toCharArray());
+      client.setNeedClientAuth(true);
+      client.setKeyManager(keyMgrFactory.getKeyManagers()[0]);
     }
-    TrustManagerFactory trustMgrFactory=TrustManagerFactory.getInstance(algorithm);
-    trustMgrFactory.init(trustStore);
-    client.setTrustManager(trustMgrFactory.getTrustManagers()[0]);
+    if (ftpClientTrustStoreParameters != null) {
+      String type=(ftpClientTrustStoreParameters.containsKey("type")) ? (String)ftpClientTrustStoreParameters.get("type") : KeyStore.getDefaultType();
+      String file=(String)ftpClientTrustStoreParameters.get("file");
+      String password=(String)ftpClientTrustStoreParameters.get("password");
+      String algorithm=(ftpClientTrustStoreParameters.containsKey("algorithm")) ? (String)ftpClientTrustStoreParameters.get("algorithm") : TrustManagerFactory.getDefaultAlgorithm();
+      KeyStore trustStore=KeyStore.getInstance(type);
+      FileInputStream trustStoreFileInputStream=new FileInputStream(new File(file));
+      try {
+        trustStore.load(trustStoreFileInputStream,password.toCharArray());
+      }
+  finally {
+        IOHelper.close(trustStoreFileInputStream,"trustStore",log);
+      }
+      TrustManagerFactory trustMgrFactory=TrustManagerFactory.getInstance(algorithm);
+      trustMgrFactory.init(trustStore);
+      client.setTrustManager(trustMgrFactory.getTrustManagers()[0]);
+    }
   }
   return client;
 }
