@@ -1,0 +1,13 @@
+{
+  getInstalledBundle("CamelBlueprintXstreamTestBundle").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintXstreamTestBundle)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintXstreamTestBundle)",10000);
+  MockEndpoint mock=(MockEndpoint)ctx.getEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  String body="<org.apache.camel.itest.osgi.xstream.SampleObject>\n" + "    <id>1</id>\n" + "    <value>test</value>\n"+ "</org.apache.camel.itest.osgi.xstream.SampleObject>";
+  ProducerTemplate template=ctx.createProducerTemplate();
+  template.sendBody("direct:start",body);
+  mock.assertIsSatisfied();
+  Object result=mock.getReceivedExchanges().get(0).getIn().getBody();
+  assertEquals(new SampleObject("1"),result);
+}
