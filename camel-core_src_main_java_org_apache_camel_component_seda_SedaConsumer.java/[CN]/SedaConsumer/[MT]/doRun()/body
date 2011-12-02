@@ -16,8 +16,17 @@
       exchange=queue.poll(1000,TimeUnit.MILLISECONDS);
       if (exchange != null) {
         try {
-          sendToConsumers(exchange);
-          if (exchange.getException() != null) {
+          Exchange newExchange=ExchangeHelper.copyExchangeAndSetCamelContext(exchange,endpoint.getCamelContext());
+          newExchange.setFromEndpoint(endpoint);
+          sendToConsumers(newExchange);
+          if (newExchange.hasOut()) {
+            exchange.setOut(newExchange.getOut().copy());
+          }
+ else {
+            exchange.setIn(newExchange.getIn());
+          }
+          if (newExchange.getException() != null) {
+            exchange.setException(newExchange.getException());
             getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
           }
         }
