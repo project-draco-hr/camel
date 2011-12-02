@@ -1,0 +1,26 @@
+{
+  Object body=exchange.getIn().getBody();
+  if (body instanceof File) {
+    ContentStreamUpdateRequest updateRequest=new ContentStreamUpdateRequest(getRequestHandler());
+    updateRequest.addFile((File)body);
+    for (    Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
+      if (entry.getKey().startsWith(SolrConstants.PARAM)) {
+        String paramName=entry.getKey().substring(SolrConstants.PARAM.length());
+        updateRequest.setParam(paramName,entry.getValue().toString());
+      }
+    }
+    updateRequest.process(solrServer);
+  }
+ else {
+    SolrInputDocument doc=new SolrInputDocument();
+    for (    Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
+      if (entry.getKey().startsWith(SolrConstants.FIELD)) {
+        String fieldName=entry.getKey().substring(SolrConstants.FIELD.length());
+        doc.setField(fieldName,entry.getValue());
+      }
+    }
+    UpdateRequest updateRequest=new UpdateRequest(getRequestHandler());
+    updateRequest.add(doc);
+    updateRequest.process(solrServer);
+  }
+}
