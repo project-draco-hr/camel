@@ -9,7 +9,16 @@
     data.retryWhilePredicate=exceptionPolicy.getRetryWhilePolicy();
     data.useOriginalInMessage=exceptionPolicy.isUseOriginalMessage();
     data.asyncDelayedRedelivery=exceptionPolicy.isAsyncDelayedRedelivery(exchange.getContext());
-    Processor processor=exceptionPolicy.getErrorHandler();
+    Processor processor=null;
+    UnitOfWork uow=exchange.getUnitOfWork();
+    if (uow != null && uow.getRouteContext() != null) {
+      String routeId=uow.getRouteContext().getRoute().getId();
+      processor=exceptionPolicy.getErrorHandler(routeId);
+    }
+ else     if (!exceptionPolicy.getErrorHandlers().isEmpty()) {
+      log.warn("Cannot determine current route from Exchange with id: {}, will fallback and use first error handler.",exchange.getExchangeId());
+      processor=exceptionPolicy.getErrorHandlers().iterator().next();
+    }
     if (processor != null) {
       data.failureProcessor=processor;
     }

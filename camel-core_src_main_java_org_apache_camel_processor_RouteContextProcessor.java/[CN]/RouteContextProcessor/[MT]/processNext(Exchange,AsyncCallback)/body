@@ -1,0 +1,23 @@
+{
+  if (exchange.getUnitOfWork() != null) {
+    exchange.getUnitOfWork().pushRouteContext(routeContext);
+  }
+  boolean sync=processor.process(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      try {
+        UnitOfWork uow=exchange.getUnitOfWork();
+        if (uow != null) {
+          uow.popRouteContext();
+        }
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+ finally {
+        callback.done(doneSync);
+      }
+    }
+  }
+);
+  return sync;
+}
