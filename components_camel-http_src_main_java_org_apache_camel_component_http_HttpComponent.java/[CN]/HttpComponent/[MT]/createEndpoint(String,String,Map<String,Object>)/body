@@ -8,11 +8,6 @@
   if (binding == null) {
     binding=resolveAndRemoveReferenceParameter(parameters,"httpBinding",HttpBinding.class);
   }
-  Boolean throwExceptionOnFailure=getAndRemoveParameter(parameters,"throwExceptionOnFailure",Boolean.class);
-  Boolean transferException=getAndRemoveParameter(parameters,"transferException",Boolean.class);
-  Boolean bridgeEndpoint=getAndRemoveParameter(parameters,"bridgeEndpoint",Boolean.class);
-  Boolean matchOnUriPrefix=getAndRemoveParameter(parameters,"matchOnUriPrefix",Boolean.class);
-  Boolean disableStreamCache=getAndRemoveParameter(parameters,"disableStreamCache",Boolean.class);
   String proxyHost=getAndRemoveParameter(parameters,"proxyHost",String.class);
   Integer proxyPort=getAndRemoveParameter(parameters,"proxyPort",Integer.class);
   String authMethodPriority=getAndRemoveParameter(parameters,"authMethodPriority",String.class);
@@ -22,36 +17,13 @@
   final Set<AuthMethod> authMethods=new LinkedHashSet<AuthMethod>();
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,authMethods);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
-  URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
-  String part=httpUri.getSchemeSpecificPart();
-  if (part != null) {
-    part=part.toLowerCase();
-    if (part.startsWith("//http//") || part.startsWith("//https//") || part.startsWith("//http://")|| part.startsWith("//https://")) {
-      throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
-    }
-  }
-  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,httpUri,clientParams,httpConnectionManager,configurer);
+  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,clientParams,httpConnectionManager,configurer);
   setEndpointHeaderFilterStrategy(endpoint);
   if (binding == null) {
     binding=getHttpBinding();
   }
   if (binding != null) {
     endpoint.setBinding(binding);
-  }
-  if (throwExceptionOnFailure != null) {
-    endpoint.setThrowExceptionOnFailure(throwExceptionOnFailure);
-  }
-  if (transferException != null) {
-    endpoint.setTransferException(transferException);
-  }
-  if (bridgeEndpoint != null) {
-    endpoint.setBridgeEndpoint(bridgeEndpoint);
-  }
-  if (matchOnUriPrefix != null) {
-    endpoint.setMatchOnUriPrefix(matchOnUriPrefix);
-  }
-  if (disableStreamCache != null) {
-    endpoint.setDisableStreamCache(disableStreamCache);
   }
   if (proxyHost != null) {
     endpoint.setProxyHost(proxyHost);
@@ -74,5 +46,14 @@
     }
   }
   setProperties(endpoint,parameters);
+  URI httpUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(parameters));
+  String part=httpUri.getSchemeSpecificPart();
+  if (part != null) {
+    part=part.toLowerCase();
+    if (part.startsWith("//http//") || part.startsWith("//https//") || part.startsWith("//http://")|| part.startsWith("//https://")) {
+      throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
+    }
+  }
+  endpoint.setHttpUri(httpUri);
   return endpoint;
 }
