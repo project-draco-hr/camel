@@ -25,6 +25,8 @@
   boolean secure=HttpHelper.isSecureConnection(uri);
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,secure);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),CastUtils.cast(httpClientParameters));
+  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,clientParams,clientConnectionManager,configurer);
+  setProperties(endpoint,parameters);
   String httpUriAddress=addressUri;
   if (addressUri.startsWith("http4")) {
     httpUriAddress="http" + addressUri.substring(5);
@@ -40,10 +42,7 @@
       throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
     }
   }
-  int port=getPort(httpUri);
-  registerPort(secure,x509HostnameVerifier,port,sslContextParameters);
-  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,httpUri,clientParams,clientConnectionManager,configurer);
-  setProperties(endpoint,parameters);
+  endpoint.setHttpUri(httpUri);
   setEndpointHeaderFilterStrategy(endpoint);
   endpoint.setBinding(getHttpBinding());
   if (httpBinding != null) {
@@ -52,5 +51,7 @@
   if (httpClientConfigurer != null) {
     endpoint.setHttpClientConfigurer(httpClientConfigurer);
   }
+  int port=getPort(httpUri);
+  registerPort(secure,x509HostnameVerifier,port,sslContextParameters);
   return endpoint;
 }
