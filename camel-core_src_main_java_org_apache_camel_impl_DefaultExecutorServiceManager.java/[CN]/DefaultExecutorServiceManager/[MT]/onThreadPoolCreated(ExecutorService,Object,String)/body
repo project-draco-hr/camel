@@ -23,8 +23,14 @@
       routeId=route.idOrCreate(this.camelContext.getNodeIdFactory());
     }
   }
+  ThreadPoolExecutor threadPool=null;
   if (executorService instanceof ThreadPoolExecutor) {
-    ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
+    threadPool=(ThreadPoolExecutor)executorService;
+  }
+ else   if (executorService instanceof SizedScheduledExecutorService) {
+    threadPool=((SizedScheduledExecutorService)executorService).getScheduledThreadPoolExecutor();
+  }
+  if (threadPool != null) {
     for (    LifecycleStrategy lifecycle : camelContext.getLifecycleStrategies()) {
       lifecycle.onThreadPoolAdd(camelContext,threadPool,id,sourceId,routeId,threadPoolProfileId);
     }

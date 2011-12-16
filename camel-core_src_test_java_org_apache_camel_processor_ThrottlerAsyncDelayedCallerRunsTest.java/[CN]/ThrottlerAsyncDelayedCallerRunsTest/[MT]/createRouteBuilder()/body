@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      ThreadPoolProfileBuilder builder=new ThreadPoolProfileBuilder("myThrottler");
+      builder.maxQueueSize(2);
+      context.getExecutorServiceManager().registerThreadPoolProfile(builder.build());
+      from("seda:start").throttle(1).timePeriodMillis(100).asyncDelayed().executorServiceRef("myThrottler").callerRunsWhenRejected(true).to("mock:result");
+    }
+  }
+;
+}

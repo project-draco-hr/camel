@@ -1,9 +1,13 @@
 {
-  ScheduledThreadPoolExecutor answer=new ScheduledThreadPoolExecutor(profile.getPoolSize(),threadFactory);
   RejectedExecutionHandler rejectedExecutionHandler=profile.getRejectedExecutionHandler();
   if (rejectedExecutionHandler == null) {
     rejectedExecutionHandler=new ThreadPoolExecutor.CallerRunsPolicy();
   }
-  answer.setRejectedExecutionHandler(rejectedExecutionHandler);
-  return answer;
+  ScheduledThreadPoolExecutor answer=new ScheduledThreadPoolExecutor(profile.getPoolSize(),threadFactory,rejectedExecutionHandler);
+  if (profile.getMaxPoolSize() > 0) {
+    return new SizedScheduledExecutorService(answer,profile.getMaxQueueSize());
+  }
+ else {
+    return answer;
+  }
 }
