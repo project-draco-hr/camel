@@ -1,0 +1,16 @@
+{
+  super.doStart();
+  AmazonSimpleDB sdbClient=getSdbClient();
+  String domainName=getConfiguration().getDomainName();
+  LOG.trace("Querying whether domain [{}] already exists...",domainName);
+  try {
+    sdbClient.domainMetadata(new DomainMetadataRequest(domainName));
+    LOG.trace("Domain [{}] already exists",domainName);
+    return;
+  }
+ catch (  NoSuchDomainException ase) {
+    LOG.trace("Domain [{}] doesn't exist yet",domainName);
+    sdbClient.createDomain(new CreateDomainRequest(domainName));
+    LOG.trace("Domain created:" + domainName);
+  }
+}
