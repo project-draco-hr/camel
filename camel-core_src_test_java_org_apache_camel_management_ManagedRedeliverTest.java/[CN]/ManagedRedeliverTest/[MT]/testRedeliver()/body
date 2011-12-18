@@ -1,6 +1,7 @@
 {
   MBeanServer mbeanServer=getMBeanServer();
-  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  MockEndpoint mock=getMockEndpoint("mock:foo");
+  mock.expectedMessageCount(1);
   Object out=template.requestBody("direct:start","Hello World");
   assertEquals("Error",out);
   assertMockEndpointsSatisfied();
@@ -14,8 +15,14 @@
   on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"myprocessor\"");
   num=(Long)mbeanServer.getAttribute(on,"ExchangesCompleted");
   assertEquals(0,num.longValue());
+  num=(Long)mbeanServer.getAttribute(on,"ExchangesTotal");
+  assertEquals(5,num.longValue());
   num=(Long)mbeanServer.getAttribute(on,"ExchangesFailed");
   assertEquals(5,num.longValue());
   num=(Long)mbeanServer.getAttribute(on,"Redeliveries");
   assertEquals(4,num.longValue());
+  String first=(String)mbeanServer.getAttribute(on,"FirstExchangeFailureExchangeId");
+  assertEquals(mock.getReceivedExchanges().get(0).getExchangeId(),first);
+  String last=(String)mbeanServer.getAttribute(on,"LastExchangeFailureExchangeId");
+  assertEquals(mock.getReceivedExchanges().get(0).getExchangeId(),last);
 }
