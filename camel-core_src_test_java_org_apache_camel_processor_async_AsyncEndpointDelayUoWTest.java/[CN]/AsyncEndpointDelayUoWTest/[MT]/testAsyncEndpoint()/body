@@ -1,0 +1,12 @@
+{
+  getMockEndpoint("mock:before").expectedBodiesReceived("Hello Camel");
+  getMockEndpoint("mock:after").expectedBodiesReceived("Bye Camel");
+  getMockEndpoint("mock:result").expectedBodiesReceived("Bye Camel");
+  String reply=template.requestBody("direct:start","Hello Camel",String.class);
+  assertEquals("Bye Camel",reply);
+  assertMockEndpointsSatisfied();
+  Thread.sleep(1000);
+  assertFalse("Should use different threads",beforeThreadName.equalsIgnoreCase(afterThreadName));
+  assertEquals(1,sync.isOnComplete());
+  assertEquals(0,sync.isOnFailure());
+}

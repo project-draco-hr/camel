@@ -3,6 +3,11 @@
   if (!isRunAllowed()) {
     exchange.setException(new RejectedExecutionException("Run is not allowed"));
   }
-  DelayProcessorSupport.super.process(exchange,callback);
-  callback.done(false);
+  DelayProcessorSupport.super.process(exchange,new AsyncCallback(){
+    @Override public void done(    boolean doneSync){
+      log.trace("Delayed task done for exchangeId: {}",exchange.getExchangeId());
+      callback.done(false);
+    }
+  }
+);
 }
