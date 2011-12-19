@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("quartz://groupName/timerName?cron=0/5+*+*+*+*+?").routeId("trigger").setBody(bean(CurrentTime.class)).to("seda:control");
+      from("seda:control").routeId("control").to("mock:result").process(new Processor(){
+        private boolean DONE=false;
+        @Override public void process(        Exchange exchange) throws Exception {
+          if (!DONE) {
+            DONE=true;
+            exchange.getContext().stopRoute("trigger");
+            Thread.sleep(7000);
+            exchange.getContext().startRoute("trigger");
+          }
+        }
+      }
+);
+    }
+  }
+;
+}
