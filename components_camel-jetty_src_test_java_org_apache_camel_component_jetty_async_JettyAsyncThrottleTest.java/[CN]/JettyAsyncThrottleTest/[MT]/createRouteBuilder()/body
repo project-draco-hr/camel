@@ -1,0 +1,12 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      int port2=getNextPort();
+      int port3=getNextPort();
+      from("jetty:http://localhost:{{port}}/myservice").removeHeaders("*").throttle(2).asyncDelayed().loadBalance().failover().to("jetty:http://localhost:" + port2 + "/foo").to("jetty:http://localhost:" + port3 + "/bar").end().to("mock:result");
+      from("jetty:http://localhost:" + port2 + "/foo").transform().constant("foo").to("mock:foo");
+      from("jetty:http://localhost:" + port3 + "/bar").transform().constant("bar").to("mock:bar");
+    }
+  }
+;
+}
