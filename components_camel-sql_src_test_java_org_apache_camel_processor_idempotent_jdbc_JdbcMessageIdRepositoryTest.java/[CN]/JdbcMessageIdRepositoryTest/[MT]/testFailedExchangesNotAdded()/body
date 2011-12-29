@@ -1,5 +1,5 @@
 {
-  RouteBuilder interceptor=new RouteBuilder(){
+  RouteBuilder interceptor=new RouteBuilder(context){
     @Override public void configure() throws Exception {
       interceptSendToEndpoint("mock:result").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
@@ -17,12 +17,12 @@
   routeDefinition.adviceWith(context,interceptor);
   errorEndpoint.expectedMessageCount(2);
   resultEndpoint.expectedBodiesReceived("one","three");
-  sendMessage("1","one");
-  sendMessage("2","two");
-  sendMessage("1","one");
-  sendMessage("2","two");
-  sendMessage("1","one");
-  sendMessage("3","three");
+  template.sendBodyAndHeader("direct:start","one","messageId","1");
+  template.sendBodyAndHeader("direct:start","two","messageId","2");
+  template.sendBodyAndHeader("direct:start","one","messageId","1");
+  template.sendBodyAndHeader("direct:start","two","messageId","2");
+  template.sendBodyAndHeader("direct:start","one","messageId","1");
+  template.sendBodyAndHeader("direct:start","three","messageId","3");
   assertMockEndpointsSatisfied();
   List<String> receivedMessageIds=jdbcTemplate.queryForList(SELECT_ALL_STRING,String.class,PROCESSOR_NAME);
   assertEquals(2,receivedMessageIds.size());
