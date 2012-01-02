@@ -1,0 +1,22 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  Map<Integer,Future<Object>> responses=new ConcurrentHashMap<Integer,Future<Object>>();
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    Future<Object> out=executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        return template.requestBody("direct:start",index,String.class);
+      }
+    }
+);
+    responses.put(index,out);
+  }
+  assertMockEndpointsSatisfied();
+  assertEquals(files,responses.size());
+  for (int i=0; i < files; i++) {
+    Object out=responses.get(i).get();
+    assertEquals("Bye " + i,out);
+  }
+  executor.shutdownNow();
+}

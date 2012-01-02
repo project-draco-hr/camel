@@ -1,0 +1,34 @@
+{
+  latch=new CountDownLatch(1);
+  uri="mina2:tcp://localhost:{{port}}?textline=true&lazySessionCreation=true";
+  Mina2ReverserServer server=new Mina2ReverserServer(getPort());
+  server.start();
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:x").to(uri).process(new Processor(){
+        public void process(        Exchange e){
+          receivedExchange=e;
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+);
+  context.start();
+  Endpoint endpoint=context.getEndpoint("direct:x");
+  Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
+  Message message=exchange.getIn();
+  message.setBody("Hello!");
+  message.setHeader("cheese",123);
+  Producer producer=endpoint.createProducer();
+  producer.start();
+  producer.process(exchange);
+  boolean received=latch.await(5,TimeUnit.SECONDS);
+  assertTrue("Did not receive the message!",received);
+  assertNotNull(receivedExchange.getIn());
+  assertEquals("!olleH",receivedExchange.getIn().getBody());
+  producer.stop();
+  context.stop();
+  server.stop();
+}

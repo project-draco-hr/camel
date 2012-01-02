@@ -1,0 +1,17 @@
+{
+  LOG.debug("createSocketEndpoint");
+  boolean minaLogger=configuration.isMinaLogger();
+  long timeout=configuration.getTimeout();
+  List<IoFilter> filters=configuration.getFilters();
+  address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
+  acceptor=new NioSocketAcceptor(new NioProcessor(this.getEndpoint().getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaSocketAcceptor")));
+  acceptorConfig=acceptor.getSessionConfig();
+  configureCodecFactory("Mina2Consumer",acceptor,configuration);
+  ((NioSocketAcceptor)acceptor).setReuseAddress(true);
+  acceptor.setCloseOnDeactivation(true);
+  acceptor.getFilterChain().addLast("threadPool",new ExecutorFilter(this.getEndpoint().getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaThreadPool")));
+  if (minaLogger) {
+    acceptor.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  appendIoFiltersToChain(filters,acceptor.getFilterChain());
+}

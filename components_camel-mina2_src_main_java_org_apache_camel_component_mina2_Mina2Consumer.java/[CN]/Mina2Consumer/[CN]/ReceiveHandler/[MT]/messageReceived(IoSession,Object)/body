@@ -1,0 +1,53 @@
+{
+  if (LOG.isDebugEnabled()) {
+    Object in=object;
+    if (in instanceof byte[]) {
+      in=getEndpoint().getCamelContext().getTypeConverter().convertTo(String.class,in);
+    }
+    LOG.debug("Received body: {}",in);
+  }
+  Exchange exchange=getEndpoint().createExchange(session,object);
+  if (getEndpoint().getConfiguration().getCharsetName() != null) {
+    exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.normalizeCharset(getEndpoint().getConfiguration().getCharsetName()));
+  }
+  try {
+    getProcessor().process(exchange);
+  }
+ catch (  Throwable e) {
+    getExceptionHandler().handleException(e);
+  }
+  boolean disconnect=getEndpoint().getConfiguration().isDisconnect();
+  Object response=null;
+  response=Mina2PayloadHelper.getOut(getEndpoint(),exchange);
+  boolean failed=exchange.isFailed();
+  if (failed && !getEndpoint().getConfiguration().isTransferExchange()) {
+    if (exchange.getException() != null) {
+      response=exchange.getException();
+    }
+ else {
+      response=exchange.getOut().getBody();
+    }
+  }
+  if (response != null) {
+    LOG.debug("Writing body: {}",response);
+    Mina2Helper.writeBody(session,response,exchange);
+  }
+ else {
+    LOG.debug("Writing no response");
+    disconnect=Boolean.TRUE;
+  }
+  Boolean close;
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    close=exchange.getOut().getHeader(Mina2Constants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+  }
+ else {
+    close=exchange.getIn().getHeader(Mina2Constants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+  }
+  if (close != null) {
+    disconnect=close;
+  }
+  if (disconnect) {
+    LOG.debug("Closing session when complete at address: {}",address);
+    session.close(true);
+  }
+}
