@@ -2,12 +2,16 @@
   log.trace("Resolving property placeholders for: {}",definition);
   Map<Object,Object> properties=new HashMap<Object,Object>();
   IntrospectionSupport.getProperties(definition,properties,null);
-  if (definition.getOtherAttributes() != null) {
-    for (    Object key : definition.getOtherAttributes().keySet()) {
+  ProcessorDefinition processorDefinition=null;
+  if (definition instanceof ProcessorDefinition) {
+    processorDefinition=(ProcessorDefinition)definition;
+  }
+  if (processorDefinition != null && processorDefinition.getOtherAttributes() != null) {
+    for (    Object key : processorDefinition.getOtherAttributes().keySet()) {
       QName qname=(QName)key;
       if (Constants.PLACEHOLDER_QNAME.equals(qname.getNamespaceURI())) {
         String local=qname.getLocalPart();
-        Object value=definition.getOtherAttributes().get(key);
+        Object value=processorDefinition.getOtherAttributes().get(key);
         if (value != null && value instanceof String) {
           String s=(String)value;
           String prefixToken=routeContext.getCamelContext().getPropertyPrefixToken();
