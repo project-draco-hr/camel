@@ -1,0 +1,41 @@
+{
+  InputStream is=null;
+  NodeList answer=null;
+  XPathExpression xpathExpression=null;
+  try {
+    xpathExpression=poolTraceNamespaces.poll();
+    if (xpathExpression == null) {
+      xpathExpression=createTraceNamespaceExpression();
+    }
+    Object document;
+    if (isInputStreamNeeded(exchange)) {
+      is=exchange.getIn().getBody(InputStream.class);
+      document=getDocument(exchange,is);
+    }
+ else {
+      Object body=exchange.getIn().getBody();
+      document=getDocument(exchange,body);
+    }
+    if (document instanceof InputSource) {
+      InputSource inputSource=(InputSource)document;
+      answer=(NodeList)xpathExpression.evaluate(inputSource,XPathConstants.NODESET);
+    }
+ else     if (document instanceof DOMSource) {
+      DOMSource source=(DOMSource)document;
+      answer=(NodeList)xpathExpression.evaluate(source.getNode(),XPathConstants.NODESET);
+    }
+ else {
+      answer=(NodeList)xpathExpression.evaluate(document,XPathConstants.NODESET);
+    }
+  }
+ catch (  Exception e) {
+    LOG.trace("Unable to trace discovered namespaces in XPath expression",e);
+  }
+ finally {
+    IOHelper.close(is);
+    poolTraceNamespaces.add(xpathExpression);
+  }
+  if (answer != null) {
+    logDiscoveredNamespaces(answer);
+  }
+}

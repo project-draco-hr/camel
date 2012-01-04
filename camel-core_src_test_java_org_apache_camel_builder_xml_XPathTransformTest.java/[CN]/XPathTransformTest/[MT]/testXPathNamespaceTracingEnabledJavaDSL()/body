@@ -1,0 +1,18 @@
+{
+  Logger l=createNiceMock(Logger.class);
+  expect(l.isTraceEnabled()).andReturn(true).anyTimes();
+  l.trace(contains("Namespaces discovered in message"),anyObject());
+  expectLastCall().times(1);
+  replay(l);
+  String body="<aRoot xmlns:nsa=\"http://namespacec.net\"><nsa:a xmlns:nsa=\"http://namespacea.net\">Hello|there|Camel</nsa:a>" + "<nsb:a xmlns:nsb=\"http://namespaceb.net\">Hello|there|Camel</nsb:a><nsb:a xmlns:nsb=\"http://namespaceb.net\">Hello|there|Camel</nsb:a>" + "<a xmlns=\"http://defaultNamespace.net\">Hello|there|Camel</a><a>Hello|there|Camel</a></aRoot>";
+  Document doc=context.getTypeConverter().convertTo(Document.class,body);
+  Field logField=XPathBuilder.class.getDeclaredField("LOG");
+  logField.setAccessible(true);
+  Field modifiers=Field.class.getDeclaredField("modifiers");
+  modifiers.setAccessible(true);
+  modifiers.setInt(logField,logField.getModifiers() & ~Modifier.FINAL);
+  logField.set(null,l);
+  NodeList list=XPathBuilder.xpath("//*",NodeList.class).traceNamespaces().evaluate(context,doc,NodeList.class);
+  assertNotNull(list);
+  verify(l);
+}
