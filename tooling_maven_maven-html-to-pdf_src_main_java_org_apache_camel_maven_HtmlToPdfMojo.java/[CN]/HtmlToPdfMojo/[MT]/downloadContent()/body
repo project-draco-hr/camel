@@ -1,4 +1,9 @@
 {
+  String previousTransformerFactoryClassName=null;
+  if (transformerFactoryClassName != null) {
+    previousTransformerFactoryClassName=System.setProperty(XSLT_SYSTEM_PROPERTY_KEY,transformerFactoryClassName);
+    getLog().info("Set the XSL transformer factory class name to be '" + transformerFactoryClassName + "'");
+  }
   String contentTag="<div class=\"" + contentDivClass + "\"";
   getLog().info("Downloading: " + page);
   URL url=new URL(page);
@@ -19,6 +24,18 @@
  else {
       getLog().error("Download or validation of '" + page + "' failed: "+ e);
       return null;
+    }
+  }
+ finally {
+    if (transformerFactoryClassName != null) {
+      if (previousTransformerFactoryClassName == null) {
+        System.getProperties().remove(XSLT_SYSTEM_PROPERTY_KEY);
+        getLog().info("Removed the set XSL transformer factory class name '" + transformerFactoryClassName + "' from the system properties");
+      }
+ else {
+        System.setProperty(XSLT_SYSTEM_PROPERTY_KEY,previousTransformerFactoryClassName);
+        getLog().info("Resetted the XSL transformer factory class name to be '" + previousTransformerFactoryClassName + "'");
+      }
     }
   }
   throw new MojoExecutionException("The '" + page + "' page did not have a "+ contentTag+ " element.");
