@@ -1,0 +1,69 @@
+{
+  String[] uriSplit=splitUri(uri);
+  if (uriSplit.length > 0) {
+switch (ConsumerType.fromUri(uriSplit[0])) {
+case DIRECTMESSAGE:
+      return new DirectMessageConsumer(te);
+case SEARCH:
+    if (te.getProperties().getKeywords() == null || te.getProperties().getKeywords().trim().isEmpty()) {
+      throw new IllegalArgumentException("Type set to SEARCH but no keywords were provided.");
+    }
+ else {
+      return new SearchConsumer(te);
+    }
+case STREAMING:
+switch (StreamingType.fromUri(uriSplit[1])) {
+case SAMPLE:
+    return new SampleConsumer(te);
+case FILTER:
+  return new FilterConsumer(te);
+default :
+break;
+}
+break;
+case TIMELINE:
+if (uriSplit.length > 1) {
+switch (TimelineType.fromUri(uriSplit[1])) {
+case HOME:
+return new HomeConsumer(te);
+case MENTIONS:
+return new MentionsConsumer(te);
+case PUBLIC:
+return new PublicConsumer(te);
+case RETWEETSOFME:
+return new RetweetsConsumer(te);
+case USER:
+if (te.getProperties().getUser() == null || te.getProperties().getUser().trim().isEmpty()) {
+throw new IllegalArgumentException("Fetch type set to USER TIMELINE but no user was set.");
+}
+ else {
+return new UserConsumer(te);
+}
+default :
+break;
+}
+}
+break;
+case TRENDS:
+if (uriSplit.length > 1) {
+switch (TrendsType.fromUri(uriSplit[1])) {
+case DAILY:
+break;
+case WEEKLY:
+break;
+default :
+break;
+}
+}
+break;
+case USER:
+break;
+case USERLIST:
+break;
+default :
+break;
+}
+}
+LOG.warn("A consumer type was not provided (or an incorrect pairing was used).  Defaulting to Public Timeline!");
+return new PublicConsumer(te);
+}
