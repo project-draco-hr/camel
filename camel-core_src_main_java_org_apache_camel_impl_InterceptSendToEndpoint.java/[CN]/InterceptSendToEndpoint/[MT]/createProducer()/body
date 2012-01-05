@@ -27,7 +27,12 @@
       if (!continueProcessing(exchange,"skip sending to original intended destination: " + getEndpointUri(),LOG)) {
         return;
       }
-      if (!skip) {
+      boolean shouldSkip=skip;
+      Boolean whenMatches=(Boolean)exchange.removeProperty(Exchange.INTERCEPT_SEND_TO_ENDPOINT_WHEN_MATCHED);
+      if (whenMatches != null) {
+        shouldSkip=skip && whenMatches;
+      }
+      if (!shouldSkip) {
         if (exchange.hasOut()) {
           exchange.setIn(exchange.getOut());
           exchange.setOut(null);

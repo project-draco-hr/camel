@@ -1,0 +1,13 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      interceptSendToEndpoint("mock:skippable").skipSendToOriginalEndpoint().when(body().isEqualTo("skip")).to("mock:detour");
+      interceptSendToEndpoint("mock:skippableNoEffect").skipSendToOriginalEndpoint().choice().when(body().isEqualTo("skipNoEffectWhen")).to("mock:noSkipWhen").otherwise().to("mock:noSkipOW");
+      interceptSendToEndpoint("mock:skippableMultipleConditions").skipSendToOriginalEndpoint().when(body().isEqualTo("skip")).when(body().isNotEqualTo("skip")).to("mock:detour");
+      from("direct:start").to("mock:a").to("mock:skippable").to("mock:c");
+      from("direct:startNoEffect").to("mock:a").to("mock:skippableNoEffect").to("mock:c");
+      from("direct:startMultipleConditions").to("mock:a").to("mock:skippableMultipleConditions").to("mock:c");
+    }
+  }
+;
+}
