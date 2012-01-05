@@ -1,9 +1,14 @@
 {
+  if (routeScoped == null) {
+    routeScoped=super.getParent() != null;
+  }
   if (isOnCompleteOnly() && isOnFailureOnly()) {
     throw new IllegalArgumentException("Both onCompleteOnly and onFailureOnly cannot be true. Only one of them can be true. On node: " + this);
   }
   Processor childProcessor=this.createChildProcessor(routeContext,true);
   childProcessor=new UnitOfWorkProcessor(routeContext,childProcessor);
+  String id=routeContext.getRoute().getId();
+  onCompletions.put(id,childProcessor);
   Predicate when=null;
   if (onWhen != null) {
     when=onWhen.getExpression().createPredicate(routeContext);
