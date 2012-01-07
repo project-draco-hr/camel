@@ -26,15 +26,13 @@
   }
   StringWriter buffer=new StringWriter();
   String logTag=getClass().getName();
-  Map variableMap=ExchangeHelper.createVariableMap(exchange);
+  Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
   Context velocityContext=new VelocityContext(variableMap);
   VelocityEngine engine=getVelocityEngine();
   log.debug("Velocity is evaluating using velocity context: {}",variableMap);
   engine.evaluate(velocityContext,buffer,logTag,reader);
   Message out=exchange.getOut();
   out.setBody(buffer.toString());
-  Map<String,Object> headers=(Map<String,Object>)velocityContext.get("headers");
-  for (  Entry<String,Object> entry : headers.entrySet()) {
-    out.setHeader(entry.getKey(),entry.getValue());
-  }
+  out.setHeaders(exchange.getIn().getHeaders());
+  out.setAttachments(exchange.getIn().getAttachments());
 }

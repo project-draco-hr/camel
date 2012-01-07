@@ -16,7 +16,7 @@
     reader=new StringReader(content);
     exchange.getIn().removeHeader(FreemarkerConstants.FREEMARKER_TEMPLATE);
   }
-  Map variableMap=ExchangeHelper.createVariableMap(exchange);
+  Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
   Template template;
   if (reader != null) {
     log.debug("Freemarker is evaluating template read from header {} using context: {}",FreemarkerConstants.FREEMARKER_TEMPLATE,variableMap);
@@ -36,8 +36,6 @@
   buffer.flush();
   Message out=exchange.getOut();
   out.setBody(buffer.toString());
-  Map<String,Object> headers=(Map<String,Object>)variableMap.get("headers");
-  for (  Entry<String,Object> entry : headers.entrySet()) {
-    out.setHeader(entry.getKey(),entry.getValue());
-  }
+  out.setHeaders(exchange.getIn().getHeaders());
+  out.setAttachments(exchange.getIn().getAttachments());
 }
