@@ -4,13 +4,19 @@
     public Boolean doInTransaction(    TransactionStatus status){
       try {
         jdbcTemplate.execute(tableExistsString);
-        log.debug("table for JdbcMessageIdRepository already exists");
+        log.debug("Expected table for JdbcMessageIdRepository exist");
       }
  catch (      DataAccessException e) {
         if (createTableIfNotExists) {
-          log.debug("creating table for JdbcMessageIdRepository because it doesn't exists...");
-          jdbcTemplate.execute(createString);
-          log.info("table created with query '{}'",createString);
+          try {
+            log.debug("creating table for JdbcMessageIdRepository because it doesn't exist...");
+            jdbcTemplate.execute(createString);
+            log.info("table created with query '{}'",createString);
+          }
+ catch (          DataAccessException dae) {
+            log.error("Can't create table for JdbcMessageIdRepository with query '{}' because of: {}. This may be a permissions problem. Please create this table and try again.",createString,e.getMessage());
+            throw dae;
+          }
         }
  else {
           throw e;
