@@ -1,18 +1,11 @@
 {
-  Iterator<Status> statusIterator=twitter4jConsumer.requestPollingStatus(lastStatusUpdateID);
+  Iterator<? extends Serializable> i=twitter4jConsumer.pollConsume().iterator();
   int total=0;
-  while (statusIterator.hasNext()) {
-    Status tStatus=statusIterator.next();
+  while (i.hasNext()) {
     Exchange e=getEndpoint().createExchange();
-    e.getIn().setHeader("screenName",tStatus.getUser().getScreenName());
-    e.getIn().setHeader("date",tStatus.getDate());
-    e.getIn().setBody(tStatus);
+    e.getIn().setBody(i.next());
     getProcessor().process(e);
     total++;
-    long newerStatusID=tStatus.getId();
-    if (newerStatusID > lastStatusUpdateID) {
-      lastStatusUpdateID=newerStatusID;
-    }
   }
   return total;
 }
