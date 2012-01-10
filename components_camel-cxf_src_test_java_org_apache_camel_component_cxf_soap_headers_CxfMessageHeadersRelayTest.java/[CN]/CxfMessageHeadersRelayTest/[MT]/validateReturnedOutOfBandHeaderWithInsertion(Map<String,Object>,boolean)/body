@@ -1,6 +1,6 @@
 {
   List<OutofBandHeader> hdrToTest=new ArrayList<OutofBandHeader>();
-  List oobHdr=(List)responseContext.get(Header.HEADER_LIST);
+  List<Header> oobHdr=CastUtils.cast((List<?>)responseContext.get(Header.HEADER_LIST));
   if (!expect) {
     if (oobHdr == null || (oobHdr != null && oobHdr.size() == 0)) {
       return;
@@ -11,21 +11,14 @@
     fail("Should have got List of out-of-band headers");
   }
   assertTrue("HeaderHolder list expected to conain 2 object received " + oobHdr.size(),oobHdr.size() == 2);
-  if (oobHdr != null & oobHdr instanceof List) {
-    Iterator iter=oobHdr.iterator();
-    while (iter.hasNext()) {
-      Object hdr=iter.next();
-      if (hdr instanceof Header) {
-        Header hdr1=(Header)hdr;
-        if (hdr1.getObject() instanceof Node) {
-          try {
-            JAXBElement job=(JAXBElement)JAXBContext.newInstance(org.apache.cxf.outofband.header.ObjectFactory.class).createUnmarshaller().unmarshal((Node)hdr1.getObject());
-            hdrToTest.add((OutofBandHeader)job.getValue());
-          }
- catch (          JAXBException ex) {
-            ex.printStackTrace();
-          }
-        }
+  for (  Header hdr1 : oobHdr) {
+    if (hdr1.getObject() instanceof Node) {
+      try {
+        JAXBElement<?> job=(JAXBElement<?>)JAXBContext.newInstance(org.apache.cxf.outofband.header.ObjectFactory.class).createUnmarshaller().unmarshal((Node)hdr1.getObject());
+        hdrToTest.add((OutofBandHeader)job.getValue());
+      }
+ catch (      JAXBException ex) {
+        ex.printStackTrace();
       }
     }
   }

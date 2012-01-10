@@ -2,7 +2,7 @@
   if (factoryBean instanceof JaxWsClientFactoryBean && handlers != null) {
     AnnotationHandlerChainBuilder builder=new AnnotationHandlerChainBuilder();
     JaxWsServiceFactoryBean sf=(JaxWsServiceFactoryBean)factoryBean.getServiceFactory();
-    List<Handler> chain=new ArrayList<Handler>(handlers);
+    @SuppressWarnings("rawtypes") List<Handler> chain=new ArrayList<Handler>(handlers);
     chain.addAll(builder.buildHandlerChainFromClass(sf.getServiceClass(),sf.getEndpointInfo().getName(),sf.getServiceQName(),factoryBean.getBindingId()));
     if (!chain.isEmpty()) {
       ResourceManager resourceManager=getBus().getExtension(ResourceManager.class);
@@ -10,7 +10,7 @@
       resourceManager=new DefaultResourceManager(resolvers);
       resourceManager.addResourceResolver(new WebServiceContextResourceResolver());
       ResourceInjector injector=new ResourceInjector(resourceManager);
-      for (      Handler h : chain) {
+      for (      Handler<?> h : chain) {
         if (Proxy.isProxyClass(h.getClass()) && getServiceClass() != null) {
           injector.inject(h,getServiceClass());
           injector.construct(h,getServiceClass());
