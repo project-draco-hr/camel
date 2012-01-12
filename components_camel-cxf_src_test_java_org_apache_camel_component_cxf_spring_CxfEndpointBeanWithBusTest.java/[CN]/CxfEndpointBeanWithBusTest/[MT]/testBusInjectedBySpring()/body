@@ -2,5 +2,10 @@
   CamelContext camelContext=ctx.getBean("camel",CamelContext.class);
   CxfEndpoint endpoint=camelContext.getEndpoint("cxf:bean:routerEndpoint",CxfEndpoint.class);
   assertTrue(endpoint.getBus().getInInterceptors().size() >= 1);
-  assertEquals(LoggingInInterceptor.class,endpoint.getBus().getInInterceptors().get(0).getClass());
+  for (  Interceptor<?> i : endpoint.getBus().getInInterceptors()) {
+    if (i instanceof LoggingInInterceptor) {
+      return;
+    }
+  }
+  fail("Could not find the LoggingInInterceptor on the bus. " + endpoint.getBus().getInInterceptors());
 }
