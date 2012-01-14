@@ -4,7 +4,7 @@
   }
   Policy answer=null;
   if (type != null) {
-    Map types=routeContext.lookupByType(type);
+    Map<String,?> types=routeContext.lookupByType(type);
     if (types.size() == 1) {
       Object found=types.values().iterator().next();
       if (type.isInstance(found)) {
@@ -16,13 +16,13 @@
     answer=routeContext.lookup(PROPAGATION_REQUIRED,TransactedPolicy.class);
   }
   if (answer == null && type == TransactedPolicy.class) {
-    Class tmClazz=routeContext.getCamelContext().getClassResolver().resolveClass("org.springframework.transaction.PlatformTransactionManager");
+    Class<?> tmClazz=routeContext.getCamelContext().getClassResolver().resolveClass("org.springframework.transaction.PlatformTransactionManager");
     if (tmClazz != null) {
-      Map<String,Object> maps=routeContext.lookupByType(tmClazz);
+      Map<String,?> maps=routeContext.lookupByType(tmClazz);
       if (maps.size() == 1) {
         Object transactionManager=maps.values().iterator().next();
         LOG.debug("One instance of PlatformTransactionManager found in registry: {}",transactionManager);
-        Class txClazz=routeContext.getCamelContext().getClassResolver().resolveClass("org.apache.camel.spring.spi.SpringTransactionPolicy");
+        Class<?> txClazz=routeContext.getCamelContext().getClassResolver().resolveClass("org.apache.camel.spring.spi.SpringTransactionPolicy");
         if (txClazz != null) {
           LOG.debug("Creating a new temporary SpringTransactionPolicy using the PlatformTransactionManager: {}",transactionManager);
           TransactedPolicy txPolicy=ObjectHelper.newInstance(txClazz,TransactedPolicy.class);
