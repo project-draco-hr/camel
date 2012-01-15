@@ -1,19 +1,29 @@
 {
   List<String> methods=new ArrayList<String>();
+  if (ObjectHelper.isEmpty(ognl)) {
+    return methods;
+  }
   StringBuilder sb=new StringBuilder();
   int j=0;
   boolean squareBracket=false;
+  boolean parenthesisBracket=false;
   for (int i=0; i < ognl.length(); i++) {
     char ch=ognl.charAt(i);
     if (j == 0 || (j == 1 && ognl.charAt(i - 1) == '?') || (ch != '.' && ch != '?' && ch != ']')) {
       sb.append(ch);
-      if (ch == '[') {
+      if (ch == '[' && !parenthesisBracket) {
         squareBracket=true;
+      }
+ else       if (ch == '(') {
+        parenthesisBracket=true;
+      }
+ else       if (ch == ')') {
+        parenthesisBracket=false;
       }
       j++;
     }
  else {
-      if (ch == '.' && !squareBracket) {
+      if (ch == '.' && !squareBracket && !parenthesisBracket) {
         String s=sb.toString();
         sb.setLength(0);
         if (s.endsWith("?")) {
@@ -23,7 +33,7 @@
         methods.add(s);
         j=0;
       }
- else       if (ch == ']') {
+ else       if (ch == ']' && !parenthesisBracket) {
         sb.append(ch);
         String s=sb.toString();
         sb.setLength(0);
@@ -31,8 +41,11 @@
         j=0;
         squareBracket=false;
       }
-      if (ch != ']') {
+      if (ch != ']' || parenthesisBracket) {
         sb.append(ch);
+      }
+      if (ch == ')') {
+        parenthesisBracket=false;
       }
       if (j > 0) {
         j++;
