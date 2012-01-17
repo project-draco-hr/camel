@@ -1,0 +1,15 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(2);
+  mock.expectedBodiesReceivedInAnyOrder("log4j.properties","jndi-example.properties");
+  template.send("direct:begin",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      Message m=exchange.getIn();
+      m.setBody("Hello World");
+      m.addAttachment("log4j",new DataHandler(new FileDataSource("src/test/resources/log4j.properties")));
+      m.addAttachment("jndi-example",new DataHandler(new FileDataSource("src/test/resources/jndi-example.properties")));
+    }
+  }
+);
+  assertMockEndpointsSatisfied();
+}
