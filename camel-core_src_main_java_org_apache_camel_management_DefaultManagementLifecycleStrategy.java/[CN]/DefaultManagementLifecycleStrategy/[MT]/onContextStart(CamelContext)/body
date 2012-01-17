@@ -1,33 +1,28 @@
 {
   Object mc=getManagementObjectStrategy().getManagedObjectForCamelContext(context);
-  String managementName=context.getManagementName() != null ? context.getManagementName() : context.getName();
+  String name=context.getName();
+  String managementName=context.getManagementNameStrategy().getName();
   try {
     boolean done=false;
     while (!done) {
-      ObjectName on=getManagementStrategy().getManagementNamingStrategy().getObjectNameForCamelContext(context);
+      ObjectName on=getManagementStrategy().getManagementNamingStrategy().getObjectNameForCamelContext(managementName,name);
       boolean exists=getManagementStrategy().isManaged(mc,on);
       if (!exists) {
         done=true;
       }
  else {
         boolean fixed=false;
-        String name=findFreeName(mc,context.getNameStrategy(),managementName);
-        if (name != null) {
+        String newName=findFreeName(mc,context.getManagementNameStrategy(),name);
+        if (newName != null) {
           fixed=true;
           done=true;
-          managementName=name;
+          managementName=newName;
         }
         if (!fixed) {
           throw new VetoCamelContextStartException("CamelContext (" + context.getName() + ") with ObjectName["+ on+ "] is already registered."+ " Make sure to use unique names on CamelContext when using multiple CamelContexts in the same MBeanServer.",context);
         }
  else {
-          if (context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
-            LOG.warn("Reassigned auto assigned name on CamelContext from: " + context.getName() + " to: "+ name+ " due to clash with existing name already registered in MBeanServer.");
-            context.setNameStrategy(new ExplicitCamelContextNameStrategy(name));
-          }
- else {
-            LOG.warn("This CamelContext(" + context.getName() + ") will be registered using the name: "+ managementName+ " due to clash with an existing name already registered in MBeanServer.");
-          }
+          LOG.warn("This CamelContext(" + context.getName() + ") will be registered using the name: "+ managementName+ " due to clash with an existing name already registered in MBeanServer.");
         }
       }
     }
@@ -38,7 +33,9 @@
 catch (  Exception e) {
     throw ObjectHelper.wrapRuntimeCamelException(e);
   }
-  context.setManagementName(managementName);
+  if (context instanceof DefaultCamelContext) {
+    ((DefaultCamelContext)context).setManagementName(managementName);
+  }
   try {
     manageObject(mc);
   }

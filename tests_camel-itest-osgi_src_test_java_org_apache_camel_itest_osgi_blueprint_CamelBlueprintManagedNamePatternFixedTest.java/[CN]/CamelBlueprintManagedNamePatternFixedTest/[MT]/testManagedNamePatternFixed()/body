@@ -1,0 +1,13 @@
+{
+  getInstalledBundle("CamelBlueprintTestBundleFixed").start();
+  BlueprintContainer ctn=getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=CamelBlueprintTestBundleFixed)",10000);
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintTestBundleFixed)",10000);
+  ProducerTemplate template=ctx.createProducerTemplate();
+  MockEndpoint mock=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  template.sendBody("direct:start","World");
+  mock.assertIsSatisfied();
+  MBeanServer mbeanServer=ctx.getManagementStrategy().getManagementAgent().getMBeanServer();
+  assertEquals("cool",ctx.getManagementName());
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/" + ctx.getManagementName() + ",type=context,name=\""+ ctx.getName()+ "\"");
+  assertTrue("Should be registered",mbeanServer.isRegistered(on));
+}
