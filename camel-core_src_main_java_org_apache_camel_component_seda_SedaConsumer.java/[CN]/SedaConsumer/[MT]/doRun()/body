@@ -1,6 +1,16 @@
 {
   BlockingQueue<Exchange> queue=endpoint.getQueue();
   while (queue != null && (isRunAllowed())) {
+    if (getEndpoint().getCamelContext().getStatus().isStarting()) {
+      LOG.trace("CamelContext is starting so skip polling");
+      try {
+        Thread.sleep(1000);
+      }
+ catch (      InterruptedException e) {
+        LOG.debug("Sleep interrupted, are we stopping? {}",isStopping() || isStopped());
+      }
+      continue;
+    }
     if (isSuspending() || isSuspended()) {
       LOG.trace("Consumer is suspended so skip polling");
       try {
