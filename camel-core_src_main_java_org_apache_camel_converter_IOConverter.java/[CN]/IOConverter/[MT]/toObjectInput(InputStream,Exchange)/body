@@ -1,0 +1,23 @@
+{
+  if (stream instanceof ObjectInput) {
+    return (ObjectInput)stream;
+  }
+ else {
+    return new ObjectInputStream(IOHelper.buffered(stream)){
+      @Override protected Class<?> resolveClass(      ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
+        Class<?> answer=null;
+        String name=objectStreamClass.getName();
+        if (exchange != null) {
+          LOG.trace("Loading class {} using Camel ClassResolver",name);
+          answer=exchange.getContext().getClassResolver().resolveClass(name);
+        }
+        if (answer == null) {
+          LOG.trace("Loading class {} using JDK default implementation",name);
+          answer=super.resolveClass(objectStreamClass);
+        }
+        return answer;
+      }
+    }
+;
+  }
+}
