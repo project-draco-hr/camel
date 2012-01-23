@@ -1,0 +1,13 @@
+{
+  boolean abort=ThreadPoolRejectedPolicy.Abort == rejectedPolicy;
+  if (abort) {
+    exchange.setException(new RejectedExecutionException());
+  }
+  LOG.trace("{} routing exchange {} ",abort ? "Aborted" : "Rejected",exchange);
+  exchange.setProperty(Exchange.ROUTE_STOP,true);
+  exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,true);
+  if (shutdown.get()) {
+    exchange.setException(new RejectedExecutionException("ThreadsProcessor is not running."));
+  }
+  callback.done(false);
+}

@@ -4,21 +4,20 @@
   }
   ProcessCall call=new ProcessCall(exchange,callback);
   try {
+    LOG.trace("Submitting task {}",call);
     executorService.submit(call);
     return false;
   }
  catch (  RejectedExecutionException e) {
-    if (isCallerRunsWhenRejected()) {
-      if (shutdown.get()) {
-        exchange.setException(new RejectedExecutionException());
-      }
- else {
-        callback.done(true);
-      }
-    }
- else {
+    boolean callerRuns=isCallerRunsWhenRejected();
+    if (!callerRuns) {
       exchange.setException(e);
     }
+    LOG.trace("{} executing task {}",callerRuns ? "CallerRuns" : "Aborted",call);
+    if (shutdown.get()) {
+      exchange.setException(new RejectedExecutionException());
+    }
+    callback.done(true);
     return true;
   }
 }
