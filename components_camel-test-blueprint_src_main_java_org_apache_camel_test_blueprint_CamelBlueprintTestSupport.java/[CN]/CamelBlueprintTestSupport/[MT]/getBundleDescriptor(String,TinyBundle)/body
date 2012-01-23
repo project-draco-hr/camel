@@ -1,12 +1,15 @@
 {
   File file=new File(path);
-  FileOutputStream fos=new FileOutputStream(file);
-  copy(bundle.build(),fos);
-  fos.close();
-  JarInputStream jis=new JarInputStream(new FileInputStream(file));
+  FileOutputStream fos=new FileOutputStream(file,true);
+  IOHelper.copy(bundle.build(),fos);
+  IOHelper.close(fos);
+  FileInputStream fis=new FileInputStream(file);
+  JarInputStream jis=new JarInputStream(fis);
   Map<String,String> headers=new HashMap<String,String>();
   for (  Map.Entry<Object,Object> entry : jis.getManifest().getMainAttributes().entrySet()) {
     headers.put(entry.getKey().toString(),entry.getValue().toString());
   }
+  IOHelper.close(fis);
+  IOHelper.close(jis);
   return new BundleDescriptor(getClass().getClassLoader(),new URL("jar:" + file.toURI().toString() + "!/"),headers);
 }
