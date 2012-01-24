@@ -1,19 +1,11 @@
 {
-  LOG.trace("Camel bean processing before initialization for bean: {}",beanName);
-  if (!canPostProcessBean(bean,beanName)) {
-    return bean;
+  try {
+    return delegate.postProcessBeforeInitialization(bean,beanName);
   }
-  injectFields(bean,beanName);
-  injectMethods(bean,beanName);
-  if (bean instanceof CamelContextAware && canSetCamelContext(bean,beanName)) {
-    CamelContextAware contextAware=(CamelContextAware)bean;
-    CamelContext context=getOrLookupCamelContext();
-    if (context == null) {
-      LOG.warn("No CamelContext defined yet so cannot inject into bean: " + beanName);
+ catch (  Exception e) {
+    if (e instanceof BeansException) {
+      throw (BeansException)e;
     }
- else {
-      contextAware.setCamelContext(context);
-    }
+    throw new GenericBeansException("Error post processing bean: " + beanName,e);
   }
-  return bean;
 }
