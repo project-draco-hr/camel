@@ -1,0 +1,39 @@
+{
+  StringBuilder sb=new StringBuilder();
+  sb.append("<camelContextStat").append(String.format(" id=\"%s\"",getCamelId())).append(">\n");
+  MBeanServer server=getContext().getManagementStrategy().getManagementAgent().getMBeanServer();
+  if (server != null) {
+    ObjectName query=ObjectName.getInstance("org.apache.camel:context=*/" + getContext().getManagementName() + ",type=routes,*");
+    Set<ObjectName> routes=server.queryNames(query,null);
+    Set<ManagedProcessorMBean> processors=new LinkedHashSet<ManagedProcessorMBean>();
+    if (includeProcessors) {
+      query=ObjectName.getInstance("org.apache.camel:context=*/" + getContext().getManagementName() + ",type=processors,*");
+      Set<ObjectName> names=server.queryNames(query,null);
+      for (      ObjectName on : names) {
+        ManagedProcessorMBean processor=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedProcessorMBean.class,true);
+        processors.add(processor);
+      }
+    }
+    sb.append("  <routeStats>\n");
+    for (    ObjectName on : routes) {
+      ManagedRouteMBean route=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedRouteMBean.class,true);
+      sb.append("    <routeStat").append(String.format(" id=\"%s\"",route.getRouteId()));
+      String stat=route.dumpStatsAsXml(fullStats);
+      sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
+      if (includeProcessors) {
+        sb.append("      <processorStats>\n");
+        for (        ManagedProcessorMBean processor : processors) {
+          if (route.getRouteId().equals(processor.getRouteId())) {
+            sb.append("        <processorStat").append(String.format(" id=\"%s\"",processor.getProcessorId()));
+            sb.append(" ").append(processor.dumpStatsAsXml(fullStats).substring(7)).append("\n");
+          }
+        }
+        sb.append("      </processorStats>\n");
+      }
+      sb.append("    </routeStat>\n");
+    }
+    sb.append("  </routeStats>\n");
+  }
+  sb.append("</camelContextStat>");
+  return sb.toString();
+}
