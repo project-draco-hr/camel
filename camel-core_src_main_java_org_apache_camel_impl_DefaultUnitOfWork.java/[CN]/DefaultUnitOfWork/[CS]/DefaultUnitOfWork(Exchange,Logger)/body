@@ -1,6 +1,8 @@
 {
-  log=l;
-  log.trace("UnitOfWork created for ExchangeId: {} with {}",exchange.getExchangeId(),exchange);
+  log=logger;
+  if (log.isTraceEnabled()) {
+    log.trace("UnitOfWork created for ExchangeId: {} with {}",exchange.getExchangeId(),exchange);
+  }
   tracedRouteNodes=new DefaultTracedRouteNodes();
   context=exchange.getContext();
   if (exchange.getIn().getClass().getSimpleName().equals("JmsMessage")) {
@@ -20,7 +22,12 @@
       exchange.getIn().setHeader(Exchange.BREADCRUMB_ID,breadcrumbId);
     }
   }
-  EventHelper.notifyExchangeCreated(exchange.getContext(),exchange);
+  try {
+    EventHelper.notifyExchangeCreated(exchange.getContext(),exchange);
+  }
+ catch (  Throwable e) {
+    log.warn("Exception occurred during event notification. This exception will be ignored.",e);
+  }
   if (exchange.getContext() != null) {
     exchange.getContext().getInflightRepository().add(exchange);
   }
