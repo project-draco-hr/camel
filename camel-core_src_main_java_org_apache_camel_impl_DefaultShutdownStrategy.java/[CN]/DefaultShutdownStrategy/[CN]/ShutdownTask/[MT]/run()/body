@@ -74,7 +74,8 @@
     Consumer consumer=deferred.getConsumer();
     if (consumer instanceof ShutdownAware) {
       LOG.trace("Route: {} preparing to shutdown.",deferred.getRoute().getId());
-      ((ShutdownAware)consumer).prepareShutdown();
+      boolean forced=context.getShutdownStrategy().forceShutdown(consumer);
+      prepareShutdown(consumer,forced,false);
       LOG.debug("Route: {} preparing to shutdown complete.",deferred.getRoute().getId());
     }
   }
@@ -87,6 +88,12 @@
  else {
       shutdownNow(consumer);
       LOG.info("Route: {} shutdown complete, was consuming from: {}",deferred.getRoute().getId(),deferred.getConsumer().getEndpoint());
+    }
+  }
+  for (  RouteStartupOrder order : routes) {
+    for (    Service service : order.getServices()) {
+      boolean forced=context.getShutdownStrategy().forceShutdown(service);
+      prepareShutdown(service,forced,true);
     }
   }
 }

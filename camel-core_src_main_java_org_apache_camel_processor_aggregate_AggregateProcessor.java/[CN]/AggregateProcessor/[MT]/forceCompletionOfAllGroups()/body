@@ -1,12 +1,15 @@
 {
-  if (!camelContext.getStatus().isStarted()) {
+  boolean allow=camelContext.getStatus().isStarted() || camelContext.getStatus().isStopping();
+  if (!allow) {
     LOG.warn("cannot start force completion because CamelContext({}) has not been started yet",camelContext.getName());
-    return;
+    return 0;
   }
   LOG.trace("Starting force completion of all groups task");
   Set<String> keys=aggregationRepository.getKeys();
+  int total=0;
   if (keys != null && !keys.isEmpty()) {
     lock.lock();
+    total=keys.size();
     try {
       for (      String key : keys) {
         Exchange exchange=aggregationRepository.get(camelContext,key);
@@ -22,4 +25,8 @@
     }
   }
   LOG.trace("Completed force completion of all groups task");
+  if (total > 0) {
+    LOG.debug("Forcing completion of all groups with {} exchanges",total);
+  }
+  return total;
 }

@@ -1,0 +1,21 @@
+{
+  Set<Service> list;
+  if (includeChildren) {
+    list=ServiceHelper.getChildServices(service);
+  }
+ else {
+    list=new LinkedHashSet<Service>(1);
+    list.add(service);
+  }
+  for (  Service child : list) {
+    if (child instanceof ShutdownPrepared) {
+      try {
+        LOG.trace("Preparing {} shutdown on {}",forced ? "forced" : "",child);
+        ((ShutdownPrepared)child).prepareShutdown(forced);
+      }
+ catch (      Exception e) {
+        LOG.warn("Error during prepare shutdown on " + child + ". This exception will be ignored.",e);
+      }
+    }
+  }
+}
