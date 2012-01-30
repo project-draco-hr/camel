@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure(){
+      errorHandler(deadLetterChannel("mock:error").maximumRedeliveries(3).redeliveryDelay(0L).onRedelivery(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          final Message in=exchange.getIn();
+          final int count=in.getHeader(Exchange.REDELIVERY_COUNTER,Integer.class);
+          final int maxCount=in.getHeader(Exchange.REDELIVERY_MAX_COUNTER,Integer.class);
+          log.info("Redelivery count = {}",count);
+          if (count >= (maxCount - 1)) {
+            if (sshd != null) {
+              sshd.start();
+              log.info("Restarting SSHD");
+            }
+          }
+        }
+      }
+));
+      from("direct:redeliver").tracing().to("ssh://smx:smx@localhost:" + port).to("mock:success");
+    }
+  }
+;
+}

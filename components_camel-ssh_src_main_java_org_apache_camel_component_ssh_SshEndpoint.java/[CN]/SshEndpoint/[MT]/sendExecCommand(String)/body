@@ -1,0 +1,45 @@
+{
+  byte[] result=null;
+  if (getConfiguration() == null) {
+    throw new IllegalStateException("Configuration must be set");
+  }
+  ConnectFuture connectFuture=client.connect(getHost(),getPort());
+  connectFuture.await(getTimeout());
+  if (!connectFuture.isDone() || !connectFuture.isConnected()) {
+    final String msg="Failed to connect to " + getHost() + ":"+ getPort()+ " within timeout "+ getTimeout()+ "ms";
+    log.debug(msg);
+    throw new RuntimeCamelException(msg);
+  }
+  log.debug("Connected to {}:{}",getHost(),getPort());
+  AuthFuture authResult;
+  ClientSession session=connectFuture.getSession();
+  final KeyPairProvider keyPairProvider=getKeyPairProvider();
+  if (keyPairProvider != null) {
+    log.debug("Attempting to authenticate username '{}' using Key...",getUsername());
+    KeyPair pair=keyPairProvider.loadKey(getKeyType());
+    authResult=session.authPublicKey(getUsername(),pair);
+  }
+ else {
+    log.debug("Attempting to authenticate username '{}' using Password...",getUsername());
+    authResult=session.authPassword(getUsername(),getPassword());
+  }
+  authResult.await(getTimeout());
+  if (!authResult.isDone() || authResult.isFailure()) {
+    log.debug("Failed to authenticate");
+    throw new RuntimeCamelException("Failed to authenticate username " + getUsername());
+  }
+  ClientChannel channel=session.createChannel(ClientChannel.CHANNEL_EXEC,command);
+  ByteArrayInputStream in=new ByteArrayInputStream(new byte[]{0});
+  channel.setIn(in);
+  ByteArrayOutputStream out=new ByteArrayOutputStream();
+  channel.setOut(out);
+  ByteArrayOutputStream err=new ByteArrayOutputStream();
+  channel.setErr(err);
+  OpenFuture openFuture=channel.open();
+  openFuture.await(getTimeout());
+  if (openFuture.isOpened()) {
+    channel.waitFor(ClientChannel.CLOSED,0);
+    result=out.toByteArray();
+  }
+  return result;
+}
