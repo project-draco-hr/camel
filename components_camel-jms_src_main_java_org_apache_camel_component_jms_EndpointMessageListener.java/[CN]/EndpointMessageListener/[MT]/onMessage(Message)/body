@@ -12,13 +12,15 @@
     }
     String correlationId=message.getJMSCorrelationID();
     if (correlationId != null) {
-      LOG.debug("Received Message has JMSCorrelationID [" + correlationId + "]");
+      LOG.debug("Received Message has JMSCorrelationID [{}]",correlationId);
     }
     LOG.trace("onMessage.process START");
     AsyncCallback callback=new EndpointMessageListenerAsyncCallback(message,exchange,endpoint,sendReply,replyDestination);
     boolean forceSync=endpoint.isSynchronous() || endpoint.isTransacted();
     if (forceSync || !isAsync()) {
-      LOG.trace("Processing exchange {} synchronously",exchange.getExchangeId());
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing exchange {} synchronously",exchange.getExchangeId());
+      }
       try {
         processor.process(exchange);
       }
@@ -30,7 +32,9 @@
       }
     }
  else {
-      LOG.trace("Processing exchange {} asynchronously",exchange.getExchangeId());
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing exchange {} asynchronously",exchange.getExchangeId());
+      }
       boolean sync=AsyncProcessorHelper.process(processor,exchange,callback);
       if (!sync) {
         return;
