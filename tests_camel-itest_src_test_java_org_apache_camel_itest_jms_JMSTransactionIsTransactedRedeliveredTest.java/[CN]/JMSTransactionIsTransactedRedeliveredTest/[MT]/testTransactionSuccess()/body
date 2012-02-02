@@ -1,0 +1,21 @@
+{
+  context.getRouteDefinitions().get(0).adviceWith(context,new AdviceWithRouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(AssertionError.class).to("log:error","mock:error");
+    }
+  }
+);
+  context.start();
+  MockEndpoint error=getMockEndpoint("mock:error");
+  error.expectedMessageCount(0);
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  mock.expectedBodiesReceived("Bye World");
+  mock.message(0).header("count").isEqualTo(3);
+  MockEndpoint jetty=getMockEndpoint("mock:jetty");
+  jetty.expectedMessageCount(1);
+  template.sendBody("activemq:queue:okay","Hello World");
+  mock.assertIsSatisfied();
+  jetty.assertIsSatisfied();
+  error.assertIsSatisfied();
+}
