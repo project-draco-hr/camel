@@ -1,0 +1,16 @@
+{
+  Object request=exchange.getIn().getBody();
+  if (transceiver == null) {
+    transceiver=createTranceiver();
+    requestor=new AvroRequestor(getEndpoint().getProtocol(),transceiver);
+  }
+  requestor.request(exchange.getIn().getHeader(AvroConstants.AVRO_MESSAGE_NAME,String.class),wrapObjectToArray(request),new Callback<Object>(){
+    @Override public void handleResult(    Object result){
+      exchange.getOut().setBody(result);
+    }
+    @Override public void handleError(    Throwable error){
+      exchange.setException(error);
+    }
+  }
+);
+}

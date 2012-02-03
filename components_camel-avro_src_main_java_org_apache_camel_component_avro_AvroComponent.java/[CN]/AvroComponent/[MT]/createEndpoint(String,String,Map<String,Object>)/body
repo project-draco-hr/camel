@@ -1,0 +1,27 @@
+{
+  AvroConfiguration config;
+  if (configuration != null) {
+    config=configuration.copy();
+  }
+ else {
+    config=new AvroConfiguration();
+  }
+  URI enpointUri=new URI(URISupport.normalizeUri(remaining));
+  config.parseURI(enpointUri,parameters,this);
+  setProperties(config,parameters);
+  if (config.getProtocol() == null && config.getProtocolClassName() != null) {
+    Class<?> protocolClass=getCamelContext().getClassResolver().resolveClass(config.getProtocolClassName());
+    Field f=protocolClass.getField("PROTOCOL");
+    Protocol protocol=(Protocol)f.get(null);
+    config.setProtocol(protocol);
+  }
+  if (AvroConstants.AVRO_NETTY_TRANSPORT.equals(enpointUri.getScheme())) {
+    return new AvroNettyEndpoint(remaining,this,config);
+  }
+ else   if (AvroConstants.AVRO_HTTP_TRANSPORT.equals(enpointUri.getScheme())) {
+    return new AvroHttpEndpoint(remaining,this,config);
+  }
+ else {
+    throw new IllegalArgumentException("Unknown avro scheme. Should use either netty or http.");
+  }
+}

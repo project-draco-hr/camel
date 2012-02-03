@@ -1,0 +1,13 @@
+{
+  Value input=Value.newBuilder().build();
+  input.setValue("test body");
+  MockEndpoint mock=getMockEndpoint("mock:reverse");
+  mock.expectedMessageCount(1);
+  mock.message(0).body().isInstanceOf(Value.class);
+  mock.message(0).body().equals(input);
+  Object marshalled=template.requestBody(inURI,input);
+  template.sendBody(outURI,marshalled);
+  mock.assertIsSatisfied();
+  Value output=mock.getReceivedExchanges().get(0).getIn().getBody(Value.class);
+  assertEquals(input,output);
+}

@@ -1,0 +1,35 @@
+{
+  Object response=null;
+  int numParams=message.getRequest().getFields().size();
+  Object[] params=new Object[numParams];
+  Class[] paramTypes=new Class[numParams];
+  int i=0;
+  for (  Schema.Field param : message.getRequest().getFields()) {
+    params[i]=((GenericRecord)request).get(param.name());
+    paramTypes[i]=SpecificData.get().getClass(param.schema());
+    i++;
+  }
+  Exchange exchange=consumer.getEndpoint().createExchange(message,params);
+  try {
+    consumer.getProcessor().process(exchange);
+  }
+ catch (  Throwable e) {
+    consumer.getExceptionHandler().handleException(e);
+  }
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    response=exchange.getOut().getBody();
+  }
+ else {
+    response=null;
+  }
+  boolean failed=exchange.isFailed();
+  if (failed) {
+    if (exchange.getException() != null) {
+      response=exchange.getException();
+    }
+ else {
+      response=exchange.getOut().getBody();
+    }
+  }
+  return response;
+}
