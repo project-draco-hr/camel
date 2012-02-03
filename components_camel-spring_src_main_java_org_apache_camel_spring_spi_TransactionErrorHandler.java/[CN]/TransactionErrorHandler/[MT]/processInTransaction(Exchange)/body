@@ -4,22 +4,16 @@
   final String ids=ExchangeHelper.logIds(exchange);
   try {
     exchange.getUnitOfWork().beginTransactedBy(transactionKey);
-    if (log.isDebugEnabled()) {
-      log.debug("Transaction begin ({}) redelivered({}) for {})",new Object[]{transactionKey,redelivered,ids});
-    }
+    logTransactionBegin(redelivered,ids);
     doInTransactionTemplate(exchange);
-    if (log.isDebugEnabled()) {
-      log.debug("Transaction commit ({}) redelivered({}) for {})",new Object[]{transactionKey,redelivered,ids});
-    }
+    logTransactionCommit(redelivered,ids);
   }
  catch (  TransactionRollbackException e) {
-    if (log.isDebugEnabled()) {
-      log.debug("Transaction rollback ({}) redelivered({}) for {} due exchange was marked for rollbackOnly",new Object[]{transactionKey,redelivered,ids});
-    }
+    logTransactionRollback(redelivered,ids,null,true);
   }
 catch (  Throwable e) {
     exchange.setException(e);
-    logTransactionRollback(redelivered,ids,e);
+    logTransactionRollback(redelivered,ids,e,false);
   }
  finally {
     exchange.getUnitOfWork().endTransactedBy(transactionKey);
