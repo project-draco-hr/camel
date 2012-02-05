@@ -1,0 +1,24 @@
+{
+  super.doStart();
+  AmazonDynamoDB ddbClient=getDdbClient();
+  String tableName=getConfiguration().getTableName();
+  LOG.trace("Querying whether table [{}] already exists...",tableName);
+  try {
+    DescribeTableRequest request=new DescribeTableRequest().withTableName(tableName);
+    TableDescription tableDescription=ddbClient.describeTable(request).getTable();
+    if (!isTableActive(tableDescription)) {
+      waitForTableToBecomeAvailable(tableName);
+    }
+    LOG.trace("Table [{}] already exists",tableName);
+    return;
+  }
+ catch (  ResourceNotFoundException e) {
+    LOG.trace("Table [{}] doesn't exist yet",tableName);
+    LOG.trace("Creating table [{}]...",tableName);
+    TableDescription tableDescription=createTable(tableName);
+    if (!isTableActive(tableDescription)) {
+      waitForTableToBecomeAvailable(tableName);
+    }
+    LOG.trace("Table [{}] created",tableName);
+  }
+}

@@ -1,0 +1,27 @@
+{
+  LOG.trace("Waiting for [{}] to become ACTIVE...",tableName);
+  long waitTime=5 * 60 * 1000;
+  while (waitTime > 0) {
+    try {
+      Thread.sleep(1000 * 5);
+      waitTime-=5000;
+    }
+ catch (    Exception e) {
+    }
+    try {
+      DescribeTableRequest request=new DescribeTableRequest().withTableName(tableName);
+      TableDescription tableDescription=getDdbClient().describeTable(request).getTable();
+      if (isTableActive(tableDescription)) {
+        LOG.trace("Table [{}] became active",tableName);
+        return;
+      }
+      LOG.trace("Table [{}] not active yet",tableName);
+    }
+ catch (    AmazonServiceException ase) {
+      if (!ase.getErrorCode().equalsIgnoreCase("ResourceNotFoundException")) {
+        throw ase;
+      }
+    }
+  }
+  throw new RuntimeException("Table " + tableName + " never went active");
+}
