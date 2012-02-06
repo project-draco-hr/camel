@@ -1,0 +1,18 @@
+{
+  BeanManager beanManager=getBeanManager();
+  Set<Bean<?>> beans=beanManager.getBeans(type,new AnyLiteral());
+  if (beans == null || beans.isEmpty()) {
+    if (optional) {
+      return Collections.emptyList();
+    }
+    throw new IllegalStateException("Could not find beans for Type=" + type);
+  }
+  if (!includeDefaultScopedBeans) {
+    beans=filterDefaultScopedBeans(beans);
+  }
+  List<T> result=new ArrayList<T>(beans.size());
+  for (  Bean<?> bean : beans) {
+    result.add(getContextualReference(type,beanManager,new HashSet<Bean<?>>((Collection)Arrays.asList(new Object[]{bean}))));
+  }
+  return result;
+}
