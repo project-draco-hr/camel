@@ -1,0 +1,29 @@
+{
+  WebServiceTemplate webServiceTemplate=configuration.getWebServiceTemplate();
+  List<WebServiceMessageSender> webServiceMessageSenders=new ArrayList<WebServiceMessageSender>(webServiceTemplate.getMessageSenders().length);
+  Collections.addAll(webServiceMessageSenders,webServiceTemplate.getMessageSenders());
+  for (  WebServiceMessageSender webServiceMessageSender : webServiceMessageSenders) {
+    if (webServiceMessageSender instanceof CommonsHttpMessageSender) {
+      CommonsHttpMessageSender commonsHttpMessageSender=(CommonsHttpMessageSender)webServiceMessageSender;
+      setTimeOut(commonsHttpMessageSender,configuration);
+    }
+ else     if (webServiceMessageSender instanceof HttpsUrlConnectionMessageSender) {
+      if (shouldConsiderTimeoutConfiguration(configuration)) {
+        webServiceMessageSenders.remove(webServiceMessageSender);
+        webServiceMessageSenders.add(new CamelHttpsUrlConnectionMessageSender(configuration));
+      }
+    }
+ else     if (webServiceMessageSender instanceof HttpUrlConnectionMessageSender) {
+      if (shouldConsiderTimeoutConfiguration(configuration)) {
+        webServiceMessageSenders.remove(webServiceMessageSender);
+        webServiceMessageSenders.add(new CamelHttpUrlConnectionMessageSender(configuration));
+      }
+    }
+ else {
+      if (shouldConsiderTimeoutConfiguration(configuration)) {
+        LOG.warn("Ignoring the timeout option for {} as there's no provided API available to populate it!",webServiceMessageSender);
+      }
+    }
+  }
+  webServiceTemplate.setMessageSenders(webServiceMessageSenders.toArray(new WebServiceMessageSender[webServiceMessageSenders.size()]));
+}

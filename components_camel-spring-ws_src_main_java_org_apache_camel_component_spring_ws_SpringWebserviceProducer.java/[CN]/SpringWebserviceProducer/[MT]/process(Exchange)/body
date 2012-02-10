@@ -3,13 +3,14 @@
   String endpointUri=exchange.getIn().getHeader(SpringWebserviceConstants.SPRING_WS_ENDPOINT_URI,String.class);
   String soapAction=exchange.getIn().getHeader(SpringWebserviceConstants.SPRING_WS_SOAP_ACTION,String.class);
   URI wsAddressingAction=exchange.getIn().getHeader(SpringWebserviceConstants.SPRING_WS_ADDRESSING_ACTION,URI.class);
-  WebServiceMessageCallback callback=new DefaultWebserviceMessageCallback(soapAction,wsAddressingAction);
+  populateTimeout(getEndpoint().getConfiguration());
+  WebServiceMessageCallback callback=new DefaultWebserviceMessageCallback(soapAction,wsAddressingAction,getEndpoint().getConfiguration());
   Object body=null;
   if (endpointUri != null) {
-    body=endpoint.getConfiguration().getWebServiceTemplate().sendSourceAndReceive(endpointUri,sourcePayload,callback,SOURCE_EXTRACTOR);
+    body=getEndpoint().getConfiguration().getWebServiceTemplate().sendSourceAndReceive(endpointUri,sourcePayload,callback,SOURCE_EXTRACTOR);
   }
  else {
-    body=endpoint.getConfiguration().getWebServiceTemplate().sendSourceAndReceive(sourcePayload,callback,SOURCE_EXTRACTOR);
+    body=getEndpoint().getConfiguration().getWebServiceTemplate().sendSourceAndReceive(sourcePayload,callback,SOURCE_EXTRACTOR);
   }
   if (ExchangeHelper.isOutCapable(exchange)) {
     exchange.getOut().copyFrom(exchange.getIn());
