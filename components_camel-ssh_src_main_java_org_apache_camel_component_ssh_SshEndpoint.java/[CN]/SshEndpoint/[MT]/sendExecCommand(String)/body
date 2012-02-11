@@ -13,7 +13,15 @@
   log.debug("Connected to {}:{}",getHost(),getPort());
   AuthFuture authResult;
   ClientSession session=connectFuture.getSession();
-  final KeyPairProvider keyPairProvider=getKeyPairProvider();
+  KeyPairProvider keyPairProvider;
+  final String certFilename=getCertFilename();
+  if (certFilename != null) {
+    log.debug("Attempting to authenticate using FileKey '{}'...",certFilename);
+    keyPairProvider=new FileKeyPairProvider(new String[]{certFilename});
+  }
+ else {
+    keyPairProvider=getKeyPairProvider();
+  }
   if (keyPairProvider != null) {
     log.debug("Attempting to authenticate username '{}' using Key...",getUsername());
     KeyPair pair=keyPairProvider.loadKey(getKeyType());
