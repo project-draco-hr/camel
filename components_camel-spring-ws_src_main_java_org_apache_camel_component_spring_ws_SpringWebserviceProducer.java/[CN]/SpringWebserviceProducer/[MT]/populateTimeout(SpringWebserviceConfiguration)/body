@@ -1,4 +1,7 @@
 {
+  if (!(configuration.getTimeout() > -1)) {
+    return;
+  }
   WebServiceTemplate webServiceTemplate=configuration.getWebServiceTemplate();
   List<WebServiceMessageSender> webServiceMessageSenders=new ArrayList<WebServiceMessageSender>(webServiceTemplate.getMessageSenders().length);
   Collections.addAll(webServiceMessageSenders,webServiceTemplate.getMessageSenders());
@@ -8,21 +11,15 @@
       setTimeOut(commonsHttpMessageSender,configuration);
     }
  else     if (webServiceMessageSender instanceof HttpsUrlConnectionMessageSender) {
-      if (shouldConsiderTimeoutConfiguration(configuration)) {
-        webServiceMessageSenders.remove(webServiceMessageSender);
-        webServiceMessageSenders.add(new CamelHttpsUrlConnectionMessageSender(configuration,(HttpsUrlConnectionMessageSender)webServiceMessageSender));
-      }
+      webServiceMessageSenders.remove(webServiceMessageSender);
+      webServiceMessageSenders.add(new CamelHttpsUrlConnectionMessageSender(configuration,(HttpsUrlConnectionMessageSender)webServiceMessageSender));
     }
  else     if (webServiceMessageSender instanceof HttpUrlConnectionMessageSender) {
-      if (shouldConsiderTimeoutConfiguration(configuration)) {
-        webServiceMessageSenders.remove(webServiceMessageSender);
-        webServiceMessageSenders.add(new CamelHttpUrlConnectionMessageSender(configuration,(HttpUrlConnectionMessageSender)webServiceMessageSender));
-      }
+      webServiceMessageSenders.remove(webServiceMessageSender);
+      webServiceMessageSenders.add(new CamelHttpUrlConnectionMessageSender(configuration,(HttpUrlConnectionMessageSender)webServiceMessageSender));
     }
  else {
-      if (shouldConsiderTimeoutConfiguration(configuration)) {
-        LOG.warn("Ignoring the timeout option for {} as there's no provided API available to populate it!",webServiceMessageSender);
-      }
+      LOG.warn("Ignoring the timeout option for {} as there's no provided API available to populate it!",webServiceMessageSender);
     }
   }
   webServiceTemplate.setMessageSenders(webServiceMessageSenders.toArray(new WebServiceMessageSender[webServiceMessageSenders.size()]));
