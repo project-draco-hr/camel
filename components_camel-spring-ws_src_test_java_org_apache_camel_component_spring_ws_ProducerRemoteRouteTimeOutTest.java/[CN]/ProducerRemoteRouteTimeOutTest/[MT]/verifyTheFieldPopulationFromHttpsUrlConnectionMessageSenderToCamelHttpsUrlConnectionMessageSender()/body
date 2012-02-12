@@ -18,14 +18,12 @@
 });
   CamelHttpsUrlConnectionMessageSender toMessageSender=new CamelHttpsUrlConnectionMessageSender(new SpringWebserviceConfiguration(),fromMessageSender);
   assertFalse("acceptGzipEncoding field didn't get populated properly!",toMessageSender.isAcceptGzipEncoding());
-  for (  Field expectedField : fromMessageSender.getClass().getDeclaredFields()) {
-    if (Modifier.isStatic(expectedField.getModifiers())) {
+  for (  Field field : fromMessageSender.getClass().getDeclaredFields()) {
+    if (Modifier.isStatic(field.getModifiers())) {
       continue;
     }
-    expectedField.setAccessible(true);
-    String fieldName=expectedField.getName();
-    Field actualField=toMessageSender.getClass().getSuperclass().getDeclaredField(fieldName);
-    actualField.setAccessible(true);
-    assertSame("The field '" + fieldName + "' didn't get populated properly!",expectedField.get(fromMessageSender),actualField.get(toMessageSender));
+    field.setAccessible(true);
+    String fieldName=field.getName();
+    assertSame("The field '" + fieldName + "' didn't get populated properly!",field.get(fromMessageSender),field.get(toMessageSender));
   }
 }
