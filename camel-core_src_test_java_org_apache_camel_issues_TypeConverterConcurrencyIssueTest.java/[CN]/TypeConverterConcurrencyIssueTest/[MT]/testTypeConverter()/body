@@ -1,0 +1,19 @@
+{
+  Method method=TypeConverterConcurrencyIssueTest.class.getMethod("toMyCamelBean",String.class);
+  assertNotNull(method);
+  context.getTypeConverterRegistry().addTypeConverter(MyCamelBean.class,String.class,new StaticMethodTypeConverter(method));
+  ExecutorService pool=context.getExecutorServiceManager().newThreadPool(this,"test",50,50);
+  final CountDownLatch latch=new CountDownLatch(size);
+  StopWatch watch=new StopWatch();
+  for (int i=0; i < size; i++) {
+    pool.submit(new Runnable(){
+      @Override public void run(){
+        MyCamelBean bean=context.getTypeConverter().convertTo(MyCamelBean.class,"1;MyCamel");
+        latch.countDown();
+      }
+    }
+);
+  }
+  assertTrue(latch.await(1,TimeUnit.MINUTES));
+  log.info("Took " + watch.stop() + " millis to convert "+ size+ " objects");
+}
