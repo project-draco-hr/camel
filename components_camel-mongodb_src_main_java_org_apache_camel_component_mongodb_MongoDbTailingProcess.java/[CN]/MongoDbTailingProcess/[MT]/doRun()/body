@@ -1,0 +1,27 @@
+{
+  try {
+    while (cursor.hasNext() && cursor.getCursorId() != 0 && keepRunning) {
+      DBObject dbObj=cursor.next();
+      Exchange exchange=endpoint.createMongoDbExchange(dbObj);
+      try {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Sending exchange: {}, ObjectId: {}",exchange,dbObj.get("_id"));
+        }
+        consumer.getProcessor().process(exchange);
+      }
+ catch (      Exception e) {
+        LOG.warn("Exception ocurred while processing exchange with ID " + exchange.getExchangeId(),e);
+        if (exchange.getException() != e) {
+          exchange.setException(e);
+        }
+      }
+      tailTracking.setLastVal(dbObj);
+    }
+  }
+ catch (  CursorNotFound e) {
+    if (keepRunning) {
+      LOG.debug("Cursor not found exception from MongoDB, will regenerate cursor. This is normal behaviour with tailable cursors.",e);
+    }
+  }
+  tailTracking.persistToStore();
+}

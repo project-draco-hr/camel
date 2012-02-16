@@ -1,0 +1,18 @@
+{
+  if (!endpoint.isDynamicity()) {
+    return endpoint.getDbCollection();
+  }
+  String dynamicDB=exchange.getIn().getHeader(MongoDbConstants.DATABASE,String.class);
+  String dynamicCollection=exchange.getIn().getHeader(MongoDbConstants.COLLECTION,String.class);
+  if (dynamicDB == null && dynamicCollection == null) {
+    return endpoint.getDbCollection();
+  }
+  DB db=endpoint.getDb();
+  DBCollection dbCol=null;
+  if (dynamicDB != null) {
+    db=endpoint.getMongoConnection().getDB(dynamicDB);
+  }
+  dbCol=dynamicCollection == null ? db.getCollection(endpoint.getCollection()) : db.getCollection(dynamicCollection);
+  LOG.debug("Dynamic database and/or collection selected: {}->{}",dbCol.getDB().getName(),dbCol.getName());
+  return dbCol;
+}

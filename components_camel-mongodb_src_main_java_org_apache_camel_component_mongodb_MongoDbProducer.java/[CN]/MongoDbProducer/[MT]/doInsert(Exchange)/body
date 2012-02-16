@@ -1,0 +1,25 @@
+{
+  DBCollection dbCol=calculateCollection(exchange);
+  boolean singleInsert=true;
+  Object insert=exchange.getIn().getBody(DBObject.class);
+  if (insert == null) {
+    insert=exchange.getIn().getBody(List.class);
+    if (insert != null) {
+      singleInsert=false;
+      insert=attemptConvertToList((List)insert,exchange);
+    }
+ else {
+      throw new CamelMongoDbException("MongoDB operation = insert, Body is not conversible to type DBObject nor List<DBObject>");
+    }
+  }
+  WriteResult result;
+  WriteConcern wc=extractWriteConcern(exchange);
+  if (singleInsert) {
+    result=wc == null ? dbCol.insert((DBObject)insert) : dbCol.insert((DBObject)insert,wc);
+  }
+ else {
+    result=wc == null ? dbCol.insert((List<DBObject>)insert) : dbCol.insert((List<DBObject>)insert,wc);
+  }
+  processWriteResult(result,exchange);
+  exchange.getOut().setBody(result);
+}

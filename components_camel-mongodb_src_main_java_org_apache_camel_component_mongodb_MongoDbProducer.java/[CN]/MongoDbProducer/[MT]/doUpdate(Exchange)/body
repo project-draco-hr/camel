@@ -1,0 +1,23 @@
+{
+  DBCollection dbCol=calculateCollection(exchange);
+  List<DBObject> saveObj=exchange.getIn().getMandatoryBody((Class<List<DBObject>>)(Class<?>)List.class);
+  if (saveObj.size() != 2) {
+    throw new CamelMongoDbException("MongoDB operation = insert, failed because body is not a List of DBObject objects with size = 2");
+  }
+  DBObject updateCriteria=saveObj.get(0);
+  DBObject objNew=saveObj.get(1);
+  Boolean multi=exchange.getIn().getHeader(MongoDbConstants.MULTIUPDATE,Boolean.class);
+  Boolean upsert=exchange.getIn().getHeader(MongoDbConstants.UPSERT,Boolean.class);
+  WriteResult result;
+  WriteConcern wc=extractWriteConcern(exchange);
+  if (multi == null && upsert == null) {
+    result=wc == null ? dbCol.update(updateCriteria,objNew) : dbCol.update(updateCriteria,objNew,false,false,wc);
+  }
+ else {
+    result=wc == null ? dbCol.update(updateCriteria,objNew,calculateBooleanValue(upsert),calculateBooleanValue(multi)) : dbCol.update(updateCriteria,objNew,calculateBooleanValue(upsert),calculateBooleanValue(multi),wc);
+  }
+  processWriteResult(result,exchange);
+  Message out=exchange.getOut();
+  out.setBody(result);
+  out.setHeader(MongoDbConstants.RECORDS_AFFECTED,result.getN());
+}

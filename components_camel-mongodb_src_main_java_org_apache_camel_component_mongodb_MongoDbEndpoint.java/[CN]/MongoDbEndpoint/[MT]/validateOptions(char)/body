@@ -1,0 +1,23 @@
+{
+  if (role == 'P') {
+    if (!ObjectHelper.isEmpty(consumerType) || persistentTailTracking || !ObjectHelper.isEmpty(tailTrackDb)|| !ObjectHelper.isEmpty(tailTrackCollection)|| !ObjectHelper.isEmpty(tailTrackField)|| cursorRegenerationDelay != 1000L) {
+      throw new IllegalArgumentException("consumerType, tailTracking, cursorRegenerationDelay options cannot appear on a producer endpoint");
+    }
+  }
+ else   if (role == 'C') {
+    if (!ObjectHelper.isEmpty(operation) || !ObjectHelper.isEmpty(writeConcern) || writeConcernRef != null || readPreference != null || dynamicity || invokeGetLastError) {
+      throw new IllegalArgumentException("operation, writeConcern, writeConcernRef, readPreference, dynamicity, invokeGetLastError " + "options cannot appear on a consumer endpoint");
+    }
+    if (consumerType == MongoDbConsumerType.tailable) {
+      if (tailTrackIncreasingField == null) {
+        throw new IllegalArgumentException("tailTrackIncreasingField option must be set for tailable cursor MongoDB consumer endpoint");
+      }
+      if (persistentTailTracking && (ObjectHelper.isEmpty(persistentId))) {
+        throw new IllegalArgumentException("persistentId is compulsory for persistent tail tracking");
+      }
+    }
+  }
+ else {
+    throw new IllegalArgumentException("Unknown endpoint role");
+  }
+}

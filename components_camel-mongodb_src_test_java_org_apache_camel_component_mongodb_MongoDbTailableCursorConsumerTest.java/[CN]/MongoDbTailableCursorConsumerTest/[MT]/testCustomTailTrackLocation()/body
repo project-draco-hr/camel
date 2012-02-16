@@ -1,0 +1,43 @@
+{
+  assertEquals(0,cappedTestCollection.count());
+  final MockEndpoint mock=getMockEndpoint("mock:test");
+  DBCollection trackingCol=mongo.getDB("einstein").getCollection("curie");
+  trackingCol.drop();
+  trackingCol=mongo.getDB("einstein").getCollection("curie");
+  cappedTestCollection=db.createCollection(cappedTestCollectionName,BasicDBObjectBuilder.start().add("capped",true).add("size",1000000000).add("max",1000).get());
+  addTestRoutes();
+  context.startRoute("tailableCursorConsumer3");
+  mock.expectedMessageCount(300);
+  Thread t=new Thread(new Runnable(){
+    @Override public void run(){
+      for (int i=1; i <= 300; i++) {
+        cappedTestCollection.insert(BasicDBObjectBuilder.start("increasing",i).add("string","value" + i).get(),WriteConcern.SAFE);
+      }
+    }
+  }
+);
+  t.start();
+  t.join();
+  mock.assertIsSatisfied();
+  mock.reset();
+  context.stopRoute("tailableCursorConsumer3");
+  assertEquals(300,trackingCol.findOne(new BasicDBObject("persistentId","darwin")).get("newton"));
+  context.startRoute("tailableCursorConsumer3");
+  mock.expectedMessageCount(300);
+  t=new Thread(new Runnable(){
+    @Override public void run(){
+      for (int i=301; i <= 600; i++) {
+        cappedTestCollection.insert(BasicDBObjectBuilder.start("increasing",i).add("string","value" + i).get(),WriteConcern.SAFE);
+      }
+    }
+  }
+);
+  t.start();
+  t.join();
+  mock.assertIsSatisfied();
+  Object firstBody=mock.getExchanges().get(0).getIn().getBody();
+  assertTrue(firstBody instanceof DBObject);
+  assertEquals(301,((DBObject)firstBody).get("increasing"));
+  context.stopRoute("tailableCursorConsumer3");
+  assertEquals(600,trackingCol.findOne(new BasicDBObject("persistentId","darwin")).get("newton"));
+}

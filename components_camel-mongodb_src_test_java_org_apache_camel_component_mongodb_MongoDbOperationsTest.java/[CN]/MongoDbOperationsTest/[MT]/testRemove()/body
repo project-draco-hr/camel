@@ -1,0 +1,20 @@
+{
+  assertEquals(0,testCollection.count());
+  for (int i=1; i <= 100; i++) {
+    String body=null;
+    Formatter f=new Formatter();
+    if (i % 2 == 0) {
+      body=f.format("{\"_id\":\"testSave%d\", \"scientist\":\"Einstein\"}",i).toString();
+    }
+ else {
+      body=f.format("{\"_id\":\"testSave%d\", \"scientist\":\"Einstein\", \"extraField\": true}",i).toString();
+    }
+    template.requestBody("direct:insert",body);
+  }
+  assertEquals(100L,testCollection.count());
+  DBObject extraField=new BasicDBObject("extraField",true);
+  assertEquals("Number of records with 'extraField' flag on must equal 50",50L,testCollection.count(extraField));
+  Object result=template.requestBody("direct:remove",extraField);
+  assertTrue(result instanceof WriteResult);
+  assertEquals("Number of records with 'extraField' flag on must be 0 after remove",0,testCollection.count(extraField));
+}

@@ -1,0 +1,48 @@
+{
+  DBCollection dbCol=calculateCollection(exchange);
+  DBObject query=null;
+  if (exchange.getIn().getBody() != null) {
+    query=exchange.getIn().getBody(DBObject.class);
+  }
+  DBObject fieldFilter=exchange.getIn().getHeader(MongoDbConstants.FIELDS_FILTER,DBObject.class);
+  Integer batchSize=exchange.getIn().getHeader(MongoDbConstants.BATCH_SIZE,Integer.class);
+  Integer numToSkip=exchange.getIn().getHeader(MongoDbConstants.NUM_TO_SKIP,Integer.class);
+  Integer limit=exchange.getIn().getHeader(MongoDbConstants.LIMIT,Integer.class);
+  DBObject sortBy=exchange.getIn().getHeader(MongoDbConstants.SORT_BY,DBObject.class);
+  DBCursor ret=null;
+  try {
+    if (query == null && fieldFilter == null) {
+      ret=dbCol.find(new BasicDBObject());
+    }
+ else     if (fieldFilter == null) {
+      ret=dbCol.find(query);
+    }
+ else {
+      ret=dbCol.find(query,fieldFilter);
+    }
+    if (sortBy != null) {
+      ret.sort(sortBy);
+    }
+    if (batchSize != null) {
+      ret.batchSize(batchSize.intValue());
+    }
+    if (numToSkip != null) {
+      ret.skip(numToSkip.intValue());
+    }
+    if (limit != null) {
+      ret.limit(limit.intValue());
+    }
+    Message out=exchange.getOut();
+    out.setBody(ret.toArray());
+    out.setHeader(MongoDbConstants.RESULT_TOTAL_SIZE,ret.count());
+    out.setHeader(MongoDbConstants.RESULT_PAGE_SIZE,ret.size());
+  }
+ catch (  Exception e) {
+    throw e;
+  }
+ finally {
+    if (ret != null) {
+      ret.close();
+    }
+  }
+}

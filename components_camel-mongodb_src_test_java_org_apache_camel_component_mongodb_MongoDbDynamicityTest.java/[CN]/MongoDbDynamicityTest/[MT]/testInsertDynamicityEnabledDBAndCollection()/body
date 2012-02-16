@@ -1,0 +1,17 @@
+{
+  assertEquals(0,testCollection.count());
+  mongo.getDB("otherDB").dropDatabase();
+  assertFalse("The otherDB database should not exist",mongo.getDatabaseNames().contains("otherDB"));
+  String body="{\"_id\": \"testInsertDynamicityEnabledDBAndCollection\", \"a\" : \"1\"}";
+  HashMap<String,Object> headers=new HashMap<String,Object>();
+  headers.put(MongoDbConstants.DATABASE,"otherDB");
+  headers.put(MongoDbConstants.COLLECTION,"otherCollection");
+  Object result=template.requestBodyAndHeaders("direct:dynamicityEnabled",body,headers);
+  assertEquals("Response isn't of type WriteResult",WriteResult.class,result.getClass());
+  DBCollection dynamicCollection=mongo.getDB("otherDB").getCollection("otherCollection");
+  DBObject b=dynamicCollection.findOne("testInsertDynamicityEnabledDBAndCollection");
+  assertNotNull("No record with 'testInsertDynamicityEnabledDBAndCollection' _id",b);
+  b=testCollection.findOne("testInsertDynamicityEnabledDBOnly");
+  assertNull("There is a record with 'testInsertDynamicityEnabledDBAndCollection' _id in the test collection",b);
+  assertTrue("The otherDB database should exist",mongo.getDatabaseNames().contains("otherDB"));
+}
