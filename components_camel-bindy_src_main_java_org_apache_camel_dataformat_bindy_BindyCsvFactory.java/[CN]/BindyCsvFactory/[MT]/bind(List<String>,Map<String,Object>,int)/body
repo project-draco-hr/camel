@@ -35,16 +35,21 @@ catch (      Exception e) {
       }
     }
  else {
-      value=getDefaultValueForPrimitive(field.getType());
+      if (!dataField.defaultValue().isEmpty()) {
+        value=format.parse(dataField.defaultValue());
+      }
+ else {
+        value=getDefaultValueForPrimitive(field.getType());
+      }
     }
     field.set(modelField,value);
     ++pos;
   }
   LOG.debug("Counter mandatory fields: {}",counterMandatoryFields);
-  if (pos < totalFields) {
-    throw new IllegalArgumentException("Some fields are missing (optional or mandatory), line: " + line);
-  }
   if (counterMandatoryFields < numberMandatoryFields) {
     throw new IllegalArgumentException("Some mandatory fields are missing, line: " + line);
+  }
+  if (pos < totalFields) {
+    setDefaultValuesForFields(model);
   }
 }

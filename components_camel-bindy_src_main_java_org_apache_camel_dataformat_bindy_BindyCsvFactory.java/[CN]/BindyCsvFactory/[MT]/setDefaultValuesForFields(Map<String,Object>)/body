@@ -1,0 +1,14 @@
+{
+  for (int i=1; i <= dataFields.size(); i++) {
+    Field field=annotatedFields.get(i);
+    field.setAccessible(true);
+    DataField dataField=dataFields.get(i);
+    Object modelField=model.get(field.getDeclaringClass().getName());
+    if (field.get(modelField) == null && !dataField.defaultValue().isEmpty()) {
+      String pattern=dataField.pattern();
+      Format<?> format=FormatFactory.getFormat(field.getType(),pattern,getLocale(),dataField.precision());
+      Object value=format.parse(dataField.defaultValue());
+      field.set(modelField,value);
+    }
+  }
+}
