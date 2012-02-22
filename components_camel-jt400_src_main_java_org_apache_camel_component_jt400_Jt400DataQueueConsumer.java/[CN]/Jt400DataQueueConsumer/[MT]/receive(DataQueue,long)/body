@@ -1,0 +1,24 @@
+{
+  DataQueueEntry entry;
+  if (timeout >= 0) {
+    int seconds=(int)timeout / 1000;
+    log.trace("Reading from data queue: {} with {} seconds timeout",queue.getName(),seconds);
+    entry=queue.read(seconds);
+  }
+ else {
+    log.trace("Reading from data queue: {} with no timeout",queue.getName());
+    entry=queue.read(-1);
+  }
+  Exchange exchange=new DefaultExchange(endpoint.getCamelContext());
+  if (entry != null) {
+    exchange.getIn().setHeader(Jt400DataQueueEndpoint.SENDER_INFORMATION,entry.getSenderInformation());
+    if (endpoint.getFormat() == Format.binary) {
+      exchange.getIn().setBody(entry.getData());
+    }
+ else {
+      exchange.getIn().setBody(entry.getString());
+    }
+    return exchange;
+  }
+  return null;
+}

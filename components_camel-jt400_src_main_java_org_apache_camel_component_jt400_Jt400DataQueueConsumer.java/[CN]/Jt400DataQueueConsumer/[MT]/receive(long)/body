@@ -1,44 +1,14 @@
 {
-  DataQueue queue=endpoint.getDataQueue();
+  BaseDataQueue queue=endpoint.getDataQueue();
   try {
-    DataQueueEntry entry;
-    if (timeout >= 0) {
-      int seconds=(int)timeout / 1000;
-      log.trace("Reading from data queue: {} with {} seconds timeout",queue.getName(),seconds);
-      entry=queue.read(seconds);
+    if (endpoint.isKeyed()) {
+      return receive((KeyedDataQueue)queue,timeout);
     }
  else {
-      log.trace("Reading from data queue: {} with no timeout",queue.getName());
-      entry=queue.read(-1);
-    }
-    Exchange exchange=new DefaultExchange(endpoint.getCamelContext());
-    if (entry != null) {
-      if (endpoint.getFormat() == Format.binary) {
-        exchange.getIn().setBody(entry.getData());
-      }
- else {
-        exchange.getIn().setBody(entry.getString());
-      }
-      return exchange;
+      return receive((DataQueue)queue,timeout);
     }
   }
- catch (  AS400SecurityException e) {
+ catch (  Exception e) {
     throw new RuntimeCamelException("Unable to read from data queue: " + queue.getName(),e);
   }
-catch (  ErrorCompletingRequestException e) {
-    throw new RuntimeCamelException("Unable to read from data queue: " + queue.getName(),e);
-  }
-catch (  IOException e) {
-    throw new RuntimeCamelException("Unable to read from data queue: " + queue.getName(),e);
-  }
-catch (  IllegalObjectTypeException e) {
-    throw new RuntimeCamelException("Unable to read from data queue: " + queue.getName(),e);
-  }
-catch (  InterruptedException e) {
-    throw new RuntimeCamelException("Unable to read from data queue: " + queue.getName(),e);
-  }
-catch (  ObjectDoesNotExistException e) {
-    throw new RuntimeCamelException("Unable to read from data queue: " + queue.getName(),e);
-  }
-  return null;
 }
