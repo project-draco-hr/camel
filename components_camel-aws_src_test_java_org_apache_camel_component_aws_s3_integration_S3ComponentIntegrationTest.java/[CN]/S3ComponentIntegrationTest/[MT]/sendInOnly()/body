@@ -1,13 +1,22 @@
 {
-  result.expectedMessageCount(1);
-  Exchange exchange=template.send("direct:start",ExchangePattern.InOnly,new Processor(){
+  result.expectedMessageCount(2);
+  Exchange exchange1=template.send("direct:start",ExchangePattern.InOnly,new Processor(){
     public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(S3Constants.KEY,"CamelUnitTest");
+      exchange.getIn().setHeader(S3Constants.KEY,"CamelUnitTest1");
+      exchange.getIn().setBody("This is my bucket content.");
+    }
+  }
+);
+  Exchange exchange2=template.send("direct:start",ExchangePattern.InOnly,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(S3Constants.KEY,"CamelUnitTest2");
       exchange.getIn().setBody("This is my bucket content.");
     }
   }
 );
   assertMockEndpointsSatisfied();
   assertResultExchange(result.getExchanges().get(0));
-  assertResponseMessage(exchange.getIn());
+  assertResultExchange(result.getExchanges().get(1));
+  assertResponseMessage(exchange1.getIn());
+  assertResponseMessage(exchange2.getIn());
 }
