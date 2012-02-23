@@ -1,11 +1,10 @@
 {
-  Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,true);
-  copy.setFromEndpoint(endpoint);
   WaitForTaskToComplete wait=waitForTaskToComplete;
   if (exchange.getProperty(Exchange.ASYNC_WAIT) != null) {
     wait=exchange.getProperty(Exchange.ASYNC_WAIT,WaitForTaskToComplete.class);
   }
   if (wait == WaitForTaskToComplete.Always || (wait == WaitForTaskToComplete.IfReplyExpected && ExchangeHelper.isOutCapable(exchange))) {
+    Exchange copy=prepareCopy(exchange,false);
     final CountDownLatch latch=new CountDownLatch(1);
     copy.addOnCompletion(new SynchronizationAdapter(){
       @Override public void onDone(      Exchange response){
@@ -65,6 +64,7 @@
     }
   }
  else {
+    Exchange copy=prepareCopy(exchange,true);
     log.trace("Adding Exchange to queue: {}",copy);
     addToQueue(copy);
   }
