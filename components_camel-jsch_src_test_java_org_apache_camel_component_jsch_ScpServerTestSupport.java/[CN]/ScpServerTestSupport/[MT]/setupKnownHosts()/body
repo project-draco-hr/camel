@@ -1,0 +1,40 @@
+{
+  knownHostsFile=SCP_ROOT_DIR + "/" + KNOWN_HOSTS+ "-"+ getPort();
+  FileUtil.deleteFile(new File(knownHostsFile));
+  if (!acceptLocalhostConnections) {
+    return;
+  }
+  JSch jsch=new JSch();
+  try {
+    LOG.debug("Using '{}' for known hosts.",knownHostsFile);
+    jsch.setKnownHosts(knownHostsFile);
+    Session s=jsch.getSession("admin","localhost",getPort());
+    s.setConfig("StrictHostKeyChecking","ask");
+    s.setConfig("HashKnownHosts","yes");
+    s.setUserInfo(new UserInfo(){
+      @Override public String getPassphrase(){
+        return null;
+      }
+      @Override public String getPassword(){
+        return "admin";
+      }
+      @Override public boolean promptPassword(      String message){
+        return true;
+      }
+      @Override public boolean promptPassphrase(      String message){
+        return false;
+      }
+      @Override public boolean promptYesNo(      String message){
+        return true;
+      }
+      @Override public void showMessage(      String message){
+      }
+    }
+);
+    s.connect();
+    s.disconnect();
+  }
+ catch (  JSchException e) {
+    LOG.info("Could not add [localhost] to known hosts",e);
+  }
+}

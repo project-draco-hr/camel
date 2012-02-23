@@ -1,0 +1,31 @@
+{
+  ObjectHelper.notNull(config,"ScpConfiguration");
+  try {
+    final JSch jsch=new JSch();
+    if (isNotEmpty(config.getCiphers())) {
+      LOG.debug("Using ciphers: {}",config.getCiphers());
+      Hashtable<String,String> ciphers=new Hashtable<String,String>();
+      ciphers.put("cipher.s2c",config.getCiphers());
+      ciphers.put("cipher.c2s",config.getCiphers());
+      JSch.setConfig(ciphers);
+    }
+    String knownHostsFile=config.getKnownHostsFile();
+    jsch.setKnownHosts(ObjectHelper.isEmpty(knownHostsFile) ? DEFAULT_KNOWN_HOSTS : knownHostsFile);
+    session=jsch.getSession(config.getUsername(),config.getHost(),config.getPort());
+    session.setTimeout(config.getTimeout());
+    session.setUserInfo(new SessionUserInfo(config));
+    int timeout=config.getConnectTimeout();
+    LOG.debug("Connecting to {} with {} timeout...",config.remoteServerInformation(),timeout > 0 ? (Integer.toString(timeout) + " ms") : "no");
+    if (timeout > 0) {
+      session.connect(timeout);
+    }
+ else {
+      session.connect();
+    }
+  }
+ catch (  JSchException e) {
+    session=null;
+    LOG.warn("Could not create ssh session for " + config.remoteServerInformation(),e);
+  }
+  return session;
+}

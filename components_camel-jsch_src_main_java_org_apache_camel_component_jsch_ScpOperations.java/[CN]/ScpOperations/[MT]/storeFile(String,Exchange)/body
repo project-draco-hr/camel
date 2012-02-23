@@ -1,0 +1,34 @@
+{
+  ObjectHelper.notNull(session,"session");
+  ScpConfiguration cfg=endpoint.getConfiguration();
+  int timeout=cfg.getConnectTimeout();
+  LOG.trace("Opening channel to {} with {} timeout...",cfg.remoteServerInformation(),timeout > 0 ? (Integer.toString(timeout) + " ms") : "no");
+  String target=getRemoteTarget(cfg);
+  String file=getRemoteFile(name,cfg);
+  try {
+    channel=(ChannelExec)session.openChannel("exec");
+    String command="scp -t " + target;
+    channel.setCommand(command);
+    channel.connect(timeout);
+    LOG.trace("Channel connected to {}",cfg.remoteServerInformation());
+    try {
+      writeFile(channel,file,"foo");
+    }
+ catch (    IOException e) {
+      throw new GenericFileOperationFailedException("Failed to write file " + file,e);
+    }
+  }
+ catch (  JSchException e) {
+    LOG.warn("Failed to secure copy file " + file,e);
+    return false;
+  }
+ finally {
+    if (channel != null) {
+      LOG.trace("Disconnecting 'exec' scp channel");
+      channel.disconnect();
+      channel=null;
+      LOG.trace("Channel disconnected from {}",cfg.remoteServerInformation());
+    }
+  }
+  return true;
+}

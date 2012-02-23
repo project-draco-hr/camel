@@ -1,0 +1,20 @@
+{
+  sshd=SshServer.setUpDefaultServer();
+  sshd.setPort(getPort());
+  sshd.setKeyPairProvider(new FileKeyPairProvider(new String[]{"src/test/resources/hostkey.pem"}));
+  sshd.setCommandFactory(new ScpCommandFactory());
+  sshd.setPasswordAuthenticator(new PasswordAuthenticator(){
+    @Override public boolean authenticate(    String username,    String password,    ServerSession session){
+      return username != null && username.equals(password);
+    }
+  }
+);
+  try {
+    sshd.start();
+    return true;
+  }
+ catch (  IOException e) {
+    LOG.info("Failed to start ssh server.",e);
+  }
+  return false;
+}
