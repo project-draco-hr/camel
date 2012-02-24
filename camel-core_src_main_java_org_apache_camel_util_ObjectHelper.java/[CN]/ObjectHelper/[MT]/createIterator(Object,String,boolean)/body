@@ -1,0 +1,65 @@
+{
+  if (value instanceof Message) {
+    value=((Message)value).getBody();
+  }
+  if (value == null) {
+    return Collections.emptyList().iterator();
+  }
+ else   if (value instanceof Iterator) {
+    return (Iterator<Object>)value;
+  }
+ else   if (value instanceof Iterable) {
+    return ((Iterable<Object>)value).iterator();
+  }
+ else   if (value.getClass().isArray()) {
+    List<Object> list=Arrays.asList((Object[])value);
+    return list.iterator();
+  }
+ else   if (value instanceof NodeList) {
+    final NodeList nodeList=(NodeList)value;
+    return CastUtils.cast(new Iterator<Node>(){
+      int idx=-1;
+      public boolean hasNext(){
+        return (idx + 1) < nodeList.getLength();
+      }
+      public Node next(){
+        idx++;
+        return nodeList.item(idx);
+      }
+      public void remove(){
+        throw new UnsupportedOperationException();
+      }
+    }
+);
+  }
+ else   if (value instanceof String) {
+    final String s=(String)value;
+    if (delimiter != null && s.contains(delimiter)) {
+      Scanner scanner=new Scanner((String)value);
+      if (DEFAULT_DELIMITER.equals(delimiter)) {
+        delimiter=",(?!(?:[^\\(,]|[^\\)],[^\\)])+\\))";
+      }
+      scanner.useDelimiter(delimiter);
+      return CastUtils.cast(scanner);
+    }
+ else {
+      return CastUtils.cast(new Iterator<String>(){
+        int idx=-1;
+        public boolean hasNext(){
+          return idx + 1 == 0 && (allowEmptyValues || ObjectHelper.isNotEmpty(s));
+        }
+        public String next(){
+          idx++;
+          return s;
+        }
+        public void remove(){
+          throw new UnsupportedOperationException();
+        }
+      }
+);
+    }
+  }
+ else {
+    return Collections.singletonList(value).iterator();
+  }
+}
