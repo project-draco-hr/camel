@@ -1,9 +1,14 @@
 {
   ObjectHelper.notNull(executorService,"executorService");
-  if (executorService.isShutdown()) {
-    return;
+  if (!executorService.isShutdown()) {
+    LOG.debug("Shutdown ExecutorService: {}",executorService);
+    executorService.shutdown();
+    LOG.trace("Shutdown ExecutorService: {} complete.",executorService);
   }
-  LOG.debug("Shutdown ExecutorService: {}",executorService);
-  executorService.shutdown();
-  LOG.trace("Shutdown ExecutorService: {} complete.",executorService);
+  if (executorService instanceof ThreadPoolExecutor) {
+    ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
+    for (    LifecycleStrategy lifecycle : camelContext.getLifecycleStrategies()) {
+      lifecycle.onThreadPoolRemove(camelContext,threadPool);
+    }
+  }
 }
