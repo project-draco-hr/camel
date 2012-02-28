@@ -1,0 +1,35 @@
+{
+  int pos=filename.indexOf('/');
+  if (pos >= 0) {
+    String dir=filename.substring(0,pos);
+    os.write(("D0775 0 " + dir + "\n").getBytes());
+    os.flush();
+    is.read();
+    writeFile(filename.substring(pos + 1),data,os,is);
+    os.write(("E\n").getBytes());
+    os.flush();
+    is.read();
+  }
+ else {
+    int count=0;
+    int read=0;
+    int size=endpoint.getBufferSize();
+    byte[] bytes=new byte[size];
+    BufferedInputStream buffer=new BufferedInputStream(data,size);
+    buffer.mark(Integer.MAX_VALUE);
+    while ((read=buffer.read(bytes)) != -1) {
+      count+=read;
+    }
+    os.write(("C0775 " + count + " "+ filename+ "\n").getBytes());
+    os.flush();
+    is.read();
+    buffer.reset();
+    while ((read=buffer.read(bytes)) != -1) {
+      os.write(bytes,0,read);
+    }
+    os.flush();
+    is.read();
+  }
+  os.write(0);
+  os.flush();
+}

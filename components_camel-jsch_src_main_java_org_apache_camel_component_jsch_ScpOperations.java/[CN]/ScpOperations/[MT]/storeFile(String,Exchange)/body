@@ -3,18 +3,19 @@
   ScpConfiguration cfg=endpoint.getConfiguration();
   int timeout=cfg.getConnectTimeout();
   LOG.trace("Opening channel to {} with {} timeout...",cfg.remoteServerInformation(),timeout > 0 ? (Integer.toString(timeout) + " ms") : "no");
-  String target=getRemoteTarget(cfg);
   String file=getRemoteFile(name,cfg);
   try {
     channel=(ChannelExec)session.openChannel("exec");
-    String command="scp -t " + target;
-    channel.setCommand(command);
+    channel.setCommand(getScpCommand(cfg,file));
     channel.connect(timeout);
     LOG.trace("Channel connected to {}",cfg.remoteServerInformation());
     try {
-      writeFile(channel,file,"foo");
+      write(channel,file,ExchangeHelper.getMandatoryInBody(exchange,InputStream.class));
     }
- catch (    IOException e) {
+ catch (    InvalidPayloadException e) {
+      throw new GenericFileOperationFailedException("Failed extract message body as InputStream",e);
+    }
+catch (    IOException e) {
       throw new GenericFileOperationFailedException("Failed to write file " + file,e);
     }
   }
