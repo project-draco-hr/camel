@@ -1,7 +1,9 @@
 {
   String key=getQueueKey(uri);
-  if (queues.containsKey(key)) {
-    return queues.get(key);
+  QueueReference ref=getQueues().get(key);
+  if (ref != null) {
+    ref.addReference();
+    return ref.getQueue();
   }
   BlockingQueue<Exchange> queue;
   Integer size=getAndRemoveParameter(parameters,"size",Integer.class);
@@ -16,6 +18,8 @@
       queue=new LinkedBlockingQueue<Exchange>();
     }
   }
-  queues.put(key,queue);
+  ref=new QueueReference(queue);
+  ref.addReference();
+  getQueues().put(key,ref);
   return queue;
 }
