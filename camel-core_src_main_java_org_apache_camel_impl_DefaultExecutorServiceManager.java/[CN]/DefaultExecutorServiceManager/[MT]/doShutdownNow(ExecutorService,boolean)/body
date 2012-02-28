@@ -1,0 +1,19 @@
+{
+  ObjectHelper.notNull(executorService,"executorService");
+  List<Runnable> answer=null;
+  if (!executorService.isShutdown()) {
+    LOG.debug("ShutdownNow ExecutorService: {}",executorService);
+    answer=executorService.shutdownNow();
+    LOG.trace("ShutdownNow ExecutorService: {} complete.",executorService);
+  }
+  if (executorService instanceof ThreadPoolExecutor) {
+    ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
+    for (    LifecycleStrategy lifecycle : camelContext.getLifecycleStrategies()) {
+      lifecycle.onThreadPoolRemove(camelContext,threadPool);
+    }
+  }
+  if (remove) {
+    executorServices.remove(executorService);
+  }
+  return answer;
+}
