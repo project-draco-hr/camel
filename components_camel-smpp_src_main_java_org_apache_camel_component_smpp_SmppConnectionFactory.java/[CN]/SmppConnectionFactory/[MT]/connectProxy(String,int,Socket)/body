@@ -1,0 +1,53 @@
+{
+  try {
+    OutputStream out=socket.getOutputStream();
+    InputStream in=socket.getInputStream();
+    String connectString="CONNECT " + host + ":"+ port+ " HTTP/1.0\r\n";
+    out.write(connectString.getBytes());
+    String username=config.getHttpProxyUsername();
+    String password=config.getHttpProxyPassword();
+    if (username != null && password != null) {
+      String usernamePassword=username + ":" + password;
+      byte[] code=Base64.encodeBase64(usernamePassword.getBytes());
+      out.write("Proxy-Authorization: Basic ".getBytes());
+      out.write(code);
+      out.write("\r\n".getBytes());
+    }
+    out.write("\r\n".getBytes());
+    out.flush();
+    int ch=0;
+    BufferedReader reader=new BufferedReader(new InputStreamReader(in));
+    String response=reader.readLine();
+    if (response == null) {
+      throw new RuntimeCamelException("Empty response to CONNECT request to host " + host + ":"+ port);
+    }
+    String reason="Unknown reason";
+    int code=-1;
+    try {
+      ch=response.indexOf(' ');
+      int bar=response.indexOf(' ',ch + 1);
+      code=Integer.parseInt(response.substring(ch + 1,bar));
+      reason=response.substring(bar + 1);
+    }
+ catch (    NumberFormatException e) {
+      throw new RuntimeCamelException("Invalid response to CONNECT request to host " + host + ":"+ port+ " - cannot parse code from response string: "+ response);
+    }
+    if (code != 200) {
+      throw new RuntimeCamelException("Proxy error: " + reason);
+    }
+    for (; response.length() > 0; ) {
+      response=reader.readLine();
+      if (response == null) {
+        throw new RuntimeCamelException("Proxy error: reached end of stream");
+      }
+    }
+  }
+ catch (  RuntimeException re) {
+    closeSocket(socket);
+    throw re;
+  }
+catch (  Exception e) {
+    closeSocket(socket);
+    throw new RuntimeException("SmppConnectionFactory: " + e.getMessage());
+  }
+}
