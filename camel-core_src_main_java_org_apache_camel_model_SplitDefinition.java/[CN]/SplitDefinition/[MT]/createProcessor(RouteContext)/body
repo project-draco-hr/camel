@@ -1,11 +1,7 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,true);
   aggregationStrategy=createAggregationStrategy(routeContext);
-  if (isParallelProcessing() && executorService == null) {
-    String ref=this.executorServiceRef != null ? this.executorServiceRef : "Split";
-    ExecutorServiceManager manager=routeContext.getCamelContext().getExecutorServiceManager();
-    executorService=manager.newDefaultThreadPool(this,ref);
-  }
+  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Split",this,isParallelProcessing());
   long timeout=getTimeout() != null ? getTimeout() : 0;
   if (timeout > 0 && !isParallelProcessing()) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");

@@ -3,15 +3,9 @@
   processor=new UnitOfWorkProcessor(routeContext,processor);
   Expression correlation=getExpression().createExpression(routeContext);
   AggregationStrategy strategy=createAggregationStrategy(routeContext);
-  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Aggregator",this);
-  if (executorService == null) {
-    ExecutorServiceManager executorServiceManager=routeContext.getCamelContext().getExecutorServiceManager();
-    if (isParallelProcessing()) {
-      executorService=executorServiceManager.newDefaultThreadPool(this,"Aggregator");
-    }
- else {
-      executorService=new SynchronousExecutorService();
-    }
+  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Aggregator",this,isParallelProcessing());
+  if (executorService == null && !isParallelProcessing()) {
+    executorService=new SynchronousExecutorService();
   }
   if (timeoutCheckerExecutorServiceRef != null && timeoutCheckerExecutorService == null) {
     timeoutCheckerExecutorService=getConfiguredScheduledExecutorService(routeContext);

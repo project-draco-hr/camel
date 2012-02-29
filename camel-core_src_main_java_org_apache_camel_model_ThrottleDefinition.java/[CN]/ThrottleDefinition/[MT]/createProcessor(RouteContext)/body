@@ -1,12 +1,6 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,true);
-  ScheduledExecutorService scheduled=null;
-  if (getAsyncDelayed() != null && getAsyncDelayed()) {
-    scheduled=ProcessorDefinitionHelper.getConfiguredScheduledExecutorService(routeContext,"Throttle",this);
-    if (scheduled == null) {
-      scheduled=routeContext.getCamelContext().getExecutorServiceManager().newDefaultScheduledThreadPool(this,"Throttle");
-    }
-  }
+  ScheduledExecutorService scheduled=ProcessorDefinitionHelper.getConfiguredScheduledExecutorService(routeContext,"Throttle",this,isAsyncDelayed());
   long period=getTimePeriodMillis() != null ? getTimePeriodMillis() : 1000L;
   Expression maxRequestsExpression=createMaxRequestsPerPeriodExpression(routeContext);
   Throttler answer=new Throttler(childProcessor,maxRequestsExpression,period,scheduled);

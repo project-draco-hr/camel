@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      ThreadPoolProfile profile=new ThreadPoolProfileBuilder("myProfile").poolSize(5).maxPoolSize(10).maxQueueSize(20).build();
+      context.getExecutorServiceManager().registerThreadPoolProfile(profile);
+      from("direct:start").multicast(new AggregationStrategy(){
+        public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          if (oldExchange == null) {
+            return newExchange;
+          }
+          String body=oldExchange.getIn().getBody(String.class);
+          oldExchange.getIn().setBody(body + newExchange.getIn().getBody(String.class));
+          return oldExchange;
+        }
+      }
+).parallelProcessing().executorServiceRef("myProfile").to("direct:a","direct:b").end().to("mock:result");
+      from("direct:a").delay(100).setBody(constant("A"));
+      from("direct:b").setBody(constant("B"));
+    }
+  }
+;
+}
