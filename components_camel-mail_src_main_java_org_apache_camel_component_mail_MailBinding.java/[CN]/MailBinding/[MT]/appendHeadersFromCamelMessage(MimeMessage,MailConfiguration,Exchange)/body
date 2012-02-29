@@ -5,7 +5,15 @@
     if (headerValue != null) {
       if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(headerName,headerValue,exchange)) {
         if (headerName.equalsIgnoreCase("subject")) {
-          mimeMessage.setSubject(asString(exchange,headerValue),IOHelper.getCharsetName(exchange,false));
+          mimeMessage.setSubject(asString(exchange,headerValue),determineCharSet(configuration,exchange));
+          continue;
+        }
+        if (headerName.equalsIgnoreCase("from")) {
+          mimeMessage.setFrom(asEncodedInternetAddress(asString(exchange,headerValue),determineCharSet(configuration,exchange)));
+          continue;
+        }
+        if (headerName.equalsIgnoreCase("sender")) {
+          mimeMessage.setSender(asEncodedInternetAddress(asString(exchange,headerValue),determineCharSet(configuration,exchange)));
           continue;
         }
         if (isRecipientHeader(headerName)) {

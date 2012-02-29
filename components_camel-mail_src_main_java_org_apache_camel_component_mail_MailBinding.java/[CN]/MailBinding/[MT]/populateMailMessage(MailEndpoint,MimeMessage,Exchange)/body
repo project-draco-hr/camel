@@ -1,9 +1,9 @@
 {
   if (hasRecipientHeaders(exchange)) {
-    setRecipientFromCamelMessage(mimeMessage,exchange);
+    setRecipientFromCamelMessage(mimeMessage,endpoint.getConfiguration(),exchange);
   }
  else {
-    setRecipientFromEndpointConfiguration(mimeMessage,endpoint);
+    setRecipientFromEndpointConfiguration(mimeMessage,endpoint,exchange);
   }
   String replyTo=exchange.getIn().getHeader("Reply-To",String.class);
   if (replyTo == null) {
@@ -12,7 +12,7 @@
   if (replyTo != null) {
     ArrayList<InternetAddress> replyToAddresses=new ArrayList<InternetAddress>();
     for (    String reply : splitRecipients(replyTo)) {
-      replyToAddresses.add(new InternetAddress(reply.trim()));
+      replyToAddresses.add(asEncodedInternetAddress(reply.trim(),determineCharSet(endpoint.getConfiguration(),exchange)));
     }
     mimeMessage.setReplyTo(replyToAddresses.toArray(new InternetAddress[replyToAddresses.size()]));
   }
@@ -26,7 +26,7 @@
   appendHeadersFromCamelMessage(mimeMessage,endpoint.getConfiguration(),exchange);
   if (empty(mimeMessage.getFrom())) {
     String from=endpoint.getConfiguration().getFrom();
-    mimeMessage.setFrom(new InternetAddress(from));
+    mimeMessage.setFrom(asEncodedInternetAddress(from,determineCharSet(endpoint.getConfiguration(),exchange)));
   }
   if (hasAlternativeBody(endpoint.getConfiguration(),exchange)) {
     createMultipartAlternativeMessage(mimeMessage,endpoint.getConfiguration(),exchange);
