@@ -9,12 +9,19 @@
   }
  else {
     if (bean == null) {
-      ObjectHelper.notNull(beanType,"bean, ref or beanType",this);
-      try {
-        clazz=routeContext.getCamelContext().getClassResolver().resolveMandatoryClass(beanType);
+      if (beanType == null && beanClass == null) {
+        throw new IllegalArgumentException("bean, ref or beanType must be provided");
       }
- catch (      ClassNotFoundException e) {
-        throw ObjectHelper.wrapRuntimeCamelException(e);
+      if (beanType != null) {
+        try {
+          clazz=routeContext.getCamelContext().getClassResolver().resolveMandatoryClass(beanType);
+        }
+ catch (        ClassNotFoundException e) {
+          throw ObjectHelper.wrapRuntimeCamelException(e);
+        }
+      }
+ else {
+        clazz=beanClass;
       }
       if (ObjectHelper.hasDefaultPublicNoArgConstructor(clazz)) {
         bean=CamelContextHelper.newInstance(routeContext.getCamelContext(),clazz);
