@@ -1,8 +1,15 @@
 {
   for (  Service service : services) {
     LOG.debug("{} child service on route: {} -> {}",new Object[]{shutdown ? "Shutting down" : "Stopping",route.getId(),service});
-    for (    LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
-      strategy.onServiceRemove(camelContext,service,route);
+    if (service instanceof ErrorHandler) {
+      for (      LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
+        strategy.onErrorHandlerRemove(route.getRouteContext(),(Processor)service,route.getRouteContext().getRoute().getErrorHandlerBuilder());
+      }
+    }
+ else {
+      for (      LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
+        strategy.onServiceRemove(camelContext,service,route);
+      }
     }
     if (shutdown) {
       ServiceHelper.stopAndShutdownService(service);

@@ -7,12 +7,14 @@
   }
   for (  Route route : routes) {
     LOG.debug("Stopping services on route: {}",route.getId());
-    List<Service> services=route.getServices();
+    List<Service> services=new ArrayList<Service>();
+    services.addAll(route.getServices());
     doGetRouteScopedServices(services,route);
     Set<Service> list=new LinkedHashSet<Service>();
     for (    Service service : services) {
       list.addAll(ServiceHelper.getChildServices(service));
     }
+    doGetRouteScopedErrorHandler(list,route);
     stopChildService(route,list,isShutdownCamelContext);
     if (isShutdownCamelContext) {
       ServiceHelper.stopAndShutdownServices(route);
