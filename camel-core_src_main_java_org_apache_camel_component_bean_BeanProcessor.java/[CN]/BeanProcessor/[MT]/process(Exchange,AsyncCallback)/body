@@ -46,28 +46,25 @@
     in.setHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,isMultiParameterArray());
   }
   MethodInvocation invocation;
-  if (methodObject != null) {
-    invocation=beanInfo.createInvocation(methodObject,bean,exchange);
+  if (explicitMethodName != null) {
+    in.setHeader(Exchange.BEAN_METHOD_NAME,explicitMethodName);
   }
- else {
-    if (explicitMethodName != null) {
-      in.setHeader(Exchange.BEAN_METHOD_NAME,explicitMethodName);
-    }
-    try {
-      invocation=beanInfo.createInvocation(bean,exchange);
-    }
- catch (    Throwable e) {
-      exchange.setException(e);
-      callback.done(true);
-      return true;
-    }
+  try {
+    invocation=beanInfo.createInvocation(bean,exchange);
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+ finally {
+    in.removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
+    in.removeHeader(Exchange.BEAN_METHOD_NAME);
   }
   if (invocation == null) {
     throw new IllegalStateException("No method invocation could be created, no matching method could be found on: " + bean);
   }
-  in.removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
-  in.removeHeader(Exchange.BEAN_METHOD_NAME);
-  Object value=null;
+  Object value;
   try {
     AtomicBoolean sync=new AtomicBoolean(true);
     value=invocation.proceed(callback,sync);

@@ -1,0 +1,58 @@
+{
+  MethodInfo methodInfo=null;
+  if (explicitMethod != null) {
+    Iterator<List<MethodInfo>> it=operations.values().iterator();
+    while (it.hasNext()) {
+      List<MethodInfo> infos=it.next();
+      for (      MethodInfo info : infos) {
+        if (explicitMethod.equals(info.getMethod())) {
+          return info.createMethodInvocation(pojo,exchange);
+        }
+      }
+    }
+    throw new MethodNotFoundException(exchange,pojo,explicitMethod.getName());
+  }
+  String methodName=exchange.getIn().getHeader(Exchange.BEAN_METHOD_NAME,String.class);
+  if (methodName != null) {
+    String name=methodName;
+    if (methodName.contains("(")) {
+      name=ObjectHelper.before(methodName,"(");
+    }
+    if ("class".equals(name) || "getClass".equals(name)) {
+      try {
+        Method method=pojo.getClass().getMethod("getClass");
+        methodInfo=new MethodInfo(exchange.getContext(),pojo.getClass(),method,Collections.<ParameterInfo>emptyList(),Collections.<ParameterInfo>emptyList(),false,false);
+      }
+ catch (      NoSuchMethodException e) {
+        throw new MethodNotFoundException(exchange,pojo,"getClass");
+      }
+    }
+ else {
+      List<MethodInfo> methods=getOperations(name);
+      if (methods != null && methods.size() == 1) {
+        methodInfo=methods.get(0);
+      }
+ else       if (methods != null) {
+        methodInfo=chooseMethod(pojo,exchange,methodName);
+        if (methodInfo == null || !name.equals(methodInfo.getMethod().getName())) {
+          throw new AmbiguousMethodCallException(exchange,methods);
+        }
+      }
+ else {
+        throw new MethodNotFoundException(exchange,pojo,methodName);
+      }
+    }
+  }
+  if (methodInfo == null) {
+    methodInfo=chooseMethod(pojo,exchange,null);
+  }
+  if (methodInfo == null) {
+    methodInfo=defaultMethod;
+  }
+  if (methodInfo != null) {
+    LOG.trace("Chosen method to invoke: {} on bean: {}",methodInfo,pojo);
+    return methodInfo.createMethodInvocation(pojo,exchange);
+  }
+  LOG.debug("Cannot find suitable method to invoke on bean: {}",pojo);
+  return null;
+}
