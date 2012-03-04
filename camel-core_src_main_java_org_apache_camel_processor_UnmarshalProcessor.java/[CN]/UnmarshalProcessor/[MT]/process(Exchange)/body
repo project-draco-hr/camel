@@ -5,7 +5,20 @@
     Message out=exchange.getOut();
     out.copyFrom(exchange.getIn());
     Object result=dataFormat.unmarshal(exchange,stream);
-    out.setBody(result);
+    if (result instanceof Exchange) {
+      if (result != exchange) {
+        throw new RuntimeCamelException("The returned exchange " + result + " is not the same as "+ exchange+ " provided to the DataFormat");
+      }
+    }
+ else     if (result instanceof Message) {
+      Message message=(Message)result;
+      ObjectHelper.notNull(message.getBody(),"body",message);
+      exchange.setOut((Message)result);
+    }
+ else {
+      ObjectHelper.notNull(result,"result");
+      out.setBody(result);
+    }
   }
  catch (  Exception e) {
     exchange.setOut(null);
