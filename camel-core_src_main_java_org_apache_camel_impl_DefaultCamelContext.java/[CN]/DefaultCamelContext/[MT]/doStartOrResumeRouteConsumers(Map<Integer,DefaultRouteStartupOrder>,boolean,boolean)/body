@@ -14,6 +14,20 @@
       if (!doCheckMultipleConsumerSupportClash(endpoint,routeInputs)) {
         throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
       }
+      List<Endpoint> existingEndpoints=new ArrayList<Endpoint>();
+      for (      Route existingRoute : getRoutes()) {
+        if (route.getId().equals(existingRoute.getId())) {
+          continue;
+        }
+        Endpoint existing=existingRoute.getEndpoint();
+        ServiceStatus status=getRouteStatus(existingRoute.getId());
+        if (status != null && status.isStarted() || status.isStarting()) {
+          existingEndpoints.add(existing);
+        }
+      }
+      if (!doCheckMultipleConsumerSupportClash(endpoint,existingEndpoints)) {
+        throw new FailedToStartRouteException(routeService.getId(),"Multiple consumers for the same endpoint is not allowed: " + endpoint);
+      }
       log.debug("Route: {} >>> {}",route.getId(),route);
       if (resumeOnly) {
         log.debug("Resuming consumer (order: {}) on route: {}",order,route.getId());
