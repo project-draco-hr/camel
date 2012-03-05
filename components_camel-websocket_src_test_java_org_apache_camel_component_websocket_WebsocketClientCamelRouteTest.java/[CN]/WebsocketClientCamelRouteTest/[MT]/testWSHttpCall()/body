@@ -1,19 +1,30 @@
 {
-  WebSocketConnection webSocketConnection=new WebSocketConnection(new URI("ws://127.0.0.1:9292/test"));
-  webSocketConnection.setEventHandler(new WebSocketEventHandler(){
-    public void onOpen(){
-      log.info("--open");
+  AsyncHttpClient c=new AsyncHttpClient();
+  WebSocket websocket=c.prepareGet("ws://127.0.0.1:9292/test").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener(){
+    @Override public void onMessage(    String message){
+      received.add(message);
+      log.info("received --> " + message);
+      latch.countDown();
     }
-    public void onMessage(    WebSocketMessage message){
-      log.info("--received message: " + message.getText());
+    @Override public void onFragment(    String fragment,    boolean last){
     }
-    public void onClose(){
-      log.info("--close");
+    @Override public void onOpen(    WebSocket websocket){
+    }
+    @Override public void onClose(    WebSocket websocket){
+    }
+    @Override public void onError(    Throwable t){
+      t.printStackTrace();
     }
   }
-);
-  webSocketConnection.connect();
-  log.info(">>> Connection established.");
-  webSocketConnection.send("Hello from WS Client");
-  webSocketConnection.close();
+).build()).get();
+  getMockEndpoint("mock:client").expectedBodiesReceived("Hello from WS client");
+  websocket.sendTextMessage("Hello from WS client");
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  assertMockEndpointsSatisfied();
+  assertEquals(10,received.size());
+  for (int i=0; i < 10; i++) {
+    assertEquals(">> Welcome on board!",received.get(i));
+  }
+  websocket.close();
+  c.close();
 }
