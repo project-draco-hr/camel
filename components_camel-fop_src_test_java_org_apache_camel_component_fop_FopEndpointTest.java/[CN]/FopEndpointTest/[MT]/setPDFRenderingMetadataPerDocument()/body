@@ -1,0 +1,11 @@
+{
+  Endpoint endpoint=context().getEndpoint("fop:application/pdf");
+  Producer producer=endpoint.createProducer();
+  Exchange exchange=new DefaultExchange(context);
+  exchange.getIn().setHeader("CamelFop.Render.Creator","Test User");
+  exchange.getIn().setBody(FopHelper.decorateTextWithXSLFO("Test Content"));
+  producer.process(exchange);
+  PDDocument document=getDocumentFrom(exchange);
+  String creator=FopHelper.getDocumentMetadataValue(document,COSName.CREATOR);
+  assertEquals("Test User",creator);
+}
