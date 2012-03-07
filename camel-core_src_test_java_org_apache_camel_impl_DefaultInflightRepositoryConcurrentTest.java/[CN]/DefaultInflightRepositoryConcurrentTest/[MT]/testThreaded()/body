@@ -1,0 +1,52 @@
+{
+  long started=System.currentTimeMillis();
+  DefaultInflightRepository toTest=new DefaultInflightRepository();
+  Endpoint[] eps=new Endpoint[TOTAL_ENDPOINTS];
+  for (int i=0; i < eps.length; i++) {
+    Endpoint endpoint=new DefaultEndpoint(){
+      final String uri="def:" + System.nanoTime();
+      @Override public String getEndpointUri(){
+        return uri;
+      }
+      public boolean isSingleton(){
+        return false;
+      }
+      public Producer createProducer() throws Exception {
+        return null;
+      }
+      public Consumer createConsumer(      Processor processor) throws Exception {
+        return null;
+      }
+    }
+;
+    eps[i]=endpoint;
+  }
+  AtomicInteger locker=new AtomicInteger(0);
+  Thread[] ts=new Thread[THREAD_COUNT];
+  for (int i=0; i < ts.length; i++) {
+    TypicalConsumer consumer=new TypicalConsumer();
+    consumer.eps=eps;
+    consumer.repo=toTest;
+    consumer.locker=locker;
+    ts[i]=new Thread(consumer);
+  }
+  for (int i=0; i < ts.length; i++) {
+    ts[i].start();
+  }
+  Thread.sleep(1000);
+  while (locker.get() > 0) {
+synchronized (locker) {
+      locker.wait();
+    }
+  }
+  if (failure) {
+    throw new Exception("Failed to properly track endpoints");
+  }
+  for (  Endpoint ep : eps) {
+    Assert.assertTrue("Size MUST be 0",0 == toTest.size(ep));
+  }
+  if (toTest.size() > 0) {
+    throw new Exception("Test either incomplete or tracking failed");
+  }
+  Assert.assertTrue("Must not have any references left",0 == toTest.endpointSize());
+}

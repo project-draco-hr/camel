@@ -5,8 +5,13 @@
     return;
   }
   String key=exchange.getFromEndpoint().getEndpointKey();
-  AtomicInteger existing=endpointCount.putIfAbsent(key,new AtomicInteger(1));
-  if (existing != null) {
-    existing.addAndGet(1);
+synchronized (endpointCount) {
+    AtomicInteger existing=endpointCount.get(key);
+    if (existing != null) {
+      existing.incrementAndGet();
+    }
+ else {
+      endpointCount.put(key,new AtomicInteger(1));
+    }
   }
 }

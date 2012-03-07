@@ -1,0 +1,25 @@
+{
+synchronized (locker) {
+    locker.incrementAndGet();
+  }
+  try {
+    for (int i=0; i < LOOP_COUNT; i++) {
+      Endpoint ep=eps[Math.abs(rand.nextInt() % eps.length)];
+      ep.setCamelContext(context);
+      Exchange ex=new DefaultExchange(ep);
+      repo.add(ex);
+      int size=repo.size(ep);
+      if (size <= 0) {
+        failure=true;
+      }
+      repo.remove(ex);
+    }
+  }
+ catch (  Exception e) {
+    failure=true;
+  }
+synchronized (locker) {
+    locker.decrementAndGet();
+    locker.notifyAll();
+  }
+}
