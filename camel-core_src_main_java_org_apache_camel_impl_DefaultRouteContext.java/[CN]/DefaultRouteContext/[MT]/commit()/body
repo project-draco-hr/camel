@@ -21,10 +21,11 @@
  else {
       target=unitOfWorkProcessor;
     }
-    InstrumentationProcessor wrapper=new InstrumentationProcessor();
-    wrapper.setType("route");
-    wrapper.setProcessor(target);
-    Route edcr=new EventDrivenConsumerRoute(this,getEndpoint(),wrapper);
+    RouteInflightRepositoryProcessor inflight=new RouteInflightRepositoryProcessor(camelContext.getInflightRepository(),target);
+    InstrumentationProcessor instrument=new InstrumentationProcessor();
+    instrument.setType("route");
+    instrument.setProcessor(inflight);
+    Route edcr=new EventDrivenConsumerRoute(this,getEndpoint(),instrument);
     String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
     edcr.getProperties().put(Route.ID_PROPERTY,routeId);
     edcr.getProperties().put(Route.PARENT_PROPERTY,Integer.toHexString(route.hashCode()));
@@ -34,6 +35,7 @@
     if (routePolicyProcessor != null) {
       routePolicyProcessor.setRoute(edcr);
     }
+    inflight.setRoute(edcr);
     if (routePolicyList != null && !routePolicyList.isEmpty()) {
       for (      RoutePolicy policy : routePolicyList) {
         policy.onInit(edcr);
