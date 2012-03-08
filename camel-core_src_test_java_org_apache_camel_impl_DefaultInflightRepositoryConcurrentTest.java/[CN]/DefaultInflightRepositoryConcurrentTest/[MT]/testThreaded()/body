@@ -1,8 +1,7 @@
 {
-  long started=System.currentTimeMillis();
   DefaultInflightRepository toTest=new DefaultInflightRepository();
-  Endpoint[] eps=new Endpoint[TOTAL_ENDPOINTS];
-  for (int i=0; i < eps.length; i++) {
+  Endpoint[] endpoints=new Endpoint[TOTAL_ENDPOINTS];
+  for (int i=0; i < endpoints.length; i++) {
     Endpoint endpoint=new DefaultEndpoint(){
       final String uri="def:" + System.nanoTime();
       @Override public String getEndpointUri(){
@@ -19,19 +18,15 @@
       }
     }
 ;
-    eps[i]=endpoint;
+    endpoints[i]=endpoint;
   }
-  AtomicInteger locker=new AtomicInteger(0);
-  Thread[] ts=new Thread[THREAD_COUNT];
-  for (int i=0; i < ts.length; i++) {
-    TypicalConsumer consumer=new TypicalConsumer();
-    consumer.eps=eps;
-    consumer.repo=toTest;
-    consumer.locker=locker;
-    ts[i]=new Thread(consumer);
+  AtomicInteger locker=new AtomicInteger();
+  Thread[] threads=new Thread[THREAD_COUNT];
+  for (int i=0; i < threads.length; i++) {
+    threads[i]=new Thread(new TypicalConsumer(endpoints,toTest,locker));
   }
-  for (int i=0; i < ts.length; i++) {
-    ts[i].start();
+  for (int i=0; i < threads.length; i++) {
+    threads[i].start();
   }
   Thread.sleep(1000);
   while (locker.get() > 0) {
@@ -39,14 +34,14 @@ synchronized (locker) {
       locker.wait();
     }
   }
-  if (failure) {
-    throw new Exception("Failed to properly track endpoints");
+  if (failed) {
+    throw new AssertionError("Failed to properly track endpoints");
   }
-  for (  Endpoint ep : eps) {
-    Assert.assertTrue("Size MUST be 0",0 == toTest.size(ep));
+  for (  Endpoint endpoint : endpoints) {
+    Assert.assertEquals("Size MUST be 0",0,toTest.size(endpoint));
   }
   if (toTest.size() > 0) {
-    throw new Exception("Test either incomplete or tracking failed");
+    throw new AssertionError("Test either incomplete or tracking failed");
   }
-  Assert.assertTrue("Must not have any references left",0 == toTest.endpointSize());
+  Assert.assertEquals("Must not have any references left",0,toTest.endpointSize());
 }
