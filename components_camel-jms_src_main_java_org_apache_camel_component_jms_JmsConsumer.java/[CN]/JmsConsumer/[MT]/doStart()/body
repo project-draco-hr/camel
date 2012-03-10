@@ -3,12 +3,24 @@
   if (listenerContainer == null) {
     createMessageListenerContainer();
   }
-  listenerContainer.afterPropertiesSet();
-  if (initialized || getEndpoint().isAutoStartup()) {
-    if (getEndpoint().isTestConnectionOnStartup()) {
-      testConnectionOnStartup();
+  if (getEndpoint().getConfiguration().isAsyncStartListener()) {
+    getEndpoint().getAsyncStartExecutorService().submit(new Runnable(){
+      @Override public void run(){
+        try {
+          prepareAndStartListenerContainer();
+        }
+ catch (        Throwable e) {
+          log.warn("Error starting listener container on destination: " + getDestinationName() + ". This exception will be ignored.",e);
+        }
+      }
+      @Override public String toString(){
+        return "AsyncStartListenerTask[" + getDestinationName() + "]";
+      }
     }
-    startListenerContainer();
+);
+  }
+ else {
+    prepareAndStartListenerContainer();
   }
   initialized=true;
 }
