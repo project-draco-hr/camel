@@ -1,12 +1,13 @@
 {
   LOG.trace("Cache Name: {}",config.getCacheName());
   cache=getEndpoint().initializeCache();
-  String key=exchange.getIn().getHeader(CacheConstants.CACHE_KEY,String.class);
-  String operation=exchange.getIn().getHeader(CacheConstants.CACHE_OPERATION,String.class);
+  Map<String,Object> headers=exchange.getIn().getHeaders();
+  String key=(headers.containsKey(CacheConstants.CACHE_KEY)) ? (String)headers.get(CacheConstants.CACHE_KEY) : getEndpoint().getKey();
+  String operation=(headers.containsKey(CacheConstants.CACHE_OPERATION)) ? (String)headers.get(CacheConstants.CACHE_OPERATION) : getEndpoint().getOperation();
   if (operation == null) {
     throw new CacheException(CacheConstants.CACHE_OPERATION + " header not specified in message");
   }
-  if ((key == null) && (!operation.equalsIgnoreCase(CacheConstants.CACHE_OPERATION_DELETEALL))) {
+  if ((key == null) && (!checkIsEqual(operation,CacheConstants.CACHE_OPERATION_DELETEALL))) {
     throw new CacheException(CacheConstants.CACHE_KEY + " is not specified in message header or endpoint URL.");
   }
   performCacheOperation(exchange,operation,key);
