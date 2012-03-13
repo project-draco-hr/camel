@@ -3,21 +3,31 @@
   processor=new UnitOfWorkProcessor(routeContext,processor);
   Expression correlation=getExpression().createExpression(routeContext);
   AggregationStrategy strategy=createAggregationStrategy(routeContext);
-  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Aggregator",this,isParallelProcessing());
-  if (executorService == null && !isParallelProcessing()) {
-    executorService=new SynchronousExecutorService();
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Aggregator",this,isParallelProcessing());
+  if (threadPool == null && !isParallelProcessing()) {
+    threadPool=new SynchronousExecutorService();
+    shutdownThreadPool=true;
   }
-  if (timeoutCheckerExecutorServiceRef != null && timeoutCheckerExecutorService == null) {
-    timeoutCheckerExecutorService=getConfiguredScheduledExecutorService(routeContext);
-  }
-  AggregateProcessor answer=new AggregateProcessor(routeContext.getCamelContext(),processor,correlation,strategy,executorService);
+  AggregateProcessor answer=new AggregateProcessor(routeContext.getCamelContext(),processor,correlation,strategy,threadPool,shutdownThreadPool);
   AggregationRepository repository=createAggregationRepository(routeContext);
   if (repository != null) {
     answer.setAggregationRepository(repository);
   }
-  if (getTimeoutCheckerExecutorService() != null) {
-    answer.setTimeoutCheckerExecutorService(timeoutCheckerExecutorService);
+  boolean shutdownTimeoutThreadPool=false;
+  ScheduledExecutorService timeoutThreadPool=timeoutCheckerExecutorService;
+  if (timeoutThreadPool == null && timeoutCheckerExecutorServiceRef != null) {
+    timeoutThreadPool=routeContext.getCamelContext().getRegistry().lookup(timeoutCheckerExecutorServiceRef,ScheduledExecutorService.class);
+    if (timeoutThreadPool == null) {
+      timeoutThreadPool=routeContext.getCamelContext().getExecutorServiceManager().newScheduledThreadPool(this,AggregateProcessor.AGGREGATE_TIMEOUT_CHECKER,timeoutCheckerExecutorServiceRef);
+      if (timeoutThreadPool == null) {
+        throw new IllegalArgumentException("ExecutorServiceRef " + timeoutCheckerExecutorServiceRef + " not found in registry or as a thread pool profile.");
+      }
+      shutdownTimeoutThreadPool=true;
+    }
   }
+  answer.setTimeoutCheckerExecutorService(timeoutThreadPool);
+  answer.setShutdownTimeoutCheckerExecutorService(shutdownTimeoutThreadPool);
   answer.setParallelProcessing(isParallelProcessing());
   if (getCompletionPredicate() != null) {
     Predicate predicate=getCompletionPredicate().createPredicate(routeContext);

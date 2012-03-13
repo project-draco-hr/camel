@@ -5,7 +5,8 @@
   if (aggregationStrategy == null) {
     aggregationStrategy=new UseLatestAggregationStrategy();
   }
-  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Multicast",this,isParallelProcessing());
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Multicast",this,isParallelProcessing());
   long timeout=getTimeout() != null ? getTimeout() : 0;
   if (timeout > 0 && !isParallelProcessing()) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
@@ -13,7 +14,7 @@
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
-  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
+  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),threadPool,shutdownThreadPool,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
   if (isShareUnitOfWork()) {
     return new SubUnitOfWorkProcessor(answer);
   }

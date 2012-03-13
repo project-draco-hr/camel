@@ -1,7 +1,8 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,true);
   aggregationStrategy=createAggregationStrategy(routeContext);
-  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Split",this,isParallelProcessing());
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Split",this,isParallelProcessing());
   long timeout=getTimeout() != null ? getTimeout() : 0;
   if (timeout > 0 && !isParallelProcessing()) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
@@ -10,7 +11,7 @@
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
   Expression exp=getExpression().createExpression(routeContext);
-  Splitter answer=new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),executorService,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
+  Splitter answer=new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),threadPool,shutdownThreadPool,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
   if (isShareUnitOfWork()) {
     return new SubUnitOfWorkProcessor(answer);
   }

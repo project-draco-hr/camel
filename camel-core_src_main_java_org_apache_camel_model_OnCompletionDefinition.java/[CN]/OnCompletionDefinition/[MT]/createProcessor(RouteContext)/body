@@ -13,8 +13,9 @@
   if (onWhen != null) {
     when=onWhen.getExpression().createPredicate(routeContext);
   }
-  executorService=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,true);
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,true);
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,true);
   boolean original=getUseOriginalMessagePolicy() != null ? getUseOriginalMessagePolicy() : false;
-  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),childProcessor,executorService,isOnCompleteOnly(),isOnFailureOnly(),when,original);
+  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),childProcessor,threadPool,shutdownThreadPool,isOnCompleteOnly(),isOnFailureOnly(),when,original);
   return answer;
 }
