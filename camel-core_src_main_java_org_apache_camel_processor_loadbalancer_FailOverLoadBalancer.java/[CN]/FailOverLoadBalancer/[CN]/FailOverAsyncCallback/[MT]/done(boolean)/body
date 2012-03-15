@@ -2,7 +2,7 @@
   if (doneSync) {
     return;
   }
-  while (shouldFailOver(exchange)) {
+  while (shouldFailOver(copy)) {
     attempts.incrementAndGet();
     if (maximumFailoverAttempts > -1 && attempts.get() > maximumFailoverAttempts) {
       log.trace("Breaking out of failover after {} failover attempts",attempts);
@@ -21,13 +21,16 @@
         break;
       }
     }
-    prepareExchangeForFailover(exchange);
+    copy=prepareExchangeForFailover(exchange);
     Processor processor=processors.get(index.get());
-    doneSync=processExchange(processor,exchange,attempts,index,callback,processors);
+    doneSync=processExchange(processor,exchange,copy,attempts,index,callback,processors);
     if (!doneSync) {
       log.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
       return;
     }
+  }
+  if (copy != null) {
+    ExchangeHelper.copyResults(exchange,copy);
   }
   log.debug("Failover complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
   callback.done(false);

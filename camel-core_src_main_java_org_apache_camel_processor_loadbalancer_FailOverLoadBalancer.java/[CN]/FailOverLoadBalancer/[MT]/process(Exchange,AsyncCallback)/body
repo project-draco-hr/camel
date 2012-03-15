@@ -3,6 +3,7 @@
   final AtomicInteger index=new AtomicInteger();
   final AtomicInteger attempts=new AtomicInteger();
   boolean first=true;
+  Exchange copy=null;
   if (isRoundRobin()) {
     if (counter.incrementAndGet() >= processors.size()) {
       counter.set(0);
@@ -10,7 +11,7 @@
     index.set(counter.get());
   }
   log.trace("Failover starting with endpoint index {}",index);
-  while (first || shouldFailOver(exchange)) {
+  while (first || shouldFailOver(copy)) {
     if (!first) {
       attempts.incrementAndGet();
       if (maximumFailoverAttempts > -1 && attempts.get() > maximumFailoverAttempts) {
@@ -34,14 +35,17 @@
         break;
       }
     }
-    prepareExchangeForFailover(exchange);
+    copy=prepareExchangeForFailover(exchange);
     Processor processor=processors.get(index.get());
-    boolean sync=processExchange(processor,exchange,attempts,index,callback,processors);
+    boolean sync=processExchange(processor,exchange,copy,attempts,index,callback,processors);
     if (!sync) {
       log.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
       return false;
     }
     log.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
+  }
+  if (copy != null) {
+    ExchangeHelper.copyResults(exchange,copy);
   }
   log.debug("Failover complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
   callback.done(true);
