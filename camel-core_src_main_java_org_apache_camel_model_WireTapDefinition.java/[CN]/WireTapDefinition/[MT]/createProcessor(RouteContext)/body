@@ -1,8 +1,11 @@
 {
-  Endpoint endpoint=resolveEndpoint(routeContext);
   boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,true);
   ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"WireTap",this,true);
-  WireTapProcessor answer=new WireTapProcessor(endpoint,getPattern(),threadPool,shutdownThreadPool);
+  Endpoint endpoint=resolveEndpoint(routeContext);
+  Producer producer=endpoint.createProducer();
+  Processor target=wrapInErrorHandler(routeContext,producer);
+  target=new UnitOfWorkProcessor(routeContext,target);
+  WireTapProcessor answer=new WireTapProcessor(endpoint,target,getPattern(),threadPool,shutdownThreadPool);
   answer.setCopy(isCopy());
   if (newExchangeProcessorRef != null) {
     newExchangeProcessor=routeContext.lookup(newExchangeProcessorRef,Processor.class);
