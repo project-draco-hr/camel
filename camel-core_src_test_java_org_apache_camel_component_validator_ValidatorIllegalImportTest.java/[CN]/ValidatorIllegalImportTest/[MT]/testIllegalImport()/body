@@ -1,0 +1,17 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:test").to("validator:org/apache/camel/component/validator/BroadCastMonitor.xsd").to("mock:result");
+    }
+  }
+);
+  try {
+    context.start();
+    fail("Should have thrown exception");
+  }
+ catch (  FailedToCreateRouteException e) {
+    ResolveEndpointFailedException cause=assertIsInstanceOf(ResolveEndpointFailedException.class,e.getCause());
+    IllegalArgumentException iae=assertIsInstanceOf(IllegalArgumentException.class,cause.getCause());
+    assertTrue(iae.getMessage().startsWith("Resource: org/apache/camel/component/validator/BroadCastMonitor.xsd refers an invalid resource without SystemId."));
+  }
+}
