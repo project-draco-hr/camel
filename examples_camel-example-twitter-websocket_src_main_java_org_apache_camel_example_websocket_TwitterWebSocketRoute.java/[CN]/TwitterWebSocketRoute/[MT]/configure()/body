@@ -1,6 +1,11 @@
 {
   WebsocketComponent wc=getContext().getComponent("websocket",WebsocketComponent.class);
-  wc.setPort(9090);
+  wc.setPort(port);
   wc.setStaticResources("src/main/resources");
-  fromF("twitter://search?type=polling&delay=%s&keywords=%s" + "&consumerKey=%s&consumerSecret=%s&accessToken=%s&accessTokenSecret=%s",delay,searchTerm,consumerKey,consumerSecret,accessToken,accessTokenSecret).setHeader(WebsocketConstants.SEND_TO_ALL).constant(true).to("websocket:camel-tweet");
+  TwitterComponent tc=getContext().getComponent("twitter",TwitterComponent.class);
+  tc.setAccessToken(accessToken);
+  tc.setAccessTokenSecret(accessTokenSecret);
+  tc.setConsumerKey(consumerKey);
+  tc.setConsumerSecret(consumerSecret);
+  fromF("twitter://search?type=polling&delay=%s&keywords=%s",delay,searchTerm).setHeader(WebsocketConstants.SEND_TO_ALL).constant(true).to("websocket:camel-tweet");
 }
