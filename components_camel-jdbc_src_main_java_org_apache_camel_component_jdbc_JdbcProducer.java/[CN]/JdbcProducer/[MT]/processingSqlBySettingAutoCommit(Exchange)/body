@@ -1,8 +1,6 @@
 {
   String sql=exchange.getIn().getBody(String.class);
   Connection conn=null;
-  Statement stmt=null;
-  ResultSet rs=null;
   Boolean autoCommit=null;
   try {
     conn=dataSource.getConnection();
@@ -10,19 +8,7 @@
     if (autoCommit) {
       conn.setAutoCommit(false);
     }
-    stmt=conn.createStatement();
-    if (parameters != null && !parameters.isEmpty()) {
-      IntrospectionSupport.setProperties(stmt,parameters);
-    }
-    LOG.debug("Executing JDBC statement: {}",sql);
-    if (stmt.execute(sql)) {
-      rs=stmt.getResultSet();
-      setResultSet(exchange,rs);
-    }
- else {
-      int updateCount=stmt.getUpdateCount();
-      exchange.getOut().setHeader(JdbcConstants.JDBC_UPDATE_COUNT,updateCount);
-    }
+    createAndExecuteSqlStatement(exchange,sql,conn);
     conn.commit();
   }
  catch (  Exception e) {
@@ -32,13 +18,11 @@
       }
     }
  catch (    SQLException sqle) {
-      LOG.warn("Error on jdbc component rollback: " + sqle,sqle);
+      LOG.warn("Error occurred during jdbc rollback. This exception will be ignored.",sqle);
     }
     throw e;
   }
  finally {
-    closeQuietly(rs);
-    closeQuietly(stmt);
     resetAutoCommit(conn,autoCommit);
     closeQuietly(conn);
   }
