@@ -6,7 +6,15 @@
   SessionHandler sh=new SessionHandler(sm);
   context.setSessionHandler(sh);
   if (home != null) {
-    context.setResourceBase(home);
+    if (home.startsWith("classpath:")) {
+      home=ObjectHelper.after(home,"classpath:");
+      LOG.debug("Using base resource from classpath: {}",home);
+      context.setBaseResource(new JettyClassPathResource(getCamelContext().getClassResolver(),home));
+    }
+ else {
+      LOG.debug("Using base resource: {}",home);
+      context.setResourceBase(home);
+    }
     DefaultServlet defaultServlet=new DefaultServlet();
     ServletHolder holder=new ServletHolder(defaultServlet);
     holder.setInitParameter("useFileMappedBuffer","false");
