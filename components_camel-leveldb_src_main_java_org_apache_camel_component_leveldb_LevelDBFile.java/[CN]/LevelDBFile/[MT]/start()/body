@@ -1,0 +1,23 @@
+{
+  if (getFile() == null) {
+    throw new IllegalArgumentException("A file must be configured");
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Starting LevelDB using file: {}",getFile());
+  }
+  Options options=new Options().writeBufferSize(writeBufferSize).maxOpenFiles(maxOpenFiles).blockRestartInterval(blockRestartInterval).blockSize(blockSize).verifyChecksums(verifyChecksums).paranoidChecks(paranoidChecks).cacheSize(cacheSize);
+  if ("snappy".equals(compressionType)) {
+    options.compressionType(CompressionType.SNAPPY);
+  }
+ else {
+    options.compressionType(CompressionType.NONE);
+  }
+  options.createIfMissing(true);
+  try {
+    getFile().getParentFile().mkdirs();
+    db=factory.open(getFile(),options);
+  }
+ catch (  IOException ioe) {
+    throw new RuntimeException("Error opening LevelDB with file " + getFile(),ioe);
+  }
+}

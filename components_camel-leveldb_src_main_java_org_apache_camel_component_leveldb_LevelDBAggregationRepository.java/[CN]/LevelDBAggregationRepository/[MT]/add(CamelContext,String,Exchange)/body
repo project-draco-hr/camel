@@ -1,0 +1,24 @@
+{
+  LOG.debug("Adding key [{}] -> {}",key,exchange);
+  try {
+    byte[] lDbKey=keyBuilder(repositoryName,key);
+    final Buffer exchangeBuffer=codec.marshallExchange(camelContext,exchange);
+    byte[] rc=null;
+    if (isReturnOldExchange()) {
+      rc=levelDBFile.getDb().get(lDbKey);
+    }
+    LOG.trace("Adding key index {} for repository {}",key,repositoryName);
+    levelDBFile.getDb().put(lDbKey,exchangeBuffer.toByteArray(),levelDBFile.getWriteOptions());
+    LOG.trace("Added key index {}",key);
+    if (rc == null) {
+      return null;
+    }
+    if (isReturnOldExchange()) {
+      return codec.unmarshallExchange(camelContext,new Buffer(rc));
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Error adding to repository " + repositoryName + " with key "+ key,e);
+  }
+  return null;
+}

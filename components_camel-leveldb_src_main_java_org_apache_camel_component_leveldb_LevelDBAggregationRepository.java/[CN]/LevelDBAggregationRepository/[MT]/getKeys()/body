@@ -1,0 +1,29 @@
+{
+  final Set<String> keys=new LinkedHashSet<String>();
+  if (!isRunAllowed()) {
+    return null;
+  }
+  DBIterator it=levelDBFile.getDb().iterator();
+  String keyBuffer=null;
+  try {
+    String prefix=repositoryName + '\0';
+    for (it.seek(keyBuilder(repositoryName,"")); it.hasNext(); it.next()) {
+      if (!isRunAllowed()) {
+        break;
+      }
+      keyBuffer=asString(it.peekNext().getKey());
+      if (!keyBuffer.startsWith(prefix)) {
+        break;
+      }
+      String key=keyBuffer.substring(prefix.length());
+      if (key != null) {
+        LOG.trace("getKey [{}]",key);
+        keys.add(key);
+      }
+    }
+  }
+  finally {
+    it.close();
+  }
+  return Collections.unmodifiableSet(keys);
+}

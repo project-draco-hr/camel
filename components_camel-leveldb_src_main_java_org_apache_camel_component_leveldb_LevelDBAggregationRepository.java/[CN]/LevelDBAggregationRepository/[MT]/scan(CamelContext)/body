@@ -1,0 +1,34 @@
+{
+  final Set<String> answer=new LinkedHashSet<String>();
+  if (!isRunAllowed()) {
+    return null;
+  }
+  DBIterator it=levelDBFile.getDb().iterator();
+  String keyBuffer=null;
+  try {
+    String prefix=getRepositoryNameCompleted() + '\0';
+    for (it.seek(keyBuilder(getRepositoryNameCompleted(),"")); it.hasNext(); it.next()) {
+      keyBuffer=asString(it.peekNext().getKey());
+      if (!keyBuffer.startsWith(prefix)) {
+        break;
+      }
+      String exchangeId=keyBuffer.substring(prefix.length());
+      if (exchangeId != null) {
+        LOG.trace("Scan exchangeId [{}]",exchangeId);
+        answer.add(exchangeId);
+      }
+    }
+  }
+  finally {
+    it.close();
+  }
+  if (answer.size() == 0) {
+    LOG.trace("Scanned and found no exchange to recover.");
+  }
+ else {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Scanned and found {} exchange(s) to recover (note some of them may already be in progress).",answer.size());
+    }
+  }
+  return answer;
+}
