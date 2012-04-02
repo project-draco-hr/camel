@@ -1,0 +1,20 @@
+{
+  int counter=10000;
+  final PurchaseOrder order=new PurchaseOrder();
+  order.setName("Wine");
+  order.setAmount(123.45);
+  order.setPrice(2.22);
+  final CountDownLatch latch=new CountDownLatch(counter);
+  template.setDefaultEndpointUri("direct:marshalFallback");
+  ExecutorService pool=Executors.newFixedThreadPool(20);
+  for (int i=0; i < counter; i++) {
+    pool.execute(new Runnable(){
+      public void run(){
+        template.sendBody(order);
+        latch.countDown();
+      }
+    }
+);
+  }
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+}
