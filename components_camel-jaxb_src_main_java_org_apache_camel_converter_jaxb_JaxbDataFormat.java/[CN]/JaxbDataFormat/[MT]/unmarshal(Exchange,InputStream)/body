@@ -4,14 +4,14 @@
     lock.lock();
     try {
       if (partialClass != null) {
-        Source source;
         if (needFiltering(exchange)) {
-          source=new StreamSource(createNonXmlFilterReader(exchange,stream));
+          Source source=new StreamSource(createNonXmlFilterReader(exchange,stream));
+          answer=getUnmarshaller().unmarshal(source,partialClass);
         }
  else {
-          source=new StreamSource(stream);
+          XMLStreamReader xmlReader=typeConverter.convertTo(XMLStreamReader.class,stream);
+          answer=getUnmarshaller().unmarshal(xmlReader,partialClass);
         }
-        answer=getUnmarshaller().unmarshal(source,partialClass);
       }
  else {
         if (needFiltering(exchange)) {
@@ -19,7 +19,8 @@
           answer=getUnmarshaller().unmarshal(reader);
         }
  else {
-          answer=getUnmarshaller().unmarshal(stream);
+          XMLStreamReader xmlReader=typeConverter.convertTo(XMLStreamReader.class,stream);
+          answer=getUnmarshaller().unmarshal(xmlReader);
         }
       }
     }
