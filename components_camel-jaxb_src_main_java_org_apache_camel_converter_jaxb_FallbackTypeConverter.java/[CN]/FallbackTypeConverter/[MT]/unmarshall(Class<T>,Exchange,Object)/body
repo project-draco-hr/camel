@@ -5,6 +5,13 @@
   }
   Unmarshaller unmarshaller=getOrCreateUnmarshaller(type);
   if (parentTypeConverter != null) {
+    if (!needFiltering(exchange)) {
+      XMLStreamReader xmlReader=parentTypeConverter.convertTo(XMLStreamReader.class,value);
+      if (xmlReader != null) {
+        Object unmarshalled=unmarshal(unmarshaller,exchange,xmlReader);
+        return type.cast(unmarshalled);
+      }
+    }
     InputStream inputStream=parentTypeConverter.convertTo(InputStream.class,value);
     if (inputStream != null) {
       Object unmarshalled=unmarshal(unmarshaller,exchange,inputStream);
