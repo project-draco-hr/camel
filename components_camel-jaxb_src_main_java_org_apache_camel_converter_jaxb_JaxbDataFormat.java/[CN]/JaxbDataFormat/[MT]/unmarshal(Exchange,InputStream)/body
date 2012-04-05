@@ -1,31 +1,18 @@
 {
   try {
     Object answer;
-    lock.lock();
-    try {
-      if (partialClass != null) {
-        if (needFiltering(exchange)) {
-          Source source=new StreamSource(createNonXmlFilterReader(exchange,stream));
-          answer=getUnmarshaller().unmarshal(source,partialClass);
-        }
- else {
-          XMLStreamReader xmlReader=typeConverter.convertTo(XMLStreamReader.class,stream);
-          answer=getUnmarshaller().unmarshal(xmlReader,partialClass);
-        }
-      }
- else {
-        if (needFiltering(exchange)) {
-          NonXmlFilterReader reader=createNonXmlFilterReader(exchange,stream);
-          answer=getUnmarshaller().unmarshal(reader);
-        }
- else {
-          XMLStreamReader xmlReader=typeConverter.convertTo(XMLStreamReader.class,stream);
-          answer=getUnmarshaller().unmarshal(xmlReader);
-        }
-      }
+    XMLStreamReader xmlReader;
+    if (needFiltering(exchange)) {
+      xmlReader=typeConverter.convertTo(XMLStreamReader.class,createNonXmlFilterReader(exchange,stream));
     }
-  finally {
-      lock.unlock();
+ else {
+      xmlReader=typeConverter.convertTo(XMLStreamReader.class,stream);
+    }
+    if (partialClass != null) {
+      answer=createUnmarshaller().unmarshal(xmlReader,partialClass);
+    }
+ else {
+      answer=createUnmarshaller().unmarshal(xmlReader);
     }
     if (answer instanceof JAXBElement && isIgnoreJAXBElement()) {
       answer=((JAXBElement<?>)answer).getValue();

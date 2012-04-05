@@ -1,15 +1,16 @@
 {
-  unmarshallerLock.lock();
   try {
+    XMLStreamReader xmlReader=null;
     if (value instanceof XMLStreamReader) {
-      XMLStreamReader xmlReader=(XMLStreamReader)value;
-      return unmarshaller.unmarshal(xmlReader);
+      xmlReader=(XMLStreamReader)value;
     }
  else     if (value instanceof InputStream) {
       if (needFiltering(exchange)) {
-        return unmarshaller.unmarshal(new NonXmlFilterReader(new InputStreamReader((InputStream)value,IOHelper.getCharsetName(exchange))));
+        xmlReader=staxConverter.createXMLStreamReader(new NonXmlFilterReader(new InputStreamReader((InputStream)value,IOHelper.getCharsetName(exchange))));
       }
-      return unmarshaller.unmarshal((InputStream)value);
+ else {
+        xmlReader=staxConverter.createXMLStreamReader((InputStream)value,exchange);
+      }
     }
  else     if (value instanceof Reader) {
       Reader reader=(Reader)value;
@@ -18,17 +19,19 @@
           reader=new NonXmlFilterReader((Reader)value);
         }
       }
-      return unmarshaller.unmarshal(reader);
+      xmlReader=staxConverter.createXMLStreamReader(reader);
     }
  else     if (value instanceof Source) {
-      return unmarshaller.unmarshal((Source)value);
+      xmlReader=staxConverter.createXMLStreamReader((Source)value);
     }
+ else {
+      throw new IllegalArgumentException("Cannot convert from " + value.getClass());
+    }
+    return unmarshaller.unmarshal(xmlReader);
   }
   finally {
-    unmarshallerLock.unlock();
     if (value instanceof Closeable) {
       IOHelper.close((Closeable)value,"Unmarshalling",LOG);
     }
   }
-  return null;
 }
