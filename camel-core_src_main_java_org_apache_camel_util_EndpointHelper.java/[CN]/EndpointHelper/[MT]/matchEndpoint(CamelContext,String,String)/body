@@ -1,0 +1,31 @@
+{
+  if (context != null) {
+    try {
+      uri=context.resolvePropertyPlaceholders(uri);
+    }
+ catch (    Exception e) {
+      throw new ResolveEndpointFailedException(uri,e);
+    }
+  }
+  try {
+    uri=URISupport.normalizeUri(uri);
+  }
+ catch (  Exception e) {
+    throw new ResolveEndpointFailedException(uri,e);
+  }
+  if (uri.indexOf("://") != -1) {
+    String scheme=ObjectHelper.before(uri,"://");
+    String path=ObjectHelper.after(uri,"://");
+    if (matchPattern(scheme + ":" + path,pattern)) {
+      return true;
+    }
+  }
+ else {
+    String scheme=ObjectHelper.before(uri,":");
+    String path=ObjectHelper.after(uri,":");
+    if (matchPattern(scheme + "://" + path,pattern)) {
+      return true;
+    }
+  }
+  return matchPattern(uri,pattern);
+}
