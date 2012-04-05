@@ -1,0 +1,30 @@
+{
+  MockEndpoint mockJSON=getMockEndpoint("mock:json");
+  MockEndpoint mockXML=getMockEndpoint("mock:xml");
+  mockJSON.expectedMessageCount(files);
+  mockXML.expectedMessageCount(files);
+  InputStream inStream=getClass().getClassLoader().getResourceAsStream(resourceURI);
+  final String in=context.getTypeConverter().convertTo(String.class,inStream);
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  for (int i=0; i < files; i++) {
+    executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        template.sendBody(endpointURI,in);
+        return null;
+      }
+    }
+);
+  }
+  assertMockEndpointsSatisfied(30000,TimeUnit.MILLISECONDS);
+  Object jsonBody=mockJSON.getExchanges().get(0).getIn().getBody(String.class);
+  Object xmlBody=mockXML.getExchanges().get(0).getIn().getBody(String.class);
+  for (  Exchange e : mockJSON.getExchanges()) {
+    assertEquals("Bodies are expected to be equal (json mock endpoint)",jsonBody,e.getIn().getBody(String.class));
+  }
+  for (  Exchange e : mockXML.getExchanges()) {
+    assertEquals("Bodies are expected to be equal (xml mock endpoint)",xmlBody,e.getIn().getBody(String.class));
+  }
+  mockJSON.reset();
+  mockXML.reset();
+  executor.shutdownNow();
+}
