@@ -11,17 +11,19 @@
     callback.done(true);
     return true;
   }
-  Processor processor=getProcessor();
-  if (explicitMethodName == null && processor != null) {
-    LOG.trace("Using a custom adapter as bean invocation: {}",processor);
-    try {
-      processor.process(exchange);
+  if (allowProcessor(explicitMethodName,beanInfo)) {
+    Processor processor=getProcessor();
+    if (processor != null) {
+      LOG.trace("Using a custom adapter as bean invocation: {}",processor);
+      try {
+        processor.process(exchange);
+      }
+ catch (      Throwable e) {
+        exchange.setException(e);
+      }
+      callback.done(true);
+      return true;
     }
- catch (    Throwable e) {
-      exchange.setException(e);
-    }
-    callback.done(true);
-    return true;
   }
   Message in=exchange.getIn();
   BeanInvocation beanInvoke=null;
