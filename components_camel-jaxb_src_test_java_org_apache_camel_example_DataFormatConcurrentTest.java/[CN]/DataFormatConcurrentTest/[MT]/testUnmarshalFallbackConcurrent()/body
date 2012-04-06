@@ -1,9 +1,9 @@
 {
-  template.setDefaultEndpointUri("direct:marshal");
+  template.setDefaultEndpointUri("direct:unmarshalFallback");
   final CountDownLatch latch=new CountDownLatch(warmupCount + testCycleCount);
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("direct:marshal").marshal(new JaxbDataFormat("org.apache.camel.example")).process(new Processor(){
+      from("direct:unmarshalFallback").convertBodyTo(Foo.class).process(new Processor(){
         @Override public void process(        Exchange exchange) throws Exception {
           latch.countDown();
         }
@@ -12,5 +12,5 @@
     }
   }
 );
-  marshal(latch);
+  unmarshal(latch);
 }

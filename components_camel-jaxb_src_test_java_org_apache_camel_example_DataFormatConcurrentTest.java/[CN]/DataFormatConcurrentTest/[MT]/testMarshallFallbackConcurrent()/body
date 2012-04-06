@@ -1,20 +1,16 @@
 {
-  int counter=10000;
-  final PurchaseOrder order=new PurchaseOrder();
-  order.setName("Wine");
-  order.setAmount(123.45);
-  order.setPrice(2.22);
-  final CountDownLatch latch=new CountDownLatch(counter);
   template.setDefaultEndpointUri("direct:marshalFallback");
-  ExecutorService pool=Executors.newFixedThreadPool(20);
-  for (int i=0; i < counter; i++) {
-    pool.execute(new Runnable(){
-      public void run(){
-        template.sendBody(order);
-        latch.countDown();
+  final CountDownLatch latch=new CountDownLatch(warmupCount + testCycleCount);
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:marshalFallback").convertBodyTo(String.class).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+        }
       }
-    }
 );
+    }
   }
-  assertTrue(latch.await(10,TimeUnit.SECONDS));
+);
+  marshal(latch);
 }
