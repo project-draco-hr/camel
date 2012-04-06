@@ -1,9 +1,12 @@
 {
   ByteArrayOutputStream stream=new ByteArrayOutputStream();
   ObjectOutput serialStream=new ObjectOutputStream(stream);
-  serialStream.writeObject(securityToken);
-  ByteSource byteSource=cipherService.encrypt(stream.toByteArray(),passPhrase);
-  serialStream.close();
-  stream.close();
-  return byteSource;
+  try {
+    serialStream.writeObject(securityToken);
+    return cipherService.encrypt(stream.toByteArray(),passPhrase);
+  }
+  finally {
+    close(serialStream);
+    IOHelper.close(stream);
+  }
 }

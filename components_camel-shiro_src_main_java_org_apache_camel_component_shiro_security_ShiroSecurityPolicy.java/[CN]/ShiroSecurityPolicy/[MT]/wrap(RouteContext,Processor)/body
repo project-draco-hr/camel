@@ -35,9 +35,13 @@
       ByteSource decryptedToken=getCipherService().decrypt(encryptedToken.getBytes(),getPassPhrase());
       ByteArrayInputStream byteArrayInputStream=new ByteArrayInputStream(decryptedToken.getBytes());
       ObjectInputStream objectInputStream=new ObjectInputStream(byteArrayInputStream);
-      ShiroSecurityToken securityToken=(ShiroSecurityToken)objectInputStream.readObject();
-      objectInputStream.close();
-      byteArrayInputStream.close();
+      ShiroSecurityToken securityToken;
+      try {
+        securityToken=(ShiroSecurityToken)objectInputStream.readObject();
+      }
+  finally {
+        IOHelper.close(objectInputStream,byteArrayInputStream);
+      }
       Subject currentUser=SecurityUtils.getSubject();
       try {
         authenticateUser(currentUser,securityToken);
@@ -46,7 +50,6 @@
   finally {
         if (alwaysReauthenticate) {
           currentUser.logout();
-          currentUser=null;
         }
       }
     }
