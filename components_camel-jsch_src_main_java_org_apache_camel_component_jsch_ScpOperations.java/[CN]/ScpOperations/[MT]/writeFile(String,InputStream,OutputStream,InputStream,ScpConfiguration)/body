@@ -1,0 +1,44 @@
+{
+  final int lineFeed='\n';
+  String bytes;
+  int pos=filename.indexOf('/');
+  if (pos >= 0) {
+    String dir=filename.substring(0,pos);
+    bytes="D0775 0 " + dir;
+    LOG.trace("[scp:sink] {}",bytes);
+    os.write(bytes.getBytes());
+    os.write(lineFeed);
+    os.flush();
+    readAck(is,false);
+    writeFile(filename.substring(pos + 1),data,os,is,cfg);
+    bytes="E";
+    LOG.trace("[scp:sink] {}",bytes);
+    os.write(bytes.getBytes());
+    os.write(lineFeed);
+    os.flush();
+    readAck(is,false);
+  }
+ else {
+    int count=0;
+    int read=0;
+    int size=endpoint.getBufferSize();
+    byte[] reply=new byte[size];
+    BufferedInputStream buffer=new BufferedInputStream(data,size);
+    buffer.mark(Integer.MAX_VALUE);
+    while ((read=buffer.read(reply)) != -1) {
+      count+=read;
+    }
+    bytes="C0" + cfg.getChmod() + " "+ count+ " "+ filename;
+    LOG.trace("[scp:sink] {}",bytes);
+    os.write(bytes.getBytes());
+    os.write(lineFeed);
+    os.flush();
+    readAck(is,false);
+    buffer.reset();
+    while ((read=buffer.read(reply)) != -1) {
+      os.write(reply,0,read);
+    }
+    writeAck(os);
+    readAck(is,false);
+  }
+}
