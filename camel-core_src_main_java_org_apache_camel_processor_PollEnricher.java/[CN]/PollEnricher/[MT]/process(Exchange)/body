@@ -25,7 +25,13 @@
  else {
     prepareResult(exchange);
     ExchangeHelper.prepareAggregation(exchange,resourceExchange);
-    Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+    Exchange aggregatedExchange;
+    try {
+      aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+    }
+ catch (    Throwable e) {
+      throw new CamelExchangeException("Error occurred during aggregation",exchange,e);
+    }
     if (aggregatedExchange != null) {
       copyResultsPreservePattern(exchange,aggregatedExchange);
       if (resourceExchange != null) {
