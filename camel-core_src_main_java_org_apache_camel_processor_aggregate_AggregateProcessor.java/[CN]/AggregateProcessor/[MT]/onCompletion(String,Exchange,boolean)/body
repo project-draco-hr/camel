@@ -7,6 +7,12 @@
   if (closedCorrelationKeys != null) {
     closedCorrelationKeys.put(key,key);
   }
+  if (fromTimeout) {
+    if (aggregationStrategy instanceof TimeoutAwareAggregationStrategy) {
+      long timeout=getCompletionTimeout() > 0 ? getCompletionTimeout() : -1;
+      ((TimeoutAwareAggregationStrategy)aggregationStrategy).timeout(exchange,-1,-1,timeout);
+    }
+  }
   if (fromTimeout && isDiscardOnCompletionTimeout()) {
     LOG.debug("Aggregation for correlation key {} discarding aggregated exchange: ()",key,exchange);
     aggregationRepository.confirm(exchange.getContext(),exchange.getExchangeId());
