@@ -1,6 +1,11 @@
 {
-  ExecutorService workerExecutor=context.getExecutorServiceManager().newThreadPool(this,"NettyUDPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
-  datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor);
+  workerExecutor=context.getExecutorServiceManager().newCachedThreadPool(this,"NettyUDPWorker");
+  if (configuration.getWorkerCount() <= 0) {
+    datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor);
+  }
+ else {
+    datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor,configuration.getWorkerCount());
+  }
   connectionlessServerBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
   if (configuration.getServerPipelineFactory() != null) {
     configuration.getServerPipelineFactory().setConsumer(this);
@@ -11,6 +16,7 @@
   }
   connectionlessServerBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
   connectionlessServerBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+  connectionlessServerBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
   connectionlessServerBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
   connectionlessServerBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
   connectionlessServerBootstrap.setOption("child.broadcast",configuration.isBroadcast());

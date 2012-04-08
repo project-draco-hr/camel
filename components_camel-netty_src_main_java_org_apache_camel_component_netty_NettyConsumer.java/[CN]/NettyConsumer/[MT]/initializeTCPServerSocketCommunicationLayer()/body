@@ -1,7 +1,7 @@
 {
-  ExecutorService bossExecutor=context.getExecutorServiceManager().newThreadPool(this,"NettyTCPBoss",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
-  ExecutorService workerExecutor=context.getExecutorServiceManager().newThreadPool(this,"NettyTCPWorker",configuration.getCorePoolSize(),configuration.getMaxPoolSize());
-  if (configuration.getWorkerCount() == 0) {
+  bossExecutor=context.getExecutorServiceManager().newCachedThreadPool(this,"NettyTCPBoss");
+  workerExecutor=context.getExecutorServiceManager().newCachedThreadPool(this,"NettyTCPWorker");
+  if (configuration.getWorkerCount() <= 0) {
     channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor);
   }
  else {
@@ -17,6 +17,7 @@
   }
   serverBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
   serverBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+  serverBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
   serverBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
   serverBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
   channel=serverBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));

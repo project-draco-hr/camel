@@ -1,9 +1,16 @@
 {
   LOG.debug("Stopping producer at address: {}",configuration.getAddress());
+  LOG.trace("Closing {} channels",ALL_CHANNELS.size());
   ChannelGroupFuture future=ALL_CHANNELS.close();
   future.awaitUninterruptibly();
   if (channelFactory != null) {
     channelFactory.releaseExternalResources();
+  }
+  if (bossExecutor != null) {
+    context.getExecutorServiceManager().shutdownNow(bossExecutor);
+  }
+  if (workerExecutor != null) {
+    context.getExecutorServiceManager().shutdownNow(workerExecutor);
   }
   super.doStop();
 }

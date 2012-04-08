@@ -1,9 +1,16 @@
 {
   LOG.debug("Netty consumer unbinding from: {}",configuration.getAddress());
+  LOG.trace("Closing {} channels",allChannels.size());
   ChannelGroupFuture future=allChannels.close();
   future.awaitUninterruptibly();
   if (channelFactory != null) {
     channelFactory.releaseExternalResources();
+  }
+  if (bossExecutor != null) {
+    context.getExecutorServiceManager().shutdownNow(bossExecutor);
+  }
+  if (workerExecutor != null) {
+    context.getExecutorServiceManager().shutdownNow(workerExecutor);
   }
   super.doStop();
   LOG.info("Netty consumer unbound from: " + configuration.getAddress());
