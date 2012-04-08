@@ -25,11 +25,12 @@
   if (getConfiguration().getCharsetName() != null) {
     exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.normalizeCharset(getConfiguration().getCharsetName()));
   }
-  ChannelFuture channelFuture;
-  final Channel channel;
   try {
-    channelFuture=openConnection(exchange,callback);
-    channel=openChannel(channelFuture);
+    if (channelFuture == null || channel == null || !channel.isOpen()) {
+      channelFuture=openConnection();
+      channel=openChannel(channelFuture);
+    }
+    state.set(channel,new NettyCamelState(callback,exchange));
   }
  catch (  Exception e) {
     exchange.setException(e);
