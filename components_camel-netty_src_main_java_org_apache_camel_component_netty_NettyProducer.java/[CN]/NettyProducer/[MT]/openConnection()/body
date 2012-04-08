@@ -1,14 +1,7 @@
 {
   ChannelFuture answer;
   ChannelPipeline clientPipeline;
-  if (configuration.getClientPipelineFactory() != null) {
-    configuration.getClientPipelineFactory().setProducer(this);
-    clientPipeline=configuration.getClientPipelineFactory().getPipeline();
-  }
- else {
-    ClientPipelineFactory clientPipelineFactory=new DefaultClientPipelineFactory(this);
-    clientPipeline=clientPipelineFactory.getPipeline();
-  }
+  clientPipeline=pipelineFactory.getPipeline(this);
   if (isTcp()) {
     ClientBootstrap clientBootstrap=new ClientBootstrap(channelFactory);
     clientBootstrap.setOption("keepAlive",configuration.isKeepAlive());
@@ -29,7 +22,8 @@
     connectionlessClientBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
     connectionlessClientBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
     connectionlessClientBootstrap.setPipeline(clientPipeline);
-    connectionlessClientBootstrap.bind(new InetSocketAddress(0));
+    Channel channel=connectionlessClientBootstrap.bind(new InetSocketAddress(0));
+    ALL_CHANNELS.add(channel);
     answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
     return answer;
   }

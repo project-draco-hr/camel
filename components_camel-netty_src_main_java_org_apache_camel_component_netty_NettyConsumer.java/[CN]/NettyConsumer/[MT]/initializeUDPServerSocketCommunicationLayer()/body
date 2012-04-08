@@ -7,13 +7,6 @@
     datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor,configuration.getWorkerCount());
   }
   connectionlessServerBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
-  if (configuration.getServerPipelineFactory() != null) {
-    configuration.getServerPipelineFactory().setConsumer(this);
-    connectionlessServerBootstrap.setPipelineFactory(configuration.getServerPipelineFactory());
-  }
- else {
-    connectionlessServerBootstrap.setPipelineFactory(new DefaultServerPipelineFactory(this));
-  }
   connectionlessServerBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
   connectionlessServerBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
   connectionlessServerBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
@@ -25,6 +18,8 @@
   if (configuration.getReceiveBufferSizePredictor() > 0) {
     connectionlessServerBootstrap.setOption("receiveBufferSizePredictorFactory",new FixedReceiveBufferSizePredictorFactory(configuration.getReceiveBufferSizePredictor()));
   }
+  ChannelPipeline serverPipeline=pipelineFactory.getPipeline(this);
+  connectionlessServerBootstrap.setPipeline(serverPipeline);
   channel=connectionlessServerBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
   allChannels.add(channel);
 }
