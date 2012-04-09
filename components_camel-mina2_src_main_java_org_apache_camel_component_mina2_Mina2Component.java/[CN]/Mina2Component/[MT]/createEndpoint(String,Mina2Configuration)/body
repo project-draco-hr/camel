@@ -1,10 +1,20 @@
 {
   ObjectHelper.notNull(getCamelContext(),"camelContext");
   String protocol=config.getProtocol();
+  Mina2Endpoint endpoint=null;
   if (protocol != null) {
     if (protocol.equals("tcp") || config.isDatagramProtocol() || protocol.equals("vm")) {
-      return new Mina2Endpoint(uri,this,config);
+      endpoint=new Mina2Endpoint(uri,this,config);
     }
   }
-  throw new IllegalArgumentException("Unrecognised MINA protocol: " + protocol + " for uri: "+ uri);
+  if (endpoint == null) {
+    throw new IllegalArgumentException("Unrecognised MINA protocol: " + protocol + " for uri: "+ uri);
+  }
+  if (config.isSync()) {
+    endpoint.setExchangePattern(ExchangePattern.InOut);
+  }
+ else {
+    endpoint.setExchangePattern(ExchangePattern.InOnly);
+  }
+  return endpoint;
 }
