@@ -4,13 +4,16 @@
   boolean sync=configuration.isSync();
   List<IoFilter> filters=configuration.getFilters();
   final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
-  IoAcceptor acceptor=new SocketAcceptor(processorCount,getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaSocketAcceptor"));
-  IoConnector connector=new SocketConnector(processorCount,getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaSocketConnector"));
+  ExecutorService acceptorPool=getCamelContext().getExecutorServiceManager().newCachedThreadPool(this,"MinaSocketAcceptor");
+  ExecutorService connectorPool=getCamelContext().getExecutorServiceManager().newCachedThreadPool(this,"MinaSocketConnector");
+  ExecutorService workerPool=getCamelContext().getExecutorServiceManager().newCachedThreadPool(this,"MinaThreadPool");
+  IoAcceptor acceptor=new SocketAcceptor(processorCount,acceptorPool);
+  IoConnector connector=new SocketConnector(processorCount,connectorPool);
   SocketAddress address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   SocketConnectorConfig connectorConfig=new SocketConnectorConfig();
   connectorConfig.setThreadModel(ThreadModel.MANUAL);
   configureCodecFactory("MinaProducer",connectorConfig,configuration);
-  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaThreadPool")));
+  connectorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(workerPool));
   if (minaLogger) {
     connectorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -21,7 +24,7 @@
   configureCodecFactory("MinaConsumer",acceptorConfig,configuration);
   acceptorConfig.setReuseAddress(true);
   acceptorConfig.setDisconnectOnUnbind(true);
-  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"MinaThreadPool")));
+  acceptorConfig.getFilterChain().addLast("threadPool",new ExecutorFilter(workerPool));
   if (minaLogger) {
     acceptorConfig.getFilterChain().addLast("logger",new LoggingFilter());
   }
@@ -33,6 +36,9 @@
   endpoint.setConnector(connector);
   endpoint.setConnectorConfig(connectorConfig);
   endpoint.setConfiguration(configuration);
+  endpoint.addThreadPool(acceptorPool);
+  endpoint.addThreadPool(connectorPool);
+  endpoint.addThreadPool(workerPool);
   if (sync) {
     endpoint.setExchangePattern(ExchangePattern.InOut);
   }
