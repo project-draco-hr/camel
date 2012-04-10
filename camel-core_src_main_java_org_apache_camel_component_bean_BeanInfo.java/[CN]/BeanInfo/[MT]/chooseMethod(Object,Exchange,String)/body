@@ -1,16 +1,19 @@
 {
   final List<MethodInfo> localOperationsWithBody=new ArrayList<MethodInfo>(operationsWithBody);
+  final List<MethodInfo> localOperationsWithNoBody=new ArrayList<MethodInfo>(operationsWithNoBody);
   final List<MethodInfo> localOperationsWithCustomAnnotation=new ArrayList<MethodInfo>(operationsWithCustomAnnotation);
   final List<MethodInfo> localOperationsWithHandlerAnnotation=new ArrayList<MethodInfo>(operationsWithHandlerAnnotation);
   if (name != null) {
     removeNonMatchingMethods(localOperationsWithHandlerAnnotation,name);
     removeNonMatchingMethods(localOperationsWithCustomAnnotation,name);
     removeNonMatchingMethods(localOperationsWithBody,name);
+    removeNonMatchingMethods(localOperationsWithNoBody,name);
   }
  else {
     removeAllSetterOrGetterMethods(localOperationsWithHandlerAnnotation);
     removeAllSetterOrGetterMethods(localOperationsWithCustomAnnotation);
     removeAllSetterOrGetterMethods(localOperationsWithBody);
+    removeAllSetterOrGetterMethods(localOperationsWithNoBody);
   }
   if (localOperationsWithHandlerAnnotation.size() > 1) {
     throw new AmbiguousMethodCallException(exchange,localOperationsWithHandlerAnnotation);
@@ -20,6 +23,10 @@
   }
  else   if (localOperationsWithCustomAnnotation.size() == 1) {
     return localOperationsWithCustomAnnotation.get(0);
+  }
+  boolean noParameters=name != null && name.endsWith("()");
+  if (noParameters && localOperationsWithNoBody.size() == 1) {
+    return localOperationsWithNoBody.get(0);
   }
  else   if (localOperationsWithBody.size() == 1) {
     return localOperationsWithBody.get(0);
