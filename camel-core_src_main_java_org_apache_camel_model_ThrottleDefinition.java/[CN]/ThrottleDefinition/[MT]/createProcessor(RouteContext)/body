@@ -4,6 +4,9 @@
   ScheduledExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredScheduledExecutorService(routeContext,"Throttle",this,isAsyncDelayed());
   long period=getTimePeriodMillis() != null ? getTimePeriodMillis() : 1000L;
   Expression maxRequestsExpression=createMaxRequestsPerPeriodExpression(routeContext);
+  if (maxRequestsExpression == null) {
+    throw new IllegalArgumentException("MaxRequestsPerPeriod expression must be provided on " + this);
+  }
   Throttler answer=new Throttler(routeContext.getCamelContext(),childProcessor,maxRequestsExpression,period,threadPool,shutdownThreadPool);
   if (getAsyncDelayed() != null) {
     answer.setAsyncDelayed(getAsyncDelayed());

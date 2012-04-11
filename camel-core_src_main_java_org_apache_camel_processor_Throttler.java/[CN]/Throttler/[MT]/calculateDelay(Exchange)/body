@@ -1,5 +1,9 @@
 {
-  Long longValue=maxRequestsPerPeriodExpression.evaluate(exchange,Long.class);
+  Object result=maxRequestsPerPeriodExpression.evaluate(exchange,Object.class);
+  if (result == null) {
+    throw new RuntimeExchangeException("The max requests per period expression was evaluated as null: " + maxRequestsPerPeriodExpression,exchange);
+  }
+  Long longValue=exchange.getContext().getTypeConverter().convertTo(Long.class,result);
   if (longValue != null) {
     if (maximumRequestsPerPeriod > 0 && longValue.longValue() != maximumRequestsPerPeriod) {
       log.debug("Throttler changed maximum requests per period from {} to {}",maximumRequestsPerPeriod,longValue);

@@ -4,10 +4,18 @@
     callback.done(true);
     return true;
   }
-  long delay=calculateDelay(exchange);
-  if (delay <= 0) {
-    log.trace("No delay for exchangeId: {}",exchange.getExchangeId());
-    return super.process(exchange,callback);
+  long delay;
+  try {
+    delay=calculateDelay(exchange);
+    if (delay <= 0) {
+      log.trace("No delay for exchangeId: {}",exchange.getExchangeId());
+      return super.process(exchange,callback);
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
   }
   if (!isAsyncDelayed() || exchange.isTransacted()) {
     try {
