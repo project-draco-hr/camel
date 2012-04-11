@@ -2,8 +2,10 @@
   boolean sync=true;
   Exception caught=exchange.getException();
   exchange.setException(null);
+  final boolean shouldHandle=shouldHandled(exchange,data);
+  final boolean shouldContinue=shouldContinue(exchange,data);
   boolean handled=false;
-  if (shouldHandled(exchange,data) || shouldContinue(exchange,data)) {
+  if (shouldHandle || shouldContinue) {
     exchange.getIn().removeHeader(Exchange.REDELIVERED);
     exchange.getIn().removeHeader(Exchange.REDELIVERY_COUNTER);
     exchange.getIn().removeHeader(Exchange.REDELIVERY_MAX_COUNTER);
@@ -32,7 +34,7 @@
       public void done(      boolean sync){
         log.trace("Failure processor done: {} processing Exchange: {}",processor,exchange);
         try {
-          prepareExchangeAfterFailure(exchange,data);
+          prepareExchangeAfterFailure(exchange,data,shouldHandle,shouldContinue);
           boolean deadLetterChannel=processor == data.deadLetterProcessor && data.deadLetterProcessor != null;
           EventHelper.notifyExchangeFailureHandled(exchange.getContext(),exchange,processor,deadLetterChannel);
         }
@@ -46,7 +48,7 @@
   }
  else {
     try {
-      prepareExchangeAfterFailure(exchange,data);
+      prepareExchangeAfterFailure(exchange,data,shouldHandle,shouldContinue);
     }
   finally {
       callback.done(data.sync);
