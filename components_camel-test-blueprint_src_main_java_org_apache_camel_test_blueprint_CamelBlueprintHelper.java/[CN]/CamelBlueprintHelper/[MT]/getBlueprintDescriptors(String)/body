@@ -1,0 +1,47 @@
+{
+  List<URL> answer=new ArrayList<URL>();
+  String descriptor=descriptors;
+  if (descriptor != null) {
+    Iterator<Object> it=ObjectHelper.createIterator(descriptor);
+    while (it.hasNext()) {
+      String s=(String)it.next();
+      s=FileUtil.stripLeadingSeparator(s);
+      if (s.endsWith("*.xml")) {
+        String packageName=s.substring(0,s.length() - 5);
+        Enumeration<URL> urls=ObjectHelper.loadResourcesAsURL(packageName);
+        while (urls.hasMoreElements()) {
+          URL url=urls.nextElement();
+          File dir=new File(url.getFile());
+          if (dir.isDirectory()) {
+            File[] files=dir.listFiles();
+            if (files != null) {
+              for (              File file : files) {
+                if (file.isFile() && file.exists() && file.getName().endsWith(".xml")) {
+                  String name=packageName + file.getName();
+                  URL xmlUrl=ObjectHelper.loadResourceAsURL(name);
+                  if (xmlUrl != null) {
+                    answer.add(xmlUrl);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+ else {
+        URL url=ObjectHelper.loadResourceAsURL(s);
+        if (url == null) {
+          throw new FileNotFoundException("Resource " + s + " not found in classpath");
+        }
+        answer.add(url);
+      }
+    }
+  }
+ else {
+    throw new IllegalArgumentException("No bundle descriptor configured. Override getBlueprintDescriptor() or getBlueprintDescriptors() method");
+  }
+  if (answer.isEmpty()) {
+    throw new IllegalArgumentException("Cannot find any resources in classpath from descriptor " + descriptors);
+  }
+  return answer;
+}
