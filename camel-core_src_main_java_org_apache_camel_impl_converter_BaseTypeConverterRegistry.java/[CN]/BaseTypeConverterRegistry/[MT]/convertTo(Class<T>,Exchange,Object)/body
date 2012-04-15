@@ -4,17 +4,14 @@
   }
   Object answer;
   try {
-    answer=doConvertTo(type,exchange,value);
+    answer=doConvertTo(type,exchange,value,false);
   }
  catch (  Exception e) {
     boolean execution=ObjectHelper.getException(ExecutionException.class,e) != null || ObjectHelper.getException(CamelExecutionException.class,e) != null;
     if (execution) {
       throw ObjectHelper.wrapCamelExecutionException(exchange,e);
     }
-    if (log.isDebugEnabled()) {
-      log.debug("{} Caused by: {}. Will ignore this and continue.",NoTypeConversionAvailableException.createMessage(value,type),e.getMessage());
-    }
-    return null;
+    throw new TypeConversionException(value,type,e);
   }
   if (answer == Void.TYPE) {
     return null;

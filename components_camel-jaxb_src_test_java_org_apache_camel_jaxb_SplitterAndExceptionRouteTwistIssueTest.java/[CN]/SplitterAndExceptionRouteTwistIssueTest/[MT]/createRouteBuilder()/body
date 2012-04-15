@@ -1,0 +1,33 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel(mockRejectEndpoint).useOriginalMessage().maximumRedeliveries(0).retryAttemptedLogLevel(LoggingLevel.WARN).logExhausted(true).logStackTrace(true).logRetryStackTrace(true));
+      from("direct:error").handleFault().convertBodyTo(String.class,"UTF-8").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String text=(String)exchange.getIn().getBody();
+          Twits twits=new Twits();
+          Twit twit1=new Twit();
+          twit1.setText(text);
+          twits.getTwits().add(twit1);
+          exchange.getIn().setBody(twits);
+        }
+      }
+).split().xpath("//twits/twit").streaming().to(mock_output);
+      from("direct:error2").handleFault().convertBodyTo(String.class,"UTF-8").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String text=(String)exchange.getIn().getBody();
+          StringBuilder twits=new StringBuilder();
+          twits.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+          twits.append("<twits>");
+          twits.append("<twit>");
+          twits.append(text);
+          twits.append("</twit>");
+          twits.append("</twits>");
+          exchange.getIn().setBody(twits.toString());
+        }
+      }
+).split().xpath("//twits/twit").streaming().to(mock_output);
+    }
+  }
+;
+}
