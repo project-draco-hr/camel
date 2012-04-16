@@ -1,14 +1,17 @@
 {
   Object[] params=null;
   if (endpoint.getDataFormat() == DataFormat.POJO) {
-    List<?> list=exchange.getIn().getBody(List.class);
-    if (list != null) {
-      params=list.toArray();
+    Object body=exchange.getIn().getBody();
+    if (body instanceof Object[]) {
+      params=(Object[])body;
+    }
+ else     if (body instanceof List) {
+      params=((List<?>)body).toArray();
     }
  else {
       Iterator<?> it=exchange.getIn().getBody(Iterator.class);
       if (it != null && it.hasNext()) {
-        list=exchange.getContext().getTypeConverter().convertTo(List.class,it);
+        List<?> list=exchange.getContext().getTypeConverter().convertTo(List.class,it);
         if (list != null) {
           params=list.toArray();
         }
