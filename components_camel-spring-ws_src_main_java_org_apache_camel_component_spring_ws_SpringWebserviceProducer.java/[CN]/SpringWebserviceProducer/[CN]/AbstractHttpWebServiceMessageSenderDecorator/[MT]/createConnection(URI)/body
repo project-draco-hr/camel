@@ -1,0 +1,26 @@
+{
+  WebServiceConnection wsc=delegate.createConnection(uri);
+  if (wsc instanceof HttpUrlConnection) {
+    HttpURLConnection connection=((HttpUrlConnection)wsc).getConnection();
+    if (configuration.getTimeout() > -1) {
+      connection.setReadTimeout(configuration.getTimeout());
+    }
+    if (configuration.getSslContextParameters() != null && connection instanceof HttpsURLConnection) {
+      try {
+synchronized (this) {
+          if (sslContext == null) {
+            sslContext=configuration.getSslContextParameters().createSSLContext();
+          }
+        }
+      }
+ catch (      GeneralSecurityException e) {
+        throw new RuntimeCamelException("Error creating SSLContext based on SSLContextParameters.",e);
+      }
+      ((HttpsURLConnection)connection).setSSLSocketFactory(sslContext.getSocketFactory());
+    }
+  }
+ else {
+    throw new RuntimeCamelException("Unsupported delegate.  Delegate must return a org.springframework.ws.transport.http.HttpUrlConnection.  Found " + wsc.getClass());
+  }
+  return wsc;
+}

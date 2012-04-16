@@ -1,0 +1,24 @@
+{
+  if (!(configuration.getTimeout() > -1) && configuration.getSslContextParameters() == null) {
+    return;
+  }
+  WebServiceTemplate webServiceTemplate=configuration.getWebServiceTemplate();
+  WebServiceMessageSender[] messageSenders=webServiceTemplate.getMessageSenders();
+  for (int i=0; i < messageSenders.length; i++) {
+    WebServiceMessageSender messageSender=messageSenders[i];
+    if (messageSender instanceof CommonsHttpMessageSender) {
+      if (configuration.getSslContextParameters() != null) {
+        LOG.warn("Not applying SSLContextParameters based configuration to CommonsHttpMessageSender.  " + "If you are using this MessageSender, which you are not by default, you will need " + "to configure SSL using the Commons HTTP 3.x Protocol registry.");
+      }
+      if (configuration.getTimeout() > -1) {
+        ((CommonsHttpMessageSender)messageSender).setReadTimeout(configuration.getTimeout());
+      }
+    }
+ else     if (messageSender.getClass().equals(HttpUrlConnectionMessageSender.class)) {
+      messageSenders[i]=new AbstractHttpWebServiceMessageSenderDecorator((HttpUrlConnectionMessageSender)messageSender,configuration);
+    }
+ else {
+      LOG.warn("Ignoring the timeout and SSLContextParameters options for {}.  You will need to configure " + "these options directly on your custom configured WebServiceMessageSender",messageSender);
+    }
+  }
+}
