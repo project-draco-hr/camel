@@ -4,9 +4,11 @@
   }
   Object answer;
   try {
+    attemptCounter.incrementAndGet();
     answer=doConvertTo(type,exchange,value,false);
   }
  catch (  Exception e) {
+    failedCounter.incrementAndGet();
     boolean execution=ObjectHelper.getException(ExecutionException.class,e) != null || ObjectHelper.getException(CamelExecutionException.class,e) != null;
     if (execution) {
       throw ObjectHelper.wrapCamelExecutionException(exchange,e);
@@ -14,9 +16,11 @@
     throw new TypeConversionException(value,type,e);
   }
   if (answer == Void.TYPE) {
+    missCounter.incrementAndGet();
     return null;
   }
  else {
+    hitCounter.incrementAndGet();
     return (T)answer;
   }
 }
