@@ -5,6 +5,7 @@
     Iterator<Object> it=ObjectHelper.createIterator(descriptor);
     while (it.hasNext()) {
       String s=(String)it.next();
+      LOG.trace("Resource descriptor: {}",s);
       s=FileUtil.stripLeadingSeparator(s);
       if (s.endsWith("*.xml")) {
         String packageName=s.substring(0,s.length() - 5);
@@ -18,6 +19,7 @@
               for (              File file : files) {
                 if (file.isFile() && file.exists() && file.getName().endsWith(".xml")) {
                   String name=packageName + file.getName();
+                  LOG.debug("Resolving resource: {}",name);
                   URL xmlUrl=ObjectHelper.loadResourceAsURL(name);
                   if (xmlUrl != null) {
                     answer.add(xmlUrl);
@@ -29,9 +31,10 @@
         }
       }
  else {
-        URL url=ObjectHelper.loadResourceAsURL(s);
+        LOG.debug("Resolving resource: {}",s);
+        URL url=ResourceHelper.resolveMandatoryResourceAsUrl(RESOLVER,s);
         if (url == null) {
-          throw new FileNotFoundException("Resource " + s + " not found in classpath");
+          throw new FileNotFoundException("Resource " + s + " not found");
         }
         answer.add(url);
       }
