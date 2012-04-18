@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(IOException.class).handled(true).log("IOException occurred due: ${exception.message}").to("direct:file-error");
+      from("direct:file-error").log("File error route triggered to deal with exception ${exception?.class}").transform().simple("Error ${exception.message}").to("mock:error");
+      from("file:target/nospace?exclusiveReadLockStrategy=#myReadLockStrategy&consumer.exceptionHandler=#myExceptionHandler").convertBodyTo(String.class).to("mock:result");
+    }
+  }
+;
+}
