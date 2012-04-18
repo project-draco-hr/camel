@@ -4,7 +4,7 @@
     if (getEndpoint().getCamelContext().getStatus().isStarting()) {
       LOG.trace("CamelContext is starting so skip polling");
       try {
-        Thread.sleep(1000);
+        Thread.sleep(Math.min(pollTimeout,1000));
       }
  catch (      InterruptedException e) {
         LOG.debug("Sleep interrupted, are we stopping? {}",isStopping() || isStopped());
@@ -14,7 +14,7 @@
     if (isSuspending() || isSuspended()) {
       LOG.trace("Consumer is suspended so skip polling");
       try {
-        Thread.sleep(1000);
+        Thread.sleep(Math.min(pollTimeout,1000));
       }
  catch (      InterruptedException e) {
         LOG.debug("Sleep interrupted, are we stopping? {}",isStopping() || isStopped());
@@ -23,7 +23,7 @@
     }
     Exchange exchange=null;
     try {
-      exchange=queue.poll(1000,TimeUnit.MILLISECONDS);
+      exchange=queue.poll(pollTimeout,TimeUnit.MILLISECONDS);
       if (exchange != null) {
         try {
           Exchange newExchange=prepareExchange(exchange);
