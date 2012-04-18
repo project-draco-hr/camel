@@ -3,6 +3,16 @@
     Map<String,Object> copy=new HashMap<String,Object>(consumerProperties);
     EndpointHelper.setReferenceProperties(getCamelContext(),consumer,copy);
     EndpointHelper.setProperties(getCamelContext(),consumer,copy);
+    Object bridge=copy.remove("bridgeErrorHandler");
+    if (bridge != null && "true".equals(bridge)) {
+      if (consumer instanceof DefaultConsumer) {
+        DefaultConsumer defaultConsumer=(DefaultConsumer)consumer;
+        defaultConsumer.setExceptionHandler(new BridgeExceptionHandlerToErrorHandler(defaultConsumer));
+      }
+ else {
+        throw new IllegalArgumentException("Option consumer.bridgeErrorHandler is only supported by endpoints," + "having the consumer extend the DefaultConsumer. The consumer is a " + consumer.getClass().getName() + " class.");
+      }
+    }
     if (!this.isLenientProperties() && copy.size() > 0) {
       throw new ResolveEndpointFailedException(this.getEndpointUri(),"There are " + copy.size() + " parameters that couldn't be set on the endpoint consumer."+ " Check the uri if the parameters are spelt correctly and that they are properties of the endpoint."+ " Unknown consumer parameters=["+ copy+ "]");
     }
