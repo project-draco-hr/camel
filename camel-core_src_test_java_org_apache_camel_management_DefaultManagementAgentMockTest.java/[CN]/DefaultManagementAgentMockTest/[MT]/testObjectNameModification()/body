@@ -1,0 +1,25 @@
+{
+  MBeanServer mbeanServer=createStrictMock(MBeanServer.class);
+  ObjectInstance instance=createStrictMock(ObjectInstance.class);
+  ManagementAgent agent=new DefaultManagementAgent();
+  agent.setMBeanServer(mbeanServer);
+  Object object="object";
+  ObjectName sourceObjectName=new ObjectName("domain","key","value");
+  ObjectName registeredObjectName=new ObjectName("domain","key","otherValue");
+  expect(mbeanServer.isRegistered(sourceObjectName)).andReturn(false);
+  expect(mbeanServer.registerMBean(object,sourceObjectName)).andReturn(instance);
+  expect(instance.getObjectName()).andReturn(registeredObjectName);
+  expect(mbeanServer.isRegistered(registeredObjectName)).andReturn(true);
+  replay(mbeanServer,instance);
+  agent.register(object,sourceObjectName);
+  assertTrue(agent.isRegistered(sourceObjectName));
+  verify(mbeanServer,instance);
+  reset(mbeanServer,instance);
+  expect(mbeanServer.isRegistered(registeredObjectName)).andReturn(true);
+  mbeanServer.unregisterMBean(registeredObjectName);
+  expect(mbeanServer.isRegistered(sourceObjectName)).andReturn(false);
+  replay(mbeanServer);
+  agent.unregister(sourceObjectName);
+  assertFalse(agent.isRegistered(sourceObjectName));
+  verify(mbeanServer);
+}
