@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      getContext().addComponent("my",new MyComponent());
+      onException(Exception.class).maximumRedeliveries(3).onRedelivery(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          redeliverCounter.incrementAndGet();
+        }
+      }
+).handled(true).to("mock:dead");
+      from("my:foo?consumer.bridgeErrorHandler=true").to("log:foo").to("mock:result");
+    }
+  }
+;
+}
