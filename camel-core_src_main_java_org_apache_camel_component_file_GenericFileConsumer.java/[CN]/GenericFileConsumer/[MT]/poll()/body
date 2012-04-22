@@ -30,11 +30,17 @@
   if (endpoint.getSortBy() != null) {
     Collections.sort(exchanges,endpoint.getSortBy());
   }
+  Deque<Exchange> q=exchanges;
+  if (!eagerLimitMaxMessagesPerPoll && maxMessagesPerPoll > 0) {
+    if (files.size() > maxMessagesPerPoll) {
+      log.debug("Limiting maximum messages to poll at {} files as there was more messages in this poll.",maxMessagesPerPoll);
+      removeExcessiveInProgressFiles(q,maxMessagesPerPoll);
+    }
+  }
   int total=exchanges.size();
   if (total > 0) {
     log.debug("Total {} files to consume",total);
   }
-  Queue<Exchange> q=exchanges;
   int polledMessages=processBatch(CastUtils.cast(q));
   postPollCheck();
   return polledMessages;
