@@ -29,13 +29,46 @@
   TypeConverter converter=getOrFindTypeConverter(type,value);
   if (converter != null) {
     log.trace("Using converter: {} to convert {}",converter,key);
-    Object rc=converter.convertTo(type,exchange,value);
+    Object rc;
+    if (tryConvert) {
+      rc=converter.tryConvertTo(type,exchange,value);
+    }
+ else {
+      rc=converter.convertTo(type,exchange,value);
+    }
     if (rc != null) {
       return rc;
     }
   }
+  if (type.isPrimitive()) {
+    Class<?> primitiveType=ObjectHelper.convertPrimitiveTypeToWrapperType(type);
+    if (primitiveType != type) {
+      Class<?> fromType=value.getClass();
+      TypeConverter tc=getOrFindTypeConverter(primitiveType,value);
+      if (tc != null) {
+        addTypeConverter(type,fromType,tc);
+        Object rc;
+        if (tryConvert) {
+          rc=tc.tryConvertTo(primitiveType,exchange,value);
+        }
+ else {
+          rc=tc.convertTo(primitiveType,exchange,value);
+        }
+        if (rc != null) {
+          return rc;
+        }
+      }
+    }
+  }
   for (  FallbackTypeConverter fallback : fallbackConverters) {
-    Object rc=fallback.getFallbackTypeConverter().convertTo(type,exchange,value);
+    TypeConverter tc=fallback.getFallbackTypeConverter();
+    Object rc;
+    if (tryConvert) {
+      rc=tc.tryConvertTo(type,exchange,value);
+    }
+ else {
+      rc=tc.convertTo(type,exchange,value);
+    }
     if (Void.TYPE.equals(rc)) {
       return Void.TYPE;
     }
@@ -50,12 +83,6 @@
         log.trace("Fallback type converter {} converted type from: {} to: {}",new Object[]{fallback.getFallbackTypeConverter(),type.getCanonicalName(),value.getClass().getCanonicalName()});
       }
       return rc;
-    }
-  }
-  if (type.isPrimitive()) {
-    Class<?> primitiveType=ObjectHelper.convertPrimitiveTypeToWrapperType(type);
-    if (primitiveType != type) {
-      return convertTo(primitiveType,exchange,value);
     }
   }
   if (!tryConvert) {
