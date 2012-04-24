@@ -1,0 +1,43 @@
+{
+  JcrConsumerThread consumerThread=new JcrConsumerThread();
+  consumerThread.start();
+  while (consumerThread.getReceiveTrialTimes() < 1) {
+    Thread.sleep(10L);
+  }
+  Session session=getRepository().login(new SimpleCredentials("user","pass".toCharArray()));
+  try {
+    Node folderNode=session.getRootNode();
+    for (    String folderNodeName : absPath.split("\\/")) {
+      if (!"".equals(folderNodeName)) {
+        if (folderNode.hasNode(folderNodeName)) {
+          folderNode.getNode(folderNodeName).remove();
+        }
+        folderNode=folderNode.addNode(folderNodeName,"nt:unstructured");
+      }
+    }
+    folderNode.addNode("node","nt:unstructured");
+    session.save();
+  }
+  finally {
+    if (session != null && session.isLive()) {
+      session.logout();
+    }
+  }
+  consumerThread.join();
+  Exchange exchange=consumerThread.getExchange();
+  assertNotNull(exchange);
+  Message message=exchange.getIn();
+  assertNotNull(message);
+  assertTrue(message instanceof JcrMessage);
+  EventIterator eventIterator=((JcrMessage)message).getEventIterator();
+  assertNotNull(eventIterator);
+  assertEquals(1,eventIterator.getSize());
+  Object body=message.getBody();
+  assertTrue(body instanceof List);
+  @SuppressWarnings("unchecked") List<Event> eventList=(List<Event>)body;
+  assertEquals(1,eventList.size());
+  Event event=eventList.get(0);
+  assertEquals(Event.NODE_ADDED,event.getType());
+  assertNotNull(event.getPath());
+  assertTrue(event.getPath().startsWith(absPath));
+}
