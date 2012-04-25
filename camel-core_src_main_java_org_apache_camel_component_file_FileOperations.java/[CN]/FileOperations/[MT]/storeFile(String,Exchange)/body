@@ -11,8 +11,20 @@
     }
   }
   try {
+    String charset=IOHelper.getCharsetName(exchange,false);
+    if (charset == null) {
+      charset=endpoint.getCharset();
+    }
     File source=null;
-    source=exchange.getIn().getBody(File.class);
+    if (charset == null) {
+      Object body=exchange.getIn().getBody();
+      if (body instanceof WrappedFile) {
+        body=((WrappedFile)body).getFile();
+      }
+      if (body instanceof File) {
+        source=(File)body;
+      }
+    }
     if (source != null) {
       File local=exchange.getIn().getHeader(Exchange.FILE_LOCAL_WORK_PATH,File.class);
       if (local != null && local.exists()) {
@@ -29,8 +41,19 @@
         return true;
       }
     }
-    InputStream in=exchange.getIn().getMandatoryBody(InputStream.class);
-    writeFileByStream(in,file);
+    if (charset != null) {
+      Reader in=exchange.getIn().getBody(Reader.class);
+      if (in == null) {
+        InputStream is=exchange.getIn().getMandatoryBody(InputStream.class);
+        in=new InputStreamReader(is);
+      }
+      in=IOHelper.buffered(in);
+      writeFileByReaderWithCharset(in,file,charset);
+    }
+ else {
+      InputStream in=exchange.getIn().getMandatoryBody(InputStream.class);
+      writeFileByStream(in,file);
+    }
     keepLastModified(exchange,file);
     return true;
   }
