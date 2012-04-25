@@ -1,17 +1,19 @@
 {
   Message in=exchange.getIn();
+  if (in.getBody() == null) {
+    return;
+  }
   if (charset != null) {
     exchange.setProperty(Exchange.CHARSET_NAME,charset);
   }
-  if (in.getBody() != null) {
-    Object value=in.getMandatoryBody(type);
-    if (exchange.getPattern().isOutCapable()) {
-      Message out=exchange.getOut();
-      out.copyFrom(in);
-      out.setBody(value);
-    }
+  Object value=in.getMandatoryBody(type);
+  Message msg=new DefaultMessage();
+  msg.copyFrom(in);
+  msg.setBody(value);
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.setOut(msg);
+  }
  else {
-      in.setBody(value);
-    }
+    exchange.setIn(msg);
   }
 }
