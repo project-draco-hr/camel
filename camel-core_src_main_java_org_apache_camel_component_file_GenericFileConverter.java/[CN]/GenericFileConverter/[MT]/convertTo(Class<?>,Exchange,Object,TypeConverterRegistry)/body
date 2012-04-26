@@ -8,6 +8,25 @@
     TypeConverter tc=registry.lookup(type,from);
     if (tc != null) {
       Object body=file.getBody();
+      if (Reader.class.isAssignableFrom(type)) {
+        Reader reader=genericFileToReader(file,exchange);
+        if (reader != null) {
+          return reader;
+        }
+      }
+      if (InputStream.class.isAssignableFrom(type)) {
+        InputStream is=genericFileToInputStream(file,exchange);
+        if (is != null) {
+          return is;
+        }
+      }
+      if (body instanceof File && file.getCharset() != null) {
+        Reader reader=genericFileToReader(file,exchange);
+        TypeConverter readerTc=registry.lookup(type,Reader.class);
+        if (readerTc != null) {
+          return readerTc.convertTo(type,exchange,reader);
+        }
+      }
       return tc.convertTo(type,exchange,body);
     }
   }

@@ -1,12 +1,18 @@
 {
-  if (exchange != null) {
-    if (file.getFile() instanceof java.io.File) {
-      File f=(File)file.getFile();
-      InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,exchange,f);
-      if (is != null) {
-        return is;
+  if (file.getFile() instanceof File) {
+    File f=(File)file.getFile();
+    if (f.exists()) {
+      String charset=file.getCharset();
+      if (charset != null) {
+        LOG.debug("Read file {} with charset {}",f,file.getCharset());
       }
+ else {
+        LOG.debug("Read file {} (no charset)",f);
+      }
+      return IOConverter.toInputStream(f,charset);
     }
+  }
+  if (exchange != null) {
     file.getBinding().loadContent(exchange,file);
     return exchange.getContext().getTypeConverter().convertTo(InputStream.class,exchange,file.getBody());
   }
