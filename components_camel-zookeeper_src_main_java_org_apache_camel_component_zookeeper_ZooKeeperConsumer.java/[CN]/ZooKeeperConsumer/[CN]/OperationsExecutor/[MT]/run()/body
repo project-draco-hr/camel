@@ -3,7 +3,7 @@
     try {
       current=operations.take();
       if (log.isTraceEnabled()) {
-        log.trace(format("Processing '%s' operation",current.getClass().getSimpleName()));
+        log.trace(String.format("Processing '%s' operation",current.getClass().getSimpleName()));
       }
     }
  catch (    InterruptedException e) {
@@ -12,8 +12,12 @@
     String node=current.getNode();
     try {
       OperationResult result=current.get();
+      if (ZooKeeperUtils.hasWatchedEvent(current)) {
+        watchedEvent=ZooKeeperUtils.getWatchedEvent(current);
+      }
       if (result != null && current.shouldProduceExchange()) {
-        getProcessor().process(createExchange(node,result));
+        getProcessor().process(createExchange(node,result,watchedEvent));
+        watchedEvent=null;
       }
     }
  catch (    Exception e) {

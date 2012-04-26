@@ -1,8 +1,16 @@
 {
   int index=0;
   for (  Exchange received : mock.getReceivedExchanges()) {
+    Watcher.Event.EventType expectedEvent;
+    if (index == 0) {
+      expectedEvent=Watcher.Event.EventType.NodeCreated;
+    }
+ else {
+      expectedEvent=Watcher.Event.EventType.NodeChildrenChanged;
+    }
     List<String> actual=ExchangeHelper.getMandatoryInBody(received,List.class);
     assertEquals(expected[index++],actual);
+    assertEquals(expectedEvent,ExchangeHelper.getMandatoryHeader(received,ZooKeeperMessage.ZOOKEEPER_EVENT_TYPE,Watcher.Event.EventType.class));
     validateChildrenCountChangesEachTime(mock);
   }
 }
