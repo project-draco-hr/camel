@@ -1,9 +1,24 @@
 {
   if (listenerContainer != null) {
-    listenerContainer.stop();
-    listenerContainer.destroy();
+    if (getEndpoint().getConfiguration().isAsyncStopListener()) {
+      getEndpoint().getAsyncStartStopExecutorService().submit(new Runnable(){
+        @Override public void run(){
+          try {
+            stopAndDestroyListenerContainer();
+          }
+ catch (          Throwable e) {
+            log.warn("Error stopping listener container on destination: " + getDestinationName() + ". This exception will be ignored.",e);
+          }
+        }
+        @Override public String toString(){
+          return "AsyncStopListenerTask[" + getDestinationName() + "]";
+        }
+      }
+);
+    }
+ else {
+      prepareAndStartListenerContainer();
+    }
   }
-  listenerContainer=null;
-  messageListener=null;
   super.doStop();
 }
