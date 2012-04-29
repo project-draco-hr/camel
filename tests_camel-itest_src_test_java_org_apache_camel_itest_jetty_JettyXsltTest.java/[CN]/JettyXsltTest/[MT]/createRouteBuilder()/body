@@ -1,0 +1,20 @@
+{
+  port=AvailablePortFinder.getNextAvailable(8000);
+  return new RouteBuilder(){
+    public void configure(){
+      from("jetty:http://localhost:" + port + "/test").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String name=exchange.getIn().getHeader("name",String.class);
+          ObjectHelper.notNull(name,"name");
+          name="org/apache/camel/itest/jetty/" + name;
+          InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext().getClassResolver(),name);
+          String xml=exchange.getContext().getTypeConverter().convertTo(String.class,is);
+          exchange.getOut().setBody(xml);
+          exchange.getOut().setHeader(Exchange.CONTENT_TYPE,"text/xml");
+        }
+      }
+);
+    }
+  }
+;
+}

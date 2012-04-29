@@ -1,5 +1,5 @@
 {
-  final String resourceUri=remaining;
+  String resourceUri=remaining;
   LOG.debug("{} using schema resource: {}",this,resourceUri);
   final XsltBuilder xslt=getCamelContext().getInjector().newInstance(XsltBuilder.class);
   XmlConverter converter=resolveAndRemoveReferenceParameter(parameters,"converter",XmlConverter.class);
@@ -26,14 +26,6 @@
   if (factory != null) {
     xslt.getConverter().setTransformerFactory(factory);
   }
-  URIResolver resolver=resolveAndRemoveReferenceParameter(parameters,"uriResolver",URIResolver.class);
-  if (resolver == null) {
-    resolver=getUriResolver();
-  }
-  if (resolver == null) {
-    resolver=new XsltUriResolver(getCamelContext().getClassResolver(),remaining);
-  }
-  xslt.setUriResolver(resolver);
   ResultHandlerFactory resultHandlerFactory=resolveAndRemoveReferenceParameter(parameters,"resultHandlerFactory",ResultHandlerFactory.class);
   if (resultHandlerFactory != null) {
     xslt.setResultHandlerFactory(resultHandlerFactory);
@@ -44,7 +36,18 @@
   }
   String output=getAndRemoveParameter(parameters,"output",String.class);
   configureOutput(xslt,output);
-  configureXslt(xslt,uri,remaining,parameters);
   boolean cache=getAndRemoveParameter(parameters,"contentCache",Boolean.class,contentCache);
+  configureXslt(xslt,uri,remaining,parameters);
+  if (ResourceHelper.isHttpUri(resourceUri)) {
+    resourceUri=ResourceHelper.appendParameters(resourceUri,parameters);
+  }
+  URIResolver resolver=resolveAndRemoveReferenceParameter(parameters,"uriResolver",URIResolver.class);
+  if (resolver == null) {
+    resolver=getUriResolver();
+  }
+  if (resolver == null) {
+    resolver=new XsltUriResolver(getCamelContext().getClassResolver(),remaining);
+  }
+  xslt.setUriResolver(resolver);
   return new XsltEndpoint(uri,this,xslt,resourceUri,cache);
 }
