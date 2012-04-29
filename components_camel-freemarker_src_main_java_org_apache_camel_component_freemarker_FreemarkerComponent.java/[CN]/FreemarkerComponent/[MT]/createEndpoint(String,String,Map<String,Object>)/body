@@ -1,10 +1,6 @@
 {
-  FreemarkerEndpoint endpoint=new FreemarkerEndpoint(uri,this,remaining);
   Configuration config;
   String encoding=getAndRemoveParameter(parameters,"encoding",String.class);
-  if (ObjectHelper.isNotEmpty(encoding)) {
-    endpoint.setEncoding(encoding);
-  }
   boolean cache=getAndRemoveParameter(parameters,"contentCache",Boolean.class,Boolean.TRUE);
   if (cache) {
     config=getConfiguration();
@@ -16,6 +12,14 @@
  else {
     config=getNoCacheConfiguration();
   }
+  FreemarkerEndpoint endpoint=new FreemarkerEndpoint(uri,this,remaining);
+  if (ObjectHelper.isNotEmpty(encoding)) {
+    endpoint.setEncoding(encoding);
+  }
   endpoint.setConfiguration(config);
+  if (ResourceHelper.isHttpUri(remaining)) {
+    remaining=ResourceHelper.appendParameters(remaining,parameters);
+    endpoint.setResourceUri(remaining);
+  }
   return endpoint;
 }
