@@ -1,4 +1,10 @@
 {
+  if (packages == null && (classType == null && clazz == null)) {
+    throw new IllegalArgumentException("Either packages or classType must be specified");
+  }
+  if (packages != null && (classType != null || clazz != null)) {
+    throw new IllegalArgumentException("Only one of packages and classType must be specified");
+  }
   if (type == BindyType.Csv) {
     setDataFormatName("bindy-csv");
   }
@@ -7,6 +13,14 @@
   }
  else {
     setDataFormatName("bindy-kvp");
+  }
+  if (clazz == null && classType != null) {
+    try {
+      clazz=routeContext.getCamelContext().getClassResolver().resolveMandatoryClass(classType);
+    }
+ catch (    ClassNotFoundException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
   }
   return super.createDataFormat(routeContext);
 }
