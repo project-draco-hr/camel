@@ -1,0 +1,41 @@
+{
+  Object request=exchange.getIn().getBody();
+  if (transceiver == null) {
+    try {
+      transceiver=createTransceiver();
+      requestor=new AvroRequestor(getEndpoint().getProtocol(),transceiver);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+  }
+  try {
+    requestor.request(exchange.getIn().getHeader(AvroConstants.AVRO_MESSAGE_NAME,String.class),wrapObjectToArray(request),new Callback<Object>(){
+      @Override public void handleResult(      Object result){
+        try {
+          exchange.getOut().setBody(result);
+        }
+  finally {
+          callback.done(false);
+        }
+      }
+      @Override public void handleError(      Throwable error){
+        try {
+          exchange.setException(error);
+        }
+  finally {
+          callback.done(false);
+        }
+      }
+    }
+);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+  return false;
+}
