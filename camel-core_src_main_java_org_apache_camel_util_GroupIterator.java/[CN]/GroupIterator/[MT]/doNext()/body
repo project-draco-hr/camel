@@ -1,0 +1,26 @@
+{
+  int count=0;
+  Object data="";
+  while (count < group && it.hasNext()) {
+    data=it.next();
+    if (data != null && count > 0 && token != null) {
+      bos.write(token.getBytes());
+    }
+    if (data instanceof InputStream) {
+      InputStream is=(InputStream)data;
+      IOHelper.copy(is,bos);
+    }
+ else     if (data instanceof byte[]) {
+      byte[] bytes=(byte[])data;
+      bos.write(bytes);
+    }
+ else     if (data != null) {
+      InputStream is=camelContext.getTypeConverter().mandatoryConvertTo(InputStream.class,data);
+      IOHelper.copy(is,bos);
+    }
+    count++;
+  }
+  String answer=bos.toString();
+  bos.reset();
+  return answer;
+}
