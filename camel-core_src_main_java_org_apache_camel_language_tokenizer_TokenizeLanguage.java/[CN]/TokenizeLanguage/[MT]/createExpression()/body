@@ -1,21 +1,24 @@
 {
   ObjectHelper.notNull(token,"token");
+  Expression answer=null;
   if (isXml()) {
-    return ExpressionBuilder.tokenizeXMLExpression(token,inheritNamespaceTagName);
+    answer=ExpressionBuilder.tokenizeXMLExpression(token,inheritNamespaceTagName);
   }
  else   if (endToken != null) {
-    return ExpressionBuilder.tokenizePairExpression(token,endToken,includeTokens);
+    answer=ExpressionBuilder.tokenizePairExpression(token,endToken,includeTokens);
   }
-  Expression answer;
-  Expression exp=headerName == null ? ExpressionBuilder.bodyExpression() : ExpressionBuilder.headerExpression(headerName);
-  if (regex) {
-    answer=ExpressionBuilder.regexTokenizeExpression(exp,token);
-  }
+  if (answer == null) {
+    Expression exp=headerName == null ? ExpressionBuilder.bodyExpression() : ExpressionBuilder.headerExpression(headerName);
+    if (regex) {
+      answer=ExpressionBuilder.regexTokenizeExpression(exp,token);
+    }
  else {
-    answer=ExpressionBuilder.tokenizeExpression(exp,token);
+      answer=ExpressionBuilder.tokenizeExpression(exp,token);
+    }
   }
   if (group > 0) {
-    answer=ExpressionBuilder.groupIteratorExpression(answer,token,group);
+    String groupToken=isXml() ? null : token;
+    answer=ExpressionBuilder.groupIteratorExpression(answer,groupToken,group);
   }
   return answer;
 }
