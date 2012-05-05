@@ -1,28 +1,51 @@
 {
-  Object body=ExchangeHelper.getMandatoryInBody(exchange);
-  String[] params=(String[])body;
+  Object body=exchange.getIn().getMandatoryBody();
+  Object[] params=(Object[])body;
   ProgramParameter[] parameterList=new ProgramParameter[params.length];
   for (int i=0; i < params.length; i++) {
     Object param=params[i];
-    boolean input=param != null;
-    boolean output=getISeriesEndpoint().isFieldIdxForOuput(i);
-    byte[] inputData=null;
-    int outputLength=-1;
-    if (input) {
-      String value=(String)param;
-      inputData=new AS400Text(getISeriesEndpoint().getOutputFieldLength(i)).toBytes(value);
+    boolean input;
+    boolean output;
+    if (getISeriesEndpoint().isFieldIdxForOuput(i)) {
+      output=true;
+      input=param != null;
     }
-    if (output) {
-      outputLength=getISeriesEndpoint().getOutputFieldLength(i);
+ else {
+      output=false;
+      input=true;
+    }
+    byte[] inputData=null;
+    int length=getISeriesEndpoint().getOutputFieldLength(i);
+    if (input) {
+      if (param != null) {
+        AS400DataType typeConverter;
+        if (getISeriesEndpoint().getFormat() == Format.binary) {
+          typeConverter=new AS400ByteArray(length);
+        }
+ else {
+          typeConverter=new AS400Text(length,getISeriesEndpoint().getiSeries());
+        }
+        inputData=typeConverter.toBytes(param);
+      }
     }
     if (input && output) {
-      parameterList[i]=new ProgramParameter(inputData,outputLength);
+      LOG.trace("Parameter {} is both input and output.",i);
+      parameterList[i]=new ProgramParameter(inputData,length);
     }
-    if (input) {
-      parameterList[i]=new ProgramParameter(inputData);
+ else     if (input) {
+      LOG.trace("Parameter {} is input.",i);
+      if (inputData != null) {
+        parameterList[i]=new ProgramParameter(inputData);
+      }
+ else {
+        parameterList[i]=new ProgramParameter();
+        parameterList[i].setParameterType(ProgramParameter.PASS_BY_REFERENCE);
+        parameterList[i].setNullParameter(true);
+      }
     }
-    if (output) {
-      parameterList[i]=new ProgramParameter(outputLength);
+ else {
+      LOG.trace("Parameter {} is output.",i);
+      parameterList[i]=new ProgramParameter(length);
     }
   }
   return parameterList;
