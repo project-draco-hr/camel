@@ -1,0 +1,12 @@
+{
+  when(endpoint.areSessionHeadersEnabled()).thenReturn(true);
+  testObj.start();
+  ServerMessage cometdMessage=mock(ServerMessage.class);
+  Exchange exchange=mock(Exchange.class);
+  when(endpoint.createExchange()).thenReturn(exchange);
+  ArgumentCaptor<Message> transferredMessage=ArgumentCaptor.forClass(Message.class);
+  testObj.getConsumerService().push(remote,"channelName",cometdMessage,"messageId");
+  verify(exchange).setIn(transferredMessage.capture());
+  Message message=transferredMessage.getValue();
+  assertEquals(MEMEBER_USER_NAME,message.getHeader(USER_NAME));
+}
