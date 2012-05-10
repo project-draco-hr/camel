@@ -3,18 +3,7 @@
     @Override public void configure() throws Exception {
       JaxbDataFormat jaxbDataFormat=new JaxbDataFormat(JAXBContext.newInstance(Order.class,Address.class));
       JaxbDataFormat jaxbDataFormatWithNamespacePrefixMapper=new JaxbDataFormat(JAXBContext.newInstance(Order.class,Address.class));
-      jaxbDataFormatWithNamespacePrefixMapper.setNameSpacePrefixMapper(new NamespacePrefixMapper(){
-        public String getPreferredPrefix(        String namespaceUri,        String suggestion,        boolean requirePrefix){
-          if (namespaceUri.equals("http://www.camel.apache.org/jaxb/example/order/1")) {
-            return "order";
-          }
- else           if (namespaceUri.equals("http://www.camel.apache.org/jaxb/example/address/1")) {
-            return "address";
-          }
-          return "ns";
-        }
-      }
-);
+      jaxbDataFormatWithNamespacePrefixMapper.setNameSpacePrefixMapper(new MyNameSpacePrefixMapper());
       from("direct:marshall").marshal(jaxbDataFormat).to("mock:marshall");
       from("direct:marshallWithNamespacePrefixMapper").marshal(jaxbDataFormatWithNamespacePrefixMapper).to("mock:marshall");
       from("direct:unmarshall").unmarshal(jaxbDataFormat).to("mock:unmarshall");
