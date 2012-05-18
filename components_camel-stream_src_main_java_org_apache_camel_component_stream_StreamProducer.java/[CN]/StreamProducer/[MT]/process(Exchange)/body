@@ -1,24 +1,8 @@
 {
   delay(endpoint.getDelay());
-  OutputStream outputStream=System.out;
-  boolean isSystemStream=false;
-  if ("out".equals(uri)) {
-    isSystemStream=true;
-    outputStream=System.out;
+synchronized (this) {
+    openStream(exchange);
+    writeToStream(outputStream,exchange);
+    closeStream(false);
   }
- else   if ("err".equals(uri)) {
-    isSystemStream=true;
-    outputStream=System.err;
-  }
- else   if ("file".equals(uri)) {
-    outputStream=resolveStreamFromFile();
-  }
- else   if ("header".equals(uri)) {
-    outputStream=resolveStreamFromHeader(exchange.getIn().getHeader("stream"),exchange);
-  }
- else   if ("url".equals(uri)) {
-    outputStream=resolveStreamFromUrl();
-  }
-  writeToStream(outputStream,exchange);
-  closeStream(outputStream,isSystemStream);
 }
