@@ -1,0 +1,23 @@
+{
+  if (exchange.getProperty(Exchange.NOTIFY_EVENT,false,Boolean.class)) {
+    return;
+  }
+  List<EventNotifier> notifiers=context.getManagementStrategy().getEventNotifiers();
+  if (notifiers == null || notifiers.isEmpty()) {
+    return;
+  }
+  for (  EventNotifier notifier : notifiers) {
+    if (notifier.isIgnoreExchangeEvents() || notifier.isIgnoreExchangeSentEvents()) {
+      continue;
+    }
+    EventFactory factory=context.getManagementStrategy().getEventFactory();
+    if (factory == null) {
+      return;
+    }
+    EventObject event=factory.createExchangeSendingEvent(exchange,endpoint);
+    if (event == null) {
+      return;
+    }
+    doNotifyEvent(notifier,event);
+  }
+}
