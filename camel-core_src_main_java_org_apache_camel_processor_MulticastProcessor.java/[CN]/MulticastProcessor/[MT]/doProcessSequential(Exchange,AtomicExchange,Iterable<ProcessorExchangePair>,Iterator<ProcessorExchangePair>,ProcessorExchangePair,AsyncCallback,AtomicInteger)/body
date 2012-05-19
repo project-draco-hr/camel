@@ -2,12 +2,9 @@
   boolean sync=true;
   final Exchange exchange=pair.getExchange();
   Processor processor=pair.getProcessor();
-  Producer producer=pair.getProducer();
+  final Producer producer=pair.getProducer();
   TracedRouteNodes traced=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getTracedRouteNodes() : null;
-  StopWatch watch=null;
-  if (producer != null) {
-    watch=new StopWatch();
-  }
+  final StopWatch watch=producer != null ? new StopWatch() : null;
   try {
     if (traced != null) {
       traced.pushBlock();
@@ -20,6 +17,11 @@
     sync=AsyncProcessorHelper.process(async,exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
         pair.done();
+        if (producer != null) {
+          long timeTaken=watch.stop();
+          Endpoint endpoint=producer.getEndpoint();
+          EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+        }
         if (doneSync) {
           return;
         }
@@ -83,11 +85,6 @@
   finally {
     if (traced != null) {
       traced.popBlock();
-    }
-    if (producer != null) {
-      long timeTaken=watch.stop();
-      Endpoint endpoint=producer.getEndpoint();
-      EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
     }
   }
   return sync;
