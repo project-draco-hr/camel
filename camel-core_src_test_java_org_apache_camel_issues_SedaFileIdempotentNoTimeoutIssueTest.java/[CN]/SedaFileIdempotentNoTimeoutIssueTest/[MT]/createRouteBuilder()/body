@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(RuntimeException.class).process(new ShutDown());
+      from("file:target/inbox?idempotent=true&noop=true&idempotentRepository=#repo&delay=1000").to("log:begin").inOut("seda:process?timeout=-1");
+      from("seda:process").delay(1000).throwException(new RuntimeException("Testing with exception"));
+    }
+  }
+;
+}
