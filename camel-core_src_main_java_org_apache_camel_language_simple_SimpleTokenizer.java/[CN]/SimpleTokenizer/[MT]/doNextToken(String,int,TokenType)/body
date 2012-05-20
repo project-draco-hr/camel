@@ -24,6 +24,28 @@
       return new SimpleToken(new SimpleTokenType(TokenType.numericValue,sb.toString()),index);
     }
   }
+  boolean escapeAllowed=acceptType(TokenType.escape,filters);
+  if (escapeAllowed) {
+    StringBuilder sb=new StringBuilder();
+    char ch=expression.charAt(index);
+    boolean escaped='\\' == ch;
+    if (escaped && index < expression.length()) {
+      char next=expression.charAt(++index);
+      if ('n' == next) {
+        sb.append("\n");
+      }
+ else       if ('t' == next) {
+        sb.append("\t");
+      }
+ else       if ('r' == next) {
+        sb.append("\r");
+      }
+ else {
+        sb.append(next);
+      }
+      return new SimpleToken(new SimpleTokenType(TokenType.character,sb.toString()),index,2);
+    }
+  }
   String text=expression.substring(index);
   for (  SimpleTokenType token : KNOWN_TOKENS) {
     if (acceptType(token.getType(),filters)) {
