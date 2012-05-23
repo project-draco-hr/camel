@@ -7,10 +7,12 @@
     if (LOG.isDebugEnabled()) {
       LOG.debug("Multicasting to {} consumers for Exchange: {}",endpoint.getConsumers().size(),exchange);
     }
+    final List<Synchronization> completions=exchange.handoverCompletions();
     MulticastProcessor mp=endpoint.getConsumerMulticastProcessor();
     ObjectHelper.notNull(mp,"ConsumerMulticastProcessor",this);
     AsyncProcessorHelper.process(mp,exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
+        UnitOfWorkHelper.doneSynchronizations(exchange,completions,LOG);
       }
     }
 );
