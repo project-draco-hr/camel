@@ -40,8 +40,12 @@
     if (getDataFormat() == DataFormat.PAYLOAD) {
       sfb.getFeatures().add(new PayLoadDataFormatFeature(allowStreaming));
     }
+ else     if (getDataFormat().dealias() == DataFormat.CXF_MESSAGE) {
+      sfb.getFeatures().add(new CXFMessageDataFormatFeature());
+      sfb.setDataBinding(new SourceDataBinding());
+    }
  else     if (getDataFormat().dealias() == DataFormat.RAW) {
-      MessageDataFormatFeature feature=new MessageDataFormatFeature();
+      RAWDataFormatFeature feature=new RAWDataFormatFeature();
       feature.addInIntercepters(getInInterceptors());
       feature.addOutInterceptors(getOutInterceptors());
       sfb.getFeatures().add(feature);
@@ -61,7 +65,7 @@
   if (getDataFormat() == DataFormat.PAYLOAD) {
     sfb.setDataBinding(new HybridSourceDataBinding());
   }
-  if (getWrappedStyle() != null) {
+  if (getWrappedStyle() != null && getDataFormat().dealias() != DataFormat.CXF_MESSAGE) {
     sfb.getServiceFactory().setWrapped(getWrappedStyle());
   }
   if (getProperties() != null) {
