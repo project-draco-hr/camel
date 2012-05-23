@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(Exception.class).handled(true).useOriginalMessage().to("file://target/outbox").to("mock:error");
+      from("file://target/inbox").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          exchange.getIn().setBody("B");
+        }
+      }
+).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          exchange.getIn().setHeader("path","xxx");
+        }
+      }
+).recipientList(header("path"));
+    }
+  }
+;
+}
