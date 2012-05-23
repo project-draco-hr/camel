@@ -1,6 +1,13 @@
 {
+  ObjectHelper.notNull(camelContext,"CamelContext");
   if (eventNotifiers != null) {
-    ServiceHelper.startServices(eventNotifiers);
+    for (    EventNotifier notifier : eventNotifiers) {
+      if (notifier instanceof CamelContextAware) {
+        CamelContextAware aware=(CamelContextAware)notifier;
+        aware.setCamelContext(camelContext);
+      }
+      ServiceHelper.startService(notifier);
+    }
   }
   if (managementAgent != null) {
     managementAgent.start();
