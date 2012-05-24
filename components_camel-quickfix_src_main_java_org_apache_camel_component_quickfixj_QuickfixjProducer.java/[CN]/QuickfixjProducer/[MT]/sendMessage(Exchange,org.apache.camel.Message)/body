@@ -1,28 +1,25 @@
 {
-  try {
-    Message message=camelMessage.getBody(Message.class);
-    log.debug("Sending FIX message: {}",message);
-    SessionID messageSessionID=sessionID;
-    if (messageSessionID == null) {
-      messageSessionID=MessageUtils.getSessionID(message);
-    }
-    Session session=getSession(messageSessionID);
-    if (session == null) {
-      throw new IllegalStateException("Unknown session: " + messageSessionID);
-    }
-    Callable<Message> callable=null;
-    if (exchange.getPattern().isOutCapable()) {
-      QuickfixjEndpoint endpoint=(QuickfixjEndpoint)getEndpoint();
-      MessageCorrelator messageCorrelator=endpoint.getEngine().getMessageCorrelator();
-      callable=messageCorrelator.getReply(endpoint.getSessionID(),exchange);
-    }
-    session.send(message);
-    if (callable != null) {
-      Message reply=callable.call();
-      exchange.getOut().setBody(reply);
-    }
+  Message message=camelMessage.getBody(Message.class);
+  log.debug("Sending FIX message: {}",message);
+  SessionID messageSessionID=sessionID;
+  if (messageSessionID == null) {
+    messageSessionID=MessageUtils.getSessionID(message);
   }
- catch (  Exception e) {
-    exchange.setException(e);
+  Session session=getSession(messageSessionID);
+  if (session == null) {
+    throw new IllegalStateException("Unknown session: " + messageSessionID);
+  }
+  Callable<Message> callable=null;
+  if (exchange.getPattern().isOutCapable()) {
+    QuickfixjEndpoint endpoint=(QuickfixjEndpoint)getEndpoint();
+    MessageCorrelator messageCorrelator=endpoint.getEngine().getMessageCorrelator();
+    callable=messageCorrelator.getReply(endpoint.getSessionID(),exchange);
+  }
+  if (!session.send(message)) {
+    throw new CannotSendException("Cannot send FIX message: " + message.toString());
+  }
+  if (callable != null) {
+    Message reply=callable.call();
+    exchange.getOut().setBody(reply);
   }
 }
