@@ -1,0 +1,60 @@
+{
+  Server server=null;
+  DefaultServlet defaultServlet=null;
+  String baseResource=null;
+  WebsocketEndpoint endpoint=prodcon.getEndpoint();
+  String connectorKey="websocket" + ":" + endpoint.getHost() + ":"+ endpoint.getPort();
+synchronized (CONNECTORS) {
+    ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
+    if (connectorRef == null) {
+      Connector connector;
+      if (endpoint.getSslContextParameters() != null) {
+        connector=getSslSocketConnector(endpoint.getSslContextParameters());
+      }
+ else {
+        connector=new SelectChannelConnector();
+      }
+      if (port != null) {
+        connector.setPort(port);
+      }
+ else {
+        connector.setPort(endpoint.getPort());
+      }
+      if (host != null) {
+        connector.setHost(host);
+      }
+ else {
+        connector.setHost(endpoint.getHost());
+      }
+      connector.setHost(endpoint.getHost());
+      context.setContextPath("/");
+      SessionManager sm=new HashSessionManager();
+      SessionHandler sh=new SessionHandler(sm);
+      context.setSessionHandler(sh);
+      if (endpoint.getHome() != null) {
+        if (endpoint.getHome().startsWith("classpath:")) {
+          baseResource=ObjectHelper.after(endpoint.getHome(),"classpath:");
+          LOG.debug("Using base resource from classpath: {}",baseResource);
+          context.setBaseResource(new JettyClassPathResource(getCamelContext().getClassResolver(),baseResource));
+        }
+ else {
+          LOG.debug("Using base resource: {}",baseResource);
+          context.setResourceBase(baseResource);
+        }
+        defaultServlet=new DefaultServlet();
+        ServletHolder holder=new ServletHolder(defaultServlet);
+        holder.setInitParameter("useFileMappedBuffer","false");
+        context.addServlet(holder,"/");
+      }
+      server=new Server();
+      server.addConnector(connector);
+      server.setHandler(context);
+      connectorRef=new ConnectorRef(server,connector,defaultServlet);
+      CONNECTORS.put(connectorKey,connectorRef);
+      server.start();
+    }
+ else {
+      connectorRef.increment();
+    }
+  }
+}

@@ -1,9 +1,22 @@
 {
-  WebsocketEndpoint endpoint=endpoints.get(remaining);
-  if (endpoint == null) {
-    endpoint=new WebsocketEndpoint(uri,this,remaining);
-    setProperties(endpoint,parameters);
-    endpoints.put(remaining,endpoint);
+  Map<String,Object> websocketParameters=new HashMap<String,Object>(parameters);
+  Boolean enableJmx=getAndRemoveParameter(parameters,"enableJmx",Boolean.class);
+  SSLContextParameters sslContextParameters=resolveAndRemoveReferenceParameter(parameters,"sslContextParametersRef",SSLContextParameters.class);
+  int port=extractPortNumber(remaining);
+  String host=extractHostName(remaining);
+  WebsocketEndpoint endpoint=new WebsocketEndpoint(this,uri,remaining,parameters);
+  if (enableJmx != null) {
+    endpoint.setEnableJmx(enableJmx);
   }
+ else {
+    endpoint.setEnableJmx(isEnableJmx());
+  }
+  if (sslContextParameters == null) {
+    sslContextParameters=this.sslContextParameters;
+  }
+  endpoint.setSslContextParameters(sslContextParameters);
+  endpoint.setPort(port);
+  endpoint.setHost(host);
+  setProperties(endpoint,parameters);
   return endpoint;
 }
