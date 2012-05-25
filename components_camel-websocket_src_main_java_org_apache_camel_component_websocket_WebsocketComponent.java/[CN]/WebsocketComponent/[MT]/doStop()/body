@@ -1,9 +1,14 @@
 {
   super.doStop();
-  for (  ConnectorRef connectorRef : CONNECTORS.values()) {
-    connectorRef.server.removeConnector(connectorRef.connector);
-    connectorRef.connector.stop();
-    connectorRef.server.stop();
+  if (CONNECTORS.size() > 0) {
+    for (    String connectorKey : CONNECTORS.keySet()) {
+      ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
+      if (connectorRef != null && connectorRef.getRefCount() == 0) {
+        connectorRef.server.removeConnector(connectorRef.connector);
+        connectorRef.connector.stop();
+        connectorRef.server.stop();
+      }
+      CONNECTORS.remove(connectorKey);
+    }
   }
-  CONNECTORS.clear();
 }

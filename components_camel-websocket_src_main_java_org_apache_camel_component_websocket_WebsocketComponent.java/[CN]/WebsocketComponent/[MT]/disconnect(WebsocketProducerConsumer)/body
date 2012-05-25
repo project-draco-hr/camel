@@ -1,6 +1,6 @@
 {
   WebsocketEndpoint endpoint=prodcon.getEndpoint();
-  String connectorKey="websocket" + ":" + endpoint.getHost() + ":"+ endpoint.getPort();
+  String connectorKey=getConnectorKey(endpoint);
 synchronized (CONNECTORS) {
     ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
     if (connectorRef != null) {
@@ -8,7 +8,11 @@ synchronized (CONNECTORS) {
         connectorRef.server.removeConnector(connectorRef.connector);
         connectorRef.connector.stop();
         connectorRef.server.stop();
-        CONNECTORS.remove(CONNECTORS);
+        CONNECTORS.remove(connectorKey);
+        if (mbContainer != null) {
+          mbContainer.removeBean(connectorRef.server);
+          mbContainer.removeBean(connectorRef.connector);
+        }
       }
     }
   }

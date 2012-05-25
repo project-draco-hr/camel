@@ -1,9 +1,8 @@
 {
   Server server=null;
-  DefaultServlet defaultServlet=null;
   String baseResource=null;
   WebsocketEndpoint endpoint=prodcon.getEndpoint();
-  String connectorKey="websocket" + ":" + endpoint.getHost() + ":"+ endpoint.getPort();
+  String connectorKey=getConnectorKey(endpoint);
 synchronized (CONNECTORS) {
     ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
     if (connectorRef == null) {
@@ -28,11 +27,8 @@ synchronized (CONNECTORS) {
         connector.setHost(endpoint.getHost());
       }
       connector.setHost(endpoint.getHost());
-      context.setContextPath("/");
-      SessionManager sm=new HashSessionManager();
-      SessionHandler sh=new SessionHandler(sm);
-      context.setSessionHandler(sh);
       if (endpoint.getHome() != null) {
+        ServletContextHandler context=new ServletContextHandler(server,"/",ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
         if (endpoint.getHome().startsWith("classpath:")) {
           baseResource=ObjectHelper.after(endpoint.getHome(),"classpath:");
           LOG.debug("Using base resource from classpath: {}",baseResource);
@@ -42,21 +38,31 @@ synchronized (CONNECTORS) {
           LOG.debug("Using base resource: {}",baseResource);
           context.setResourceBase(baseResource);
         }
-        defaultServlet=new DefaultServlet();
+        DefaultServlet defaultServlet=new DefaultServlet();
         ServletHolder holder=new ServletHolder(defaultServlet);
         holder.setInitParameter("useFileMappedBuffer","false");
         context.addServlet(holder,"/");
       }
-      server=new Server();
+      server=createServer();
+      if (endpoint.isEnableJmx()) {
+        enableJmx(server);
+      }
       server.addConnector(connector);
-      server.setHandler(context);
-      connectorRef=new ConnectorRef(server,connector,defaultServlet);
+      context=createContext(server,connector,endpoint.getHandlers());
+      connectorRef=new ConnectorRef(server,connector,null);
+      if (endpoint.isSessionSupport()) {
+        enableSessionSupport(connectorRef.server,connectorKey);
+      }
+      connectorRef.server.start();
       CONNECTORS.put(connectorKey,connectorRef);
       LOG.debug("Jetty Server started for host : " + connector.getHost() + ", on port : "+ connector.getPort());
       server.start();
     }
  else {
       connectorRef.increment();
+    }
+    if (endpoint.isSessionSupport()) {
+      enableSessionSupport(connectorRef.server,connectorKey);
     }
   }
 }
