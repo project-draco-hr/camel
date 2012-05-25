@@ -1,11 +1,25 @@
 {
-  String pathSpec=createPathSpec(remaining);
-  WebsocketComponentServlet servlet=servlets.get(pathSpec);
-  if (servlet == null) {
-    servlet=createServlet(sync,pathSpec,servlets,context);
+  WebsocketEndpoint endpoint=consumer.getEndpoint();
+  WebsocketComponent component=endpoint.getComponent();
+  String key=getConnectorKey(endpoint);
+  ConnectorRef connectorRef=component.getConnectors().get(key);
+  WebsocketComponentServlet servlet;
+  if (connectorRef != null) {
+    String pathSpec=createPathSpec(remaining);
+    servlet=servlets.get(pathSpec);
+    if (servlet == null) {
+      ServletContextHandler context=(ServletContextHandler)connectorRef.server.getHandler();
+      servlet=createServlet(sync,pathSpec,servlets,context);
+      connectorRef.servlet=servlet;
+      servlets.put(pathSpec,servlet);
+      LOG.debug("WebSocket servlet added for the following path : " + pathSpec + ", to the Jetty Server : "+ key);
+    }
+    if (servlet.getConsumer() == null && consumer != null) {
+      servlet.setConsumer(consumer);
+    }
+    return servlet;
   }
-  if (servlet.getConsumer() == null && consumer != null) {
-    servlet.setConsumer(consumer);
+ else {
+    throw new Exception("Jetty instance has not been retrieved for : " + key);
   }
-  return servlet;
 }
