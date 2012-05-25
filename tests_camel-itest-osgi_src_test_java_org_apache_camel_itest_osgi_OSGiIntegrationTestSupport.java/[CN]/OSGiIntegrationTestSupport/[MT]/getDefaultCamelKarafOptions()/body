@@ -1,14 +1,4 @@
 {
-  deleteDirectory("target/paxrunner");
-  int failsafe=1000;
-  workDir="target/paxrunner/work-" + COUNTER.getAndIncrement();
-  File dir=new File(workDir);
-  while (dir.exists() && failsafe-- > 0) {
-    workDir="target/paxrunner/work-" + COUNTER.getAndIncrement();
-    dir=new File(workDir);
-  }
-  createDirectory(workDir);
-  System.out.println("*** Using working directory: " + workDir + " ***");
-  Option[] options=combine(combine(Helper.getDefaultConfigOptions(Helper.getDefaultSystemOptions(),getResource("/org/apache/camel/itest/karaf/config.properties"),Helper.setLogLevel("WARN")),Helper.getDefaultProvisioningOptions()),scanFeatures(getKarafFeatureUrl(),"spring","spring-dm","jetty"),scanFeatures(getCamelKarafFeatureUrl(),"cxf-jaxb"),scanFeatures(getCamelKarafFeatureUrl(),"camel-core","camel-spring","camel-test"),workingDirectory(workDir));
+  Option[] options=new Option[]{karafDistributionConfiguration().frameworkUrl(maven().groupId("org.apache.karaf").artifactId("apache-karaf").type("tar.gz").versionAsInProject()).karafVersion("2.2.7").name("Apache Karaf").useDeployFolder(false).unpackDirectory(new File("target/paxexam/unpack/")),KarafDistributionOption.keepRuntimeFolder(),replaceConfigurationFile("etc/jre.properties",new File("src/test/resources/org/apache/camel/itest/karaf/jre.properties")),scanFeatures(getCamelKarafFeatureUrl(),"cxf-jaxb","camel-core","camel-spring","camel-test")};
   return options;
 }
