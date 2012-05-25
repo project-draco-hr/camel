@@ -1,6 +1,8 @@
 {
+  received.clear();
+  latch=new CountDownLatch(1);
   AsyncHttpClient c=new AsyncHttpClient();
-  WebSocket websocket=c.prepareGet("ws://127.0.0.1:9393/echo").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener(){
+  WebSocket websocket=c.prepareGet("ws://127.0.0.1:9292/bar").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener(){
     @Override public void onMessage(    String message){
       received.add(message);
       log.info("received --> " + message);
@@ -17,10 +19,10 @@
     }
   }
 ).build()).get();
-  websocket.sendTextMessage("Beer");
+  websocket.sendTextMessage("wine");
   assertTrue(latch.await(10,TimeUnit.SECONDS));
   assertEquals(1,received.size());
-  assertEquals("BeerBeer",received.get(0));
+  assertEquals("The bar has wine",received.get(0));
   websocket.close();
   c.close();
 }
