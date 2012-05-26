@@ -40,8 +40,13 @@
   if (tm != null) {
     container.setTransactionManager(tm);
   }
- else   if (transacted) {
-    throw new IllegalArgumentException("Property transacted is enabled but a transactionManager was not injected!");
+ else   if (transacted && transactionManager == null) {
+    if (!lazyCreateTransactionManager) {
+      container.setSessionTransacted(true);
+    }
+ else {
+      throw new IllegalArgumentException("Property transacted is enabled but neither a transactionManager is available nor lazyCreateTransactionManager is disabled!");
+    }
   }
   if (transactionName != null) {
     container.setTransactionName(transactionName);
