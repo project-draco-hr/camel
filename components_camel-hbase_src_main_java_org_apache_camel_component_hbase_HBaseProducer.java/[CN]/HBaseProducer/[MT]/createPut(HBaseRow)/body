@@ -1,0 +1,16 @@
+{
+  ObjectHelper.notNull(hRow,"HBase row");
+  ObjectHelper.notNull(hRow.getId(),"HBase row id");
+  ObjectHelper.notNull(hRow.getCells(),"HBase cells");
+  Put put=new Put(endpoint.getCamelContext().getTypeConverter().convertTo(byte[].class,hRow.getId()));
+  Set<HBaseCell> cells=hRow.getCells();
+  for (  HBaseCell cell : cells) {
+    String family=cell.getFamily();
+    String column=cell.getQualifier();
+    Object value=cell.getValue();
+    ObjectHelper.notNull(family,"HBase column family",cell);
+    ObjectHelper.notNull(column,"HBase column",cell);
+    put.add(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column),endpoint.getCamelContext().getTypeConverter().convertTo(byte[].class,value));
+  }
+  return put;
+}

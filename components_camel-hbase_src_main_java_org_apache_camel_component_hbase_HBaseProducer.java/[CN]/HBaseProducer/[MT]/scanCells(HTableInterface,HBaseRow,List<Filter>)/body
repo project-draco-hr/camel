@@ -1,0 +1,33 @@
+{
+  List<HBaseRow> rowSet=new LinkedList<HBaseRow>();
+  Scan scan=new Scan();
+  if (filters != null && !filters.isEmpty()) {
+    scan.setFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,filters));
+  }
+  Set<HBaseCell> cellModels=model.getCells();
+  for (  HBaseCell cellModel : cellModels) {
+    String family=cellModel.getFamily();
+    String column=cellModel.getQualifier();
+    if (ObjectHelper.isNotEmpty(family) && ObjectHelper.isNotEmpty(column)) {
+      scan.addColumn(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column));
+    }
+  }
+  ResultScanner resultScanner=table.getScanner(scan);
+  Result result=resultScanner.next();
+  while (result != null) {
+    HBaseRow resultRow=new HBaseRow();
+    resultRow.setId(endpoint.getCamelContext().getTypeConverter().convertTo(model.getRowType(),result.getRow()));
+    cellModels=model.getCells();
+    for (    HBaseCell modelCell : cellModels) {
+      HBaseCell resultCell=new HBaseCell();
+      String family=modelCell.getFamily();
+      String column=modelCell.getQualifier();
+      resultRow.setId(endpoint.getCamelContext().getTypeConverter().convertTo(model.getRowType(),result.getRow()));
+      resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(modelCell.getValueType(),result.getValue(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column))));
+      resultRow.getCells().add(resultCell);
+      rowSet.add(resultRow);
+    }
+    result=resultScanner.next();
+  }
+  return rowSet;
+}

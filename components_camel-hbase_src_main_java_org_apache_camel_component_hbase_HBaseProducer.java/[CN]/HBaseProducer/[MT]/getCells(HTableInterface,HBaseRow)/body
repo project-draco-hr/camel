@@ -1,0 +1,32 @@
+{
+  HBaseRow resultRow=new HBaseRow();
+  List<HBaseCell> resultCells=new LinkedList<HBaseCell>();
+  ObjectHelper.notNull(hRow,"HBase row");
+  ObjectHelper.notNull(hRow.getId(),"HBase row id");
+  ObjectHelper.notNull(hRow.getCells(),"HBase cells");
+  resultRow.setId(hRow.getId());
+  Get get=new Get(endpoint.getCamelContext().getTypeConverter().convertTo(byte[].class,hRow.getId()));
+  Set<HBaseCell> cellModels=hRow.getCells();
+  for (  HBaseCell cellModel : cellModels) {
+    String family=cellModel.getFamily();
+    String column=cellModel.getQualifier();
+    ObjectHelper.notNull(family,"HBase column family",cellModel);
+    ObjectHelper.notNull(column,"HBase column",cellModel);
+    get.addColumn(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column));
+  }
+  Result result=table.get(get);
+  for (  HBaseCell cellModel : cellModels) {
+    HBaseCell resultCell=new HBaseCell();
+    String family=cellModel.getFamily();
+    String column=cellModel.getQualifier();
+    resultCell.setFamily(family);
+    resultCell.setQualifier(column);
+    List<KeyValue> kvs=result.getColumn(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column));
+    if (kvs != null && !kvs.isEmpty()) {
+      resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(cellModel.getValueType(),kvs.get(0).getValue()));
+    }
+    resultCells.add(resultCell);
+    resultRow.getCells().add(resultCell);
+  }
+  return resultRow;
+}

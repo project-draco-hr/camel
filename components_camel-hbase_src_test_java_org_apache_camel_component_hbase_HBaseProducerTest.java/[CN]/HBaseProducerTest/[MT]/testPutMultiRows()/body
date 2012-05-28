@@ -1,0 +1,37 @@
+{
+  if (systemReady) {
+    ProducerTemplate template=context.createProducerTemplate();
+    Map<String,Object> headers=new HashMap<String,Object>();
+    headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
+    headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
+    headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0]);
+    headers.put(HbaseAttribute.HBASE_VALUE.asHeader(),body[0]);
+    headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(2),key[1]);
+    headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(2),family[0]);
+    headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(2),column[0]);
+    headers.put(HbaseAttribute.HBASE_VALUE.asHeader(2),body[1]);
+    headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(3),key[2]);
+    headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(3),family[0]);
+    headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(3),column[0]);
+    headers.put(HbaseAttribute.HBASE_VALUE.asHeader(3),body[2]);
+    headers.put(HBaseContats.OPERATION,HBaseContats.PUT);
+    template.sendBodyAndHeaders("direct:start",null,headers);
+    Configuration configuration=hbaseUtil.getHBaseAdmin().getConfiguration();
+    HTable bar=new HTable(configuration,DEFAULTTABLE.getBytes());
+    Get get=new Get(key[0].getBytes());
+    get.addColumn(family[0].getBytes(),column[0].getBytes());
+    Result result=bar.get(get);
+    byte[] resultValue=result.value();
+    assertArrayEquals(body[0].getBytes(),resultValue);
+    get=new Get(key[1].getBytes());
+    get.addColumn(family[0].getBytes(),column[0].getBytes());
+    result=bar.get(get);
+    resultValue=result.value();
+    assertArrayEquals(body[1].getBytes(),resultValue);
+    get=new Get(key[2].getBytes());
+    get.addColumn(family[0].getBytes(),column[0].getBytes());
+    result=bar.get(get);
+    resultValue=result.value();
+    assertArrayEquals(body[2].getBytes(),resultValue);
+  }
+}

@@ -1,0 +1,23 @@
+{
+  int total=exchanges.size();
+  if (maxMessagesPerPoll > 0 && total > maxMessagesPerPoll) {
+    LOG.debug("Limiting to maximum messages to poll {} as there was {} messages in this poll.",maxMessagesPerPoll,total);
+    total=maxMessagesPerPoll;
+  }
+  for (int index=0; index < total && isBatchAllowed(); index++) {
+    Exchange exchange=ObjectHelper.cast(Exchange.class,exchanges.poll());
+    exchange.setProperty(Exchange.BATCH_INDEX,index);
+    exchange.setProperty(Exchange.BATCH_SIZE,total);
+    exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
+    pendingExchanges=total - index - 1;
+    LOG.trace("Processing exchange [{}]...",exchange);
+    getProcessor().process(exchange);
+    if (exchange.getException() != null) {
+      throw exchange.getException();
+    }
+    if (endpoint.isRemove()) {
+      remove((byte[])exchange.getIn().getHeader(HbaseAttribute.HBASE_MARKED_ROW_ID.asHeader()));
+    }
+  }
+  return total;
+}

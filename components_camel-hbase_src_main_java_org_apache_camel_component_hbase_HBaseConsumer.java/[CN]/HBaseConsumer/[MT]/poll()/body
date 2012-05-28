@@ -1,0 +1,59 @@
+{
+  HTableInterface table=null;
+  try {
+    table=tablePool.getTable(tableName);
+    shutdownRunningTask=null;
+    pendingExchanges=0;
+    Queue<Exchange> queue=new LinkedList<Exchange>();
+    Scan scan=new Scan();
+    List<Filter> filters=new LinkedList<Filter>();
+    if (endpoint.getFilters() != null) {
+      filters.addAll(endpoint.getFilters());
+    }
+    if (maxMessagesPerPoll > 0) {
+      filters.add(new PageFilter(maxMessagesPerPoll));
+    }
+    Filter compoundFilter=new FilterList(filters);
+    scan.setFilter(compoundFilter);
+    if (rowModel != null && rowModel.getCells() != null) {
+      Set<HBaseCell> cellModels=rowModel.getCells();
+      for (      HBaseCell cellModel : cellModels) {
+        scan.addColumn(HBaseHelper.getHBaseFieldAsBytes(cellModel.getFamily()),HBaseHelper.getHBaseFieldAsBytes(cellModel.getQualifier()));
+      }
+    }
+    ResultScanner scanner=table.getScanner(scan);
+    int exchangeCount=0;
+    for (Result result=scanner.next(); (exchangeCount < maxMessagesPerPoll || maxMessagesPerPoll <= 0) && result != null; result=scanner.next()) {
+      HBaseData data=new HBaseData();
+      HBaseRow resultRow=new HBaseRow();
+      resultRow.apply(rowModel);
+      byte[] row=result.getRow();
+      resultRow.setId(endpoint.getCamelContext().getTypeConverter().convertTo(rowModel.getRowType(),row));
+      List<KeyValue> keyValues=result.list();
+      if (keyValues != null) {
+        for (        KeyValue keyValue : keyValues) {
+          String qualifier=new String(keyValue.getQualifier());
+          String family=new String(keyValue.getFamily());
+          HBaseCell resultCell=new HBaseCell();
+          resultCell.setFamily(family);
+          resultCell.setQualifier(qualifier);
+          resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(String.class,keyValue.getValue()));
+          resultRow.getCells().add(resultCell);
+        }
+        data.getRows().add(resultRow);
+        Exchange exchange=endpoint.createExchange();
+        exchange.getIn().setHeader(CellMappingStrategyFactory.STRATEGY,CellMappingStrategyFactory.BODY);
+        CellMappingStrategy mappingStrategy=endpoint.getCellMappingStrategyFactory().getStrategy(exchange.getIn());
+        mappingStrategy.applyScanResults(exchange.getIn(),data);
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_MARKED_ROW_ID.asHeader(),result.getRow());
+        queue.add(exchange);
+        exchangeCount++;
+      }
+    }
+    scanner.close();
+    return queue.isEmpty() ? 0 : processBatch(CastUtils.cast(queue));
+  }
+  finally {
+    table.close();
+  }
+}

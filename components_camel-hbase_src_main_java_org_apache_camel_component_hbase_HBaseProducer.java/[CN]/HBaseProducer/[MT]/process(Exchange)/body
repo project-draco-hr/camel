@@ -1,0 +1,46 @@
+{
+  HTableInterface table=null;
+  try {
+    table=tablePool.getTable(tableName.getBytes());
+    updateHeaders(exchange);
+    String operation=(String)exchange.getIn().getHeader(HBaseContats.OPERATION);
+    CellMappingStrategy mappingStrategy=endpoint.getCellMappingStrategyFactory().getStrategy(exchange.getIn());
+    HBaseData data=mappingStrategy.resolveModel(exchange.getIn());
+    List<Put> putOperations=new LinkedList<Put>();
+    List<Delete> deleteOperations=new LinkedList<Delete>();
+    List<HBaseRow> getOperationResult=new LinkedList<HBaseRow>();
+    List<HBaseRow> scanOperationResult=new LinkedList<HBaseRow>();
+    for (    HBaseRow hRow : data.getRows()) {
+      hRow.apply(rowModel);
+      if (HBaseContats.PUT.equals(operation)) {
+        putOperations.add(createPut(hRow));
+      }
+ else       if (HBaseContats.GET.equals(operation)) {
+        HBaseRow getResultRow=getCells(table,hRow);
+        getOperationResult.add(getResultRow);
+      }
+ else       if (HBaseContats.DELETE.equals(operation)) {
+        deleteOperations.add(createDeleteRow(hRow));
+      }
+ else       if (HBaseContats.SCAN.equals(operation)) {
+        scanOperationResult=scanCells(table,hRow,endpoint.getFilters());
+      }
+    }
+    if (!putOperations.isEmpty()) {
+      table.put(putOperations);
+      table.flushCommits();
+    }
+ else     if (!deleteOperations.isEmpty()) {
+      table.delete(deleteOperations);
+    }
+ else     if (!getOperationResult.isEmpty()) {
+      mappingStrategy.applyGetResults(exchange.getOut(),new HBaseData(getOperationResult));
+    }
+ else     if (!scanOperationResult.isEmpty()) {
+      mappingStrategy.applyScanResults(exchange.getOut(),new HBaseData(scanOperationResult));
+    }
+  }
+  finally {
+    table.close();
+  }
+}

@@ -1,0 +1,25 @@
+{
+  HBaseRow hRow=new HBaseRow();
+  HBaseCell hCell=new HBaseCell();
+  if (message != null) {
+    Object id=message.getHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(index));
+    String rowClassName=message.getHeader(HbaseAttribute.HBASE_ROW_TYPE.asHeader(index),String.class);
+    Class rowClass=rowClassName == null || rowClassName.isEmpty() ? String.class : message.getExchange().getContext().getClassResolver().resolveClass(rowClassName);
+    String columnFamily=(String)message.getHeader(HbaseAttribute.HBASE_FAMILY.asHeader(index));
+    String columnName=(String)message.getHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(index));
+    Object value=message.getHeader(HbaseAttribute.HBASE_VALUE.asHeader(index));
+    String valueClassName=message.getHeader(HbaseAttribute.HBASE_VALUE_TYPE.asHeader(index),String.class);
+    Class valueClass=valueClassName == null || valueClassName.isEmpty() ? String.class : message.getExchange().getContext().getClassResolver().resolveClass(valueClassName);
+    if (id == null && columnFamily == null && columnName == null) {
+      return null;
+    }
+    hRow.setId(id);
+    hRow.setRowType(rowClass);
+    hCell.setQualifier(columnName);
+    hCell.setFamily(columnFamily);
+    hCell.setValue(value);
+    hCell.setValueType(valueClass);
+    hRow.getCells().add(hCell);
+  }
+  return hRow;
+}
