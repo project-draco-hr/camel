@@ -18,8 +18,25 @@
       }
     }
 );
+    ScheduledFuture<?> scheduledFuture=null;
+    Integer visibilityTimeout=getConfiguration().getVisibilityTimeout();
+    if (scheduledExecutor != null && visibilityTimeout != null && (visibilityTimeout.intValue() / 2) > 0) {
+      int delay=visibilityTimeout.intValue() / 2;
+      int period=visibilityTimeout.intValue();
+      LOG.debug("Scheduled TimeoutExtender task to start after {} delay, and run with {} period (seconds) to extend exchangeId: {}",new Object[]{delay,period,exchange.getExchangeId()});
+      scheduledFuture=this.scheduledExecutor.scheduleAtFixedRate(new TimeoutExtender(exchange,visibilityTimeout),delay,period,TimeUnit.SECONDS);
+    }
     LOG.trace("Processing exchange [{}]...",exchange);
-    getProcessor().process(exchange);
+    try {
+      getProcessor().process(exchange);
+    }
+  finally {
+      LOG.trace("Processing exchange [{}] done.",exchange);
+      if (scheduledFuture != null) {
+        LOG.trace("Processing done so cancelling TimeoutExtender task for exchangeId: {}",exchange.getExchangeId());
+        scheduledFuture.cancel(true);
+      }
+    }
   }
   return total;
 }
