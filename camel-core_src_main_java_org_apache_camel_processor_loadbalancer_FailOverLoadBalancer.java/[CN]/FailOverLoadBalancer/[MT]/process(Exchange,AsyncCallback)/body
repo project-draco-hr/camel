@@ -12,6 +12,14 @@
   }
   log.trace("Failover starting with endpoint index {}",index);
   while (first || shouldFailOver(copy)) {
+    if (!isRunAllowed()) {
+      log.trace("Run not allowed, will reject executing exchange: {}",exchange);
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      callback.done(true);
+      return true;
+    }
     if (!first) {
       attempts.incrementAndGet();
       if (maximumFailoverAttempts > -1 && attempts.get() > maximumFailoverAttempts) {

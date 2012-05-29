@@ -3,6 +3,13 @@
     return;
   }
   while (shouldFailOver(copy)) {
+    if (!isRunAllowed()) {
+      log.trace("Run not allowed, will reject executing exchange: {}",exchange);
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      callback.done(false);
+    }
     attempts.incrementAndGet();
     if (maximumFailoverAttempts > -1 && attempts.get() > maximumFailoverAttempts) {
       log.trace("Breaking out of failover after {} failover attempts",attempts);
