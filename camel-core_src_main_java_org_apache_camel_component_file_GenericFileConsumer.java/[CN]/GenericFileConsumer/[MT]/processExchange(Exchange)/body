@@ -6,8 +6,13 @@
     final GenericFileProcessStrategy<T> processStrategy=endpoint.getGenericFileProcessStrategy();
     boolean begin=processStrategy.begin(operations,endpoint,exchange,file);
     if (!begin) {
-      log.debug(endpoint + " cannot begin processing file: {}",file);
-      endpoint.getInProgressRepository().remove(absoluteFileName);
+      log.debug("{} cannot begin processing file: {}",endpoint,file);
+      try {
+        processStrategy.abort(operations,endpoint,exchange,file);
+      }
+  finally {
+        endpoint.getInProgressRepository().remove(absoluteFileName);
+      }
       return;
     }
   }

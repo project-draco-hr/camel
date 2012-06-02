@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("file:target/rename?readLock=rename").routeId("foo").noAutoStartup().process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String name=exchange.getIn().getHeader(Exchange.FILE_PATH) + FileComponent.DEFAULT_LOCK_FILE_POSTFIX;
+          File lock=new File(name);
+          assertTrue("Lock file should exist: " + name,lock.exists());
+        }
+      }
+).convertBodyTo(String.class).to("mock:result");
+    }
+  }
+;
+}
