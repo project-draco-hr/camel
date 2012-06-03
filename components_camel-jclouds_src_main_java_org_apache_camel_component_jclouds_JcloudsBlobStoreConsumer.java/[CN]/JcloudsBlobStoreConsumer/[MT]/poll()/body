@@ -2,14 +2,26 @@
   shutdownRunningTask=null;
   pendingExchanges=0;
   Queue<Exchange> queue=new LinkedList<Exchange>();
+  String directory=endpoint.getDirectory();
   ListContainerOptions opt=new ListContainerOptions();
-  for (  StorageMetadata md : blobStore.list(container,opt.maxResults(maxMessagesPerPoll))) {
+  if (!Strings.isNullOrEmpty(directory)) {
+    opt=opt.inDirectory(directory);
+  }
+  for (  StorageMetadata md : blobStore.list(container,opt.maxResults(maxMessagesPerPoll).recursive())) {
     String blobName=md.getName();
-    Object body=JcloudsBlobStoreHelper.readBlob(blobStore,container,blobName,Thread.currentThread().getContextClassLoader());
-    Exchange exchange=endpoint.createExchange();
-    exchange.getIn().setBody(body);
-    exchange.setProperty(JcloudsConstants.BLOB_NAME,blobName);
-    queue.add(exchange);
+    if (md.getType().equals(StorageType.BLOB)) {
+      if (!Strings.isNullOrEmpty(blobName)) {
+        InputStream body=JcloudsBlobStoreHelper.readBlob(blobStore,container,blobName);
+        if (body != null) {
+          Exchange exchange=endpoint.createExchange();
+          CachedOutputStream cos=new CachedOutputStream(exchange);
+          IOHelper.copy(body,cos);
+          exchange.getIn().setBody(cos.getStreamCache());
+          exchange.setProperty(JcloudsConstants.BLOB_NAME,blobName);
+          queue.add(exchange);
+        }
+      }
+    }
   }
   return queue.isEmpty() ? 0 : processBatch(CastUtils.cast(queue));
 }

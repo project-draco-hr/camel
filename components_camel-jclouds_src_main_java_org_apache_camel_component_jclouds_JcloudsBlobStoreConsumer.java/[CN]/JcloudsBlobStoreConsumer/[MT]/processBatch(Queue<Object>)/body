@@ -6,17 +6,12 @@
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
-    exchange.addOnCompletion(new Synchronization(){
-      public void onComplete(      Exchange exchange){
-        String blobName=(String)exchange.getProperty(JcloudsConstants.BLOB_NAME);
-        blobStore.removeBlob(container,blobName);
-      }
-      public void onFailure(      Exchange exchange){
-      }
-    }
-);
     LOG.trace("Processing exchange [{}]...",exchange);
     getProcessor().process(exchange);
+    if (exchange.getException() != null) {
+      throw exchange.getException();
+    }
+    blobStore.removeBlob(container,exchange.getProperty(JcloudsConstants.BLOB_NAME,String.class));
   }
   return total;
 }
