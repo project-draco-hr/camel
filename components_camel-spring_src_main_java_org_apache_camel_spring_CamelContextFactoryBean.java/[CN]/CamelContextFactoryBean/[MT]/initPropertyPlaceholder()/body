@@ -1,0 +1,27 @@
+{
+  super.initPropertyPlaceholder();
+  Map<String,BridgePropertyPlaceholderConfigurer> beans=applicationContext.getBeansOfType(BridgePropertyPlaceholderConfigurer.class);
+  if (beans.size() == 1) {
+    BridgePropertyPlaceholderConfigurer configurer=beans.values().iterator().next();
+    String id=beans.keySet().iterator().next();
+    LOG.info("Bridging Camel and Spring property placeholder configurer with id: " + id);
+    PropertiesComponent pc=getContext().getComponent("properties",PropertiesComponent.class);
+    configurer.setResolver(pc.getPropertiesResolver());
+    String ref="ref:" + id;
+    pc.setPropertiesResolver(configurer);
+    String[] locations=pc.getLocations();
+    String[] updatedLocations;
+    if (locations != null && locations.length > 0) {
+      updatedLocations=new String[locations.length + 1];
+      updatedLocations[0]=ref;
+      System.arraycopy(locations,0,updatedLocations,1,locations.length);
+    }
+ else {
+      updatedLocations=new String[]{ref};
+    }
+    pc.setLocations(updatedLocations);
+  }
+ else   if (beans.size() > 1) {
+    LOG.warn("Cannot bridge Camel and Spring property placeholders, as only exact 1 bean of type CamelSpringPropertyPlaceholderConfigurer" + " must be defined, was {} beans",beans.size());
+  }
+}
