@@ -1,0 +1,13 @@
+{
+  getInstalledBundle("CamelBlueprintXmlJsonTestBundle").start();
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=CamelBlueprintXmlJsonTestBundle)",10000);
+  MockEndpoint mock=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(1);
+  String body="<hello>\n" + "    <name>Raul</name>\n" + "    <surname>Kripalani</surname>\n"+ "</hello>";
+  ProducerTemplate template=ctx.createProducerTemplate();
+  template.sendBody("direct:start",body);
+  mock.assertIsSatisfied();
+  String result=mock.getReceivedExchanges().get(0).getIn().getBody(String.class);
+  String spacesRemoved=result.replaceAll("\\s+",result);
+  assertEquals("{\"name\":\"Raul\",\"surname\":\"Kripalani\"}",spacesRemoved);
+}
