@@ -1,0 +1,25 @@
+{
+  AS400 system=null;
+  try {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Getting an AS400 object for '{}' from {}.",systemName + '/' + userID,connectionPool);
+    }
+    system=connectionPool.getConnection(systemName,userID,password);
+    if (ccsid != DEFAULT_SYSTEM_CCSID) {
+      system.setCcsid(ccsid);
+    }
+    try {
+      system.setGuiAvailable(guiAvailable);
+    }
+ catch (    PropertyVetoException e) {
+      LOG.warn("Failed to disable AS/400 prompting in the environment running Camel. This exception will be ignored.",e);
+    }
+    return system;
+  }
+ catch (  ConnectionPoolException e) {
+    throw new RuntimeCamelException(String.format("Unable to obtain an AS/400 connection for system name '%s' and user ID '%s'",systemName,userID),e);
+  }
+catch (  PropertyVetoException e) {
+    throw new RuntimeCamelException("Unable to set the CSSID to use with " + system,e);
+  }
+}
