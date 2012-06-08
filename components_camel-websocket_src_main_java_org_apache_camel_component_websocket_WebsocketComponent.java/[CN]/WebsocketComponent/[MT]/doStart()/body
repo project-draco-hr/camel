@@ -1,3 +1,15 @@
 {
   super.doStart();
+  if (staticResources != null) {
+    ObjectHelper.notEmpty(host,"host",this);
+    ObjectHelper.notNull(port,"port",this);
+    LOG.info("Starting static resources server {}:{} with static resource: {}",new Object[]{host,port,staticResources});
+    ServletContextHandler context=new ServletContextHandler(ServletContextHandler.SESSIONS);
+    staticResourcesServer=createStaticResourcesServer(context,host,port,staticResources);
+    staticResourcesServer.start();
+    Connector connector=staticResourcesServer.getConnectors()[0];
+    ConnectorRef ref=new ConnectorRef(staticResourcesServer,connector,null);
+    String key="websocket:" + host + ":"+ port;
+    CONNECTORS.put(key,ref);
+  }
 }

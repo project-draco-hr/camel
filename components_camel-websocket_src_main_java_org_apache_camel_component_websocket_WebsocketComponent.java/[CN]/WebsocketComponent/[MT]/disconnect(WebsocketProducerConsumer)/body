@@ -6,13 +6,18 @@ synchronized (CONNECTORS) {
     if (connectorRef != null) {
       if (connectorRef.decrement() == 0) {
         connectorRef.server.removeConnector(connectorRef.connector);
-        connectorRef.connector.stop();
+        if (connectorRef.connector != null) {
+          connectorRef.connector.stop();
+        }
         connectorRef.server.stop();
         CONNECTORS.remove(connectorKey);
         if (mbContainer != null) {
           mbContainer.removeBean(connectorRef.server);
           mbContainer.removeBean(connectorRef.connector);
         }
+      }
+      if (prodcon instanceof WebsocketConsumer) {
+        connectorRef.servlet.disconnect((WebsocketConsumer)prodcon);
       }
     }
   }
