@@ -1,0 +1,56 @@
+{
+  message.getAttributes().put(header,value);
+  if (message.getEntity() != null) {
+    if (header.equalsIgnoreCase(HeaderConstants.HEADER_EXPIRES)) {
+      if (value instanceof Calendar) {
+        message.getEntity().setExpirationDate(((Calendar)value).getTime());
+      }
+ else       if (value instanceof Date) {
+        message.getEntity().setExpirationDate((Date)value);
+      }
+ else {
+        Date date=exchange.getContext().getTypeConverter().mandatoryConvertTo(Date.class,value);
+        message.getEntity().setExpirationDate(date);
+      }
+    }
+    if (header.equalsIgnoreCase(HeaderConstants.HEADER_LAST_MODIFIED)) {
+      if (value instanceof Calendar) {
+        message.getEntity().setModificationDate(((Calendar)value).getTime());
+      }
+ else       if (value instanceof Date) {
+        message.getEntity().setModificationDate((Date)value);
+      }
+ else {
+        Date date=exchange.getContext().getTypeConverter().mandatoryConvertTo(Date.class,value);
+        message.getEntity().setModificationDate(date);
+      }
+    }
+    if (header.equalsIgnoreCase(HeaderConstants.HEADER_CONTENT_LENGTH)) {
+      if (value instanceof Long) {
+        message.getEntity().setSize((Long)value);
+      }
+ else       if (value instanceof Integer) {
+        message.getEntity().setSize((Integer)value);
+      }
+ else {
+        Long num=exchange.getContext().getTypeConverter().mandatoryConvertTo(Long.class,value);
+        message.getEntity().setSize(num);
+      }
+    }
+    if (header.equalsIgnoreCase(HeaderConstants.HEADER_CONTENT_TYPE)) {
+      if (value instanceof MediaType) {
+        message.getEntity().setMediaType((MediaType)value);
+      }
+ else {
+        String type=value.toString();
+        MediaType media=MediaType.valueOf(type);
+        if (media != null) {
+          message.getEntity().setMediaType(media);
+        }
+ else {
+          LOG.debug("Value {} cannot be converted as a MediaType. The value will be ignored.",value);
+        }
+      }
+    }
+  }
+}

@@ -32,12 +32,6 @@
   if (responseCode != null) {
     response.setStatus(Status.valueOf(responseCode));
   }
-  for (  Map.Entry<String,Object> entry : out.getHeaders().entrySet()) {
-    if (!headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue(),exchange)) {
-      response.getAttributes().put(entry.getKey(),entry.getValue());
-      LOG.debug("Populate Restlet response from exchange header: {} value: {}",entry.getKey(),entry.getValue());
-    }
-  }
   Object body=out.getBody();
   if (body instanceof WrappedFile) {
     GenericFile<?> gf=(GenericFile<?>)body;
@@ -63,5 +57,11 @@
   if (exchange.getProperty(Exchange.CHARSET_NAME) != null) {
     CharacterSet cs=CharacterSet.valueOf(exchange.getProperty(Exchange.CHARSET_NAME,String.class));
     response.getEntity().setCharacterSet(cs);
+  }
+  for (  Map.Entry<String,Object> entry : out.getHeaders().entrySet()) {
+    if (!headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue(),exchange)) {
+      setResponseHeader(exchange,response,entry.getKey(),entry.getValue());
+      LOG.debug("Populate Restlet HTTP header in response from exchange header: {} value: {}",entry.getKey(),entry.getValue());
+    }
   }
 }
