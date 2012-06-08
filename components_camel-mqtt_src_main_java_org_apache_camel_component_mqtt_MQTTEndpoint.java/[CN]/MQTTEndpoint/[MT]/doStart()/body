@@ -1,0 +1,70 @@
+{
+  super.doStart();
+  connection=configuration.callbackConnection();
+  connection.listener(new Listener(){
+    public void onConnected(){
+      LOG.info("MQTT Endpoint Connected to " + configuration.getHost());
+    }
+    public void onDisconnected(){
+      LOG.debug("MQTT Connection disconnected");
+    }
+    public void onPublish(    UTF8Buffer topic,    Buffer body,    Runnable ack){
+      if (!consumers.isEmpty()) {
+        Exchange exchange=createExchange();
+        exchange.getIn().setBody(body.getData());
+        exchange.setProperty(configuration.getMqttTopicPropertyName(),topic.toString());
+        for (        MQTTConsumer consumer : consumers) {
+          try {
+            consumer.processExchange(exchange);
+          }
+ catch (          Exception e) {
+            LOG.error("Failed to process exchange ",exchange);
+          }
+        }
+      }
+      if (ack != null) {
+        ack.run();
+      }
+    }
+    public void onFailure(    Throwable value){
+      connection.disconnect(new Callback<Void>(){
+        public void onSuccess(        Void value){
+        }
+        public void onFailure(        Throwable value){
+          LOG.debug("Failed to disconnect from " + configuration.getHost());
+        }
+      }
+);
+    }
+  }
+);
+  final Promise promise=new Promise();
+  connection.connect(new Callback<Void>(){
+    public void onSuccess(    Void value){
+      String subscribeTopicName=configuration.getSubscribeTopicName();
+      subscribeTopicName=subscribeTopicName != null ? subscribeTopicName.trim() : null;
+      if (subscribeTopicName != null && !subscribeTopicName.isEmpty()) {
+        Topic[] topics={new Topic(subscribeTopicName,configuration.getQoS())};
+        connection.subscribe(topics,new Callback<byte[]>(){
+          public void onSuccess(          byte[] value){
+            promise.onSuccess(value);
+          }
+          public void onFailure(          Throwable value){
+            promise.onFailure(value);
+            connection.disconnect(null);
+          }
+        }
+);
+      }
+ else {
+        promise.onSuccess(value);
+      }
+    }
+    public void onFailure(    Throwable value){
+      promise.onFailure(value);
+      connection.disconnect(null);
+    }
+  }
+);
+  promise.await(configuration.getConnectWaitInSeconds(),TimeUnit.SECONDS);
+}
