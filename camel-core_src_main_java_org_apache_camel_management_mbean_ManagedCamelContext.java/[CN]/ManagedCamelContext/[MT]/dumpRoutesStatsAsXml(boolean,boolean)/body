@@ -1,6 +1,8 @@
 {
   StringBuilder sb=new StringBuilder();
-  sb.append("<camelContextStat").append(String.format(" id=\"%s\"",getCamelId())).append(">\n");
+  sb.append("<camelContextStat").append(String.format(" id=\"%s\"",getCamelId()));
+  String stat=dumpStatsAsXml(fullStats);
+  sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
   MBeanServer server=getContext().getManagementStrategy().getManagementAgent().getMBeanServer();
   if (server != null) {
     ObjectName query=ObjectName.getInstance("org.apache.camel:context=*/" + getContext().getManagementName() + ",type=routes,*");
@@ -18,7 +20,7 @@
     for (    ObjectName on : routes) {
       ManagedRouteMBean route=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedRouteMBean.class,true);
       sb.append("    <routeStat").append(String.format(" id=\"%s\"",route.getRouteId()));
-      String stat=route.dumpStatsAsXml(fullStats);
+      stat=route.dumpStatsAsXml(fullStats);
       sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
       if (includeProcessors) {
         sb.append("      <processorStats>\n");

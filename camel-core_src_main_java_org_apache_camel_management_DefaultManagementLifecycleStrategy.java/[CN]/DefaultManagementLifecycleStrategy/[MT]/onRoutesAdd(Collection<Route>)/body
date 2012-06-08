@@ -14,9 +14,16 @@
     if (route instanceof EventDrivenConsumerRoute) {
       EventDrivenConsumerRoute edcr=(EventDrivenConsumerRoute)route;
       Processor processor=edcr.getProcessor();
-      if (processor instanceof InstrumentationProcessor) {
+      if (processor instanceof InstrumentationProcessor && mr instanceof ManagedRoute) {
         InstrumentationProcessor ip=(InstrumentationProcessor)processor;
-        ip.setCounter(mr);
+        ManagedRoute routeMBean=(ManagedRoute)mr;
+        if (camelContextMBean != null) {
+          CompositePerformanceCounter wrapper=new CompositePerformanceCounter(routeMBean,camelContextMBean);
+          ip.setCounter(wrapper);
+        }
+ else {
+          ip.setCounter(routeMBean);
+        }
       }
     }
     try {
