@@ -22,7 +22,12 @@
   byte[] bytes=context.getTypeConverter().convertTo(byte[].class,handler.getInputStream());
   assertNotNull("content should be there",bytes);
   assertTrue("logo should be more than 1000 bytes",bytes.length > 1000);
-  assertEquals("image/jpeg; name=logo.jpeg",handler.getContentType());
+  if (isJava16()) {
+    assertEquals("image/jpeg; name=logo.jpeg",handler.getContentType());
+  }
+ else {
+    assertEquals("application/octet-stream; name=logo.jpeg",handler.getContentType());
+  }
   template.sendBodyAndHeader("file://target",bytes,Exchange.FILE_NAME,"maillogo.jpg");
   producer.stop();
 }
