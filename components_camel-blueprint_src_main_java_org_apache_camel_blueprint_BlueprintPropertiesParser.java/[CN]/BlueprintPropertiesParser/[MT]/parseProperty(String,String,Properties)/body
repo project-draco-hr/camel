@@ -1,17 +1,21 @@
 {
   log.trace("Parsing property key: {} with value: {}",key,value);
-  if (key != null) {
+  String answer=null;
+  if (key != null && propertiesComponent.getOverrideProperties() != null) {
+    answer=(String)propertiesComponent.getOverrideProperties().get(key);
+  }
+  if (answer == null && key != null) {
     for (    AbstractPropertyPlaceholder placeholder : placeholders) {
-      value=(String)ObjectHelper.invokeMethod(method,placeholder,key);
-      if (value != null) {
-        log.debug("Blueprint parsed property key: {} as value: {}",key,value);
+      answer=(String)ObjectHelper.invokeMethod(method,placeholder,key);
+      if (answer != null) {
+        log.debug("Blueprint parsed property key: {} as value: {}",key,answer);
         break;
       }
     }
   }
-  if (value == null && delegate != null) {
-    value=delegate.parseProperty(key,value,properties);
+  if (answer == null && delegate != null) {
+    answer=delegate.parseProperty(key,value,properties);
   }
-  log.trace("Returning parsed property key: {} as value: {}",key,value);
-  return value;
+  log.trace("Returning parsed property key: {} as value: {}",key,answer);
+  return answer;
 }

@@ -2,8 +2,15 @@
   super.initPropertyPlaceholder();
   if (isUseBlueprintPropertyResolver()) {
     PropertiesComponent pc=getContext().getComponent("properties",PropertiesComponent.class);
-    BlueprintPropertiesParser parser=new BlueprintPropertiesParser(blueprintContainer,pc.getPropertiesParser());
+    BlueprintPropertiesParser parser=new BlueprintPropertiesParser(pc,blueprintContainer,pc.getPropertiesParser());
     BlueprintPropertiesResolver resolver=new BlueprintPropertiesResolver(pc.getPropertiesResolver(),parser);
+    ServiceReference ref=bundleContext.getServiceReference(PropertiesComponent.OVERRIDE_PROPERTIES);
+    if (ref != null) {
+      Properties extra=(Properties)bundleContext.getService(ref);
+      if (extra != null) {
+        pc.setOverrideProperties(extra);
+      }
+    }
     if (pc.getLocations() == null) {
       StringBuilder sb=new StringBuilder();
       String[] ids=parser.lookupPropertyPlaceholderIds();
