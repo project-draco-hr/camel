@@ -1,9 +1,10 @@
 {
-  String status=exchange.getIn().getBody(String.class);
-  if (status.length() > 160) {
-    LOG.warn("Message is longer than 160 characters. Message will be truncated!");
-    status=status.substring(0,160);
+  Object in=exchange.getIn().getBody();
+  if (in instanceof StatusUpdate) {
+    updateStatus((StatusUpdate)in);
   }
-  te.getTwitter().updateStatus(status);
-  LOG.debug("Updated status: {}",status);
+ else {
+    String s=exchange.getIn().getMandatoryBody(String.class);
+    updateStatus(s);
+  }
 }
