@@ -4,25 +4,5 @@
   connector.setHost(host);
   connector.setPort(port);
   server.addConnector(connector);
-  context.setContextPath("/");
-  SessionManager sm=new HashSessionManager();
-  SessionHandler sh=new SessionHandler(sm);
-  context.setSessionHandler(sh);
-  if (home != null) {
-    if (home.startsWith("classpath:")) {
-      home=ObjectHelper.after(home,"classpath:");
-      LOG.debug("Using base resource from classpath: {}",home);
-      context.setBaseResource(new JettyClassPathResource(getCamelContext().getClassResolver(),home));
-    }
- else {
-      LOG.debug("Using base resource: {}",home);
-      context.setResourceBase(home);
-    }
-    DefaultServlet defaultServlet=new DefaultServlet();
-    ServletHolder holder=new ServletHolder(defaultServlet);
-    holder.setInitParameter("useFileMappedBuffer","false");
-    context.addServlet(holder,"/");
-  }
-  server.setHandler(context);
-  return server;
+  return createStaticResourcesServer(server,context,home);
 }

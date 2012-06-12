@@ -1,0 +1,24 @@
+{
+  context.setContextPath("/");
+  SessionManager sm=new HashSessionManager();
+  SessionHandler sh=new SessionHandler(sm);
+  context.setSessionHandler(sh);
+  if (home != null) {
+    String[] resources=home.split(":");
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(">>> Protocol found: " + resources[0] + ", and resource: "+ resources[1]);
+    }
+    if (resources[0].equals("classpath")) {
+      context.setBaseResource(new JettyClassPathResource(getCamelContext().getClassResolver(),resources[1]));
+    }
+ else     if (resources[0].equals("file")) {
+      context.setBaseResource(Resource.newResource(resources[1]));
+    }
+    DefaultServlet defaultServlet=new DefaultServlet();
+    ServletHolder holder=new ServletHolder(defaultServlet);
+    holder.setInitParameter("useFileMappedBuffer","false");
+    context.addServlet(holder,"/");
+  }
+  server.setHandler(context);
+  return server;
+}

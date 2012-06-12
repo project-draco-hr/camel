@@ -1,6 +1,7 @@
 {
-  Boolean enableJmx=getAndRemoveParameter(parameters,"enableJmx",Boolean.class);
   SSLContextParameters sslContextParameters=resolveAndRemoveReferenceParameter(parameters,"sslContextParametersRef",SSLContextParameters.class);
+  Boolean enableJmx=getAndRemoveParameter(parameters,"enableJmx",Boolean.class);
+  String staticResources=getAndRemoveParameter(parameters,"staticResources",String.class);
   int port=extractPortNumber(remaining);
   String host=extractHostName(remaining);
   WebsocketEndpoint endpoint=new WebsocketEndpoint(this,uri,remaining,parameters);
@@ -11,7 +12,16 @@
     endpoint.setEnableJmx(isEnableJmx());
   }
   if (sslContextParameters == null) {
-    sslContextParameters=this.sslContextParameters;
+    sslContextParameters=getSslContextParameters();
+  }
+  if (sslContextParameters != null) {
+    endpoint.setSslContextParameters(sslContextParameters);
+  }
+  if (staticResources == null) {
+    staticResources=getStaticResources();
+  }
+  if (staticResources != null) {
+    endpoint.setStaticResources(staticResources);
   }
   endpoint.setSslContextParameters(sslContextParameters);
   endpoint.setPort(port);
