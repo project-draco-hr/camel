@@ -2,6 +2,11 @@
   List<HBaseRow> rowSet=new LinkedList<HBaseRow>();
   Scan scan=new Scan();
   if (filters != null && !filters.isEmpty()) {
+    for (    Filter filter : filters) {
+      if (ModelAwareFilter.class.isAssignableFrom(filter.getClass())) {
+        ((ModelAwareFilter)filter).apply(endpoint.getCamelContext(),model);
+      }
+    }
     scan.setFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,filters));
   }
   Set<HBaseCell> cellModels=model.getCells();
@@ -24,6 +29,8 @@
       String column=modelCell.getQualifier();
       resultRow.setId(endpoint.getCamelContext().getTypeConverter().convertTo(model.getRowType(),result.getRow()));
       resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(modelCell.getValueType(),result.getValue(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column))));
+      resultCell.setFamily(modelCell.getFamily());
+      resultCell.setQualifier(modelCell.getQualifier());
       resultRow.getCells().add(resultCell);
       rowSet.add(resultRow);
     }
