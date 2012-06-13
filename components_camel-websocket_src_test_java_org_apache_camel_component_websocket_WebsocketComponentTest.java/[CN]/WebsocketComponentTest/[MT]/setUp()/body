@@ -1,4 +1,13 @@
 {
   component=new WebsocketComponent();
-  setUpJettyServer();
+  component.setCamelContext(new DefaultCamelContext());
+  Connector connector=new SelectChannelConnector();
+  connector.setHost("localhost");
+  connector.setPort(1988);
+  server=component.createServer();
+  server.addConnector(connector);
+  WebsocketEndpoint endpoint=(WebsocketEndpoint)component.createEndpoint("websocket://x");
+  producer=(WebsocketProducer)endpoint.createProducer();
+  component.connect(producer);
+  when(consumer.getEndpoint()).thenReturn(endpoint);
 }
