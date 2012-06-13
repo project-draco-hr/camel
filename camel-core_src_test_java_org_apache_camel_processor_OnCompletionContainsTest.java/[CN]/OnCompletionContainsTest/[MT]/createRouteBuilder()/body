@@ -1,0 +1,32 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onCompletion().to("mock:sync");
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          SynchronizationAdapter adapter=new SimpleSynchronizationAdapter("mock:sync","A");
+          exchange.addOnCompletion(adapter);
+          if (!exchange.containsOnCompletion(adapter)) {
+            exchange.addOnCompletion(adapter);
+          }
+          adapter=new SimpleSynchronizationAdapter("mock:sync","B");
+          exchange.addOnCompletion(adapter);
+          if (exchange.containsOnCompletion(adapter)) {
+            exchange.addOnCompletion(adapter);
+          }
+          exchange.addOnCompletion(new SynchronizationAdapter(){
+            @Override public void onDone(            Exchange exchange){
+              template.sendBody("mock:sync","C");
+            }
+            @Override public String toString(){
+              return "C";
+            }
+          }
+);
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
