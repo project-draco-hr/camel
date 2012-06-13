@@ -1,9 +1,19 @@
 {
-  channelFuture.awaitUninterruptibly();
+  final CountDownLatch latch=new CountDownLatch(1);
+  channelFuture.addListener(new ChannelFutureListener(){
+    @Override public void operationComplete(    ChannelFuture channelFuture) throws Exception {
+      LOG.debug("Operation complete {}",channelFuture);
+      latch.countDown();
+    }
+  }
+);
+  LOG.trace("Waiting for operation to complete {}",channelFuture);
+  latch.await();
   if (!channelFuture.isSuccess()) {
+    channel=null;
     throw new CamelException("Cannot connect to " + configuration.getAddress(),channelFuture.getCause());
   }
-  Channel channel=channelFuture.getChannel();
+  channel=channelFuture.getChannel();
   ALL_CHANNELS.add(channel);
   LOG.debug("Creating connector to address: {}",configuration.getAddress());
   return channel;

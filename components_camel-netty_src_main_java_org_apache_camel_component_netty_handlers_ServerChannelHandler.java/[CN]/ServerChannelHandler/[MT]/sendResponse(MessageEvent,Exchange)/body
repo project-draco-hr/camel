@@ -29,28 +29,12 @@
       body=NettyHelper.getTextlineBody(body,exchange,consumer.getConfiguration().getDelimiter(),consumer.getConfiguration().isAutoAppendDelimiter());
     }
     LOG.debug("Writing body: {}",body);
+    ChannelFutureListener listener=new ResponseFutureListener(exchange,messageEvent.getRemoteAddress());
     if (consumer.getConfiguration().isTcp()) {
-      NettyHelper.writeBodySync(messageEvent.getChannel(),null,body,exchange);
+      NettyHelper.writeBodyAsync(messageEvent.getChannel(),null,body,exchange,listener);
     }
  else {
-      NettyHelper.writeBodySync(messageEvent.getChannel(),messageEvent.getRemoteAddress(),body,exchange);
+      NettyHelper.writeBodyAsync(messageEvent.getChannel(),messageEvent.getRemoteAddress(),body,exchange,listener);
     }
-  }
-  Boolean close;
-  if (ExchangeHelper.isOutCapable(exchange)) {
-    close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
-  }
- else {
-    close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
-  }
-  boolean disconnect=consumer.getConfiguration().isDisconnect();
-  if (close != null) {
-    disconnect=close;
-  }
-  if (disconnect) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Closing channel when complete at address: {}",messageEvent.getRemoteAddress());
-    }
-    NettyHelper.close(messageEvent.getChannel());
   }
 }
