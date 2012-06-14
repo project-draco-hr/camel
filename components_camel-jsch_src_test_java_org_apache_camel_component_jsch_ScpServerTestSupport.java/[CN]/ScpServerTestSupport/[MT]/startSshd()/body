@@ -2,10 +2,17 @@
   sshd=SshServer.setUpDefaultServer();
   sshd.setPort(getPort());
   sshd.setKeyPairProvider(new FileKeyPairProvider(new String[]{"src/test/resources/hostkey.pem"}));
+  sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new SftpSubsystem.Factory()));
   sshd.setCommandFactory(new ScpCommandFactory());
   sshd.setPasswordAuthenticator(new PasswordAuthenticator(){
     @Override public boolean authenticate(    String username,    String password,    ServerSession session){
       return username != null && username.equals(password);
+    }
+  }
+);
+  sshd.setPublickeyAuthenticator(new PublickeyAuthenticator(){
+    @Override public boolean authenticate(    String username,    PublicKey key,    ServerSession session){
+      return true;
     }
   }
 );
