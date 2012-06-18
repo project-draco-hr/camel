@@ -10,13 +10,17 @@
       throw new IOException(e);
     }
   }
-  InputStream is=null;
+  InputStream is;
   if (checkChunked(message,exchange)) {
     is=message.getBody(InputStream.class);
+  }
+ else {
+    is=exchange.getContext().getTypeConverter().tryConvertTo(InputStream.class,message.getBody());
   }
   if (is != null) {
     ServletOutputStream os=response.getOutputStream();
     try {
+      LOG.trace("Writing direct response from source input stream to servlet output stream");
       IOHelper.copy(is,os);
     }
   finally {
@@ -26,9 +30,17 @@
  else {
     String data=message.getBody(String.class);
     if (data != null) {
-      response.setContentLength(data.length());
-      response.getWriter().print(data);
-      response.getWriter().flush();
+      LOG.debug("Cannot write from source input stream, falling back to using String content. For binary content this can be a problem.");
+      String charset=IOHelper.getCharsetName(exchange,true);
+      final int dataByteLength=data.getBytes(charset).length;
+      response.setCharacterEncoding(charset);
+      response.setContentLength(dataByteLength);
+      try {
+        response.getWriter().print(data);
+      }
+  finally {
+        response.getWriter().flush();
+      }
     }
   }
 }
