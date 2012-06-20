@@ -1,5 +1,5 @@
 {
-  LOG.debug("Creating KeyStore instance from KeyStoreParameters: {}",this);
+  LOG.trace("Creating KeyStore instance from KeyStoreParameters [{}].",this);
   String ksType=this.parsePropertyValue(this.type);
   if (ksType == null) {
     ksType=KeyStore.getDefaultType();
@@ -21,6 +21,14 @@
  else {
     InputStream is=this.resolveResource(this.parsePropertyValue(this.resource));
     ks.load(is,ksPassword);
+  }
+  if (LOG.isDebugEnabled()) {
+    List<String> aliases=new LinkedList<String>();
+    Enumeration<String> aliasEnum=ks.aliases();
+    while (aliasEnum.hasMoreElements()) {
+      aliases.add(aliasEnum.nextElement());
+    }
+    LOG.debug("KeyStore [{}], initialized from [{}], is using provider [{}], has type [{}], and contains aliases {}.",new Object[]{ks,this,ks.getProvider(),ks.getType(),aliases});
   }
   return ks;
 }
