@@ -21,10 +21,14 @@
   Configurer<SSLEngine> sslEngineConfigurer=new Configurer<SSLEngine>(){
     @Override public SSLEngine configure(    SSLEngine engine){
       Collection<String> filteredCipherSuites=BaseSSLContextParameters.this.filter(enabledCipherSuites,Arrays.asList(engine.getSSLParameters().getCipherSuites()),Arrays.asList(engine.getEnabledCipherSuites()),enabledCipherSuitePatterns,defaultEnabledCipherSuitePatterns,!allowPassthrough);
-      LOG.debug("Configuring SSLEngine [{}] with " + "\r\n\t explicitly set cipher suites [{}]," + "\r\n\t cipher suite patterns [{}],"+ "\r\n\t available cipher suites [{}],"+ "\r\n\t currently enabled cipher suites [{}],"+ "\r\n\t and default cipher suite patterns [{}]."+ "\r\n\t Resulting enabled cipher suites are [{}].",new Object[]{engine,enabledCipherSuites,enabledCipherSuitePatterns,engine.getSSLParameters().getCipherSuites(),engine.getEnabledCipherSuites(),defaultEnabledCipherSuitePatterns,filteredCipherSuites});
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(SSL_ENGINE_CIPHER_SUITE_LOG_MSG,new Object[]{engine,enabledCipherSuites,enabledCipherSuitePatterns,engine.getSSLParameters().getCipherSuites(),engine.getEnabledCipherSuites(),defaultEnabledCipherSuitePatterns,filteredCipherSuites});
+      }
       engine.setEnabledCipherSuites(filteredCipherSuites.toArray(new String[filteredCipherSuites.size()]));
       Collection<String> filteredSecureSocketProtocols=BaseSSLContextParameters.this.filter(enabledSecureSocketProtocols,Arrays.asList(engine.getSSLParameters().getProtocols()),Arrays.asList(engine.getEnabledProtocols()),enabledSecureSocketProtocolsPatterns,defaultEnabledSecureSocketProtocolsPatterns,!allowPassthrough);
-      LOG.debug("Configuring SSLEngine [{}] with " + "\r\n\t explicitly set protocols [{}]," + "\r\n\t protocol patterns [{}],"+ "\r\n\t available protocols [{}],"+ "\r\n\t currently enabled protocols [{}],"+ "\r\n\t and default protocol patterns [{}]."+ "\r\n\t Resulting enabled protocols are [{}].",new Object[]{engine,enabledSecureSocketProtocols,enabledSecureSocketProtocolsPatterns,engine.getSSLParameters().getProtocols(),engine.getEnabledProtocols(),defaultEnabledSecureSocketProtocolsPatterns,filteredSecureSocketProtocols});
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(SSL_ENGINE_PROTOCOL_LOG_MSG,new Object[]{engine,enabledSecureSocketProtocols,enabledSecureSocketProtocolsPatterns,engine.getSSLParameters().getProtocols(),engine.getEnabledProtocols(),defaultEnabledSecureSocketProtocolsPatterns,filteredSecureSocketProtocols});
+      }
       engine.setEnabledProtocols(filteredSecureSocketProtocols.toArray(new String[filteredSecureSocketProtocols.size()]));
       return engine;
     }
