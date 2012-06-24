@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      pool=new ThreadPoolBuilder(context).poolSize(1).buildScheduled(this,"MySharedPool");
+      registry.put("myPool",pool);
+      from("file:target/a?scheduledExecutorService=#myPool").routeId("a").to("direct:shared");
+      from("file:target/b?scheduledExecutorService=#myPool").routeId("b").to("direct:shared");
+      from("direct:shared").routeId("shared").convertBodyTo(String.class).log("Get ${file:name} using ${threadName}").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          exchange.getIn().setHeader("threadName",Thread.currentThread().getName());
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
