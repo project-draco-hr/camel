@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("bean:retryBean").useOriginalMessage());
+      from("seda:start","seda:retry").to("log:start","mock:start").transform(body().prepend("Hello ")).process(new Processor(){
+        private int counter;
+        @Override public void process(        Exchange exchange) throws Exception {
+          if (counter++ <= 3) {
+            throw new IllegalArgumentException("Damn");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
