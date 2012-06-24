@@ -16,6 +16,12 @@
     queueSize=CamelContextHelper.parseInteger(getCamelContext(),maxQueueSize);
   }
   ThreadPoolProfile profile=new ThreadPoolProfileBuilder(getId()).poolSize(size).maxPoolSize(max).keepAliveTime(keepAlive,timeUnit).maxQueueSize(queueSize).rejectedPolicy(rejectedPolicy).build();
-  ExecutorService answer=getCamelContext().getExecutorServiceManager().newThreadPool(getId(),getThreadName(),profile);
+  ExecutorService answer;
+  if (scheduled != null && scheduled) {
+    answer=getCamelContext().getExecutorServiceManager().newScheduledThreadPool(getId(),getThreadName(),profile);
+  }
+ else {
+    answer=getCamelContext().getExecutorServiceManager().newThreadPool(getId(),getThreadName(),profile);
+  }
   return answer;
 }
