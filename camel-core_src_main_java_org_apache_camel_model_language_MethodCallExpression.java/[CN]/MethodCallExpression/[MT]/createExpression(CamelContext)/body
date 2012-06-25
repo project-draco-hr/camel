@@ -8,24 +8,26 @@
       throw ObjectHelper.wrapRuntimeCamelException(e);
     }
   }
+  BeanHolder holder;
   if (beanType != null) {
     if (ObjectHelper.hasDefaultPublicNoArgConstructor(beanType)) {
       instance=camelContext.getInjector().newInstance(beanType);
-      answer=new BeanExpression(instance,getMethod());
+      holder=new ConstantBeanHolder(instance,camelContext);
     }
  else {
-      answer=new BeanExpression(beanType,getMethod());
+      holder=new ConstantTypeBeanHolder(beanType,camelContext);
     }
   }
  else   if (instance != null) {
-    answer=new BeanExpression(instance,getMethod());
+    holder=new ConstantBeanHolder(instance,camelContext);
   }
  else {
     String ref=beanName();
-    BeanHolder holder=new RegistryBean(camelContext,ref);
-    instance=holder.getBean();
-    answer=new BeanExpression(instance,getMethod());
+    BeanHolder regHolder=new RegistryBean(camelContext,ref);
+    instance=regHolder.getBean();
+    holder=new ConstantBeanHolder(instance,camelContext);
   }
+  answer=new BeanExpression(holder,getMethod());
   validateHasMethod(camelContext,instance,beanType,getMethod());
   return answer;
 }

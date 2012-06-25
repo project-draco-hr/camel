@@ -1,23 +1,13 @@
 {
-  BeanHolder holder;
-  if (bean != null) {
-    holder=new ConstantBeanHolder(bean,exchange.getContext());
-  }
- else   if (beanName != null) {
-    holder=new RegistryBean(exchange.getContext(),beanName);
-  }
- else   if (type != null) {
-    holder=new ConstantTypeBeanHolder(type,exchange.getContext());
-  }
- else {
-    throw new IllegalArgumentException("Either bean, beanName or type should be set on " + this);
+  if (beanHolder == null) {
+    beanHolder=createBeanHolder(exchange.getContext());
   }
   if (OgnlHelper.isInvalidValidOgnlExpression(method)) {
     ExpressionIllegalSyntaxException cause=new ExpressionIllegalSyntaxException(method);
     throw new RuntimeBeanExpressionException(exchange,beanName,method,cause);
   }
   if (OgnlHelper.isValidOgnlExpression(method)) {
-    OgnlInvokeProcessor ognl=new OgnlInvokeProcessor(holder,method);
+    OgnlInvokeProcessor ognl=new OgnlInvokeProcessor(beanHolder,method);
     try {
       ognl.process(exchange);
       return ognl.getResult();
@@ -27,7 +17,7 @@
     }
   }
  else {
-    InvokeProcessor invoke=new InvokeProcessor(holder,method);
+    InvokeProcessor invoke=new InvokeProcessor(beanHolder,method);
     try {
       invoke.process(exchange);
       return invoke.getResult();
