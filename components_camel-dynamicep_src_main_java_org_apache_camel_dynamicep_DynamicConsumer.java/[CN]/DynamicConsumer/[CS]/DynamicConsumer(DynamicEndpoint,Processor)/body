@@ -1,0 +1,17 @@
+{
+  super(endpoint,processor);
+  consumers=new HashSet<Consumer>();
+  String uris=endpoint.getEndpointUri().substring("dynamicep://".length());
+  String[] uriAr=uris.split(",|%2C");
+  for (  String epUri : uriAr) {
+    try {
+      epUri=URLDecoder.decode(epUri,"UTF-8");
+      Endpoint ep=this.getEndpoint().getCamelContext().getEndpoint(epUri);
+      Consumer consumer=ep.createConsumer(getProcessor());
+      consumers.add(consumer);
+    }
+ catch (    Exception e) {
+      throw new RuntimeException("Error initializing endpoint dynamic endpoint from " + uris + " at "+ epUri,e);
+    }
+  }
+}
