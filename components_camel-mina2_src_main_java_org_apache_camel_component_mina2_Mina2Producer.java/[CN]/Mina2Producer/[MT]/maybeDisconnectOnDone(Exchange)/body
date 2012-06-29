@@ -1,0 +1,20 @@
+{
+  if (session == null) {
+    return;
+  }
+  Boolean close;
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    close=exchange.getOut().getHeader(Mina2Constants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+  }
+ else {
+    close=exchange.getIn().getHeader(Mina2Constants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
+  }
+  boolean disconnect=getEndpoint().getConfiguration().isDisconnect();
+  if (close != null) {
+    disconnect=close;
+  }
+  if (disconnect) {
+    LOG.debug("Closing session when complete at address: {}",address);
+    session.close(true);
+  }
+}
