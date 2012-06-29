@@ -1,71 +1,8 @@
 {
-  if (session == null && !lazySessionCreation) {
-    throw new IllegalStateException("Not started yet!");
+  try {
+    doProcess(exchange);
   }
-  if (session == null || !session.isConnected()) {
-    openConnection();
-  }
-  if (getEndpoint().getConfiguration().getCharsetName() != null) {
-    exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.normalizeCharset(getEndpoint().getConfiguration().getCharsetName()));
-  }
-  Object body=MinaPayloadHelper.getIn(getEndpoint(),exchange);
-  if (body == null) {
-    noReplyLogger.log("No payload to send for exchange: " + exchange);
-    return;
-  }
-  if (getEndpoint().getConfiguration().isTextline()) {
-    body=getEndpoint().getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,exchange,body);
-  }
-  if (sync) {
-    latch=new CountDownLatch(1);
-    ResponseHandler handler=(ResponseHandler)session.getHandler();
-    handler.reset();
-  }
-  if (LOG.isDebugEnabled()) {
-    Object out=body;
-    if (body instanceof byte[]) {
-      out=exchange.getContext().getTypeConverter().convertTo(String.class,body);
-    }
-    LOG.debug("Writing body : {}",out);
-  }
-  MinaHelper.writeBody(session,body,exchange);
-  if (sync) {
-    LOG.debug("Waiting for response using timeout {} millis.",timeout);
-    boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
-    if (!done) {
-      throw new ExchangeTimedOutException(exchange,timeout);
-    }
-    ResponseHandler handler=(ResponseHandler)session.getHandler();
-    if (handler.getCause() != null) {
-      throw new CamelExchangeException("Error occurred in ResponseHandler",exchange,handler.getCause());
-    }
- else     if (!handler.isMessageReceived()) {
-      throw new CamelExchangeException("No response received from remote server: " + getEndpoint().getEndpointUri(),exchange);
-    }
- else {
-      if (ExchangeHelper.isOutCapable(exchange)) {
-        MinaPayloadHelper.setOut(exchange,handler.getMessage());
-      }
- else {
-        MinaPayloadHelper.setIn(exchange,handler.getMessage());
-      }
-    }
-  }
-  Boolean close;
-  if (ExchangeHelper.isOutCapable(exchange)) {
-    close=exchange.getOut().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
-  }
- else {
-    close=exchange.getIn().getHeader(MinaConstants.MINA_CLOSE_SESSION_WHEN_COMPLETE,Boolean.class);
-  }
-  boolean disconnect=getEndpoint().getConfiguration().isDisconnect();
-  if (close != null) {
-    disconnect=close;
-  }
-  if (disconnect) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Closing session when complete at address: {}",getEndpoint().getAddress());
-    }
-    session.close();
+  finally {
+    maybeDisconnectOnDone(exchange);
   }
 }
