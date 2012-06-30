@@ -1,6 +1,6 @@
 {
   producer=delegate.createProducer();
-  return new Producer(){
+  return new DefaultAsyncProducer(delegate){
     public Endpoint getEndpoint(){
       return producer.getEndpoint();
     }
@@ -13,7 +13,7 @@
     public Exchange createExchange(    Exchange exchange){
       return producer.createExchange(exchange);
     }
-    public void process(    Exchange exchange) throws Exception {
+    @Override public boolean process(    Exchange exchange,    AsyncCallback callback){
       if (LOG.isDebugEnabled()) {
         LOG.debug("Sending to endpoint: {} is intercepted and detoured to: {} for exchange: {}",new Object[]{getEndpoint(),detour,exchange});
       }
@@ -23,9 +23,12 @@
       }
  catch (      Exception e) {
         exchange.setException(e);
+        callback.done(true);
+        return true;
       }
       if (!continueProcessing(exchange,"skip sending to original intended destination: " + getEndpoint(),LOG)) {
-        return;
+        callback.done(true);
+        return true;
       }
       boolean shouldSkip=skip;
       Boolean whenMatches=(Boolean)exchange.removeProperty(Exchange.INTERCEPT_SEND_TO_ENDPOINT_WHEN_MATCHED);
@@ -37,10 +40,15 @@
           exchange.setIn(exchange.getOut());
           exchange.setOut(null);
         }
-        producer.process(exchange);
+        AsyncProcessor async=AsyncProcessorConverterHelper.convert(producer);
+        return AsyncProcessorHelper.process(async,exchange,callback);
       }
  else {
-        LOG.debug("Stop() means skip sending exchange to original intended destination: {} for exchange: {}",getEndpoint(),exchange);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Stop() means skip sending exchange to original intended destination: {} for exchange: {}",getEndpoint(),exchange);
+        }
+        callback.done(true);
+        return true;
       }
     }
     public boolean isSingleton(){
