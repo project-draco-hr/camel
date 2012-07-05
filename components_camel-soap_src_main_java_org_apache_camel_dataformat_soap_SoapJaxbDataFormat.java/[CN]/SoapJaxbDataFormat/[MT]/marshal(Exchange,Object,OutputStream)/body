@@ -8,32 +8,6 @@
       soapAction=webMethod.action();
     }
   }
-  Body body=new Body();
-  Header header=new Header();
-  Throwable exception=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
-  if (exception == null) {
-    exception=exchange.getIn().getHeader(Exchange.EXCEPTION_CAUGHT,Throwable.class);
-  }
-  final List<JAXBElement<?>> bodyContent;
-  List<JAXBElement<?>> headerContent=new ArrayList<JAXBElement<?>>();
-  if (exception != null) {
-    bodyContent=new ArrayList<JAXBElement<?>>();
-    bodyContent.add(createFaultFromException(exception));
-  }
- else {
-    bodyContent=createContentFromObject(inputObject,soapAction,headerContent);
-  }
-  for (  JAXBElement<?> elem : bodyContent) {
-    body.getAny().add(elem);
-  }
-  for (  JAXBElement<?> elem : headerContent) {
-    header.getAny().add(elem);
-  }
-  Envelope envelope=new Envelope();
-  if (headerContent.size() > 0) {
-    envelope.setHeader(header);
-  }
-  envelope.setBody(body);
-  JAXBElement<Envelope> envelopeEl=new ObjectFactory().createEnvelope(envelope);
-  super.marshal(exchange,envelopeEl,stream);
+  Object envelope=adapter.doMarshal(exchange,inputObject,stream,soapAction);
+  super.marshal(exchange,envelope,stream);
 }

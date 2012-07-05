@@ -1,0 +1,28 @@
+{
+  WebFault webFault=exception.getClass().getAnnotation(WebFault.class);
+  if (webFault == null || webFault.targetNamespace() == null) {
+    throw new RuntimeException("The exception " + exception.getClass().getName() + " needs to have an WebFault annotation with name and targetNamespace",exception);
+  }
+  QName name=new QName(webFault.targetNamespace(),webFault.name());
+  Object faultObject;
+  try {
+    Method method=exception.getClass().getMethod("getFaultInfo");
+    faultObject=method.invoke(exception);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException("Exception while trying to get fault details",e);
+  }
+  Fault fault=new Fault();
+  Faultcode code=new Faultcode();
+  code.setValue(FAULT_CODE_SERVER);
+  fault.setCode(code);
+  Reasontext text=new Reasontext();
+  text.setValue(exception.getMessage());
+  text.setLang("en");
+  fault.setReason(new Faultreason().withText(text));
+  Detail detailEl=new ObjectFactory().createDetail();
+  @SuppressWarnings("rawtypes") JAXBElement<?> faultDetailContent=new JAXBElement(name,faultObject.getClass(),faultObject);
+  detailEl.getAny().add(faultDetailContent);
+  fault.setDetail(detailEl);
+  return new ObjectFactory().createFault(fault);
+}

@@ -11,39 +11,5 @@
   }
   Object unmarshalledObject=super.unmarshal(exchange,stream);
   Object rootObject=JAXBIntrospector.getValue(unmarshalledObject);
-  if (rootObject.getClass() != Envelope.class) {
-    throw new RuntimeCamelException("Expected Soap Envelope but got " + rootObject.getClass());
-  }
-  Envelope envelope=(Envelope)rootObject;
-  Header header=envelope.getHeader();
-  if (header != null) {
-    List<Object> returnHeaders;
-    List<Object> anyHeaderElements=envelope.getHeader().getAny();
-    if (null != anyHeaderElements && !(isIgnoreUnmarshalledHeaders())) {
-      if (isIgnoreJAXBElement()) {
-        returnHeaders=new ArrayList<Object>();
-        for (        Object headerEl : anyHeaderElements) {
-          returnHeaders.add(JAXBIntrospector.getValue(headerEl));
-        }
-      }
- else {
-        returnHeaders=anyHeaderElements;
-      }
-      exchange.getOut().setHeader(SoapJaxbDataFormat.SOAP_UNMARSHALLED_HEADER_LIST,returnHeaders);
-    }
-  }
-  List<Object> anyElement=envelope.getBody().getAny();
-  if (anyElement.size() == 0) {
-    return null;
-  }
-  Object payloadEl=anyElement.get(0);
-  Object payload=JAXBIntrospector.getValue(payloadEl);
-  if (payload instanceof Fault) {
-    Exception exception=createExceptionFromFault((Fault)payload);
-    exchange.setException(exception);
-    return null;
-  }
- else {
-    return isIgnoreJAXBElement() ? payload : payloadEl;
-  }
+  return adapter.doUnmarshal(exchange,stream,rootObject);
 }
