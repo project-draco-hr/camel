@@ -23,10 +23,16 @@
     type=getJMSMessageTypeForBody(exchange,body,headers,session,context);
   }
   if (type != null) {
+    if (body == null && (endpoint != null && !endpoint.getConfiguration().isAllowNullBody())) {
+      throw new JMSException("Cannot send message as message body is null, and option allowNullBody is false.");
+    }
     LOG.trace("Using JmsMessageType: {}",type);
     Message answer=createJmsMessageForType(exchange,body,headers,session,context,type);
     answer.setJMSDeliveryMode(Message.DEFAULT_DELIVERY_MODE);
     return answer;
+  }
+  if (body == null && (endpoint != null && !endpoint.getConfiguration().isAllowNullBody())) {
+    throw new JMSException("Cannot send message as message body is null, and option allowNullBody is false.");
   }
   if (body != null && LOG.isWarnEnabled()) {
     LOG.warn("Cannot determine specific JmsMessage type to use from body class." + " Will use generic JmsMessage." + " Body class: " + ObjectHelper.classCanonicalName(body) + ". If you want to send a POJO then your class might need to implement java.io.Serializable"+ ", or you can force a specific type by setting the jmsMessageType option on the JMS endpoint.");
