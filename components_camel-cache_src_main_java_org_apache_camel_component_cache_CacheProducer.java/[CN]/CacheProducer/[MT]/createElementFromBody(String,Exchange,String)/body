@@ -1,0 +1,27 @@
+{
+  Element element;
+  Object body=exchange.getIn().getBody();
+  if (body == null) {
+    throw new CacheException("Body cannot be null for operation " + cacheOperation);
+  }
+ else   if (body instanceof Serializable) {
+    element=new Element(key,body);
+  }
+ else {
+    InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,body);
+    element=new Element(key,exchange.getContext().getTypeConverter().mandatoryConvertTo(byte[].class,is));
+  }
+  final Integer ttl=exchange.getIn().getHeader(CacheConstants.CACHE_ELEMENT_EXPIRY_TTL,Integer.class);
+  if (ttl != null) {
+    element.setTimeToLive(ttl);
+  }
+  final Integer idle=exchange.getIn().getHeader(CacheConstants.CACHE_ELEMENT_EXPIRY_IDLE,Integer.class);
+  if (idle != null) {
+    element.setTimeToIdle(idle);
+  }
+  final Boolean flag=exchange.getIn().getHeader(CacheConstants.CACHE_ELEMENT_EXPIRY_ETERNAL,Boolean.class);
+  if (flag != null) {
+    element.setEternal(flag);
+  }
+  return element;
+}
