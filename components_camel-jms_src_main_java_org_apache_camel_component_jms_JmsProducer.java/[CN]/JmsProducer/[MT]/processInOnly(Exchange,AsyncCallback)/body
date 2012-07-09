@@ -41,10 +41,15 @@
         jmsReplyTo=null;
       }
       if (jmsReplyTo != null && jmsReplyTo instanceof String) {
-        String replyTo=normalizeDestinationName((String)jmsReplyTo);
+        String before=(String)jmsReplyTo;
+        String replyTo=normalizeDestinationName(before);
         jmsReplyTo=null;
+        LOG.trace("Normalized JMSReplyTo destination name {} -> {}",before,replyTo);
         if (endpoint.getDestinationResolver() != null) {
           jmsReplyTo=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,endpoint.isPubSubDomain());
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Resolved JMSReplyTo destination {} using DestinationResolver {} as PubSubDomain {} -> ",new Object[]{replyTo,endpoint.getDestinationResolver(),endpoint.isPubSubDomain(),jmsReplyTo});
+          }
         }
         if (jmsReplyTo == null) {
           if (endpoint.isPubSubDomain()) {
@@ -66,8 +71,10 @@
         JmsMessageHelper.setJMSReplyTo(answer,replyTo);
       }
  else {
+        log.trace("Not using JMSReplyTo");
         JmsMessageHelper.setJMSReplyTo(answer,null);
       }
+      LOG.trace("Created javax.jms.Message: {}",answer);
       return answer;
     }
   }

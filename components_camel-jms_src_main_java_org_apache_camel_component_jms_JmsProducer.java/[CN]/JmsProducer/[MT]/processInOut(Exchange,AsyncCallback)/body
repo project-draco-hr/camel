@@ -27,16 +27,19 @@
   }
   MessageCreator messageCreator=new MessageCreator(){
     public Message createMessage(    Session session) throws JMSException {
-      Message message=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
+      Message answer=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
       Destination replyTo=replyManager.getReplyTo();
       if (replyTo == null) {
         throw new RuntimeExchangeException("Failed to resolve replyTo destination",exchange);
       }
-      JmsMessageHelper.setJMSReplyTo(message,replyTo);
-      replyManager.setReplyToSelectorHeader(in,message);
-      String correlationId=determineCorrelationId(message,provisionalCorrelationId);
+      LOG.debug("Using JMSReplyTo destination: {}",replyTo);
+      JmsMessageHelper.setJMSReplyTo(answer,replyTo);
+      replyManager.setReplyToSelectorHeader(in,answer);
+      String correlationId=determineCorrelationId(answer,provisionalCorrelationId);
       replyManager.registerReply(replyManager,exchange,callback,originalCorrelationId,correlationId,endpoint.getRequestTimeout());
-      return message;
+      LOG.debug("Using JMSCorrelationID: {}",correlationId);
+      LOG.trace("Created javax.jms.Message: {}",answer);
+      return answer;
     }
   }
 ;
