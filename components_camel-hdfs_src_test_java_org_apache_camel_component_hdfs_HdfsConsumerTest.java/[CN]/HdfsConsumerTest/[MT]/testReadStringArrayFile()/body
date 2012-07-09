@@ -15,6 +15,8 @@
   valueWritable.set(value);
   writer.append(valueWritable);
   writer.close();
+  MockEndpoint resultEndpoint=context.getEndpoint("mock:result",MockEndpoint.class);
+  resultEndpoint.expectedMessageCount(1);
   context.addRoutes(new RouteBuilder(){
     public void configure(){
       from("hdfs:///" + file.getParent().toUri() + "?fileSystemType=LOCAL&fileType=ARRAY_FILE&initialDelay=0").to("mock:result");
@@ -22,7 +24,5 @@
   }
 );
   context.start();
-  MockEndpoint resultEndpoint=context.getEndpoint("mock:result",MockEndpoint.class);
-  resultEndpoint.expectedMessageCount(1);
   resultEndpoint.assertIsSatisfied();
 }

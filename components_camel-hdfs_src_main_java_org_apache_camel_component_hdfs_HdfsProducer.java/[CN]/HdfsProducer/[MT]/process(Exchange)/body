@@ -1,13 +1,18 @@
 {
   Object body=exchange.getIn().getBody();
   Object key=exchange.getIn().getHeader(HdfsHeader.KEY.name());
+  if (ostream == null) {
+    ostream=setupHdfs(false);
+  }
   boolean split=false;
   List<SplitStrategy> strategies=config.getSplitStrategies();
   for (  SplitStrategy splitStrategy : strategies) {
     split|=splitStrategy.getType().split(ostream,splitStrategy.value,this);
   }
   if (split) {
-    ostream.close();
+    if (ostream != null) {
+      IOHelper.close(ostream,"output stream",log);
+    }
     StringBuilder actualPath=newFileName();
     ostream=HdfsOutputStream.createOutputStream(actualPath.toString(),config);
   }
