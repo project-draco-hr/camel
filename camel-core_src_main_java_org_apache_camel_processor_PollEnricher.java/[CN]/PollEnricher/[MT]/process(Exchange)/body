@@ -1,62 +1,41 @@
 {
   preCheckPoll(exchange);
-  if (pollMultiple != null && pollMultiple) {
-    List<Exchange> exchangeList=new ArrayList<Exchange>();
-    Exchange receivedExchange;
-    while (true) {
-      if (timeout == 0) {
-        LOG.debug("Polling Consumer receiveNoWait: {}",consumer);
-        receivedExchange=consumer.receiveNoWait();
-      }
- else {
-        LOG.debug("Polling Consumer receive with timeout: {} ms. {}",timeout,consumer);
-        receivedExchange=consumer.receive(timeout);
-      }
-      if (receivedExchange == null) {
-        break;
-      }
-      exchangeList.add(receivedExchange);
-    }
-    exchange.getIn().setBody(exchangeList);
+  Exchange resourceExchange;
+  if (timeout < 0) {
+    LOG.debug("Consumer receive: {}",consumer);
+    resourceExchange=consumer.receive();
+  }
+ else   if (timeout == 0) {
+    LOG.debug("Consumer receiveNoWait: {}",consumer);
+    resourceExchange=consumer.receiveNoWait();
   }
  else {
-    Exchange resourceExchange;
-    if (timeout < 0) {
-      LOG.debug("Consumer receive: {}",consumer);
-      resourceExchange=consumer.receive();
-    }
- else     if (timeout == 0) {
-      LOG.debug("Consumer receiveNoWait: {}",consumer);
-      resourceExchange=consumer.receiveNoWait();
-    }
+    LOG.debug("Consumer receive with timeout: {} ms. {}",timeout,consumer);
+    resourceExchange=consumer.receive(timeout);
+  }
+  if (resourceExchange == null) {
+    LOG.debug("Consumer received no exchange");
+  }
  else {
-      LOG.debug("Consumer receive with timeout: {} ms. {}",timeout,consumer);
-      resourceExchange=consumer.receive(timeout);
-    }
-    if (resourceExchange == null) {
-      LOG.debug("Consumer received no exchange");
-    }
+    LOG.debug("Consumer received: {}",resourceExchange);
+  }
+  if (resourceExchange != null && resourceExchange.isFailed()) {
+    copyResultsPreservePattern(exchange,resourceExchange);
+  }
  else {
-      LOG.debug("Consumer received: {}",resourceExchange);
+    prepareResult(exchange);
+    ExchangeHelper.prepareAggregation(exchange,resourceExchange);
+    Exchange aggregatedExchange;
+    try {
+      aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
     }
-    if (resourceExchange != null && resourceExchange.isFailed()) {
-      copyResultsPreservePattern(exchange,resourceExchange);
+ catch (    Throwable e) {
+      throw new CamelExchangeException("Error occurred during aggregation",exchange,e);
     }
- else {
-      prepareResult(exchange);
-      ExchangeHelper.prepareAggregation(exchange,resourceExchange);
-      Exchange aggregatedExchange;
-      try {
-        aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
-      }
- catch (      Throwable e) {
-        throw new CamelExchangeException("Error occurred during aggregation",exchange,e);
-      }
-      if (aggregatedExchange != null) {
-        copyResultsPreservePattern(exchange,aggregatedExchange);
-        if (resourceExchange != null) {
-          resourceExchange.handoverCompletions(exchange);
-        }
+    if (aggregatedExchange != null) {
+      copyResultsPreservePattern(exchange,aggregatedExchange);
+      if (resourceExchange != null) {
+        resourceExchange.handoverCompletions(exchange);
       }
     }
   }
