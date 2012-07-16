@@ -29,6 +29,13 @@
     return (T)Void.TYPE;
   }
   if (CxfPayload.class.isAssignableFrom(value.getClass())) {
+    CxfPayload<?> payload=(CxfPayload<?>)value;
+    if (payload.getBodySources().size() == 1) {
+      TypeConverter tc=registry.lookup(type,Source.class);
+      if (tc != null) {
+        return tc.convertTo(type,payload.getBodySources().get(0));
+      }
+    }
     TypeConverter tc=registry.lookup(type,NodeList.class);
     if (tc != null) {
       return tc.convertTo(type,cxfPayloadToNodeList((CxfPayload<?>)value,exchange));
