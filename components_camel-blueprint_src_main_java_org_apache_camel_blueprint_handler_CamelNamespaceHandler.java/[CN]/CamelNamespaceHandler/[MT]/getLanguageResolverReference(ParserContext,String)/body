@@ -1,0 +1,29 @@
+{
+  ComponentDefinitionRegistry componentDefinitionRegistry=context.getComponentDefinitionRegistry();
+  ComponentMetadata cm=componentDefinitionRegistry.getComponentDefinition(".camelBlueprint.languageResolver." + language);
+  if (cm == null) {
+    MutableReferenceMetadata svc=context.createMetadata(MutableReferenceMetadata.class);
+    svc.setId(".camelBlueprint.languageResolver." + language);
+    svc.setFilter("(language=" + language + ")");
+    svc.setAvailability(componentDefinitionRegistry.containsComponentDefinition(language) ? AVAILABILITY_OPTIONAL : AVAILABILITY_MANDATORY);
+    try {
+      svc.getClass().getMethod("setRuntimeInterface",Class.class).invoke(svc,LanguageResolver.class);
+    }
+ catch (    Throwable t) {
+      try {
+        PassThroughMetadata ptm=(PassThroughMetadata)componentDefinitionRegistry.getComponentDefinition("blueprintBundle");
+        Bundle b=(Bundle)ptm.getObject();
+        if (b.loadClass(LanguageResolver.class.getName()) != LanguageResolver.class) {
+          throw new UnsupportedOperationException();
+        }
+        svc.setInterface(LanguageResolver.class.getName());
+      }
+ catch (      Throwable t2) {
+        throw new UnsupportedOperationException();
+      }
+    }
+    componentDefinitionRegistry.registerComponentDefinition(svc);
+    cm=svc;
+  }
+  return cm;
+}

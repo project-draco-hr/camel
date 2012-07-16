@@ -4,92 +4,19 @@
   Set<String> components=new HashSet<String>();
   Set<String> languages=new HashSet<String>();
   Set<String> dataformats=new HashSet<String>();
-  Set<String> dependsOn=new HashSet<String>();
   for (  RouteDefinition rd : camelContext.getRouteDefinitions()) {
     findInputComponents(rd.getInputs(),components,languages,dataformats);
     findOutputComponents(rd.getOutputs(),components,languages,dataformats);
   }
   try {
     for (    String component : components) {
-      ComponentMetadata cm=componentDefinitionRegistry.getComponentDefinition(".camelBlueprint.componentResolver." + component);
-      if (cm == null) {
-        MutableReferenceMetadata svc=createMetadata(MutableReferenceMetadata.class);
-        svc.setId(".camelBlueprint.componentResolver." + component);
-        svc.setFilter("(component=" + component + ")");
-        svc.setAvailability(componentDefinitionRegistry.containsComponentDefinition(component) ? AVAILABILITY_OPTIONAL : AVAILABILITY_MANDATORY);
-        try {
-          svc.getClass().getMethod("setRuntimeInterface",Class.class).invoke(svc,ComponentResolver.class);
-        }
- catch (        Throwable t) {
-          try {
-            PassThroughMetadata ptm=(PassThroughMetadata)componentDefinitionRegistry.getComponentDefinition("blueprintBundle");
-            Bundle b=(Bundle)ptm.getObject();
-            if (b.loadClass(ComponentResolver.class.getName()) != ComponentResolver.class) {
-              throw new UnsupportedOperationException();
-            }
-            svc.setInterface(ComponentResolver.class.getName());
-          }
- catch (          Throwable t2) {
-            throw new UnsupportedOperationException();
-          }
-        }
-        componentDefinitionRegistry.registerComponentDefinition(svc);
-        dependsOn.add(svc.getId());
-      }
+      getComponentResolverReference(context,component);
     }
     for (    String language : languages) {
-      ComponentMetadata cm=componentDefinitionRegistry.getComponentDefinition(".camelBlueprint.languageResolver." + language);
-      if (cm == null) {
-        MutableReferenceMetadata svc=createMetadata(MutableReferenceMetadata.class);
-        svc.setId(".camelBlueprint.languageResolver." + language);
-        svc.setFilter("(language=" + language + ")");
-        svc.setAvailability(componentDefinitionRegistry.containsComponentDefinition(language) ? AVAILABILITY_OPTIONAL : AVAILABILITY_MANDATORY);
-        try {
-          svc.getClass().getMethod("setRuntimeInterface",Class.class).invoke(svc,LanguageResolver.class);
-        }
- catch (        Throwable t) {
-          try {
-            PassThroughMetadata ptm=(PassThroughMetadata)componentDefinitionRegistry.getComponentDefinition("blueprintBundle");
-            Bundle b=(Bundle)ptm.getObject();
-            if (b.loadClass(LanguageResolver.class.getName()) != LanguageResolver.class) {
-              throw new UnsupportedOperationException();
-            }
-            svc.setInterface(LanguageResolver.class.getName());
-          }
- catch (          Throwable t2) {
-            throw new UnsupportedOperationException();
-          }
-        }
-        componentDefinitionRegistry.registerComponentDefinition(svc);
-        dependsOn.add(svc.getId());
-      }
+      getLanguageResolverReference(context,language);
     }
     for (    String dataformat : dataformats) {
-      ComponentMetadata cm=componentDefinitionRegistry.getComponentDefinition(".camelBlueprint.dataformatResolver." + dataformat);
-      if (cm == null) {
-        MutableReferenceMetadata svc=createMetadata(MutableReferenceMetadata.class);
-        svc.setId(".camelBlueprint.dataformatResolver." + dataformat);
-        svc.setFilter("(dataformat=" + dataformat + ")");
-        svc.setAvailability(componentDefinitionRegistry.containsComponentDefinition(dataformat) ? AVAILABILITY_OPTIONAL : AVAILABILITY_MANDATORY);
-        try {
-          svc.getClass().getMethod("setRuntimeInterface",Class.class).invoke(svc,DataFormatResolver.class);
-        }
- catch (        Throwable t) {
-          try {
-            PassThroughMetadata ptm=(PassThroughMetadata)componentDefinitionRegistry.getComponentDefinition("blueprintBundle");
-            Bundle b=(Bundle)ptm.getObject();
-            if (b.loadClass(DataFormatResolver.class.getName()) != DataFormatResolver.class) {
-              throw new UnsupportedOperationException();
-            }
-            svc.setInterface(DataFormatResolver.class.getName());
-          }
- catch (          Throwable t2) {
-            throw new UnsupportedOperationException();
-          }
-        }
-        componentDefinitionRegistry.registerComponentDefinition(svc);
-        dependsOn.add(svc.getId());
-      }
+      getDataformatResolverReference(context,dataformat);
     }
   }
  catch (  UnsupportedOperationException e) {

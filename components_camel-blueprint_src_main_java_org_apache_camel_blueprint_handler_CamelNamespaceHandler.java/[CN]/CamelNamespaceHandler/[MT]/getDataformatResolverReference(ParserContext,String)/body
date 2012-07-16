@@ -1,0 +1,29 @@
+{
+  ComponentDefinitionRegistry componentDefinitionRegistry=context.getComponentDefinitionRegistry();
+  ComponentMetadata cm=componentDefinitionRegistry.getComponentDefinition(".camelBlueprint.dataformatResolver." + dataformat);
+  if (cm == null) {
+    MutableReferenceMetadata svc=context.createMetadata(MutableReferenceMetadata.class);
+    svc.setId(".camelBlueprint.dataformatResolver." + dataformat);
+    svc.setFilter("(dataformat=" + dataformat + ")");
+    svc.setAvailability(componentDefinitionRegistry.containsComponentDefinition(dataformat) ? AVAILABILITY_OPTIONAL : AVAILABILITY_MANDATORY);
+    try {
+      svc.getClass().getMethod("setRuntimeInterface",Class.class).invoke(svc,DataFormatResolver.class);
+    }
+ catch (    Throwable t) {
+      try {
+        PassThroughMetadata ptm=(PassThroughMetadata)componentDefinitionRegistry.getComponentDefinition("blueprintBundle");
+        Bundle b=(Bundle)ptm.getObject();
+        if (b.loadClass(DataFormatResolver.class.getName()) != DataFormatResolver.class) {
+          throw new UnsupportedOperationException();
+        }
+        svc.setInterface(DataFormatResolver.class.getName());
+      }
+ catch (      Throwable t2) {
+        throw new UnsupportedOperationException();
+      }
+    }
+    componentDefinitionRegistry.registerComponentDefinition(svc);
+    cm=svc;
+  }
+  return cm;
+}
