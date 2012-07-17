@@ -1,36 +1,38 @@
 {
   Source source=sources.get(i);
+  XMLStreamReader r=null;
   if (source instanceof DOMSource) {
-    return ((Element)((DOMSource)source).getNode()).getLocalName();
+    Node nd=((DOMSource)source).getNode();
+    if (nd instanceof Document) {
+      nd=((Document)nd).getDocumentElement();
+    }
+    return ((Element)nd).getLocalName();
   }
  else   if (source instanceof StaxSource) {
     StaxSource s=(StaxSource)source;
-    return s.getXMLStreamReader().getLocalName();
+    r=s.getXMLStreamReader();
   }
  else   if (source instanceof StAXSource) {
     StAXSource s=(StAXSource)source;
-    XMLStreamReader r=s.getXMLStreamReader();
-    if (r.getEventType() != XMLStreamReader.START_ELEMENT) {
-      try {
-        r.nextTag();
-      }
- catch (      XMLStreamException e) {
-      }
-    }
-    return r.getLocalName();
+    r=s.getXMLStreamReader();
   }
  else   if (source instanceof StreamSource) {
-    XMLStreamReader reader=StaxUtils.createXMLStreamReader(source);
-    StaxSource src2=new StaxSource(reader);
+    r=StaxUtils.createXMLStreamReader(source);
+    StaxSource src2=new StaxSource(r);
     sources.set(i,src2);
-    if (reader.getEventType() == XMLStreamReader.START_DOCUMENT) {
-      try {
-        reader.nextTag();
+  }
+  if (r != null) {
+    try {
+      if (r.getEventType() == XMLStreamReader.START_DOCUMENT) {
+        r.next();
       }
- catch (      XMLStreamException e) {
+      if (r.getEventType() != XMLStreamReader.START_ELEMENT) {
+        r.nextTag();
       }
     }
-    return reader.getLocalName();
+ catch (    XMLStreamException e) {
+    }
+    return r.getLocalName();
   }
   return null;
 }
