@@ -1,0 +1,28 @@
+{
+  final int count=getHeaderValue(exchange,HEADER_ITERATIONS);
+  final int threads=getHeaderValue(exchange,HEADER_THREADS);
+  PerformanceTestEndpoint endpoint=(PerformanceTestEndpoint)getEndpoint();
+  if (endpoint != null) {
+    final DefaultConsumer consumer=(DefaultConsumer)endpoint.getConsumer();
+    ExecutorService executor=exchange.getContext().getExecutorServiceManager().newFixedThreadPool(this,"perf",threads);
+    CompletionService<Exchange> tasks=new ExecutorCompletionService<Exchange>(executor);
+    for (int i=0; i < count; i++) {
+      tasks.submit(new Callable<Exchange>(){
+        @Override public Exchange call() throws Exception {
+          Exchange exch=ExchangeHelper.createCopy(exchange,false);
+          try {
+            consumer.getProcessor().process(exch);
+          }
+ catch (          final Exception e) {
+            exch.setException(e);
+          }
+          return exch;
+        }
+      }
+);
+    }
+    for (int i=0; i < count; i++) {
+      tasks.take();
+    }
+  }
+}
