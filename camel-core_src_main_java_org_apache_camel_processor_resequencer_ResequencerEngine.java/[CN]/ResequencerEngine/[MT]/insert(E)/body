@@ -3,6 +3,9 @@
   if (!sequence.comparator().isValid(element)) {
     throw new IllegalArgumentException("Element cannot be used in comparator: " + sequence.comparator());
   }
+  if (rejectOld != null && rejectOld.booleanValue() && beforeLastDelivered(element)) {
+    throw new MessageRejectedException("rejecting message [" + element.getObject() + "], it should have been sent before the last delivered message ["+ lastDelivered.getObject()+ "]");
+  }
   sequence.add(element);
   Element<E> successor=sequence.successor(element);
   if (successor != null) {
@@ -11,10 +14,6 @@
   if (successorOfLastDelivered(element)) {
   }
  else   if (sequence.predecessor(element) != null) {
-  }
- else   if (rejectOld != null && rejectOld.booleanValue() && beforeLastDelivered(element)) {
-    sequence.remove(element);
-    throw new MessageRejectedException("rejecting message [" + element.getObject() + "], it should have been sent before the last delivered message ["+ lastDelivered.getObject()+ "]");
   }
  else {
     element.schedule(defineTimeout());
