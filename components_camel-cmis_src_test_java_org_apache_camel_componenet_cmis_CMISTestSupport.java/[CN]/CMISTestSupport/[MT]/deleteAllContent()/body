@@ -1,0 +1,17 @@
+{
+  Session session=createSession();
+  Folder rootFolder=session.getRootFolder();
+  ItemIterable<CmisObject> children=rootFolder.getChildren();
+  for (  CmisObject cmisObject : children) {
+    if ("cmis:folder".equals(cmisObject.getPropertyValue(PropertyIds.OBJECT_TYPE_ID))) {
+      List<String> notDeltedIdList=((Folder)cmisObject).deleteTree(true,UnfileObject.DELETE,true);
+      if (notDeltedIdList != null && notDeltedIdList.size() > 0) {
+        throw new RuntimeException("Cannot empty repo");
+      }
+    }
+ else {
+      cmisObject.delete(true);
+    }
+  }
+  session.getBinding().close();
+}

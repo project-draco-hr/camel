@@ -1,0 +1,29 @@
+{
+  int count=0;
+  int pageNumber=0;
+  boolean finished=false;
+  ItemIterable<QueryResult> itemIterable=executeQuery(query);
+  while (!finished) {
+    ItemIterable<QueryResult> currentPage=itemIterable.skipTo(count).getPage();
+    LOG.debug("Processing page {0}",pageNumber);
+    for (    QueryResult item : currentPage) {
+      Map<String,Object> properties=CMISHelper.propertyDataToMap(item.getProperties());
+      Object objectTypeId=item.getPropertyValueById(PropertyIds.OBJECT_TYPE_ID);
+      InputStream inputStream=null;
+      if (readContent && CamelCMISConstants.CMIS_DOCUMENT.equals(objectTypeId)) {
+        inputStream=getContentStreamFor(item);
+      }
+      cmisConsumer.sendExchangeWithPropsAndBody(properties,inputStream);
+      count++;
+      if (count == readCount) {
+        finished=true;
+        break;
+      }
+    }
+    pageNumber++;
+    if (!currentPage.getHasMoreItems()) {
+      finished=true;
+    }
+  }
+  return count;
+}

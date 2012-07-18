@@ -1,0 +1,28 @@
+{
+  List<Map<String,Object>> result=new ArrayList<Map<String,Object>>();
+  int count=0;
+  int pageNumber=0;
+  boolean finished=false;
+  while (!finished) {
+    ItemIterable<QueryResult> currentPage=itemIterable.skipTo(count).getPage();
+    LOG.debug("Processing page {0}",pageNumber);
+    for (    QueryResult item : currentPage) {
+      Map<String,Object> properties=CMISHelper.propertyDataToMap(item.getProperties());
+      if (retrieveContent) {
+        InputStream inputStream=getContentStreamFor(item);
+        properties.put(CamelCMISConstants.CAMEL_CMIS_CONTENT_STREAM,inputStream);
+      }
+      result.add(properties);
+      count++;
+      if (count == readSize) {
+        finished=true;
+        break;
+      }
+    }
+    pageNumber++;
+    if (!currentPage.getHasMoreItems()) {
+      finished=true;
+    }
+  }
+  return result;
+}

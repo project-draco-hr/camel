@@ -1,0 +1,20 @@
+{
+  validateRequiredHeader(exchange,PropertyIds.NAME);
+  Message message=exchange.getIn();
+  String parentFolderPath=parentFolderPathFor(message);
+  Folder parentFolder=getFolderOnPath(exchange,parentFolderPath);
+  Map<String,Object> cmisProperties=CMISHelper.filterCMISProperties(message.getHeaders());
+  if (isDocument(exchange)) {
+    String fileName=message.getHeader(PropertyIds.NAME,String.class);
+    String mimeType=getMimeType(message);
+    byte[] buf=getBodyData(message);
+    ContentStream contentStream=cmisSessionFacade.createContentStream(fileName,buf,mimeType);
+    return storeDocument(parentFolder,cmisProperties,contentStream,cmisSessionFacade);
+  }
+ else   if (isFolder(message)) {
+    return storeFolder(parentFolder,cmisProperties);
+  }
+ else {
+    return storeDocument(parentFolder,cmisProperties,null,cmisSessionFacade);
+  }
+}
