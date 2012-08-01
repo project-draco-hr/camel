@@ -1,0 +1,18 @@
+{
+  Client client=endpoint.getClient();
+  log.debug("indexing " + exchange);
+  String indexName=exchange.getIn().getHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME,String.class);
+  if (indexName == null) {
+    indexName=endpoint.getConfig().getIndexName();
+  }
+  String indexType=exchange.getIn().getHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE,String.class);
+  if (indexType == null) {
+    indexType=endpoint.getConfig().getIndexType();
+  }
+  IndexRequestBuilder prepareIndex=client.prepareIndex(indexName,indexType);
+  if (!setIndexRequestSource(exchange.getIn(),prepareIndex)) {
+    throw new ExpectedBodyTypeException(exchange,XContentBuilder.class);
+  }
+  ListenableActionFuture<IndexResponse> future=prepareIndex.execute();
+  IndexResponse response=future.actionGet();
+}
