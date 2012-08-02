@@ -16,19 +16,21 @@
     LOG.debug("Basic HTTP Authentication has been applied");
   }
   for (  Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
-    if (!headerFilterStrategy.applyFilterToCamelHeaders(entry.getKey(),entry.getValue(),exchange)) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    if (!headerFilterStrategy.applyFilterToCamelHeaders(key,value,exchange)) {
       if (request.getMethod() == Method.GET || (request.getMethod() == Method.POST && mediaType == MediaType.APPLICATION_WWW_FORM)) {
-        if (entry.getKey().startsWith("org.restlet.")) {
-          request.getAttributes().put(entry.getKey(),entry.getValue());
+        if (key.startsWith("org.restlet.")) {
+          request.getAttributes().put(key,value);
         }
  else {
-          form.add(entry.getKey(),entry.getValue().toString());
+          form.add(key,value.toString());
         }
       }
  else {
-        request.getAttributes().put(entry.getKey(),entry.getValue());
+        request.getAttributes().put(key,value);
       }
-      LOG.debug("Populate Restlet request from exchange header: {} value: {}",entry.getKey(),entry.getValue());
+      LOG.debug("Populate Restlet request from exchange header: {} value: {}",key,value);
     }
   }
   LOG.debug("Using Content Type: {} for POST data: {}",mediaType,body);

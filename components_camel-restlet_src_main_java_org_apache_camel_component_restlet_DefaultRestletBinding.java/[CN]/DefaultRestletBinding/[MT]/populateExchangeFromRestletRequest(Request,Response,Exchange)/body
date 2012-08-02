@@ -4,8 +4,10 @@
   inMessage.setHeader(RestletConstants.RESTLET_RESPONSE,response);
   for (  Map.Entry<String,Object> entry : request.getAttributes().entrySet()) {
     if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
-      inMessage.setHeader(entry.getKey(),entry.getValue());
-      LOG.debug("Populate exchange from Restlet request header: {} value: {}",entry.getKey(),entry.getValue());
+      String key=entry.getKey();
+      Object value=entry.getValue();
+      inMessage.setHeader(key,value);
+      LOG.debug("Populate exchange from Restlet request header: {} value: {}",key,value);
     }
   }
   String query=request.getResourceRef().getQuery();
@@ -20,14 +22,16 @@
   if (request.getEntity().getMediaType() != null && request.getEntity().getMediaType().equals(MediaType.APPLICATION_WWW_FORM)) {
     Form form=new Form(request.getEntity());
     for (    Map.Entry<String,String> entry : form.getValuesMap().entrySet()) {
-      if (entry.getValue() == null) {
-        inMessage.setBody(entry.getKey());
-        LOG.debug("Populate exchange from Restlet request body: {}",entry.getValue());
+      String key=entry.getKey();
+      String value=entry.getValue();
+      if (value == null) {
+        inMessage.setBody(key);
+        LOG.debug("Populate exchange from Restlet request body: {}",key);
       }
  else {
-        if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
-          inMessage.setHeader(entry.getKey(),entry.getValue());
-          LOG.debug("Populate exchange from Restlet request user header: {} value: {}",entry.getKey(),entry.getValue());
+        if (!headerFilterStrategy.applyFilterToExternalHeaders(key,value,exchange)) {
+          inMessage.setHeader(key,value);
+          LOG.debug("Populate exchange from Restlet request user header: {} value: {}",key,value);
         }
       }
     }
