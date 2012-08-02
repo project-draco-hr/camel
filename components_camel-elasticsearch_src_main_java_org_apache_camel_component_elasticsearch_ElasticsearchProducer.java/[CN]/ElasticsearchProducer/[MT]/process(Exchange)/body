@@ -1,18 +1,19 @@
 {
+  String operation=(String)exchange.getIn().getHeader(ElasticsearchConfiguration.PARAM_OPERATION);
+  if (operation == null) {
+    operation=endpoint.getConfig().getOperation();
+  }
+  if (operation == null) {
+    throw new IllegalArgumentException(ElasticsearchConfiguration.PARAM_OPERATION + " is missing");
+  }
   Client client=endpoint.getClient();
-  log.debug("indexing " + exchange);
-  String indexName=exchange.getIn().getHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME,String.class);
-  if (indexName == null) {
-    indexName=endpoint.getConfig().getIndexName();
+  if (operation.equalsIgnoreCase(ElasticsearchConfiguration.OPERATION_INDEX)) {
+    addToIndex(client,exchange);
   }
-  String indexType=exchange.getIn().getHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE,String.class);
-  if (indexType == null) {
-    indexType=endpoint.getConfig().getIndexType();
+ else   if (operation.equalsIgnoreCase(ElasticsearchConfiguration.OPERATION_GET_BY_ID)) {
+    getById(client,exchange);
   }
-  IndexRequestBuilder prepareIndex=client.prepareIndex(indexName,indexType);
-  if (!setIndexRequestSource(exchange.getIn(),prepareIndex)) {
-    throw new ExpectedBodyTypeException(exchange,XContentBuilder.class);
+ else {
+    throw new IllegalArgumentException(ElasticsearchConfiguration.PARAM_OPERATION + " value '" + operation+ "' is not supported");
   }
-  ListenableActionFuture<IndexResponse> future=prepareIndex.execute();
-  IndexResponse response=future.actionGet();
 }
