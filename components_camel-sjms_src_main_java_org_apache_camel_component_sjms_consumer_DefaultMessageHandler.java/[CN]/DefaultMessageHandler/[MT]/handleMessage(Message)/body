@@ -1,0 +1,54 @@
+{
+  RuntimeCamelException rce=null;
+  try {
+    final DefaultExchange exchange=(DefaultExchange)JmsMessageHelper.createExchange(message,getEndpoint());
+    if (log.isDebugEnabled()) {
+      log.debug("Processing Exchange.id:{}",exchange.getExchangeId());
+    }
+    if (isTransacted() && synchronization != null) {
+      exchange.addOnCompletion(synchronization);
+    }
+    try {
+      if (isTransacted() || isSynchronous()) {
+        if (log.isDebugEnabled()) {
+          log.debug("  Handling synchronous message: {}",exchange.getIn().getBody());
+        }
+        doHandleMessage(exchange);
+      }
+ else {
+        if (log.isDebugEnabled()) {
+          log.debug("  Handling asynchronous message: {}",exchange.getIn().getBody());
+        }
+        executor.execute(new Runnable(){
+          @Override public void run(){
+            try {
+              doHandleMessage(exchange);
+            }
+ catch (            Exception e) {
+              ObjectHelper.wrapRuntimeCamelException(e);
+            }
+          }
+        }
+);
+      }
+    }
+ catch (    Exception e) {
+      if (exchange != null) {
+        if (exchange.getException() == null) {
+          exchange.setException(e);
+        }
+ else {
+          throw e;
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    rce=wrapRuntimeCamelException(e);
+  }
+ finally {
+    if (rce != null) {
+      throw rce;
+    }
+  }
+}

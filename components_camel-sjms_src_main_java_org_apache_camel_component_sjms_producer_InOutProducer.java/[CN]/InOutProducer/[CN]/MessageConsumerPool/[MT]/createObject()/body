@@ -1,0 +1,35 @@
+{
+  Connection conn=getConnectionResource().borrowConnection();
+  Session session=null;
+  if (isEndpointTransacted()) {
+    session=conn.createSession(true,Session.SESSION_TRANSACTED);
+  }
+ else {
+    session=conn.createSession(false,Session.AUTO_ACKNOWLEDGE);
+  }
+  getConnectionResource().returnConnection(conn);
+  Destination replyToDestination=null;
+  if (ObjectHelper.isEmpty(getNamedReplyTo())) {
+    replyToDestination=JmsObjectFactory.createTemporaryDestination(session,isTopic());
+  }
+ else {
+    replyToDestination=JmsObjectFactory.createDestination(session,getNamedReplyTo(),isTopic());
+  }
+  MessageConsumer messageConsumer=JmsObjectFactory.createMessageConsumer(session,replyToDestination,null,isTopic(),null,true);
+  messageConsumer.setMessageListener(new MessageListener(){
+    @Override public void onMessage(    Message message){
+      logger.info("Message Received in the Consumer Pool");
+      logger.info("  Message : {}",message);
+      try {
+        Exchanger<Object> exchanger=exchangerMap.get(message.getJMSCorrelationID());
+        exchanger.exchange(message,getResponseTimeOut(),TimeUnit.MILLISECONDS);
+      }
+ catch (      Exception e) {
+        ObjectHelper.wrapRuntimeCamelException(e);
+      }
+    }
+  }
+);
+  MessageConsumerResource mcm=new MessageConsumerResource(session,messageConsumer,replyToDestination);
+  return mcm;
+}

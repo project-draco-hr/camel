@@ -1,0 +1,12 @@
+{
+  if (getProducers() != null) {
+    MessageProducerResources producer=getProducers().borrowObject();
+    if (isEndpointTransacted()) {
+      exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession()));
+    }
+    Message message=JmsMessageHelper.createMessage(exchange,producer.getSession());
+    producer.getMessageProducer().send(message);
+    getProducers().returnObject(producer);
+    callback.done(isSynchronous());
+  }
+}

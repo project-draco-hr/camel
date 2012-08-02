@@ -1,0 +1,33 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(TEST_DESTINATION_1).to("log:test1.before").to("mock:test1.topic.mock.before").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          logger.info("Begin processing Exchange ID: {}",exchange.getExchangeId());
+          if (!exchange.getIn().getHeader(JmsMessageHeaderType.JMSRedelivered.toString(),String.class).equalsIgnoreCase("true")) {
+            logger.info("Exchange does not have a retry message.  Set the exception and allow the retry.");
+            exchange.setException(new RuntimeCamelException("Creating Failure"));
+          }
+ else {
+            logger.info("Exchange has retry header.  Continue processing the message.");
+          }
+        }
+      }
+).transform(body().prepend("Hello ")).to("log:test1.after?showAll=true","mock:test1.topic.mock.after");
+      from(TEST_DESTINATION_2).to("log:test2.before").to("mock:test2.topic.mock.before").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          logger.info("Begin processing Exchange ID: {}",exchange.getExchangeId());
+          if (!exchange.getIn().getHeader(JmsMessageHeaderType.JMSRedelivered.toString(),String.class).equalsIgnoreCase("true")) {
+            logger.info("Exchange does not have a retry message.  Throw the exception to verify we handle the retry.");
+            throw new RuntimeCamelException("Creating Failure");
+          }
+ else {
+            logger.info("Exchange has retry header.  Continue processing the message.");
+          }
+        }
+      }
+).transform(body().prepend("Hello ")).to("log:test2.after?showAll=true","mock:test2.topic.mock.after");
+    }
+  }
+;
+}

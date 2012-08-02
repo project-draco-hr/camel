@@ -1,0 +1,34 @@
+{
+  if (log.isDebugEnabled()) {
+    log.debug("Handling InOnly Message: {}",exchange.getIn().getBody());
+  }
+  if (exchange.isFailed()) {
+    return;
+  }
+ else {
+    NoOpAsyncCallback callback=new NoOpAsyncCallback();
+    if (isTransacted() || isSynchronous()) {
+      if (log.isDebugEnabled()) {
+        log.debug("Synchronous processing: Message[{}], Destination[{}] ",exchange.getIn().getBody(),this.getEndpoint().getEndpointUri());
+      }
+      try {
+        AsyncProcessorHelper.process(getProcessor(),exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+ finally {
+        callback.done(true);
+      }
+    }
+ else {
+      if (log.isDebugEnabled()) {
+        log.debug("Aynchronous processing: Message[{}], Destination[{}] ",exchange.getIn().getBody(),this.getEndpoint().getEndpointUri());
+      }
+      boolean sync=AsyncProcessorHelper.process(getProcessor(),exchange,callback);
+      if (!sync) {
+        return;
+      }
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  try {
+    MessageProducer messageProducer=null;
+    Object obj=exchange.getIn().getHeader("JMSReplyTo");
+    if (obj != null) {
+      Destination replyTo=null;
+      if (isDestination(obj)) {
+        replyTo=(Destination)obj;
+      }
+ else       if (obj instanceof String) {
+        replyTo=JmsObjectFactory.createDestination(getSession(),(String)obj,isTopic());
+      }
+ else {
+        throw new Exception("The value of JMSReplyTo must be a valid Destination or String.  Value provided: " + obj);
+      }
+      String destinationName=getDestinationName(replyTo);
+      try {
+        lock.readLock().lock();
+        if (producerCache.containsKey(destinationName)) {
+          messageProducer=producerCache.get(destinationName);
+        }
+      }
+  finally {
+        lock.readLock().unlock();
+      }
+      if (messageProducer == null) {
+        try {
+          lock.writeLock().lock();
+          messageProducer=getSession().createProducer(replyTo);
+          producerCache.put(destinationName,messageProducer);
+        }
+  finally {
+          lock.writeLock().unlock();
+        }
+      }
+    }
+    MessageHanderAsyncCallback callback=new MessageHanderAsyncCallback(exchange,messageProducer);
+    if (exchange.isFailed()) {
+      return;
+    }
+ else {
+      if (isTransacted() || isSynchronous()) {
+        if (log.isDebugEnabled()) {
+          log.debug("Synchronous processing: Message[{}], Destination[{}] ",exchange.getIn().getBody(),this.getEndpoint().getEndpointUri());
+        }
+        try {
+          AsyncProcessorHelper.process(getProcessor(),exchange);
+        }
+ catch (        Exception e) {
+          exchange.setException(e);
+        }
+ finally {
+          callback.done(true);
+        }
+      }
+ else {
+        if (log.isDebugEnabled()) {
+          log.debug("Aynchronous processing: Message[{}], Destination[{}] ",exchange.getIn().getBody(),this.getEndpoint().getEndpointUri());
+        }
+        boolean sync=AsyncProcessorHelper.process(getProcessor(),exchange,callback);
+        if (!sync) {
+          return;
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  if (log.isDebugEnabled()) {
+    log.debug("SjmsMessageConsumer invoked for Exchange id:{} ",exchange.getExchangeId());
+  }
+}

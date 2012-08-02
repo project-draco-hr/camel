@@ -1,0 +1,25 @@
+{
+  DefaultMessageHandler messageHandler=null;
+  if (getSjmsEndpoint().getExchangePattern().equals(ExchangePattern.InOnly)) {
+    if (isEndpointTransacted()) {
+      messageHandler=new InOnlyMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session));
+    }
+ else {
+      messageHandler=new InOnlyMessageHandler(getEndpoint(),executor);
+    }
+  }
+ else {
+    if (isEndpointTransacted()) {
+      messageHandler=new InOutMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session));
+    }
+ else {
+      messageHandler=new InOutMessageHandler(getEndpoint(),executor);
+    }
+  }
+  messageHandler.setSession(session);
+  messageHandler.setProcessor(getAsyncProcessor());
+  messageHandler.setSynchronous(isSynchronous());
+  messageHandler.setTransacted(isEndpointTransacted());
+  messageHandler.setTopic(isTopic());
+  return messageHandler;
+}

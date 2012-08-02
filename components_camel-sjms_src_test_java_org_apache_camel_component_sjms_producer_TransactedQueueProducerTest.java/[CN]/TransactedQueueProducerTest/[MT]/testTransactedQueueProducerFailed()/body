@@ -1,0 +1,21 @@
+{
+  MessageConsumer mc=JmsObjectFactory.createQueueConsumer(session,TEST_DESTINATION_NAME);
+  assertNotNull(mc);
+  final String expectedBody="Transaction Failed";
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  mock.expectedBodiesReceived(expectedBody);
+  template.sendBody("direct:start.transacted",expectedBody);
+  mc.receive(5000);
+  session.rollback();
+  Enumeration<?> enumeration=session.createBrowser(session.createQueue(TEST_DESTINATION_NAME)).getEnumeration();
+  while (enumeration.hasMoreElements()) {
+    TextMessage tm=(TextMessage)enumeration.nextElement();
+    String text=tm.getText();
+    log.info("Element from Enumeration: {}",text);
+    assertNotNull(text);
+    template.sendBody("direct:finish",text);
+  }
+  mock.assertIsSatisfied();
+  mc.close();
+}

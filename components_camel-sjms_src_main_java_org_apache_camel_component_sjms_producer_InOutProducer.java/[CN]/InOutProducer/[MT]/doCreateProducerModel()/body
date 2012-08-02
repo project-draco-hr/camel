@@ -1,0 +1,19 @@
+{
+  Connection conn=getConnectionResource().borrowConnection();
+  Session session=null;
+  if (isEndpointTransacted()) {
+    session=conn.createSession(true,getAcknowledgeMode());
+  }
+ else {
+    session=conn.createSession(false,getAcknowledgeMode());
+  }
+  MessageProducer messageProducer=null;
+  if (isTopic()) {
+    messageProducer=JmsObjectFactory.createMessageProducer(session,getDestinationName(),isTopic(),isPersistent(),getTtl());
+  }
+ else {
+    messageProducer=JmsObjectFactory.createQueueProducer(session,getDestinationName());
+  }
+  getConnectionResource().returnConnection(conn);
+  return new MessageProducerResources(session,messageProducer);
+}

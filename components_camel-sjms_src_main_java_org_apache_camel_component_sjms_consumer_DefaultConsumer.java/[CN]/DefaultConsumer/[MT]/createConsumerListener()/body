@@ -1,0 +1,14 @@
+{
+  Session queueSession=getSessionPool().borrowObject();
+  MessageConsumer messageConsumer=null;
+  if (isTopic()) {
+    messageConsumer=JmsObjectFactory.createTopicConsumer(queueSession,getDestinationName(),getMessageSelector());
+  }
+ else {
+    messageConsumer=JmsObjectFactory.createQueueConsumer(queueSession,getDestinationName(),getMessageSelector());
+  }
+  getSessionPool().returnObject(queueSession);
+  MessageListener handler=createMessageHandler(null);
+  messageConsumer.setMessageListener(handler);
+  return new MessageConsumerResources(messageConsumer);
+}

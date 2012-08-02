@@ -1,0 +1,22 @@
+{
+  Connection connection;
+  try {
+    connection=connectionFactory.createConnection();
+    connection.start();
+    Session session=connection.createSession(transacted,ackMode);
+    Destination adminQueue=session.createQueue(clientQueueName);
+    this.producer=session.createProducer(adminQueue);
+    this.producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+    Destination tempDest=session.createTemporaryQueue();
+    MessageConsumer responseConsumer=session.createConsumer(tempDest);
+    responseConsumer.setMessageListener(this);
+    TextMessage txtMessage=session.createTextMessage();
+    txtMessage.setText("MyProtocolMessage");
+    txtMessage.setJMSReplyTo(tempDest);
+    String correlationId=this.createRandomString();
+    txtMessage.setJMSCorrelationID(correlationId);
+    this.producer.send(txtMessage);
+  }
+ catch (  JMSException e) {
+  }
+}
