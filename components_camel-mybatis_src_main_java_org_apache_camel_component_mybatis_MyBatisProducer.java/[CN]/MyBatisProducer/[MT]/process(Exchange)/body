@@ -1,24 +1,35 @@
 {
+  SqlSession session=endpoint.getSqlSessionFactory().openSession();
+  try {
 switch (endpoint.getStatementType()) {
 case SelectOne:
-    doSelectOne(exchange);
-  break;
+      doSelectOne(exchange,session);
+    break;
 case SelectList:
-doSelectList(exchange);
+  doSelectList(exchange,session);
 break;
 case Insert:
-doInsert(exchange);
+doInsert(exchange,session);
 break;
 case InsertList:
-doInsertList(exchange);
+doInsertList(exchange,session);
 break;
 case Update:
-doUpdate(exchange);
+doUpdate(exchange,session);
 break;
 case Delete:
-doDelete(exchange);
+doDelete(exchange,session);
 break;
 default :
 throw new IllegalArgumentException("Unsupported statementType: " + endpoint.getStatementType());
+}
+session.commit();
+}
+ catch (Exception e) {
+session.rollback();
+throw e;
+}
+ finally {
+session.close();
 }
 }
