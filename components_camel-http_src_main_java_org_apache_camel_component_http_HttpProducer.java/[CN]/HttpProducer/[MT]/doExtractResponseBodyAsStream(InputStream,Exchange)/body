@@ -1,10 +1,21 @@
 {
+  CachedOutputStream cos=null;
   try {
-    CachedOutputStream cos=new CachedOutputStream(exchange,false);
+    cos=new CachedOutputStream(exchange,false);
     IOHelper.copy(is,cos);
     return cos.getWrappedInputStream();
   }
-  finally {
+ catch (  IOException ex) {
+    if (cos != null) {
+      try {
+        cos.close();
+      }
+ catch (      IOException ignore) {
+      }
+    }
+    throw ex;
+  }
+ finally {
     IOHelper.close(is,"Extracting response body",LOG);
   }
 }
