@@ -1,0 +1,14 @@
+{
+  when(msg.getHeader(Neo4jEndpoint.HEADER_OPERATION)).thenReturn(Neo4jOperation.CREATE_RELATIONSHIP);
+  Node start=mock(Node.class);
+  Node end=mock(Node.class);
+  String type="friendswith";
+  BasicRelationship br=new BasicRelationship(start,end,type);
+  when(msg.getBody()).thenReturn(br);
+  Relationship r=mock(Relationship.class);
+  when(r.getId()).thenReturn(99L);
+  when(template.createRelationshipBetween(start,end,type,null)).thenReturn(r);
+  producer.process(exchange);
+  verify(template).createRelationshipBetween(start,end,type,null);
+  verify(msg).setHeader(Neo4jEndpoint.HEADER_RELATIONSHIP_ID,99L);
+}

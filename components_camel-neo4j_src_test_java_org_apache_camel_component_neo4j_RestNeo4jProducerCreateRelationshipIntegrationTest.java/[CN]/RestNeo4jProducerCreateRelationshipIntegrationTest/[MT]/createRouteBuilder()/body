@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to(neo4jEndpoint).process(new Processor(){
+        @Override public void process(        Exchange arg0) throws Exception {
+          Long id=(Long)arg0.getIn().getHeader(Neo4jEndpoint.HEADER_RELATIONSHIP_ID);
+          assertNotNull(id);
+          Relationship r=neo.getRelationship(id);
+          assertNotNull(r);
+          assertEquals("tickles",r.getType().name());
+        }
+      }
+).to(end);
+    }
+  }
+;
+}
