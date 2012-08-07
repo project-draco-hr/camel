@@ -1,10 +1,15 @@
 {
   Object in=exchange.getIn().getBody();
+  Status response;
   if (in instanceof StatusUpdate) {
-    updateStatus((StatusUpdate)in);
+    response=updateStatus((StatusUpdate)in);
   }
  else {
     String s=exchange.getIn().getMandatoryBody(String.class);
-    updateStatus(s);
+    response=updateStatus(s);
+  }
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getOut().copyFrom(exchange.getIn());
+    exchange.getOut().setBody(response);
   }
 }
