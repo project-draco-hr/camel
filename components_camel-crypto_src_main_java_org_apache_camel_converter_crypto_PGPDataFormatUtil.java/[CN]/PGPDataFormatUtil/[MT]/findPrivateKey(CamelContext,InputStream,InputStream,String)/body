@@ -1,0 +1,22 @@
+{
+  PGPSecretKeyRingCollection pgpSec=new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyringInput));
+  PGPObjectFactory factory=new PGPObjectFactory(PGPUtil.getDecoderStream(encryptedInput));
+  PGPEncryptedDataList enc;
+  Object o=factory.nextObject();
+  if (o instanceof PGPEncryptedDataList) {
+    enc=(PGPEncryptedDataList)o;
+  }
+ else {
+    enc=(PGPEncryptedDataList)factory.nextObject();
+  }
+  encryptedInput.reset();
+  Iterator encryptedDataObjects=enc.getEncryptedDataObjects();
+  PGPPrivateKey privateKey=null;
+  PGPPublicKeyEncryptedData encryptedData;
+  while (privateKey == null && encryptedDataObjects.hasNext()) {
+    encryptedData=(PGPPublicKeyEncryptedData)encryptedDataObjects.next();
+    PGPSecretKey pgpSecKey=pgpSec.getSecretKey(encryptedData.getKeyID());
+    privateKey=pgpSecKey.extractPrivateKey(passphrase.toCharArray(),"BC");
+  }
+  return privateKey;
+}
