@@ -10,6 +10,21 @@
       throw new GenericFileOperationFailedException("File already exist: " + file + ". Cannot write new file.");
     }
   }
+  if (exchange.getIn().getBody() == null) {
+    if (endpoint.isAllowNullBody()) {
+      LOG.trace("The in message of exchange body was null.");
+      try {
+        writeFileEmptyBody(file);
+        return true;
+      }
+ catch (      IOException e) {
+        throw new GenericFileOperationFailedException("Cannot store file: " + file,e);
+      }
+    }
+ else {
+      throw new GenericFileOperationFailedException("Cannot write null body to file.");
+    }
+  }
   try {
     String charset=endpoint.getCharset();
     File source=null;
