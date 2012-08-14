@@ -1,0 +1,15 @@
+{
+  Throwable t=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+  Message msg=exchange.getIn().getBody(Message.class);
+  try {
+    HL7Exception hl7e=generateHL7Exception(t);
+    AckCode code=acknowledgementCode;
+    if (t != null && code == null) {
+      code=AckCode.AE;
+    }
+    return msg.generateACK(code == null ? null : code.name(),hl7e);
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}

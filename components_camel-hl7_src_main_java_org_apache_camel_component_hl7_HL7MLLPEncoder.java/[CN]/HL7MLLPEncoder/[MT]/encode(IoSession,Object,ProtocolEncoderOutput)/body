@@ -12,7 +12,7 @@
   }
   String body;
   if (message instanceof Message) {
-    body=HL7Converter.encode((Message)message,config.isValidate());
+    body=HL7Converter.encode((Message)message,config.getParser());
   }
  else   if (message instanceof String) {
     body=(String)message;
@@ -26,14 +26,12 @@
   if (config.isConvertLFtoCR()) {
     body=body.replace('\n','\r');
   }
-  ByteBuffer buf=ByteBuffer.allocate(body.length() + 3).setAutoExpand(true);
+  IoBuffer buf=IoBuffer.allocate(body.length() + 3).setAutoExpand(true);
   buf.put((byte)config.getStartByte());
   buf.putString(body,encoder);
   buf.put((byte)config.getEndByte1());
   buf.put((byte)config.getEndByte2());
   buf.flip();
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Encoding HL7 from {} to byte stream",message.getClass().getCanonicalName());
-  }
+  LOG.debug("Encoding HL7 from {} to byte stream",message.getClass().getCanonicalName());
   out.write(buf);
 }

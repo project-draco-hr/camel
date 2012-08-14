@@ -1,17 +1,9 @@
 {
   String body=ExchangeHelper.convertToMandatoryType(exchange,String.class,inputStream);
-  Message message=HL7Converter.parse(body,validate);
+  Message message=HL7Converter.parse(body,parser);
   Terser terser=new Terser(message);
-  exchange.getOut().setHeader(HL7Constants.HL7_SENDING_APPLICATION,terser.get("MSH-3"));
-  exchange.getOut().setHeader(HL7Constants.HL7_SENDING_FACILITY,terser.get("MSH-4"));
-  exchange.getOut().setHeader(HL7Constants.HL7_RECEIVING_APPLICATION,terser.get("MSH-5"));
-  exchange.getOut().setHeader(HL7Constants.HL7_RECEIVING_FACILITY,terser.get("MSH-6"));
-  exchange.getOut().setHeader(HL7Constants.HL7_TIMESTAMP,terser.get("MSH-7"));
-  exchange.getOut().setHeader(HL7Constants.HL7_SECURITY,terser.get("MSH-8"));
-  exchange.getOut().setHeader(HL7Constants.HL7_MESSAGE_TYPE,terser.get("MSH-9-1"));
-  exchange.getOut().setHeader(HL7Constants.HL7_TRIGGER_EVENT,terser.get("MSH-9-2"));
-  exchange.getOut().setHeader(HL7Constants.HL7_MESSAGE_CONTROL,terser.get("MSH-10"));
-  exchange.getOut().setHeader(HL7Constants.HL7_PROCESSING_ID,terser.get("MSH-11"));
-  exchange.getOut().setHeader(HL7Constants.HL7_VERSION_ID,terser.get("MSH-12"));
+  for (  Map.Entry<String,String> entry : HEADER_MAP.entrySet()) {
+    exchange.getOut().setHeader(entry.getKey(),terser.get(entry.getValue()));
+  }
   return message;
 }
