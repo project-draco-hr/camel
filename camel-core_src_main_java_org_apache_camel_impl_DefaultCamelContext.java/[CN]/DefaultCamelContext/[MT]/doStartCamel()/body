@@ -71,6 +71,21 @@ catch (    Exception e) {
   addService(inflightRepository);
   addService(shutdownStrategy);
   addService(packageScanClassResolver);
+  Component existing=hasComponent("properties");
+  if (existing == null) {
+    propertiesComponent=getRegistry().lookup("properties",PropertiesComponent.class);
+    if (propertiesComponent != null) {
+      addComponent("properties",propertiesComponent);
+    }
+  }
+ else {
+    if (existing instanceof PropertiesComponent) {
+      propertiesComponent=(PropertiesComponent)existing;
+    }
+ else {
+      throw new IllegalArgumentException("Found properties component of type: " + existing.getClass() + " instead of expected: "+ PropertiesComponent.class);
+    }
+  }
   startServices(components.values());
   if (errorHandlerExecutorService == null || errorHandlerExecutorService.isShutdown()) {
     errorHandlerExecutorService=getExecutorServiceManager().newDefaultScheduledThreadPool(this,"ErrorHandlerRedeliveryTask");
