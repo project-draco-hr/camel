@@ -11,8 +11,19 @@
     }
   }
   InputStream is=null;
+  if (exchange.getIn().getBody() == null) {
+    if (endpoint.isAllowNullBody()) {
+      log.trace("Writing empty file.");
+      is=new ByteArrayInputStream(new byte[]{});
+    }
+ else {
+      throw new GenericFileOperationFailedException("Cannot write null body to file: " + name);
+    }
+  }
   try {
-    is=exchange.getIn().getMandatoryBody(InputStream.class);
+    if (is == null) {
+      is=exchange.getIn().getMandatoryBody(InputStream.class);
+    }
     if (endpoint.getFileExist() == GenericFileExist.Append) {
       log.trace("Client appendFile: {}",targetName);
       return client.appendFile(targetName,is);

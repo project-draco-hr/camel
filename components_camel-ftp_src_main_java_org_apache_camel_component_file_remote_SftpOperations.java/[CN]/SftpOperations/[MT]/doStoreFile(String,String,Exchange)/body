@@ -11,12 +11,25 @@
     }
   }
   InputStream is=null;
+  if (exchange.getIn().getBody() == null) {
+    if (endpoint.isAllowNullBody()) {
+      LOG.trace("Writing empty file.");
+      is=new ByteArrayInputStream(new byte[]{});
+    }
+ else {
+      throw new GenericFileOperationFailedException("Cannot write null body to file: " + name);
+    }
+  }
   try {
-    is=exchange.getIn().getMandatoryBody(InputStream.class);
+    if (is == null) {
+      is=exchange.getIn().getMandatoryBody(InputStream.class);
+    }
     if (endpoint.getFileExist() == GenericFileExist.Append) {
+      LOG.trace("Client appendFile: {}",targetName);
       channel.put(is,targetName,ChannelSftp.APPEND);
     }
  else {
+      LOG.trace("Client storeFile: {}",targetName);
       channel.put(is,targetName);
     }
     String mode=endpoint.getConfiguration().getChmod();
