@@ -1,0 +1,28 @@
+{
+  if (ObjectHelper.isEmpty(propertyName)) {
+    propertyName=injectionPointName;
+  }
+  try {
+    Object value=IntrospectionSupport.getOrElseProperty(bean,propertyName,null);
+    if (value == null) {
+      value=IntrospectionSupport.getOrElseProperty(bean,propertyName + "Endpoint",null);
+    }
+    if (value == null && propertyName.startsWith("on")) {
+      propertyName=propertyName.substring(2);
+      return doGetEndpointInjection(bean,propertyName,injectionPointName);
+    }
+    if (value == null) {
+      return null;
+    }
+ else     if (value instanceof Endpoint) {
+      return (Endpoint)value;
+    }
+ else {
+      String uriOrRef=getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,value);
+      return getCamelContext().getEndpoint(uriOrRef);
+    }
+  }
+ catch (  Exception e) {
+    throw new IllegalArgumentException("Error getting property " + propertyName + " from bean "+ bean+ " due "+ e.getMessage(),e);
+  }
+}
