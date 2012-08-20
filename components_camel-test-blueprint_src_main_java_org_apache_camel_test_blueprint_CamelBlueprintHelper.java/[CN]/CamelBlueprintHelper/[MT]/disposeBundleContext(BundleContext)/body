@@ -1,10 +1,23 @@
 {
   try {
     if (bundleContext != null) {
-      bundleContext.getBundle().stop();
+      List<Bundle> bundles=new ArrayList<Bundle>();
+      bundles.addAll(Arrays.asList(bundleContext.getBundles()));
+      Collections.reverse(bundles);
+      for (      Bundle bundle : bundles) {
+        LOG.debug("Stopping bundle {}",bundle);
+        bundle.stop();
+      }
     }
   }
-  finally {
-    System.clearProperty("org.osgi.framework.storage");
+ catch (  Exception e) {
+    LOG.warn("Error during disposing BundleContext. This exception will be ignored.",e);
+  }
+ finally {
+    String tempDir=System.clearProperty("org.osgi.framework.storage");
+    if (tempDir != null) {
+      LOG.info("Deleting work directory {}",tempDir);
+      deleteDirectory(tempDir);
+    }
   }
 }

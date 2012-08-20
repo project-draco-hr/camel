@@ -1,12 +1,15 @@
 {
   File file=new File(path);
-  FileOutputStream fos=new FileOutputStream(file,true);
+  file.deleteOnExit();
+  FileOutputStream fos=new FileOutputStream(file,false);
+  InputStream is=bundle.build();
   try {
-    IOHelper.copyAndCloseInput(bundle.build(),fos);
+    IOHelper.copyAndCloseInput(is,fos);
   }
   finally {
-    IOHelper.close(fos);
+    IOHelper.close(is,fos);
   }
+  BundleDescriptor answer=null;
   FileInputStream fis=null;
   JarInputStream jis=null;
   try {
@@ -16,9 +19,10 @@
     for (    Map.Entry<Object,Object> entry : jis.getManifest().getMainAttributes().entrySet()) {
       headers.put(entry.getKey().toString(),entry.getValue().toString());
     }
-    return new BundleDescriptor(bundle.getClass().getClassLoader(),new URL("jar:" + file.toURI().toString() + "!/"),headers);
+    answer=new BundleDescriptor(bundle.getClass().getClassLoader(),new URL("jar:" + file.toURI().toString() + "!/"),headers);
   }
   finally {
-    IOHelper.close(fis,jis);
+    IOHelper.close(jis,fis);
   }
+  return answer;
 }
