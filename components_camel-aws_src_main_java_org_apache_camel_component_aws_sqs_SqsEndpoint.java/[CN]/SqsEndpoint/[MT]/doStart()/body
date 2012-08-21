@@ -1,20 +1,20 @@
 {
   client=getConfiguration().getAmazonSQSClient() != null ? getConfiguration().getAmazonSQSClient() : getClient();
   CreateQueueRequest request=new CreateQueueRequest(configuration.getQueueName());
+  if (getConfiguration().getDefaultVisibilityTimeout() != null) {
+    request.getAttributes().put(QueueAttributeName.VisibilityTimeout.name(),String.valueOf(getConfiguration().getDefaultVisibilityTimeout()));
+  }
+  if (getConfiguration().getMaximumMessageSize() != null) {
+    request.getAttributes().put(QueueAttributeName.MaximumMessageSize.name(),String.valueOf(getConfiguration().getMaximumMessageSize()));
+  }
+  if (getConfiguration().getMessageRetentionPeriod() != null) {
+    request.getAttributes().put(QueueAttributeName.MessageRetentionPeriod.name(),String.valueOf(getConfiguration().getMessageRetentionPeriod()));
+  }
+  if (getConfiguration().getPolicy() != null) {
+    request.getAttributes().put(QueueAttributeName.Policy.name(),String.valueOf(getConfiguration().getPolicy()));
+  }
   LOG.trace("Creating queue [{}] with request [{}]...",configuration.getQueueName(),request);
   CreateQueueResult queueResult=client.createQueue(request);
   queueUrl=queueResult.getQueueUrl();
   LOG.trace("Queue created and available at: {}",queueUrl);
-  if (getConfiguration().getDefaultVisibilityTimeout() != null) {
-    updateAttribute("VisibilityTimeout",getConfiguration().getDefaultVisibilityTimeout());
-  }
-  if (getConfiguration().getMaximumMessageSize() != null) {
-    updateAttribute("MaximumMessageSize",getConfiguration().getMaximumMessageSize());
-  }
-  if (getConfiguration().getMessageRetentionPeriod() != null) {
-    updateAttribute("MessageRetentionPeriod",getConfiguration().getMessageRetentionPeriod());
-  }
-  if (getConfiguration().getPolicy() != null) {
-    updateAttribute("Policy",getConfiguration().getPolicy());
-  }
 }
