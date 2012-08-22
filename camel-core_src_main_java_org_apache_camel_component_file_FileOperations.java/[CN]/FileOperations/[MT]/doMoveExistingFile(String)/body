@@ -1,0 +1,36 @@
+{
+  Exchange dummy=endpoint.createExchange();
+  String parent=FileUtil.onlyPath(fileName);
+  String onlyName=FileUtil.stripPath(fileName);
+  dummy.getIn().setHeader(Exchange.FILE_NAME,fileName);
+  dummy.getIn().setHeader(Exchange.FILE_NAME_ONLY,onlyName);
+  dummy.getIn().setHeader(Exchange.FILE_PARENT,parent);
+  String to=endpoint.getMoveExisting().evaluate(dummy,String.class);
+  to=FileUtil.normalizePath(to);
+  if (ObjectHelper.isEmpty(to)) {
+    throw new GenericFileOperationFailedException("moveExisting evaluated as empty String, cannot move existing file: " + fileName);
+  }
+  File toFile=new File(to);
+  String directory=toFile.getParent();
+  boolean absolute=FileUtil.isAbsolute(toFile);
+  if (directory != null) {
+    if (!buildDirectory(directory,absolute)) {
+      LOG.debug("Cannot build directory [{}] (could be because of denied permissions)",directory);
+    }
+  }
+  if (existsFile(to)) {
+    if (endpoint.isEagerDeleteTargetFile()) {
+      LOG.trace("Deleting existing file: {}",to);
+      if (!deleteFile(to)) {
+        throw new GenericFileOperationFailedException("Cannot delete file: " + to);
+      }
+    }
+ else {
+      throw new GenericFileOperationFailedException("Cannot moved existing file from: " + fileName + " to: "+ to+ " as there already exists a file: "+ to);
+    }
+  }
+  LOG.trace("Moving existing file: {} to: {}",fileName,to);
+  if (!renameFile(fileName,to)) {
+    throw new GenericFileOperationFailedException("Cannot rename file from: " + fileName + " to: "+ to);
+  }
+}
