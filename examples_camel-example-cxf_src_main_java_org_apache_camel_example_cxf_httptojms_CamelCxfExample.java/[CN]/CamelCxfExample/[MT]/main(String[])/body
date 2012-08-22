@@ -1,5 +1,9 @@
 {
+  System.setProperty("routerPort","9001");
+  System.setProperty("servicePort","9003");
   CamelContext context=new DefaultCamelContext();
+  PropertiesComponent pc=new PropertiesComponent();
+  context.addComponent("properties",pc);
   JmsBroker broker=new JmsBroker();
   Server server=new Server();
   try {
@@ -12,8 +16,9 @@
       }
     }
 );
+    String address=ROUTER_ADDRESS.replace("{{routerPort}}",System.getProperty("routerPort"));
     context.start();
-    Client client=new Client(ROUTER_ADDRESS + "?wsdl");
+    Client client=new Client(address + "?wsdl");
     client.invoke();
     Thread.sleep(1000);
     context.stop();
