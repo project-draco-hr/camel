@@ -3,16 +3,7 @@
     @Override public void configure() throws Exception {
       onException(IOException.class).maximumRedeliveries(2).redeliveryDelay(0);
       from("direct:start").to("mock:a").to("direct:sub").to("mock:c");
-      from("direct:sub").errorHandler(noErrorHandler()).to("mock:b").process(new Processor(){
-        private int counter;
-        @Override public void process(        Exchange exchange) throws Exception {
-          if (counter++ < 2) {
-            throw new IOException("Forced");
-          }
-          exchange.getIn().setBody("Bye World");
-        }
-      }
-);
+      from("direct:sub").errorHandler(noErrorHandler()).to("mock:b").process(new MyProcessor());
     }
   }
 ;
