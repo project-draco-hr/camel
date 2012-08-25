@@ -1,0 +1,24 @@
+{
+  while (changes.hasNext()) {
+    ChangesResult.Row feed=changes.next();
+    if (feed.isDeleted() && !endpoint.isDeletes()) {
+      continue;
+    }
+    if (!feed.isDeleted() && !endpoint.isUpdates()) {
+      continue;
+    }
+    String seq=feed.getSeq();
+    JsonObject doc=feed.getDoc();
+    Exchange exchange=endpoint.createExchange(seq,feed.getId(),doc,feed.isDeleted());
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Created exchange [exchange={}, _id={}, seq={}",new Object[]{exchange,feed.getId(),seq});
+    }
+    try {
+      consumer.getProcessor().process(exchange);
+    }
+ catch (    Exception e) {
+      consumer.getExceptionHandler().handleException("Error processing exchange.",exchange,e);
+    }
+  }
+  stopped=true;
+}

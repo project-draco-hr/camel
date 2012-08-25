@@ -1,0 +1,12 @@
+{
+  when(msg.getMandatoryBody()).thenReturn("{ \"name\" : \"coldplay\" }");
+  when(client.save(anyObject())).thenAnswer(new Answer(){
+    @Override public Object answer(    InvocationOnMock invocation) throws Throwable {
+      assertTrue(invocation.getArguments()[0].getClass() + " but wanted " + JsonObject.class,invocation.getArguments()[0] instanceof JsonElement);
+      return new Response();
+    }
+  }
+);
+  producer.process(exchange);
+  verify(client).save(any(JsonObject.class));
+}
