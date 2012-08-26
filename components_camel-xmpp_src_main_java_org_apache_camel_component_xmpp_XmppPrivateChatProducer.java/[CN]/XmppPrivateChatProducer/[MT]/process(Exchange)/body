@@ -11,19 +11,7 @@
     throw new RuntimeExchangeException("Cannot connect to: " + XmppEndpoint.getConnectionMessage(connection),exchange,e);
   }
   ChatManager chatManager=connection.getChatManager();
-  LOG.trace("Looking for existing chat instance with thread ID {}",endpoint.getChatId());
-  Chat chat=chatManager.getThreadChat(endpoint.getChatId());
-  if (chat == null) {
-    LOG.trace("Creating new chat instance with thread ID {}",endpoint.getChatId());
-    chat=chatManager.createChat(getParticipant(),endpoint.getChatId(),new MessageListener(){
-      public void processMessage(      Chat chat,      Message message){
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Received and discarding message from {} : {}",getParticipant(),message.getBody());
-        }
-      }
-    }
-);
-  }
+  Chat chat=getOrCreateChat(chatManager);
   Message message=null;
   try {
     message=new Message();
