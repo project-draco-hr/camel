@@ -8,7 +8,12 @@
   configureCodecFactory("Mina2Consumer",acceptor,configuration);
   ((NioSocketAcceptor)acceptor).setReuseAddress(true);
   acceptor.setCloseOnDeactivation(true);
-  workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  if (configuration.isOrderedThreadPoolExecutor()) {
+    workerPool=new OrderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
+ else {
+    workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
   acceptor.getFilterChain().addLast("threadPool",new ExecutorFilter(workerPool));
   if (minaLogger) {
     acceptor.getFilterChain().addLast("logger",new LoggingFilter());

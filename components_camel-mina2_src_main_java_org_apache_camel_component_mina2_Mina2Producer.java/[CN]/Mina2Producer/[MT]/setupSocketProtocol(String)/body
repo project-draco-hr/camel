@@ -6,7 +6,12 @@
   final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
   connector=new NioSocketConnector(processorCount);
   connectorConfig=connector.getSessionConfig();
-  workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  if (configuration.isOrderedThreadPoolExecutor()) {
+    workerPool=new OrderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
+ else {
+    workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
   connector.getFilterChain().addLast("threadPool",new ExecutorFilter(workerPool));
   if (minaLogger) {
     connector.getFilterChain().addLast("logger",new LoggingFilter());

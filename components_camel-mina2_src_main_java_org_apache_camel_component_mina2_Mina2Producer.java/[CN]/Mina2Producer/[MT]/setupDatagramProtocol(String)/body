@@ -8,7 +8,12 @@
   address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
   connector=new NioDatagramConnector(processorCount);
-  workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  if (configuration.isOrderedThreadPoolExecutor()) {
+    workerPool=new OrderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
+ else {
+    workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
   connectorConfig=connector.getSessionConfig();
   connector.getFilterChain().addLast("threadPool",new ExecutorFilter(workerPool));
   if (minaLogger) {
