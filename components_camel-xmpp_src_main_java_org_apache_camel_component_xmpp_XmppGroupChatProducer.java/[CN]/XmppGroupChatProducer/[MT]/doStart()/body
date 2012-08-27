@@ -1,16 +1,19 @@
 {
   if (connection == null) {
-    connection=endpoint.createConnection();
-  }
-  if (chat == null) {
-    room=endpoint.resolveRoom(connection);
-    chat=new MultiUserChat(connection,room);
-    DiscussionHistory history=new DiscussionHistory();
-    history.setMaxChars(0);
-    chat.join(endpoint.getNickname(),null,history,SmackConfiguration.getPacketReplyTimeout());
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Joined room: {} as: {}",room,endpoint.getNickname());
+    try {
+      connection=endpoint.createConnection();
     }
+ catch (    XMPPException e) {
+      if (endpoint.isTestConnectionOnStartup()) {
+        throw new RuntimeException("Could not connect to XMPP server:  " + endpoint.getConnectionDescription(),e);
+      }
+ else {
+        LOG.warn("Could not connect to XMPP server. {}  Producer will attempt lazy connection when needed.",XmppEndpoint.getXmppExceptionLogMessage(e));
+      }
+    }
+  }
+  if (chat == null && connection != null) {
+    initializeChat();
   }
   super.doStart();
 }

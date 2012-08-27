@@ -1,14 +1,27 @@
 {
+  if (connection == null) {
+    try {
+      connection=endpoint.createConnection();
+    }
+ catch (    XMPPException e) {
+      throw new RuntimeExchangeException("Could not connect to XMPP server.",exchange,e);
+    }
+  }
+  if (chat == null) {
+    try {
+      initializeChat();
+    }
+ catch (    Exception e) {
+      throw new RuntimeExchangeException("Could not initialize XMPP chat.",exchange,e);
+    }
+  }
   Message message=chat.createMessage();
   message.setTo(room);
   message.setFrom(endpoint.getUser());
   endpoint.getBinding().populateXmppMessage(message,exchange);
   try {
     if (!connection.isConnected()) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Reconnecting to: {}",XmppEndpoint.getConnectionMessage(connection));
-      }
-      connection.connect();
+      this.reconnect();
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Sending XMPP message: {}",message.getBody());
@@ -17,6 +30,6 @@
     chat.pollMessage();
   }
  catch (  XMPPException e) {
-    throw new RuntimeExchangeException("Cannot send XMPP message: " + message,exchange,e);
+    throw new RuntimeExchangeException("Could not send XMPP message: " + message,exchange,e);
   }
 }

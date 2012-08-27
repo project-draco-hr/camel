@@ -1,5 +1,17 @@
 {
-  connection=endpoint.createConnection();
+  try {
+    connection=endpoint.createConnection();
+  }
+ catch (  XMPPException e) {
+    if (endpoint.isTestConnectionOnStartup()) {
+      throw new RuntimeException("Could not connect to XMPP server.",e);
+    }
+ else {
+      LOG.warn(XmppEndpoint.getXmppExceptionLogMessage(e));
+      scheduleDelayedStart();
+      return;
+    }
+  }
   chatManager=connection.getChatManager();
   chatManager.addChatListener(this);
   if (endpoint.getRoom() == null) {
@@ -30,5 +42,6 @@
       LOG.info("Joined room: {} as: {}",muc.getRoom(),endpoint.getNickname());
     }
   }
+  this.startRobustConnectionMonitor();
   super.doStart();
 }

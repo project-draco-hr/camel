@@ -1,14 +1,14 @@
 {
   try {
+    if (connection == null) {
+      connection=endpoint.createConnection();
+    }
     if (!connection.isConnected()) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Reconnecting to: {}",XmppEndpoint.getConnectionMessage(connection));
-      }
-      connection.connect();
+      this.reconnect();
     }
   }
  catch (  XMPPException e) {
-    throw new RuntimeExchangeException("Cannot connect to: " + XmppEndpoint.getConnectionMessage(connection),exchange,e);
+    throw new RuntimeException("Could not connect to XMPP server.",e);
   }
   ChatManager chatManager=connection.getChatManager();
   Chat chat=getOrCreateChat(chatManager);
@@ -25,9 +25,9 @@
     chat.sendMessage(message);
   }
  catch (  XMPPException xmppe) {
-    throw new RuntimeExchangeException("Cannot send XMPP message: to " + endpoint.getParticipant() + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,xmppe);
+    throw new RuntimeExchangeException("Could not send XMPP message: to " + endpoint.getParticipant() + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,xmppe);
   }
 catch (  Exception e) {
-    throw new RuntimeExchangeException("Cannot send XMPP message to " + endpoint.getParticipant() + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,e);
+    throw new RuntimeExchangeException("Could not send XMPP message to " + endpoint.getParticipant() + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,e);
   }
 }
