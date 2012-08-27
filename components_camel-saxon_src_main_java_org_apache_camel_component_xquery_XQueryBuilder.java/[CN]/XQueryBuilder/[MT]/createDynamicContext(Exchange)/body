@@ -2,17 +2,34 @@
   Configuration config=getConfiguration();
   DynamicQueryContext dynamicQueryContext=new DynamicQueryContext(config);
   Message in=exchange.getIn();
-  Item<?> item=in.getBody(Item.class);
+  Item item=null;
+  if (ObjectHelper.isNotEmpty(getHeaderName())) {
+    item=in.getHeader(getHeaderName(),Item.class);
+  }
+ else {
+    item=in.getBody(Item.class);
+  }
   if (item != null) {
     dynamicQueryContext.setContextItem(item);
   }
  else {
-    Object body=in.getBody();
+    Object body=null;
+    if (ObjectHelper.isNotEmpty(getHeaderName())) {
+      body=in.getHeader(getHeaderName());
+    }
+ else {
+      body=in.getBody();
+    }
     InputStream is=null;
     try {
       Source source;
       if (isInputStreamNeeded(exchange)) {
-        is=exchange.getIn().getBody(InputStream.class);
+        if (ObjectHelper.isNotEmpty(getHeaderName())) {
+          is=exchange.getIn().getHeader(getHeaderName(),InputStream.class);
+        }
+ else {
+          is=exchange.getIn().getBody(InputStream.class);
+        }
         source=getSource(exchange,is);
       }
  else {
