@@ -5,13 +5,26 @@
   InputStream is=null;
   try {
     Object document;
-    if (isInputStreamNeeded(exchange)) {
-      is=exchange.getIn().getBody(InputStream.class);
-      document=getDocument(exchange,is);
+    if (ObjectHelper.isNotEmpty(getHeaderName())) {
+      String headerName=getHeaderName();
+      if (isInputStreamNeeded(exchange,headerName)) {
+        is=exchange.getIn().getHeader(headerName,InputStream.class);
+        document=getDocument(exchange,is);
+      }
+ else {
+        Object headerObject=exchange.getIn().getHeader(getHeaderName());
+        document=getDocument(exchange,headerObject);
+      }
     }
  else {
-      Object body=exchange.getIn().getBody();
-      document=getDocument(exchange,body);
+      if (isInputStreamNeeded(exchange)) {
+        is=exchange.getIn().getBody(InputStream.class);
+        document=getDocument(exchange,is);
+      }
+ else {
+        Object body=exchange.getIn().getBody();
+        document=getDocument(exchange,body);
+      }
     }
     if (resultQName != null) {
       if (document instanceof InputSource) {
