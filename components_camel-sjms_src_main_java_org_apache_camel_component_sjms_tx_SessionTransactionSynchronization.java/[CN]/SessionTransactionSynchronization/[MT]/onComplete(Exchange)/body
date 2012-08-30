@@ -1,13 +1,13 @@
 {
-  if (log.isDebugEnabled()) {
-    log.debug("Processing completion of Exchange id:{}",exchange.getExchangeId());
-  }
   try {
-    if (session != null && session.getTransacted()) {
-      this.session.commit();
+    if (commitStrategy.commit(exchange)) {
+      log.debug("Processing completion of Exchange id:{}",exchange.getExchangeId());
+      if (session != null && session.getTransacted()) {
+        this.session.commit();
+      }
     }
   }
- catch (  JMSException e) {
+ catch (  Exception e) {
     log.warn("Failed to commit the session: {}",e.getMessage());
     exchange.setException(e);
   }

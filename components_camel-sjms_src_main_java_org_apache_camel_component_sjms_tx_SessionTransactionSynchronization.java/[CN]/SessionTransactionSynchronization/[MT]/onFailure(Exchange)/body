@@ -1,13 +1,13 @@
 {
-  if (log.isDebugEnabled()) {
-    log.debug("Processing failure of Exchange id:{}",exchange.getExchangeId());
-  }
   try {
-    if (session != null && session.getTransacted()) {
-      this.session.rollback();
+    if (commitStrategy.rollback(exchange)) {
+      log.debug("Processing failure of Exchange id:{}",exchange.getExchangeId());
+      if (session != null && session.getTransacted()) {
+        this.session.rollback();
+      }
     }
   }
- catch (  JMSException e) {
+ catch (  Exception e) {
     log.warn("Failed to rollback the session: {}",e.getMessage());
   }
 }

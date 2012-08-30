@@ -1,0 +1,43 @@
+{
+  Message answer=null;
+  JmsMessageType messageType=JmsMessageHelper.discoverPayloadType(payload);
+  try {
+switch (messageType) {
+case Bytes:
+      BytesMessage bytesMessage=session.createBytesMessage();
+    bytesMessage.writeBytes((byte[])payload);
+  answer=bytesMessage;
+break;
+case Map:
+MapMessage mapMessage=session.createMapMessage();
+Map<String,Object> objMap=(Map<String,Object>)payload;
+Set<String> keys=objMap.keySet();
+for (String key : keys) {
+Object value=objMap.get(key);
+mapMessage.setObject(key,value);
+}
+answer=mapMessage;
+break;
+case Object:
+ObjectMessage objectMessage=session.createObjectMessage();
+objectMessage.setObject((Serializable)payload);
+answer=objectMessage;
+break;
+case Text:
+TextMessage textMessage=session.createTextMessage();
+textMessage.setText((String)payload);
+answer=textMessage;
+break;
+default :
+break;
+}
+}
+ catch (Exception e) {
+LOGGER.error("Error creating a message of type: " + messageType.toString());
+throw e;
+}
+if (messageHeaders != null && !messageHeaders.isEmpty()) {
+answer=JmsMessageHelper.setJmsMessageHeaders(answer,messageHeaders,keyFormatStrategy);
+}
+return answer;
+}

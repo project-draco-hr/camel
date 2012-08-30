@@ -1,7 +1,14 @@
 {
   Connection conn=getConnectionResource().borrowConnection();
+  TransactionCommitStrategy commitStrategy=null;
   Session session=null;
   if (isEndpointTransacted()) {
+    if (this.getCommitStrategy() != null) {
+      commitStrategy=this.getCommitStrategy();
+    }
+ else {
+      commitStrategy=new DefaultTransactionCommitStrategy();
+    }
     session=conn.createSession(true,getAcknowledgeMode());
   }
  else {
@@ -15,5 +22,5 @@
     messageProducer=JmsObjectFactory.createQueueProducer(session,getDestinationName());
   }
   getConnectionResource().returnConnection(conn);
-  return new MessageProducerResources(session,messageProducer);
+  return new MessageProducerResources(session,messageProducer,commitStrategy);
 }

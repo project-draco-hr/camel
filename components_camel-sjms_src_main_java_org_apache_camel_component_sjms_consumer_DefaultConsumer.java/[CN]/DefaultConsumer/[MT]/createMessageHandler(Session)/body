@@ -1,16 +1,26 @@
 {
+  TransactionCommitStrategy commitStrategy=null;
+  if (this.getCommitStrategy() != null) {
+    commitStrategy=this.getCommitStrategy();
+  }
+ else   if (this.getTransactionBatchCount() > 0) {
+    commitStrategy=new BatchTransactionCommitStrategy(this.getTransactionBatchCount());
+  }
+ else {
+    commitStrategy=new DefaultTransactionCommitStrategy();
+  }
   DefaultMessageHandler messageHandler=null;
   if (getSjmsEndpoint().getExchangePattern().equals(ExchangePattern.InOnly)) {
-    if (isEndpointTransacted()) {
-      messageHandler=new InOnlyMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session));
+    if (isTransacted()) {
+      messageHandler=new InOnlyMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session,commitStrategy));
     }
  else {
       messageHandler=new InOnlyMessageHandler(getEndpoint(),executor);
     }
   }
  else {
-    if (isEndpointTransacted()) {
-      messageHandler=new InOutMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session));
+    if (isTransacted()) {
+      messageHandler=new InOutMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session,commitStrategy));
     }
  else {
       messageHandler=new InOutMessageHandler(getEndpoint(),executor);
@@ -19,7 +29,7 @@
   messageHandler.setSession(session);
   messageHandler.setProcessor(getAsyncProcessor());
   messageHandler.setSynchronous(isSynchronous());
-  messageHandler.setTransacted(isEndpointTransacted());
+  messageHandler.setTransacted(isTransacted());
   messageHandler.setTopic(isTopic());
   return messageHandler;
 }

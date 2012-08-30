@@ -1,0 +1,94 @@
+{
+  KeyFormatStrategy localKeyFormatStrategy=null;
+  if (keyFormatStrategy == null) {
+    localKeyFormatStrategy=new DefaultJmsKeyFormatStrategy();
+  }
+ else {
+    localKeyFormatStrategy=keyFormatStrategy;
+  }
+  Map<String,Object> headers=new HashMap<String,Object>(messageHeaders);
+  Set<String> keys=headers.keySet();
+  for (  String headerName : keys) {
+    Object headerValue=headers.get(headerName);
+    if (headerName.equalsIgnoreCase(JMS_CORRELATION_ID)) {
+      if (headerValue == null) {
+        setCorrelationId(jmsMessage,null);
+      }
+ else       if (headerValue instanceof String) {
+        setCorrelationId(jmsMessage,(String)headerValue);
+      }
+ else {
+        throw new IllegalHeaderException("The " + JMS_CORRELATION_ID + " must either be a String or null.  Found: "+ headerValue.getClass().getName());
+      }
+    }
+ else     if (headerName.equalsIgnoreCase(JMS_REPLY_TO)) {
+      if (headerValue instanceof String) {
+      }
+ else {
+      }
+    }
+ else     if (headerName.equalsIgnoreCase(JMS_TYPE)) {
+      if (headerValue == null) {
+        setMessageType(jmsMessage,null);
+      }
+ else       if (headerValue instanceof String) {
+        setMessageType(jmsMessage,(String)headerValue);
+      }
+ else {
+        throw new IllegalHeaderException("The " + JMS_TYPE + " must either be a String or null.  Found: "+ headerValue.getClass().getName());
+      }
+    }
+ else     if (headerName.equalsIgnoreCase(JMS_PRIORITY)) {
+      if (headerValue instanceof Integer) {
+        try {
+          jmsMessage.setJMSPriority((Integer)headerValue);
+        }
+ catch (        JMSException e) {
+          throw new IllegalHeaderException("Failed to set the " + JMS_PRIORITY + " header. Cause: "+ e.getLocalizedMessage(),e);
+        }
+      }
+ else {
+        throw new IllegalHeaderException("The " + JMS_PRIORITY + " must be a Integer.  Type found: "+ headerValue.getClass().getName());
+      }
+    }
+ else     if (headerName.equalsIgnoreCase(JMS_DELIVERY_MODE)) {
+      try {
+        JmsMessageHelper.setJMSDeliveryMode(jmsMessage,headerValue);
+      }
+ catch (      JMSException e) {
+        throw new IllegalHeaderException("Failed to set the " + JMS_DELIVERY_MODE + " header. Cause: "+ e.getLocalizedMessage(),e);
+      }
+    }
+ else     if (headerName.equalsIgnoreCase(JMS_EXPIRATION)) {
+      if (headerValue instanceof Long) {
+        try {
+          jmsMessage.setJMSExpiration((Long)headerValue);
+        }
+ catch (        JMSException e) {
+          throw new IllegalHeaderException("Failed to set the " + JMS_EXPIRATION + " header. Cause: "+ e.getLocalizedMessage(),e);
+        }
+      }
+ else {
+        throw new IllegalHeaderException("The " + JMS_EXPIRATION + " must be a Long.  Type found: "+ headerValue.getClass().getName());
+      }
+    }
+ else {
+      LOGGER.trace("Ignoring JMS header: {} with value: {}",headerName,headerValue);
+      if (headerName.equalsIgnoreCase(JMS_DESTINATION) || headerName.equalsIgnoreCase(JMS_MESSAGE_ID) || headerName.equalsIgnoreCase("JMSTimestamp")|| headerName.equalsIgnoreCase("JMSRedelivered")) {
+        LOGGER.trace("Ignoring JMS header: {} with value: {}",headerName,headerValue);
+      }
+ else {
+        if (!(headerValue instanceof JmsMessageType)) {
+          String encodedName=localKeyFormatStrategy.encodeKey(headerName);
+          try {
+            JmsMessageHelper.setProperty(jmsMessage,encodedName,headerValue);
+          }
+ catch (          JMSException e) {
+            throw new IllegalHeaderException("Failed to set the header " + encodedName + " header. Cause: "+ e.getLocalizedMessage(),e);
+          }
+        }
+      }
+    }
+  }
+  return jmsMessage;
+}

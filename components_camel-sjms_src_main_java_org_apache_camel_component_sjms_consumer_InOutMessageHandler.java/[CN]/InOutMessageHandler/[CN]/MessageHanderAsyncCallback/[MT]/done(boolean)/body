@@ -1,6 +1,13 @@
 {
   try {
-    Message response=JmsMessageHelper.createMessage(exchange,getSession(),true);
+    Object body=exchange.getOut().getBody();
+    if (body != null) {
+      if (body instanceof InputStream) {
+        byte[] bytes=exchange.getContext().getTypeConverter().convertTo(byte[].class,body);
+        exchange.getOut().setBody(bytes);
+      }
+    }
+    Message response=JmsMessageExchangeHelper.createMessage(exchange,getSession(),true);
     response.setJMSCorrelationID(exchange.getIn().getHeader("JMSCorrelationID",String.class));
     localProducer.send(response);
   }
