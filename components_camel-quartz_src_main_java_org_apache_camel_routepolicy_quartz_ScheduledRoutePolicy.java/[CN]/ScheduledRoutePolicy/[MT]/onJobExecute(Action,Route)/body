@@ -5,7 +5,7 @@
     if (routeStatus == ServiceStatus.Stopped) {
       startRoute(route);
     }
- else     if (routeStatus == ServiceStatus.Suspended) {
+ else     if (ServiceHelper.isSuspended(route.getConsumer())) {
       startConsumer(route.getConsumer());
     }
   }
@@ -27,7 +27,12 @@
   }
  else   if (action == Action.RESUME) {
     if (routeStatus == ServiceStatus.Started) {
-      startConsumer(route.getConsumer());
+      if (ServiceHelper.isSuspended(route.getConsumer())) {
+        startConsumer(route.getConsumer());
+      }
+ else {
+        LOG.warn("The Consumer {} is not suspended and cannot be resumed.",route.getConsumer());
+      }
     }
  else {
       LOG.warn("Route is not in a started state and cannot be resumed. The current route state is {}",routeStatus);
