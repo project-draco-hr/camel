@@ -1,20 +1,19 @@
 {
   ProducerTemplate producerTemplate=camelContext.createProducerTemplate();
-  Produce annotation=point.getAnnotated().getAnnotation(Produce.class);
-  if (annotation != null) {
-    String uri=annotation.uri();
-    String ref=annotation.ref();
-    String property=annotation.property();
-    if (ObjectHelper.isEmpty(uri)) {
-      if (ObjectHelper.isNotEmpty(ref)) {
-        uri="ref:" + ref;
-      }
+  Annotated annotated=point.getAnnotated();
+  Uri uri=annotated.getAnnotation(Uri.class);
+  Endpoint endpoint=null;
+  if (uri != null) {
+    endpoint=CamelContextHelper.getMandatoryEndpoint(camelContext,uri.value());
+  }
  else {
-        ObjectHelper.notEmpty(property,"uri, ref or property",annotation);
-        throw new UnsupportedOperationException("property not yet supported");
-      }
+    Produce annotation=annotated.getAnnotation(Produce.class);
+    if (annotation != null) {
+      endpoint=getEndpoint(point,annotation.uri(),annotation.ref(),annotation.property());
     }
-    producerTemplate.setDefaultEndpointUri(uri);
+  }
+  if (endpoint != null) {
+    producerTemplate.setDefaultEndpoint(endpoint);
   }
   return producerTemplate;
 }
