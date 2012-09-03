@@ -1,0 +1,18 @@
+{
+  CamelPostProcessorHelper postProcessorHelper=postProcessor.getPostProcessorHelper();
+  for (  Method method : consumeMethods) {
+    postProcessorHelper.consumerInjection(method,reference,beanName);
+  }
+  for (  Method method : produceMethods) {
+    Produce produce=method.getAnnotation(Produce.class);
+    if (produce != null && postProcessorHelper.matchContext(produce.context())) {
+      postProcessor.setterInjection(method,bean,beanName,produce.uri(),produce.ref(),produce.property());
+    }
+  }
+  for (  Field field : produceFields) {
+    Produce produce=field.getAnnotation(Produce.class);
+    if (produce != null && postProcessorHelper.matchContext(produce.context())) {
+      postProcessor.injectField(field,produce.uri(),produce.ref(),produce.property(),reference,beanName);
+    }
+  }
+}
