@@ -1,0 +1,15 @@
+{
+  ObjectHelper.notNull(getCamelContext(),"camelContext");
+  CamelPostProcessorHelper postProcessor=new CamelPostProcessorHelper(getCamelContext());
+  Collection<BeanAdapter> adapters=beanAdapters.values();
+  for (  BeanAdapter adapter : adapters) {
+    Bean<?> bean=adapter.getBean();
+    CreationalContext<?> creationalContext=beanManager.createCreationalContext(bean);
+    Object reference=beanManager.getReference(bean,Object.class,creationalContext);
+    String beanName=bean.getName();
+    List<Method> consumeMethods=adapter.getConsumeMethods();
+    for (    Method method : consumeMethods) {
+      postProcessor.consumerInjection(method,reference,beanName);
+    }
+  }
+}

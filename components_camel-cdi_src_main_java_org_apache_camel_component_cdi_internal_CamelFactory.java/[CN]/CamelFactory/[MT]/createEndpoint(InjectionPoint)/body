@@ -7,13 +7,15 @@
   EndpointInject annotation=point.getAnnotated().getAnnotation(EndpointInject.class);
   if (annotation != null) {
     String uri=annotation.uri();
-    if (ObjectHelper.isNotEmpty(uri)) {
-      return camelContext.getEndpoint(uri,endpointType);
+    if (ObjectHelper.isEmpty(uri)) {
+      String ref=annotation.ref();
+      if (ObjectHelper.isNotEmpty(ref)) {
+        uri="ref:" + ref;
+      }
+ else {
+      }
     }
-    String ref=annotation.ref();
-    if (ObjectHelper.isNotEmpty(ref)) {
-      return camelContext.getEndpoint("ref:" + ref,endpointType);
-    }
+    return camelContext.getEndpoint(uri,endpointType);
   }
   throw new IllegalArgumentException("Could not create instance of Endpoint for the given injection point " + point);
 }
