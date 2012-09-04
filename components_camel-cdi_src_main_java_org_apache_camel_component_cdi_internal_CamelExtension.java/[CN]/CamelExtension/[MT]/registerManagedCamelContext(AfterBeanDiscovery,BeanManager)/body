@@ -1,3 +1,15 @@
 {
-  abd.addBean(new CamelContextBean(manager.createInjectionTarget(manager.createAnnotatedType(CdiCamelContext.class))));
+  if (namedCamelContexts.isEmpty()) {
+    abd.addBean(new CamelContextBean(manager));
+  }
+ else {
+    Set<Map.Entry<String,List<Bean<?>>>> entries=namedCamelContexts.entrySet();
+    for (    Map.Entry<String,List<Bean<?>>> entry : entries) {
+      String name=entry.getKey();
+      List<Bean<?>> beans=entry.getValue();
+      CamelContextBean camelContextBean=new CamelContextBean(manager,"CamelContext:" + name,name,beans);
+      camelContextBeans.add(camelContextBean);
+      abd.addBean(camelContextBean);
+    }
+  }
 }

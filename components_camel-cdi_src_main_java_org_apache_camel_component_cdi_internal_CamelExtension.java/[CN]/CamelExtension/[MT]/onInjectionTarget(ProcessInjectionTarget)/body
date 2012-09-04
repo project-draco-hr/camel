@@ -1,0 +1,16 @@
+{
+  final InjectionTarget injectionTarget=event.getInjectionTarget();
+  final Class beanClass=event.getAnnotatedType().getJavaClass();
+  final String beanName=event.getInjectionTarget().toString();
+  final BeanAdapter adapter=createBeanAdapter(beanClass);
+  if (!adapter.isEmpty()) {
+    DelegateInjectionTarget newTarget=new DelegateInjectionTarget(injectionTarget){
+      @Override public void postConstruct(      Object instance){
+        super.postConstruct(instance);
+        adapter.inject(CamelExtension.this,instance,beanName);
+      }
+    }
+;
+    event.setInjectionTarget(newTarget);
+  }
+}
