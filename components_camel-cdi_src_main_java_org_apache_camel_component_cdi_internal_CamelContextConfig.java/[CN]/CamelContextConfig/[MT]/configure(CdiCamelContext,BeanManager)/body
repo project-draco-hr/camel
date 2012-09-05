@@ -1,12 +1,24 @@
 {
   for (  Bean<?> bean : routeBuilderBeans) {
     CreationalContext<?> createContext=beanManager.createCreationalContext(bean);
-    RouteBuilder routeBuilder=(RouteBuilder)beanManager.getReference(bean,RouteBuilder.class,createContext);
+    Class<?> beanClass=bean.getBeanClass();
+    Object reference=beanManager.getReference(bean,beanClass,createContext);
+    ObjectHelper.notNull(reference,"Could not instantiate bean of type " + beanClass.getName() + " for "+ bean);
     try {
-      camelContext.addRoutes(routeBuilder);
+      if (reference instanceof RoutesBuilder) {
+        RoutesBuilder routeBuilder=(RoutesBuilder)reference;
+        camelContext.addRoutes(routeBuilder);
+      }
+ else       if (reference instanceof RouteContainer) {
+        RouteContainer routeContainer=(RouteContainer)reference;
+        camelContext.addRouteDefinitions(routeContainer.getRoutes());
+      }
+ else {
+        throw new IllegalArgumentException("Invalid route builder " + reference + " of type "+ beanClass.getName()+ ". Should be RoutesBuilder or RoutesContainer");
+      }
     }
  catch (    Exception e) {
-      throw new RuntimeCamelException("Could not add route builder " + routeBuilder + ". Reason: "+ e,e);
+      throw new RuntimeCamelException("Could not add " + reference + " to CamelContext: "+ camelContext+ ". Reason: "+ e,e);
     }
   }
 }
