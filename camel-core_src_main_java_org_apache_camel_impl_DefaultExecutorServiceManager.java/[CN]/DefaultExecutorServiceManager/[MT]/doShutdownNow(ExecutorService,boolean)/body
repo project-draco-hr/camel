@@ -2,9 +2,16 @@
   ObjectHelper.notNull(executorService,"executorService");
   List<Runnable> answer=null;
   if (!executorService.isShutdown()) {
-    LOG.debug("ShutdownNow ExecutorService: {}",executorService);
+    if (failSafe) {
+      LOG.warn("Forcing shutdown of ExecutorService: {}",executorService);
+    }
+ else {
+      LOG.debug("Forcing shutdown of ExecutorService: {}",executorService);
+    }
     answer=executorService.shutdownNow();
-    LOG.trace("ShutdownNow ExecutorService: {} complete.",executorService);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Shutdown of ExecutorService: {} is shutdown: {} and terminated: {}.",new Object[]{executorService,executorService.isShutdown(),executorService.isTerminated()});
+    }
   }
   if (executorService instanceof ThreadPoolExecutor) {
     ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
@@ -12,7 +19,7 @@
       lifecycle.onThreadPoolRemove(camelContext,threadPool);
     }
   }
-  if (remove) {
+  if (!failSafe) {
     executorServices.remove(executorService);
   }
   return answer;

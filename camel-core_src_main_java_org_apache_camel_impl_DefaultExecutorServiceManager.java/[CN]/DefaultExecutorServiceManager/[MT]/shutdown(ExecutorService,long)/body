@@ -1,0 +1,40 @@
+{
+  ObjectHelper.notNull(executorService,"executorService");
+  if (shutdownAwaitTermination <= 0) {
+    throw new IllegalArgumentException("ShutdownAwaitTermination must be a positive number, was: " + shutdownAwaitTermination);
+  }
+  boolean warned=false;
+  StopWatch watch=new StopWatch();
+  if (!executorService.isShutdown()) {
+    LOG.trace("Shutdown of ExecutorService: {} with await termination: {} millis",executorService,shutdownAwaitTermination);
+    executorService.shutdown();
+    try {
+      if (!awaitTermination(executorService,shutdownAwaitTermination)) {
+        warned=true;
+        LOG.warn("Forcing shutdown of ExecutorService: {} due first await termination elapsed.",executorService);
+        executorService.shutdownNow();
+        if (!awaitTermination(executorService,shutdownAwaitTermination)) {
+          LOG.warn("Cannot completely force shutdown of ExecutorService: {} due second await termination elapsed.",executorService);
+        }
+      }
+    }
+ catch (    InterruptedException e) {
+      warned=true;
+      LOG.warn("Forcing shutdown of ExecutorService: {} due interrupted.",executorService);
+      executorService.shutdownNow();
+    }
+    if (warned) {
+      LOG.info("Shutdown of ExecutorService: {} is shutdown: {} and terminated: {} took: {}.",new Object[]{executorService,executorService.isShutdown(),executorService.isTerminated(),TimeUtils.printDuration(watch.taken())});
+    }
+ else     if (LOG.isDebugEnabled()) {
+      LOG.debug("Shutdown of ExecutorService: {} is shutdown: {} and terminated: {} took: {}.",new Object[]{executorService,executorService.isShutdown(),executorService.isTerminated(),TimeUtils.printDuration(watch.taken())});
+    }
+  }
+  if (executorService instanceof ThreadPoolExecutor) {
+    ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
+    for (    LifecycleStrategy lifecycle : camelContext.getLifecycleStrategies()) {
+      lifecycle.onThreadPoolRemove(camelContext,threadPool);
+    }
+  }
+  executorServices.remove(executorService);
+}
