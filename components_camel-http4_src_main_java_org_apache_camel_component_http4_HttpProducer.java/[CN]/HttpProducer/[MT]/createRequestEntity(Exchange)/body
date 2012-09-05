@@ -8,8 +8,12 @@
     try {
       Object data=in.getBody();
       if (data != null) {
-        String contentType=ExchangeHelper.getContentType(exchange);
-        if (contentType != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+        String contentTypeString=ExchangeHelper.getContentType(exchange);
+        ContentType contentType=null;
+        if (contentTypeString != null) {
+          contentType=ContentType.parse(contentTypeString);
+        }
+        if (contentTypeString != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentTypeString)) {
           Serializable obj=in.getMandatoryBody(Serializable.class);
           ByteArrayOutputStream bos=new ByteArrayOutputStream();
           HttpHelper.writeObjectToStream(bos,obj);
@@ -21,19 +25,28 @@
  else         if (data instanceof File || data instanceof GenericFile) {
           File file=in.getBody(File.class);
           if (file != null) {
-            answer=new FileEntity(file,contentType);
+            if (contentType != null) {
+              answer=new FileEntity(file,contentType);
+            }
+ else {
+              answer=new FileEntity(file);
+            }
           }
         }
  else         if (data instanceof String) {
           String charset=IOHelper.getCharsetName(exchange,false);
           StringEntity entity=new StringEntity((String)data,charset);
-          entity.setContentType(contentType);
+          if (contentType != null) {
+            entity.setContentType(contentType.toString());
+          }
           answer=entity;
         }
         if (answer == null) {
           InputStream is=in.getMandatoryBody(InputStream.class);
           InputStreamEntity entity=new InputStreamEntity(is,-1);
-          entity.setContentType(contentType);
+          if (contentType != null) {
+            entity.setContentType(contentType.toString());
+          }
           answer=entity;
         }
       }
