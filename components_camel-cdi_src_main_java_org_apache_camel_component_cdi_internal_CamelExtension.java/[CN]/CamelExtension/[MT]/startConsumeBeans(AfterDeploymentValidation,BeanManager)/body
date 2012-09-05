@@ -1,16 +1,14 @@
 {
-  if (camelContextBeans.isEmpty()) {
-    CamelContext camelContext=BeanProvider.getContextualReference(CamelContext.class);
-    camelContexts.put("",camelContext);
+  for (  CamelContextBean bean : camelContextBeans) {
+    String name=bean.getCamelContextName();
+    CamelContext context=getCamelContext(name);
+    if (context == null) {
+      throw new IllegalStateException("CamelContext '" + name + "' has not been injected into the CamelContextMap");
+    }
+    bean.configureCamelContext((CdiCamelContext)context);
   }
-  for (  CamelContextBean camelContextBean : camelContextBeans) {
-    CdiCamelContext context=camelContextBean.configure();
-    camelContexts.put(camelContextBean.getCamelContextName(),context);
-  }
-  Set<Map.Entry<Bean<?>,BeanAdapter>> entries=eagerBeans.entrySet();
-  for (  Map.Entry<Bean<?>,BeanAdapter> entry : entries) {
-    Bean<?> bean=entry.getKey();
+  for (  Bean<?> bean : eagerBeans) {
     CreationalContext<?> creationalContext=beanManager.createCreationalContext(bean);
-    beanManager.getReference(bean,Object.class,creationalContext);
+    beanManager.getReference(bean,bean.getBeanClass(),creationalContext);
   }
 }

@@ -1,0 +1,34 @@
+{
+  final BeanAdapter adapter=new BeanAdapter(camelStartup);
+  ReflectionHelper.doWithFields(beanClass,new ReflectionHelper.FieldCallback(){
+    @Override public void doWith(    Field field) throws IllegalArgumentException, IllegalAccessException {
+      Produce produce=field.getAnnotation(Produce.class);
+      if (produce != null && !injectAnnotatedField(field)) {
+        adapter.addProduceField(field);
+      }
+      EndpointInject endpointInject=field.getAnnotation(EndpointInject.class);
+      if (endpointInject != null) {
+        adapter.addEndpointField(field);
+      }
+    }
+  }
+);
+  ReflectionHelper.doWithMethods(beanClass,new ReflectionHelper.MethodCallback(){
+    @Override public void doWith(    Method method) throws IllegalArgumentException, IllegalAccessException {
+      Consume consume=method.getAnnotation(Consume.class);
+      if (consume != null) {
+        adapter.addConsumeMethod(method);
+      }
+      Produce produce=method.getAnnotation(Produce.class);
+      if (produce != null) {
+        adapter.addProduceMethod(method);
+      }
+      EndpointInject endpointInject=method.getAnnotation(EndpointInject.class);
+      if (endpointInject != null) {
+        adapter.addEndpointMethod(method);
+      }
+    }
+  }
+);
+  return adapter;
+}
