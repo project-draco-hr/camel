@@ -27,6 +27,7 @@
     sslContextParameters=getSslContextParameters();
   }
   String httpMethodRestrict=getAndRemoveParameter(parameters,"httpMethodRestrict",String.class);
+  HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
   boolean secure=HttpHelper.isSecureConnection(uri);
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,secure);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),httpClientParameters);
@@ -48,7 +49,12 @@
     }
   }
   endpoint.setHttpUri(httpUri);
-  setEndpointHeaderFilterStrategy(endpoint);
+  if (headerFilterStrategy != null) {
+    endpoint.setHeaderFilterStrategy(headerFilterStrategy);
+  }
+ else {
+    setEndpointHeaderFilterStrategy(endpoint);
+  }
   endpoint.setBinding(getHttpBinding());
   if (httpBinding != null) {
     endpoint.setHttpBinding(httpBinding);
