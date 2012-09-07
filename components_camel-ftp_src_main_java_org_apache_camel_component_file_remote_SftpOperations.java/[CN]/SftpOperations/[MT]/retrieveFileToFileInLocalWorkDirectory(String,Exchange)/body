@@ -28,10 +28,10 @@
  catch (  Exception e) {
     throw new GenericFileOperationFailedException("Cannot create new local work file: " + local);
   }
+  String currentDir=null;
   try {
     file.setBody(local);
     String remoteName=name;
-    String currentDir=null;
     if (endpoint.getConfiguration().isStepwise()) {
       currentDir=getCurrentDirectory();
       String path=FileUtil.onlyPath(name);
@@ -41,9 +41,6 @@
       remoteName=FileUtil.stripPath(name);
     }
     channel.get(remoteName,os);
-    if (endpoint.getConfiguration().isStepwise()) {
-      changeCurrentDirectory(currentDir);
-    }
   }
  catch (  SftpException e) {
     LOG.trace("Error occurred during retrieving file: {} to local directory. Deleting local work file: {}",name,temp);
@@ -56,6 +53,9 @@
   }
  finally {
     IOHelper.close(os,"retrieve: " + name,LOG);
+    if (currentDir != null) {
+      changeCurrentDirectory(currentDir);
+    }
   }
   LOG.debug("Retrieve file to local work file result: true");
   LOG.trace("Renaming local in progress file from: {} to: {}",temp,local);
