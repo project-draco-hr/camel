@@ -11,6 +11,7 @@
   String proxyHost=getAndRemoveParameter(parameters,"proxyHost",String.class);
   Integer proxyPort=getAndRemoveParameter(parameters,"proxyPort",Integer.class);
   String authMethodPriority=getAndRemoveParameter(parameters,"authMethodPriority",String.class);
+  HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
   HttpClientParams clientParams=new HttpClientParams();
   IntrospectionSupport.setProperties(clientParams,parameters,"httpClient.");
   validateParameters(uri,parameters,"httpClient.");
@@ -18,7 +19,12 @@
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,authMethods);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),httpClientParameters);
   HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,clientParams,httpConnectionManager,configurer);
-  setEndpointHeaderFilterStrategy(endpoint);
+  if (headerFilterStrategy != null) {
+    endpoint.setHeaderFilterStrategy(headerFilterStrategy);
+  }
+ else {
+    setEndpointHeaderFilterStrategy(endpoint);
+  }
   if (binding == null) {
     binding=getHttpBinding();
   }
