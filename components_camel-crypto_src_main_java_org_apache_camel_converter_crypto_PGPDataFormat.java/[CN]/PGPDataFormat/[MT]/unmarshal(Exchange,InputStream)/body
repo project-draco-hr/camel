@@ -6,8 +6,15 @@
   if (key == null) {
     throw new IllegalArgumentException("Private key is null, cannot proceed");
   }
-  InputStream in=new ByteArrayInputStream(IOUtils.toByteArray(encryptedStream));
-  in=PGPUtil.getDecoderStream(in);
+  InputStream in;
+  try {
+    byte[] encryptedData=IOUtils.toByteArray(encryptedStream);
+    InputStream byteStream=new ByteArrayInputStream(encryptedData);
+    in=PGPUtil.getDecoderStream(byteStream);
+  }
+  finally {
+    IOUtils.closeQuietly(encryptedStream);
+  }
   PGPObjectFactory pgpF=new PGPObjectFactory(in);
   PGPEncryptedDataList enc;
   Object o=pgpF.nextObject();

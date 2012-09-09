@@ -3,8 +3,16 @@
   if (key == null) {
     throw new IllegalArgumentException("Public key is null, cannot proceed");
   }
-  InputStream plaintextStream=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
-  byte[] compressedData=PGPDataFormatUtil.compress(IOUtils.toByteArray(plaintextStream),PGPLiteralData.CONSOLE,CompressionAlgorithmTags.ZIP);
+  byte[] plaintextData;
+  InputStream plaintextStream=null;
+  try {
+    plaintextStream=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
+    plaintextData=IOUtils.toByteArray(plaintextStream);
+  }
+  finally {
+    IOUtils.closeQuietly(plaintextStream);
+  }
+  byte[] compressedData=PGPDataFormatUtil.compress(plaintextData,PGPLiteralData.CONSOLE,CompressionAlgorithmTags.ZIP);
   if (armored) {
     outputStream=new ArmoredOutputStream(outputStream);
   }
