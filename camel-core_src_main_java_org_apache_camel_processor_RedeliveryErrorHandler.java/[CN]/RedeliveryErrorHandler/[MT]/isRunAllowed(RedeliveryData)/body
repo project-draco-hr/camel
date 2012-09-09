@@ -1,0 +1,20 @@
+{
+  boolean forceShutdown=camelContext.getShutdownStrategy().forceShutdown(this);
+  if (forceShutdown) {
+    log.trace("isRunAllowed() -> false (Run not allowed as ShutdownStrategy is forcing shutting down)");
+    return false;
+  }
+  if (data.redeliveryCounter > 0) {
+    if (data.redeliverWhileStopping) {
+      log.trace("isRunAllowed() -> true (Run allowed as RedeliverWhileStopping is enabled)");
+      return true;
+    }
+ else     if (preparingShutdown) {
+      log.trace("isRunAllowed() -> false (Run not allowed as we are preparing for shutdown)");
+      return false;
+    }
+  }
+  boolean answer=super.isRunAllowed();
+  log.trace("isRunAllowed() -> {} (Run allowed if we are not stopped/stopping)",answer);
+  return answer;
+}
