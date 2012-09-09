@@ -22,6 +22,9 @@
     }
     ResultScanner scanner=table.getScanner(scan);
     int exchangeCount=0;
+    Exchange exchange=endpoint.createExchange();
+    exchange.getIn().setHeader(CellMappingStrategyFactory.STRATEGY,CellMappingStrategyFactory.BODY);
+    CellMappingStrategy mappingStrategy=endpoint.getCellMappingStrategyFactory().getStrategy(exchange.getIn());
     for (Result result=scanner.next(); (exchangeCount < maxMessagesPerPoll || maxMessagesPerPoll <= 0) && result != null; result=scanner.next()) {
       HBaseData data=new HBaseData();
       HBaseRow resultRow=new HBaseRow();
@@ -40,9 +43,8 @@
           resultRow.getCells().add(resultCell);
         }
         data.getRows().add(resultRow);
-        Exchange exchange=endpoint.createExchange();
+        exchange=endpoint.createExchange();
         exchange.getIn().setHeader(CellMappingStrategyFactory.STRATEGY,CellMappingStrategyFactory.BODY);
-        CellMappingStrategy mappingStrategy=endpoint.getCellMappingStrategyFactory().getStrategy(exchange.getIn());
         mappingStrategy.applyScanResults(exchange.getIn(),data);
         exchange.getIn().setHeader(HbaseAttribute.HBASE_MARKED_ROW_ID.asHeader(),result.getRow());
         queue.add(exchange);
