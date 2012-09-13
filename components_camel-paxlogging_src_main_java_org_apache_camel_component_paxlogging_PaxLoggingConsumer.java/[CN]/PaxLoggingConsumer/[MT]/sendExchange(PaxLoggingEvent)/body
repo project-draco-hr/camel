@@ -5,14 +5,16 @@
   }
   Exchange exchange=endpoint.createExchange();
   exchange.getIn().setBody(paxLoggingEvent);
-  LOG.trace("PaxLogging {} is firing",endpoint.getName());
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("PaxLogging {} is firing",endpoint.getName());
+  }
   try {
     getProcessor().process(exchange);
-    if (exchange.getException() != null) {
-      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
-    }
   }
  catch (  Exception e) {
+    exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
     getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
   }
 }
