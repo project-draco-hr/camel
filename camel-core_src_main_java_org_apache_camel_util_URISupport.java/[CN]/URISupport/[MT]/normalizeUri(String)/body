@@ -13,6 +13,17 @@
     path=path.substring(0,idx);
   }
   path=UnsafeUriCharactersEncoder.encode(path);
+  String userInfoPath=path;
+  if (userInfoPath.contains("/")) {
+    userInfoPath=userInfoPath.substring(0,userInfoPath.indexOf("/"));
+  }
+  if (StringHelper.countChar(userInfoPath,'@') > 1) {
+    int max=userInfoPath.lastIndexOf('@');
+    String before=userInfoPath.substring(0,max);
+    String after=path.substring(max);
+    before=StringHelper.replaceAll(before,"@","%40");
+    path=before + after;
+  }
   Map<String,Object> parameters=URISupport.parseParameters(u);
   if (parameters.isEmpty()) {
     return buildUri(scheme,path,null);
