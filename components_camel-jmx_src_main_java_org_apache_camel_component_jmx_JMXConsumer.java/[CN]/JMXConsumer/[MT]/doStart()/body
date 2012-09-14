@@ -1,15 +1,22 @@
 {
-  super.doStart();
-  JMXEndpoint ep=(JMXEndpoint)getEndpoint();
-  if (ep.isPlatformServer()) {
+  if (mJmxEndpoint.isPlatformServer()) {
     setServerConnection(ManagementFactory.getPlatformMBeanServer());
   }
  else {
-    JMXServiceURL url=new JMXServiceURL(ep.getServerURL());
-    String[] creds={ep.getUser(),ep.getPassword()};
-    Map<String,String[]> map=Collections.singletonMap(JMXConnector.CREDENTIALS,creds);
-    JMXConnector connector=JMXConnectorFactory.connect(url,map);
-    setServerConnection(connector.getMBeanServerConnection());
+    try {
+      initNetworkConnection();
+    }
+ catch (    IOException e) {
+      if (!mJmxEndpoint.getTestConnectionOnStartup()) {
+        LOG.warn("Failed to connect to JMX server. >> {}",e.getMessage());
+        scheduleDelayedStart();
+        return;
+      }
+ else {
+        throw e;
+      }
+    }
   }
   addNotificationListener();
+  super.doStart();
 }

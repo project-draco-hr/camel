@@ -1,0 +1,15 @@
+{
+  JMXConnectionNotification connectionNotification=(JMXConnectionNotification)notification;
+  if (!connectionNotification.getConnectionId().equals(mConnectionId)) {
+    return;
+  }
+  if (connectionNotification.getType().equals(JMXConnectionNotification.NOTIFS_LOST) || connectionNotification.getType().equals(JMXConnectionNotification.CLOSED) || connectionNotification.getType().equals(JMXConnectionNotification.FAILED)) {
+    LOG.warn("Lost JMX connection for : {}",URISupport.sanitizeUri(mJmxEndpoint.getEndpointUri()));
+    if (mJmxEndpoint.getReconnectOnConnectionFailure()) {
+      scheduleReconnect();
+    }
+ else {
+      LOG.warn("The JMX consumer will not be reconnected.  Use 'reconnectOnConnectionFailure' to " + "enable reconnections.");
+    }
+  }
+}

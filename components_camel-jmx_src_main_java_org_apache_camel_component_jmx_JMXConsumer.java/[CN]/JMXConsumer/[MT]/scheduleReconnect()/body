@@ -1,0 +1,17 @@
+{
+  Runnable startRunnable=new Runnable(){
+    @Override public void run(){
+      try {
+        initNetworkConnection();
+        addNotificationListener();
+      }
+ catch (      Exception e) {
+        LOG.warn("Failed to reconnect to JMX server. >> {}",e.getMessage());
+        scheduleReconnect();
+      }
+    }
+  }
+;
+  LOG.info("Delaying JMX consumer reconnection for endpoint {}. Trying again in {} seconds.",URISupport.sanitizeUri(mJmxEndpoint.getEndpointUri()),mJmxEndpoint.getReconnectDelay());
+  getExecutor().schedule(startRunnable,mJmxEndpoint.getReconnectDelay(),TimeUnit.SECONDS);
+}
