@@ -22,8 +22,9 @@
   }
   final ValueHolder<MessageSentCallback> sentCallback=new ValueHolder<MessageSentCallback>(messageSentCallback);
   final String originalCorrelationId=in.getHeader("JMSCorrelationID",String.class);
-  if (ObjectHelper.isEmpty(originalCorrelationId) && !msgIdAsCorrId) {
-    in.setHeader("JMSCorrelationID",getUuidGenerator().generateUuid());
+  boolean generateFreshCorrId=(ObjectHelper.isEmpty(originalCorrelationId) && !msgIdAsCorrId) || (originalCorrelationId != null && originalCorrelationId.startsWith(GENERATED_CORRELATION_ID_PREFIX));
+  if (generateFreshCorrId) {
+    in.setHeader("JMSCorrelationID",GENERATED_CORRELATION_ID_PREFIX + getUuidGenerator().generateUuid());
   }
   MessageCreator messageCreator=new MessageCreator(){
     public Message createMessage(    Session session) throws JMSException {
