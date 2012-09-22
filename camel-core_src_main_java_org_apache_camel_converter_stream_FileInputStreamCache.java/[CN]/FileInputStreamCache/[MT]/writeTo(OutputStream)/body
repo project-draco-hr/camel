@@ -1,3 +1,23 @@
 {
-  IOHelper.copy(getInputStream(),os);
+  if (stream == null) {
+    FileInputStream s=new FileInputStream(file);
+    long len=file.length();
+    WritableByteChannel out;
+    if (os instanceof WritableByteChannel) {
+      out=(WritableByteChannel)os;
+    }
+ else {
+      out=Channels.newChannel(os);
+    }
+    FileChannel fc=s.getChannel();
+    long pos=0;
+    while (pos < len) {
+      long i=fc.transferTo(pos,len - pos,out);
+      pos+=i;
+    }
+    s.close();
+  }
+ else {
+    IOHelper.copy(getInputStream(),os);
+  }
 }
