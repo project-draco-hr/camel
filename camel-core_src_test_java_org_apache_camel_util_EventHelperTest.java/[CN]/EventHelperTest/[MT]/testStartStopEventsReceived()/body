@@ -1,0 +1,23 @@
+{
+  MyEventNotifier en1=new MyEventNotifier();
+  MyEventNotifier en2=new MyEventNotifier();
+  CamelContext camelContext=new DefaultCamelContext();
+  camelContext.addRoutes(new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:start").routeId("route-1").to("mock:end");
+    }
+  }
+);
+  ManagementStrategy managementStrategy=new DefaultManagementStrategy();
+  managementStrategy.addEventNotifier(en1);
+  managementStrategy.addEventNotifier(en2);
+  camelContext.setManagementStrategy(managementStrategy);
+  camelContext.start();
+  camelContext.stop();
+  assertEquals(1,en1.routeStartedEvent.get());
+  assertEquals(1,en1.routeStoppedEvent.get());
+  assertEquals(1,en1.camelContextStoppingEvent.get());
+  assertEquals(1,en2.routeStartedEvent.get());
+  assertEquals(1,en2.routeStoppedEvent.get());
+  assertEquals(1,en2.camelContextStoppingEvent.get());
+}
