@@ -2,17 +2,28 @@
   return new RouteBuilder(){
     @Override public void configure(){
       from("direct:start").to("sjms:topic:transacted.consumer.test");
-      from("sjms:topic:transacted.consumer.test?transacted=true&transactionBatchCount=10").choice().when(header("JMSRedelivered").isEqualTo("false")).to("log:before_log?showAll=true").to("mock:test.before").process(new Processor(){
+      from("sjms:topic:transacted.consumer.test?transacted=true&transactionBatchCount=10").choice().when(header("JMSRedelivered").isEqualTo("false")).log("Consumer 1 Message Before Received: ${body}").to("mock:test.before.1").process(new Processor(){
         @Override public void process(        Exchange exchange) throws Exception {
           String body=exchange.getIn().getBody(String.class);
-          if (body.endsWith("10")) {
-            log.info("10th message received.  Rolling back.");
+          if (body.endsWith("6")) {
+            log.info("5th message received.  Rolling back.");
             exchange.getOut().setFault(true);
-            exchange.getOut().setBody("10th message received.  Rolling back.");
+            exchange.getOut().setBody("5th message received.  Rolling back.");
           }
         }
       }
-).otherwise().to("log:after_log?showAll=true").to("mock:test.after");
+).otherwise().log("Consumer 1 Message After Received: ${body}").to("mock:test.after.1");
+      from("sjms:topic:transacted.consumer.test?transacted=true&transactionBatchCount=10").choice().when(header("JMSRedelivered").isEqualTo("false")).log("Consumer 2 Message Before Received: ${body}").to("mock:test.before.2").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          if (body.endsWith("3") || body.endsWith("7")) {
+            log.info("5th message received.  Rolling back.");
+            exchange.getOut().setFault(true);
+            exchange.getOut().setBody("5th message received.  Rolling back.");
+          }
+        }
+      }
+).otherwise().log("Consumer 2 Message After Received: ${body}").to("mock:test.after.2");
     }
   }
 ;

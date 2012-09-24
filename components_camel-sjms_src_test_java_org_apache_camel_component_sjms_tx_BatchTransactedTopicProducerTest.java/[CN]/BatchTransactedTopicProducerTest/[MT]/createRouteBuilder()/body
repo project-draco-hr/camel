@@ -1,8 +1,21 @@
 {
   return new RouteBuilder(){
     @Override public void configure(){
-      from("direct:start").to("log:test-before?showAll=true").to("sjms:topic:batch.topic?transacted=true").to("mock:test.prebatch");
-      from("sjms:topic:batch.topic").to("log:test-after?showAll=true").to("mock:test.postbatch");
+      onException(Exception.class).handled(true).setHeader("redeliveryAttempt").constant("1").log("Redelivery attempt 1").to("mock:test.redelivery").to("direct:start");
+      from("direct:start").to("log:test-before?showAll=true").to("sjms:topic:batch.topic?transacted=true").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String redeliveryAttempt=exchange.getIn().getHeader("redeliveryAttempt",String.class);
+          if (redeliveryAttempt != null && redeliveryAttempt.equals("1")) {
+          }
+ else {
+            log.info("BatchMessage received without redelivery. Rolling back.");
+            exchange.setException(new Exception());
+          }
+        }
+      }
+).to("mock:test.prebatch");
+      from("sjms:topic:batch.topic").to("log:test-after?showAll=true").to("mock:test.postbatch.1");
+      from("sjms:topic:batch.topic").to("log:test-after?showAll=true").to("mock:test.postbatch.2");
     }
   }
 ;
