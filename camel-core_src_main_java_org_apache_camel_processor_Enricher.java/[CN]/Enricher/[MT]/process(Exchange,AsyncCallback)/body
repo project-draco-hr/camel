@@ -12,9 +12,16 @@
  else {
         prepareResult(exchange);
         ExchangeHelper.prepareAggregation(exchange,resourceExchange);
-        Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
-        if (aggregatedExchange != null) {
-          copyResultsPreservePattern(exchange,aggregatedExchange);
+        Exchange aggregatedExchange;
+        try {
+          aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+          if (aggregatedExchange != null) {
+            copyResultsPreservePattern(exchange,aggregatedExchange);
+          }
+        }
+ catch (        Throwable e) {
+          exchange.setException(new CamelExchangeException("Error occurred during aggregation",exchange,e));
+          callback.done(false);
         }
       }
       if (exchange.hasOut()) {
