@@ -2,7 +2,7 @@
   ObjectHelper.notNull(getCamelContext(),"camelContext");
   String encodedUri=preProcessUri(uri);
   URI u=new URI(encodedUri);
-  String path=u.getSchemeSpecificPart();
+  String path=useRawUri() ? u.getRawSchemeSpecificPart() : u.getSchemeSpecificPart();
   if (path.startsWith("//")) {
     path=path.substring(2);
   }
@@ -11,11 +11,12 @@
     path=path.substring(0,idx);
   }
   Map<String,Object> parameters=URISupport.parseParameters(u);
-  validateURI(encodedUri,path,parameters);
+  uri=useRawUri() ? uri : encodedUri;
+  validateURI(uri,path,parameters);
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Creating endpoint uri=[{}], path=[{}], parameters=[{}]",new Object[]{URISupport.sanitizeUri(encodedUri),URISupport.sanitizePath(path),parameters});
+    LOG.debug("Creating endpoint uri=[{}], path=[{}], parameters=[{}]",new Object[]{URISupport.sanitizeUri(uri),URISupport.sanitizePath(path),parameters});
   }
-  Endpoint endpoint=createEndpoint(encodedUri,path,parameters);
+  Endpoint endpoint=createEndpoint(uri,path,parameters);
   if (endpoint == null) {
     return null;
   }
@@ -25,9 +26,9 @@
       setProperties(endpoint,parameters);
     }
     if (!endpoint.isLenientProperties()) {
-      validateParameters(encodedUri,parameters,null);
+      validateParameters(uri,parameters,null);
     }
   }
-  afterConfiguration(encodedUri,path,endpoint,parameters);
+  afterConfiguration(uri,path,endpoint,parameters);
   return endpoint;
 }

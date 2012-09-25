@@ -7,8 +7,9 @@
  catch (  Exception e) {
     throw new ResolveEndpointFailedException(uri,e);
   }
+  final String rawUri=uri;
   uri=normalizeEndpointUri(uri);
-  log.trace("Getting endpoint with normalized uri: {}",uri);
+  log.trace("Getting endpoint with raw uri: {}, normalized uri: {}",rawUri,uri);
   Endpoint answer;
   String scheme=null;
   EndpointKey key=getEndpointKey(uri);
@@ -20,7 +21,12 @@
         scheme=splitURI[0];
         Component component=getComponent(scheme);
         if (component != null) {
-          answer=component.createEndpoint(uri);
+          if (component.useRawUri()) {
+            answer=component.createEndpoint(rawUri);
+          }
+ else {
+            answer=component.createEndpoint(uri);
+          }
           if (answer != null && log.isDebugEnabled()) {
             log.debug("{} converted to endpoint: {} by component: {}",new Object[]{URISupport.sanitizeUri(uri),answer,component});
           }
