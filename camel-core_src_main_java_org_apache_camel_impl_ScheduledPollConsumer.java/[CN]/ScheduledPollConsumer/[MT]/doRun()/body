@@ -5,8 +5,10 @@
   }
   int retryCounter=-1;
   boolean done=false;
+  Throwable cause=null;
   while (!done) {
     try {
+      cause=null;
       done=true;
       if (isPollAllowed()) {
         if (retryCounter == -1) {
@@ -42,15 +44,28 @@
         if (retry) {
           done=false;
         }
+ else {
+          cause=e;
+          done=true;
+        }
       }
  catch (      Throwable t) {
-        getExceptionHandler().handleException("Consumer " + this + " failed polling endpoint: "+ getEndpoint()+ ". Will try again at next poll",t);
+        cause=t;
         done=true;
       }
     }
 catch (    Throwable t) {
-      getExceptionHandler().handleException("Consumer " + this + " failed polling endpoint: "+ getEndpoint()+ ". Will try again at next poll",t);
+      cause=t;
       done=true;
+    }
+    if (cause != null && isRunAllowed()) {
+      try {
+        getExceptionHandler().handleException("Consumer " + this + " failed polling endpoint: "+ getEndpoint()+ ". Will try again at next poll",cause);
+      }
+ catch (      Throwable e) {
+        LOG.warn("Error handling exception. This exception will be ignored.",e);
+      }
+      cause=null;
     }
   }
 }
