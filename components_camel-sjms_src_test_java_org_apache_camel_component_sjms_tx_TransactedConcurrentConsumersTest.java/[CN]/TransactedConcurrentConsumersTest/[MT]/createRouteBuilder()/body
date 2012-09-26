@@ -1,0 +1,25 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure(){
+      from("direct:start").to("sjms:queue:transacted.consumer.test");
+      from("sjms:queue:transacted.consumer.test?transacted=true&consumerCount=" + CONSUMER_COUNT).choice().when(header("JMSRedelivered").isEqualTo("false")).process(new Processor(){
+        private final AtomicInteger counter=new AtomicInteger(0);
+        @Override public void process(        Exchange exchange) throws Exception {
+          int count=counter.incrementAndGet();
+          if (count == MAX_ATTEMPTS_COUNT) {
+            log.info("Exchange does not have a retry message.  Set the exception and allow the retry.");
+            exchange.getOut().setFault(true);
+            counter.set(0);
+          }
+        }
+      }
+).log("1st attempt Body: ${body} | Redeliverd: ${header.JMSRedelivered}").to("mock:test.redelivered.false").when(header("JMSRedelivered").isEqualTo("true")).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          log.info("Retry processing attempt.  Continue processing the message.");
+        }
+      }
+).log("2nd attempt Body: ${body} | Redeliverd: ${header.JMSRedelivered}").to("mock:test.redelivered.true").otherwise().to("mock:test.after");
+    }
+  }
+;
+}
