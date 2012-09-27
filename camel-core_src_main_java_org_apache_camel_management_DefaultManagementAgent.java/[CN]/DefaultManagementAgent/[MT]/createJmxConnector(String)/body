@@ -16,7 +16,8 @@
     url=new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":"+ registryPort+ path);
   }
   cs=JMXConnectorServerFactory.newJMXConnectorServer(url,null,server);
-  Thread thread=new Thread(new Runnable(){
+  String threadName=camelContext.getExecutorServiceManager().resolveThreadName("JMXConnector: " + url);
+  Thread thread=getCamelContext().getExecutorServiceManager().newThread(threadName,new Runnable(){
     public void run(){
       try {
         LOG.debug("Staring JMX Connector thread to listen at: {}",url);
@@ -29,8 +30,5 @@
     }
   }
 );
-  thread.setDaemon(true);
-  String threadName=camelContext.getExecutorServiceManager().resolveThreadName("JMXConnector: " + url);
-  thread.setName(threadName);
   thread.start();
 }
