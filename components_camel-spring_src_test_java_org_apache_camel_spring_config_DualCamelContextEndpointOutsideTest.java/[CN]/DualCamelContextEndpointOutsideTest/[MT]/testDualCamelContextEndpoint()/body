@@ -1,0 +1,14 @@
+{
+  CamelContext camelA=applicationContext.getBean("camel-A",CamelContext.class);
+  assertNotNull(camelA);
+  CamelContext camelB=applicationContext.getBean("camel-B",CamelContext.class);
+  assertNotNull(camelB);
+  MockEndpoint mockA=camelA.getEndpoint("mock:mock1",MockEndpoint.class);
+  mockA.expectedBodiesReceived("Hello A");
+  MockEndpoint mockB=camelB.getEndpoint("mock:mock2",MockEndpoint.class);
+  mockB.expectedBodiesReceived("Hello B");
+  camelA.createProducerTemplate().sendBody("direct:start1","Hello A");
+  camelB.createProducerTemplate().sendBody("direct:start2","Hello B");
+  mockA.assertIsSatisfied();
+  mockB.assertIsSatisfied();
+}
