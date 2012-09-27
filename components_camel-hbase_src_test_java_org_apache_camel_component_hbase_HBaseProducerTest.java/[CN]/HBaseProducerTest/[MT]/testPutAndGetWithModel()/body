@@ -1,0 +1,29 @@
+{
+  if (systemReady) {
+    ProducerTemplate template=context.createProducerTemplate();
+    Endpoint startEndpoint=context.getEndpoint("direct:start");
+    Endpoint startWithModelEndpoint=context.getEndpoint("direct:start-with-model");
+    Exchange putExchange=startEndpoint.createExchange(ExchangePattern.InOut);
+    int index=1;
+    for (int row=0; row < key.length; row++) {
+      for (int fam=0; fam < family.length; fam++) {
+        for (int col=0; col < column[fam].length; col++) {
+          putExchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(index),key[row]);
+          putExchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(index),family[fam]);
+          putExchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(index),column[fam][col]);
+          putExchange.getIn().setHeader(HbaseAttribute.HBASE_VALUE.asHeader(index++),body[row][fam][col]);
+        }
+      }
+    }
+    putExchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.PUT);
+    template.send(startEndpoint,putExchange);
+    Exchange getExchange=startWithModelEndpoint.createExchange(ExchangePattern.InOut);
+    getExchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
+    getExchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
+    getExchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0][0]);
+    getExchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
+    Exchange resp=template.send(startWithModelEndpoint,getExchange);
+    assertEquals(body[0][0][0],resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader()));
+    assertEquals(body[0][1][2],resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader(2)));
+  }
+}

@@ -2,27 +2,22 @@
   if (systemReady) {
     ProducerTemplate template=context.createProducerTemplate();
     Map<String,Object> headers=new HashMap<String,Object>();
-    headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
-    headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
-    headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0]);
-    headers.put(HbaseAttribute.HBASE_VALUE.asHeader(),body[0]);
-    headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(2),key[0]);
-    headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(2),family[1]);
-    headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(2),column[1]);
-    headers.put(HbaseAttribute.HBASE_VALUE.asHeader(2),body[1]);
+    for (int col=0; col < column[0].length; col++) {
+      headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(col + 1),key[0]);
+      headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(col + 1),family[0]);
+      headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(col + 1),column[0][col]);
+      headers.put(HbaseAttribute.HBASE_VALUE.asHeader(col + 1),body[0][col][0]);
+    }
     headers.put(HBaseConstants.OPERATION,HBaseConstants.PUT);
     template.sendBodyAndHeaders("direct:start",null,headers);
     Configuration configuration=hbaseUtil.getHBaseAdmin().getConfiguration();
-    HTable bar=new HTable(configuration,DEFAULTTABLE.getBytes());
-    Get get=new Get(key[0].getBytes());
-    get.addColumn(family[0].getBytes(),column[0].getBytes());
-    Result result=bar.get(get);
-    byte[] resultValue=result.value();
-    assertArrayEquals(body[0].getBytes(),resultValue);
-    get=new Get(key[0].getBytes());
-    get.addColumn(family[1].getBytes(),column[1].getBytes());
-    result=bar.get(get);
-    resultValue=result.value();
-    assertArrayEquals(body[1].getBytes(),resultValue);
+    HTable bar=new HTable(configuration,PERSON_TABLE.getBytes());
+    for (int col=0; col < column[0].length; col++) {
+      Get get=new Get(key[0].getBytes());
+      get.addColumn(family[0].getBytes(),column[0][col].getBytes());
+      Result result=bar.get(get);
+      byte[] resultValue=result.value();
+      assertArrayEquals(body[0][col][0].getBytes(),resultValue);
+    }
   }
 }
