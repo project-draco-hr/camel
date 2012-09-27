@@ -1,11 +1,12 @@
 {
-  getMockEndpoint("mock:test.redelivered.false").expectedMessageCount(196);
-  getMockEndpoint("mock:test.redelivered.true").expectedMessageCount(4);
+  int transactedMsgs=MESSAGE_COUNT / MAX_ATTEMPTS_COUNT;
+  getMockEndpoint("mock:test.redelivered.false").expectedMessageCount(MESSAGE_COUNT - transactedMsgs);
+  getMockEndpoint("mock:test.redelivered.true").expectedMessageCount(transactedMsgs);
   getMockEndpoint("mock:test.after").expectedMessageCount(0);
   for (int i=1; i <= MESSAGE_COUNT; i++) {
     String message="Hello World " + i;
     template.sendBody("direct:start",message);
     log.trace("Sending message: {}",message);
   }
-  assertMockEndpointsSatisfied();
+  assertMockEndpointsSatisfied(10,TimeUnit.SECONDS);
 }
