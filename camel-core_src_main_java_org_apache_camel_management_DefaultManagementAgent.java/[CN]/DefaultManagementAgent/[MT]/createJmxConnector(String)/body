@@ -16,19 +16,21 @@
     url=new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":"+ registryPort+ path);
   }
   cs=JMXConnectorServerFactory.newJMXConnectorServer(url,null,server);
-  if (executorService == null) {
-    executorService=camelContext.getExecutorServiceManager().newSingleThreadExecutor(this,"JMXConnector: " + url);
-  }
-  executorService.execute(new Runnable(){
+  Thread thread=new Thread(new Runnable(){
     public void run(){
       try {
+        LOG.debug("Staring JMX Connector thread to listen at: {}",url);
         cs.start();
+        LOG.info("JMX Connector thread started and listening at: {}",url);
       }
  catch (      IOException ioe) {
-        LOG.warn("Could not start JMXConnector thread.",ioe);
+        LOG.warn("Could not start JMXConnector thread at: " + url + ". JMX Connector not in use.",ioe);
       }
     }
   }
 );
-  LOG.info("JMX Connector thread started and listening at: " + url);
+  thread.setDaemon(true);
+  String threadName=camelContext.getExecutorServiceManager().resolveThreadName("JMXConnector: " + url);
+  thread.setName(threadName);
+  thread.start();
 }
