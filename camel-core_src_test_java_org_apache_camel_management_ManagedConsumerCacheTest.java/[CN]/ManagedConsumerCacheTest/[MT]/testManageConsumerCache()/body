@@ -3,7 +3,9 @@
   ConsumerCache cache=new ConsumerCache(this,context);
   context.addService(cache);
   template.sendBody("direct:start","Hello World");
-  Exchange out=cache.getConsumer(context.getEndpoint("seda:queue")).receive(3000);
+  Endpoint endpoint=context.getEndpoint("seda:queue");
+  PollingConsumer consumer=cache.getConsumer(endpoint);
+  Exchange out=consumer.receive(3000);
   assertNotNull("Should got an exchange",out);
   assertEquals("Hello World",out.getIn().getBody());
   MBeanServer mbeanServer=getMBeanServer();
@@ -27,4 +29,6 @@
   mbeanServer.invoke(on,"purge",null,null);
   current=(Integer)mbeanServer.getAttribute(on,"Size");
   assertEquals(0,current.intValue());
+  consumer.stop();
+  cache.stop();
 }
