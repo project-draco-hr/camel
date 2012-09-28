@@ -1,6 +1,15 @@
 {
   CamelLogger logger=new CamelLogger(log,level);
-  LoggingErrorHandler handler=new LoggingErrorHandler(routeContext.getCamelContext(),processor,logger,getExceptionPolicyStrategy());
+  RedeliveryPolicy policy=new RedeliveryPolicy();
+  policy.setLogExhausted(true);
+  policy.setRetriesExhaustedLogLevel(level);
+  policy.setLogStackTrace(true);
+  policy.setLogRetryAttempted(false);
+  policy.setRetryAttemptedLogLevel(LoggingLevel.OFF);
+  policy.setLogRetryStackTrace(false);
+  policy.setLogContinued(false);
+  policy.setLogHandled(false);
+  LoggingErrorHandler handler=new LoggingErrorHandler(routeContext.getCamelContext(),processor,logger,policy,getExceptionPolicyStrategy());
   configure(routeContext,handler);
   return handler;
 }
