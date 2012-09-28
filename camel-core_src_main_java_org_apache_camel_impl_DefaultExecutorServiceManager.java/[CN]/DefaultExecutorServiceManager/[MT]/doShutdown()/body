@@ -1,15 +1,26 @@
 {
+  Set<ExecutorService> forced=new LinkedHashSet<ExecutorService>();
   if (!executorServices.isEmpty()) {
-    LOG.warn("Shutting down {} ExecutorService's which has not been shutdown properly (acting as fail-safe)",executorServices.size());
+    LOG.debug("Giving time for {} ExecutorService's to shutdown properly (acting as fail-safe)",executorServices.size());
     for (    ExecutorService executorService : executorServices) {
       try {
-        doShutdownNow(executorService,true);
+        boolean warned=doShutdown(executorService,getShutdownAwaitTermination(),true);
+        if (warned) {
+          forced.add(executorService);
+        }
       }
  catch (      Throwable e) {
         LOG.warn("Error occurred during shutdown of ExecutorService: " + executorService + ". This exception will be ignored.",e);
       }
     }
   }
+  if (!forced.isEmpty()) {
+    LOG.warn("Forced shutdown of {} ExecutorService's which has not been shutdown properly (acting as fail-safe)",forced.size());
+    for (    ExecutorService executorService : forced) {
+      LOG.warn("  forced -> {}",executorService);
+    }
+  }
+  forced.clear();
   executorServices.clear();
   Iterator<ThreadPoolProfile> it=threadPoolProfiles.values().iterator();
   while (it.hasNext()) {
