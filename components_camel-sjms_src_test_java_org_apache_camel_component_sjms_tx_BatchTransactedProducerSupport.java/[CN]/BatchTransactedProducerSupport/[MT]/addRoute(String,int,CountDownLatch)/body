@@ -1,0 +1,26 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure(){
+      from("direct:start").id("producer.route").log("Producer Route Body: ${body}").to("mock:test.producer").to(destinationName + "?transacted=true").process(new Processor(){
+        private final AtomicInteger counter=new AtomicInteger(0);
+        @Override public void process(        Exchange exchange) throws Exception {
+          if (counter.getAndIncrement() == 0) {
+            log.info("BatchMessage received without redelivery. Rolling back.");
+            exchange.setException(new Exception());
+          }
+          latch.countDown();
+        }
+      }
+);
+      for (int i=1; i <= consumerRouteCount; i++) {
+        from(destinationName).id("consumer.route." + i).log("Consumer Route " + i + " Body: ${body}").to("mock:test.consumer." + i).process(new Processor(){
+          @Override public void process(          Exchange exchange) throws Exception {
+            latch.countDown();
+          }
+        }
+);
+      }
+    }
+  }
+);
+}

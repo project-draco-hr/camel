@@ -1,0 +1,16 @@
+{
+  CountDownLatch latch=new CountDownLatch((totalRedeliverdFalse * routeCount) + (totalRedeliveredTrue * routeCount));
+  for (int i=1; i <= routeCount; i++) {
+    addRoute(destinationName,i,batchCount,consumerCount,maxAttemptsCount,latch);
+    getMockEndpoint("mock:test.before." + i).expectedMessageCount(totalRedeliverdFalse);
+    getMockEndpoint("mock:test.after." + i).expectedMessageCount(totalRedeliveredTrue);
+  }
+  getMockEndpoint("mock:test.after").expectedMessageCount(0);
+  for (int i=1; i <= messageCount; i++) {
+    String message="Hello World " + i;
+    template.sendBody("direct:start",message);
+    log.trace("Sending message: {}",message);
+  }
+  latch.await(10,TimeUnit.SECONDS);
+  assertMockEndpointsSatisfied(10,TimeUnit.SECONDS);
+}

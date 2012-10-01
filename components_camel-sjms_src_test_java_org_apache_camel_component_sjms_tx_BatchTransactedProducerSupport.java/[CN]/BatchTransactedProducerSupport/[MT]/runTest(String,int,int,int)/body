@@ -1,0 +1,24 @@
+{
+  CountDownLatch latch=new CountDownLatch(totalAttempts + (messageCount * consumerRouteCount));
+  addRoute(destinationName,consumerRouteCount,latch);
+  getMockEndpoint("mock:test.producer").expectedMessageCount(totalAttempts);
+  for (int i=1; i <= consumerRouteCount; i++) {
+    getMockEndpoint("mock:test.consumer." + i).expectedMessageCount(messageCount);
+  }
+  List<BatchMessage<String>> messages=new ArrayList<BatchMessage<String>>();
+  for (int i=1; i <= messageCount; i++) {
+    String body="Hello World " + i;
+    BatchMessage<String> message=new BatchMessage<String>(body,null);
+    messages.add(message);
+  }
+  try {
+    log.info("Send Messages");
+    template.sendBody("direct:start",messages);
+  }
+ catch (  Exception e) {
+    log.info("Send Again");
+    template.sendBody("direct:start",messages);
+  }
+  latch.await(10,TimeUnit.SECONDS);
+  assertMockEndpointsSatisfied(10,TimeUnit.SECONDS);
+}

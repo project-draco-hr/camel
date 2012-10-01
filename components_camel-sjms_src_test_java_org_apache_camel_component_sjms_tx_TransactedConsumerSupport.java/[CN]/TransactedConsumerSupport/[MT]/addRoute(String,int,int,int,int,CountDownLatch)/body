@@ -1,0 +1,26 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure(){
+      if (context.getRoute("direct.route") == null) {
+        from("direct:start").id("direct.route").to(destinationName);
+      }
+      from(destinationName + "?transacted=true&transactionBatchCount=" + batchCount+ "&consumerCount="+ consumerCount).id("consumer.route." + routeNumber).choice().when(header("JMSRedelivered").isEqualTo("false")).log("Route " + routeNumber + " 1st attempt Body: ${body} | Redeliverd: ${header.JMSRedelivered}").to("mock:test.before." + routeNumber).process(new Processor(){
+        private final AtomicInteger counter=new AtomicInteger(0);
+        @Override public void process(        Exchange exchange) throws Exception {
+          if (counter.incrementAndGet() == maxAttemptsCount) {
+            log.info("{} Messages have been processed. Failing the exchange to force a rollback of the transaction.",maxAttemptsCount);
+            exchange.getOut().setFault(true);
+          }
+          latch.countDown();
+        }
+      }
+).when(header("JMSRedelivered").isEqualTo("true")).log("Route " + routeNumber + " 2nd attempt Body: ${body} | Redeliverd: ${header.JMSRedelivered}").to("mock:test.after." + routeNumber).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+        }
+      }
+).otherwise().to("mock:test.after");
+    }
+  }
+);
+}
