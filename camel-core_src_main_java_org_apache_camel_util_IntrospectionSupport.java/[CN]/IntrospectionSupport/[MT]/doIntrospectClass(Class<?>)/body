@@ -1,0 +1,50 @@
+{
+  ClassInfo answer=new ClassInfo();
+  answer.clazz=clazz;
+  List<MethodInfo> found=new ArrayList<MethodInfo>();
+  Method[] methods=clazz.getMethods();
+  for (  Method method : methods) {
+    if (EXCLUDED_METHODS.contains(method)) {
+      continue;
+    }
+    MethodInfo cache=new MethodInfo();
+    cache.method=method;
+    if (isGetter(method)) {
+      cache.isGetter=true;
+      cache.isSetter=false;
+      cache.getterOrSetterShorthandName=getGetterShorthandName(method);
+    }
+ else     if (isSetter(method)) {
+      cache.isGetter=false;
+      cache.isSetter=true;
+      cache.getterOrSetterShorthandName=getSetterShorthandName(method);
+    }
+ else {
+      cache.isGetter=false;
+      cache.isSetter=false;
+      cache.hasGetterAndSetter=false;
+    }
+    found.add(cache);
+  }
+  for (  MethodInfo info : found) {
+    info.hasGetterAndSetter=false;
+    if (info.isGetter) {
+      for (      MethodInfo info2 : found) {
+        if (info2.isSetter && info.getterOrSetterShorthandName.equals(info2.getterOrSetterShorthandName)) {
+          info.hasGetterAndSetter=true;
+          break;
+        }
+      }
+    }
+ else     if (info.isSetter) {
+      for (      MethodInfo info2 : found) {
+        if (info2.isGetter && info.getterOrSetterShorthandName.equals(info2.getterOrSetterShorthandName)) {
+          info.hasGetterAndSetter=true;
+          break;
+        }
+      }
+    }
+  }
+  answer.methods=found.toArray(new MethodInfo[found.size()]);
+  return answer;
+}

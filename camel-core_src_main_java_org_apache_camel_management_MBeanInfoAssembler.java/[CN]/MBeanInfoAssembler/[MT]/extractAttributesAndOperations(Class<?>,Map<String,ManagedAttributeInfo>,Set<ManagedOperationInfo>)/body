@@ -1,19 +1,14 @@
 {
-  doExtractAttributesAndOperations(managedClass,attributes,operations);
-  if (managedClass.getSuperclass() != null) {
-    Class<?> clazz=managedClass.getSuperclass();
-    if (!clazz.getName().startsWith("java")) {
-      LOG.trace("Extracting attributes and operations from sub class: {}",clazz);
-      extractAttributesAndOperations(clazz,attributes,operations);
-    }
+  MBeanAttributesAndOperations cached=cache.get(managedClass);
+  if (cached == null) {
+    doExtractAttributesAndOperations(managedClass,attributes,operations);
+    cached=new MBeanAttributesAndOperations();
+    cached.attributes=new LinkedHashMap<String,ManagedAttributeInfo>(attributes);
+    cached.operations=new LinkedHashSet<ManagedOperationInfo>(operations);
+    attributes.clear();
+    operations.clear();
+    cache.put(managedClass,cached);
   }
-  if (managedClass.getInterfaces() != null) {
-    for (    Class<?> clazz : managedClass.getInterfaces()) {
-      if (clazz.getName().startsWith("java")) {
-        continue;
-      }
-      LOG.trace("Extracting attributes and operations from implemented interface: {}",clazz);
-      extractAttributesAndOperations(clazz,attributes,operations);
-    }
-  }
+  attributes.putAll(cached.attributes);
+  operations.addAll(cached.operations);
 }

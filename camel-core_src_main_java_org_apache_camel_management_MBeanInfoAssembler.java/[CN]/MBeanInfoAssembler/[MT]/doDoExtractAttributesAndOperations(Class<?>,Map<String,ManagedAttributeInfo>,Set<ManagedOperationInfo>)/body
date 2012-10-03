@@ -1,0 +1,46 @@
+{
+  LOG.trace("Extracting attributes and operations from class: {}",managedClass);
+  IntrospectionSupport.ClassInfo cache=IntrospectionSupport.cacheClass(managedClass);
+  for (  IntrospectionSupport.MethodInfo cacheInfo : cache.methods) {
+    if (cacheInfo.method.getDeclaringClass() != managedClass) {
+      continue;
+    }
+    LOG.trace("Extracting attributes and operations from method: {}",cacheInfo.method);
+    ManagedAttribute ma=cacheInfo.method.getAnnotation(ManagedAttribute.class);
+    if (ma != null) {
+      String key;
+      String desc=ma.description();
+      Method getter=null;
+      Method setter=null;
+      if (cacheInfo.isGetter) {
+        key=cacheInfo.getterOrSetterShorthandName;
+        getter=cacheInfo.method;
+      }
+ else       if (cacheInfo.isSetter) {
+        key=cacheInfo.getterOrSetterShorthandName;
+        setter=cacheInfo.method;
+      }
+ else {
+        throw new IllegalArgumentException("@ManagedAttribute can only be used on Java bean methods, was: " + cacheInfo.method + " on bean: "+ managedClass);
+      }
+      key=ObjectHelper.capitalize(key);
+      ManagedAttributeInfo info=attributes.get(key);
+      if (info == null) {
+        info=new ManagedAttributeInfo(key,desc);
+      }
+      if (getter != null) {
+        info.setGetter(getter);
+      }
+      if (setter != null) {
+        info.setSetter(setter);
+      }
+      attributes.put(key,info);
+    }
+    ManagedOperation mo=cacheInfo.method.getAnnotation(ManagedOperation.class);
+    if (mo != null) {
+      String desc=mo.description();
+      Method operation=cacheInfo.method;
+      operations.add(new ManagedOperationInfo(desc,operation));
+    }
+  }
+}

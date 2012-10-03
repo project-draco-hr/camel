@@ -1,42 +1,19 @@
 {
-  LOG.trace("Extracting attributes and operations from class: {}",managedClass);
-  for (  Method method : managedClass.getDeclaredMethods()) {
-    LOG.trace("Extracting attributes and operations from method: {}",method);
-    ManagedAttribute ma=method.getAnnotation(ManagedAttribute.class);
-    if (ma != null) {
-      String key;
-      String desc=ma.description();
-      Method getter=null;
-      Method setter=null;
-      if (IntrospectionSupport.isGetter(method)) {
-        key=IntrospectionSupport.getGetterShorthandName(method);
-        getter=method;
-      }
- else       if (IntrospectionSupport.isSetter(method)) {
-        key=IntrospectionSupport.getSetterShorthandName(method);
-        setter=method;
-      }
- else {
-        throw new IllegalArgumentException("@ManagedAttribute can only be used on Java bean methods, was: " + method + " on bean: "+ managedClass);
-      }
-      key=ObjectHelper.capitalize(key);
-      ManagedAttributeInfo info=attributes.get(key);
-      if (info == null) {
-        info=new ManagedAttributeInfo(key,desc);
-      }
-      if (getter != null) {
-        info.setGetter(getter);
-      }
-      if (setter != null) {
-        info.setSetter(setter);
-      }
-      attributes.put(key,info);
+  doDoExtractAttributesAndOperations(managedClass,attributes,operations);
+  if (managedClass.getSuperclass() != null) {
+    Class<?> clazz=managedClass.getSuperclass();
+    if (!clazz.getName().startsWith("java")) {
+      LOG.trace("Extracting attributes and operations from sub class: {}",clazz);
+      doExtractAttributesAndOperations(clazz,attributes,operations);
     }
-    ManagedOperation mo=method.getAnnotation(ManagedOperation.class);
-    if (mo != null) {
-      String desc=mo.description();
-      Method operation=method;
-      operations.add(new ManagedOperationInfo(desc,operation));
+  }
+  if (managedClass.getInterfaces() != null) {
+    for (    Class<?> clazz : managedClass.getInterfaces()) {
+      if (clazz.getName().startsWith("java")) {
+        continue;
+      }
+      LOG.trace("Extracting attributes and operations from implemented interface: {}",clazz);
+      doExtractAttributesAndOperations(clazz,attributes,operations);
     }
   }
 }
