@@ -12,7 +12,7 @@
       if (isEndpointTransacted()) {
         exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),getCommitStrategy()));
       }
-      Message request=JmsMessageExchangeHelper.createMessage(exchange,producer.getSession());
+      Message request=SjmsExchangeMessageHelper.createMessage(exchange,producer.getSession());
       String correlationId=null;
       if (exchange.getIn().getHeader("JMSCorrelationID",String.class) == null) {
         correlationId=UUID.randomUUID().toString().replace("-","");
@@ -22,7 +22,7 @@
       }
       Object responseObject=null;
       Exchanger<Object> messageExchanger=new Exchanger<Object>();
-      JmsMessageExchangeHelper.setCorrelationId(request,correlationId);
+      SjmsExchangeMessageHelper.setCorrelationId(request,correlationId);
       try {
         lock.writeLock().lock();
         exchangerMap.put(correlationId,messageExchanger);
@@ -31,7 +31,7 @@
         lock.writeLock().unlock();
       }
       MessageConsumerResource consumer=consumers.borrowObject(getResponseTimeOut());
-      JmsMessageExchangeHelper.setJMSReplyTo(request,consumer.getReplyToDestination());
+      SjmsExchangeMessageHelper.setJMSReplyTo(request,consumer.getReplyToDestination());
       consumers.returnObject(consumer);
       producer.getMessageProducer().send(request);
       try {
@@ -63,7 +63,7 @@ catch (      TimeoutException e) {
         }
  else         if (responseObject instanceof Message) {
           Message response=(Message)responseObject;
-          JmsMessageExchangeHelper.populateExchange(response,exchange,true);
+          SjmsExchangeMessageHelper.populateExchange(response,exchange,true);
         }
  else {
           exchange.setException(new CamelException("Unknown response type: " + responseObject));
