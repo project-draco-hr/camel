@@ -3,7 +3,9 @@
   Exchange exchange=getExchange(ctx);
   AsyncCallback callback=getAsyncCallback(ctx);
   Object body=messageEvent.getMessage();
-  LOG.debug("Message received: {}",body);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Receiving from channel: {} body: {}",new Object[]{messageEvent.getChannel(),body});
+  }
   if (producer.getConfiguration().isTextline()) {
     try {
       body=producer.getContext().getTypeConverter().mandatoryConvertTo(String.class,exchange,body);
@@ -32,8 +34,8 @@
       disconnect=close;
     }
     if (disconnect) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Closing channel when complete at address: {}",producer.getConfiguration().getAddress());
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Closing channel when complete at address: {}",producer.getConfiguration().getAddress());
       }
       NettyHelper.close(ctx.getChannel());
     }

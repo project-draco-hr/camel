@@ -18,8 +18,8 @@
   if (body == null) {
     noReplyLogger.log("No payload to send as reply for exchange: " + exchange);
     if (consumer.getConfiguration().isDisconnectOnNoReply()) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Closing channel as no payload to send as reply at address: {}",messageEvent.getRemoteAddress());
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Closing channel as no payload to send as reply at address: {}",messageEvent.getRemoteAddress());
       }
       NettyHelper.close(messageEvent.getChannel());
     }
@@ -28,7 +28,6 @@
     if (consumer.getConfiguration().isTextline()) {
       body=NettyHelper.getTextlineBody(body,exchange,consumer.getConfiguration().getDelimiter(),consumer.getConfiguration().isAutoAppendDelimiter());
     }
-    LOG.debug("Writing body: {}",body);
     ChannelFutureListener listener=new ResponseFutureListener(exchange,messageEvent.getRemoteAddress());
     if (consumer.getConfiguration().isTcp()) {
       NettyHelper.writeBodyAsync(messageEvent.getChannel(),null,body,exchange,listener);
