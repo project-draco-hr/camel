@@ -1,0 +1,23 @@
+{
+  Set<Entry<K,V>> original=super.entrySet();
+  Set<Entry<K,V>> answer=new LinkedHashSet<Entry<K,V>>(original.size());
+  for (  final Entry<K,V> entry : original) {
+    Entry<K,V> view=new Entry<K,V>(){
+      @Override public K getKey(){
+        return entry.getKey();
+      }
+      @Override @SuppressWarnings("unchecked") public V getValue(){
+        WeakReference<V> ref=(WeakReference<V>)entry.getValue();
+        return ref != null ? ref.get() : null;
+      }
+      @Override @SuppressWarnings("unchecked") public V setValue(      V v){
+        V put=(V)new WeakReference<V>(v);
+        WeakReference<V> prev=(WeakReference<V>)entry.setValue(put);
+        return prev != null ? prev.get() : null;
+      }
+    }
+;
+    answer.add(view);
+  }
+  return answer;
+}
