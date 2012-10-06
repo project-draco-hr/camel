@@ -18,12 +18,11 @@
     boolean continueProcessing=PipelineHelper.continueProcessing(subExchange,"Sequential processing failed for number " + total.get(),LOG);
     if (stopOnException && !continueProcessing) {
       if (subExchange.getException() != null) {
-        throw new CamelExchangeException("Sequential processing failed for number " + total.get(),subExchange,subExchange.getException());
+        CamelExchangeException cause=new CamelExchangeException("Sequential processing failed for number " + total.get(),subExchange,subExchange.getException());
+        subExchange.setException(cause);
       }
- else {
-        result.set(subExchange);
-        return true;
-      }
+      result.set(subExchange);
+      return true;
     }
     LOG.trace("Sequential processing complete for number {} exchange: {}",total,subExchange);
     doAggregate(getAggregationStrategy(subExchange),result,subExchange);

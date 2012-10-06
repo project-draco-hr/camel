@@ -1,11 +1,9 @@
 {
   final AtomicExchange result=new AtomicExchange();
   final Iterable<ProcessorExchangePair> pairs;
-  boolean exhaust=false;
   try {
     boolean sync=true;
     pairs=createProcessorExchangePairs(exchange);
-    exhaust=!isStreaming();
     if (isParallelProcessing()) {
       ObjectHelper.notNull(executorService,"executorService",this);
       doProcessParallel(exchange,result,pairs,isStreaming(),callback);
@@ -19,10 +17,10 @@
   }
  catch (  Throwable e) {
     exchange.setException(e);
-    doDone(exchange,null,callback,true,exhaust);
+    doDone(exchange,null,callback,true,false);
     return true;
   }
   Exchange subExchange=result.get() != null ? result.get() : null;
-  doDone(exchange,subExchange,callback,true,exhaust);
+  doDone(exchange,subExchange,callback,true,true);
   return true;
 }
