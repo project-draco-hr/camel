@@ -1,10 +1,44 @@
 {
-  try {
-    doProcess(exchange);
+  byte[] body=exchange.getIn().getBody(byte[].class);
+  if (body != null) {
+    MQTTConfiguration configuration=mqttEndpoint.getConfiguration();
+    boolean retain=exchange.getProperty(configuration.getMqttRetainPropertyName(),configuration.isByDefaultRetain(),Boolean.class);
+    QoS qoS=configuration.getQoS();
+    Object qoSValue=exchange.getProperty(configuration.getMqttQosPropertyName());
+    if (qoSValue != null) {
+      qoS=MQTTConfiguration.getQoS(qoSValue.toString());
+    }
+    String topicName=configuration.getPublishTopicName();
+    Object topicValue=exchange.getProperty(configuration.getMqttTopicPropertyName());
+    if (topicValue != null) {
+      topicName=topicValue.toString();
+    }
+    final String name=topicName;
+    try {
+      log.debug("Publishing to {}",name);
+      mqttEndpoint.publish(name,body,qoS,retain,new Callback<Void>(){
+        @Override public void onSuccess(        Void aVoid){
+          log.trace("onSuccess from {}",name);
+          callback.done(false);
+        }
+        @Override public void onFailure(        Throwable throwable){
+          log.trace("onFailure from {}",name);
+          exchange.setException(throwable);
+          callback.done(false);
+        }
+      }
+);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+    return false;
   }
- catch (  Exception e) {
-    exchange.setException(e);
+ else {
+    log.trace("No data to publish");
+    callback.done(true);
+    return true;
   }
-  asyncCallback.done(true);
-  return true;
 }
