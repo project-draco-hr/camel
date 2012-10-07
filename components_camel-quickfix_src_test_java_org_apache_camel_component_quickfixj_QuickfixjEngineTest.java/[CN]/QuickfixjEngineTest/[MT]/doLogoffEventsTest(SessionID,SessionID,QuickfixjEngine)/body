@@ -2,7 +2,7 @@
   final List<EventRecord> events=new ArrayList<EventRecord>();
   final CountDownLatch logoffLatch=new CountDownLatch(2);
   QuickfixjEventListener logoffListener=new QuickfixjEventListener(){
-    public void onEvent(    QuickfixjEventCategory eventCategory,    SessionID sessionID,    Message message){
+    public synchronized void onEvent(    QuickfixjEventCategory eventCategory,    SessionID sessionID,    Message message){
       EventRecord event=new EventRecord(eventCategory,sessionID,message);
       events.add(event);
       if (eventCategory == QuickfixjEventCategory.SessionLogoff) {
@@ -15,13 +15,6 @@
   quickfixjEngine.stop();
   assertTrue("Logoffs not received",logoffLatch.await(5000,TimeUnit.MILLISECONDS));
   quickfixjEngine.removeEventListener(logoffListener);
-  int n=0;
-  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.SessionLogoff));
-  assertThat(events.get(n).getSessionID(),is(acceptorSessionID));
-  assertThat(events.get(n).getMessage(),is(nullValue()));
-  n++;
-  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.SessionLogoff));
-  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
-  assertThat(events.get(n).getMessage(),is(nullValue()));
-  n++;
+  assertTrue(events.contains(new EventRecord(QuickfixjEventCategory.SessionLogoff,acceptorSessionID,null)));
+  assertTrue(events.contains(new EventRecord(QuickfixjEventCategory.SessionLogoff,initiatorSessionID,null)));
 }

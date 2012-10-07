@@ -2,7 +2,7 @@
   final List<EventRecord> events=new ArrayList<EventRecord>();
   final CountDownLatch messageLatch=new CountDownLatch(1);
   QuickfixjEventListener messageListener=new QuickfixjEventListener(){
-    public void onEvent(    QuickfixjEventCategory eventCategory,    SessionID sessionID,    Message message){
+    public synchronized void onEvent(    QuickfixjEventCategory eventCategory,    SessionID sessionID,    Message message){
       EventRecord event=new EventRecord(eventCategory,sessionID,message);
       events.add(event);
       if (eventCategory == QuickfixjEventCategory.AppMessageReceived) {
@@ -16,14 +16,12 @@
   Session.sendToTarget(email,initiatorSessionID);
   assertTrue("Application message not received",messageLatch.await(5000,TimeUnit.MILLISECONDS));
   quickfixjEngine.removeEventListener(messageListener);
-  assertThat(events.size(),is(2));
-  int n=0;
-  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AppMessageSent));
-  assertThat(events.get(n).getSessionID(),is(initiatorSessionID));
-  assertThat(events.get(n).getMessage().getHeader().getString(MsgType.FIELD),is(MsgType.EMAIL));
-  n++;
-  assertThat(events.get(n).getEventCategory(),is(QuickfixjEventCategory.AppMessageReceived));
-  assertThat(events.get(n).getSessionID(),is(acceptorSessionID));
-  assertThat(events.get(n).getMessage().getHeader().getString(MsgType.FIELD),is(MsgType.EMAIL));
-  n++;
+  EventRecord sendEvent=new EventRecord(QuickfixjEventCategory.AppMessageSent,initiatorSessionID,new Message());
+  assertTrue(events.contains(sendEvent));
+  int sendEventIndex=events.indexOf(sendEvent);
+  assertThat(events.get(sendEventIndex).message.getHeader().getString(MsgType.FIELD),is(MsgType.EMAIL));
+  EventRecord receiveEvent=new EventRecord(QuickfixjEventCategory.AppMessageReceived,acceptorSessionID,new Message());
+  assertTrue(events.contains(receiveEvent));
+  int receiveEventIndex=events.indexOf(receiveEvent);
+  assertThat(events.get(receiveEventIndex).message.getHeader().getString(MsgType.FIELD),is(MsgType.EMAIL));
 }
