@@ -1,12 +1,13 @@
 {
   LOG.debug("Received an alertNotification {}",alertNotification);
+  Exchange exchange=endpoint.createOnAcceptAlertNotificationExchange(alertNotification);
   try {
-    Exchange exchange=endpoint.createOnAcceptAlertNotificationExchange(alertNotification);
-    LOG.trace("Processing the new smpp exchange...");
     processor.process(exchange);
-    LOG.trace("Processed the new smpp exchange");
   }
  catch (  Exception e) {
-    exceptionHandler.handleException(e);
+    exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
+    exceptionHandler.handleException("Cannot process exchange. This exception will be ignored.",exchange,exchange.getException());
   }
 }

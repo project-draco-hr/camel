@@ -1,15 +1,24 @@
 {
   LOG.debug("Received a deliverSm {}",deliverSm);
+  Exchange exchange;
   try {
-    Exchange exchange=endpoint.createOnAcceptDeliverSmExchange(deliverSm);
-    LOG.trace("processing the new smpp exchange...");
-    processor.process(exchange);
-    LOG.trace("processed the new smpp exchange");
+    exchange=endpoint.createOnAcceptDeliverSmExchange(deliverSm);
   }
  catch (  Exception e) {
-    exceptionHandler.handleException(e);
-    if (e instanceof ProcessRequestException) {
-      throw (ProcessRequestException)e;
+    exceptionHandler.handleException("Cannot create exchange. This exception will be ignored.",e);
+    return;
+  }
+  try {
+    processor.process(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
+    ProcessRequestException pre=exchange.getException(ProcessRequestException.class);
+    if (pre == null) {
+      pre=new ProcessRequestException(exchange.getException().getMessage(),255,exchange.getException());
     }
+    throw pre;
   }
 }
