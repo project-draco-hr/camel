@@ -3,8 +3,7 @@
   DBObject removeObj=exchange.getIn().getMandatoryBody(DBObject.class);
   WriteConcern wc=extractWriteConcern(exchange);
   WriteResult result=wc == null ? dbCol.remove(removeObj) : dbCol.remove(removeObj,wc);
-  processWriteResult(result,exchange);
-  Message out=exchange.getOut();
-  out.setBody(result);
-  out.setHeader(MongoDbConstants.RECORDS_AFFECTED,result.getN());
+  Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.remove);
+  processAndTransferWriteResult(result,exchange);
+  resultMessage.setHeader(MongoDbConstants.RECORDS_AFFECTED,result.getN());
 }
