@@ -22,9 +22,7 @@
     addToPipeline("decoder-" + x,channelPipeline,decoder);
   }
   if (consumer.getConfiguration().isOrderedThreadPoolExecutor()) {
-    String pattern=consumer.getContext().getExecutorServiceManager().getThreadNamePattern();
-    ThreadFactory factory=new CamelThreadFactory(pattern,"NettyOrderedWorker",true);
-    final ExecutionHandler executionHandler=new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(consumer.getConfiguration().getMaximumPoolSize(),0L,0L,30,TimeUnit.SECONDS,factory));
+    ExecutionHandler executionHandler=new ExecutionHandler(consumer.getEndpoint().getComponent().getExecutorService());
     addToPipeline("executionHandler",channelPipeline,executionHandler);
     LOG.debug("Using OrderedMemoryAwareThreadPoolExecutor with core pool size: {}",consumer.getConfiguration().getMaximumPoolSize());
   }
