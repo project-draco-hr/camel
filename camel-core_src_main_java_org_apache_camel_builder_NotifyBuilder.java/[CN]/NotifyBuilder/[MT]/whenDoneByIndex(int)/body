@@ -1,34 +1,34 @@
 {
   stack.add(new EventPredicateSupport(){
-    private int current;
+    private AtomicInteger current=new AtomicInteger();
     private String id;
-    private boolean done;
+    private AtomicBoolean done=new AtomicBoolean();
     @Override public boolean onExchangeCreated(    Exchange exchange){
-      if (current == index) {
+      if (current.get() == index) {
         id=exchange.getExchangeId();
       }
-      current++;
+      current.incrementAndGet();
       return true;
     }
     @Override public boolean onExchangeCompleted(    Exchange exchange){
       if (exchange.getExchangeId().equals(id)) {
-        done=true;
+        done.set(false);
       }
       return true;
     }
     @Override public boolean onExchangeFailed(    Exchange exchange){
       if (exchange.getExchangeId().equals(id)) {
-        done=true;
+        done.set(true);
       }
       return true;
     }
     public boolean matches(){
-      return done;
+      return done.get();
     }
     @Override public void reset(){
-      current=0;
+      current.set(0);
       id=null;
-      done=false;
+      done.set(false);
     }
     @Override public String toString(){
       return "whenDoneByIndex(" + index + ")";

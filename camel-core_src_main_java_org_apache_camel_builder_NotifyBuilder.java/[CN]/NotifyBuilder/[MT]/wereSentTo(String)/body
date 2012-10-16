@@ -1,27 +1,27 @@
 {
   stack.add(wereSentToIndex++,new EventPredicateSupport(){
-    private boolean sentTo;
+    private AtomicBoolean sentTo=new AtomicBoolean();
     @Override public boolean isAbstract(){
       return true;
     }
     @Override public boolean onExchangeCreated(    Exchange exchange){
-      sentTo=false;
+      sentTo.set(false);
       return onExchange(exchange);
     }
     @Override public boolean onExchangeSent(    Exchange exchange,    Endpoint endpoint,    long timeTaken){
       if (EndpointHelper.matchEndpoint(context,endpoint.getEndpointUri(),endpointUri)) {
-        sentTo=true;
+        sentTo.set(true);
       }
       return onExchange(exchange);
     }
     @Override public boolean onExchange(    Exchange exchange){
-      return sentTo;
+      return sentTo.get();
     }
     public boolean matches(){
       return true;
     }
     @Override public void reset(){
-      sentTo=false;
+      sentTo.set(false);
     }
     @Override public String toString(){
       return "wereSentTo(" + endpointUri + ")";

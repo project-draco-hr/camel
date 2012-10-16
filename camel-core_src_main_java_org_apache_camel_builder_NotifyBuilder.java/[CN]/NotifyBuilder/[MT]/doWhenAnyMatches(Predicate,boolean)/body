@@ -1,29 +1,29 @@
 {
   stack.add(new EventPredicateSupport(){
-    private boolean matches;
+    private final AtomicBoolean matches=new AtomicBoolean();
     @Override public boolean onExchangeCompleted(    Exchange exchange){
-      if (!received && !matches) {
-        matches=predicate.matches(exchange);
+      if (!received && !matches.get()) {
+        matches.set(predicate.matches(exchange));
       }
       return true;
     }
     @Override public boolean onExchangeFailed(    Exchange exchange){
-      if (!received && !matches) {
-        matches=predicate.matches(exchange);
+      if (!received && !matches.get()) {
+        matches.set(predicate.matches(exchange));
       }
       return true;
     }
     @Override public boolean onExchangeCreated(    Exchange exchange){
-      if (received && !matches) {
-        matches=predicate.matches(exchange);
+      if (received && !matches.get()) {
+        matches.set(predicate.matches(exchange));
       }
       return true;
     }
     public boolean matches(){
-      return matches;
+      return matches.get();
     }
     @Override public void reset(){
-      matches=false;
+      matches.set(false);
     }
     @Override public String toString(){
       if (received) {

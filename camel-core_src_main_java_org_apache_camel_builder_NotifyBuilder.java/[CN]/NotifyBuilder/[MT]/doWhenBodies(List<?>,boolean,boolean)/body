@@ -1,7 +1,7 @@
 {
   stack.add(new EventPredicateSupport(){
-    private boolean matches;
-    private int current;
+    private volatile boolean matches;
+    private final AtomicInteger current=new AtomicInteger();
     @Override public boolean onExchangeCreated(    Exchange exchange){
       if (received) {
         matchBody(exchange);
@@ -21,25 +21,24 @@
       return true;
     }
     private void matchBody(    Exchange exchange){
-      current++;
-      if (current > bodies.size()) {
+      if (current.incrementAndGet() > bodies.size()) {
         return;
       }
       Object actual=exchange.getIn().getBody();
-      Object expected=bodies.get(current - 1);
+      Object expected=bodies.get(current.get() - 1);
       matches=ObjectHelper.equal(expected,actual);
     }
     public boolean matches(){
       if (exact) {
-        return matches && current == bodies.size();
+        return matches && current.get() == bodies.size();
       }
  else {
-        return matches && current >= bodies.size();
+        return matches && current.get() >= bodies.size();
       }
     }
     @Override public void reset(){
       matches=false;
-      current=0;
+      current.set(0);
     }
     @Override public String toString(){
       if (received) {
