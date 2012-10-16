@@ -1,5 +1,5 @@
 {
-  getMockEndpoint("mock:result").expectedMessageCount(files);
+  NotifyBuilder notify=new NotifyBuilder(context).whenDone(files).create();
   ExecutorService executor=Executors.newFixedThreadPool(poolSize);
   Map<Integer,Future<String>> responses=new ConcurrentHashMap<Integer,Future<String>>();
   for (int i=0; i < files; i++) {
@@ -7,7 +7,7 @@
     Future<String> out=executor.submit(new Callable<String>(){
       public String call() throws Exception {
         String reply=template.requestBody("netty:tcp://localhost:{{port}}",index,String.class);
-        log.info("Sent {} received {}",index,reply);
+        log.debug("Sent {} received {}",index,reply);
         assertEquals("Bye " + index,reply);
         return reply;
       }
@@ -15,7 +15,7 @@
 );
     responses.put(index,out);
   }
-  assertMockEndpointsSatisfied();
+  notify.matches(2,TimeUnit.MINUTES);
   assertEquals(files,responses.size());
   Set<Object> unique=new HashSet<Object>();
   for (  Future<String> future : responses.values()) {
