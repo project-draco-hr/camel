@@ -25,25 +25,30 @@
   if (getConfiguration().getCharsetName() != null) {
     exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.normalizeCharset(getConfiguration().getCharsetName()));
   }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Pool[active={}, idle={}]",pool.getNumActive(),pool.getNumIdle());
+  }
+  Channel existing;
   try {
-    if (channelFuture == null || channel == null || !channel.isOpen()) {
-      channel=null;
-      channelFuture=openConnection();
-      channel=openChannel(channelFuture);
+    existing=pool.borrowObject();
+    if (existing != null) {
+      LOG.trace("Got channel from pool {}",existing);
     }
-    state.set(channel,new NettyCamelState(callback,exchange));
   }
  catch (  Exception e) {
     exchange.setException(e);
     callback.done(true);
     return true;
   }
+  final Channel channel=existing;
+  final AsyncCallback producerCallback=new NettyProducerCallback(channel,callback);
+  state.set(channel,new NettyCamelState(producerCallback,exchange));
   NettyHelper.writeBodyAsync(LOG,channel,null,body,exchange,new ChannelFutureListener(){
     public void operationComplete(    ChannelFuture channelFuture) throws Exception {
       LOG.trace("Operation complete {}",channelFuture);
       if (!channelFuture.isSuccess()) {
         exchange.setException(channelFuture.getCause());
-        callback.done(false);
+        producerCallback.done(false);
         return;
       }
       if (!configuration.isSync()) {
@@ -67,7 +72,7 @@
           }
         }
   finally {
-          callback.done(false);
+          producerCallback.done(false);
         }
       }
     }
