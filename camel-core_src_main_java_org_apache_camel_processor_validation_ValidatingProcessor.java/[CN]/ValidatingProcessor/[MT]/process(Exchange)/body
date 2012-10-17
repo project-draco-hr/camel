@@ -7,31 +7,51 @@
     schema=createSchema();
   }
   Validator validator=schema.newValidator();
-  Source source;
-  Result result;
+  Source source=null;
+  InputStream is=null;
   try {
-    if (useDom) {
-      source=exchange.getIn().getBody(DOMSource.class);
-      result=new DOMResult();
+    Result result=null;
+    if (isInputStreamNeeded(exchange)) {
+      is=exchange.getIn().getBody(InputStream.class);
+      if (is != null) {
+        source=getSource(exchange,is);
+      }
     }
  else {
-      source=exchange.getIn().getBody(SAXSource.class);
+      Object body=exchange.getIn().getBody();
+      if (body != null) {
+        source=getSource(exchange,body);
+      }
+    }
+    if (source == null && isFailOnNullBody()) {
+      throw new NoXmlBodyValidationException(exchange);
+    }
+    if (source instanceof DOMSource) {
+      result=new DOMResult();
+    }
+ else     if (source instanceof StreamSource) {
+      result=new StreamResult(new StringWriter());
+    }
+ else     if (source instanceof SAXSource) {
       result=new SAXResult();
     }
+ else     if (source instanceof StAXSource) {
+      result=null;
+    }
+    if (source != null) {
+      ValidatorErrorHandler handler=errorHandler.getClass().newInstance();
+      validator.setErrorHandler(handler);
+      try {
+        LOG.trace("Validating {}",source);
+        validator.validate(source,result);
+        handler.handleErrors(exchange,schema,result);
+      }
+ catch (      SAXParseException e) {
+        throw new SchemaValidationException(exchange,schema,Collections.singletonList(e),Collections.<SAXParseException>emptyList(),Collections.<SAXParseException>emptyList());
+      }
+    }
   }
- catch (  Exception e) {
-    throw new NoXmlBodyValidationException(exchange,e);
+  finally {
+    IOHelper.close(is);
   }
-  if (source == null) {
-    throw new NoXmlBodyValidationException(exchange);
-  }
-  ValidatorErrorHandler handler=errorHandler.getClass().newInstance();
-  validator.setErrorHandler(handler);
-  try {
-    validator.validate(source,result);
-  }
- catch (  SAXParseException e) {
-    throw new SchemaValidationException(exchange,schema,Collections.singletonList(e),Collections.<SAXParseException>emptyList(),Collections.<SAXParseException>emptyList());
-  }
-  handler.handleErrors(exchange,schema,result);
 }
