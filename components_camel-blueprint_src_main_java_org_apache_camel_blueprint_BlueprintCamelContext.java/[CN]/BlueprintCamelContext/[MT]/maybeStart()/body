@@ -1,8 +1,16 @@
 {
   if (!isStarted() && !isStarting()) {
-    start();
+    final ClassLoader original=Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader(getApplicationContextClassLoader());
+      LOG.debug("Starting {}",this);
+      start();
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(original);
+    }
   }
  else {
-    LOG.trace("Ignoring maybeStart() as Apache Camel is already started");
+    LOG.trace("Ignoring maybeStart() as {} is already started",this);
   }
 }
