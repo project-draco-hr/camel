@@ -6,6 +6,26 @@
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
+    Integer visibilityTimeout=getConfiguration().getVisibilityTimeout();
+    if (this.scheduledExecutor != null && visibilityTimeout != null && (visibilityTimeout.intValue() / 2) > 0) {
+      int delay=visibilityTimeout.intValue() / 2;
+      int period=visibilityTimeout.intValue();
+      LOG.debug("Scheduled TimeoutExtender task to start after {} delay, and run with {} period (seconds) to extend exchangeId: {}",new Object[]{delay,period,exchange.getExchangeId()});
+      final ScheduledFuture<?> scheduledFuture=this.scheduledExecutor.scheduleAtFixedRate(new TimeoutExtender(exchange,visibilityTimeout),delay,period,TimeUnit.SECONDS);
+      exchange.addOnCompletion(new Synchronization(){
+        @Override public void onComplete(        Exchange exchange){
+          cancelExtender(exchange);
+        }
+        @Override public void onFailure(        Exchange exchange){
+          cancelExtender(exchange);
+        }
+        private void cancelExtender(        Exchange exchange){
+          LOG.trace("Processing done so cancelling TimeoutExtender task for exchangeId: {}",exchange.getExchangeId());
+          scheduledFuture.cancel(true);
+        }
+      }
+);
+    }
     exchange.addOnCompletion(new Synchronization(){
       public void onComplete(      Exchange exchange){
         processCommit(exchange);
@@ -18,24 +38,12 @@
       }
     }
 );
-    ScheduledFuture<?> scheduledFuture=null;
-    Integer visibilityTimeout=getConfiguration().getVisibilityTimeout();
-    if (scheduledExecutor != null && visibilityTimeout != null && (visibilityTimeout.intValue() / 2) > 0) {
-      int delay=visibilityTimeout.intValue() / 2;
-      int period=visibilityTimeout.intValue();
-      LOG.debug("Scheduled TimeoutExtender task to start after {} delay, and run with {} period (seconds) to extend exchangeId: {}",new Object[]{delay,period,exchange.getExchangeId()});
-      scheduledFuture=this.scheduledExecutor.scheduleAtFixedRate(new TimeoutExtender(exchange,visibilityTimeout),delay,period,TimeUnit.SECONDS);
-    }
     LOG.trace("Processing exchange [{}]...",exchange);
     try {
       getProcessor().process(exchange);
     }
   finally {
       LOG.trace("Processing exchange [{}] done.",exchange);
-      if (scheduledFuture != null) {
-        LOG.trace("Processing done so cancelling TimeoutExtender task for exchangeId: {}",exchange.getExchangeId());
-        scheduledFuture.cancel(true);
-      }
     }
   }
   return total;
