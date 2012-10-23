@@ -31,16 +31,18 @@
   try {
     String charset=endpoint.getCharset();
     File source=null;
+    boolean fileBased=false;
     if (charset == null) {
       Object body=exchange.getIn().getBody();
       if (body instanceof WrappedFile) {
         body=((WrappedFile<?>)body).getFile();
+        fileBased=true;
       }
       if (body instanceof File) {
         source=(File)body;
       }
     }
-    if (source != null) {
+    if (fileBased) {
       File local=exchange.getIn().getHeader(Exchange.FILE_LOCAL_WORK_PATH,File.class);
       if (local != null && local.exists()) {
         boolean renamed=writeFileByLocalWorkPath(local,file);
@@ -50,7 +52,7 @@
           return true;
         }
       }
- else       if (source.exists()) {
+ else       if (source != null && source.exists()) {
         writeFileByFile(source,file);
         keepLastModified(exchange,file);
         return true;
