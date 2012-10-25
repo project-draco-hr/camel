@@ -1,0 +1,23 @@
+{
+  boolean isHeaderAvailable=inOrOut != null && inOrOut.getHeaders() != null && !inOrOut.getHeaders().isEmpty();
+  if (isHeaderAvailable) {
+    SoapHeader soapHeader=soapMessage.getSoapHeader();
+    Map<String,Object> headers=inOrOut.getHeaders();
+    Set<String> headerKeySet=new HashSet<String>(headers.keySet());
+    headerKeySet.remove(SpringWebserviceConstants.SPRING_WS_SOAP_ACTION);
+    headerKeySet.remove(SpringWebserviceConstants.SPRING_WS_ADDRESSING_ACTION);
+    headerKeySet.remove(SpringWebserviceConstants.SPRING_WS_ENDPOINT_URI);
+    headerKeySet.remove(BREADCRUMB_ID);
+    for (    String name : headerKeySet) {
+      Object value=headers.get(name);
+      if (value instanceof QName) {
+        soapHeader.addHeaderElement((QName)value);
+      }
+ else {
+        if (value instanceof String) {
+          soapHeader.addAttribute(new QName(name),value + "");
+        }
+      }
+    }
+  }
+}
