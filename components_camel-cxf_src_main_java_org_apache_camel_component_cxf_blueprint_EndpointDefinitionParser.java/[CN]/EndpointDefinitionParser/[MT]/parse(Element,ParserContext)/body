@@ -16,14 +16,19 @@
     }
  else     if (isAttribute(pre,name)) {
       if ("endpointName".equals(name) || "serviceName".equals(name)) {
-        QName q=parseQName(element,val);
-        endpointConfig.addProperty(name,createValue(context,q));
+        if (isPlaceHolder(val)) {
+          endpointConfig.addProperty(name + "String",createValue(context,val));
+        }
+ else {
+          QName q=parseQName(element,val);
+          endpointConfig.addProperty(name,createValue(context,q));
+        }
       }
  else       if ("depends-on".equals(name)) {
         endpointConfig.addDependsOn(val);
       }
  else       if (!"name".equals(name)) {
-        endpointConfig.addProperty(name,AbstractBPBeanDefinitionParser.createValue(context,val));
+        endpointConfig.addProperty(name,createValue(context,val));
       }
     }
   }
@@ -51,7 +56,7 @@
   }
   endpointConfig.addProperty("bus",getBusRef(context,bus));
   endpointConfig.setDestroyMethod("destroy");
-  endpointConfig.addArgument(AbstractBPBeanDefinitionParser.createValue(context,address),String.class.getName(),0);
+  endpointConfig.addArgument(createValue(context,address),String.class.getName(),0);
   endpointConfig.addArgument(createRef(context,"blueprintBundleContext"),BundleContext.class.getName(),1);
   return endpointConfig;
 }
