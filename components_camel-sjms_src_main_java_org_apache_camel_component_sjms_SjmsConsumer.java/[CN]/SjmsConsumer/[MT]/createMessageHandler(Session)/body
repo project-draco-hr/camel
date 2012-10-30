@@ -9,10 +9,17 @@
  else {
     commitStrategy=new DefaultTransactionCommitStrategy();
   }
+  Synchronization synchronization=null;
+  if (commitStrategy instanceof BatchTransactionCommitStrategy) {
+    synchronization=new SessionBatchTransactionSynchronization(session,commitStrategy,getTransactionBatchTimeout());
+  }
+ else {
+    synchronization=new SessionTransactionSynchronization(session,commitStrategy);
+  }
   AbstractMessageHandler messageHandler=null;
   if (getSjmsEndpoint().getExchangePattern().equals(ExchangePattern.InOnly)) {
     if (isTransacted()) {
-      messageHandler=new InOnlyMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session,commitStrategy));
+      messageHandler=new InOnlyMessageHandler(getEndpoint(),executor,synchronization);
     }
  else {
       messageHandler=new InOnlyMessageHandler(getEndpoint(),executor);
@@ -20,7 +27,7 @@
   }
  else {
     if (isTransacted()) {
-      messageHandler=new InOutMessageHandler(getEndpoint(),executor,new SessionTransactionSynchronization(session,commitStrategy));
+      messageHandler=new InOutMessageHandler(getEndpoint(),executor,synchronization);
     }
  else {
       messageHandler=new InOutMessageHandler(getEndpoint(),executor);

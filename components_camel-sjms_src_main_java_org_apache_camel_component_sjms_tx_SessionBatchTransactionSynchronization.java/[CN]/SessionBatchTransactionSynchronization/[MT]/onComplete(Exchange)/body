@@ -1,0 +1,19 @@
+{
+  try {
+    lock.readLock().lock();
+    if (commitStrategy.commit(exchange)) {
+      log.debug("Processing completion of Exchange id:{}",exchange.getExchangeId());
+      if (session != null && session.getTransacted()) {
+        session.commit();
+      }
+    }
+  }
+ catch (  Exception e) {
+    log.warn("Failed to commit the session: {}",e.getMessage());
+    exchange.setException(e);
+  }
+ finally {
+    lock.readLock().unlock();
+  }
+  resetTask();
+}
