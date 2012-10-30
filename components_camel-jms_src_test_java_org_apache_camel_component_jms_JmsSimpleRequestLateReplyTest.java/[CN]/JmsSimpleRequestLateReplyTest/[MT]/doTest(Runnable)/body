@@ -1,16 +1,7 @@
 {
-  Thread sender=new Thread(runnable);
-  sender.start();
-  MockEndpoint result=getMockEndpoint("mock:result");
-  result.expectedMessageCount(1);
-  Exchange out=template.request(getQueueEndpointName(),new Processor(){
-    public void process(    Exchange exchange) throws Exception {
-      exchange.setPattern(ExchangePattern.InOut);
-      exchange.getIn().setBody("Hello World");
-    }
-  }
-);
-  result.assertIsSatisfied();
-  assertNotNull(out);
-  assertEquals(expectedBody,out.getOut().getBody());
+  new Thread(runnable).start();
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  Object body=template.requestBody(getQueueEndpointName(),"Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals(expectedBody,body);
 }

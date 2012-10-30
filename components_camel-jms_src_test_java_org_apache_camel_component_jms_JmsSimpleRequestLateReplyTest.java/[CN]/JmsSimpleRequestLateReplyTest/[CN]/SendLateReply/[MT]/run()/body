@@ -7,14 +7,8 @@
  catch (  Exception e) {
   }
   LOG.debug("Sending late reply");
-  template.send("activemq:dummy",new Processor(){
-    public void process(    Exchange exchange) throws Exception {
-      exchange.setPattern(ExchangePattern.InOnly);
-      Message in=exchange.getIn();
-      in.setBody(expectedBody);
-      in.setHeader(JmsConstants.JMS_DESTINATION,replyDestination);
-      in.setHeader("JMSCorrelationID",cid);
-    }
-  }
-);
+  Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put(JmsConstants.JMS_DESTINATION,replyDestination);
+  headers.put("JMSCorrelationID",cid);
+  template.sendBodyAndHeaders("activemq:dummy",expectedBody,headers);
 }
