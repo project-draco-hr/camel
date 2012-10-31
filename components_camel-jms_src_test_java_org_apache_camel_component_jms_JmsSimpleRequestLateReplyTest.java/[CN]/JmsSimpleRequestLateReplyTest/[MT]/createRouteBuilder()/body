@@ -1,15 +1,16 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
-      from(getQueueEndpointName()).setExchangePattern(ExchangePattern.InOptionalOut).process(new Processor(){
+      from(getQueueEndpointName()).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
+          exchange.setPattern(ExchangePattern.InOnly);
           Message in=exchange.getIn();
           assertEquals("Hello World",in.getBody());
           replyDestination=in.getHeader("JMSReplyTo",Destination.class);
           cid=in.getHeader("JMSCorrelationID",String.class);
-          LOG.debug("ReplyDestination: " + replyDestination);
-          LOG.debug("JMSCorrelationID: " + cid);
-          LOG.debug("Ahh I cannot send a reply. Someone else must do it.");
+          LOG.info("ReplyDestination: " + replyDestination);
+          LOG.info("JMSCorrelationID: " + cid);
+          LOG.info("Ahh I cannot send a reply. Someone else must do it.");
           latch.countDown();
         }
       }
