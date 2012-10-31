@@ -1,0 +1,37 @@
+{
+  SortedMap<String,Properties> map=new TreeMap<String,Properties>();
+  Enumeration<URL> iter=camelContext.getClassResolver().loadResourcesAsURL(COMPONENT_DESCRIPTOR);
+  while (iter.hasMoreElements()) {
+    URL url=iter.nextElement();
+    try {
+      Properties properties=new Properties();
+      properties.load(url.openStream());
+      String names=properties.getProperty("components");
+      if (names != null) {
+        StringTokenizer tok=new StringTokenizer(names);
+        while (tok.hasMoreTokens()) {
+          String name=tok.nextToken();
+          map.put(name,properties);
+        }
+      }
+    }
+ catch (    IOException e) {
+      throw new LoadPropertiesException(url,e);
+    }
+  }
+  Map<String,Component> beanMap=camelContext.getRegistry().lookupByType(Component.class);
+  Set<Map.Entry<String,Component>> entries=beanMap.entrySet();
+  for (  Map.Entry<String,Component> entry : entries) {
+    String name=entry.getKey();
+    if (!map.containsKey(name)) {
+      Properties properties=new Properties();
+      Component component=entry.getValue();
+      if (component != null) {
+        properties.put("component",component);
+        properties.put("class",component.getClass().getName());
+        map.put(name,properties);
+      }
+    }
+  }
+  return map;
+}
