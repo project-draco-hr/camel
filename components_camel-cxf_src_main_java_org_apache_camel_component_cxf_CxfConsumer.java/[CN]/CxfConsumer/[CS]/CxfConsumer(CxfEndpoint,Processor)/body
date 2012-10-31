@@ -81,16 +81,18 @@ synchronized (continuation) {
     @SuppressWarnings("unchecked") private void setResponseBack(    Exchange cxfExchange,    org.apache.camel.Exchange camelExchange){
       CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
       CxfBinding binding=endpoint.getCxfBinding();
-      checkFailure(camelExchange);
+      checkFailure(camelExchange,cxfExchange);
       binding.populateCxfResponseFromExchange(camelExchange,cxfExchange);
-      checkFailure(camelExchange);
+      checkFailure(camelExchange,cxfExchange);
       binding.copyJaxWsContext(cxfExchange,(Map<String,Object>)camelExchange.getProperty(CxfConstants.JAXWS_CONTEXT));
     }
-    private void checkFailure(    org.apache.camel.Exchange camelExchange) throws Fault {
+    private void checkFailure(    org.apache.camel.Exchange camelExchange,    Exchange cxfExchange) throws Fault {
       final Throwable t;
       if (camelExchange.isFailed()) {
         t=(camelExchange.hasOut() && camelExchange.getOut().isFault()) ? camelExchange.getOut().getBody(Throwable.class) : camelExchange.getException();
+        cxfExchange.getInMessage().put(FaultMode.class,FaultMode.UNCHECKED_APPLICATION_FAULT);
         if (t instanceof Fault) {
+          cxfExchange.getInMessage().put(FaultMode.class,FaultMode.CHECKED_APPLICATION_FAULT);
           throw (Fault)t;
         }
  else         if (t != null) {
