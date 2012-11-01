@@ -1,0 +1,85 @@
+{
+  String remainder=ifStartsWithReturnRemainder("bodyAs",function);
+  if (remainder != null) {
+    String type=ObjectHelper.between(remainder,"(",")");
+    if (type == null) {
+      throw new SimpleParserException("Valid syntax: ${bodyAs(type)} was: " + function,token.getIndex());
+    }
+    type=StringHelper.removeQuotes(type);
+    return ExpressionBuilder.bodyExpression(type);
+  }
+  remainder=ifStartsWithReturnRemainder("mandatoryBodyAs",function);
+  if (remainder != null) {
+    String type=ObjectHelper.between(remainder,"(",")");
+    if (type == null) {
+      throw new SimpleParserException("Valid syntax: ${mandatoryBodyAs(type)} was: " + function,token.getIndex());
+    }
+    type=StringHelper.removeQuotes(type);
+    return ExpressionBuilder.mandatoryBodyExpression(type);
+  }
+  remainder=ifStartsWithReturnRemainder("body",function);
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("in.body",function);
+  }
+  if (remainder != null) {
+    boolean invalid=OgnlHelper.isInvalidValidOgnlExpression(remainder);
+    if (invalid) {
+      throw new SimpleParserException("Valid syntax: ${body.OGNL} was: " + function,token.getIndex());
+    }
+    return ExpressionBuilder.bodyOgnlExpression(remainder);
+  }
+  remainder=ifStartsWithReturnRemainder("headerAs",function);
+  if (remainder != null) {
+    String keyAndType=ObjectHelper.between(remainder,"(",")");
+    if (keyAndType == null) {
+      throw new SimpleParserException("Valid syntax: ${headerAs(key, type)} was: " + function,token.getIndex());
+    }
+    String key=ObjectHelper.before(keyAndType,",");
+    String type=ObjectHelper.after(keyAndType,",");
+    if (ObjectHelper.isEmpty(key) || ObjectHelper.isEmpty(type)) {
+      throw new SimpleParserException("Valid syntax: ${headerAs(key, type)} was: " + function,token.getIndex());
+    }
+    key=StringHelper.removeQuotes(key);
+    type=StringHelper.removeQuotes(type);
+    return ExpressionBuilder.headerExpression(key,type);
+  }
+  if ("in.headers".equals(function) || "headers".equals(function)) {
+    return ExpressionBuilder.headersExpression();
+  }
+  remainder=ifStartsWithReturnRemainder("in.headers",function);
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("in.header",function);
+  }
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("headers",function);
+  }
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("header",function);
+  }
+  if (remainder != null) {
+    if (remainder.startsWith(".") || remainder.startsWith("?")) {
+      remainder=remainder.substring(1);
+    }
+    if (remainder.startsWith("[") && remainder.endsWith("]")) {
+      remainder=remainder.substring(1,remainder.length() - 1);
+    }
+    boolean invalid=OgnlHelper.isInvalidValidOgnlExpression(remainder);
+    if (invalid) {
+      throw new SimpleParserException("Valid syntax: ${header.name[key]} was: " + function,token.getIndex());
+    }
+    if (OgnlHelper.isValidOgnlExpression(remainder)) {
+      return ExpressionBuilder.headersOgnlExpression(remainder);
+    }
+ else {
+      return ExpressionBuilder.headerExpression(remainder);
+    }
+  }
+  remainder=ifStartsWithReturnRemainder("out.header.",function);
+  if (remainder == null) {
+    remainder=ifStartsWithReturnRemainder("out.headers.",function);
+  }
+  if (remainder != null) {
+    return ExpressionBuilder.outHeaderExpression(remainder);
+  }
+  return null;
+}
