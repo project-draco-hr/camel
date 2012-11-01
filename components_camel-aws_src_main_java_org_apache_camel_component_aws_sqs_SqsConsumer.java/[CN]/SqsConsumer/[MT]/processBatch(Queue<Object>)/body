@@ -11,7 +11,10 @@
       int delay=visibilityTimeout.intValue() / 2;
       int period=visibilityTimeout.intValue();
       LOG.debug("Scheduled TimeoutExtender task to start after {} delay, and run with {} period (seconds) to extend exchangeId: {}",new Object[]{delay,period,exchange.getExchangeId()});
-      final ScheduledFuture<?> scheduledFuture=this.scheduledExecutor.scheduleAtFixedRate(new TimeoutExtender(exchange,visibilityTimeout),delay,period,TimeUnit.SECONDS);
+      int repeatSeconds=new Double(visibilityTimeout.doubleValue() * 1.5).intValue();
+      LOG.debug("period :" + period);
+      LOG.debug("repeatSeconds :" + repeatSeconds);
+      final ScheduledFuture<?> scheduledFuture=this.scheduledExecutor.scheduleAtFixedRate(new TimeoutExtender(exchange,repeatSeconds),delay,period,TimeUnit.SECONDS);
       exchange.addOnCompletion(new Synchronization(){
         @Override public void onComplete(        Exchange exchange){
           cancelExtender(exchange);
