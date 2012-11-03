@@ -1,0 +1,27 @@
+{
+  String action=getEndpoint().getAction();
+  String id=getEndpoint().getRouteId();
+  Object result=null;
+  String task=action + " route " + id;
+  try {
+    if ("start".equals(action)) {
+      getEndpoint().getCamelContext().startRoute(id);
+    }
+ else     if ("stop".equals(action)) {
+      getEndpoint().getCamelContext().stopRoute(id);
+    }
+ else     if ("status".equals(action)) {
+      ServiceStatus status=getEndpoint().getCamelContext().getRouteStatus(id);
+      if (status != null) {
+        result=status.name();
+      }
+    }
+    if (result != null && !getEndpoint().isAsync()) {
+      exchange.getIn().setBody(result);
+    }
+    logger.log("ControlBus task done [" + task + "] with result -> "+ (result != null ? result : "void"));
+  }
+ catch (  Exception e) {
+    logger.log("Error executing ControlBus task [" + task + "]. This exception will be ignored.",e);
+  }
+}

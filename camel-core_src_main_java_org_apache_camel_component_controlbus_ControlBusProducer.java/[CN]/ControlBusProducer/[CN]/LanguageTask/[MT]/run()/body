@@ -1,0 +1,21 @@
+{
+  String task=null;
+  Object result=null;
+  try {
+    Exchange dummy=ExchangeHelper.createCopy(exchange,true);
+    task=dummy.getIn().getMandatoryBody(String.class);
+    if (task != null) {
+      Expression exp=language.createExpression(task);
+      result=exp.evaluate(dummy,Object.class);
+    }
+    if (result != null && !getEndpoint().isAsync()) {
+      exchange.getIn().setBody(result);
+    }
+    if (task != null) {
+      logger.log("ControlBus task done [" + task + "] with result -> "+ (result != null ? result : "void"));
+    }
+  }
+ catch (  Exception e) {
+    logger.log("Error executing ControlBus task [" + task + "]. This exception will be ignored.",e);
+  }
+}
