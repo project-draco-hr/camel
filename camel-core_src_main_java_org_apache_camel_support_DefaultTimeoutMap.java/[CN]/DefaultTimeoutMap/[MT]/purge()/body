@@ -1,5 +1,8 @@
 {
   log.trace("There are {} in the timeout map",map.size());
+  if (map.isEmpty()) {
+    return;
+  }
   long now=currentTime();
   List<TimeoutMapEntry<K,V>> expired=new ArrayList<TimeoutMapEntry<K,V>>();
   if (useLock) {
@@ -28,7 +31,13 @@
       List<K> evicts=new ArrayList<K>(expired.size());
       try {
         for (        TimeoutMapEntry<K,V> entry : expired) {
-          boolean evict=onEviction(entry.getKey(),entry.getValue());
+          boolean evict=false;
+          try {
+            evict=onEviction(entry.getKey(),entry.getValue());
+          }
+ catch (          Throwable t) {
+            log.warn("Exception happened during eviction of entry ID {}, won't evict and will continue trying: ",entry.getValue(),t);
+          }
           if (evict) {
             evicts.add(entry.getKey());
           }
