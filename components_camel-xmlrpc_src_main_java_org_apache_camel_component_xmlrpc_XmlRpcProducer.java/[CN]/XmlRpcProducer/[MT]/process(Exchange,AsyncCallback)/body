@@ -1,0 +1,15 @@
+{
+  LOG.trace("Process exchange: {} in the async way.",exchange);
+  Message in=exchange.getIn();
+  String operationName=in.getHeader(XmlRpcConstants.OPERATION_NAME,String.class);
+  XmlRpcAsyncCallback xmlRpcAsyncCallback=new XmlRpcAsyncCallback(exchange,callback);
+  try {
+    client.executeAsync(operationName,in.getBody(List.class),xmlRpcAsyncCallback);
+    return false;
+  }
+ catch (  Exception ex) {
+    exchange.setException(ex);
+    callback.done(true);
+    return true;
+  }
+}
