@@ -2,7 +2,16 @@
   if (isFixed()) {
     InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(exchange.getContext().getClassResolver(),getDefinition());
     InputStreamReader reader=new InputStreamReader(is,IOHelper.getCharsetName(exchange));
-    return getParserFactory().newFixedLengthParser(reader,bodyReader);
+    Parser parser=getParserFactory().newFixedLengthParser(reader,bodyReader);
+    if (allowShortLines) {
+      parser.setHandlingShortLines(true);
+      parser.setIgnoreParseWarnings(true);
+    }
+    if (ignoreExtraColumns) {
+      parser.setIgnoreExtraColumns(true);
+      parser.setIgnoreParseWarnings(true);
+    }
+    return parser;
   }
  else {
     if (ObjectHelper.isEmpty(getDefinition())) {
