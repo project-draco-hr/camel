@@ -33,6 +33,15 @@
   if (storageClass != null) {
     putObjectRequest.setStorageClass(storageClass);
   }
+  String cannedAcl=exchange.getIn().getHeader(S3Constants.CANNED_ACL,String.class);
+  if (cannedAcl != null) {
+    CannedAccessControlList objectAcl=CannedAccessControlList.valueOf(cannedAcl);
+    putObjectRequest.setCannedAcl(objectAcl);
+  }
+  AccessControlList acl=exchange.getIn().getHeader(S3Constants.ACL,AccessControlList.class);
+  if (acl != null) {
+    putObjectRequest.setAccessControlList(acl);
+  }
   LOG.trace("Put object [{}] from exchange [{}]...",putObjectRequest,exchange);
   PutObjectResult putObjectResult=getEndpoint().getS3Client().putObject(putObjectRequest);
   LOG.trace("Received result [{}]",putObjectResult);
