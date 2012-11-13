@@ -25,12 +25,18 @@
   final GenericFile<T> target=getExchangeFileProperty(exchange);
   final String name=target.getAbsoluteFilePath();
   try {
-    log.trace("Retrieving file: {} from: {}",name,endpoint);
-    boolean retrieved=operations.retrieveFile(name,exchange);
-    if (!retrieved) {
-      throw new GenericFileOperationFailedException("Cannot retrieve file: " + file + " from: "+ endpoint);
+    if (isRetrieveFile()) {
+      log.trace("Retrieving file: {} from: {}",name,endpoint);
+      boolean retrieved=operations.retrieveFile(name,exchange);
+      if (!retrieved) {
+        throw new GenericFileOperationFailedException("Cannot retrieve file: " + file + " from: "+ endpoint);
+      }
+      log.trace("Retrieved file: {} from: {}",name,endpoint);
     }
-    log.trace("Retrieved file: {} from: {}",name,endpoint);
+ else {
+      log.trace("Skiped retrieval of file: {} from: {}",name,endpoint);
+      exchange.getIn().setBody(null);
+    }
     exchange.addOnCompletion(new GenericFileOnCompletion<T>(endpoint,operations,target,absoluteFileName));
     log.debug("About to process file: {} using exchange: {}",target,exchange);
     getAsyncProcessor().process(exchange,new AsyncCallback(){
