@@ -2,14 +2,16 @@
   try {
     lock.readLock().lock();
     if (commitStrategy.rollback(exchange)) {
-      log.debug("Processing failure of Exchange id:{}",exchange.getExchangeId());
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Processing failure of Exchange id:{}",exchange.getExchangeId());
+      }
       if (session != null && session.getTransacted()) {
         session.rollback();
       }
     }
   }
  catch (  Exception e) {
-    log.warn("Failed to rollback the session: {}",e.getMessage());
+    LOG.warn("Failed to rollback the session: " + e.getMessage() + ". This exception will be ignored.",e);
   }
  finally {
     lock.readLock().unlock();

@@ -9,14 +9,15 @@
  else {
     commitStrategy=new DefaultTransactionCommitStrategy();
   }
-  Synchronization synchronization=null;
+  Synchronization synchronization;
   if (commitStrategy instanceof BatchTransactionCommitStrategy) {
-    synchronization=new SessionBatchTransactionSynchronization(session,commitStrategy,getTransactionBatchTimeout());
+    TimedTaskManager timedTaskManager=getEndpoint().getComponent().getTimedTaskManager();
+    synchronization=new SessionBatchTransactionSynchronization(timedTaskManager,session,commitStrategy,getTransactionBatchTimeout());
   }
  else {
     synchronization=new SessionTransactionSynchronization(session,commitStrategy);
   }
-  AbstractMessageHandler messageHandler=null;
+  AbstractMessageHandler messageHandler;
   if (getSjmsEndpoint().getExchangePattern().equals(ExchangePattern.InOnly)) {
     if (isTransacted()) {
       messageHandler=new InOnlyMessageHandler(getEndpoint(),executor,synchronization);
