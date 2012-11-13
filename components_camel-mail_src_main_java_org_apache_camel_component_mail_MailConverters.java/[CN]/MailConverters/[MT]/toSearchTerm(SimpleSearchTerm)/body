@@ -1,0 +1,45 @@
+{
+  SearchTermBuilder builder=new SearchTermBuilder();
+  if (simple.isUnseen()) {
+    builder=builder.unseen();
+  }
+  if (simple.getSubjectOrBody() != null) {
+    String text=simple.getSubjectOrBody();
+    builder=builder.subject(text).body(SearchTermBuilder.Op.or,text);
+  }
+  if (simple.getSubject() != null) {
+    builder=builder.subject(simple.getSubject());
+  }
+  if (simple.getBody() != null) {
+    builder=builder.body(simple.getBody());
+  }
+  if (simple.getFrom() != null) {
+    builder=builder.from(simple.getFrom());
+  }
+  if (simple.getTo() != null) {
+    builder=builder.recipient(Message.RecipientType.TO,simple.getTo());
+  }
+  if (simple.getFromSentDate() != null) {
+    SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+    Date date;
+    if ("now".equals(simple.getFromSentDate())) {
+      date=new Date();
+    }
+ else {
+      date=sdf.parse(simple.getFromSentDate());
+    }
+    builder=builder.sent(SearchTermBuilder.Comparison.GE,date);
+  }
+  if (simple.getToSentDate() != null) {
+    SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+    Date date;
+    if ("now".equals(simple.getToSentDate())) {
+      date=new Date();
+    }
+ else {
+      date=sdf.parse(simple.getToSentDate());
+    }
+    builder=builder.sent(SearchTermBuilder.Comparison.LE,date);
+  }
+  return builder.build();
+}
