@@ -1,0 +1,71 @@
+{
+  SearchTermBuilder builder=new SearchTermBuilder();
+  if (simple.isUnseen()) {
+    builder=builder.unseen();
+  }
+  if (simple.getSubjectOrBody() != null) {
+    String text=simple.getSubjectOrBody();
+    builder=builder.subject(text).body(SearchTermBuilder.Op.or,text);
+  }
+  if (simple.getSubject() != null) {
+    builder=builder.subject(simple.getSubject());
+  }
+  if (simple.getBody() != null) {
+    builder=builder.body(simple.getBody());
+  }
+  if (simple.getFrom() != null) {
+    builder=builder.from(simple.getFrom());
+  }
+  if (simple.getTo() != null) {
+    builder=builder.recipient(Message.RecipientType.TO,simple.getTo());
+  }
+  if (simple.getFromSentDate() != null) {
+    String s=simple.getFromSentDate();
+    if (s.startsWith("now")) {
+      long offset=extractOffset(s,typeConverter);
+      builder=builder.and(new NowSearchTerm(SearchTermBuilder.Comparison.GE.asNum(),true,offset));
+    }
+ else {
+      SimpleDateFormat sdf=new SimpleDateFormat(NOW_DATE_FORMAT);
+      Date date=sdf.parse(s);
+      builder=builder.sent(SearchTermBuilder.Comparison.GE,date);
+    }
+  }
+  if (simple.getToSentDate() != null) {
+    String s=simple.getFromSentDate();
+    if (s.startsWith("now")) {
+      long offset=extractOffset(s,typeConverter);
+      builder=builder.and(new NowSearchTerm(SearchTermBuilder.Comparison.LE.asNum(),true,offset));
+    }
+ else {
+      SimpleDateFormat sdf=new SimpleDateFormat(NOW_DATE_FORMAT);
+      Date date=sdf.parse(s);
+      builder=builder.sent(SearchTermBuilder.Comparison.LE,date);
+    }
+  }
+  if (simple.getFromReceivedDate() != null) {
+    String s=simple.getFromSentDate();
+    if (s.startsWith("now")) {
+      long offset=extractOffset(s,typeConverter);
+      builder=builder.and(new NowSearchTerm(SearchTermBuilder.Comparison.GE.asNum(),false,offset));
+    }
+ else {
+      SimpleDateFormat sdf=new SimpleDateFormat(NOW_DATE_FORMAT);
+      Date date=sdf.parse(s);
+      builder=builder.received(SearchTermBuilder.Comparison.GE,date);
+    }
+  }
+  if (simple.getToReceivedDate() != null) {
+    String s=simple.getFromSentDate();
+    if (s.startsWith("now")) {
+      long offset=extractOffset(s,typeConverter);
+      builder=builder.and(new NowSearchTerm(SearchTermBuilder.Comparison.LE.asNum(),false,offset));
+    }
+ else {
+      SimpleDateFormat sdf=new SimpleDateFormat(NOW_DATE_FORMAT);
+      Date date=sdf.parse(s);
+      builder=builder.received(SearchTermBuilder.Comparison.LE,date);
+    }
+  }
+  return builder.build();
+}
