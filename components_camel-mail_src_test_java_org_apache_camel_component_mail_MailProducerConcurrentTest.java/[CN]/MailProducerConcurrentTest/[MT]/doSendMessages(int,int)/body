@@ -1,5 +1,6 @@
 {
   Mailbox.clearAll();
+  NotifyBuilder builder=new NotifyBuilder(context).whenDone(files).create();
   getMockEndpoint("mock:result").expectedMessageCount(files);
   getMockEndpoint("mock:result").expectsNoDuplicates(body());
   final CountDownLatch latch=new CountDownLatch(files);
@@ -15,8 +16,9 @@
     }
 );
   }
-  assertTrue(latch.await(2,TimeUnit.SECONDS));
+  assertTrue(latch.await(5,TimeUnit.SECONDS));
   assertMockEndpointsSatisfied();
+  assertTrue(builder.matchesMockWaitTime());
   Mailbox box=Mailbox.get("someone@localhost");
   assertEquals(files,box.size());
   Set<Object> bodies=new HashSet<Object>();
