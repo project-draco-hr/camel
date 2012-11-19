@@ -1,5 +1,12 @@
 {
-  SqlSession session=endpoint.getSqlSessionFactory().openSession();
+  SqlSession session;
+  ExecutorType executorType=endpoint.getExecutorType();
+  if (executorType == null) {
+    session=endpoint.getSqlSessionFactory().openSession();
+  }
+ else {
+    session=endpoint.getSqlSessionFactory().openSession(executorType);
+  }
   try {
 switch (endpoint.getStatementType()) {
 case SelectOne:
@@ -17,8 +24,14 @@ break;
 case Update:
 doUpdate(exchange,session);
 break;
+case UpdateList:
+doUpdateList(exchange,session);
+break;
 case Delete:
 doDelete(exchange,session);
+break;
+case DeleteList:
+doDeleteList(exchange,session);
 break;
 default :
 throw new IllegalArgumentException("Unsupported statementType: " + endpoint.getStatementType());
