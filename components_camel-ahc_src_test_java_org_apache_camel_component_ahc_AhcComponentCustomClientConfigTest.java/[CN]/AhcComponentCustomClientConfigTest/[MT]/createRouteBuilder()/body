@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to(getAhcEndpointUri()).to("mock:result");
+      from(getTestServerEndpointUri()).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,"301");
+          exchange.getOut().setHeader("Location",getTestServerEndpointTwoUrl());
+        }
+      }
+);
+      from(getTestServerEndpointTwoUri()).transform(constant("Bye World"));
+    }
+  }
+;
+}
