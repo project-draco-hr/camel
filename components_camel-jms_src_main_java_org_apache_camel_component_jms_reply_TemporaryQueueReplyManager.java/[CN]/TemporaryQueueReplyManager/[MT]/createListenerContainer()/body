@@ -1,5 +1,5 @@
 {
-  DefaultMessageListenerContainer answer=new DefaultMessageListenerContainer();
+  DefaultMessageListenerContainer answer=new DefaultJmsMessageListenerContainer(endpoint);
   answer.setDestinationName("temporary");
   answer.setDestinationResolver(new DestinationResolver(){
     public Destination resolveDestinationName(    Session session,    String destinationName,    boolean pubSubDomain) throws JMSException {
@@ -44,9 +44,14 @@
   if (endpoint.getRecoveryInterval() >= 0) {
     answer.setRecoveryInterval(endpoint.getRecoveryInterval());
   }
+  if (endpoint.getTaskExecutor() != null) {
+    if (log.isDebugEnabled()) {
+      log.debug("Using custom TaskExecutor: {} on listener container: {}",endpoint.getTaskExecutor(),answer);
+    }
+    answer.setTaskExecutor(endpoint.getTaskExecutor());
+  }
   String name="TemporaryQueueReplyManager[" + answer.getDestinationName() + "]";
-  String beanName=endpoint.getCamelContext().getExecutorServiceManager().resolveThreadName(name);
-  answer.setBeanName(beanName);
+  answer.setBeanName(name);
   if (answer.getConcurrentConsumers() > 1) {
     log.info("Using {}-{} concurrent consumers on {}",new Object[]{answer.getConcurrentConsumers(),answer.getMaxConcurrentConsumers(),name});
   }
