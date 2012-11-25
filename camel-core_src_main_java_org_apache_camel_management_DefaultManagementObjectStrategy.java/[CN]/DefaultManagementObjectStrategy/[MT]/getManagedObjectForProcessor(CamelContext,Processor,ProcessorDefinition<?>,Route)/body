@@ -12,7 +12,17 @@
       answer=new ManagedThrottler(context,(Throttler)target,definition);
     }
  else     if (target instanceof SendProcessor) {
-      answer=new ManagedSendProcessor(context,(SendProcessor)target,definition);
+      SendProcessor sp=(SendProcessor)target;
+      if (sp.getDestination() instanceof LogEndpoint) {
+        LogEndpoint le=(LogEndpoint)sp.getDestination();
+        if (le.getLogger() instanceof ThroughputLogger) {
+          ThroughputLogger tl=(ThroughputLogger)le.getLogger();
+          answer=new ManagedThroughputLogger(context,tl,definition);
+        }
+      }
+      if (answer == null) {
+        answer=new ManagedSendProcessor(context,(SendProcessor)target,definition);
+      }
     }
  else     if (target instanceof BeanProcessor) {
       answer=new ManagedBeanProcessor(context,(BeanProcessor)target,definition);
