@@ -1,17 +1,36 @@
 {
   ZooKeeper connection=zkm.getConnection();
   ProductionContext context=new ProductionContext(connection,exchange);
+  String operation=exchange.getIn().getHeader(ZooKeeperMessage.ZOOKEEPER_OPERATION,String.class);
+  boolean isDelete=ZK_OPERATION_DELETE.equals(operation);
   if (ExchangeHelper.isOutCapable(exchange)) {
-    if (log.isDebugEnabled()) {
-      log.debug(format("Storing data to znode '%s', waiting for confirmation",context.node));
+    if (isDelete) {
+      if (log.isDebugEnabled()) {
+        log.debug(format("Deleting znode '%s', waiting for confirmation",context.node));
+      }
+      OperationResult result=synchronouslyDelete(context);
+      if (configuration.listChildren()) {
+        result=listChildren(context);
+      }
+      updateExchangeWithResult(context,result);
     }
-    OperationResult result=synchronouslySetData(context);
-    if (configuration.listChildren()) {
-      result=listChildren(context);
+ else {
+      if (log.isDebugEnabled()) {
+        log.debug(format("Storing data to znode '%s', waiting for confirmation",context.node));
+      }
+      OperationResult result=synchronouslySetData(context);
+      if (configuration.listChildren()) {
+        result=listChildren(context);
+      }
+      updateExchangeWithResult(context,result);
     }
-    updateExchangeWithResult(context,result);
   }
  else {
-    asynchronouslySetDataOnNode(connection,context);
+    if (isDelete) {
+      asynchronouslyDeleteNode(connection,context);
+    }
+ else {
+      asynchronouslySetDataOnNode(connection,context);
+    }
   }
 }
