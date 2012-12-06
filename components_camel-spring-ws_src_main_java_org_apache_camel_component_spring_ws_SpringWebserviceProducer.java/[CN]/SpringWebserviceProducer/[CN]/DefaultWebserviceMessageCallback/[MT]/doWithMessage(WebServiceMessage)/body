@@ -4,8 +4,17 @@
     new SoapActionCallback(soapAction).doWithMessage(message);
   }
   URI wsAddressingAction=wsAddressingActionHeader != null ? wsAddressingActionHeader : configuration.getWsAddressingAction();
+  URI wsReplyTo=wsReplyToHeader != null ? wsReplyToHeader : configuration.getReplyTo();
+  URI wsFaultTo=wsFaultToHeader != null ? wsFaultToHeader : configuration.getFaultTo();
   if (wsAddressingAction != null) {
-    new ActionCallback(wsAddressingAction).doWithMessage(message);
+    ActionCallback actionCallback=new ActionCallback(wsAddressingAction);
+    if (wsReplyTo != null) {
+      actionCallback.setReplyTo(new EndpointReference(wsReplyTo));
+    }
+    if (wsFaultTo != null) {
+      actionCallback.setFaultTo(new EndpointReference(wsFaultTo));
+    }
+    actionCallback.doWithMessage(message);
   }
   configuration.getMessageFilter().filterProducer(exchange,message);
 }
