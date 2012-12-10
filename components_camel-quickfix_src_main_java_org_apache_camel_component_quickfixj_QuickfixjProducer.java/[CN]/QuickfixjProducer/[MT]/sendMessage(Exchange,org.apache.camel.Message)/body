@@ -1,7 +1,7 @@
 {
   Message message=camelMessage.getBody(Message.class);
   log.debug("Sending FIX message: {}",message);
-  SessionID messageSessionID=sessionID;
+  SessionID messageSessionID=getEndpoint().getSessionID();
   if (messageSessionID == null) {
     messageSessionID=MessageUtils.getSessionID(message);
   }
@@ -11,9 +11,8 @@
   }
   Callable<Message> callable=null;
   if (exchange.getPattern().isOutCapable()) {
-    QuickfixjEndpoint endpoint=(QuickfixjEndpoint)getEndpoint();
-    MessageCorrelator messageCorrelator=endpoint.getEngine().getMessageCorrelator();
-    callable=messageCorrelator.getReply(endpoint.getSessionID(),exchange);
+    MessageCorrelator messageCorrelator=getEndpoint().getEngine().getMessageCorrelator();
+    callable=messageCorrelator.getReply(getEndpoint().getSessionID(),exchange);
   }
   if (!session.send(message)) {
     throw new CannotSendException("Cannot send FIX message: " + message.toString());
