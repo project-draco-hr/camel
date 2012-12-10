@@ -1,0 +1,12 @@
+{
+  URI responseAction=getResponseAction(endpoint,requestMap);
+  URI faultAction=getFaultAction(endpoint,requestMap);
+  WebServiceMessageSender[] messageSenders=getMessageSenders(endpoint);
+  MessageIdStrategy messageIdStrategy=getMessageStrategy(endpoint);
+  EndpointInterceptor[] interceptors=new EndpointInterceptor[preInterceptors.length + postInterceptors.length + 1];
+  System.arraycopy(preInterceptors,0,interceptors,0,preInterceptors.length);
+  AddressingEndpointInterceptor interceptor=new AddressingEndpointInterceptor(version,messageIdStrategy,messageSenders,responseAction,faultAction);
+  interceptors[preInterceptors.length]=interceptor;
+  System.arraycopy(postInterceptors,0,interceptors,preInterceptors.length + 1,postInterceptors.length);
+  return new SoapEndpointInvocationChain(endpoint,interceptors,actorsOrRoles,isUltimateReceiver);
+}
