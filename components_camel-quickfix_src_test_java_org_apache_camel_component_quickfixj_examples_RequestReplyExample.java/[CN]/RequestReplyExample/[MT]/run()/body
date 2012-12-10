@@ -6,7 +6,7 @@
     @Override public void configure() throws Exception {
       from("quickfix:examples/inprocess.cfg?sessionID=FIX.4.2:TRADER->MARKET").filter(header(QuickfixjEndpoint.EVENT_CATEGORY_KEY).isEqualTo(QuickfixjEventCategory.SessionLogon)).bean(new CountDownLatchDecrementer("logon",logonLatch));
       from("quickfix:examples/inprocess.cfg?sessionID=FIX.4.2:MARKET->TRADER&exchangePattern=InOut").filter(header(QuickfixjEndpoint.MESSAGE_TYPE_KEY).isEqualTo(MsgType.ORDER_STATUS_REQUEST)).bean(new MarketOrderStatusService());
-      from("jetty:" + orderStatusServiceUrl).bean(new OrderStatusRequestTransformer()).routingSlip(method(FixSessionRouter.class,"route")).bean(new QuickfixjMessageJsonTransformer());
+      from("jetty:" + orderStatusServiceUrl).bean(new OrderStatusRequestTransformer()).routingSlip(method(FixSessionRouter.class,"route")).bean(new QuickfixjMessageJsonTransformer(),"transform(${body})");
     }
   }
 ;
