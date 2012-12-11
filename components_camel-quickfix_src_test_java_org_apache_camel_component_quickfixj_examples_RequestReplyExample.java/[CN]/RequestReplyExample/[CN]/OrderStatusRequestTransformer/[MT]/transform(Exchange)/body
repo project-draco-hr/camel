@@ -1,8 +1,10 @@
 {
-  String sessionID="FIX.4.2:MARKET->TRADER";
+  String requestSessionID=exchange.getIn().getHeader("sessionID",String.class);
+  String replySessionID="FIX.4.2:MARKET->TRADER";
+  LOG.info("Given the requestSessionID '{}' calculated the replySessionID as '{}'",requestSessionID,replySessionID);
   String orderID=exchange.getIn().getHeader("orderID",String.class);
   OrderStatusRequest request=new OrderStatusRequest(new ClOrdID("XYZ"),new Symbol("GOOG"),new Side(Side.BUY));
   request.set(new OrderID(orderID));
-  exchange.setProperty(QuickfixjProducer.CORRELATION_CRITERIA_KEY,new MessagePredicate(new SessionID(sessionID),MsgType.ORDER_STATUS_REQUEST).withField(OrderID.FIELD,request.getString(OrderID.FIELD)));
+  exchange.setProperty(QuickfixjProducer.CORRELATION_CRITERIA_KEY,new MessagePredicate(new SessionID(replySessionID),MsgType.ORDER_STATUS_REQUEST).withField(OrderID.FIELD,request.getString(OrderID.FIELD)));
   exchange.getIn().setBody(request);
 }
