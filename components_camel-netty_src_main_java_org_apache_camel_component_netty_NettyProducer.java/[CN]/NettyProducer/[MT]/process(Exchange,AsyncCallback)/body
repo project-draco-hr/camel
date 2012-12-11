@@ -40,9 +40,14 @@
     callback.done(true);
     return true;
   }
+  if (existing == null) {
+    exchange.setException(new CamelExchangeException("Cannot get channel from pool",exchange));
+    callback.done(true);
+    return true;
+  }
   final Channel channel=existing;
   final AsyncCallback producerCallback=new NettyProducerCallback(channel,callback);
-  state.set(channel,new NettyCamelState(producerCallback,exchange));
+  channel.setAttachment(new NettyCamelState(producerCallback,exchange));
   NettyHelper.writeBodyAsync(LOG,channel,null,body,exchange,new ChannelFutureListener(){
     public void operationComplete(    ChannelFuture channelFuture) throws Exception {
       LOG.trace("Operation complete {}",channelFuture);
