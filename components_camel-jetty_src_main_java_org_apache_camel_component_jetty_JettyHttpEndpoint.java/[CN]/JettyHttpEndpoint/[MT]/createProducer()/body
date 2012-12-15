@@ -1,5 +1,13 @@
 {
-  JettyHttpProducer answer=new JettyHttpProducer(this,getClient());
+  JettyHttpProducer answer=new JettyHttpProducer(this);
+  if (client != null) {
+    answer.setSharedClient(client);
+  }
+ else {
+    Integer min=httpClientMinThreads != null ? httpClientMinThreads : getComponent().getHttpClientMinThreads();
+    Integer max=httpClientMaxThreads != null ? httpClientMaxThreads : getComponent().getHttpClientMaxThreads();
+    answer.setClient(JettyHttpComponent.createHttpClient(min,max,sslContextParameters));
+  }
   answer.setBinding(getJettyBinding());
   if (isSynchronous()) {
     return new SynchronousDelegateProducer(answer);
