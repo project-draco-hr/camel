@@ -1,9 +1,32 @@
 {
   if (type.isAssignableFrom(CxfPayload.class)) {
     if (!value.getClass().isArray()) {
-      TypeConverter tc=registry.lookup(Source.class,value.getClass());
-      if (tc != null) {
-        Source src=tc.convertTo(Source.class,exchange,value);
+      Source src=null;
+      if (value instanceof InputStream) {
+        src=new StreamSource((InputStream)value);
+      }
+ else       if (value instanceof Reader) {
+        src=new StreamSource((Reader)value);
+      }
+ else       if (value instanceof String) {
+        src=new StreamSource(new StringReader((String)value));
+      }
+ else       if (value instanceof Node) {
+        src=new DOMSource((Node)value);
+      }
+ else       if (value instanceof Source) {
+        src=(Source)src;
+      }
+      if (src == null) {
+        TypeConverter tc=registry.lookup(javax.xml.transform.stax.StAXSource.class,value.getClass());
+        if (tc == null) {
+          tc=registry.lookup(Source.class,value.getClass());
+        }
+        if (tc != null) {
+          src=tc.convertTo(Source.class,exchange,value);
+        }
+      }
+      if (src != null) {
         return (T)sourceToCxfPayload(src,exchange);
       }
     }
