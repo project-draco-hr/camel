@@ -1,14 +1,17 @@
 {
-  String contentEncoding=exchange.getIn().getHeader(Exchange.CONTENT_ENCODING,String.class);
-  String contentType=ExchangeHelper.getContentType(exchange);
   InputStreamEntity entity;
-  if (!exchange.getProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.FALSE,Boolean.class)) {
+  if (exchange != null && !exchange.getProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.FALSE,Boolean.class)) {
+    String contentEncoding=exchange.getIn().getHeader(Exchange.CONTENT_ENCODING,String.class);
     entity=new InputStreamEntity(GZIPHelper.compressGzip(contentEncoding,data),-1);
   }
  else {
     entity=new InputStreamEntity(new ByteArrayInputStream(data),-1);
   }
-  entity.setContentEncoding(contentEncoding);
-  entity.setContentType(contentType);
+  if (exchange != null) {
+    String contentEncoding=exchange.getIn().getHeader(Exchange.CONTENT_ENCODING,String.class);
+    String contentType=ExchangeHelper.getContentType(exchange);
+    entity.setContentEncoding(contentEncoding);
+    entity.setContentType(contentType);
+  }
   return entity;
 }
