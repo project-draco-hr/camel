@@ -21,9 +21,12 @@
   if (configuration.getBacklog() > 0) {
     connectionlessServerBootstrap.setOption("backlog",configuration.getBacklog());
   }
-  if (log.isDebugEnabled()) {
-    log.debug("Created ConnectionlessBootstrap {} with options: {}",connectionlessServerBootstrap,connectionlessServerBootstrap.getOptions());
+  if (configuration.getOptions() != null) {
+    for (    Map.Entry<String,Object> entry : configuration.getOptions().entrySet()) {
+      connectionlessServerBootstrap.setOption(entry.getKey(),entry.getValue());
+    }
   }
+  log.info("Created ConnectionlessBootstrap {} with options: {}",connectionlessServerBootstrap,connectionlessServerBootstrap.getOptions());
   connectionlessServerBootstrap.setPipelineFactory(pipelineFactory);
   channel=connectionlessServerBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
   allChannels.add(channel);
