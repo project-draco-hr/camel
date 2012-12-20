@@ -1,15 +1,9 @@
 {
-  final CountDownLatch latch=new CountDownLatch(1);
-  channelFuture.addListener(new ChannelFutureListener(){
-    @Override public void operationComplete(    ChannelFuture channelFuture) throws Exception {
-      LOG.trace("Operation complete {}",channelFuture);
-      latch.countDown();
-    }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Waiting for operation to complete {} for {} millis",channelFuture,configuration.getConnectTimeout());
   }
-);
-  LOG.trace("Waiting for operation to complete {} for {} millis",channelFuture,configuration.getConnectTimeout());
-  latch.await(configuration.getConnectTimeout(),TimeUnit.MILLISECONDS);
-  if (!channelFuture.isSuccess()) {
+  channelFuture.awaitUninterruptibly(configuration.getConnectTimeout());
+  if (!channelFuture.isDone() || !channelFuture.isSuccess()) {
     throw new CamelException("Cannot connect to " + configuration.getAddress(),channelFuture.getCause());
   }
   Channel answer=channelFuture.getChannel();
