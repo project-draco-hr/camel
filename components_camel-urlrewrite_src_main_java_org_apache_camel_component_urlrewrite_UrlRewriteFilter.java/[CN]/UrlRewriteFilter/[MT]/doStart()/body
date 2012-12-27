@@ -1,7 +1,23 @@
 {
   ObjectHelper.notNull(camelContext,"camelContext");
   if (conf == null) {
-    if (modRewriteConfText != null) {
+    if (modRewriteConfFile != null) {
+      LOG.debug("Using mod rewrite config file: {} as config for urlRewrite",modRewriteConfFile);
+      InputStream is=camelContext.getClassResolver().loadResourceAsStream(modRewriteConfFile);
+      if (is == null) {
+        throw new IOException("Cannot load mod rewrite config file: " + modRewriteConfFile);
+      }
+      try {
+        String text=camelContext.getTypeConverter().mandatoryConvertTo(String.class,is);
+        ModRewriteConfLoader loader=new ModRewriteConfLoader();
+        conf=new Conf();
+        loader.process(text,conf);
+      }
+  finally {
+        IOHelper.close(is);
+      }
+    }
+ else     if (modRewriteConfText != null) {
       LOG.debug("Using modRewriteConfText: {} as config for urlRewrite",modRewriteConfText);
       ModRewriteConfLoader loader=new ModRewriteConfLoader();
       conf=new Conf();
