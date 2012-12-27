@@ -1,19 +1,25 @@
 {
   String url=HttpHelper.createURL(exchange,getEndpoint());
-  URI uri=new URI(url);
+  URI uri=HttpHelper.createURI(exchange,url,getEndpoint());
+  url=uri.toASCIIString();
+  String queryString=uri.getRawQuery();
+  String rewriteUrl=HttpHelper.urlRewrite(exchange,url,getEndpoint(),this);
+  if (rewriteUrl != null) {
+    url=rewriteUrl;
+    uri=new URI(url);
+    queryString=uri.getRawQuery();
+  }
+  if (url.indexOf('?') != -1) {
+    url=url.substring(0,url.indexOf('?'));
+  }
   RequestEntity requestEntity=createRequestEntity(exchange);
   HttpMethods methodToUse=HttpHelper.createMethod(exchange,getEndpoint(),requestEntity != null);
   HttpMethod method=methodToUse.createMethod(url);
-  String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
-  if (queryString == null) {
-    queryString=getEndpoint().getHttpUri().getRawQuery();
-  }
-  if (queryString == null) {
-    queryString=uri.getQuery();
-  }
   if (queryString != null) {
+    queryString=UnsafeUriCharactersEncoder.encode(queryString);
     method.setQueryString(queryString);
   }
+  LOG.trace("Using URL: {} with method: {}",url,method);
   if (methodToUse.isEntityEnclosing()) {
     ((EntityEnclosingMethod)method).setRequestEntity(requestEntity);
     if (requestEntity != null && requestEntity.getContentType() == null) {

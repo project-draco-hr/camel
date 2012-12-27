@@ -1,0 +1,56 @@
+{
+  String answer=null;
+  if (endpoint.getUrlRewrite() != null) {
+    String rewriteUrl;
+    String baseUrl;
+    String relativeUri=endpoint.getHttpUri().toASCIIString();
+    if (url.startsWith(relativeUri)) {
+      baseUrl=url.substring(0,relativeUri.length());
+      rewriteUrl=url.substring(relativeUri.length());
+    }
+ else {
+      baseUrl=null;
+      rewriteUrl=url;
+    }
+    String newUrl;
+    if (endpoint.getUrlRewrite() instanceof HttpServletUrlRewrite) {
+      HttpServletRequest request=exchange.getIn().getBody(HttpServletRequest.class);
+      if (request == null) {
+        HttpMessage msg=exchange.getIn(HttpMessage.class);
+        if (msg != null) {
+          request=msg.getRequest();
+        }
+      }
+      if (request == null) {
+        throw new IllegalArgumentException("UrlRewrite " + endpoint.getUrlRewrite() + " requires the message body to be a"+ "HttpServletRequest instance, but was: "+ ObjectHelper.className(exchange.getIn().getBody()));
+      }
+      String contextPath=null;
+      if (exchange.getFromEndpoint() instanceof HttpEndpoint) {
+        contextPath=((HttpEndpoint)exchange.getFromEndpoint()).getPath();
+      }
+      request=new UrlRewriteHttpServletRequestAdapter(request,contextPath);
+      newUrl=((HttpServletUrlRewrite)endpoint.getUrlRewrite()).rewrite(rewriteUrl,producer,request);
+    }
+ else {
+      newUrl=endpoint.getUrlRewrite().rewrite(rewriteUrl,producer);
+    }
+    if (newUrl != null && newUrl != url) {
+      if (newUrl.startsWith("http:") || newUrl.startsWith("https:")) {
+        answer=newUrl;
+      }
+ else       if (baseUrl != null) {
+        if (baseUrl.endsWith("/") && newUrl.startsWith("/")) {
+          answer=baseUrl + newUrl.substring(1);
+        }
+ else {
+          answer=baseUrl + newUrl;
+        }
+      }
+ else {
+        answer=newUrl;
+      }
+      LOG.debug("Using url rewrite to rewrite from {} to {} -> {}",new Object[]{rewriteUrl,newUrl,answer});
+    }
+  }
+  return answer;
+}

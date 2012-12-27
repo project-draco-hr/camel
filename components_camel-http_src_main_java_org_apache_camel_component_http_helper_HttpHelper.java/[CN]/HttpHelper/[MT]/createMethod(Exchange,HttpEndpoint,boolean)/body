@@ -1,29 +1,14 @@
 {
-  String queryString=exchange.getIn().getHeader(Exchange.HTTP_QUERY,String.class);
-  String uriString=exchange.getIn().getHeader(Exchange.HTTP_URI,String.class);
-  try {
-    uriString=exchange.getContext().resolvePropertyPlaceholders(uriString);
-  }
- catch (  Exception e) {
-    throw new RuntimeExchangeException("Cannot resolve property placeholders with uri: " + uriString,exchange,e);
-  }
-  if (uriString != null) {
-    URI uri=new URI(uriString);
-    queryString=uri.getQuery();
-  }
-  if (queryString == null) {
-    queryString=endpoint.getHttpUri().getQuery();
-  }
   HttpMethods answer;
   HttpMethods m=exchange.getIn().getHeader(Exchange.HTTP_METHOD,HttpMethods.class);
   if (m != null) {
     answer=m;
   }
- else   if (queryString != null) {
-    answer=HttpMethods.GET;
+ else   if (hasPayload) {
+    answer=HttpMethods.POST;
   }
  else {
-    answer=hasPayload ? HttpMethods.POST : HttpMethods.GET;
+    answer=HttpMethods.GET;
   }
   return answer;
 }

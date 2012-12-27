@@ -1,0 +1,34 @@
+{
+  ObjectHelper.notNull(camelContext,"camelContext");
+  if (conf == null) {
+    if (modRewriteConfText != null) {
+      LOG.debug("Using modRewriteConfText: {} as config for urlRewrite",modRewriteConfText);
+      ModRewriteConfLoader loader=new ModRewriteConfLoader();
+      conf=new Conf();
+      loader.process(modRewriteConfText,conf);
+    }
+ else     if (configFile != null) {
+      LOG.debug("Using config file: {} as config for urlRewrite",configFile);
+      InputStream is=camelContext.getClassResolver().loadResourceAsStream(configFile);
+      if (is == null) {
+        throw new IOException("Cannot load config file: " + configFile);
+      }
+      try {
+        conf=new Conf(is,configFile);
+      }
+  finally {
+        IOHelper.close(is);
+      }
+    }
+    if (conf != null) {
+      conf.setUseQueryString(isUseQueryString());
+      conf.initialise();
+    }
+    if (conf == null || !conf.isOk()) {
+      throw new IllegalStateException("Error configuring config file: " + configFile);
+    }
+  }
+  if (urlRewriter == null) {
+    urlRewriter=new UrlRewriter(conf);
+  }
+}
