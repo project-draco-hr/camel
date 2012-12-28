@@ -13,10 +13,16 @@
   Boolean matchOnUriPrefix=getAndRemoveParameter(parameters,"matchOnUriPrefix",Boolean.class);
   String servletName=getAndRemoveParameter(parameters,"servletName",String.class,getServletName());
   String httpMethodRestrict=getAndRemoveParameter(parameters,"httpMethodRestrict",String.class);
+  HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
   URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encode(uri)),parameters);
   ServletEndpoint endpoint=createServletEndpoint(uri,this,httpUri,params,getHttpConnectionManager(),configurer);
   endpoint.setServletName(servletName);
-  setEndpointHeaderFilterStrategy(endpoint);
+  if (headerFilterStrategy != null) {
+    endpoint.setHeaderFilterStrategy(headerFilterStrategy);
+  }
+ else {
+    setEndpointHeaderFilterStrategy(endpoint);
+  }
   if (binding == null) {
     binding=getHttpBinding();
   }
