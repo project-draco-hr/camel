@@ -28,10 +28,15 @@
   }
   String httpMethodRestrict=getAndRemoveParameter(parameters,"httpMethodRestrict",String.class);
   HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
+  UrlRewrite urlRewrite=resolveAndRemoveReferenceParameter(parameters,"urlRewrite",UrlRewrite.class);
   boolean secure=HttpHelper.isSecureConnection(uri);
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,secure);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),httpClientParameters);
   HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,clientParams,clientConnectionManager,configurer);
+  if (urlRewrite != null) {
+    getCamelContext().addService(urlRewrite);
+    endpoint.setUrlRewrite(urlRewrite);
+  }
   setProperties(endpoint,parameters);
   String httpUriAddress=addressUri;
   if (addressUri.startsWith("http4")) {
