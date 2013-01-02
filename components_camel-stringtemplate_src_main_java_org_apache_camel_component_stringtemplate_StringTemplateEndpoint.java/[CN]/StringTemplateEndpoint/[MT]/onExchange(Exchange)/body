@@ -2,10 +2,12 @@
   StringWriter buffer=new StringWriter();
   Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
   String text=exchange.getContext().getTypeConverter().mandatoryConvertTo(String.class,getResourceAsInputStream());
-  StringTemplate template=new StringTemplate(text);
-  template.setAttributes(variableMap);
+  ST template=new ST(text);
+  for (  Map.Entry<String,Object> entry : variableMap.entrySet()) {
+    template.add(entry.getKey(),entry.getValue());
+  }
   log.debug("StringTemplate is writing using attributes: {}",variableMap);
-  template.write(new AutoIndentWriter(buffer));
+  template.write(new NoIndentWriter(buffer));
   Message out=exchange.getOut();
   out.setBody(buffer.toString());
   out.setHeaders(exchange.getIn().getHeaders());
