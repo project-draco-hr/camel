@@ -1,0 +1,35 @@
+{
+  Map<String,Object> properties=IntrospectionSupport.extractProperties(parameters,"jmx.");
+  if (properties != null && !properties.isEmpty()) {
+    String disabled=(String)properties.remove("disabled");
+    boolean disableJmx=CamelContextHelper.parseBoolean(camelContext,disabled != null ? disabled : "false");
+    if (disableJmx) {
+      LOG.info("JMXAgent disabled");
+      camelContext.getLifecycleStrategies().clear();
+      camelContext.setManagementStrategy(new DefaultManagementStrategy());
+    }
+ else {
+      LOG.info("JMXAgent enabled");
+      DefaultManagementAgent agent=new DefaultManagementAgent(camelContext);
+      IntrospectionSupport.setProperties(agent,properties);
+      ManagementStrategy managementStrategy=new ManagedManagementStrategy(camelContext,agent);
+      camelContext.setManagementStrategy(managementStrategy);
+      camelContext.getLifecycleStrategies().clear();
+      camelContext.addLifecycleStrategy(new DefaultManagementLifecycleStrategy(camelContext));
+      boolean onlyId=agent.getOnlyRegisterProcessorWithCustomId() != null && agent.getOnlyRegisterProcessorWithCustomId();
+      camelContext.getManagementStrategy().onlyManageProcessorWithCustomId(onlyId);
+      String statisticsLevel=(String)properties.remove("statisticsLevel");
+      if (statisticsLevel != null) {
+        camelContext.getManagementStrategy().setStatisticsLevel(ManagementStatisticsLevel.valueOf(statisticsLevel));
+      }
+      String loadStatisticsEnabled=(String)properties.remove("loadStatisticsEnabled");
+      Boolean statisticsEnabled=CamelContextHelper.parseBoolean(camelContext,loadStatisticsEnabled != null ? loadStatisticsEnabled : "true");
+      if (statisticsEnabled != null) {
+        camelContext.getManagementStrategy().setLoadStatisticsEnabled(statisticsEnabled);
+      }
+    }
+    if (!properties.isEmpty()) {
+      throw new IllegalArgumentException("Error setting jmx parameters on CamelContext." + " There are " + properties.size() + " unknown parameters. ["+ properties+ "]");
+    }
+  }
+}
