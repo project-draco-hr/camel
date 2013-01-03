@@ -22,6 +22,23 @@
             IOHelper.close(is,entry.getKey(),LOG);
           }
         }
+ else         if (value.startsWith("packagescan:")) {
+          String path=value.substring(12);
+          Set<Class<?>> classes=camelContext.getPackageScanClassResolver().findImplementations(RouteBuilder.class,path);
+          if (!classes.isEmpty()) {
+            Set<RouteBuilder> builders=new LinkedHashSet<RouteBuilder>();
+            target=builders;
+            for (            Class<?> clazz : classes) {
+              try {
+                RouteBuilder route=(RouteBuilder)camelContext.getInjector().newInstance(clazz);
+                builders.add(route);
+              }
+ catch (              Exception e) {
+                throw new RuntimeException("Error creating RouteBuilder " + clazz,e);
+              }
+            }
+          }
+        }
  else {
           try {
             Class<RouteBuilder> clazz=camelContext.getClassResolver().resolveMandatoryClass(value,RouteBuilder.class);
