@@ -1,13 +1,26 @@
 {
-  Map<String,RouteBuilder> routeBuilders=new LinkedHashMap<String,RouteBuilder>();
+  Map<String,Object> routes=new LinkedHashMap<String,Object>();
   for (  Map.Entry<String,Object> entry : map.entrySet()) {
     if (entry.getKey().toLowerCase(Locale.UK).startsWith("routebuilder")) {
       String value=(String)entry.getValue();
       if (ObjectHelper.isNotEmpty(value)) {
-        Object target;
+        Object target=null;
         if (value.startsWith("#")) {
           value=value.substring(1);
           target=lookupJndi(jndiContext,value);
+        }
+ else         if (ResourceHelper.hasScheme(value)) {
+          InputStream is=null;
+          try {
+            is=ResourceHelper.resolveMandatoryResourceAsInputStream(camelContext.getClassResolver(),value);
+            target=camelContext.loadRoutesDefinition(is);
+          }
+ catch (          Exception e) {
+            throw new RuntimeException("Error loading routes from resource: " + value,e);
+          }
+ finally {
+            IOHelper.close(is,entry.getKey(),LOG);
+          }
         }
  else {
           try {
@@ -18,17 +31,14 @@
             throw new RuntimeException("Error creating RouteBuilder " + value,e);
           }
         }
-        if (target instanceof RouteBuilder) {
-          routeBuilders.put(entry.getKey(),(RouteBuilder)target);
-        }
- else {
-          throw new IllegalArgumentException("Parameter " + entry.getKey() + " is expected to be a "+ RouteBuilder.class.getName()+ " type but was "+ target.getClass().getName()+ " type.");
+        if (target != null) {
+          routes.put(entry.getKey(),target);
         }
       }
     }
   }
-  for (  String name : routeBuilders.keySet()) {
+  for (  String name : routes.keySet()) {
     map.remove(name);
   }
-  return routeBuilders;
+  return routes;
 }
