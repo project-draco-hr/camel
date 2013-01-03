@@ -1,61 +1,68 @@
 {
-  Map<String,Object> routes=new LinkedHashMap<String,Object>();
+  List<Object> answer=new ArrayList<Object>();
+  List<String> names=new ArrayList<String>();
   for (  Map.Entry<String,Object> entry : map.entrySet()) {
     if (entry.getKey().toLowerCase(Locale.UK).startsWith("routebuilder")) {
+      names.add(entry.getKey());
       String value=(String)entry.getValue();
-      if (ObjectHelper.isNotEmpty(value)) {
-        Object target=null;
-        if (value.startsWith("#")) {
-          value=value.substring(1);
-          target=lookupJndi(jndiContext,value);
-        }
- else         if (ResourceHelper.hasScheme(value)) {
-          InputStream is=null;
-          try {
-            is=ResourceHelper.resolveMandatoryResourceAsInputStream(camelContext.getClassResolver(),value);
-            target=camelContext.loadRoutesDefinition(is);
+      Iterator it=ObjectHelper.createIterator(value);
+      while (it.hasNext()) {
+        value=(String)it.next();
+        if (ObjectHelper.isNotEmpty(value)) {
+          value=value.trim();
+          Object target=null;
+          if (value.startsWith("#")) {
+            value=value.substring(1);
+            target=lookupJndi(jndiContext,value);
           }
- catch (          Exception e) {
-            throw new RuntimeException("Error loading routes from resource: " + value,e);
-          }
+ else           if (ResourceHelper.hasScheme(value)) {
+            InputStream is=null;
+            try {
+              is=ResourceHelper.resolveMandatoryResourceAsInputStream(camelContext.getClassResolver(),value);
+              target=camelContext.loadRoutesDefinition(is);
+            }
+ catch (            Exception e) {
+              throw new RuntimeException("Error loading routes from resource: " + value,e);
+            }
  finally {
-            IOHelper.close(is,entry.getKey(),LOG);
+              IOHelper.close(is,entry.getKey(),LOG);
+            }
           }
-        }
- else         if (value.startsWith("packagescan:")) {
-          String path=value.substring(12);
-          Set<Class<?>> classes=camelContext.getPackageScanClassResolver().findImplementations(RouteBuilder.class,path);
-          if (!classes.isEmpty()) {
-            Set<RouteBuilder> builders=new LinkedHashSet<RouteBuilder>();
-            target=builders;
-            for (            Class<?> clazz : classes) {
-              try {
-                RouteBuilder route=(RouteBuilder)camelContext.getInjector().newInstance(clazz);
-                builders.add(route);
-              }
- catch (              Exception e) {
-                throw new RuntimeException("Error creating RouteBuilder " + clazz,e);
+ else           if (value.startsWith("packagescan:")) {
+            String path=value.substring(12);
+            Set<Class<?>> classes=camelContext.getPackageScanClassResolver().findImplementations(RouteBuilder.class,path);
+            if (!classes.isEmpty()) {
+              Set<RouteBuilder> builders=new LinkedHashSet<RouteBuilder>();
+              target=builders;
+              for (              Class<?> clazz : classes) {
+                try {
+                  RouteBuilder route=(RouteBuilder)camelContext.getInjector().newInstance(clazz);
+                  builders.add(route);
+                }
+ catch (                Exception e) {
+                  throw new RuntimeException("Error creating RouteBuilder " + clazz,e);
+                }
               }
             }
           }
-        }
  else {
-          try {
-            Class<RouteBuilder> clazz=camelContext.getClassResolver().resolveMandatoryClass(value,RouteBuilder.class);
-            target=camelContext.getInjector().newInstance(clazz);
+            try {
+              Class<RouteBuilder> clazz=camelContext.getClassResolver().resolveMandatoryClass(value,RouteBuilder.class);
+              target=camelContext.getInjector().newInstance(clazz);
+            }
+ catch (            Exception e) {
+              throw new RuntimeException("Error creating RouteBuilder " + value,e);
+            }
           }
- catch (          Exception e) {
-            throw new RuntimeException("Error creating RouteBuilder " + value,e);
+          if (target != null) {
+            answer.add(target);
           }
-        }
-        if (target != null) {
-          routes.put(entry.getKey(),target);
         }
       }
     }
   }
-  for (  String name : routes.keySet()) {
+  for (  String name : names) {
     map.remove(name);
   }
-  return routes;
+  return answer;
 }

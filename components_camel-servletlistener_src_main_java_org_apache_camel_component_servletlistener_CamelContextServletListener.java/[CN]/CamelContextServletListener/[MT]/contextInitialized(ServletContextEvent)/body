@@ -22,48 +22,44 @@
       throw new RuntimeException("Error setting init parameters on CamelContext.",e);
     }
   }
-  Map<String,Object> routes=extractRoutes(map);
-  for (  Map.Entry<String,Object> entry : routes.entrySet()) {
-    if (entry.getValue() instanceof RouteBuilder) {
-      LOG.debug("Adding route(s) {} -> {}",entry.getKey(),entry.getValue());
+  List<Object> routes=extractRoutes(map);
+  for (  Object route : routes) {
+    if (route instanceof RouteBuilder) {
       try {
-        camelContext.addRoutes((RoutesBuilder)entry.getValue());
+        camelContext.addRoutes((RoutesBuilder)route);
       }
  catch (      Exception e) {
-        throw new RuntimeException("Error adding route(s) " + entry.getKey(),e);
+        throw new RuntimeException("Error adding route " + route,e);
       }
     }
- else     if (entry.getValue() instanceof Set) {
-      for (      Object clazz : (Set)entry.getValue()) {
-        LOG.debug("Adding route(s) {} -> {}",entry.getKey(),clazz);
+ else     if (route instanceof Set) {
+      for (      Object clazz : (Set)route) {
         try {
           camelContext.addRoutes((RoutesBuilder)clazz);
         }
  catch (        Exception e) {
-          throw new RuntimeException("Error adding route(s) " + entry.getKey(),e);
+          throw new RuntimeException("Error adding route " + clazz,e);
         }
       }
     }
- else     if (entry.getValue() instanceof RoutesDefinition) {
-      LOG.debug("Adding routes {} -> {}",entry.getKey(),entry.getValue());
+ else     if (route instanceof RoutesDefinition) {
       try {
-        camelContext.addRouteDefinitions(((RoutesDefinition)entry.getValue()).getRoutes());
+        camelContext.addRouteDefinitions(((RoutesDefinition)route).getRoutes());
       }
  catch (      Exception e) {
-        throw new RuntimeException("Error adding route(s) " + entry.getKey(),e);
+        throw new RuntimeException("Error adding route(s) " + route,e);
       }
     }
- else     if (entry.getValue() instanceof RouteDefinition) {
-      LOG.debug("Adding routes {} -> {}",entry.getKey(),entry.getValue());
+ else     if (route instanceof RouteDefinition) {
       try {
-        camelContext.addRouteDefinition((RouteDefinition)entry.getValue());
+        camelContext.addRouteDefinition((RouteDefinition)route);
       }
  catch (      Exception e) {
-        throw new RuntimeException("Error adding route(s) " + entry.getKey(),e);
+        throw new RuntimeException("Error adding route(s) " + route,e);
       }
     }
  else {
-      throw new IllegalArgumentException("Unsupported route " + entry.getKey() + " of type: "+ entry.getValue().getClass().getName());
+      throw new IllegalArgumentException("Unsupported route: " + route);
     }
   }
   String lifecycle=(String)map.remove(CamelContextLifecycle.class.getName());
