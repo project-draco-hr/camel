@@ -1,0 +1,34 @@
+{
+  Map<String,RouteBuilder> routeBuilders=new LinkedHashMap<String,RouteBuilder>();
+  for (  Map.Entry<String,Object> entry : map.entrySet()) {
+    if (entry.getKey().toLowerCase(Locale.UK).startsWith("routebuilder")) {
+      String value=(String)entry.getValue();
+      if (ObjectHelper.isNotEmpty(value)) {
+        Object target;
+        if (value.startsWith("#")) {
+          value=value.substring(1);
+          target=lookupJndi(jndiContext,value);
+        }
+ else {
+          try {
+            Class<RouteBuilder> clazz=camelContext.getClassResolver().resolveMandatoryClass(value,RouteBuilder.class);
+            target=camelContext.getInjector().newInstance(clazz);
+          }
+ catch (          Exception e) {
+            throw new RuntimeException("Error creating RouteBuilder " + value,e);
+          }
+        }
+        if (target instanceof RouteBuilder) {
+          routeBuilders.put(entry.getKey(),(RouteBuilder)target);
+        }
+ else {
+          throw new IllegalArgumentException("Parameter " + entry.getKey() + " is expected to be a "+ RouteBuilder.class.getName()+ " type but was "+ target.getClass().getName()+ " type.");
+        }
+      }
+    }
+  }
+  for (  String name : routeBuilders.keySet()) {
+    map.remove(name);
+  }
+  return routeBuilders;
+}
