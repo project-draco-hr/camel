@@ -1,15 +1,17 @@
 {
-  MessageChannel requestChannel=applicationContext.getBean("channelD",MessageChannel.class);
-  DirectChannel responseChannel=applicationContext.getBean("channelC",DirectChannel.class);
+  final CountDownLatch latch=new CountDownLatch(1);
+  MessageChannel requestChannel=getMandatoryBean(MessageChannel.class,"channelD");
+  DirectChannel responseChannel=getMandatoryBean(DirectChannel.class,"channelC");
   Map<String,Object> headers=new HashMap<String,Object>();
   headers.put(MessageHeaders.REPLY_CHANNEL,responseChannel);
   GenericMessage<String> message=new GenericMessage<String>(MESSAGE_BODY,headers);
   responseChannel.subscribe(new MessageHandler(){
     public void handleMessage(    Message<?> message){
-      String result=(String)message.getPayload();
-      assertEquals("Get the wrong result",MESSAGE_BODY + " is processed",result);
+      latch.countDown();
+      assertEquals("Get the wrong result",MESSAGE_BODY + " is processed",message.getPayload());
     }
   }
 );
   requestChannel.send(message);
+  assertTrue(latch.await(1,TimeUnit.SECONDS));
 }
