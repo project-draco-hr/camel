@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      Processor myProcessor=new RandomSleepProcessor();
+      from("seda:fork?concurrentConsumers=" + CONCURRENCY).process(myProcessor).to("seda:join");
+      from("seda:join").resequence(header("seqnum")).stream().capacity(CAPACITY).timeout(TIMEOUT).to("mock:result");
+    }
+  }
+;
+}
