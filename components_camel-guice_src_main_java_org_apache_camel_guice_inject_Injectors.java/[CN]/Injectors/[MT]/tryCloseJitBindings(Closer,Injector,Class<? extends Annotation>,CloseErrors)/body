@@ -1,0 +1,22 @@
+{
+  Class<? extends Injector> type=injector.getClass();
+  Field field;
+  try {
+    field=type.getDeclaredField("jitBindings");
+    field.setAccessible(true);
+    Object bindings=field.get(injector);
+    if (bindings != null) {
+      if (bindings instanceof Map) {
+        Map<Key<?>,BindingImpl<?>> map=(Map<Key<?>,BindingImpl<?>>)bindings;
+        Set<Entry<Key<?>,BindingImpl<?>>> entries=map.entrySet();
+        for (        Entry<Key<?>,BindingImpl<?>> entry : entries) {
+          closeBinding(entry.getKey(),entry.getValue(),scopeAnnotationToClose,closer,errors);
+        }
+      }
+    }
+  }
+ catch (  NoSuchFieldException e) {
+  }
+catch (  IllegalAccessException e) {
+  }
+}

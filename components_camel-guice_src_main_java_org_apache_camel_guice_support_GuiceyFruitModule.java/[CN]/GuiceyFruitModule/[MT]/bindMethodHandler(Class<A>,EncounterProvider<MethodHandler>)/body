@@ -1,0 +1,31 @@
+{
+  bindListener(any(),new TypeListener(){
+    public <I>void hear(    TypeLiteral<I> injectableType,    TypeEncounter<I> encounter){
+      Class<? super I> type=injectableType.getRawType();
+      Method[] methods=type.getDeclaredMethods();
+      for (      final Method method : methods) {
+        final A annotation=method.getAnnotation(annotationType);
+        if (annotation != null) {
+          final Provider<? extends MethodHandler> provider=encounterProvider.get(encounter);
+          encounter.register(new InjectionListener<I>(){
+            public void afterInjection(            I injectee){
+              MethodHandler methodHandler=provider.get();
+              try {
+                methodHandler.afterInjection(injectee,annotation,method);
+              }
+ catch (              InvocationTargetException ie) {
+                Throwable e=ie.getTargetException();
+                throw new ProvisionException(e.getMessage(),e);
+              }
+catch (              IllegalAccessException e) {
+                throw new ProvisionException(e.getMessage(),e);
+              }
+            }
+          }
+);
+        }
+      }
+    }
+  }
+);
+}

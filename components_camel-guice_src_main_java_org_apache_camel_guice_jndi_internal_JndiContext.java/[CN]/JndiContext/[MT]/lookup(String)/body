@@ -1,0 +1,65 @@
+{
+  if (name.length() == 0) {
+    return this;
+  }
+  Object result=treeBindings.get(name);
+  if (result == null) {
+    result=bindings.get(name);
+  }
+  if (result == null) {
+    int pos=name.indexOf(':');
+    if (pos > 0) {
+      String scheme=name.substring(0,pos);
+      Context ctx=NamingManager.getURLContext(scheme,environment);
+      if (ctx == null) {
+        throw new NamingException("scheme " + scheme + " not recognized");
+      }
+      return ctx.lookup(name);
+    }
+ else {
+      CompositeName path=new CompositeName(name);
+      if (path.size() == 0) {
+        return this;
+      }
+ else {
+        String first=path.get(0);
+        Object value=bindings.get(first);
+        if (value == null) {
+          throw new NameNotFoundException(name);
+        }
+ else         if (value instanceof Context && path.size() > 1) {
+          Context subContext=(Context)value;
+          value=subContext.lookup(path.getSuffix(1));
+        }
+        return value;
+      }
+    }
+  }
+  if (result instanceof Provider) {
+    Provider provider=(Provider)result;
+    result=provider.get();
+  }
+  if (result instanceof LinkRef) {
+    LinkRef ref=(LinkRef)result;
+    result=lookup(ref.getLinkName());
+  }
+  if (result instanceof Reference) {
+    try {
+      result=NamingManager.getObjectInstance(result,null,null,this.environment);
+    }
+ catch (    NamingException e) {
+      throw e;
+    }
+catch (    Exception e) {
+      throw (NamingException)new NamingException("could not look up : " + name).initCause(e);
+    }
+  }
+  if (result instanceof JndiContext) {
+    String prefix=getNameInNamespace();
+    if (prefix.length() > 0) {
+      prefix=prefix + SEPARATOR;
+    }
+    result=new JndiContext((JndiContext)result,environment,prefix + name);
+  }
+  return result;
+}

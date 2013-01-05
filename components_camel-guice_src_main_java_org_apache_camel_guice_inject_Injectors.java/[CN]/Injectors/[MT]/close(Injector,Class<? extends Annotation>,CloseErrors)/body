@@ -1,0 +1,15 @@
+{
+  Set<Closer> closers=getInstancesOf(injector,Closer.class);
+  Closer closer=CompositeCloser.newInstance(closers);
+  if (closer == null) {
+    return;
+  }
+  Set<Entry<Key<?>,Binding<?>>> entries=injector.getBindings().entrySet();
+  for (  Entry<Key<?>,Binding<?>> entry : entries) {
+    Key<?> key=entry.getKey();
+    Binding<?> binding=entry.getValue();
+    closeBinding(key,binding,scopeAnnotationToClose,closer,errors);
+  }
+  tryCloseJitBindings(closer,injector,scopeAnnotationToClose,errors);
+  errors.throwIfNecessary();
+}

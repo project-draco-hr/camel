@@ -1,0 +1,16 @@
+{
+  Preconditions.checkNotNull(test,"test");
+  Class<? extends Object> testType=test.getClass();
+  moduleType=getModuleForTestClass(testType);
+  Injector classInjector;
+synchronized (injectors) {
+    classInjector=injectors.get(moduleType);
+    if (classInjector == null) {
+      classInjector=createInjector(moduleType);
+      Preconditions.checkNotNull(classInjector,"classInjector");
+      injectors.put(moduleType,classInjector);
+    }
+  }
+  injectors.put(testType,classInjector);
+  classInjector.injectMembers(test);
+}

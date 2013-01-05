@@ -1,0 +1,23 @@
+{
+  List<Module> modules=Lists.newArrayList();
+  modules.add(new AbstractModule(){
+    protected void configure(){
+      Names.bindProperties(binder(),environment);
+    }
+  }
+);
+  Object moduleValue=environment.get(MODULE_CLASS_NAMES);
+  if (moduleValue instanceof String) {
+    String names=(String)moduleValue;
+    StringTokenizer iter=new StringTokenizer(names);
+    while (iter.hasMoreTokens()) {
+      String moduleName=iter.nextToken();
+      Module module=loadModule(moduleName);
+      if (module != null) {
+        modules.add(module);
+      }
+    }
+  }
+  Injector injector=Guice.createInjector(Modules.override(modules).with(overridingModules));
+  return injector;
+}

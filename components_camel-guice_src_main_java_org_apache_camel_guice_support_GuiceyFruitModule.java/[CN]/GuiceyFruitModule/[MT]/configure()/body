@@ -1,0 +1,44 @@
+{
+  List<Method> configureMethods=getConfiguresMethods();
+  if (!configureMethods.isEmpty()) {
+    final GuiceyFruitModule moduleInstance=this;
+    final Class<? extends GuiceyFruitModule> moduleType=getClass();
+    TypeLiteral<? extends GuiceyFruitModule> type=TypeLiteral.get(moduleType);
+    for (    final Method method : configureMethods) {
+      int size=method.getParameterTypes().length;
+      if (size == 0) {
+        throw new ProvisionException("No arguments on @Configures method " + method);
+      }
+ else       if (size > 1) {
+        throw new ProvisionException("Too many arguments " + size + " on @Configures method "+ method);
+      }
+      final Class<?> paramType=getParameterType(type,method,0);
+      bindListener(new AbstractMatcher<TypeLiteral<?>>(){
+        public boolean matches(        TypeLiteral<?> typeLiteral){
+          return typeLiteral.getRawType().equals(paramType);
+        }
+      }
+,new TypeListener(){
+        public <I>void hear(        TypeLiteral<I> injectableType,        TypeEncounter<I> encounter){
+          encounter.register(new MembersInjector<I>(){
+            public void injectMembers(            I injectee){
+              try {
+                method.setAccessible(true);
+                method.invoke(moduleInstance,injectee);
+              }
+ catch (              IllegalAccessException e) {
+                throw new ProvisionException("Failed to invoke @Configures method " + method + ". Reason: "+ e,e);
+              }
+catch (              InvocationTargetException ie) {
+                Throwable e=ie.getTargetException();
+                throw new ProvisionException("Failed to invoke @Configures method " + method + ". Reason: "+ e,e);
+              }
+            }
+          }
+);
+        }
+      }
+);
+    }
+  }
+}
