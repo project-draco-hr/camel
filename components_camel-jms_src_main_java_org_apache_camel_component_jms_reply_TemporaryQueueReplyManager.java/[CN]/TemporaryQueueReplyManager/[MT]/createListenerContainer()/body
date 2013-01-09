@@ -1,14 +1,7 @@
 {
   DefaultMessageListenerContainer answer=new DefaultJmsMessageListenerContainer(endpoint);
   answer.setDestinationName("temporary");
-  answer.setDestinationResolver(new DestinationResolver(){
-    public Destination resolveDestinationName(    Session session,    String destinationName,    boolean pubSubDomain) throws JMSException {
-      TemporaryQueue queue=session.createTemporaryQueue();
-      setReplyTo(queue);
-      return queue;
-    }
-  }
-);
+  answer.setDestinationResolver(destResolver);
   answer.setAutoStartup(true);
   if (endpoint.getMaxMessagesPerTask() >= 0) {
     answer.setMaxMessagesPerTask(endpoint.getMaxMessagesPerTask());
@@ -23,15 +16,14 @@
     answer.setMaxConcurrentConsumers(endpoint.getMaxConcurrentConsumers());
   }
   answer.setConnectionFactory(endpoint.getConnectionFactory());
+  answer.setCacheLevel(DefaultMessageListenerContainer.CACHE_CONSUMER);
   String clientId=endpoint.getClientId();
   if (clientId != null) {
     clientId+=".CamelReplyManager";
     answer.setClientId(clientId);
   }
   answer.setSessionTransacted(false);
-  if (endpoint.getExceptionListener() != null) {
-    answer.setExceptionListener(endpoint.getExceptionListener());
-  }
+  answer.setExceptionListener(new TemporaryReplyQueueExceptionListener(destResolver,endpoint.getExceptionListener()));
   if (endpoint.getErrorHandler() != null) {
     answer.setErrorHandler(endpoint.getErrorHandler());
   }
@@ -50,7 +42,7 @@
     }
     answer.setTaskExecutor(endpoint.getTaskExecutor());
   }
-  String name="TemporaryQueueReplyManager[" + answer.getDestinationName() + "]";
+  String name="TemporaryQueueReplyManager[" + endpoint.getDestinationName() + "]";
   answer.setBeanName(name);
   if (answer.getConcurrentConsumers() > 1) {
     log.info("Using {}-{} concurrent consumers on {}",new Object[]{answer.getConcurrentConsumers(),answer.getMaxConcurrentConsumers(),name});

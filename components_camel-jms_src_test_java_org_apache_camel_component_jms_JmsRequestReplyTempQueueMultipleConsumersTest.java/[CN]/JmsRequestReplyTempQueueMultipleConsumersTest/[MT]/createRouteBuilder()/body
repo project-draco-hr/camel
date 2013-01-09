@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("seda:start").inOut("jms:queue:foo?concurrentConsumers=10&maxConcurrentConsumers=20&recoveryInterval=10").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String threadName=Thread.currentThread().getName();
+synchronized (msgsPerThread) {
+            AtomicInteger count=msgsPerThread.get(threadName);
+            if (count == null) {
+              count=new AtomicInteger(0);
+              msgsPerThread.put(threadName,count);
+            }
+            count.incrementAndGet();
+          }
+        }
+      }
+).to("mock:result");
+      from("jms:queue:foo?concurrentConsumers=20&recoveryInterval=10").setBody(simple("Reply >>> ${body}"));
+    }
+  }
+;
+}

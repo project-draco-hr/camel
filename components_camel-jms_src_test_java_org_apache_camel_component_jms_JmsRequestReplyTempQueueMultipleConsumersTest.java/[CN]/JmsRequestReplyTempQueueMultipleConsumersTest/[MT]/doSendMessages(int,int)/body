@@ -1,0 +1,18 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(files);
+  getMockEndpoint("mock:result").expectsNoDuplicates(body());
+  ExecutorService executor=Executors.newFixedThreadPool(poolSize);
+  for (int i=0; i < files; i++) {
+    final int index=i;
+    executor.submit(new Callable<Object>(){
+      public Object call() throws Exception {
+        template.sendBody("seda:start","Message " + index);
+        return null;
+      }
+    }
+);
+  }
+  assertMockEndpointsSatisfied();
+  resetMocks();
+  executor.shutdownNow();
+}
