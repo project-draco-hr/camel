@@ -1,7 +1,11 @@
 {
+  NotifyBuilder notify=new NotifyBuilder(context).whenDone(2).create();
   MockEndpoint resultEndpoint=getMockEndpoint("mock:result");
   resultEndpoint.expectedMessageCount(2);
-  resultEndpoint.assertIsSatisfied();
+  prepareFtpServer();
+  context.startRoute("foo");
+  assertMockEndpointsSatisfied();
+  assertTrue(notify.matchesMockWaitTime());
   Exchange ex=resultEndpoint.getExchanges().get(0);
   byte[] bytes=ex.getIn().getBody(byte[].class);
   assertTrue("Logo size wrong",bytes.length > 10000);
