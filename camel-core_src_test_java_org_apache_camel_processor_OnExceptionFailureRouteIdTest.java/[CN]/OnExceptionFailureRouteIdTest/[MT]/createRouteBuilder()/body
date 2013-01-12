@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(IllegalArgumentException.class).handled(true).to("direct:dead");
+      from("direct:foo").routeId("foo").to("mock:foo").to("direct:bar").to("mock:result");
+      from("direct:bar").routeId("bar").to("mock:bar").throwException(new IllegalArgumentException("Forced"));
+      from("direct:dead").log("Failed at route ${property.CamelFailureRouteId}").to("mock:dead");
+    }
+  }
+;
+}

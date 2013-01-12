@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("direct:dead"));
+      from("direct:foo").routeId("foo").to("mock:foo").to("direct:bar").to("mock:result");
+      from("direct:bar").routeId("bar").to("mock:bar").throwException(new IllegalArgumentException("Forced"));
+      from("direct:dead").log("Failed at route ${property.CamelFailureRouteId}").to("mock:dead");
+    }
+  }
+;
+}
