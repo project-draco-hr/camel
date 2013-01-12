@@ -1,9 +1,17 @@
 {
   if (session == null) {
-    if (getConfiguration().isLazySessionCreation()) {
+    if (this.configuration.isLazySessionCreation()) {
       if (connectLock.tryLock()) {
         try {
           if (session == null) {
+            Message in=exchange.getIn();
+            String systemId=in.getHeader(SmppConstants.SYSTEM_ID,String.class);
+            String password=in.getHeader(SmppConstants.PASSWORD,String.class);
+            if (systemId != null && password != null) {
+              log.info("using the system id '{}' to connect to the SMSC...",systemId);
+              this.configuration.setSystemId(systemId);
+              this.configuration.setPassword(password);
+            }
             session=createSession();
           }
         }

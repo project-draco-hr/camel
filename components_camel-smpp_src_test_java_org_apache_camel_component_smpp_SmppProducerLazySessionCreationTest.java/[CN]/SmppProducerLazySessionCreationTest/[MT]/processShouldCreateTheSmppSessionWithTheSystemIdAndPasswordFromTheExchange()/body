@@ -1,10 +1,10 @@
 {
-  expect(endpoint.getConnectionString()).andReturn("smpp://smppclient@localhost:2775").times(2);
+  expect(endpoint.getConnectionString()).andReturn("smpp://localhost:2775").times(2);
   session.setEnquireLinkTimer(5000);
   session.setTransactionTimer(10000);
   session.addSessionStateListener(isA(SessionStateListener.class));
-  expect(session.connectAndBind("localhost",new Integer(2775),new BindParameter(BindType.BIND_TX,"smppclient","password","cp",TypeOfNumber.UNKNOWN,NumberingPlanIndicator.UNKNOWN,""))).andReturn("1");
-  expect(endpoint.getConnectionString()).andReturn("smpp://smppclient@localhost:2775");
+  expect(session.connectAndBind("localhost",new Integer(2775),new BindParameter(BindType.BIND_TX,"smppclient2","password2","cp",TypeOfNumber.UNKNOWN,NumberingPlanIndicator.UNKNOWN,""))).andReturn("1");
+  expect(endpoint.getConnectionString()).andReturn("smpp://localhost:2775");
   SmppBinding binding=createMock(SmppBinding.class);
   Exchange exchange=createMock(Exchange.class);
   Message in=createMock(Message.class);
@@ -12,8 +12,8 @@
   expect(endpoint.getBinding()).andReturn(binding);
   expect(binding.createSmppCommand(session,exchange)).andReturn(command);
   expect(exchange.getIn()).andReturn(in);
-  expect(in.getHeader("CamelSmppSystemId",String.class)).andReturn(null);
-  expect(in.getHeader("CamelSmppSystemId",String.class)).andReturn(null);
+  expect(in.getHeader("CamelSmppSystemId",String.class)).andReturn("smppclient2");
+  expect(in.getHeader("CamelSmppSystemId",String.class)).andReturn("password2");
   command.execute(exchange);
   replay(session,endpoint,binding,exchange,in,command);
   producer.doStart();
