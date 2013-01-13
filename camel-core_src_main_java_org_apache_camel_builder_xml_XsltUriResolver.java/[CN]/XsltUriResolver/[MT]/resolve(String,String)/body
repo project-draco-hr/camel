@@ -3,35 +3,37 @@
     throw new TransformerException("include href is empty");
   }
   LOG.trace("Resolving URI with href: {} and base: {}",href,base);
-  if (href.startsWith("classpath:")) {
-    LOG.debug("Resolving URI from classpath: {}",href);
-    String name=ObjectHelper.after(href,":");
-    InputStream is=resolver.loadResourceAsStream(name);
-    if (is == null) {
-      throw new TransformerException("Cannot find " + name + " in classpath");
+  String scheme=ResourceHelper.getScheme(href);
+  if (scheme != null && "file:".equals(scheme)) {
+    href=FileUtil.compactPath(href,'/');
+  }
+  if (scheme != null) {
+    LOG.debug("Resolving URI from {}: {}",scheme,href);
+    InputStream is;
+    try {
+      is=ResourceHelper.resolveMandatoryResourceAsInputStream(resolver,href);
+    }
+ catch (    IOException e) {
+      throw new TransformerException(e);
     }
     return new StreamSource(is);
   }
-  if (href.startsWith("file:")) {
-    LOG.debug("Resolving URI from file: {}",href);
-    String name=ObjectHelper.after(href,":");
-    File file=new File(name);
-    if (!file.exists()) {
-      throw new TransformerException("Cannot find " + name + " in the file system");
-    }
-    return new StreamSource(file);
-  }
   if (href.equals(location)) {
-    String path="classpath:" + href;
+    String path=baseScheme + href;
     return resolve(path,base);
   }
   String path=FileUtil.onlyPath(location);
   if (ObjectHelper.isEmpty(path)) {
-    path="classpath:" + href;
+    path=baseScheme + href;
     return resolve(path,base);
   }
  else {
-    path="classpath:" + path + "/"+ href;
+    if (ResourceHelper.hasScheme(path)) {
+      path=path + "/" + href;
+    }
+ else {
+      path=baseScheme + path + "/"+ href;
+    }
     return resolve(path,base);
   }
 }
