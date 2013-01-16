@@ -1,7 +1,11 @@
 {
-  String pattern=endpoint.getCamelContext().getExecutorServiceManager().getThreadNamePattern();
+  ExecutorServiceManager esm=endpoint.getCamelContext().getExecutorServiceManager();
+  String pattern=esm.getThreadNamePattern();
   String beanName=getBeanName();
-  SimpleAsyncTaskExecutor answer=new SimpleAsyncTaskExecutor(beanName);
+  ThreadPoolTaskExecutor answer=new ThreadPoolTaskExecutor();
+  answer.setBeanName(beanName);
   answer.setThreadFactory(new CamelThreadFactory(pattern,beanName,true));
+  answer.setCorePoolSize(endpoint.getConcurrentConsumers());
+  answer.setMaxPoolSize(endpoint.getMaxConcurrentConsumers());
   return answer;
 }
