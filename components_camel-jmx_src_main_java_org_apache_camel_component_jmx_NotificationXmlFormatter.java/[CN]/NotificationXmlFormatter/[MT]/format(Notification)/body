@@ -1,5 +1,6 @@
 {
-  NotificationEventType jaxb=null;
+  ObjectHelper.notNull(jaxbContext,"jaxbContext");
+  NotificationEventType jaxb;
   boolean wrap=false;
   if (aNotification instanceof AttributeChangeNotification) {
     AttributeChangeNotification ac=(AttributeChangeNotification)aNotification;
@@ -50,13 +51,8 @@
     jaxb.withDateTime(df.newXMLGregorianCalendar(gc));
     Object bean=wrap ? mObjectFactory.createNotificationEvent(jaxb) : jaxb;
     StringWriter sw=new StringWriter();
-    try {
-      mMarshallerLock.lock();
-      getMarshaller(mObjectFactory.getClass().getPackage().getName()).marshal(bean,sw);
-    }
-  finally {
-      mMarshallerLock.unlock();
-    }
+    Marshaller marshaller=jaxbContext.createMarshaller();
+    marshaller.marshal(bean,sw);
     return sw.toString();
   }
  catch (  JAXBException e) {
