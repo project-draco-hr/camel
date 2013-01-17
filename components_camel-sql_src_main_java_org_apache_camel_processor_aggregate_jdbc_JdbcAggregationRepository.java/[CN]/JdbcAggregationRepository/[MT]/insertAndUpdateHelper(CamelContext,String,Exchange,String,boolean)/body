@@ -1,0 +1,25 @@
+{
+  final byte[] data=codec.marshallExchange(camelContext,exchange);
+  jdbcTemplate.execute(sql,new AbstractLobCreatingPreparedStatementCallback(getLobHandler()){
+    @Override protected void setValues(    PreparedStatement ps,    LobCreator lobCreator) throws SQLException {
+      int totalParameterIndex=0;
+      lobCreator.setBlobAsBytes(ps,++totalParameterIndex,data);
+      if (idComesFirst) {
+        ps.setString(++totalParameterIndex,key);
+      }
+      if (storeBodyAsText) {
+        ps.setString(++totalParameterIndex,exchange.getIn().getBody(String.class));
+      }
+      if (hasHeadersToStoreAsText()) {
+        for (        String headerName : headersToStoreAsText) {
+          String headerValue=exchange.getIn().getHeader(headerName,String.class);
+          ps.setString(++totalParameterIndex,headerValue);
+        }
+      }
+      if (!idComesFirst) {
+        ps.setString(++totalParameterIndex,key);
+      }
+    }
+  }
+);
+}

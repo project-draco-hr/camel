@@ -4,18 +4,11 @@
       final String key=correlationId;
       final String confirmKey=exchange.getExchangeId();
       try {
-        final byte[] data=codec.marshallExchange(camelContext,exchange);
         LOG.debug("Removing key [{}]",key);
-        jdbcTemplate.update("DELETE FROM " + getRepositoryName() + " WHERE "+ ID+ " = ?",new Object[]{key});
-        jdbcTemplate.execute("INSERT INTO " + getRepositoryNameCompleted() + " ("+ EXCHANGE+ ", "+ ID+ ") VALUES (?, ?)",new AbstractLobCreatingPreparedStatementCallback(getLobHandler()){
-          @Override protected void setValues(          PreparedStatement ps,          LobCreator lobCreator) throws SQLException {
-            lobCreator.setBlobAsBytes(ps,1,data);
-            ps.setString(2,confirmKey);
-          }
-        }
-);
+        jdbcTemplate.update("DELETE FROM " + getRepositoryName() + " WHERE "+ ID+ " = ?",key);
+        insert(camelContext,confirmKey,exchange,getRepositoryNameCompleted());
       }
- catch (      IOException e) {
+ catch (      Exception e) {
         throw new RuntimeException("Error removing key " + key + " from repository "+ repositoryName,e);
       }
     }
