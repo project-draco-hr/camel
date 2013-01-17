@@ -12,8 +12,24 @@
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
-    log.debug("Processing exchange: {} with properties: {}",exchange,exchange.getProperties());
     getProcessor().process(exchange);
+    try {
+      if (onConsume != null && data != null) {
+        int updateCount=getEndpoint().getProcessingStrategy().commit(getEndpoint(),exchange,data,jdbcTemplate,onConsume);
+        if (expectedUpdateCount > -1 && updateCount != expectedUpdateCount) {
+          String msg="Expected update count " + expectedUpdateCount + " but was "+ updateCount+ " executing query: "+ onConsume;
+          throw new SQLException(msg);
+        }
+      }
+    }
+ catch (    Exception e) {
+      if (breakBatchOnConsumeFail) {
+        throw e;
+      }
+ else {
+        handleException("Error executing onConsume query " + onConsume,e);
+      }
+    }
   }
   return total;
 }
