@@ -1,0 +1,46 @@
+{
+  if (hasNamedParameters(query)) {
+    try {
+      final Map map=exchange.getContext().getTypeConverter().mandatoryConvertTo(Map.class,value);
+      return new Iterator(){
+        private NamedQueryParser parser=new NamedQueryParser(query);
+        private Object next;
+        private boolean done;
+        @Override public boolean hasNext(){
+          if (done) {
+            return false;
+          }
+          if (next == null) {
+            next=next();
+          }
+          return next != null;
+        }
+        @Override public Object next(){
+          if (next == null) {
+            String key=parser.next();
+            if (key == null) {
+              done=true;
+              return null;
+            }
+            if (!map.containsKey(key)) {
+              throw new RuntimeExchangeException("Cannot find key [" + key + "] in message body to use when setting named parameter in query ["+ query+ "]",exchange);
+            }
+            next=map.get(key);
+          }
+          Object answer=next;
+          next=null;
+          return answer;
+        }
+        @Override public void remove(){
+        }
+      }
+;
+    }
+ catch (    Exception e) {
+      throw new SQLException("The message body must be a java.util.Map type when using named parameters in the query: " + query,e);
+    }
+  }
+ else {
+    return exchange.getContext().getTypeConverter().convertTo(Iterator.class,value);
+  }
+}
