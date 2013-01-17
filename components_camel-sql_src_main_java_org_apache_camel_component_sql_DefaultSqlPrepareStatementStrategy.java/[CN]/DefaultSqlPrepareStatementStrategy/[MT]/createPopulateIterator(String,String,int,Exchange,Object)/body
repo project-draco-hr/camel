@@ -1,7 +1,8 @@
 {
   if (hasNamedParameters(query)) {
     try {
-      final Map map=exchange.getContext().getTypeConverter().mandatoryConvertTo(Map.class,value);
+      final Map bodyMap=exchange.getContext().getTypeConverter().tryConvertTo(Map.class,value);
+      final Map headerMap=exchange.getIn().hasHeaders() ? exchange.getIn().getHeaders() : null;
       return new Iterator(){
         private NamedQueryParser parser=new NamedQueryParser(query);
         private Object next;
@@ -22,10 +23,15 @@
               done=true;
               return null;
             }
-            if (!map.containsKey(key)) {
-              throw new RuntimeExchangeException("Cannot find key [" + key + "] in message body to use when setting named parameter in query ["+ query+ "]",exchange);
+            boolean contains=bodyMap != null ? bodyMap.containsKey(key) : false;
+            contains|=headerMap != null ? headerMap.containsKey(key) : false;
+            if (!contains) {
+              throw new RuntimeExchangeException("Cannot find key [" + key + "] in message body or headers to use when setting named parameter in query ["+ query+ "]",exchange);
             }
-            next=map.get(key);
+            next=bodyMap != null ? bodyMap.get(key) : null;
+            if (next == null) {
+              next=headerMap != null ? headerMap.get(key) : null;
+            }
           }
           Object answer=next;
           next=null;
