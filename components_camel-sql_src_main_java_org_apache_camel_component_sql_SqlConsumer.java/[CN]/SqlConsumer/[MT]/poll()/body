@@ -1,0 +1,45 @@
+{
+  shutdownRunningTask=null;
+  pendingExchanges=0;
+  Integer messagePolled=jdbcTemplate.execute(query,new PreparedStatementCallback<Integer>(){
+    @Override public Integer doInPreparedStatement(    PreparedStatement preparedStatement) throws SQLException, DataAccessException {
+      Queue<DataHolder> answer=new LinkedList<DataHolder>();
+      ResultSet rs=preparedStatement.executeQuery();
+      try {
+        log.trace("Got result list from query {}",rs);
+        RowMapperResultSetExtractor<Map<String,Object>> mapper=new RowMapperResultSetExtractor<Map<String,Object>>(new ColumnMapRowMapper());
+        List<Map<String,Object>> data=mapper.extractData(rs);
+        if (useIterator) {
+          for (          Map<String,Object> item : data) {
+            Exchange exchange=createExchange(item);
+            DataHolder holder=new DataHolder();
+            holder.exchange=exchange;
+            holder.data=item;
+            answer.add(holder);
+          }
+        }
+ else {
+          if (!data.isEmpty() || routeEmptyResultSet) {
+            Exchange exchange=createExchange(data);
+            DataHolder holder=new DataHolder();
+            holder.exchange=exchange;
+            holder.data=data;
+            answer.add(holder);
+          }
+        }
+      }
+  finally {
+        rs.close();
+      }
+      try {
+        int rows=processBatch(CastUtils.cast(answer));
+        return Integer.valueOf(rows);
+      }
+ catch (      Exception e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+    }
+  }
+);
+  return messagePolled;
+}
