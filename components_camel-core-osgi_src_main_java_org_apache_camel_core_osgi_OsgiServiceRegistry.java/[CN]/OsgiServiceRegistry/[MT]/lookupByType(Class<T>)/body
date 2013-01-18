@@ -1,3 +1,22 @@
 {
-  return Collections.<String,T>emptyMap();
+  Map<String,T> result=new HashMap<String,T>();
+  try {
+    ServiceReference<?>[] refs=bundleContext.getAllServiceReferences(type.getName(),null);
+    if (refs != null) {
+      for (      ServiceReference<?> sr : refs) {
+        serviceReferenceQueue.add(sr);
+        Object service=bundleContext.getService(sr);
+        if (service != null) {
+          String name=(String)sr.getProperty("name");
+          if (name != null) {
+            result.put(name,type.cast(service));
+          }
+        }
+      }
+    }
+  }
+ catch (  Exception ex) {
+    throw ObjectHelper.wrapRuntimeCamelException(ex);
+  }
+  return result;
 }
