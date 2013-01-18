@@ -12,12 +12,18 @@
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
-    getProcessor().process(exchange);
     try {
-      if (onConsume != null && data != null) {
-        int updateCount=getEndpoint().getProcessingStrategy().commit(getEndpoint(),exchange,data,jdbcTemplate,onConsume);
+      getProcessor().process(exchange);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+    }
+    String sql=exchange.isFailed() ? onConsumeFailed : onConsume;
+    try {
+      if (data != null && sql != null) {
+        int updateCount=getEndpoint().getProcessingStrategy().commit(getEndpoint(),exchange,data,jdbcTemplate,sql);
         if (expectedUpdateCount > -1 && updateCount != expectedUpdateCount) {
-          String msg="Expected update count " + expectedUpdateCount + " but was "+ updateCount+ " executing query: "+ onConsume;
+          String msg="Expected update count " + expectedUpdateCount + " but was "+ updateCount+ " executing query: "+ sql;
           throw new SQLException(msg);
         }
       }
@@ -27,7 +33,7 @@
         throw e;
       }
  else {
-        handleException("Error executing onConsume query " + onConsume,e);
+        handleException("Error executing onConsume/onConsumeFailed query " + sql,e);
       }
     }
   }

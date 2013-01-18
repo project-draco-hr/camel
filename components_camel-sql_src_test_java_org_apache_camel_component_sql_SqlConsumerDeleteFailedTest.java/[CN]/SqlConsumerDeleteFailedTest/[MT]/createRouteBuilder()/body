@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      getContext().getComponent("sql",SqlComponent.class).setDataSource(db);
+      from("sql:select * from projects where license <> 'BAD' order by id" + "?consumer.onConsume=delete from projects where id = :#id" + "&consumer.onConsumeFailed=update projects set license = 'BAD' where id = :#id").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Object project=exchange.getIn().getBody(Map.class).get("PROJECT");
+          if ("AMQ".equals(project)) {
+            throw new IllegalArgumentException("Cannot handled AMQ");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
