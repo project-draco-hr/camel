@@ -24,19 +24,18 @@
   }
  else {
     prepareResult(exchange);
-    ExchangeHelper.prepareAggregation(exchange,resourceExchange);
-    Exchange aggregatedExchange;
     try {
-      aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+      ExchangeHelper.prepareAggregation(exchange,resourceExchange);
+      Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+      if (aggregatedExchange != null) {
+        copyResultsPreservePattern(exchange,aggregatedExchange);
+        if (resourceExchange != null) {
+          resourceExchange.handoverCompletions(exchange);
+        }
+      }
     }
  catch (    Throwable e) {
       throw new CamelExchangeException("Error occurred during aggregation",exchange,e);
-    }
-    if (aggregatedExchange != null) {
-      copyResultsPreservePattern(exchange,aggregatedExchange);
-      if (resourceExchange != null) {
-        resourceExchange.handoverCompletions(exchange);
-      }
     }
   }
   if (exchange.hasOut()) {
