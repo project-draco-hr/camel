@@ -1,16 +1,16 @@
 {
+  validEndpoint.expectedMessageCount(0);
   invalidEndpoint.expectedMessageCount(1);
-  try {
-    template.send("direct:start",new Processor(){
-      public void process(      Exchange exchange) throws Exception {
-        exchange.getIn().setBody("<invalid/>");
-        exchange.getIn().setHeader("foo","notMatchedHeaderValue");
-        exchange.setProperty("cheese","old");
-      }
+  Exchange exchange=template.send("direct:start",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("<invalid/>");
+      exchange.getIn().setHeader("foo","notMatchedHeaderValue");
+      exchange.setProperty("cheese","old");
     }
+  }
 );
-  }
- catch (  Exception e) {
-  }
+  assertNotNull(exchange.getException());
+  ValidationException exception=assertIsInstanceOf(ValidationException.class,exchange.getException());
+  assertEquals("Invalid header foo: notMatchedHeaderValue",exception.getMessage());
   assertMockEndpointsSatisfied();
 }
