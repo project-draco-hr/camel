@@ -6,7 +6,14 @@
   }
   for (  Route camelRoute : camelRoutes) {
     CamelContext camelContext=camelRoute.getRouteContext().getCamelContext();
-    executeOnRoute(camelContext,camelRoute);
+    ClassLoader oldClassloader=Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(camelContext.getApplicationContextClassLoader());
+    try {
+      executeOnRoute(camelContext,camelRoute);
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(oldClassloader);
+    }
   }
   return null;
 }
