@@ -1,9 +1,21 @@
 {
   Exchange copy=prepareExchange(exchange);
+  ClassLoader current=Thread.currentThread().getContextClassLoader();
+  boolean changed=false;
   try {
+    ClassLoader appClassLoader=endpoint.getCamelContext().getApplicationContextClassLoader();
+    if (appClassLoader != null) {
+      LOG.trace("Setting Thread ContextClassLoader to {}",appClassLoader);
+      Thread.currentThread().setContextClassLoader(appClassLoader);
+      changed=true;
+    }
     getProcessor().process(copy);
   }
   finally {
     ExchangeHelper.copyResults(exchange,copy);
+    if (changed) {
+      LOG.trace("Restoring Thread ContextClassLoader to {}",current);
+      Thread.currentThread().setContextClassLoader(current);
+    }
   }
 }
