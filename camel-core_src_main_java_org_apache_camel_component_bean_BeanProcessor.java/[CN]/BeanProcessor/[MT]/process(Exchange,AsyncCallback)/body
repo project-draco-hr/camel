@@ -64,39 +64,9 @@
     in.removeHeader(Exchange.BEAN_METHOD_NAME);
   }
   if (invocation == null) {
-    throw new IllegalStateException("No method invocation could be created, no matching method could be found on: " + bean);
-  }
-  Object value;
-  try {
-    AtomicBoolean sync=new AtomicBoolean(true);
-    value=invocation.proceed(callback,sync);
-    if (!sync.get()) {
-      LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
-      return false;
-    }
-    LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
-  }
- catch (  InvocationTargetException e) {
-    exchange.setException(e.getCause());
+    exchange.setException(new IllegalStateException("No method invocation could be created, no matching method could be found on: " + bean));
     callback.done(true);
     return true;
   }
-catch (  Throwable e) {
-    exchange.setException(e);
-    callback.done(true);
-    return true;
-  }
-  if (!invocation.getMethod().getReturnType().equals(Void.TYPE) && value != Void.TYPE) {
-    if (exchange.getPattern().isOutCapable()) {
-      LOG.debug("Setting bean invocation result on the OUT message: {}",value);
-      exchange.getOut().setBody(value);
-      exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
-    }
- else {
-      LOG.debug("Setting bean invocation result on the IN message: {}",value);
-      exchange.getIn().setBody(value);
-    }
-  }
-  callback.done(true);
-  return true;
+  return invocation.proceed(callback);
 }

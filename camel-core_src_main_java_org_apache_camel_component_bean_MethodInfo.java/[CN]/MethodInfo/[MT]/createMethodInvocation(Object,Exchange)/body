@@ -7,15 +7,28 @@
     public Object[] getArguments(){
       return arguments;
     }
-    public Object proceed(    AsyncCallback callback,    AtomicBoolean doneSync) throws Exception {
+    public boolean proceed(    AsyncCallback callback){
+      try {
+        return doProceed(callback);
+      }
+ catch (      InvocationTargetException e) {
+        exchange.setException(e.getTargetException());
+        callback.done(true);
+        return true;
+      }
+catch (      Throwable e) {
+        exchange.setException(e);
+        callback.done(true);
+        return true;
+      }
+    }
+    private boolean doProceed(    AsyncCallback callback) throws Exception {
       if (dynamicRouter != null) {
         if (!dynamicRouter.isStarted()) {
           ServiceHelper.startService(dynamicRouter);
         }
         Expression expression=new DynamicRouterExpression(pojo);
-        boolean sync=dynamicRouter.doRoutingSlip(exchange,expression,callback);
-        doneSync.set(sync);
-        return Void.TYPE;
+        return dynamicRouter.doRoutingSlip(exchange,expression,callback);
       }
       if (LOG.isTraceEnabled()) {
         LOG.trace(">>>> invoking: {} on bean: {} with arguments: {} for exchange: {}",new Object[]{method,pojo,asString(arguments),exchange});
@@ -25,19 +38,27 @@
         if (!recipientList.isStarted()) {
           ServiceHelper.startService(recipientList);
         }
-        boolean sync=recipientList.sendToRecipientList(exchange,result,callback);
-        doneSync.set(sync);
-        return Void.TYPE;
+        return recipientList.sendToRecipientList(exchange,result,callback);
       }
       if (routingSlip != null) {
         if (!routingSlip.isStarted()) {
           ServiceHelper.startService(routingSlip);
         }
-        boolean sync=routingSlip.doRoutingSlip(exchange,result,callback);
-        doneSync.set(sync);
-        return Void.TYPE;
+        return routingSlip.doRoutingSlip(exchange,result,callback);
       }
-      return result;
+      if (!getMethod().getReturnType().equals(Void.TYPE) && result != Void.TYPE) {
+        if (exchange.getPattern().isOutCapable()) {
+          LOG.debug("Setting bean invocation result on the OUT message: {}",result);
+          exchange.getOut().setBody(result);
+          exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+        }
+ else {
+          LOG.debug("Setting bean invocation result on the IN message: {}",result);
+          exchange.getIn().setBody(result);
+        }
+      }
+      callback.done(true);
+      return true;
     }
     public Object getThis(){
       return pojo;
