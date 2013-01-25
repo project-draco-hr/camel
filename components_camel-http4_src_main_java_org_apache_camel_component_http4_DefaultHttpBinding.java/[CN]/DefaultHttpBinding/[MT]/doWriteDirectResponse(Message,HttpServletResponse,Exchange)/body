@@ -10,21 +10,31 @@
       throw new IOException(e);
     }
   }
-  InputStream is;
+  InputStream is=null;
   if (checkChunked(message,exchange)) {
     is=message.getBody(InputStream.class);
   }
  else {
-    is=exchange.getContext().getTypeConverter().tryConvertTo(InputStream.class,message.getBody());
+    if (!isText(contentType)) {
+      is=exchange.getContext().getTypeConverter().tryConvertTo(InputStream.class,message.getBody());
+    }
   }
   if (is != null) {
     ServletOutputStream os=response.getOutputStream();
-    try {
-      LOG.trace("Writing direct response from source input stream to servlet output stream");
-      IOHelper.copy(is,os);
-    }
+    LOG.trace("Writing direct response from source input stream to servlet output stream");
+    if (!checkChunked(message,exchange)) {
+      CachedOutputStream stream=new CachedOutputStream(exchange);
+      try {
+        int len=IOHelper.copy(is,stream);
+        response.setContentLength(len);
+        copyStream(stream.getInputStream(),os);
+      }
   finally {
-      IOHelper.close(os,is);
+        IOHelper.close(is,stream);
+      }
+    }
+ else {
+      copyStream(is,os);
     }
   }
  else {
