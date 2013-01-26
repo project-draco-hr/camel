@@ -1,6 +1,13 @@
 {
   if (endpoint.isIdempotent()) {
-    endpoint.getIdempotentRepository().add(absoluteFileName);
+    String key=absoluteFileName;
+    if (endpoint.getIdempotentKey() != null) {
+      Exchange dummy=endpoint.createExchange(file);
+      key=endpoint.getIdempotentKey().evaluate(dummy,String.class);
+    }
+    if (key != null) {
+      endpoint.getIdempotentRepository().add(key);
+    }
   }
   boolean complete=exchange.getProperty(Exchange.BATCH_COMPLETE,false,Boolean.class);
   if (endpoint.getDoneFileName() != null && !endpoint.isNoop() && complete) {
