@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(noErrorHandler());
+      from("jetty:http://localhost:{{port}}/myapp?matchOnUriPrefix=true").loadBalance().failover(Exception.class).to("jetty:http://localhost:{{port2}}/myapp2?bridgeEndpoint=true&throwExceptionOnFailure=true&urlRewrite=#myRewrite").to("jetty:http://localhost:{{port2}}/myapp3?bridgeEndpoint=true&throwExceptionOnFailure=true&urlRewrite=#myRewrite");
+      from("jetty:http://localhost:{{port2}}/myapp2?matchOnUriPrefix=true").log("I am going to fail").throwException(new IllegalArgumentException("Failed"));
+      from("jetty:http://localhost:{{port2}}/myapp3?matchOnUriPrefix=true").transform().simple("${header.CamelHttpUrl}?${header.CamelHttpQuery}");
+    }
+  }
+;
+}

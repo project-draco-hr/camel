@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("jetty:http://localhost:{{port}}/myapp?matchOnUriPrefix=true").loadBalance().roundRobin().to("http4://localhost:{{port2}}/myapp2?bridgeEndpoint=true&throwExceptionOnFailure=false&urlRewrite=#myRewrite").to("http4://localhost:{{port2}}/myapp3?bridgeEndpoint=true&throwExceptionOnFailure=false&urlRewrite=#myRewrite");
+      from("jetty:http://localhost:{{port2}}/myapp2?matchOnUriPrefix=true").transform().simple("${header.CamelHttpUrl}?${header.CamelHttpQuery}");
+      from("jetty:http://localhost:{{port2}}/myapp3?matchOnUriPrefix=true").transform().simple("${header.CamelHttpUrl}?${header.CamelHttpQuery}");
+    }
+  }
+;
+}
