@@ -1,16 +1,16 @@
 {
   RestletEndpoint endpoint=consumer.getEndpoint();
-  List<MethodBasedRouter> routers=new ArrayList<MethodBasedRouter>();
+  List<MethodBasedRouter> routesToRemove=new ArrayList<MethodBasedRouter>();
   String pattern=decodePattern(endpoint.getUriPattern());
   if (pattern != null && !pattern.isEmpty()) {
-    routers.add(getMethodRouter(pattern));
+    routesToRemove.add(getMethodRouter(pattern,false));
   }
   if (endpoint.getRestletUriPatterns() != null) {
     for (    String uriPattern : endpoint.getRestletUriPatterns()) {
-      routers.add(getMethodRouter(uriPattern));
+      routesToRemove.add(getMethodRouter(uriPattern,false));
     }
   }
-  for (  MethodBasedRouter router : routers) {
+  for (  MethodBasedRouter router : routesToRemove) {
     if (endpoint.getRestletMethods() != null) {
       Method[] methods=endpoint.getRestletMethods();
       for (      Method method : methods) {
@@ -22,6 +22,13 @@
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Detached restlet uriPattern: {} method: {}",router.getUriPattern(),endpoint.getRestletMethod());
+    }
+    if (!router.hasRoutes()) {
+      deattachUriPatternFrimRestlet(router.getUriPattern(),endpoint,router);
+      if (!router.isStopped()) {
+        router.stop();
+      }
+      routers.remove(router.getUriPattern());
     }
   }
 }
