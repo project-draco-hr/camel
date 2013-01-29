@@ -1,0 +1,16 @@
+{
+  PGPSecretKey pgpSecKey=null;
+  PGPSecretKeyRingCollection pgpSec=new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyringInput));
+  for (Iterator<?> i=pgpSec.getKeyRings(); i.hasNext() && pgpSecKey == null; ) {
+    Object data=i.next();
+    if (data instanceof PGPSecretKeyRing) {
+      PGPSecretKeyRing keyring=(PGPSecretKeyRing)data;
+      PGPSecretKey secKey=keyring.getSecretKey();
+      PGPPrivateKey privateKey=secKey.extractPrivateKey(passphrase.toCharArray(),"BC");
+      if (privateKey != null) {
+        pgpSecKey=secKey;
+      }
+    }
+  }
+  return pgpSecKey;
+}

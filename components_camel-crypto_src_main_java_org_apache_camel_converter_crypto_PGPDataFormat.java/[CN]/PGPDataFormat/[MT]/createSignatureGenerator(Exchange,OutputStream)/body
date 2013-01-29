@@ -1,0 +1,24 @@
+{
+  String sigKeyFileName=findSignatureKeyFileName(exchange);
+  String sigKeyUserid=findSignatureKeyUserid(exchange);
+  String sigKeyPassword=findSignatureKeyPassword(exchange);
+  if (sigKeyFileName == null || sigKeyUserid == null || sigKeyPassword == null) {
+    return null;
+  }
+  PGPSecretKey sigSecretKey=PGPDataFormatUtil.findSecretKey(exchange.getContext(),sigKeyFileName,sigKeyPassword);
+  if (sigSecretKey == null) {
+    throw new IllegalArgumentException("Signature secret key is null, cannot proceed");
+  }
+  PGPPrivateKey sigPrivateKey=sigSecretKey.extractPrivateKey(sigKeyPassword.toCharArray(),"BC");
+  if (sigPrivateKey == null) {
+    throw new IllegalArgumentException("Signature private key is null, cannot proceed");
+  }
+  PGPSignatureSubpacketGenerator spGen=new PGPSignatureSubpacketGenerator();
+  spGen.setSignerUserID(false,sigKeyUserid);
+  int algorithm=sigSecretKey.getPublicKey().getAlgorithm();
+  PGPSignatureGenerator sigGen=new PGPSignatureGenerator(algorithm,HashAlgorithmTags.SHA1,"BC");
+  sigGen.initSign(PGPSignature.BINARY_DOCUMENT,sigPrivateKey);
+  sigGen.setHashedSubpackets(spGen.generate());
+  sigGen.generateOnePassVersion(false).encode(out);
+  return sigGen;
+}

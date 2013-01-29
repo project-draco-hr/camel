@@ -15,6 +15,19 @@
       pgpDecrypt.setPassword(keyPassword);
       from("direct:inline2").marshal(pgpEncrypt).to("mock:encrypted").unmarshal(pgpDecrypt).to("mock:unencrypted");
       from("direct:inline-armor").marshal().pgp(keyFileName,keyUserid,null,true,true).to("mock:encrypted").unmarshal().pgp(keyFileNameSec,keyUserid,keyPassword,true,true).to("mock:unencrypted");
+      PGPDataFormat pgpSignAndEncrypt=new PGPDataFormat();
+      pgpSignAndEncrypt.setKeyFileName(keyFileName);
+      pgpSignAndEncrypt.setKeyUserid(keyUserid);
+      pgpSignAndEncrypt.setSignatureKeyFileName(keyFileNameSec);
+      pgpSignAndEncrypt.setSignatureKeyUserid(keyUserid);
+      pgpSignAndEncrypt.setSignaturePassword(keyPassword);
+      PGPDataFormat pgpVerifyAndDecrypt=new PGPDataFormat();
+      pgpVerifyAndDecrypt.setKeyFileName(keyFileNameSec);
+      pgpVerifyAndDecrypt.setKeyUserid(keyUserid);
+      pgpVerifyAndDecrypt.setPassword(keyPassword);
+      pgpVerifyAndDecrypt.setSignatureKeyFileName(keyFileName);
+      pgpVerifyAndDecrypt.setSignatureKeyUserid(keyUserid);
+      from("direct:inline-sign").marshal(pgpSignAndEncrypt).to("mock:encrypted").unmarshal(pgpVerifyAndDecrypt).to("mock:unencrypted");
     }
   }
 ;

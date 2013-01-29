@@ -15,28 +15,45 @@
   finally {
     IOUtils.closeQuietly(encryptedStream);
   }
-  PGPObjectFactory pgpF=new PGPObjectFactory(in);
+  PGPObjectFactory pgpFactory=new PGPObjectFactory(in);
+  Object o=pgpFactory.nextObject();
   PGPEncryptedDataList enc;
-  Object o=pgpF.nextObject();
   if (o instanceof PGPEncryptedDataList) {
     enc=(PGPEncryptedDataList)o;
   }
  else {
-    enc=(PGPEncryptedDataList)pgpF.nextObject();
+    enc=(PGPEncryptedDataList)pgpFactory.nextObject();
   }
   IOHelper.close(in);
   PGPPublicKeyEncryptedData pbe=(PGPPublicKeyEncryptedData)enc.get(0);
-  InputStream clear=pbe.getDataStream(key,"BC");
-  PGPObjectFactory pgpFact=new PGPObjectFactory(clear);
-  PGPCompressedData cData=(PGPCompressedData)pgpFact.nextObject();
-  pgpFact=new PGPObjectFactory(cData.getDataStream());
-  PGPLiteralData ld=(PGPLiteralData)pgpFact.nextObject();
+  InputStream encData=pbe.getDataStream(key,"BC");
+  pgpFactory=new PGPObjectFactory(encData);
+  PGPCompressedData comData=(PGPCompressedData)pgpFactory.nextObject();
+  pgpFactory=new PGPObjectFactory(comData.getDataStream());
+  Object object=pgpFactory.nextObject();
+  PGPOnePassSignature signature;
+  if (object instanceof PGPOnePassSignatureList) {
+    signature=getSignature(exchange,(PGPOnePassSignatureList)object);
+    object=pgpFactory.nextObject();
+  }
+ else {
+    signature=null;
+  }
+  PGPLiteralData ld=(PGPLiteralData)object;
+  InputStream litData=ld.getInputStream();
   byte[] answer;
   try {
-    answer=Streams.readAll(ld.getInputStream());
+    answer=Streams.readAll(litData);
   }
   finally {
-    IOHelper.close(clear);
+    IOHelper.close(litData,encData,in);
+  }
+  if (signature != null) {
+    signature.update(answer);
+    PGPSignatureList sigList=(PGPSignatureList)pgpFactory.nextObject();
+    if (!signature.verify(sigList.get(0))) {
+      throw new SignatureException("Cannot verify PGP signature");
+    }
   }
   return answer;
 }

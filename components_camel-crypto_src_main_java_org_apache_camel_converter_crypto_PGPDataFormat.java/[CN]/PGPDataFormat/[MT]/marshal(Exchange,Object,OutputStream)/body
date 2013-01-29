@@ -1,28 +1,36 @@
 {
-  PGPPublicKey key=PGPDataFormatUtil.findPublicKey(exchange.getContext(),findKeyFileName(exchange),findKeyUserid(exchange));
+  PGPPublicKey key=PGPDataFormatUtil.findPublicKey(exchange.getContext(),findKeyFileName(exchange),findKeyUserid(exchange),true);
   if (key == null) {
     throw new IllegalArgumentException("Public key is null, cannot proceed");
   }
-  byte[] plaintextData;
-  InputStream plaintextStream=null;
-  try {
-    plaintextStream=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
-    plaintextData=IOUtils.toByteArray(plaintextStream);
-  }
-  finally {
-    IOUtils.closeQuietly(plaintextStream);
-  }
-  byte[] compressedData=PGPDataFormatUtil.compress(plaintextData,PGPLiteralData.CONSOLE,CompressionAlgorithmTags.ZIP);
+  InputStream input=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
   if (armored) {
     outputStream=new ArmoredOutputStream(outputStream);
   }
   PGPEncryptedDataGenerator encGen=new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5,integrity,new SecureRandom(),"BC");
   encGen.addMethod(key);
-  OutputStream encOut=encGen.open(outputStream,compressedData.length);
+  OutputStream encOut=encGen.open(outputStream,new byte[BUFFER_SIZE]);
+  PGPCompressedDataGenerator comData=new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
+  OutputStream comOut=new BufferedOutputStream(comData.open(encOut));
+  PGPSignatureGenerator sigGen=createSignatureGenerator(exchange,comOut);
+  PGPLiteralDataGenerator litData=new PGPLiteralDataGenerator();
+  OutputStream litOut=litData.open(comOut,PGPLiteralData.BINARY,PGPLiteralData.CONSOLE,new Date(),new byte[BUFFER_SIZE]);
   try {
-    encOut.write(compressedData);
+    byte[] buffer=new byte[BUFFER_SIZE];
+    int bytesRead;
+    while ((bytesRead=input.read(buffer)) != -1) {
+      litOut.write(buffer,0,bytesRead);
+      if (sigGen != null) {
+        sigGen.update(buffer,0,bytesRead);
+      }
+      litOut.flush();
+    }
   }
   finally {
-    IOHelper.close(encOut,outputStream);
+    IOHelper.close(litOut);
+    if (sigGen != null) {
+      sigGen.generate().encode(comOut);
+    }
+    IOHelper.close(comOut,encOut,outputStream,input);
   }
 }
