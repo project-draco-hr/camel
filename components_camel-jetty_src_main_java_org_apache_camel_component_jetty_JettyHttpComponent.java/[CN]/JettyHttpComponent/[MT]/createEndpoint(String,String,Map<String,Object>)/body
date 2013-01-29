@@ -17,6 +17,8 @@
   UrlRewrite urlRewrite=resolveAndRemoveReferenceParameter(parameters,"urlRewrite",UrlRewrite.class);
   SSLContextParameters sslContextParameters=resolveAndRemoveReferenceParameter(parameters,"sslContextParametersRef",SSLContextParameters.class);
   SSLContextParameters ssl=sslContextParameters != null ? sslContextParameters : this.sslContextParameters;
+  String proxyHost=getAndRemoveParameter(parameters,"proxyHost",String.class);
+  Integer proxyPort=getAndRemoveParameter(parameters,"proxyPort",Integer.class);
   Map<String,Object> httpClientParameters=IntrospectionSupport.extractProperties(parameters,"httpClient.");
   String address=remaining;
   URI addressUri=new URI(UnsafeUriCharactersEncoder.encode(address));
@@ -28,6 +30,10 @@
   }
  else {
     setEndpointHeaderFilterStrategy(endpoint);
+  }
+  if (proxyHost != null) {
+    endpoint.setProxyHost(proxyHost);
+    endpoint.setProxyPort(proxyPort);
   }
   if (urlRewrite != null) {
     getCamelContext().addService(urlRewrite);
