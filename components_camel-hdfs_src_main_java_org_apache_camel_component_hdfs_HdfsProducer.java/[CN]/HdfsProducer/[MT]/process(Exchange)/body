@@ -16,6 +16,17 @@
     StringBuilder actualPath=newFileName();
     ostream=HdfsOutputStream.createOutputStream(actualPath.toString(),config);
   }
+  String path=ostream.getActualPath();
+  log.trace("Writing body to hdfs-file {}",path);
   ostream.append(key,body,exchange.getContext().getTypeConverter());
   idle.set(false);
+  if (scheduler == null) {
+    try {
+      ostream.close();
+      ostream=null;
+    }
+ catch (    IOException e) {
+    }
+  }
+  log.debug("Wrote body to hdfs-file {}",path);
 }
