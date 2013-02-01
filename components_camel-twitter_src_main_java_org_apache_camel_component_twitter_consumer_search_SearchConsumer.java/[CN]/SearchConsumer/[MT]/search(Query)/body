@@ -1,6 +1,25 @@
 {
-  QueryResult qr=te.getProperties().getTwitter().search(query);
+  Integer numberOfPages=1;
+  if (ObjectHelper.isNotEmpty(te.getProperties().getLang())) {
+    query.setLang(te.getProperties().getLang());
+  }
+  if (ObjectHelper.isNotEmpty(te.getProperties().getCount())) {
+    query.setCount(te.getProperties().getCount());
+  }
+  if (ObjectHelper.isNotEmpty(te.getProperties().getNumberOfPages())) {
+    numberOfPages=te.getProperties().getNumberOfPages();
+  }
+  LOG.debug("Searching with " + numberOfPages + " pages.");
+  Twitter twitter=te.getProperties().getTwitter();
+  QueryResult qr=twitter.search(query);
   List<Status> tweets=qr.getTweets();
+  for (int i=1; i < numberOfPages; i++) {
+    if (!qr.hasNext()) {
+      break;
+    }
+    qr=twitter.search(qr.nextQuery());
+    tweets.addAll(qr.getTweets());
+  }
   if (te.getProperties().isFilterOld()) {
     for (    Status t : tweets) {
       checkLastId(t.getId());

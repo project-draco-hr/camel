@@ -18,10 +18,29 @@
   if (ObjectHelper.isNotEmpty(lang)) {
     query.setLang(lang);
   }
+  Integer count=exchange.getIn().getHeader(TwitterConstants.TWITTER_COUNT,Integer.class);
+  if (count == null) {
+    count=te.getProperties().getCount();
+  }
+  if (ObjectHelper.isNotEmpty(count)) {
+    query.setCount(count);
+  }
+  Integer numberOfPages=exchange.getIn().getHeader(TwitterConstants.TWITTER_NUMBER_OF_PAGES,Integer.class);
+  if (numberOfPages == null) {
+    numberOfPages=te.getProperties().getNumberOfPages();
+  }
   Twitter twitter=te.getProperties().getTwitter();
   log.debug("Searching twitter with keywords: {}",keywords);
   QueryResult results=twitter.search(query);
   List<Status> list=results.getTweets();
+  for (int i=1; i < numberOfPages; i++) {
+    if (results.hasNext() == false) {
+      break;
+    }
+    log.debug("Fetching page");
+    results=twitter.search(results.nextQuery());
+    list.addAll(results.getTweets());
+  }
   if (te.getProperties().isFilterOld()) {
     for (    Status t : list) {
       long newId=t.getId();
