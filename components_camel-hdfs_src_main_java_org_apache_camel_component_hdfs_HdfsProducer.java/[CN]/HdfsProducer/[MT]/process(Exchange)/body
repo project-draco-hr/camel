@@ -20,8 +20,14 @@
   log.trace("Writing body to hdfs-file {}",path);
   ostream.append(key,body,exchange.getContext().getTypeConverter());
   idle.set(false);
-  if (scheduler == null) {
+  boolean close=scheduler == null;
+  Boolean closeHeader=exchange.getIn().getHeader(HdfsConstants.HDFS_CLOSE,Boolean.class);
+  if (closeHeader != null) {
+    close=closeHeader;
+  }
+  if (close) {
     try {
+      HdfsProducer.this.log.trace("Closing stream");
       ostream.close();
       ostream=null;
     }
