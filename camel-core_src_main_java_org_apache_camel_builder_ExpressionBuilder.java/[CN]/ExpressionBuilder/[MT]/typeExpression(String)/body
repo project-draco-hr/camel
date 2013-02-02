@@ -1,0 +1,24 @@
+{
+  return new ExpressionAdapter(){
+    public Object evaluate(    Exchange exchange){
+      Class<?> type=exchange.getContext().getClassResolver().resolveClass(name);
+      if (type != null) {
+        return type;
+      }
+      int pos=name.lastIndexOf(".");
+      if (pos > 0) {
+        String before=name.substring(0,pos);
+        String after=name.substring(pos + 1);
+        type=exchange.getContext().getClassResolver().resolveClass(before);
+        if (type != null) {
+          return ObjectHelper.lookupConstantFieldValue(type,after);
+        }
+      }
+      throw ObjectHelper.wrapCamelExecutionException(exchange,new ClassNotFoundException("Cannot find type " + name));
+    }
+    @Override public String toString(){
+      return "type:" + name;
+    }
+  }
+;
+}
