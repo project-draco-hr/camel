@@ -1,0 +1,12 @@
+{
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  getMockEndpoint("mock:deadLetter").expectedMessageCount(1);
+  template.sendBody("seda:foo","Hello World");
+  getMockEndpoint("mock:foo").assertIsSatisfied();
+  StopWatch watch=new StopWatch();
+  context.stopRoute("foo");
+  watch.stop();
+  getMockEndpoint("mock:deadLetter").setResultWaitTime(25000);
+  getMockEndpoint("mock:deadLetter").assertIsSatisfied();
+  assertTrue("Should stop route faster, was " + watch.taken(),watch.taken() < 4000);
+}
