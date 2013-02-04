@@ -18,16 +18,19 @@
     log.debug("Using destinationResolver: {} on listenerContainer: ",resolver,listenerContainer);
   }
   listenerContainer.setPubSubDomain(pubSubDomain);
-  String consumerName="JmsConsumer[" + getEndpointConfiguredDestinationName() + "]";
+  String consumerName=getThreadName();
   if (configuration.getTaskExecutor() != null) {
     if (log.isDebugEnabled()) {
       log.debug("Using custom TaskExecutor: {} on listener container: {}",configuration.getTaskExecutor(),listenerContainer);
     }
     setContainerTaskExecutor(listenerContainer,configuration.getTaskExecutor());
   }
- else {
+ else   if ((listenerContainer instanceof DefaultJmsMessageListenerContainer && configuration.getDefaultTaskExecutorType() == null) || !(listenerContainer instanceof DefaultJmsMessageListenerContainer)) {
     ExecutorService executor=getCamelContext().getExecutorServiceManager().newCachedThreadPool(consumer,consumerName);
     setContainerTaskExecutor(listenerContainer,executor);
+  }
+ else {
+    log.debug("Deferring creation of TaskExecutor for listener container: {} as per policy: {}",listenerContainer,configuration.getDefaultTaskExecutorType());
   }
   if (configuration.getTransactionName() == null) {
     if (listenerContainer instanceof DefaultMessageListenerContainer) {
