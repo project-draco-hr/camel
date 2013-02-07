@@ -1,8 +1,47 @@
 {
+  PackageScanFilter defaultRecordScanFilter=new PackageScanFilter(){
+    @Override public boolean matches(    Class<?> type){
+      FixedLengthRecord record=type.getAnnotation(FixedLengthRecord.class);
+      return record != null && !record.isFooter() && !record.isHeader();
+    }
+  }
+;
+  BindyFixedLengthFactory factory;
   if (getClassType() != null) {
-    return new BindyFixedLengthFactory(resolver,getClassType());
+    factory=new BindyFixedLengthFactory(resolver,defaultRecordScanFilter,getClassType());
   }
  else {
-    return new BindyFixedLengthFactory(resolver,getPackages());
+    factory=new BindyFixedLengthFactory(resolver,defaultRecordScanFilter,getPackages());
   }
+  if (factory.hasHeader()) {
+    PackageScanFilter headerScanFilter=new PackageScanFilter(){
+      @Override public boolean matches(      Class<?> type){
+        FixedLengthRecord record=type.getAnnotation(FixedLengthRecord.class);
+        return record != null && record.isHeader();
+      }
+    }
+;
+    if (getClassType() != null) {
+      this.headerFactory=new BindyFixedLengthFactory(resolver,headerScanFilter,getClassType());
+    }
+ else {
+      this.headerFactory=new BindyFixedLengthFactory(resolver,headerScanFilter,getPackages());
+    }
+  }
+  if (factory.hasFooter()) {
+    PackageScanFilter footerScanFilter=new PackageScanFilter(){
+      @Override public boolean matches(      Class<?> type){
+        FixedLengthRecord record=type.getAnnotation(FixedLengthRecord.class);
+        return record != null && record.isFooter();
+      }
+    }
+;
+    if (getClassType() != null) {
+      this.footerFactory=new BindyFixedLengthFactory(resolver,footerScanFilter,getClassType());
+    }
+ else {
+      this.footerFactory=new BindyFixedLengthFactory(resolver,footerScanFilter,getPackages());
+    }
+  }
+  return factory;
 }

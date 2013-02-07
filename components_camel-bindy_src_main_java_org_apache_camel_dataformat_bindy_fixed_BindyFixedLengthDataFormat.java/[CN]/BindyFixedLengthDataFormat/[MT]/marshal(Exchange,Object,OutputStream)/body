@@ -1,5 +1,6 @@
 {
-  BindyFixedLengthFactory factory=(BindyFixedLengthFactory)getFactory(exchange.getContext().getPackageScanClassResolver());
+  PackageScanClassResolver resolver=exchange.getContext().getPackageScanClassResolver();
+  BindyFixedLengthFactory factory=(BindyFixedLengthFactory)getFactory(resolver);
   ObjectHelper.notNull(factory,"not instantiated");
   byte[] bytesCRLF=ConverterUtils.getByteReturn(factory.getCarriageReturn());
   List<Map<String,Object>> models;
@@ -17,8 +18,45 @@
  else {
     models=(List<Map<String,Object>>)body;
   }
+  Map<String,Object> headerRow=(Map<String,Object>)exchange.getIn().getHeader(CAMEL_BINDY_FIXED_LENGTH_HEADER);
+  if (headerRow != null) {
+    models.add(0,headerRow);
+  }
+  Map<String,Object> footerRow=(Map<String,Object>)exchange.getIn().getHeader(CAMEL_BINDY_FIXED_LENGTH_FOOTER);
+  if (headerRow != null) {
+    models.add(models.size(),footerRow);
+  }
+  int row=0;
   for (  Map<String,Object> model : models) {
-    String result=factory.unbind(model);
+    row++;
+    String result=null;
+    if (row == 1 && headerFactory != null) {
+      Set<String> modelClassNames=model.keySet();
+      if (headerFactory.supportsModel(modelClassNames)) {
+        if (factory.skipHeader()) {
+          LOG.warn("Skipping marshal of header row; 'skipHeader=true'");
+          continue;
+        }
+ else {
+          result=headerFactory.unbind(model);
+        }
+      }
+    }
+ else     if (row == models.size() && footerFactory != null) {
+      Set<String> modelClassNames=model.keySet();
+      if (footerFactory.supportsModel(modelClassNames)) {
+        if (factory.skipFooter()) {
+          LOG.warn("Skipping marshal of footer row; 'skipFooter=true'");
+          continue;
+        }
+ else {
+          result=footerFactory.unbind(model);
+        }
+      }
+    }
+    if (result == null) {
+      result=factory.unbind(model);
+    }
     byte[] bytes=exchange.getContext().getTypeConverter().convertTo(byte[].class,exchange,result);
     outputStream.write(bytes);
     outputStream.write(bytesCRLF);

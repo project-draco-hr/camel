@@ -3,21 +3,42 @@
   int counterMandatoryFields=0;
   DataField dataField;
   String token;
-  int offset;
+  int offset=1;
   int length;
+  String delimiter;
   Field field;
   Collection<DataField> c=dataFields.values();
   Iterator<DataField> itr=c.iterator();
   while (itr.hasNext()) {
     dataField=itr.next();
-    offset=dataField.pos();
     length=dataField.length();
+    delimiter=dataField.delimiter();
     ObjectHelper.notNull(offset,"Position/offset is not defined for the field: " + dataField.toString());
-    ObjectHelper.notNull(offset,"Length is not defined for the field: " + dataField.toString());
+    if (length == 0 && dataField.lengthPos() != 0) {
+      Field lengthField=annotatedFields.get(dataField.lengthPos());
+      lengthField.setAccessible(true);
+      Object modelObj=model.get(lengthField.getDeclaringClass().getName());
+      Object lengthObj=(Integer)lengthField.get(modelObj);
+      length=((Integer)lengthObj).intValue();
+    }
+    if (length < 1 && delimiter == null && dataField.lengthPos() == 0) {
+      throw new IllegalArgumentException("Either length or delimiter must be specified for the field : " + dataField.toString());
+    }
     if (offset - 1 <= -1) {
       throw new IllegalArgumentException("Offset/Position of the field " + dataField.toString() + " cannot be negative");
     }
-    token=record.substring(offset - 1,offset + length - 1);
+    if (length > 0) {
+      token=record.substring(offset - 1,offset + length - 1);
+      offset+=length;
+    }
+ else     if (!delimiter.equals("")) {
+      String tempToken=record.substring(offset - 1,record.length());
+      token=tempToken.substring(0,tempToken.indexOf(delimiter));
+      offset+=token.length() + 1;
+    }
+ else {
+      token="";
+    }
     if (dataField.trim()) {
       token=token.trim();
     }
@@ -27,7 +48,7 @@
         throw new IllegalArgumentException("The mandatory field defined at the position " + pos + " is empty for the line: "+ line);
       }
     }
-    field=annotatedFields.get(offset);
+    field=annotatedFields.get(dataField.pos());
     field.setAccessible(true);
     if (LOG.isDebugEnabled()) {
       LOG.debug("Pos/Offset: {}, Data: {}, Field type: {}",new Object[]{offset,token,field.getType()});
