@@ -2,6 +2,21 @@
   this.camelContext=camelContext;
   this.type=type;
   this.strategy=strategy;
+  Map<CacheKey,BeanInfo> cache=(Map<CacheKey,BeanInfo>)camelContext.getRegistry().lookupByNameAndType(BEAN_INFO_CACHE_REGISTRY_KEY,Map.class);
+  CacheKey cacheKey=new CacheKey(type,explicitMethod,strategy);
+  if (cache != null) {
+    BeanInfo beanInfo=cache.get(cacheKey);
+    if (beanInfo != null) {
+      defaultMethod=beanInfo.defaultMethod;
+      operations=beanInfo.operations;
+      operationsWithBody=beanInfo.operationsWithBody;
+      operationsWithNoBody=beanInfo.operationsWithNoBody;
+      operationsWithCustomAnnotation=beanInfo.operationsWithCustomAnnotation;
+      operationsWithHandlerAnnotation=beanInfo.operationsWithHandlerAnnotation;
+      methodMap=beanInfo.methodMap;
+      return;
+    }
+  }
   if (explicitMethod != null) {
     if (!isValidMethod(type,explicitMethod)) {
       throw new IllegalArgumentException("The method " + explicitMethod + " is not valid (for example the method must be public)");
@@ -25,4 +40,7 @@
   operationsWithCustomAnnotation=Collections.unmodifiableList(operationsWithCustomAnnotation);
   operationsWithHandlerAnnotation=Collections.unmodifiableList(operationsWithHandlerAnnotation);
   methodMap=Collections.unmodifiableMap(methodMap);
+  if (cache != null) {
+    cache.put(cacheKey,this);
+  }
 }
