@@ -5,6 +5,17 @@
   if (extra != null) {
     bundleContext.registerService(PropertiesComponent.OVERRIDE_PROPERTIES,extra,null);
   }
+  Dictionary props=new Properties();
+  String pid=useOverridePropertiesWithConfigAdmin(props);
+  if (pid != null) {
+    ConfigurationAdmin configAdmin=getOsgiService(ConfigurationAdmin.class);
+    Configuration config=configAdmin.getConfiguration(pid);
+    if (config == null) {
+      throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
+    }
+    log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
+    config.update(props);
+  }
   super.setUp();
   log.debug("Waiting for BlueprintContainer to be published with symbolicName: {}",symbolicName);
   getOsgiService(BlueprintContainer.class,"(osgi.blueprint.container.symbolicname=" + symbolicName + ")");
