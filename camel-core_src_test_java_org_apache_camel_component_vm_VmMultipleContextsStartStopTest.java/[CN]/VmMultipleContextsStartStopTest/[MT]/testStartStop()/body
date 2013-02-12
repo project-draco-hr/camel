@@ -1,0 +1,28 @@
+{
+  DefaultCamelContext c1=new DefaultCamelContext();
+  c1.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:test").to("vm:foo");
+    }
+  }
+);
+  c1.start();
+  ProducerTemplate template=c1.createProducerTemplate();
+  DefaultCamelContext c2=new DefaultCamelContext();
+  c2.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("vm:foo").to("mock:result");
+    }
+  }
+);
+  c2.start();
+  MockEndpoint mock=c2.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(1);
+  template.requestBody("direct:test","Hello world!");
+  mock.assertIsSatisfied();
+  mock.reset();
+  c2.stop();
+  c2.start();
+  template.requestBody("direct:test","Hello world!");
+  mock.assertIsSatisfied();
+}
