@@ -1,7 +1,14 @@
 {
-  MimeMessage mimeMessage=new MimeMessage(sender.getSession());
   try {
-    getEndpoint().getBinding().populateMailMessage(getEndpoint(),mimeMessage,exchange);
+    MimeMessage mimeMessage;
+    final Object body=exchange.getIn().getBody();
+    if (body instanceof MimeMessage) {
+      mimeMessage=(MimeMessage)body;
+    }
+ else {
+      mimeMessage=new MimeMessage(sender.getSession());
+      getEndpoint().getBinding().populateMailMessage(getEndpoint(),mimeMessage,exchange);
+    }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Sending MimeMessage: {}",MailUtils.dumpMessage(mimeMessage));
     }
