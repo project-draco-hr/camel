@@ -6,19 +6,35 @@
   LOG.trace("Starting completion interval task");
   Set<String> keys=aggregationRepository.getKeys();
   if (keys != null && !keys.isEmpty()) {
-    lock.lock();
+    if (!optimisticLocking) {
+      lock.lock();
+    }
     try {
       for (      String key : keys) {
+        boolean stolenInterval=false;
         Exchange exchange=aggregationRepository.get(camelContext,key);
-        if (exchange != null) {
+        if (exchange == null) {
+          stolenInterval=true;
+        }
+ else {
           LOG.trace("Completion interval triggered for correlation key: {}",key);
           exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"interval");
-          onCompletion(key,exchange,false);
+          try {
+            onCompletion(key,exchange,exchange,false);
+          }
+ catch (          OptimisticLockingAggregationRepository.OptimisticLockingException e) {
+            stolenInterval=true;
+          }
+        }
+        if (optimisticLocking && stolenInterval) {
+          LOG.debug("Another Camel instance has already processed this interval aggregation for exchange with correlation id: {}",key);
         }
       }
     }
   finally {
-      lock.unlock();
+      if (!optimisticLocking) {
+        lock.unlock();
+      }
     }
   }
   LOG.trace("Completion interval task complete");

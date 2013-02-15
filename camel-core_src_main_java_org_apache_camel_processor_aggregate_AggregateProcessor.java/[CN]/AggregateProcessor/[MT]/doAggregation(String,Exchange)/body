@@ -1,10 +1,13 @@
 {
   LOG.trace("onAggregation +++ start +++ with correlation key: {}",key);
   Exchange answer;
-  Exchange oldExchange=aggregationRepository.get(exchange.getContext(),key);
-  Exchange newExchange=exchange;
+  Exchange originalExchange=aggregationRepository.get(newExchange.getContext(),key);
+  Exchange oldExchange=originalExchange;
   Integer size=1;
   if (oldExchange != null) {
+    if (optimisticLocking && aggregationRepository instanceof MemoryAggregationRepository) {
+      oldExchange=originalExchange.copy();
+    }
     size=oldExchange.getProperty(Exchange.AGGREGATED_SIZE,0,Integer.class);
     size++;
   }
@@ -16,21 +19,20 @@
   }
   ExchangeHelper.prepareAggregation(oldExchange,newExchange);
   try {
-    answer=onAggregation(oldExchange,exchange);
+    answer=onAggregation(oldExchange,newExchange);
   }
  catch (  Throwable e) {
-    throw new CamelExchangeException("Error occurred during aggregation",exchange,e);
+    throw new CamelExchangeException("Error occurred during aggregation",newExchange,e);
   }
   if (answer == null) {
-    throw new CamelExchangeException("AggregationStrategy " + aggregationStrategy + " returned null which is not allowed",exchange);
+    throw new CamelExchangeException("AggregationStrategy " + aggregationStrategy + " returned null which is not allowed",newExchange);
   }
   answer.setProperty(Exchange.AGGREGATED_SIZE,size);
   if (!isEagerCheckCompletion()) {
     complete=isCompleted(key,answer);
   }
   if (complete == null) {
-    LOG.trace("In progress aggregated exchange: {} with correlation key: {}",answer,key);
-    aggregationRepository.add(exchange.getContext(),key,answer);
+    doAggregationRepositoryAdd(newExchange.getContext(),key,originalExchange,answer);
   }
  else {
     if ("consumer".equals(complete)) {
@@ -44,14 +46,14 @@
         }
         if (batchAnswer != null) {
           batchAnswer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,complete);
-          onCompletion(batchKey,batchAnswer,false);
+          onCompletion(batchKey,originalExchange,batchAnswer,false);
         }
       }
       batchConsumerCorrelationKeys.clear();
     }
  else {
       answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,complete);
-      onCompletion(key,answer,false);
+      onCompletion(key,originalExchange,answer,false);
     }
   }
   LOG.trace("onAggregation +++  end  +++ with correlation key: {}",key);

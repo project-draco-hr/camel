@@ -5,10 +5,22 @@
     LOG.trace("Aggregated exchange with id: {} is already in progress.",exchangeId);
     return true;
   }
+  boolean evictionStolen=false;
   Exchange answer=aggregationRepository.get(camelContext,key);
-  if (answer != null) {
+  if (answer == null) {
+    evictionStolen=true;
+  }
+ else {
     answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"timeout");
-    onCompletion(key,answer,true);
+    try {
+      onCompletion(key,answer,answer,true);
+    }
+ catch (    OptimisticLockingAggregationRepository.OptimisticLockingException e) {
+      evictionStolen=true;
+    }
+  }
+  if (optimisticLocking && evictionStolen) {
+    LOG.debug("Another Camel instance has already successfully correlated or processed this timeout eviction " + "for exchange with id: {} and correlation id: {}",exchangeId,key);
   }
   return true;
 }

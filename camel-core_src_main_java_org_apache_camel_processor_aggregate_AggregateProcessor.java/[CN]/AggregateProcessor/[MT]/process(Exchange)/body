@@ -17,12 +17,29 @@
   if (closedCorrelationKeys != null && closedCorrelationKeys.containsKey(key)) {
     throw new ClosedCorrelationKeyException(key,exchange);
   }
-  Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
-  lock.lock();
-  try {
-    doAggregation(key,copy);
+  if (optimisticLocking) {
+    boolean done=false;
+    int attempt=0;
+    while (!done) {
+      attempt++;
+      Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
+      try {
+        doAggregation(key,copy);
+        done=true;
+      }
+ catch (      OptimisticLockingAggregationRepository.OptimisticLockingException e) {
+        LOG.trace("On attempt {} OptimisticLockingAggregationRepository: {} threw OptimisticLockingException while trying to add() key: {} and exchange: {}",new Object[]{attempt,aggregationRepository,key,copy,e});
+      }
+    }
   }
+ else {
+    Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
+    lock.lock();
+    try {
+      doAggregation(key,copy);
+    }
   finally {
-    lock.unlock();
+      lock.unlock();
+    }
   }
 }

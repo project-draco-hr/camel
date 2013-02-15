@@ -1,0 +1,24 @@
+{
+  aggregationRepository.remove(aggregated.getContext(),key,original);
+  aggregated.setProperty(Exchange.AGGREGATED_CORRELATION_KEY,key);
+  if (!fromTimeout && timeoutMap != null) {
+    timeoutMap.remove(key);
+  }
+  if (closedCorrelationKeys != null) {
+    closedCorrelationKeys.put(key,key);
+  }
+  if (fromTimeout) {
+    if (aggregationStrategy instanceof TimeoutAwareAggregationStrategy) {
+      long timeout=getCompletionTimeout() > 0 ? getCompletionTimeout() : -1;
+      ((TimeoutAwareAggregationStrategy)aggregationStrategy).timeout(aggregated,-1,-1,timeout);
+    }
+  }
+  if (fromTimeout && isDiscardOnCompletionTimeout()) {
+    LOG.debug("Aggregation for correlation key {} discarding aggregated exchange: {}",key,aggregated);
+    aggregationRepository.confirm(aggregated.getContext(),aggregated.getExchangeId());
+    redeliveryState.remove(aggregated.getExchangeId());
+  }
+ else {
+    onSubmitCompletion(key,aggregated);
+  }
+}

@@ -5,12 +5,22 @@
   if (getCloseCorrelationKeyOnCompletion() != null) {
     if (getCloseCorrelationKeyOnCompletion() > 0) {
       LOG.info("Using ClosedCorrelationKeys with a LRUCache with a capacity of " + getCloseCorrelationKeyOnCompletion());
-      closedCorrelationKeys=new LRUCache<Object,Object>(getCloseCorrelationKeyOnCompletion());
+      closedCorrelationKeys=new LRUCache<String,String>(getCloseCorrelationKeyOnCompletion());
     }
  else {
       LOG.info("Using ClosedCorrelationKeys with unbounded capacity");
-      closedCorrelationKeys=new HashMap<Object,Object>();
+      closedCorrelationKeys=new ConcurrentHashMap<String,String>();
     }
+  }
+  if (aggregationRepository == null) {
+    aggregationRepository=new MemoryAggregationRepository(optimisticLocking);
+    LOG.info("Defaulting to MemoryAggregationRepository");
+  }
+  if (optimisticLocking) {
+    if (!(aggregationRepository instanceof OptimisticLockingAggregationRepository)) {
+      throw new IllegalArgumentException("Optimistic locking cannot be enabled without using an AggregationRepository that implements OptimisticLockingAggregationRepository");
+    }
+    LOG.info("Optimistic locking is enabled");
   }
   ServiceHelper.startServices(aggregationStrategy,processor,aggregationRepository);
   if (aggregationRepository instanceof RecoverableAggregationRepository) {

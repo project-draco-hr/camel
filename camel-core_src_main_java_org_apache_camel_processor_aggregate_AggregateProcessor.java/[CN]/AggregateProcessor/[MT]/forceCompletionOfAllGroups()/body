@@ -8,7 +8,9 @@
   Set<String> keys=aggregationRepository.getKeys();
   int total=0;
   if (keys != null && !keys.isEmpty()) {
-    lock.lock();
+    if (!optimisticLocking) {
+      lock.lock();
+    }
     total=keys.size();
     try {
       for (      String key : keys) {
@@ -16,12 +18,14 @@
         if (exchange != null) {
           LOG.trace("Force completion triggered for correlation key: {}",key);
           exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"forceCompletion");
-          onCompletion(key,exchange,false);
+          onCompletion(key,exchange,exchange,false);
         }
       }
     }
   finally {
-      lock.unlock();
+      if (!optimisticLocking) {
+        lock.unlock();
+      }
     }
   }
   LOG.trace("Completed force completion of all groups task");
