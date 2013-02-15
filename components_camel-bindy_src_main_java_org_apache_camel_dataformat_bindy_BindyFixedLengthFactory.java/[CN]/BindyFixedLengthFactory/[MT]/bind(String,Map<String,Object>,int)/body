@@ -13,7 +13,6 @@
     dataField=itr.next();
     length=dataField.length();
     delimiter=dataField.delimiter();
-    ObjectHelper.notNull(offset,"Position/offset is not defined for the field: " + dataField.toString());
     if (length == 0 && dataField.lengthPos() != 0) {
       Field lengthField=annotatedFields.get(dataField.lengthPos());
       lengthField.setAccessible(true);
@@ -72,6 +71,9 @@ catch (      Exception e) {
     }
     field.set(modelField,value);
     ++pos;
+  }
+  if (offset <= record.length() && !(record.substring(offset - 1,record.length())).trim().equals("")) {
+    throw new IllegalArgumentException("Unexpected / unmapped characters found at the end of the fixed-length record at line : " + line);
   }
   LOG.debug("Counter mandatory fields: {}",counterMandatoryFields);
   if (pos < totalFields) {
