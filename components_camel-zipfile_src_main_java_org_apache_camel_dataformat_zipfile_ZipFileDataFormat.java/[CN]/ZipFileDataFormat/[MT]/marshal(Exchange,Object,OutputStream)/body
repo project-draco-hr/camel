@@ -1,0 +1,20 @@
+{
+  String filename=exchange.getIn().getHeader(FILE_NAME,String.class);
+  if (filename != null) {
+    filename=new File(filename).getName();
+  }
+ else {
+    filename=StringHelper.sanitize(exchange.getIn().getMessageId());
+  }
+  ZipOutputStream zos=new ZipOutputStream(stream);
+  zos.putNextEntry(new ZipEntry(filename));
+  InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,graph);
+  try {
+    IOHelper.copy(is,zos);
+  }
+  finally {
+    IOHelper.close(is,zos);
+  }
+  String newFilename=filename + ".zip";
+  exchange.getOut().setHeader(FILE_NAME,newFilename);
+}
