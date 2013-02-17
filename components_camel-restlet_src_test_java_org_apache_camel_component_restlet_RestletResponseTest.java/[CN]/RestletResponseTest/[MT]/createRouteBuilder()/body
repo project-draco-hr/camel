@@ -8,6 +8,20 @@
           exchange.getOut().setBody("{" + userName + "}");
           exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,"417");
           exchange.getOut().setHeader(Exchange.CONTENT_TYPE,"application/JSON");
+          exchange.getOut().setHeader(HeaderConstants.HEADER_CACHE_CONTROL,"max-age=20");
+        }
+      }
+);
+      from("restlet:http://localhost:" + portNum + "/cached/{username}?restletMethod=POST").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String userName=exchange.getIn().getHeader("username",String.class);
+          assertNotNull("userName should not be null",userName);
+          exchange.getOut().setBody("{" + userName + "}");
+          exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,"417");
+          exchange.getOut().setHeader(Exchange.CONTENT_TYPE,"application/JSON");
+          List<CacheDirective> cacheDirectives=new ArrayList<CacheDirective>();
+          cacheDirectives.add(CacheDirective.maxAge(20));
+          exchange.getOut().setHeader(HeaderConstants.HEADER_CACHE_CONTROL,cacheDirectives);
         }
       }
 );
