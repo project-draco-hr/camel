@@ -40,7 +40,13 @@ synchronized (continuation) {
     }
     private Continuation getContinuation(    Exchange cxfExchange){
       ContinuationProvider provider=(ContinuationProvider)cxfExchange.getInMessage().get(ContinuationProvider.class.getName());
-      return provider == null ? null : provider.getContinuation();
+      Continuation continuation=provider == null ? null : provider.getContinuation();
+      if (continuation != null && continuation.getClass().getName().equals("org.apache.cxf.transport.jms.continuations.JMSContinuation")) {
+        return null;
+      }
+ else {
+        return continuation;
+      }
     }
     private Object syncInvoke(    Exchange cxfExchange){
       org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
