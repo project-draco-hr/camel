@@ -1,0 +1,15 @@
+{
+  String dnToBind="some dn to bind";
+  initializeTest(dnToBind);
+  Attributes attributes=new BasicAttributes();
+  attributes.put("some attribute name","some attribute value");
+  body.put(SpringLdapProducer.ATTRIBUTES,attributes);
+  producer.sendBody("spring-ldap:" + SpringLdapTestConfiguration.LDAP_MOCK_NAME + "?operation=bind",body);
+  ArgumentCaptor<String> dnCaptor=ArgumentCaptor.forClass(String.class);
+  ArgumentCaptor<Attributes> attributesCaptor=ArgumentCaptor.forClass(Attributes.class);
+  ArgumentCaptor<Object> objectToBindCaptor=ArgumentCaptor.forClass(Object.class);
+  Mockito.verify(ldapTemplate).bind(dnCaptor.capture(),objectToBindCaptor.capture(),attributesCaptor.capture());
+  assertEquals(dnToBind,dnCaptor.getValue());
+  assertNull(objectToBindCaptor.getValue());
+  assertEquals(attributes,attributesCaptor.getValue());
+}

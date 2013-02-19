@@ -1,0 +1,27 @@
+{
+  @SuppressWarnings("unchecked") Map<String,Object> body=exchange.getIn().getBody(Map.class);
+  String dn=(String)body.get(DN);
+  if (null == dn || dn.length() == 0) {
+    throw new UnsupportedOperationException("DN must not be empty, but you provided an empty DN");
+  }
+  LdapOperation operation=endpoint.getOperation();
+  LdapTemplate ldapTemplate=endpoint.getLdapTemplate();
+  if (null == operation) {
+    throw new UnsupportedOperationException("LDAP operation must not be empty, but you provided an empty operation");
+  }
+switch (operation) {
+case SEARCH:
+    String filter=(String)body.get(FILTER);
+  exchange.getIn().setBody(ldapTemplate.search(dn,filter,endpoint.getScope(),mapper));
+break;
+case BIND:
+Attributes attributes=(Attributes)body.get(ATTRIBUTES);
+ldapTemplate.bind(dn,null,attributes);
+break;
+case UNBIND:
+ldapTemplate.unbind(dn);
+break;
+default :
+throw new UnsupportedOperationException("Bug in the Spring-LDAP component. Despite of all assertions, you managed to call an unsupported operation '" + operation + "'");
+}
+}
