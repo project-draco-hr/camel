@@ -12,19 +12,26 @@
   try {
     Result result=null;
     if (isInputStreamNeeded(exchange)) {
-      is=exchange.getIn().getBody(InputStream.class);
+      is=getContentToValidate(exchange,InputStream.class);
       if (is != null) {
         source=getSource(exchange,is);
       }
     }
  else {
-      Object body=exchange.getIn().getBody();
-      if (body != null) {
-        source=getSource(exchange,body);
+      Object content=getContentToValidate(exchange);
+      if (content != null) {
+        source=getSource(exchange,content);
       }
     }
-    if (source == null && isFailOnNullBody()) {
-      throw new NoXmlBodyValidationException(exchange);
+    if (shouldUseHeader()) {
+      if (source == null && isFailOnNullHeader()) {
+        throw new NoXmlHeaderValidationException(exchange,headerName);
+      }
+    }
+ else {
+      if (source == null && isFailOnNullBody()) {
+        throw new NoXmlBodyValidationException(exchange);
+      }
     }
     if (source instanceof DOMSource) {
       result=new DOMResult();
