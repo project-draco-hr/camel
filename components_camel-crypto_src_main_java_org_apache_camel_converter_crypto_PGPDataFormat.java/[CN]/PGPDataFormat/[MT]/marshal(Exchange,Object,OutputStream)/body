@@ -14,7 +14,11 @@
   OutputStream comOut=new BufferedOutputStream(comData.open(encOut));
   PGPSignatureGenerator sigGen=createSignatureGenerator(exchange,comOut);
   PGPLiteralDataGenerator litData=new PGPLiteralDataGenerator();
-  OutputStream litOut=litData.open(comOut,PGPLiteralData.BINARY,PGPLiteralData.CONSOLE,new Date(),new byte[BUFFER_SIZE]);
+  String fileName=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+  if (ObjectHelper.isEmpty(fileName)) {
+    fileName=PGPLiteralData.CONSOLE;
+  }
+  OutputStream litOut=litData.open(comOut,PGPLiteralData.BINARY,fileName,new Date(),new byte[BUFFER_SIZE]);
   try {
     byte[] buffer=new byte[BUFFER_SIZE];
     int bytesRead;
