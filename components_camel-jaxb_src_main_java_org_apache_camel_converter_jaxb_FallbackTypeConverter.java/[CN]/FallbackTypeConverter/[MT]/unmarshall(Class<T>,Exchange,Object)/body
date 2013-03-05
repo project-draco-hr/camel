@@ -8,8 +8,13 @@
     if (!needFiltering(exchange)) {
       XMLStreamReader xmlReader=parentTypeConverter.convertTo(XMLStreamReader.class,exchange,value);
       if (xmlReader != null) {
-        Object unmarshalled=unmarshal(unmarshaller,exchange,xmlReader);
-        return type.cast(unmarshalled);
+        try {
+          Object unmarshalled=unmarshal(unmarshaller,exchange,xmlReader);
+          return type.cast(unmarshalled);
+        }
+ catch (        Exception ex) {
+          LOG.info("Cannot use StaxStreamReader to unmarshal the message, due to {}",ex);
+        }
       }
     }
     InputStream inputStream=parentTypeConverter.convertTo(InputStream.class,exchange,value);
