@@ -1,0 +1,27 @@
+{
+  if (!SecurityUtils.isBouncyCastleRegistered()) {
+    throw new IllegalStateException("BouncyCastle must be registered as a JCE provider");
+  }
+  final List<KeyPair> keys=new ArrayList<KeyPair>(this.resources.length);
+  for (  String resource : resources) {
+    PEMReader r=null;
+    InputStreamReader isr=null;
+    InputStream is=null;
+    try {
+      is=ResourceHelper.resolveMandatoryResourceAsInputStream(classResolver,resource);
+      isr=new InputStreamReader(is);
+      r=new PEMReader(isr,passwordFinder);
+      Object o=r.readObject();
+      if (o instanceof KeyPair) {
+        keys.add((KeyPair)o);
+      }
+    }
+ catch (    Exception e) {
+      log.warn("Unable to read key",e);
+    }
+ finally {
+      IoUtils.closeQuietly(r,is,isr);
+    }
+  }
+  return keys.toArray(new KeyPair[keys.size()]);
+}
