@@ -1,18 +1,26 @@
 {
   T answer=null;
+  RuntimeCamelException ex=null;
   for (  Registry registry : registryList) {
     try {
       answer=registry.lookupByNameAndType(name,type);
-      if (answer != null) {
-        break;
-      }
     }
  catch (    Throwable e) {
       if (e instanceof NoSuchBeanException) {
-        throw (NoSuchBeanException)e;
+        ex=(NoSuchBeanException)e;
       }
-      throw new NoSuchBeanException(name,"Cannot lookup: " + name + " from registry: "+ registry+ " with expected type: "+ type+ " due: "+ e.getMessage(),e);
+ else {
+        ex=new NoSuchBeanException(name,"Cannot lookup: " + name + " from registry: "+ registry+ " with expected type: "+ type+ " due: "+ e.getMessage(),e);
+      }
+    }
+    if (answer != null) {
+      return answer;
     }
   }
-  return answer;
+  if (ex != null) {
+    throw ex;
+  }
+ else {
+    return answer;
+  }
 }
