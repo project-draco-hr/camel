@@ -6,33 +6,9 @@
     Object v=entry.getValue();
     String value=v != null ? v.toString() : null;
     if (value != null && isReferenceParameter(value)) {
-      List<Method> candidates=IntrospectionSupport.findSetterMethodsOrderedByParameterType(bean.getClass(),name,false);
-      Exception typeConversionFailed=null;
-      for (      Method setter : candidates) {
-        Class parameterType=setter.getParameterTypes()[0];
-        Object ref=resolveReferenceParameter(context,value,parameterType,false);
-        if (ref != null) {
-          try {
-            boolean hit=IntrospectionSupport.setProperty(context.getTypeConverter(),bean,setter,ref);
-            if (hit) {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Configured property: {} on bean: {} with value: {}",new Object[]{name,bean,ref});
-              }
-              it.remove();
-              typeConversionFailed=null;
-              break;
-            }
-          }
- catch (          NoTypeConversionAvailableException e) {
-            typeConversionFailed=e;
-          }
-catch (          IllegalArgumentException e) {
-            typeConversionFailed=e;
-          }
-        }
-      }
-      if (typeConversionFailed != null) {
-        throw new IllegalArgumentException("Could not find a suitable setter for property: " + name + " as there isn't a setter method with same type: "+ value.getClass().getCanonicalName()+ " nor type conversion possible: "+ typeConversionFailed.getMessage());
+      boolean hit=IntrospectionSupport.setProperty(context,context.getTypeConverter(),bean,name,null,value,true);
+      if (hit) {
+        it.remove();
       }
     }
   }
