@@ -1,0 +1,20 @@
+{
+  InterceptStrategy tracer=BacklogTracer.getBacklogTracer(camelContext);
+  if (tracer == null) {
+    if (camelContext.getRegistry() != null) {
+      Map<String,BacklogTracer> map=camelContext.getRegistry().findByTypeWithName(BacklogTracer.class);
+      if (map.size() == 1) {
+        tracer=map.values().iterator().next();
+      }
+    }
+    if (tracer == null) {
+      tracer=camelContext.getDefaultBacklogTracer();
+    }
+  }
+  for (  LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
+    if (tracer instanceof Service) {
+      strategy.onServiceAdd(camelContext,(Service)tracer,null);
+    }
+  }
+  return tracer;
+}
