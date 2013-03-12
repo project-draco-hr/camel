@@ -2,10 +2,11 @@
   if (outputStream == null) {
     return;
   }
-  boolean systemStream=outputStream != System.out || outputStream != System.err;
+  boolean systemStream=outputStream == System.out || outputStream == System.err;
   boolean headerStream="header".equals(uri);
   boolean reachedLimit=endpoint.getAutoCloseCount() > 0 && count.decrementAndGet() <= 0;
-  boolean expiredStream=force || headerStream || reachedLimit;
+  boolean isDone=endpoint.isCloseOnDone() && isDone(exchange);
+  boolean expiredStream=force || headerStream || isDone|| reachedLimit;
   if (!systemStream && expiredStream) {
     outputStream.close();
     outputStream=null;
