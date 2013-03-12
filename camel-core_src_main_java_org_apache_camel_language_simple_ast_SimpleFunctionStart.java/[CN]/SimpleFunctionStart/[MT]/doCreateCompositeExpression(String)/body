@@ -3,17 +3,24 @@
   return new Expression(){
     @Override public <T>T evaluate(    Exchange exchange,    Class<T> type){
       StringBuilder sb=new StringBuilder();
+      boolean quoteEmbeddedFunctions=false;
       for (      SimpleNode child : block.getChildren()) {
         if (child instanceof LiteralNode) {
           String text=((LiteralNode)child).getText();
           sb.append(text);
+          quoteEmbeddedFunctions|=((LiteralNode)child).quoteEmbeddedNodes();
         }
- else         if (child instanceof SimpleFunctionStart) {
+ else         if (child instanceof SimpleFunctionStart || child instanceof SingleQuoteStart || child instanceof DoubleQuoteStart) {
           try {
             Expression nested=child.createExpression(null);
             String text=nested.evaluate(exchange,String.class);
             if (text != null) {
-              sb.append(text);
+              if (quoteEmbeddedFunctions && !StringHelper.isQuoted(text)) {
+                sb.append("'").append(text).append("'");
+              }
+ else {
+                sb.append(text);
+              }
             }
           }
  catch (          SimpleParserException e) {
