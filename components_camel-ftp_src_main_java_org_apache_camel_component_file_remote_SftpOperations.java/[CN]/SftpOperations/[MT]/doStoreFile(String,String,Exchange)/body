@@ -27,6 +27,8 @@
     if (is == null) {
       is=exchange.getIn().getMandatoryBody(InputStream.class);
     }
+    final StopWatch watch=new StopWatch();
+    LOG.debug("About to store file: {} using stream: {}",targetName,is);
     if (endpoint.getFileExist() == GenericFileExist.Append) {
       LOG.trace("Client appendFile: {}",targetName);
       channel.put(is,targetName,ChannelSftp.APPEND);
@@ -34,6 +36,10 @@
  else {
       LOG.trace("Client storeFile: {}",targetName);
       channel.put(is,targetName);
+    }
+    watch.stop();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Took {} ({} millis) to store file: {} and FTP client returned: true",new Object[]{TimeUtils.printDuration(watch.taken()),watch.taken(),targetName});
     }
     String mode=endpoint.getConfiguration().getChmod();
     if (ObjectHelper.isNotEmpty(mode)) {
