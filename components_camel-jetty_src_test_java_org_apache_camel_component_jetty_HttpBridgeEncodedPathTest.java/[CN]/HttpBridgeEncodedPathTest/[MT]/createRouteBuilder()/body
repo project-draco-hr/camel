@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      port1=getPort();
+      port2=getNextPort();
+      errorHandler(noErrorHandler());
+      Processor serviceProc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals(" 447777111222",exchange.getIn().getHeader("param1"));
+          assertEquals("param1=+447777111222",exchange.getIn().getHeader(Exchange.HTTP_QUERY));
+          exchange.getOut().setBody(exchange.getIn().getHeader(Exchange.HTTP_QUERY));
+        }
+      }
+;
+      from("jetty:http://localhost:" + port2 + "/test/hello").to("http://localhost:" + port1 + "?throwExceptionOnFailure=false&bridgeEndpoint=true");
+      from("jetty://http://localhost:" + port1 + "?matchOnUriPrefix=true").process(serviceProc);
+    }
+  }
+;
+}
