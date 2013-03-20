@@ -1,14 +1,20 @@
 {
 synchronized (components) {
-    Component answer=components.remove(componentName);
-    if (answer != null) {
+    Component oldComponent=components.remove(componentName);
+    if (oldComponent != null) {
+      try {
+        stopServices(oldComponent);
+      }
+ catch (      Exception e) {
+        log.warn("Error stopping component " + oldComponent + ". This exception will be ignored.",e);
+      }
       for (      LifecycleStrategy strategy : lifecycleStrategies) {
-        strategy.onComponentRemove(componentName,answer);
+        strategy.onComponentRemove(componentName,oldComponent);
       }
     }
-    if (answer != null && "properties".equals(componentName)) {
+    if (oldComponent != null && "properties".equals(componentName)) {
       propertiesComponent=null;
     }
-    return answer;
+    return oldComponent;
   }
 }
