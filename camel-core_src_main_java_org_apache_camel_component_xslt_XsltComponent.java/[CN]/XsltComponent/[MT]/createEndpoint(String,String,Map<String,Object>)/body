@@ -10,20 +10,21 @@
     xslt.setConverter(converter);
   }
   String transformerFactoryClassName=getAndRemoveParameter(parameters,"transformerFactoryClass",String.class);
+  Boolean saxon=getAndRemoveParameter(parameters,"saxon",Boolean.class,isSaxon());
+  if (transformerFactoryClassName == null && saxon) {
+    transformerFactoryClassName=SAXON_TRANSFORMER_FACTORY_CLASS_NAME;
+  }
   TransformerFactory factory=null;
   if (transformerFactoryClassName != null) {
-    Class<?> factoryClass=getCamelContext().getClassResolver().resolveClass(transformerFactoryClassName,XsltComponent.class.getClassLoader());
-    if (factoryClass != null) {
-      factory=(TransformerFactory)getCamelContext().getInjector().newInstance(factoryClass);
-    }
- else {
-      LOG.warn("Cannot find the TransformerFactoryClass with the class name: {}",transformerFactoryClassName);
-    }
+    Class<?> factoryClass=getCamelContext().getClassResolver().resolveMandatoryClass(transformerFactoryClassName,XsltComponent.class.getClassLoader());
+    LOG.debug("Using TransformerFactoryClass {}",factoryClass);
+    factory=(TransformerFactory)getCamelContext().getInjector().newInstance(factoryClass);
   }
   if (parameters.get("transformerFactory") != null) {
     factory=resolveAndRemoveReferenceParameter(parameters,"transformerFactory",TransformerFactory.class);
   }
   if (factory != null) {
+    LOG.debug("Using TransformerFactory {}",factory);
     xslt.getConverter().setTransformerFactory(factory);
   }
   ResultHandlerFactory resultHandlerFactory=resolveAndRemoveReferenceParameter(parameters,"resultHandlerFactory",ResultHandlerFactory.class);
