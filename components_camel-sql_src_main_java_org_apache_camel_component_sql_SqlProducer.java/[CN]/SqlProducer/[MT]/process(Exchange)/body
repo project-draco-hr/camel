@@ -5,18 +5,20 @@
   jdbcTemplate.execute(preparedQuery,new PreparedStatementCallback<Map<?,?>>(){
     public Map<?,?> doInPreparedStatement(    PreparedStatement ps) throws SQLException {
       int expected=ps.getParameterMetaData().getParameterCount();
-      if (batch) {
-        Iterator<?> iterator=exchange.getIn().getBody(Iterator.class);
-        while (iterator != null && iterator.hasNext()) {
-          Object value=iterator.next();
-          Iterator<?> i=getEndpoint().getPrepareStatementStrategy().createPopulateIterator(sql,preparedQuery,expected,exchange,value);
-          getEndpoint().getPrepareStatementStrategy().populateStatement(ps,i,expected);
-          ps.addBatch();
+      if (alwaysPopulateStatement || expected > 0) {
+        if (batch) {
+          Iterator<?> iterator=exchange.getIn().getBody(Iterator.class);
+          while (iterator != null && iterator.hasNext()) {
+            Object value=iterator.next();
+            Iterator<?> i=getEndpoint().getPrepareStatementStrategy().createPopulateIterator(sql,preparedQuery,expected,exchange,value);
+            getEndpoint().getPrepareStatementStrategy().populateStatement(ps,i,expected);
+            ps.addBatch();
+          }
         }
-      }
  else {
-        Iterator<?> i=getEndpoint().getPrepareStatementStrategy().createPopulateIterator(sql,preparedQuery,expected,exchange,exchange.getIn().getBody());
-        getEndpoint().getPrepareStatementStrategy().populateStatement(ps,i,expected);
+          Iterator<?> i=getEndpoint().getPrepareStatementStrategy().createPopulateIterator(sql,preparedQuery,expected,exchange,exchange.getIn().getBody());
+          getEndpoint().getPrepareStatementStrategy().populateStatement(ps,i,expected);
+        }
       }
       if (batch) {
         int[] updateCounts=ps.executeBatch();
