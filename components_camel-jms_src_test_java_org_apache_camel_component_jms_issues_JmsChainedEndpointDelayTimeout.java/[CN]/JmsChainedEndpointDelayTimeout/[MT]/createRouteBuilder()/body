@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(ExchangeTimedOutException.class).handled(true).to("mock:exception");
+      from("activemq:test").inOut("activemq:ping?requestTimeout=500").delay(constant(1000));
+      from("activemq:testReplyFixedQueue").inOut("activemq:ping?requestTimeout=500&replyToType=Exclusive&replyTo=reply").delay(constant(1000));
+      from("activemq:ping").to("mock:ping").log("pong");
+    }
+  }
+;
+}
