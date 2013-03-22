@@ -24,10 +24,14 @@
       log.debug("Using custom TaskExecutor: {} on listener container: {}",configuration.getTaskExecutor(),listenerContainer);
     }
     setContainerTaskExecutor(listenerContainer,configuration.getTaskExecutor());
+    if (configuration.getTaskExecutor() instanceof ExecutorService) {
+      consumer.setListenerContainerExecutorService((ExecutorService)configuration.getTaskExecutor(),false);
+    }
   }
  else   if ((listenerContainer instanceof DefaultJmsMessageListenerContainer && configuration.getDefaultTaskExecutorType() == null) || !(listenerContainer instanceof DefaultJmsMessageListenerContainer)) {
     ExecutorService executor=getCamelContext().getExecutorServiceManager().newCachedThreadPool(consumer,consumerName);
     setContainerTaskExecutor(listenerContainer,executor);
+    consumer.setListenerContainerExecutorService(executor,true);
   }
  else {
     log.debug("Deferring creation of TaskExecutor for listener container: {} as per policy: {}",listenerContainer,configuration.getDefaultTaskExecutorType());
