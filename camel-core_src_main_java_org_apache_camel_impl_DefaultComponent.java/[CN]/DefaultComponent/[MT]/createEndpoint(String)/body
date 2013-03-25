@@ -11,16 +11,20 @@
     path=path.substring(0,idx);
   }
   Map<String,Object> parameters=URISupport.parseParameters(u);
+  URISupport.resolveRawParameterValues(parameters);
   uri=useRawUri() ? uri : encodedUri;
   validateURI(uri,path,parameters);
-  if (LOG.isDebugEnabled()) {
-    LOG.debug("Creating endpoint uri=[{}], path=[{}], parameters=[{}]",new Object[]{URISupport.sanitizeUri(uri),URISupport.sanitizePath(path),parameters});
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Creating endpoint uri=[{}], path=[{}], parameters=[{}]",new Object[]{URISupport.sanitizeUri(uri),URISupport.sanitizePath(path),parameters});
+  }
+ else   if (LOG.isDebugEnabled()) {
+    LOG.debug("Creating endpoint uri=[{}], path=[{}]",new Object[]{URISupport.sanitizeUri(uri),URISupport.sanitizePath(path)});
   }
   Endpoint endpoint=createEndpoint(uri,path,parameters);
   if (endpoint == null) {
     return null;
   }
-  if (parameters != null && !parameters.isEmpty()) {
+  if (!parameters.isEmpty()) {
     endpoint.configureProperties(parameters);
     if (useIntrospectionOnEndpoint()) {
       setProperties(endpoint,parameters);

@@ -7,37 +7,64 @@
   }
   try {
     Map<String,Object> rc=new LinkedHashMap<String,Object>();
-    if (uri != null) {
-      String[] parameters=uri.split("&");
-      for (      String parameter : parameters) {
-        int p=parameter.indexOf("=");
-        if (p >= 0) {
-          String name=URLDecoder.decode(parameter.substring(0,p),CHARSET);
-          String value=URLDecoder.decode(parameter.substring(p + 1).replaceAll("%","%25"),CHARSET);
-          if (rc.containsKey(name)) {
-            Object existing=rc.get(name);
-            List<String> list;
-            if (existing instanceof List) {
-              list=CastUtils.cast((List<?>)existing);
-            }
- else {
-              list=new ArrayList<String>();
-              String s=existing != null ? existing.toString() : null;
-              if (s != null) {
-                list.add(s);
-              }
-            }
-            list.add(value);
-            rc.put(name,list);
-          }
- else {
-            rc.put(name,value);
-          }
-        }
- else {
-          rc.put(parameter,null);
-        }
+    boolean isKey=true;
+    boolean isValue=false;
+    boolean isRaw=false;
+    StringBuilder key=new StringBuilder();
+    StringBuilder value=new StringBuilder();
+    for (int i=0; i < uri.length(); i++) {
+      char ch=uri.charAt(i);
+      char next;
+      if (i < uri.length() - 2) {
+        next=uri.charAt(i + 1);
       }
+ else {
+        next='\u0000';
+      }
+      isRaw=value.toString().startsWith(RAW_TOKEN_START);
+      if (isRaw) {
+        if (isKey) {
+          key.append(ch);
+        }
+ else         if (isValue) {
+          value.append(ch);
+        }
+        boolean end=ch == RAW_TOKEN_END.charAt(0) && (next == '&' || next == '\u0000');
+        if (end) {
+          addParameter(key.toString(),value.toString(),rc,isRaw);
+          key.setLength(0);
+          value.setLength(0);
+          isKey=true;
+          isValue=false;
+          isRaw=false;
+          i++;
+        }
+        continue;
+      }
+      if (isKey && ch == '=') {
+        isKey=false;
+        isValue=true;
+        isRaw=false;
+        continue;
+      }
+      if (ch == '&') {
+        addParameter(key.toString(),value.toString(),rc,isRaw);
+        key.setLength(0);
+        value.setLength(0);
+        isKey=true;
+        isValue=false;
+        isRaw=false;
+        continue;
+      }
+      if (isKey) {
+        key.append(ch);
+      }
+ else       if (isValue) {
+        value.append(ch);
+      }
+    }
+    if (key.length() > 0) {
+      addParameter(key.toString(),value.toString(),rc,isRaw);
     }
     return rc;
   }
