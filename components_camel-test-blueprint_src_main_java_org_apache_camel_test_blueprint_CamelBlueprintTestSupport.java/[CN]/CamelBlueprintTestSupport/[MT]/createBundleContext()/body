@@ -1,0 +1,43 @@
+{
+  String symbolicName=getClass().getSimpleName();
+  BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),true,getBundleFilter(),getBundleVersion(),getBundleDirectives());
+  Properties extra=useOverridePropertiesWithPropertiesComponent();
+  if (extra != null) {
+    answer.registerService(PropertiesComponent.OVERRIDE_PROPERTIES,extra,null);
+  }
+  Dictionary props=new Properties();
+  String[] file=loadConfigAdminConfigurationFile();
+  if (file != null && file.length != 2) {
+    throw new IllegalArgumentException("The returned String[] from loadConfigAdminConfigurationFile must be of length 2, was " + file.length);
+  }
+  if (file != null) {
+    String fileName=file[0];
+    String pid=file[1];
+    File load=new File(fileName);
+    log.debug("Loading properties from OSGi config admin file: {}",load);
+    org.apache.felix.utils.properties.Properties cfg=new org.apache.felix.utils.properties.Properties(load);
+    Iterator<String> it=cfg.keySet().iterator();
+    while (it.hasNext()) {
+      String key=it.next();
+      String value=(String)cfg.get(key);
+      props.put(key,value);
+    }
+    ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(answer,ConfigurationAdmin.class);
+    if (configAdmin != null) {
+      Configuration config=configAdmin.getConfiguration(pid);
+      log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
+      config.update(props);
+    }
+  }
+  String pid=useOverridePropertiesWithConfigAdmin(props);
+  if (pid != null) {
+    ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(answer,ConfigurationAdmin.class);
+    Configuration config=configAdmin.getConfiguration(pid);
+    if (config == null) {
+      throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
+    }
+    log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
+    config.update(props);
+  }
+  return answer;
+}

@@ -1,43 +1,14 @@
 {
   String symbolicName=getClass().getSimpleName();
-  this.bundleContext=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),true,getBundleFilter(),getBundleVersion(),getBundleDirectives());
-  Properties extra=useOverridePropertiesWithPropertiesComponent();
-  if (extra != null) {
-    bundleContext.registerService(PropertiesComponent.OVERRIDE_PROPERTIES,extra,null);
-  }
-  Dictionary props=new Properties();
-  String[] file=loadConfigAdminConfigurationFile();
-  if (file != null && file.length != 2) {
-    throw new IllegalArgumentException("The returned String[] from loadConfigAdminConfigurationFile must be of length 2, was " + file.length);
-  }
-  if (file != null) {
-    String fileName=file[0];
-    String pid=file[1];
-    File load=new File(fileName);
-    log.debug("Loading properties from OSGi config admin file: {}",load);
-    org.apache.felix.utils.properties.Properties cfg=new org.apache.felix.utils.properties.Properties(load);
-    Iterator<String> it=cfg.keySet().iterator();
-    while (it.hasNext()) {
-      String key=it.next();
-      String value=(String)cfg.get(key);
-      props.put(key,value);
+  if (isCreateCamelContextPerClass()) {
+    boolean first=threadLocalBundleContext.get() == null;
+    if (first) {
+      threadLocalBundleContext.set(createBundleContext());
     }
-    ConfigurationAdmin configAdmin=getOsgiService(ConfigurationAdmin.class);
-    if (configAdmin != null) {
-      Configuration config=configAdmin.getConfiguration(pid);
-      log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
-      config.update(props);
-    }
+    bundleContext=threadLocalBundleContext.get();
   }
-  String pid=useOverridePropertiesWithConfigAdmin(props);
-  if (pid != null) {
-    ConfigurationAdmin configAdmin=getOsgiService(ConfigurationAdmin.class);
-    Configuration config=configAdmin.getConfiguration(pid);
-    if (config == null) {
-      throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
-    }
-    log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
-    config.update(props);
+ else {
+    bundleContext=createBundleContext();
   }
   super.setUp();
   log.debug("Waiting for BlueprintContainer to be published with symbolicName: {}",symbolicName);
