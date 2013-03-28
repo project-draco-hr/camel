@@ -14,9 +14,16 @@
     logger=new ThroughputLogger(camelLogger,this.getCamelContext(),groupInterval,groupDelay,groupActiveOnly);
   }
  else {
-    LogFormatter formatter=new LogFormatter();
-    setProperties(formatter,parameters);
-    logger=new CamelLogProcessor(camelLogger,formatter);
+    ExchangeFormatter localFormatter=exchangeFormatter;
+    if (localFormatter == null) {
+      localFormatter=getCamelContext().getRegistry().lookupByNameAndType("logFormatter",ExchangeFormatter.class);
+      exchangeFormatter=localFormatter;
+    }
+    if (localFormatter == null) {
+      localFormatter=new LogFormatter();
+      setProperties(localFormatter,parameters);
+    }
+    logger=new CamelLogProcessor(camelLogger,localFormatter);
   }
   LogEndpoint endpoint=new LogEndpoint(uri,this);
   setProperties(endpoint,parameters);
