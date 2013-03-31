@@ -1,0 +1,19 @@
+{
+  Message m=camelExchange.hasOut() ? camelExchange.getOut() : camelExchange.getIn();
+  ResponseBuilder response;
+  if (base instanceof Response) {
+    response=Response.fromResponse((Response)base);
+  }
+ else {
+    int status=m.getHeader(org.apache.camel.Exchange.HTTP_RESPONSE_CODE,Status.OK.getStatusCode(),Integer.class);
+    response=Response.status(status);
+    if (base != null && !(base instanceof MessageContentsList)) {
+      response.entity(base);
+    }
+  }
+  Map<String,String> headersToPropagate=filterCamelHeadersForResponseHeaders(m.getHeaders(),camelExchange);
+  for (  Entry<String,String> entry : headersToPropagate.entrySet()) {
+    response.header(entry.getKey(),entry.getValue());
+  }
+  return response.build();
+}

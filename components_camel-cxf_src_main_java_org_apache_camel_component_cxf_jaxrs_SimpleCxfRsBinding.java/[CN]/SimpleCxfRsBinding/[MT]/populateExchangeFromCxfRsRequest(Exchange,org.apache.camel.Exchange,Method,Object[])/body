@@ -1,0 +1,15 @@
+{
+  super.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
+  Message in=camelExchange.getIn();
+  bindHeadersFromSubresourceLocators(cxfExchange,camelExchange);
+  MethodSpec spec=methodSpecCache.get(method);
+  if (spec == null) {
+    spec=MethodSpec.fromMethod(method);
+    methodSpecCache.put(method,spec);
+  }
+  bindParameters(in,paramArray,spec.paramNames,spec.numberParameters);
+  bindBody(in,paramArray,spec.entityIndex);
+  if (spec.multipart) {
+    transferMultipartParameters(paramArray,spec.multipartNames,spec.multipartTypes,in);
+  }
+}

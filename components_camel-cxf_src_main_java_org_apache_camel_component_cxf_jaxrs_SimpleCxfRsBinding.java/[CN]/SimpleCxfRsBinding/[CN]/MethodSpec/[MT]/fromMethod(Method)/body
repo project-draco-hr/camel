@@ -1,0 +1,35 @@
+{
+  MethodSpec answer=new MethodSpec();
+  Annotation[][] annotations=method.getParameterAnnotations();
+  int paramCount=method.getParameterTypes().length;
+  answer.paramNames=new String[paramCount];
+  answer.multipartNames=new String[paramCount];
+  answer.multipartTypes=new String[paramCount];
+  for (int i=0; i < paramCount; i++) {
+    for (    Annotation a : annotations[i]) {
+      if (HEADER_ANNOTATIONS.contains(a.annotationType())) {
+        try {
+          answer.paramNames[i]=(String)a.annotationType().getMethod("value",NO_PARAMETER_TYPES).invoke(a,NO_PARAMETERS);
+          answer.numberParameters++;
+        }
+ catch (        Exception e) {
+        }
+      }
+      if (Multipart.class.equals(a.annotationType())) {
+        Multipart multipart=(Multipart)a;
+        answer.multipart=true;
+        answer.multipartNames[i]=multipart.value();
+        answer.multipartTypes[i]=multipart.type();
+      }
+    }
+  }
+  if (!answer.multipart && answer.numberParameters < method.getParameterTypes().length) {
+    for (int i=0; i < answer.paramNames.length; i++) {
+      if (answer.paramNames[i] == null) {
+        answer.entityIndex=i;
+        break;
+      }
+    }
+  }
+  return answer;
+}

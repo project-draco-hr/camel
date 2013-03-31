@@ -1,0 +1,122 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(CXF_RS_ENDPOINT_URI).recipientList(simple("direct:${header.operationName}"));
+      from("direct:getCustomer").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertNotNull(exchange.getIn().getHeader("id"));
+          long id=exchange.getIn().getHeader("id",Long.class);
+          if (id == 123) {
+            assertEquals("123",exchange.getIn().getHeader("id"));
+            assertEquals(MessageContentsList.class,exchange.getIn().getBody().getClass());
+            exchange.getOut().setBody(new Customer(123,"Raul"));
+            exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,200);
+          }
+ else           if (id == 456) {
+            exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE,404);
+          }
+ else {
+            fail();
+          }
+        }
+      }
+);
+      from("direct:updateCustomer").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("123",exchange.getIn().getHeader("id"));
+          Customer c=exchange.getIn().getBody(Customer.class);
+          assertEquals(123,c.getId());
+          assertNotNull(c);
+        }
+      }
+);
+      from("direct:newCustomer").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Customer c=exchange.getIn().getBody(Customer.class);
+          assertNotNull(c);
+          assertEquals(123,c.getId());
+        }
+      }
+);
+      from("direct:listVipCustomers").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("gold",exchange.getIn().getHeader("status",String.class));
+          assertEquals(MessageContentsList.class,exchange.getIn().getBody().getClass());
+          assertEquals(0,exchange.getIn().getBody(MessageContentsList.class).size());
+          CustomerList response=new CustomerList();
+          List<Customer> list=new ArrayList<Customer>(2);
+          list.add(new Customer(123,"Raul"));
+          list.add(new Customer(456,"Raul2"));
+          response.setCustomers(list);
+          exchange.getOut().setBody(response);
+        }
+      }
+);
+      from("direct:updateVipCustomer").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("gold",exchange.getIn().getHeader("status",String.class));
+          assertEquals("123",exchange.getIn().getHeader("id"));
+          Customer c=exchange.getIn().getBody(Customer.class);
+          assertEquals(123,c.getId());
+          assertNotNull(c);
+        }
+      }
+);
+      from("direct:deleteVipCustomer").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("gold",exchange.getIn().getHeader("status",String.class));
+          assertEquals("123",exchange.getIn().getHeader("id"));
+        }
+      }
+);
+      from("direct:uploadImageInputStream").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("123",exchange.getIn().getHeader("id"));
+          assertEquals("image/jpeg",exchange.getIn().getHeader("Content-Type"));
+          assertTrue(InputStream.class.isAssignableFrom(exchange.getIn().getBody().getClass()));
+          InputStream is=exchange.getIn().getBody(InputStream.class);
+          is.close();
+          exchange.getOut().setBody(null);
+        }
+      }
+);
+      from("direct:uploadImageDataHandler").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("123",exchange.getIn().getHeader("id"));
+          assertEquals("image/jpeg",exchange.getIn().getHeader("Content-Type"));
+          assertTrue(DataHandler.class.isAssignableFrom(exchange.getIn().getBody().getClass()));
+          DataHandler dh=exchange.getIn().getBody(DataHandler.class);
+          assertEquals("image/jpeg",dh.getContentType());
+          dh.getInputStream().close();
+          exchange.getOut().setBody(null);
+        }
+      }
+);
+      from("direct:multipartPostWithParametersAndPayload").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertEquals("abcd",exchange.getIn().getHeader("query"));
+          assertEquals("123",exchange.getIn().getHeader("id"));
+          assertNotNull(exchange.getIn().getAttachment("part1"));
+          assertNotNull(exchange.getIn().getAttachment("part2"));
+          assertNull(exchange.getIn().getHeader("part1"));
+          assertNull(exchange.getIn().getHeader("part2"));
+          assertEquals(Customer.class,exchange.getIn().getHeader("body").getClass());
+          exchange.getOut().setBody(null);
+        }
+      }
+);
+      from("direct:multipartPostWithoutParameters").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertNotNull(exchange.getIn().getAttachment("part1"));
+          assertNotNull(exchange.getIn().getAttachment("part2"));
+          assertNull(exchange.getIn().getHeader("part1"));
+          assertNull(exchange.getIn().getHeader("part2"));
+          assertEquals(Customer.class,exchange.getIn().getHeader("body").getClass());
+          exchange.getOut().setBody(null);
+        }
+      }
+);
+    }
+  }
+;
+}
