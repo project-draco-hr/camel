@@ -1,0 +1,14 @@
+{
+  String xml=new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>").append("<person xmlns=\"person.jaxb.converter.camel.apache.org\" />").toString();
+  try {
+    template.sendBody("direct:unmarshall",xml);
+    fail("CamelExecutionException expected");
+  }
+ catch (  CamelExecutionException e) {
+    Throwable cause=e.getCause();
+    assertIsInstanceOf(IOException.class,cause);
+    assertTrue(cause.getMessage().contains("javax.xml.bind.UnmarshalException"));
+    assertTrue(cause.getMessage().contains("org.xml.sax.SAXParseException"));
+    assertTrue(cause.getMessage().contains("The content of element 'person' is not complete"));
+  }
+}
