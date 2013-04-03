@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:start").inOut("activemq:responseGenerator?transferExchange=true").to("mock:result");
+      from("activemq:responseGenerator?transferExchange=true").to("mock:transfer").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getIn().setBody(new SerializableResponseDto(true));
+          exchange.getIn().setHeader("responseHeader",new SerializableResponseDto(true));
+          exchange.setProperty("responseObjectProperty",new SerializableResponseDto(true));
+        }
+      }
+);
+    }
+  }
+;
+}
