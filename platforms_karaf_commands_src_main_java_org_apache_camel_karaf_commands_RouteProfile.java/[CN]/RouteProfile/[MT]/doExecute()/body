@@ -1,0 +1,40 @@
+{
+  Route camelRoute=camelController.getRoute(route,context);
+  if (camelRoute == null) {
+    System.err.println("Camel route " + route + " not found.");
+    return null;
+  }
+  JAXBContext context=JAXBContext.newInstance(RouteStatDump.class);
+  Unmarshaller unmarshaller=context.createUnmarshaller();
+  System.out.println(StringEscapeUtils.unescapeJava("\u001B[1m\u001B[33mCamel Route " + camelRoute.getId() + "\u001B[0m"));
+  System.out.println(StringEscapeUtils.unescapeJava("\tCamel Context: " + camelRoute.getRouteContext().getCamelContext().getName()));
+  System.out.println("");
+  System.out.println(StringEscapeUtils.unescapeJava("\u001B[1mProfile\u001B[0m"));
+  CamelContext camelContext=camelRoute.getRouteContext().getCamelContext();
+  if (camelContext != null) {
+    ManagementAgent agent=camelContext.getManagementStrategy().getManagementAgent();
+    if (agent != null) {
+      MBeanServer mBeanServer=agent.getMBeanServer();
+      Set<ObjectName> set=mBeanServer.queryNames(new ObjectName(DefaultManagementAgent.DEFAULT_DOMAIN + ":type=routes,name=\"" + route+ "\",*"),null);
+      Iterator<ObjectName> iterator=set.iterator();
+      if (iterator.hasNext()) {
+        ObjectName routeMBean=iterator.next();
+        String xml=(String)mBeanServer.invoke(routeMBean,"dumpRouteStatsAsXml",new Object[]{Boolean.FALSE,Boolean.TRUE},new String[]{"boolean","boolean"});
+        RouteStatDump route=(RouteStatDump)unmarshaller.unmarshal(new StringReader(xml));
+        System.out.println(String.format(HEADER_FORMAT,"Id","Completed","Failed","Last (ms)","Mean (ms)","Min (ms)","Max (ms)","Self (ms)"));
+        System.out.println(String.format(OUTPUT_FORMAT,route.getId(),route.getExchangesCompleted(),route.getExchangesFailed(),route.getLastProcessingTime(),route.getMeanProcessingTime(),route.getMinProcessingTime(),route.getMaxProcessingTime(),route.getTotalProcessingTime(),0));
+        for (int i=route.getProcessorStats().size() - 1; i >= 0; i--) {
+          ProcessorStatDump ps=route.getProcessorStats().get(i);
+          long selfTime=ps.getTotalProcessingTime();
+          System.out.println(String.format(OUTPUT_FORMAT,"  " + ps.getId(),ps.getExchangesCompleted(),ps.getExchangesFailed(),ps.getLastProcessingTime(),ps.getMeanProcessingTime(),ps.getMinProcessingTime(),ps.getMaxProcessingTime(),selfTime));
+        }
+      }
+    }
+ else {
+      System.out.println("");
+      System.out.println(StringEscapeUtils.unescapeJava("\u001B[31mJMX Agent of Camel is not reachable. Maybe it has been disabled on the Camel context"));
+      System.out.println(StringEscapeUtils.unescapeJava("In consequence, profile are not available.\u001B[0m"));
+    }
+  }
+  return null;
+}
