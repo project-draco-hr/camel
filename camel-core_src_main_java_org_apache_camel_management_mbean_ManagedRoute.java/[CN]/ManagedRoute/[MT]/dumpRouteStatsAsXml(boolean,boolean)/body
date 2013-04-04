@@ -9,10 +9,15 @@
     if (server != null) {
       ObjectName query=ObjectName.getInstance("org.apache.camel:context=*/" + getContext().getManagementName() + ",type=processors,*");
       Set<ObjectName> names=server.queryNames(query,null);
+      List<ManagedProcessorMBean> mps=new ArrayList<ManagedProcessorMBean>();
       for (      ObjectName on : names) {
         ManagedProcessorMBean processor=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedProcessorMBean.class,true);
+        mps.add(processor);
+      }
+      Collections.sort(mps,new OrderProcessorMBeans());
+      for (      ManagedProcessorMBean processor : mps) {
         if (getRouteId().equals(processor.getRouteId())) {
-          sb.append("    <processorStat").append(String.format(" id=\"%s\"",processor.getProcessorId()));
+          sb.append("    <processorStat").append(String.format(" id=\"%s\" index=\"%s\"",processor.getProcessorId(),processor.getIndex()));
           sb.append(" ").append(processor.dumpStatsAsXml(fullStats).substring(7)).append("\n");
         }
       }
