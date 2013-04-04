@@ -1,0 +1,28 @@
+{
+  String id=camelRoute.getId();
+  ManagementAgent agent=camelContext.getManagementStrategy().getManagementAgent();
+  if (agent != null) {
+    MBeanServer mBeanServer=agent.getMBeanServer();
+    ObjectName query=ObjectName.getInstance(DefaultManagementAgent.DEFAULT_DOMAIN + ":type=routes,*");
+    Set<ObjectName> set=mBeanServer.queryNames(query,null);
+    Iterator<ObjectName> iterator=set.iterator();
+    while (iterator.hasNext()) {
+      ObjectName routeMBean=iterator.next();
+      String camelId=(String)mBeanServer.getAttribute(routeMBean,"CamelId");
+      if (camelId != null && camelId.equals(camelContext.getName())) {
+        mBeanServer.invoke(routeMBean,"reset",null,null);
+      }
+    }
+    query=ObjectName.getInstance(DefaultManagementAgent.DEFAULT_DOMAIN + ":type=processors,*");
+    set=mBeanServer.queryNames(query,null);
+    iterator=set.iterator();
+    while (iterator.hasNext()) {
+      ObjectName processorMBean=iterator.next();
+      String camelId=(String)mBeanServer.getAttribute(processorMBean,"CamelId");
+      String routeId=(String)mBeanServer.getAttribute(processorMBean,"RouteId");
+      if (camelId != null && camelId.equals(camelContext.getName()) && routeId != null && routeId.equals(id)) {
+        mBeanServer.invoke(processorMBean,"reset",null,null);
+      }
+    }
+  }
+}
