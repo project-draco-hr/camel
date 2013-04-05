@@ -3,6 +3,8 @@
   Object key=getKey(exchange);
   LOG.trace("Processing {} operation on '[{}]'",operation,exchange);
   if (KratiConstants.KRATI_OPERATION_GET.equals(operation) && key != null) {
+    exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+    exchange.getOut().setAttachments(exchange.getIn().getAttachments());
     exchange.getOut().setBody(dataStore.get(key));
   }
  else   if (KratiConstants.KRATI_OPERATION_DELETE.equals(operation) && key != null) {
@@ -12,15 +14,21 @@ synchronized (dataStore) {
       dataStore.persist();
     }
     if (status) {
+      exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+      exchange.getOut().setAttachments(exchange.getIn().getAttachments());
       exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_SUCESSFUL);
     }
  else {
+      exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+      exchange.getOut().setAttachments(exchange.getIn().getAttachments());
       exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_FAILURE);
     }
   }
  else   if (KratiConstants.KRATI_OPERATION_DELETEALL.equals(operation)) {
     try {
       dataStore.clear();
+      exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+      exchange.getOut().setAttachments(exchange.getIn().getAttachments());
       exchange.getOut().setHeader(KratiConstants.KRATI_OPERATION_STATUS,KratiConstants.KRATI_OPERATION_SUCESSFUL);
     }
  catch (    Exception e) {
