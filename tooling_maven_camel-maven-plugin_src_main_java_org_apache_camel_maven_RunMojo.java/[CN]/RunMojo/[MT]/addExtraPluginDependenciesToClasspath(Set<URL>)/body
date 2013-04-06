@@ -1,0 +1,26 @@
+{
+  if (extraPluginDependencyArtifactId == null) {
+    return;
+  }
+  try {
+    Set<Artifact> artifacts=new HashSet<Artifact>(this.pluginDependencies);
+    for (    Artifact artifact : artifacts) {
+      if (artifact.getArtifactId().equals(extraPluginDependencyArtifactId)) {
+        getLog().debug("Adding extra plugin dependency artifact: " + artifact.getArtifactId() + " to classpath");
+        path.add(artifact.getFile().toURI().toURL());
+        Set<Artifact> deps=resolveExecutableDependencies(artifact);
+        for (        Artifact dep : deps) {
+          if (dep.getArtifactId().equals("org.apache.aries.blueprint.core")) {
+            getLog().debug("Skipping org.apache.aries.blueprint.core -> " + dep.getGroupId() + "/"+ dep.getArtifactId()+ "/"+ dep.getVersion());
+            continue;
+          }
+          getLog().debug("Adding extra plugin dependency artifact: " + dep.getArtifactId() + " to classpath");
+          path.add(dep.getFile().toURI().toURL());
+        }
+      }
+    }
+  }
+ catch (  MalformedURLException e) {
+    throw new MojoExecutionException("Error during setting up classpath",e);
+  }
+}
