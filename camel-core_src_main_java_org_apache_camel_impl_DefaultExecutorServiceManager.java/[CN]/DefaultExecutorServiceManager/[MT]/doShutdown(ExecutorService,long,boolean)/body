@@ -31,8 +31,14 @@
       LOG.debug("Shutdown of ExecutorService: {} is shutdown: {} and terminated: {} took: {}.",new Object[]{executorService,executorService.isShutdown(),executorService.isTerminated(),TimeUtils.printDuration(watch.taken())});
     }
   }
+  ThreadPoolExecutor threadPool=null;
   if (executorService instanceof ThreadPoolExecutor) {
-    ThreadPoolExecutor threadPool=(ThreadPoolExecutor)executorService;
+    threadPool=(ThreadPoolExecutor)executorService;
+  }
+ else   if (executorService instanceof SizedScheduledExecutorService) {
+    threadPool=((SizedScheduledExecutorService)executorService).getScheduledThreadPoolExecutor();
+  }
+  if (threadPool != null) {
     for (    LifecycleStrategy lifecycle : camelContext.getLifecycleStrategies()) {
       lifecycle.onThreadPoolRemove(camelContext,threadPool);
     }
