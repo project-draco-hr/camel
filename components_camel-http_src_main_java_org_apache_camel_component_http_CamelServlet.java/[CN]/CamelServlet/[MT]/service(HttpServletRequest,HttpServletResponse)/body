@@ -31,6 +31,10 @@
   exchange.setIn(new HttpMessage(exchange,request,response));
   String contextPath=consumer.getEndpoint().getPath();
   exchange.getIn().setHeader("CamelServletContextPath",contextPath);
+  String httpPath=(String)exchange.getIn().getHeader(Exchange.HTTP_PATH);
+  if (contextPath != null && httpPath.startsWith(contextPath)) {
+    exchange.getIn().setHeader(Exchange.HTTP_PATH,httpPath.substring(contextPath.length()));
+  }
   try {
     log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
     consumer.getProcessor().process(exchange);
