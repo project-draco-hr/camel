@@ -1,5 +1,5 @@
 {
-  Exchange copy=prepareExchange(exchange);
+  final Exchange copy=prepareExchange(exchange);
   ClassLoader current=Thread.currentThread().getContextClassLoader();
   boolean changed=false;
   try {
@@ -9,10 +9,19 @@
       Thread.currentThread().setContextClassLoader(appClassLoader);
       changed=true;
     }
-    getProcessor().process(copy);
+    return getProcessor().process(copy,new AsyncCallback(){
+      @Override public void done(      boolean done){
+        try {
+          ExchangeHelper.copyResults(exchange,copy);
+        }
+  finally {
+          callback.done(done);
+        }
+      }
+    }
+);
   }
   finally {
-    ExchangeHelper.copyResults(exchange,copy);
     if (changed) {
       LOG.trace("Restoring Thread ContextClassLoader to {}",current);
       Thread.currentThread().setContextClassLoader(current);
