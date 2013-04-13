@@ -23,6 +23,7 @@
     try {
       try {
         if (value == null || parameterType.isAssignableFrom(ref.getClass())) {
+          setter.setAccessible(true);
           setter.invoke(target,ref);
           if (LOG.isDebugEnabled()) {
             LOG.debug("Configured property: {} on bean: {} with value: {}",new Object[]{name,target,ref});
@@ -31,6 +32,7 @@
         }
  else {
           Object convertedValue=convert(typeConverter,parameterType,ref);
+          setter.setAccessible(true);
           setter.invoke(target,convertedValue);
           if (LOG.isDebugEnabled()) {
             LOG.debug("Configured property: {} on bean: {} with value: {}",new Object[]{name,target,ref});
@@ -50,7 +52,10 @@
         }
       }
     }
- catch (    NoTypeConversionAvailableException e) {
+ catch (    SecurityException e) {
+      typeConversionFailed=e;
+    }
+catch (    NoTypeConversionAvailableException e) {
       typeConversionFailed=e;
     }
 catch (    IllegalArgumentException e) {
