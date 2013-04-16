@@ -1,7 +1,7 @@
 {
   int total=exchanges.size();
   for (int index=0; index < total && isBatchAllowed(); index++) {
-    Exchange exchange=ObjectHelper.cast(Exchange.class,exchanges.poll());
+    final Exchange exchange=ObjectHelper.cast(Exchange.class,exchanges.poll());
     exchange.setProperty(Exchange.BATCH_INDEX,index);
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
@@ -19,7 +19,12 @@
     }
 );
     LOG.trace("Processing exchange [{}]...",exchange);
-    getProcessor().process(exchange);
+    getAsyncProcessor().process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        LOG.trace("Processing exchange [{}] done.",exchange);
+      }
+    }
+);
   }
   return total;
 }

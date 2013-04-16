@@ -1,7 +1,7 @@
 {
   int total=exchanges.size();
   for (int index=0; index < total && isBatchAllowed(); index++) {
-    Exchange exchange=ObjectHelper.cast(Exchange.class,exchanges.poll());
+    final Exchange exchange=ObjectHelper.cast(Exchange.class,exchanges.poll());
     exchange.setProperty(Exchange.BATCH_INDEX,index);
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
@@ -10,10 +10,10 @@
     if (this.scheduledExecutor != null && visibilityTimeout != null && (visibilityTimeout.intValue() / 2) > 0) {
       int delay=visibilityTimeout.intValue() / 2;
       int period=visibilityTimeout.intValue();
-      LOG.debug("Scheduled TimeoutExtender task to start after {} delay, and run with {} period (seconds) to extend exchangeId: {}",new Object[]{delay,period,exchange.getExchangeId()});
       int repeatSeconds=new Double(visibilityTimeout.doubleValue() * 1.5).intValue();
-      LOG.debug("period :" + period);
-      LOG.debug("repeatSeconds :" + repeatSeconds);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Scheduled TimeoutExtender task to start after {} delay, and run with {}/{} period/repeat (seconds), to extend exchangeId: {}",new Object[]{delay,period,repeatSeconds,exchange.getExchangeId()});
+      }
       final ScheduledFuture<?> scheduledFuture=this.scheduledExecutor.scheduleAtFixedRate(new TimeoutExtender(exchange,repeatSeconds),delay,period,TimeUnit.SECONDS);
       exchange.addOnCompletion(new Synchronization(){
         @Override public void onComplete(        Exchange exchange){
@@ -42,12 +42,12 @@
     }
 );
     LOG.trace("Processing exchange [{}]...",exchange);
-    try {
-      getProcessor().process(exchange);
+    getAsyncProcessor().process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        LOG.trace("Processing exchange [{}] done.",exchange);
+      }
     }
-  finally {
-      LOG.trace("Processing exchange [{}] done.",exchange);
-    }
+);
   }
   return total;
 }
