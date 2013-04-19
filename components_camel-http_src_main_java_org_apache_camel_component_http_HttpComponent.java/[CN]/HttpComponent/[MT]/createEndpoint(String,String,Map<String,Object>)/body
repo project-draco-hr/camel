@@ -16,10 +16,19 @@
   HttpClientParams clientParams=new HttpClientParams();
   IntrospectionSupport.setProperties(clientParams,parameters,"httpClient.");
   validateParameters(uri,parameters,"httpClient.");
+  HttpConnectionManagerParams connectionManagerParams=new HttpConnectionManagerParams();
+  IntrospectionSupport.setProperties(connectionManagerParams,parameters,"httpConnectionManager.");
+  validateParameters(uri,parameters,"httpConnectionManager.");
+  HttpConnectionManager thisHttpConnectionManager=httpConnectionManager;
+  if (thisHttpConnectionManager == null) {
+    thisHttpConnectionManager=new MultiThreadedHttpConnectionManager();
+    thisHttpConnectionManager.setParams(connectionManagerParams);
+  }
   final Set<AuthMethod> authMethods=new LinkedHashSet<AuthMethod>();
   HttpClientConfigurer configurer=createHttpClientConfigurer(parameters,authMethods);
   URI endpointUri=URISupport.createRemainingURI(new URI(addressUri),httpClientParameters);
-  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,clientParams,httpConnectionManager,configurer);
+  HttpEndpoint endpoint=new HttpEndpoint(endpointUri.toString(),this,clientParams,thisHttpConnectionManager,configurer);
+  endpoint.getHttpConnectionManager().setParams(connectionManagerParams);
   if (headerFilterStrategy != null) {
     endpoint.setHeaderFilterStrategy(headerFilterStrategy);
   }
