@@ -1,0 +1,33 @@
+{
+  ReflectionHelper.doWithFields(aClass,new ReflectionHelper.FieldCallback(){
+    @Override public void doWith(    Field field) throws IllegalArgumentException, IllegalAccessException {
+      UriParam uriParam=field.getAnnotation(UriParam.class);
+      if (uriParam != null) {
+        String name=uriParam.name();
+        if (ObjectHelper.isEmpty(name)) {
+          name=field.getName();
+        }
+        String propertyName=prefix + name;
+        Class<?> fieldType=field.getType();
+        UriParams uriParams=fieldType.getAnnotation(UriParams.class);
+        if (uriParams != null) {
+          String nestedPrefix=uriParams.prefix();
+          if (nestedPrefix == null) {
+            nestedPrefix="";
+          }
+          nestedPrefix=(prefix + nestedPrefix).trim();
+          populateParameterConfigurationMap(parameterMap,fieldType,nestedPrefix);
+        }
+ else {
+          if (parameterMap.containsKey(propertyName)) {
+            LOG.warn("Duplicate property name " + propertyName + " defined on field "+ field);
+          }
+ else {
+            parameterMap.put(propertyName,ParameterConfiguration.newInstance(propertyName,field,uriParam));
+          }
+        }
+      }
+    }
+  }
+);
+}
