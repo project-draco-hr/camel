@@ -1,0 +1,82 @@
+{
+  Elements elementUtils=processingEnv.getElementUtils();
+  while (true) {
+    List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
+    if (fieldElements.isEmpty()) {
+      break;
+    }
+    for (    VariableElement fieldElement : fieldElements) {
+      UriParam param=fieldElement.getAnnotation(UriParam.class);
+      String fieldName=fieldElement.getSimpleName().toString();
+      if (param != null) {
+        String name=param.name();
+        if (Strings.isNullOrEmpty(name)) {
+          name=fieldName;
+        }
+        name=prefix + name;
+        TypeMirror fieldType=fieldElement.asType();
+        String fieldTypeName=fieldType.toString();
+        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
+        UriParams fieldParams=null;
+        if (fieldTypeElement != null) {
+          fieldParams=fieldTypeElement.getAnnotation(UriParams.class);
+        }
+        if (fieldParams != null) {
+          String nestedPrefix=prefix;
+          String extraPrefix=fieldParams.prefix();
+          if (!Strings.isNullOrEmpty(extraPrefix)) {
+            nestedPrefix+=extraPrefix;
+          }
+          findClassProperties(roundEnv,sortedMap,fieldTypeElement,nestedPrefix);
+        }
+ else {
+          String docComment=elementUtils.getDocComment(fieldElement);
+          if (Strings.isNullOrEmpty(docComment)) {
+            String setter="set" + fieldName.substring(0,1).toUpperCase();
+            if (fieldName.length() > 1) {
+              setter+=fieldName.substring(1);
+            }
+            List<ExecutableElement> methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
+            for (            ExecutableElement method : methods) {
+              String methodName=method.getSimpleName().toString();
+              if (setter.equals(methodName) && method.getParameters().size() == 1) {
+                String doc=elementUtils.getDocComment(method);
+                if (!Strings.isNullOrEmpty(doc)) {
+                  docComment=doc;
+                  break;
+                }
+              }
+            }
+          }
+          if (docComment == null) {
+            docComment="";
+          }
+          List<String> values=new ArrayList<String>();
+          values.add("    <td>" + fieldTypeName + "</td>");
+          values.add("    <td>" + docComment.trim() + "</td>");
+          Object defaultValue=null;
+          if (defaultValue != null) {
+            values.add("    <td>" + defaultValue + "</td>");
+          }
+          if (sortedMap.containsKey(name)) {
+            error("Duplicate parameter annotation named '" + name + "' on class "+ classElement.getQualifiedName());
+          }
+ else {
+            sortedMap.put(name,values);
+          }
+        }
+      }
+    }
+    TypeElement baseTypeElement=null;
+    TypeMirror superclass=classElement.getSuperclass();
+    if (superclass != null) {
+      baseTypeElement=findTypeElement(roundEnv,superclass.toString());
+    }
+    if (baseTypeElement != null) {
+      classElement=baseTypeElement;
+    }
+ else {
+      break;
+    }
+  }
+}

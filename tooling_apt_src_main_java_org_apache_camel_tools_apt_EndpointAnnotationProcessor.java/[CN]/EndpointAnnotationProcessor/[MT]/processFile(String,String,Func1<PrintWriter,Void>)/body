@@ -1,0 +1,44 @@
+{
+  PrintWriter writer=null;
+  try {
+    Writer out=null;
+    Filer filer=processingEnv.getFiler();
+    FileObject resource;
+    try {
+      resource=filer.getResource(StandardLocation.CLASS_OUTPUT,packageName,fileName);
+    }
+ catch (    Throwable e) {
+      resource=filer.createResource(StandardLocation.CLASS_OUTPUT,packageName,fileName,new Element[0]);
+    }
+    URI uri=resource.toUri();
+    File file=null;
+    if (uri != null) {
+      try {
+        file=new File(uri);
+      }
+ catch (      Exception e) {
+        warning("Could not convert output directory resource URI to a file " + e);
+      }
+    }
+    if (file == null) {
+      warning("No class output directory could be found!");
+    }
+ else {
+      file.getParentFile().mkdirs();
+      out=new FileWriter(file);
+      if (out == null) {
+        out=resource.openWriter();
+      }
+      writer=new PrintWriter(out);
+      handler.call(writer);
+    }
+  }
+ catch (  IOException e) {
+    log(e);
+  }
+ finally {
+    if (writer != null) {
+      writer.close();
+    }
+  }
+}
