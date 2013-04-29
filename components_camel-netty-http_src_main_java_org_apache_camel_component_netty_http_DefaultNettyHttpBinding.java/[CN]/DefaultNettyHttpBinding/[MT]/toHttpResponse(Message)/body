@@ -1,0 +1,13 @@
+{
+  Integer code=msg.getHeader(Exchange.HTTP_RESPONSE_CODE,200,Integer.class);
+  HttpResponse response=new DefaultHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.valueOf(code));
+  byte[] data=msg.getBody(byte[].class);
+  if (data != null) {
+    response.setContent(ChannelBuffers.copiedBuffer(data));
+    response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,response.getContent().readableBytes());
+  }
+  String contentType=msg.getHeader(Exchange.CONTENT_TYPE,"text/plain; charset=UTF-8",String.class);
+  response.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+  response.setHeader(HttpHeaders.Names.CONNECTION,HttpHeaders.Values.CLOSE);
+  return response;
+}

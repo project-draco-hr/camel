@@ -1,0 +1,14 @@
+{
+  ChannelPipeline pipeline=Channels.pipeline();
+  if (sslContext != null) {
+    SSLEngine engine=sslContext.createSSLEngine();
+    engine.setUseClientMode(false);
+    engine.setNeedClientAuth(consumer.getConfiguration().isNeedClientAuth());
+    pipeline.addLast("ssl",new SslHandler(engine));
+  }
+  pipeline.addLast("decoder",new HttpRequestDecoder());
+  pipeline.addLast("aggregator",new HttpChunkAggregator(1048576));
+  pipeline.addLast("encoder",new HttpResponseEncoder());
+  pipeline.addLast("handler",new HttpServerChannelHandler(consumer));
+  return pipeline;
+}
