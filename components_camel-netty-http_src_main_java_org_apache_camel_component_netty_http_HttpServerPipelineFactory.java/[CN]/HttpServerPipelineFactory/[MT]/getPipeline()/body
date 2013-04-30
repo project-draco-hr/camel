@@ -7,8 +7,13 @@
     pipeline.addLast("ssl",new SslHandler(engine));
   }
   pipeline.addLast("decoder",new HttpRequestDecoder());
-  pipeline.addLast("aggregator",new HttpChunkAggregator(1048576));
+  if (supportChunked()) {
+    pipeline.addLast("aggregator",new HttpChunkAggregator(1048576));
+  }
   pipeline.addLast("encoder",new HttpResponseEncoder());
+  if (supportCompressed()) {
+    pipeline.addLast("deflater",new HttpContentCompressor());
+  }
   pipeline.addLast("handler",new HttpServerChannelHandler(consumer));
   return pipeline;
 }
