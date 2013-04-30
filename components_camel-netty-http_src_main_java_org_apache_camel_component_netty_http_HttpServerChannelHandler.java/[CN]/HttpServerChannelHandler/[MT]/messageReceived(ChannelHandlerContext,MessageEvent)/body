@@ -1,13 +1,28 @@
 {
   request=(HttpRequest)messageEvent.getMessage();
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Message received: keep-alive {}",isKeepAlive(request));
+    LOG.debug("Message received: {} keep-alive: {}",request,isKeepAlive(request));
   }
   if (is100ContinueExpected(request)) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,CONTINUE);
     messageEvent.getChannel().write(response);
+    return;
   }
- else {
-    super.messageReceived(ctx,messageEvent);
+  if (consumer.isSuspended()) {
+    LOG.debug("Consumer suspended, cannot service request {}",request);
+    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,SERVICE_UNAVAILABLE);
+    messageEvent.getChannel().write(response);
+    return;
   }
+  if (consumer.getEndpoint().getHttpMethodRestrict() != null && !consumer.getEndpoint().getHttpMethodRestrict().contains(request.getMethod().getName())) {
+    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
+    messageEvent.getChannel().write(response);
+    return;
+  }
+  if ("TRACE".equals(request.getMethod().getName()) && !consumer.getEndpoint().isTraceEnabled()) {
+    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
+    messageEvent.getChannel().write(response);
+    return;
+  }
+  super.messageReceived(ctx,messageEvent);
 }
