@@ -1,21 +1,7 @@
 {
-  NettyHttpMessage answer=new NettyHttpMessage(request);
-  answer.setHeader(Exchange.HTTP_METHOD,request.getMethod().getName());
-  answer.setHeader(Exchange.HTTP_URI,request.getUri());
-  Map<String,Object> headers=answer.getHeaders();
-  for (  String name : request.getHeaderNames()) {
-    if (name.toLowerCase().equals("content-type")) {
-      name=Exchange.CONTENT_TYPE;
-    }
-    List<String> values=request.getHeaders(name);
-    Iterator<?> it=ObjectHelper.createIterator(values);
-    while (it.hasNext()) {
-      Object extracted=it.next();
-      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,exchange)) {
-        NettyHttpHelper.appendHeader(headers,name,extracted);
-      }
-    }
-  }
+  LOG.trace("toCamelMessage: {}",request);
+  NettyHttpMessage answer=new NettyHttpMessage(request,this);
+  answer.getHeaders();
   answer.setBody(request.getContent());
   return answer;
 }

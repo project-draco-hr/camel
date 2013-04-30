@@ -1,6 +1,8 @@
 {
+  LOG.trace("fromCamelMessage: {}",message);
   Integer code=message.getHeader(Exchange.HTTP_RESPONSE_CODE,200,Integer.class);
   HttpResponse response=new DefaultHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.valueOf(code));
+  LOG.trace("HTTP Status Code: {}",code);
   TypeConverter tc=message.getExchange().getContext().getTypeConverter();
   for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
     String key=entry.getKey();
@@ -9,6 +11,7 @@
     while (it.hasNext()) {
       String headerValue=tc.convertTo(String.class,it.next());
       if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        LOG.trace("HTTP-Header: {}={}",key,headerValue);
         response.addHeader(key,headerValue);
       }
     }
@@ -28,13 +31,18 @@
     }
     if (buffer != null) {
       response.setContent(buffer);
-      response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,buffer.readableBytes());
+      int len=buffer.readableBytes();
+      response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,len);
+      LOG.trace("Content-Length: {}",len);
     }
   }
   String contentType=MessageHelper.getContentType(message);
   if (contentType != null) {
     response.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+    LOG.trace("Content-Type: {}",contentType);
   }
-  response.setHeader(HttpHeaders.Names.CONNECTION,HttpHeaders.Values.CLOSE);
+  String keepAlive=HttpHeaders.Values.CLOSE;
+  response.setHeader(HttpHeaders.Names.CONNECTION,keepAlive);
+  LOG.trace("Connection: {}",keepAlive);
   return response;
 }
