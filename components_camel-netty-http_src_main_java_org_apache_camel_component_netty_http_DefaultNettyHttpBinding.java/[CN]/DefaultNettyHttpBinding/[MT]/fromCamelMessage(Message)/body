@@ -1,13 +1,40 @@
 {
-  Integer code=msg.getHeader(Exchange.HTTP_RESPONSE_CODE,200,Integer.class);
+  Integer code=message.getHeader(Exchange.HTTP_RESPONSE_CODE,200,Integer.class);
   HttpResponse response=new DefaultHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.valueOf(code));
-  byte[] data=msg.getBody(byte[].class);
-  if (data != null) {
-    response.setContent(ChannelBuffers.copiedBuffer(data));
-    response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,response.getContent().readableBytes());
+  TypeConverter tc=message.getExchange().getContext().getTypeConverter();
+  for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    final Iterator<?> it=ObjectHelper.createIterator(value,null);
+    while (it.hasNext()) {
+      String headerValue=tc.convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        response.addHeader(key,headerValue);
+      }
+    }
   }
-  String contentType=msg.getHeader(Exchange.CONTENT_TYPE,"text/plain; charset=UTF-8",String.class);
-  response.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+  Object body=message.getBody();
+  if (body != null) {
+    ChannelBuffer buffer;
+    if (body instanceof ChannelBuffer) {
+      buffer=(ChannelBuffer)body;
+    }
+ else {
+      buffer=message.getBody(ChannelBuffer.class);
+      if (buffer == null) {
+        byte[] data=message.getMandatoryBody(byte[].class);
+        buffer=ChannelBuffers.copiedBuffer(data);
+      }
+    }
+    if (buffer != null) {
+      response.setContent(buffer);
+      response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,buffer.readableBytes());
+    }
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (contentType != null) {
+    response.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+  }
   response.setHeader(HttpHeaders.Names.CONNECTION,HttpHeaders.Values.CLOSE);
   return response;
 }

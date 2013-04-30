@@ -2,13 +2,18 @@
   NettyHttpMessage answer=new NettyHttpMessage(request);
   answer.setHeader(Exchange.HTTP_METHOD,request.getMethod().getName());
   answer.setHeader(Exchange.HTTP_URI,request.getUri());
+  Map<String,Object> headers=answer.getHeaders();
   for (  String name : request.getHeaderNames()) {
-    List<String> values=request.getHeaders(name);
-    if (values.size() == 1) {
-      answer.setHeader(name,values.get(0));
+    if (name.toLowerCase().equals("content-type")) {
+      name=Exchange.CONTENT_TYPE;
     }
- else {
-      answer.setHeader(name,values);
+    List<String> values=request.getHeaders(name);
+    Iterator<?> it=ObjectHelper.createIterator(values);
+    while (it.hasNext()) {
+      Object extracted=it.next();
+      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,exchange)) {
+        NettyHttpHelper.appendHeader(headers,name,extracted);
+      }
     }
   }
   answer.setBody(request.getContent());
