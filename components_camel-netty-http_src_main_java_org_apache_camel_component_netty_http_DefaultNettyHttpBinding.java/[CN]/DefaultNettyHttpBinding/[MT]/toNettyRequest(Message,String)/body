@@ -1,0 +1,49 @@
+{
+  LOG.trace("toNettyRequest: {}",message);
+  if (message.getBody() instanceof HttpRequest) {
+    return (HttpRequest)message.getBody();
+  }
+  HttpRequest request=new DefaultHttpRequest(HttpVersion.HTTP_1_1,HttpMethod.POST,uri);
+  TypeConverter tc=message.getExchange().getContext().getTypeConverter();
+  for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    final Iterator<?> it=ObjectHelper.createIterator(value,null);
+    while (it.hasNext()) {
+      String headerValue=tc.convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        LOG.trace("HTTP-Header: {}={}",key,headerValue);
+        request.addHeader(key,headerValue);
+      }
+    }
+  }
+  Object body=message.getBody();
+  if (body != null) {
+    ChannelBuffer buffer;
+    if (body instanceof ChannelBuffer) {
+      buffer=(ChannelBuffer)body;
+    }
+ else {
+      buffer=message.getBody(ChannelBuffer.class);
+      if (buffer == null) {
+        byte[] data=message.getMandatoryBody(byte[].class);
+        buffer=ChannelBuffers.copiedBuffer(data);
+      }
+    }
+    if (buffer != null) {
+      request.setContent(buffer);
+      int len=buffer.readableBytes();
+      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,len);
+      LOG.trace("Content-Length: {}",len);
+    }
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (contentType != null) {
+    request.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+    LOG.trace("Content-Type: {}",contentType);
+  }
+  String keepAlive=HttpHeaders.Values.CLOSE;
+  request.setHeader(HttpHeaders.Names.CONNECTION,keepAlive);
+  LOG.trace("Connection: {}",keepAlive);
+  return request;
+}

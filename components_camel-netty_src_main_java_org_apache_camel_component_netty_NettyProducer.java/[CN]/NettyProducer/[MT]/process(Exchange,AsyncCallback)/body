@@ -6,21 +6,19 @@
     callback.done(true);
     return true;
   }
-  Object body=NettyPayloadHelper.getIn(getEndpoint(),exchange);
-  if (body == null) {
-    noReplyLogger.log("No payload to send for exchange: " + exchange);
-    callback.done(true);
-    return true;
-  }
-  if (getConfiguration().isTextline()) {
-    try {
-      body=NettyHelper.getTextlineBody(body,exchange,getConfiguration().getDelimiter(),getConfiguration().isAutoAppendDelimiter());
-    }
- catch (    NoTypeConversionAvailableException e) {
-      exchange.setException(e);
+  Object body;
+  try {
+    body=getRequestBody(exchange);
+    if (body == null) {
+      noReplyLogger.log("No payload to send for exchange: " + exchange);
       callback.done(true);
       return true;
     }
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
   }
   if (getConfiguration().getCharsetName() != null) {
     exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.normalizeCharset(getConfiguration().getCharsetName()));
