@@ -1,0 +1,61 @@
+{
+  LOG.trace("populateCamelHeaders: {}",request);
+  String uri=request.getUri();
+  headers.put(Exchange.HTTP_METHOD,request.getMethod().getName());
+  headers.put(Exchange.HTTP_URI,uri);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("HTTP-Method {}",request.getMethod().getName());
+    LOG.trace("HTTP-Uri {}",uri);
+  }
+  for (  String name : request.getHeaderNames()) {
+    if (name.toLowerCase().equals("content-type")) {
+      name=Exchange.CONTENT_TYPE;
+    }
+    List<String> values=request.getHeaders(name);
+    Iterator<?> it=ObjectHelper.createIterator(values);
+    while (it.hasNext()) {
+      Object extracted=it.next();
+      Object decoded=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(extracted.toString(),"UTF-8") : extracted.toString();
+      LOG.trace("HTTP-header: {}",extracted);
+      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,decoded,exchange)) {
+        NettyHttpHelper.appendHeader(headers,name,decoded);
+      }
+    }
+  }
+  if (uri.contains("?")) {
+    String query=ObjectHelper.after(uri,"?");
+    Map<String,Object> uriParameters=URISupport.parseQuery(query);
+    for (    Map.Entry<String,Object> entry : uriParameters.entrySet()) {
+      String name=entry.getKey();
+      Object values=entry.getValue();
+      Iterator<?> it=ObjectHelper.createIterator(values);
+      while (it.hasNext()) {
+        Object extracted=it.next();
+        Object decoded=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(extracted.toString(),"UTF-8") : extracted.toString();
+        LOG.trace("URI-Parameter: {}",extracted);
+        if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,decoded,exchange)) {
+          NettyHttpHelper.appendHeader(headers,name,decoded);
+        }
+      }
+    }
+  }
+  if (request.getMethod().getName().equals("POST") && request.getHeader(Exchange.CONTENT_TYPE) != null && request.getHeader(Exchange.CONTENT_TYPE).startsWith(NettyHttpConstants.CONTENT_TYPE_WWW_FORM_URLENCODED)) {
+    String charset="UTF-8";
+    String body=request.getContent().toString(Charset.forName(charset));
+    if (ObjectHelper.isNotEmpty(body)) {
+      for (      String param : body.split("&")) {
+        String[] pair=param.split("=",2);
+        if (pair.length == 2) {
+          String name=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(pair[0],charset) : pair[0];
+          String value=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(pair[1],charset) : pair[1];
+          if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,exchange)) {
+            NettyHttpHelper.appendHeader(headers,name,value);
+          }
+        }
+ else {
+          throw new IllegalArgumentException("Invalid parameter, expected to be a pair but was " + param);
+        }
+      }
+    }
+  }
+}

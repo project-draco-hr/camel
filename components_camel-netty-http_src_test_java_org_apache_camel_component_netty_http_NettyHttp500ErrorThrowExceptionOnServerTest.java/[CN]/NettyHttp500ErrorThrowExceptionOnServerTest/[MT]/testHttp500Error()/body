@@ -1,0 +1,15 @@
+{
+  getMockEndpoint("mock:input").expectedBodiesReceived("Hello World");
+  try {
+    template.requestBody("netty-http:http://localhost:{{port}}/foo","Hello World",String.class);
+    fail("Should have failed");
+  }
+ catch (  CamelExecutionException e) {
+    NettyHttpOperationFailedException cause=assertIsInstanceOf(NettyHttpOperationFailedException.class,e.getCause());
+    assertEquals(500,cause.getStatusCode());
+    String trace=context.getTypeConverter().convertTo(String.class,cause.getResponse().getContent());
+    assertNotNull(trace);
+    assertTrue(trace.startsWith("java.lang.IllegalArgumentException: Camel cannot do this"));
+  }
+  assertMockEndpointsSatisfied();
+}

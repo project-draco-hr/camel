@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("netty-http:http://localhost:{{port}}/myapp/mytest?mapHeaders=false").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          assertNull(exchange.getIn().getHeader("clientHeader"));
+          assertNull(exchange.getIn().getHeader("OTHER"));
+          assertNull(exchange.getIn().getHeader("beer"));
+          assertEquals("fooBAR",exchange.getIn(NettyHttpMessage.class).getHttpRequest().getHeader("clientHeader"));
+          assertEquals("123",exchange.getIn(NettyHttpMessage.class).getHttpRequest().getHeader("OTHER"));
+          assertEquals("Carlsberg",exchange.getIn(NettyHttpMessage.class).getHttpRequest().getHeader("beer"));
+          exchange.getOut().setBody("Bye World");
+          exchange.getOut().setHeader("MyCaseHeader","aBc123");
+          exchange.getOut().setHeader("otherCaseHeader","456DEf");
+        }
+      }
+);
+    }
+  }
+;
+}
