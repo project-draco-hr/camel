@@ -1,0 +1,24 @@
+{
+  if (pid != null) {
+    if (fileName == null) {
+      throw new IllegalArgumentException("The persistent file should not be null");
+    }
+ else {
+      File load=new File(fileName);
+      LOG.debug("Loading properties from OSGi config admin file: {}",load);
+      org.apache.felix.utils.properties.Properties cfg=new org.apache.felix.utils.properties.Properties(load);
+      Iterator<String> it=cfg.keySet().iterator();
+      while (it.hasNext()) {
+        String key=it.next();
+        String value=(String)cfg.get(key);
+        props.put(key,value);
+      }
+      ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(bundleContext,ConfigurationAdmin.class);
+      if (configAdmin != null) {
+        Configuration config=configAdmin.getConfiguration(pid);
+        LOG.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
+        config.update(props);
+      }
+    }
+  }
+}
