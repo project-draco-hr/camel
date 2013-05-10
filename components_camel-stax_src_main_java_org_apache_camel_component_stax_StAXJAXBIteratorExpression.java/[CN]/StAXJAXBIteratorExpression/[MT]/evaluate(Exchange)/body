@@ -1,6 +1,15 @@
 {
   try {
-    XMLEventReader reader=exchange.getIn().getMandatoryBody(XMLEventReader.class);
+    XMLEventReader reader;
+    if (isNamespaceAware) {
+      reader=exchange.getIn().getMandatoryBody(XMLEventReader.class);
+    }
+ else {
+      InputStream inputStream=exchange.getIn().getMandatoryBody(InputStream.class);
+      XMLInputFactory xmlInputFactory=XMLInputFactory.newInstance();
+      xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE,false);
+      reader=xmlInputFactory.createXMLEventReader(inputStream);
+    }
     Class<T> clazz=handled;
     if (clazz == null && handledName != null) {
       clazz=(Class<T>)exchange.getContext().getClassResolver().resolveMandatoryClass(handledName);
@@ -16,6 +25,10 @@ catch (  JAXBException e) {
     return null;
   }
 catch (  ClassNotFoundException e) {
+    exchange.setException(e);
+    return null;
+  }
+catch (  XMLStreamException e) {
     exchange.setException(e);
     return null;
   }
