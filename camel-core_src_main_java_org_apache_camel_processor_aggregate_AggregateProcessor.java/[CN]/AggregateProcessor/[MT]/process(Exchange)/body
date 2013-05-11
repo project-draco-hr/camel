@@ -18,21 +18,24 @@
     throw new ClosedCorrelationKeyException(key,exchange);
   }
   if (optimisticLocking) {
-    boolean done=false;
+    boolean exhaustedRetries=true;
     int attempt=0;
-    while (!done) {
+    do {
       attempt++;
       Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
       try {
         doAggregation(key,copy);
-        done=true;
+        exhaustedRetries=false;
+        break;
       }
  catch (      OptimisticLockingAggregationRepository.OptimisticLockingException e) {
         LOG.trace("On attempt {} OptimisticLockingAggregationRepository: {} threw OptimisticLockingException while trying to add() key: {} and exchange: {}",new Object[]{attempt,aggregationRepository,key,copy,e});
+        optimisticLockRetryPolicy.doDelay(attempt);
       }
-      int ran=new Random().nextInt(1000);
-      LOG.trace("Sleeping for {} millis before attempting again",ran);
-      Thread.sleep(ran);
+    }
+ while (optimisticLockRetryPolicy.shouldRetry(attempt));
+    if (exhaustedRetries) {
+      throw new CamelExchangeException("Exhausted optimistic locking retry attempts, tried " + attempt + " times",exchange,new OptimisticLockingAggregationRepository.OptimisticLockingException());
     }
   }
  else {
