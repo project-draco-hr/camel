@@ -1,0 +1,16 @@
+{
+  getMockEndpoint("mock:error").expectedMessageCount(0);
+  getMockEndpoint("mock:foo").expectedBodiesReceived("Hello World");
+  getMockEndpoint("mock:result").expectedBodiesReceived("Bye World");
+  ShiroSecurityToken token=new ShiroSecurityToken("ringo","starr");
+  final ShiroSecurityTokenInjector injector=new ShiroSecurityTokenInjector(token,passPhrase);
+  injector.setBase64(true);
+  template.request("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("Hello World");
+      injector.process(exchange);
+    }
+  }
+);
+  assertMockEndpointsSatisfied();
+}

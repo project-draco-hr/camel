@@ -1,0 +1,12 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      final ShiroSecurityPolicy securityPolicy=new ShiroSecurityPolicy("src/test/resources/securityconfig.ini",passPhrase);
+      securityPolicy.setBase64(true);
+      errorHandler(deadLetterChannel("mock:error"));
+      from("direct:start").policy(securityPolicy).to("jms:queue:foo").to("mock:result");
+      from("jms:queue:foo").to("log:foo?showHeaders=true").policy(securityPolicy).to("mock:foo").transform().constant("Bye World");
+    }
+  }
+;
+}

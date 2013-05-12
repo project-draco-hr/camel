@@ -31,7 +31,15 @@
       processor.process(exchange);
     }
     private void applySecurityPolicy(    Exchange exchange) throws Exception {
-      ByteSource encryptedToken=ExchangeHelper.getMandatoryHeader(exchange,"SHIRO_SECURITY_TOKEN",ByteSource.class);
+      ByteSource encryptedToken;
+      if (isBase64()) {
+        String base64=ExchangeHelper.getMandatoryHeader(exchange,ShiroConstants.SHIRO_SECURITY_TOKEN,String.class);
+        byte[] bytes=Base64.decode(base64);
+        encryptedToken=ByteSource.Util.bytes(bytes);
+      }
+ else {
+        encryptedToken=ExchangeHelper.getMandatoryHeader(exchange,ShiroConstants.SHIRO_SECURITY_TOKEN,ByteSource.class);
+      }
       ByteSource decryptedToken=getCipherService().decrypt(encryptedToken.getBytes(),getPassPhrase());
       ByteArrayInputStream byteArrayInputStream=new ByteArrayInputStream(decryptedToken.getBytes());
       ObjectInputStream objectInputStream=new ObjectInputStream(byteArrayInputStream);
