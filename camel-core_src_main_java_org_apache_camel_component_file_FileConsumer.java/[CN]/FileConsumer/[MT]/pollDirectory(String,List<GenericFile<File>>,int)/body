@@ -32,7 +32,7 @@
     }
     GenericFile<File> gf=asGenericFile(endpointPath,file,getEndpoint().getCharset());
     if (file.isDirectory()) {
-      if (endpoint.isRecursive() && isValidFile(gf,true,files) && depth < endpoint.getMaxDepth()) {
+      if (endpoint.isRecursive() && depth < endpoint.getMaxDepth() && isValidFile(gf,true,files)) {
         String subDirectory=fileName + File.separator + file.getName();
         boolean canPollMore=pollDirectory(subDirectory,fileList,depth);
         if (!canPollMore) {
@@ -41,16 +41,9 @@
       }
     }
  else {
-      if (isValidFile(gf,false,files) && depth >= endpoint.minDepth) {
-        if (isInProgress(gf)) {
-          if (log.isTraceEnabled()) {
-            log.trace("Skipping as file is already in progress: {}",gf.getFileName());
-          }
-        }
- else {
-          log.trace("Adding valid file: {}",file);
-          fileList.add(gf);
-        }
+      if (depth >= endpoint.minDepth && isValidFile(gf,false,files)) {
+        log.trace("Adding valid file: {}",file);
+        fileList.add(gf);
       }
     }
   }

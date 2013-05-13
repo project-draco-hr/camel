@@ -3,7 +3,13 @@
     log.trace("File did not match. Will skip this file: {}",file);
     return false;
   }
- else   if (endpoint.isIdempotent()) {
+  if (!isDirectory && isInProgress(file)) {
+    if (log.isTraceEnabled()) {
+      log.trace("Skipping as file is already in progress: {}",file.getFileName());
+    }
+    return false;
+  }
+  if (endpoint.isIdempotent()) {
     String key=file.getAbsoluteFilePath();
     if (endpoint.getIdempotentKey() != null) {
       Exchange dummy=endpoint.createExchange(file);
