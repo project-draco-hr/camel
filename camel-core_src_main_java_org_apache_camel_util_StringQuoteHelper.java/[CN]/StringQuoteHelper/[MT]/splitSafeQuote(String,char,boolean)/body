@@ -13,7 +13,8 @@
   for (int i=0; i < input.length(); i++) {
     char ch=input.charAt(i);
     char prev=i > 0 ? input.charAt(i - 1) : 0;
-    if (ch == '\'') {
+    boolean isQuoting=singleQuoted || doubleQuoted;
+    if (!doubleQuoted && ch == '\'') {
       if (singleQuoted && prev == ch && sb.length() == 0) {
         answer.add("");
       }
@@ -27,7 +28,7 @@
       singleQuoted=!singleQuoted;
       continue;
     }
- else     if (ch == '"') {
+ else     if (!singleQuoted && ch == '"') {
       if (doubleQuoted && prev == ch && sb.length() == 0) {
         answer.add("");
       }
@@ -41,13 +42,13 @@
       doubleQuoted=!doubleQuoted;
       continue;
     }
- else     if (ch == ' ') {
-      if (!singleQuoted && !doubleQuoted && skipLeadingWhitespace) {
+ else     if (!isQuoting && ch == ' ') {
+      if (skipLeadingWhitespace) {
         continue;
       }
     }
- else     if (ch == separator) {
-      if (!singleQuoted && !doubleQuoted && sb.length() > 0) {
+ else     if (!isQuoting && ch == separator) {
+      if (sb.length() > 0) {
         String text=sb.toString();
         if (trim) {
           text=text.trim();
