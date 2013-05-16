@@ -1,0 +1,25 @@
+{
+  LOG.trace("Processing exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
+  boolean sync=AsyncProcessorHelper.process(asyncProcessor,exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (doneSync) {
+        return;
+      }
+      while (continueRouting(processors,exchange)) {
+        AsyncProcessor processor=AsyncProcessorConverterHelper.convert(processors.next());
+        if (!continueProcessing(exchange,"so breaking out of pipeline",LOG)) {
+          break;
+        }
+        doneSync=process(exchange,callback,processors,processor);
+        if (!doneSync) {
+          LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
+          return;
+        }
+      }
+      LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
+      callback.done(false);
+    }
+  }
+);
+  return sync;
+}

@@ -1,30 +1,20 @@
 {
-  for (int i=0; i < filters.size(); i++) {
-    FilterProcessor filter=filters.get(i);
-    Predicate predicate=filter.getPredicate();
-    boolean matches=false;
-    try {
-      if (predicate != null) {
-        matches=predicate.matches(exchange);
-      }
+  Iterator<Processor> processors=next().iterator();
+  exchange.setProperty(Exchange.FILTER_MATCHED,false);
+  while (continueRouting(processors,exchange)) {
+    Processor processor=processors.next();
+    AsyncProcessor async=AsyncProcessorConverterHelper.convert(processor);
+    boolean sync=process(exchange,callback,processors,async);
+    if (!sync) {
+      LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
+      return false;
     }
- catch (    Throwable e) {
-      exchange.setException(e);
-      callback.done(true);
-      return true;
-    }
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("#{} - {} matches: {} for: {}",new Object[]{i,predicate,matches,exchange});
-    }
-    if (matches) {
-      return filter.processNext(exchange,callback);
+    LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
+    if (!continueProcessing(exchange,"so breaking out of content based router",LOG)) {
+      break;
     }
   }
-  if (otherwise != null) {
-    return AsyncProcessorHelper.process(otherwise,exchange,callback);
-  }
- else {
-    callback.done(true);
-    return true;
-  }
+  LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
+  callback.done(true);
+  return true;
 }
