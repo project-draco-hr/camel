@@ -13,22 +13,14 @@
   if (shutdownRoutesInReverseOrder) {
     Collections.reverse(routesOrdered);
   }
-  if (timeout > 0) {
-    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
-  }
- else {
-    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (no timeout)");
-  }
-  Future<?> future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,timeout,timeUnit,suspendOnly,abortAfterTimeout));
+  LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
+  final AtomicBoolean timeoutOccurred=new AtomicBoolean();
+  Future<?> future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,timeout,timeUnit,suspendOnly,abortAfterTimeout,timeoutOccurred));
   try {
-    if (timeout > 0) {
-      future.get(timeout,timeUnit);
-    }
- else {
-      future.get();
-    }
+    future.get(timeout,timeUnit);
   }
  catch (  TimeoutException e) {
+    timeoutOccurred.set(true);
     future.cancel(true);
     this.forceShutdown=forceShutdown;
     if (!forceShutdown && abortAfterTimeout) {

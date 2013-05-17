@@ -44,7 +44,7 @@
   boolean done=false;
   long loopDelaySeconds=1;
   long loopCount=0;
-  while (!done) {
+  while (!done && !timeoutOccurred.get()) {
     int size=0;
     for (    RouteStartupOrder order : routes) {
       int inflight=context.getInflightRepository().size(order.getRoute().getId());
@@ -60,13 +60,8 @@
     }
     if (size > 0) {
       try {
-        if (timeout > 0) {
-          LOG.info("Waiting as there are still " + size + " inflight and pending exchanges to complete, timeout in "+ (TimeUnit.SECONDS.convert(timeout,timeUnit) - (loopCount++ * loopDelaySeconds))+ " seconds.");
-          Thread.sleep(loopDelaySeconds * 1000);
-        }
- else {
-          throw new InterruptedException();
-        }
+        LOG.info("Waiting as there are still " + size + " inflight and pending exchanges to complete, timeout in "+ (TimeUnit.SECONDS.convert(timeout,timeUnit) - (loopCount++ * loopDelaySeconds))+ " seconds.");
+        Thread.sleep(loopDelaySeconds * 1000);
       }
  catch (      InterruptedException e) {
         if (abortAfterTimeout) {
