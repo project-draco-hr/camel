@@ -1,0 +1,18 @@
+{
+  String name=exchange.getIn().getHeader(CwConstants.METRIC_DIMENSION_NAME,String.class);
+  String value=exchange.getIn().getHeader(CwConstants.METRIC_DIMENSION_VALUE,String.class);
+  if (name != null && value != null) {
+    metricDatum.withDimensions(new Dimension().withName(name).withValue(value));
+  }
+ else {
+    Map<String,String> dimensions=exchange.getIn().getHeader(CwConstants.METRIC_DIMENSIONS,Map.class);
+    if (dimensions != null) {
+      Collection<Dimension> dimensionCollection=new ArrayList<Dimension>();
+      for (      Map.Entry<String,String> dimensionEntry : dimensions.entrySet()) {
+        Dimension dimension=new Dimension().withName(dimensionEntry.getKey()).withValue(dimensionEntry.getValue());
+        dimensionCollection.add(dimension);
+      }
+      metricDatum.withDimensions(dimensionCollection);
+    }
+  }
+}
