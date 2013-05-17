@@ -1,15 +1,21 @@
 {
   shutdownRunningTask=null;
   pendingExchanges=0;
+  int max=getMaxMessagesPerPoll() > 0 ? getMaxMessagesPerPoll() : Integer.MAX_VALUE;
   Queue<Exchange> queue=new LinkedList<Exchange>();
   Iterator<Object> keyIterator=dataStore.keyIterator();
-  while (keyIterator.hasNext()) {
+  int index=0;
+  while (keyIterator.hasNext() && index < max) {
     Object key=keyIterator.next();
     Object value=dataStore.get(key);
     Exchange exchange=endpoint.createExchange();
     exchange.setProperty(KratiConstants.KEY,key);
     exchange.getIn().setBody(value);
     queue.add(exchange);
+    index++;
+  }
+  if (index == max && keyIterator.hasNext()) {
+    log.debug("Limiting to maximum messages to poll {} as there was more messages in this poll.",max);
   }
   return queue.isEmpty() ? 0 : processBatch(CastUtils.cast(queue));
 }
