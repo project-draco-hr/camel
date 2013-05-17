@@ -1,0 +1,38 @@
+{
+  Exception e=exchange.getException();
+  Throwable caught=catches(exchange,e);
+  if (exchange.getProperty(Exchange.EXCEPTION_HANDLED) != null || caught == null) {
+    callback.done(true);
+    return true;
+  }
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("This CatchProcessor catches the exception: {} caused by: {}",caught.getClass().getName(),e.getMessage());
+  }
+  if (exchange.getProperty(Exchange.FAILURE_ENDPOINT) == null) {
+    exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
+  }
+  exchange.setProperty(Exchange.EXCEPTION_HANDLED,true);
+  exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
+  exchange.setException(null);
+  exchange.removeProperty(Exchange.REDELIVERY_EXHAUSTED);
+  final boolean handled=handles(exchange);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("The exception is handled: {} for the exception: {} caused by: {}",new Object[]{handled,e.getClass().getName(),e.getMessage()});
+  }
+  boolean sync=super.processNext(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (!handled) {
+        if (exchange.getException() == null) {
+          exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+        }
+      }
+      exchange.removeProperty(Exchange.REDELIVERY_EXHAUSTED);
+      if (!doneSync) {
+        ExchangeHelper.prepareOutToIn(exchange);
+      }
+      callback.done(doneSync);
+    }
+  }
+);
+  return sync;
+}

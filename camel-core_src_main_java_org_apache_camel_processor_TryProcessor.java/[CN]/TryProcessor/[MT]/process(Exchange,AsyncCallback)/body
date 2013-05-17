@@ -1,9 +1,12 @@
 {
-  Iterator<AsyncProcessor> processors=getProcessors().iterator();
+  Iterator<Processor> processors=next().iterator();
+  Object lastHandled=exchange.getProperty(Exchange.EXCEPTION_HANDLED);
+  exchange.setProperty(Exchange.EXCEPTION_HANDLED,null);
   while (continueRouting(processors,exchange)) {
     ExchangeHelper.prepareOutToIn(exchange);
-    AsyncProcessor processor=processors.next();
-    boolean sync=process(exchange,callback,processor,processors);
+    Processor processor=processors.next();
+    AsyncProcessor async=AsyncProcessorConverterHelper.convert(processor);
+    boolean sync=process(exchange,callback,processors,async,lastHandled);
     if (!sync) {
       LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
       return false;
@@ -11,6 +14,7 @@
     LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
   }
   ExchangeHelper.prepareOutToIn(exchange);
+  exchange.setProperty(Exchange.EXCEPTION_HANDLED,lastHandled);
   LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
   callback.done(true);
   return true;
