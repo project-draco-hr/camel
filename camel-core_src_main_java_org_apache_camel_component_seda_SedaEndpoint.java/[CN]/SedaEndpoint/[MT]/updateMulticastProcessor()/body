@@ -1,13 +1,13 @@
 {
+  if (!isMultipleConsumersSupported()) {
+    return;
+  }
   if (consumerMulticastProcessor != null) {
     ServiceHelper.stopService(consumerMulticastProcessor);
+    consumerMulticastProcessor=null;
   }
   int size=getConsumers().size();
-  if (size == 0 && multicastExecutor != null) {
-    getCamelContext().getExecutorServiceManager().shutdownGraceful(multicastExecutor);
-    multicastExecutor=null;
-  }
-  if (size > 1) {
+  if (size >= 1) {
     if (multicastExecutor == null) {
       multicastExecutor=getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,URISupport.sanitizeUri(getEndpointUri()) + "(multicast)");
     }
@@ -17,8 +17,5 @@
     }
     multicastStarted=false;
     consumerMulticastProcessor=new MulticastProcessor(getCamelContext(),processors,null,true,multicastExecutor,false,false,false,0,null,false);
-  }
- else {
-    consumerMulticastProcessor=null;
   }
 }

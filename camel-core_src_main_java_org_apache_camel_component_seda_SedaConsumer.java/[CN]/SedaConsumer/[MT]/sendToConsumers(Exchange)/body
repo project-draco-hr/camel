@@ -1,11 +1,11 @@
 {
   int size=endpoint.getConsumers().size();
-  if (size > 1) {
-    if (!endpoint.isMultipleConsumersSupported()) {
-      throw new IllegalStateException("Multiple consumers for the same endpoint is not allowed: " + endpoint);
-    }
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Multicasting to {} consumers for Exchange: {}",endpoint.getConsumers().size(),exchange);
+  if (size > 1 && !endpoint.isMultipleConsumersSupported()) {
+    throw new IllegalStateException("Multiple consumers for the same endpoint is not allowed: " + endpoint);
+  }
+  if (endpoint.isMultipleConsumersSupported()) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Multicasting to {} consumers for Exchange: {}",size,exchange);
     }
     final List<Synchronization> completions=exchange.handoverCompletions();
     MulticastProcessor mp=endpoint.getConsumerMulticastProcessor();
