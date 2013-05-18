@@ -1,0 +1,30 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("seda:start").to("log:foo").to("log:bar").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          try {
+            throw new IllegalArgumentException("Forced to dump stacktrace");
+          }
+ catch (          Exception e) {
+            e.printStackTrace();
+            StringWriter sw=new StringWriter();
+            PrintWriter pw=new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String s=sw.toString();
+            Scanner scanner=new Scanner(s);
+            scanner.useDelimiter("\n");
+            int count=0;
+            while (scanner.hasNext()) {
+              scanner.next();
+              count++;
+            }
+            System.out.println("There is " + count + " lines in the stacktrace");
+          }
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}

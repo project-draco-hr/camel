@@ -2,6 +2,8 @@
   this.routeContext=routeContext;
   this.definition=outputDefinition;
   this.camelContext=routeContext.getCamelContext();
+  this.internalProcessor=new CamelInternalProcessor();
+  this.internalProcessor.addTask(new CamelInternalProcessor.RouteContextTask(routeContext));
   Processor target=nextProcessor;
   Processor next;
   if (target instanceof CamelContextAware) {
@@ -17,8 +19,18 @@
     next=target == nextProcessor ? null : nextProcessor;
     target=managed.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,next);
   }
-  BacklogTracerInterceptor backlog=(BacklogTracerInterceptor)getOrCreateBacklogTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,null);
-  TraceInterceptor trace=(TraceInterceptor)getOrCreateTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,backlog,null);
+  InterceptStrategy tracer=getOrCreateBacklogTracer();
+  if (tracer instanceof BacklogTracer) {
+    BacklogTracer backlogTracer=(BacklogTracer)tracer;
+    backlogTracer.addDefinition(targetOutputDef);
+    RouteDefinition route=ProcessorDefinitionHelper.getRoute(definition);
+    boolean first=false;
+    if (route != null && !route.getOutputs().isEmpty()) {
+      first=route.getOutputs().get(0) == definition;
+    }
+    internalProcessor.addTask(new CamelInternalProcessor.BacklogTracerTask(backlogTracer.getQueue(),backlogTracer,targetOutputDef,route,first));
+  }
+  TraceInterceptor trace=(TraceInterceptor)getOrCreateTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,null);
   trace.setRouteContext(routeContext);
   target=trace;
   Collections.sort(interceptors,new OrderedComparator());

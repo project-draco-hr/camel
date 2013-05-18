@@ -15,10 +15,13 @@
   if (exhausted) {
     Processor target=null;
     boolean deliver=true;
-    SubUnitOfWorkCallback uowCallback=exchange.getUnitOfWork().getSubUnitOfWorkCallback();
-    if (uowCallback != null) {
-      uowCallback.onExhausted(exchange);
-      deliver=false;
+    UnitOfWork uow=exchange.getUnitOfWork();
+    if (uow != null) {
+      SubUnitOfWorkCallback uowCallback=uow.getSubUnitOfWorkCallback();
+      if (uowCallback != null) {
+        uowCallback.onExhausted(exchange);
+        deliver=false;
+      }
     }
     if (deliver) {
       target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;

@@ -2,6 +2,11 @@
   if (shutdown.get()) {
     throw new IllegalStateException("ThreadsProcessor is not running.");
   }
+  if (exchange.isTransacted()) {
+    LOG.trace("Transacted Exchange must be routed synchronously for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+    callback.done(true);
+    return true;
+  }
   ProcessCall call=new ProcessCall(exchange,callback);
   try {
     LOG.trace("Submitting task {}",call);

@@ -2,7 +2,7 @@
   if (!eventDrivenProcessors.isEmpty()) {
     Processor target=Pipeline.newInstance(getCamelContext(),eventDrivenProcessors);
     UnitOfWorkProcessor unitOfWorkProcessor=new UnitOfWorkProcessor(this,target);
-    RoutePolicyProcessor routePolicyProcessor=null;
+    CamelInternalProcessor internal=new CamelInternalProcessor(unitOfWorkProcessor);
     List<RoutePolicy> routePolicyList=getRoutePolicyList();
     if (routePolicyList != null && !routePolicyList.isEmpty()) {
       for (      RoutePolicy policy : routePolicyList) {
@@ -15,27 +15,23 @@
           }
         }
       }
-      routePolicyProcessor=new RoutePolicyProcessor(unitOfWorkProcessor,routePolicyList);
-      target=routePolicyProcessor;
+      internal.addTask(new CamelInternalProcessor.RoutePolicyTask(routePolicyList));
     }
- else {
-      target=unitOfWorkProcessor;
-    }
-    RouteInflightRepositoryProcessor inflight=new RouteInflightRepositoryProcessor(camelContext.getInflightRepository(),target);
+    String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
+    internal.addTask(new CamelInternalProcessor.RouteInflightRepositoryTask(camelContext.getInflightRepository(),routeId));
     InstrumentationProcessor instrument=new InstrumentationProcessor();
     instrument.setType("route");
-    instrument.setProcessor(inflight);
+    instrument.setProcessor(internal);
     Route edcr=new EventDrivenConsumerRoute(this,getEndpoint(),instrument);
-    String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
     edcr.getProperties().put(Route.ID_PROPERTY,routeId);
     edcr.getProperties().put(Route.PARENT_PROPERTY,Integer.toHexString(route.hashCode()));
     if (route.getGroup() != null) {
       edcr.getProperties().put(Route.GROUP_PROPERTY,route.getGroup());
     }
-    if (routePolicyProcessor != null) {
-      routePolicyProcessor.setRoute(edcr);
+    CamelInternalProcessor.RoutePolicyTask task=internal.getTask(CamelInternalProcessor.RoutePolicyTask.class);
+    if (task != null) {
+      task.setRoute(edcr);
     }
-    inflight.setRoute(edcr);
     if (routePolicyList != null && !routePolicyList.isEmpty()) {
       for (      RoutePolicy policy : routePolicyList) {
         policy.onInit(edcr);
