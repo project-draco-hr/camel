@@ -40,8 +40,20 @@
           exchange.setIn(exchange.getOut());
           exchange.setOut(null);
         }
-        AsyncProcessor async=AsyncProcessorConverterHelper.convert(producer);
-        return AsyncProcessorHelper.process(async,exchange,callback);
+        if (producer instanceof AsyncProcessor) {
+          AsyncProcessor async=(AsyncProcessor)producer;
+          return async.process(exchange,callback);
+        }
+ else {
+          try {
+            producer.process(exchange);
+          }
+ catch (          Exception e) {
+            exchange.setException(e);
+          }
+          callback.done(true);
+          return true;
+        }
       }
  else {
         if (LOG.isDebugEnabled()) {

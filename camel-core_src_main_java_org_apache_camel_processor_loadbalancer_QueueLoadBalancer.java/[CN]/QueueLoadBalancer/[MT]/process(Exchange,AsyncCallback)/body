@@ -6,21 +6,20 @@
       throw new IllegalStateException("No processors could be chosen to process " + exchange);
     }
  else {
-      AsyncProcessor albp=AsyncProcessorConverterHelper.convert(processor);
-      boolean sync=AsyncProcessorHelper.process(albp,exchange,new AsyncCallback(){
-        public void done(        boolean doneSync){
-          if (doneSync) {
-            return;
-          }
-          callback.done(false);
+      if (processor instanceof AsyncProcessor) {
+        AsyncProcessor async=(AsyncProcessor)processor;
+        return async.process(exchange,callback);
+      }
+ else {
+        try {
+          processor.process(exchange);
         }
+ catch (        Exception e) {
+          exchange.setException(e);
+        }
+        callback.done(true);
+        return true;
       }
-);
-      if (!sync) {
-        return false;
-      }
-      callback.done(true);
-      return true;
     }
   }
   callback.done(true);

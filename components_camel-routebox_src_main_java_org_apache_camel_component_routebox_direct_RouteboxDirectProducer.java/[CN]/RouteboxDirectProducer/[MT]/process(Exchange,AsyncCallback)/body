@@ -11,18 +11,9 @@
       RouteboxDispatcher dispatcher=new RouteboxDispatcher(producer);
       exchange=dispatcher.dispatchAsync(getRouteboxEndpoint(),exchange);
       if (getRouteboxEndpoint().getConfig().isSendToConsumer()) {
-        AsyncProcessor processor=AsyncProcessorConverterHelper.convert(((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConsumer().getProcessor());
-        flag=AsyncProcessorHelper.process(processor,exchange,new AsyncCallback(){
-          public void done(          boolean doneSync){
-            if (doneSync) {
-              return;
-            }
-            callback.done(false);
-          }
-        }
-);
+        AsyncProcessor processor=((RouteboxDirectEndpoint)getRouteboxEndpoint()).getConsumer().getAsyncProcessor();
+        flag=processor.process(exchange,callback);
       }
-      callback.done(true);
     }
  catch (    Exception e) {
       getExceptionHandler().handleException("Error processing exchange",exchange,e);
