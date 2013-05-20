@@ -16,8 +16,16 @@
     }
   }
   callback=new InternalCallback(states,exchange,callback);
-  if (exchange.isTransacted()) {
-    LOG.trace("Transacted Exchange must be routed synchronously for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+  Object synchronous=exchange.removeProperty(Exchange.UNIT_OF_WORK_PROCESS_SYNC);
+  if (exchange.isTransacted() || synchronous != null) {
+    if (LOG.isTraceEnabled()) {
+      if (exchange.isTransacted()) {
+        LOG.trace("Transacted Exchange must be routed synchronously for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+      }
+ else {
+        LOG.trace("Synchronous UnitOfWork Exchange must be routed synchronously for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+      }
+    }
     try {
       processor.process(exchange);
     }
@@ -32,6 +40,9 @@
     AsyncCallback async=callback;
     if (uow != null) {
       async=uow.beforeProcess(processor,exchange,callback);
+    }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Processing exchange for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
     }
     boolean sync=processor.process(exchange,async);
     if (uow != null) {

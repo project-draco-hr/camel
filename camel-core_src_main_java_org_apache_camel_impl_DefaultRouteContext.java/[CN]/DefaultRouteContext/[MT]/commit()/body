@@ -1,8 +1,9 @@
 {
   if (!eventDrivenProcessors.isEmpty()) {
     Processor target=Pipeline.newInstance(getCamelContext(),eventDrivenProcessors);
-    UnitOfWorkProcessor unitOfWorkProcessor=new UnitOfWorkProcessor(this,target);
-    CamelInternalProcessor internal=new CamelInternalProcessor(unitOfWorkProcessor);
+    String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
+    CamelInternalProcessor internal=new CamelInternalProcessor(target);
+    internal.addTask(new CamelInternalProcessor.UnitOfWorkProcessorTask(routeId));
     List<RoutePolicy> routePolicyList=getRoutePolicyList();
     if (routePolicyList != null && !routePolicyList.isEmpty()) {
       for (      RoutePolicy policy : routePolicyList) {
@@ -17,7 +18,6 @@
       }
       internal.addTask(new CamelInternalProcessor.RoutePolicyTask(routePolicyList));
     }
-    String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
     internal.addTask(new CamelInternalProcessor.RouteInflightRepositoryTask(camelContext.getInflightRepository(),routeId));
     InstrumentationProcessor instrument=new InstrumentationProcessor();
     instrument.setType("route");
