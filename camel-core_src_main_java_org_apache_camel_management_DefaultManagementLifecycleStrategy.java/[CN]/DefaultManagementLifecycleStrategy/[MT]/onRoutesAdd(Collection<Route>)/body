@@ -14,15 +14,18 @@
     if (route instanceof EventDrivenConsumerRoute) {
       EventDrivenConsumerRoute edcr=(EventDrivenConsumerRoute)route;
       Processor processor=edcr.getProcessor();
-      if (processor instanceof InstrumentationProcessor && mr instanceof ManagedRoute) {
-        InstrumentationProcessor ip=(InstrumentationProcessor)processor;
+      if (processor instanceof CamelInternalProcessor && mr instanceof ManagedRoute) {
+        CamelInternalProcessor internal=(CamelInternalProcessor)processor;
         ManagedRoute routeMBean=(ManagedRoute)mr;
-        if (camelContextMBean != null) {
-          CompositePerformanceCounter wrapper=new CompositePerformanceCounter(routeMBean,camelContextMBean);
-          ip.setCounter(wrapper);
-        }
+        CamelInternalProcessor.InstrumentationTask task=internal.getTask(CamelInternalProcessor.InstrumentationTask.class);
+        if (task != null) {
+          if (camelContextMBean != null) {
+            CompositePerformanceCounter wrapper=new CompositePerformanceCounter(routeMBean,camelContextMBean);
+            task.setCounter(wrapper);
+          }
  else {
-          ip.setCounter(routeMBean);
+            task.setCounter(routeMBean);
+          }
         }
       }
     }
