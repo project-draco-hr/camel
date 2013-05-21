@@ -29,9 +29,12 @@
     }
     internalProcessor.addTask(new CamelInternalProcessor.BacklogTracerTask(backlogTracer.getQueue(),backlogTracer,targetOutputDef,route,first));
   }
-  TraceInterceptor trace=(TraceInterceptor)getOrCreateTracer().wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,null);
-  trace.setRouteContext(routeContext);
-  target=trace;
+  tracer=getOrCreateTracer();
+  if (tracer != null) {
+    TraceInterceptor trace=(TraceInterceptor)tracer.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,null);
+    trace.setRouteContext(routeContext);
+    target=trace;
+  }
   Collections.sort(interceptors,new OrderedComparator());
   Collections.reverse(interceptors);
   for (  InterceptStrategy strategy : interceptors) {
