@@ -1,0 +1,20 @@
+{
+  InterceptStrategy debugger=BacklogDebugger.getBacklogDebugger(camelContext);
+  if (debugger == null) {
+    if (camelContext.getRegistry() != null) {
+      Map<String,BacklogDebugger> map=camelContext.getRegistry().findByTypeWithName(BacklogDebugger.class);
+      if (map.size() == 1) {
+        debugger=map.values().iterator().next();
+      }
+    }
+    if (debugger == null) {
+      debugger=camelContext.getDefaultBacklogDebugger();
+    }
+  }
+  for (  LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
+    if (debugger instanceof Service) {
+      strategy.onServiceAdd(camelContext,(Service)debugger,null);
+    }
+  }
+  return debugger;
+}
