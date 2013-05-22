@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      final ThreadLocal<String> local=new ThreadLocal<String>();
+      from("direct:start").process(new Processor(){
+        @Override public void process(        final Exchange exchange) throws Exception {
+          local.set("Hello");
+          id=Thread.currentThread().getId();
+        }
+      }
+).to("disruptor:foo");
+      from("disruptor:foo").process(new Processor(){
+        @Override public void process(        final Exchange exchange) throws Exception {
+          assertEquals(null,local.get());
+          assertNotSame("Thread ids should not be same",id,Thread.currentThread().getId());
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}

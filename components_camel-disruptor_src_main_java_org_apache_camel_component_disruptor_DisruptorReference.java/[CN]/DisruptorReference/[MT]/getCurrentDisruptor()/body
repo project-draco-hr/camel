@@ -1,0 +1,16 @@
+{
+  Disruptor<ExchangeEvent> currentDisruptor=disruptor.getReference();
+  if (currentDisruptor == null) {
+    boolean[] changeIsPending=new boolean[1];
+    while (currentDisruptor == null) {
+      currentDisruptor=disruptor.get(changeIsPending);
+      if (currentDisruptor == null && !changeIsPending[0]) {
+        throw new DisruptorNotStartedException("Disruptor is not yet started or already shut down.");
+      }
+ else       if (currentDisruptor == null && changeIsPending[0]) {
+        LockSupport.parkNanos(1L);
+      }
+    }
+  }
+  return currentDisruptor;
+}

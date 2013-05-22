@@ -1,0 +1,17 @@
+{
+  final Disruptor<ExchangeEvent> newDisruptor=new Disruptor<ExchangeEvent>(ExchangeEventFactory.INSTANCE,size,delayedExecutor,producerType.getProducerType(),waitStrategy.createWaitStrategyInstance());
+  final ArrayList<LifecycleAwareExchangeEventHandler> eventHandlers=new ArrayList<LifecycleAwareExchangeEventHandler>();
+  uniqueConsumerCount=0;
+  for (  final DisruptorEndpoint endpoint : endpoints) {
+    final Map<DisruptorConsumer,Collection<LifecycleAwareExchangeEventHandler>> consumerEventHandlers=endpoint.createConsumerEventHandlers();
+    if (consumerEventHandlers != null) {
+      uniqueConsumerCount+=consumerEventHandlers.keySet().size();
+      for (      Collection<LifecycleAwareExchangeEventHandler> lifecycleAwareExchangeEventHandlers : consumerEventHandlers.values()) {
+        eventHandlers.addAll(lifecycleAwareExchangeEventHandlers);
+      }
+    }
+  }
+  LOGGER.debug("Disruptor created with {} event handlers",eventHandlers.size());
+  handleEventsWith(newDisruptor,eventHandlers.toArray(new LifecycleAwareExchangeEventHandler[eventHandlers.size()]));
+  return newDisruptor;
+}

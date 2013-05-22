@@ -1,0 +1,18 @@
+{
+  List<String> expectedBodies=new ArrayList<String>(Arrays.asList("Bye World-1","Bye World-2"));
+  getMockEndpoint("mock:log").expectedBodiesReceived(expectedBodies);
+  final Exchange out=template.request("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("Hello World");
+    }
+  }
+);
+  assertEquals("Bye World",getOutBody(out));
+  final List<Exchange> groupedExchange=CastUtils.cast(out.getProperty(Exchange.GROUPED_EXCHANGE,List.class));
+  assertNotNull("Expected a grouped exchange property, found none",groupedExchange);
+  for (  Exchange exchange : groupedExchange) {
+    assertTrue("Body of grouped exchange property '" + getOutBody(exchange) + "' did not match any expected body",expectedBodies.remove(getOutBody(exchange)));
+  }
+  log.info("Got reply " + out);
+  assertMockEndpointsSatisfied();
+}

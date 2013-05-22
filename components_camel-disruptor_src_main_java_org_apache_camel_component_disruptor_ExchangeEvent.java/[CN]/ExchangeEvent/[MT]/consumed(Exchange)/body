@@ -1,0 +1,15 @@
+{
+  if (expectedConsumers > 1) {
+    results.get().add(result);
+  }
+  if (processedConsumers.incrementAndGet() == expectedConsumers) {
+    if (expectedConsumers == 1) {
+      UnitOfWorkHelper.doneSynchronizations(result,exchange.handoverCompletions(),LOG);
+    }
+ else {
+      List<Exchange> localResults=results.getAndSet(new ArrayList<Exchange>());
+      exchange.setProperty(Exchange.GROUPED_EXCHANGE,localResults);
+      UnitOfWorkHelper.doneSynchronizations(exchange,exchange.handoverCompletions(),LOG);
+    }
+  }
+}

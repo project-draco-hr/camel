@@ -1,0 +1,22 @@
+{
+  if (executor == null && newSize > 0) {
+    LOGGER.debug("Creating new executor with {} threads",newSize);
+    executor=component.getCamelContext().getExecutorServiceManager().newFixedThreadPool(this,uri,newSize);
+  }
+ else   if (executor != null && newSize <= 0) {
+    LOGGER.debug("Shutting down executor");
+    component.getCamelContext().getExecutorServiceManager().shutdown(executor);
+    executor=null;
+  }
+ else   if (executor instanceof ThreadPoolExecutor) {
+    LOGGER.debug("Resizing existing executor to {} threads",newSize);
+    final ThreadPoolExecutor threadPoolExecutor=(ThreadPoolExecutor)executor;
+    threadPoolExecutor.setCorePoolSize(newSize);
+    threadPoolExecutor.setMaximumPoolSize(newSize);
+  }
+ else   if (newSize > 0) {
+    LOGGER.debug("Shutting down old and creating new executor with {} threads",newSize);
+    component.getCamelContext().getExecutorServiceManager().shutdown(executor);
+    executor=component.getCamelContext().getExecutorServiceManager().newFixedThreadPool(this,uri,newSize);
+  }
+}

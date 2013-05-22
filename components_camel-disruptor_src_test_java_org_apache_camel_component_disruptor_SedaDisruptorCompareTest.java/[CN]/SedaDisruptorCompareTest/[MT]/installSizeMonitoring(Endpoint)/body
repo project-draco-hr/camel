@@ -1,0 +1,25 @@
+{
+  final ScheduledExecutorService service=context.getExecutorServiceManager().newScheduledThreadPool(this,"SizeMonitoringThread",1);
+  endpointSizeQueue.clear();
+  final Runnable monitoring=new Runnable(){
+    @Override public void run(){
+      if (endpoint instanceof SedaEndpoint) {
+        final SedaEndpoint sedaEndpoint=(SedaEndpoint)endpoint;
+        endpointSizeQueue.offer(sedaEndpoint.getCurrentQueueSize());
+      }
+ else       if (endpoint instanceof DisruptorEndpoint) {
+        final DisruptorEndpoint disruptorEndpoint=(DisruptorEndpoint)endpoint;
+        long remainingCapacity=0;
+        try {
+          remainingCapacity=disruptorEndpoint.getRemainingCapacity();
+        }
+ catch (        DisruptorNotStartedException e) {
+        }
+        endpointSizeQueue.offer((int)(disruptorEndpoint.getBufferSize() - remainingCapacity));
+      }
+    }
+  }
+;
+  service.scheduleAtFixedRate(monitoring,0,100,TimeUnit.MILLISECONDS);
+  return service;
+}

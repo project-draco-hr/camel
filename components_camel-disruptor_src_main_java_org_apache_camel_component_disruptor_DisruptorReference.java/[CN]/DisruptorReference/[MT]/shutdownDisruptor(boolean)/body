@@ -1,0 +1,26 @@
+{
+  LOGGER.debug("Shutting down disruptor {}, reconfiguring: {}",this,isReconfiguring);
+  Disruptor<ExchangeEvent> currentDisruptor=disruptor.getReference();
+  disruptor.set(null,isReconfiguring);
+  if (currentDisruptor != null) {
+    if (handlers != null && handlers.length == 1 && handlers[0] instanceof BlockingExchangeEventHandler) {
+      final BlockingExchangeEventHandler blockingExchangeEventHandler=(BlockingExchangeEventHandler)handlers[0];
+      blockingExchangeEventHandler.unblock();
+    }
+    currentDisruptor.shutdown();
+    for (    final LifecycleAwareExchangeEventHandler eventHandler : handlers) {
+      boolean eventHandlerFinished=false;
+      while (!eventHandlerFinished) {
+        try {
+          if (!eventHandler.awaitStopped(10,TimeUnit.SECONDS)) {
+            LOGGER.error("Disruptor/event handler failed to shut down properly, PLEASE REPORT");
+          }
+          eventHandlerFinished=true;
+        }
+ catch (        InterruptedException e) {
+        }
+      }
+    }
+    handlers=new LifecycleAwareExchangeEventHandler[0];
+  }
+}

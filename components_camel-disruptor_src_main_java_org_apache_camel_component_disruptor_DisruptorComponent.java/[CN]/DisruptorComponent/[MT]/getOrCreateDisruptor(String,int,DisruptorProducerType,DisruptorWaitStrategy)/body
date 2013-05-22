@@ -1,0 +1,32 @@
+{
+  final String key=getDisruptorKey(uri);
+  int sizeToUse;
+  if (size > 0) {
+    sizeToUse=size;
+  }
+ else   if (bufferSize > 0) {
+    sizeToUse=bufferSize;
+  }
+ else   if (queueSize > 0) {
+    sizeToUse=queueSize;
+  }
+ else {
+    sizeToUse=DEFAULT_BUFFER_SIZE;
+  }
+  sizeToUse=powerOfTwo(sizeToUse);
+synchronized (this) {
+    DisruptorReference ref=getDisruptors().get(key);
+    if (ref == null) {
+      LOGGER.debug("Creating new disruptor for key {}",key);
+      ref=new DisruptorReference(this,uri,sizeToUse,producerType,waitStrategy);
+      getDisruptors().put(key,ref);
+    }
+ else {
+      if (size != 0 && ref.getBufferSize() != sizeToUse) {
+        throw new IllegalArgumentException("Cannot use existing queue " + key + " as the existing queue size "+ ref.getBufferSize()+ " does not match given queue size "+ sizeToUse);
+      }
+      LOGGER.debug("Reusing disruptor {} for key {}",ref,key);
+    }
+    return ref;
+  }
+}

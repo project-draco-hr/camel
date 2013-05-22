@@ -1,0 +1,32 @@
+{
+  final String multipleConsumerOption=consumers > 1 ? "multipleConsumers=true" : "";
+  final String concurrentConsumerOptions=parallelConsumerThreads > 1 ? "concurrentConsumers=" + parallelConsumerThreads : "";
+  final String sizeOption=SIZE_PARAMETER_VALUE > 0 ? "size=" + SIZE_PARAMETER_VALUE : "";
+  final String sizeOptionSeda=SIZE_PARAMETER_VALUE > 0 ? "&blockWhenFull=true" : "";
+  String options="";
+  if (!multipleConsumerOption.isEmpty()) {
+    if (!options.isEmpty()) {
+      options+="&";
+    }
+    options+=multipleConsumerOption;
+  }
+  if (!concurrentConsumerOptions.isEmpty()) {
+    if (!options.isEmpty()) {
+      options+="&";
+    }
+    options+=concurrentConsumerOptions;
+  }
+  if (!sizeOption.isEmpty()) {
+    if (!options.isEmpty()) {
+      options+="&";
+    }
+    options+=sizeOption;
+  }
+  if (!options.isEmpty()) {
+    options="?" + options;
+  }
+  final String sedaOptions=sizeOptionSeda.isEmpty() ? options : options + sizeOptionSeda;
+  final String testDescription=" { P=" + producers + ", C="+ consumers+ ", CCT="+ parallelConsumerThreads+ ", SIZE="+ SIZE_PARAMETER_VALUE+ " }";
+  parameters.add(new Object[]{"SEDA" + testDescription,"seda:speedtest" + sedaOptions,producers,consumers,parallelConsumerThreads,SEDA_SIZE_HISTOGRAM_BOUNDS});
+  parameters.add(new Object[]{"Disruptor" + testDescription,"disruptor:speedtest" + options,producers,consumers,parallelConsumerThreads,DISRUPTOR_SIZE_HISTOGRAM_BOUNDS});
+}

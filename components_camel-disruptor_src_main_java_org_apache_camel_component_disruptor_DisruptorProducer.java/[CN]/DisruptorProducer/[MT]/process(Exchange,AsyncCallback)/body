@@ -1,0 +1,70 @@
+{
+  WaitForTaskToComplete wait=waitForTaskToComplete;
+  if (exchange.getProperty(Exchange.ASYNC_WAIT) != null) {
+    wait=exchange.getProperty(Exchange.ASYNC_WAIT,WaitForTaskToComplete.class);
+  }
+  if (wait == WaitForTaskToComplete.Always || (wait == WaitForTaskToComplete.IfReplyExpected && ExchangeHelper.isOutCapable(exchange))) {
+    final Exchange copy=prepareCopy(exchange,false);
+    final CountDownLatch latch=new CountDownLatch(1);
+    copy.addOnCompletion(new SynchronizationAdapter(){
+      @Override public void onDone(      final Exchange response){
+        if (latch.getCount() == 0) {
+          if (log.isTraceEnabled()) {
+            log.trace("{}. Timeout occurred so response will be ignored: {}",this,response.hasOut() ? response.getOut() : response.getIn());
+          }
+        }
+ else {
+          if (log.isTraceEnabled()) {
+            log.trace("{} with response: {}",this,response.hasOut() ? response.getOut() : response.getIn());
+          }
+          try {
+            ExchangeHelper.copyResults(exchange,response);
+          }
+  finally {
+            latch.countDown();
+          }
+        }
+      }
+      @Override public boolean allowHandover(){
+        return false;
+      }
+      @Override public String toString(){
+        return "onDone at endpoint: " + endpoint;
+      }
+    }
+);
+    doPublish(copy);
+    if (timeout > 0) {
+      if (log.isTraceEnabled()) {
+        log.trace("Waiting for task to complete using timeout (ms): {} at [{}]",timeout,endpoint.getEndpointUri());
+      }
+      boolean done=false;
+      try {
+        done=latch.await(timeout,TimeUnit.MILLISECONDS);
+      }
+ catch (      InterruptedException e) {
+      }
+      if (!done) {
+        exchange.setProperty(DisruptorEndpoint.DISRUPTOR_IGNORE_EXCHANGE,true);
+        exchange.setException(new ExchangeTimedOutException(exchange,timeout));
+        latch.countDown();
+      }
+    }
+ else {
+      if (log.isTraceEnabled()) {
+        log.trace("Waiting for task to complete (blocking) at [{}]",endpoint.getEndpointUri());
+      }
+      try {
+        latch.await();
+      }
+ catch (      InterruptedException e) {
+      }
+    }
+  }
+ else {
+    final Exchange copy=prepareCopy(exchange,true);
+    doPublish(copy);
+  }
+  callback.done(true);
+  return true;
+}

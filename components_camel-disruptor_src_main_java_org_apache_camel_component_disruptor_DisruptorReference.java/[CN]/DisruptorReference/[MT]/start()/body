@@ -1,0 +1,23 @@
+{
+  LOGGER.debug("Starting disruptor {}",this);
+  Disruptor<ExchangeEvent> newDisruptor=createDisruptor();
+  newDisruptor.start();
+  if (executor != null) {
+    delayedExecutor.executeDelayedCommands(executor);
+  }
+  for (  final LifecycleAwareExchangeEventHandler handler : handlers) {
+    boolean eventHandlerStarted=false;
+    while (!eventHandlerStarted) {
+      try {
+        if (!handler.awaitStarted(10,TimeUnit.SECONDS)) {
+          LOGGER.error("Disruptor/event handler failed to start properly, PLEASE REPORT");
+        }
+        eventHandlerStarted=true;
+      }
+ catch (      InterruptedException e) {
+      }
+    }
+  }
+  publishBufferedExchanges(newDisruptor);
+  disruptor.set(newDisruptor,false);
+}

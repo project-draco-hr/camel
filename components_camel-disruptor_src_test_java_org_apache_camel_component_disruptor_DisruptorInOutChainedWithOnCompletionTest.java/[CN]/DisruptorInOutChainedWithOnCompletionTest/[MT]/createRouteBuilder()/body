@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("disruptor:a").process(new Processor(){
+        @Override public void process(        final Exchange exchange) throws Exception {
+          exchange.addOnCompletion(new SynchronizationAdapter(){
+            @Override public void onDone(            final Exchange exchange){
+              template.sendBody("mock:c","onCustomCompletion");
+            }
+          }
+);
+        }
+      }
+).to("mock:a").transform(simple("${body}-a")).to("disruptor:b");
+      from("disruptor:b").to("mock:b").transform(simple("${body}-b")).to("disruptor:c");
+      from("disruptor:c").to("mock:c").transform(simple("${body}-c"));
+    }
+  }
+;
+}
