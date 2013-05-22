@@ -1,12 +1,15 @@
 {
   ObjectHelper.notNull(camelContext,"CamelContext",this);
-  camelContext.getManagementStrategy().addEventNotifier(new DebugEventNotifier());
-  Tracer tracer=Tracer.getTracer(camelContext);
-  if (tracer == null) {
-    tracer=Tracer.createTracer(camelContext);
-    tracer.setLogLevel(LoggingLevel.OFF);
-    camelContext.addService(tracer);
-    camelContext.addInterceptStrategy(tracer);
+  ServiceHelper.startService(debugEventNotifier);
+  camelContext.getManagementStrategy().addEventNotifier(debugEventNotifier);
+  if (isUseTracer()) {
+    Tracer tracer=Tracer.getTracer(camelContext);
+    if (tracer == null) {
+      tracer=Tracer.createTracer(camelContext);
+      tracer.setLogLevel(LoggingLevel.OFF);
+      camelContext.addService(tracer);
+      camelContext.addInterceptStrategy(tracer);
+    }
+    tracer.setEnabled(true);
   }
-  tracer.setEnabled(true);
 }

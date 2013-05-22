@@ -1,0 +1,20 @@
+{
+  Date timestamp=new Date();
+  String toNode=definition.getId();
+  String routeId=ProcessorDefinitionHelper.getRouteId(definition);
+  String exchangeId=exchange.getExchangeId();
+  String messageAsXml=MessageHelper.dumpAsXml(exchange.getIn(),true,4,false,false,1000);
+  long uid=debugCounter.incrementAndGet();
+  BacklogTracerEventMessage msg=new DefaultBacklogTracerEventMessage(uid,timestamp,routeId,toNode,exchangeId,messageAsXml);
+  suspendedBreakpointMessages.put(toNode,msg);
+  final CountDownLatch latch=new CountDownLatch(1);
+  suspendedBreakpoints.put(toNode,latch);
+  logger.log("StepBreakpoint at node " + toNode + " is waiting to continue for exchangeId: "+ exchange.getExchangeId());
+  try {
+    latch.await();
+    logger.log("StepBreakpoint at node " + toNode + " is continued exchangeId: "+ exchange.getExchangeId());
+  }
+ catch (  InterruptedException e) {
+  }
+  super.beforeProcess(exchange,processor,definition);
+}
