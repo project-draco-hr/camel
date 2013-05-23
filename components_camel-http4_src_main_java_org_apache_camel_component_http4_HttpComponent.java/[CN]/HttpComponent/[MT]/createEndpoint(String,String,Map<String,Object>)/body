@@ -45,14 +45,16 @@
   if (addressUri.startsWith("https4")) {
     httpUriAddress="https" + addressUri.substring(6);
   }
-  URI httpUri=URISupport.createRemainingURI(new URI(httpUriAddress),parameters);
-  String part=httpUri.getSchemeSpecificPart();
+  URI uriHttpUriAddress=new URI(httpUriAddress);
+  String part=uriHttpUriAddress.getSchemeSpecificPart();
   if (part != null) {
     part=part.toLowerCase();
     if (part.startsWith("//http//") || part.startsWith("//https//") || part.startsWith("//http://")|| part.startsWith("//https://")) {
       throw new ResolveEndpointFailedException(uri,"The uri part is not configured correctly. You have duplicated the http(s) protocol.");
     }
   }
+  int port=getPort(uriHttpUriAddress);
+  URI httpUri=URISupport.createRemainingURI(new URI(uriHttpUriAddress.getScheme(),uriHttpUriAddress.getUserInfo(),uriHttpUriAddress.getHost(),port,uriHttpUriAddress.getPath(),uriHttpUriAddress.getQuery(),uriHttpUriAddress.getFragment()),parameters);
   endpoint.setHttpUri(httpUri);
   if (headerFilterStrategy != null) {
     endpoint.setHeaderFilterStrategy(headerFilterStrategy);
@@ -74,7 +76,6 @@
   if (httpContext != null) {
     endpoint.setHttpContext(httpContext);
   }
-  int port=getPort(httpUri);
   registerPort(secure,x509HostnameVerifier,port,sslContextParameters);
   return endpoint;
 }
