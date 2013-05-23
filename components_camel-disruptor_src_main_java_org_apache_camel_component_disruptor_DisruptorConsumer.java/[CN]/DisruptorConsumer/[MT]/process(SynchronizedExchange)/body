@@ -1,0 +1,27 @@
+{
+  try {
+    Exchange exchange=synchronizedExchange.getExchange();
+    final boolean ignore=exchange.hasProperties() && exchange.getProperties().containsKey(DisruptorEndpoint.DISRUPTOR_IGNORE_EXCHANGE);
+    if (ignore) {
+      LOGGER.trace("Ignoring exchange {}",exchange);
+      return;
+    }
+    final Exchange result=prepareExchange(exchange);
+    AsyncCallback callback=new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        synchronizedExchange.consumed(result);
+      }
+    }
+;
+    AsyncProcessorHelper.process(processor,result,callback);
+  }
+ catch (  Exception e) {
+    Exchange exchange=synchronizedExchange.getExchange();
+    if (exchange != null) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,e);
+    }
+ else {
+      getExceptionHandler().handleException(e);
+    }
+  }
+}
