@@ -1,7 +1,10 @@
 {
-  boolean match=nodeId.equals(definition.getId());
-  if (match && condition != null) {
-    return condition.matches(exchange);
+  if (!nodeId.equals(definition.getId())) {
+    return false;
   }
-  return match;
+  if (condition != null && !condition.matches(exchange)) {
+    return false;
+  }
+  boolean existing=suspendedBreakpoints.putIfAbsent(nodeId,new CountDownLatch(1)) != null;
+  return !existing;
 }
