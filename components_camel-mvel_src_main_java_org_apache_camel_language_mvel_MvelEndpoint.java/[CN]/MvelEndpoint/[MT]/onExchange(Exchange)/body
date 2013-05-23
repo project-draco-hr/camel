@@ -1,0 +1,41 @@
+{
+  String path=getResourceUri();
+  ObjectHelper.notNull(path,"resourceUri");
+  String newResourceUri=exchange.getIn().getHeader(MvelConstants.MVEL_RESOURCE_URI,String.class);
+  if (newResourceUri != null) {
+    exchange.getIn().removeHeader(MvelConstants.MVEL_RESOURCE_URI);
+    log.debug("{} set to {} creating new endpoint to handle exchange",MvelConstants.MVEL_RESOURCE_URI,newResourceUri);
+    MvelEndpoint newEndpoint=findOrCreateEndpoint(getEndpointUri(),newResourceUri);
+    newEndpoint.onExchange(exchange);
+    return;
+  }
+  CompiledTemplate compiled;
+  ParserContext mvelContext=ParserContext.create();
+  Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
+  String content=exchange.getIn().getHeader(MvelConstants.MVEL_TEMPLATE,String.class);
+  if (content != null) {
+    if (log.isDebugEnabled()) {
+      log.debug("Mvel content read from header {} for endpoint {}",MvelConstants.MVEL_TEMPLATE,getEndpointUri());
+    }
+    exchange.getIn().removeHeader(MvelConstants.MVEL_TEMPLATE);
+    compiled=TemplateCompiler.compileTemplate(content,mvelContext);
+  }
+ else {
+    if (log.isDebugEnabled()) {
+      log.debug("Mvel content read from resource {} with resourceUri: {} for endpoint {}",new Object[]{getResourceUri(),path,getEndpointUri()});
+    }
+    Reader reader=getEncoding() != null ? new InputStreamReader(getResourceAsInputStream(),getEncoding()) : new InputStreamReader(getResourceAsInputStream());
+    String template=IOConverter.toString(reader);
+    if (!template.equals(this.template)) {
+      this.template=template;
+      this.compiled=TemplateCompiler.compileTemplate(template,mvelContext);
+    }
+    compiled=this.compiled;
+  }
+  log.debug("Mvel is evaluating using mvel context: {}",variableMap);
+  Object result=TemplateRuntime.execute(compiled,mvelContext,variableMap);
+  Message out=exchange.getOut();
+  out.setBody(result.toString());
+  out.setHeaders(exchange.getIn().getHeaders());
+  out.setAttachments(exchange.getIn().getAttachments());
+}
