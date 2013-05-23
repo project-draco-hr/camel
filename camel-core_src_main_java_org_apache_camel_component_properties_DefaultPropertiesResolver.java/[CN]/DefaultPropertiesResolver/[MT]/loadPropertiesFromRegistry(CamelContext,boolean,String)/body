@@ -2,7 +2,15 @@
   if (path.startsWith("ref:")) {
     path=ObjectHelper.after(path,"ref:");
   }
-  Properties answer=context.getRegistry().lookupByNameAndType(path,Properties.class);
+  Properties answer=null;
+  try {
+    answer=context.getRegistry().lookupByNameAndType(path,Properties.class);
+  }
+ catch (  Exception ex) {
+    Map map=context.getRegistry().lookupByNameAndType(path,Map.class);
+    answer=new Properties();
+    answer.putAll(map);
+  }
   if (answer == null && (!ignoreMissingLocation)) {
     throw new FileNotFoundException("Properties " + path + " not found in registry");
   }
