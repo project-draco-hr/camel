@@ -7,17 +7,19 @@
   long uid=debugCounter.incrementAndGet();
   BacklogTracerEventMessage msg=new DefaultBacklogTracerEventMessage(uid,timestamp,routeId,toNode,exchangeId,messageAsXml);
   suspendedBreakpointMessages.put(nodeId,msg);
-  final CountDownLatch latch=suspendedBreakpoints.get(nodeId);
-  logger.log("NodeBreakpoint at node " + toNode + " is waiting to continue for exchangeId: "+ exchange.getExchangeId());
-  try {
-    boolean hit=latch.await(fallbackTimeout,TimeUnit.SECONDS);
-    if (!hit) {
-      logger.log("NodeBreakpoint at node " + toNode + " timed out and is continued exchangeId: "+ exchange.getExchangeId(),LoggingLevel.WARN);
-    }
+  final SuspendedExchange se=suspendedBreakpoints.get(nodeId);
+  if (se != null) {
+    logger.log("NodeBreakpoint at node " + toNode + " is waiting to continue for exchangeId: "+ exchange.getExchangeId());
+    try {
+      boolean hit=se.getLatch().await(fallbackTimeout,TimeUnit.SECONDS);
+      if (!hit) {
+        logger.log("NodeBreakpoint at node " + toNode + " timed out and is continued exchangeId: "+ exchange.getExchangeId(),LoggingLevel.WARN);
+      }
  else {
-      logger.log("NodeBreakpoint at node " + toNode + " is continued exchangeId: "+ exchange.getExchangeId());
+        logger.log("NodeBreakpoint at node " + toNode + " is continued exchangeId: "+ exchange.getExchangeId());
+      }
     }
-  }
- catch (  InterruptedException e) {
+ catch (    InterruptedException e) {
+    }
   }
 }

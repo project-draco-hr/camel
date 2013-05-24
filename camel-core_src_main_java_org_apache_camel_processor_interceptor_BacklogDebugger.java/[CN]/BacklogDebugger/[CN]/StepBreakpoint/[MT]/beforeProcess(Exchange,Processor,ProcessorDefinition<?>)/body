@@ -7,11 +7,11 @@
   long uid=debugCounter.incrementAndGet();
   BacklogTracerEventMessage msg=new DefaultBacklogTracerEventMessage(uid,timestamp,routeId,toNode,exchangeId,messageAsXml);
   suspendedBreakpointMessages.put(toNode,msg);
-  final CountDownLatch latch=new CountDownLatch(1);
-  suspendedBreakpoints.put(toNode,latch);
+  SuspendedExchange se=new SuspendedExchange(exchange,new CountDownLatch(1));
+  suspendedBreakpoints.put(toNode,se);
   logger.log("StepBreakpoint at node " + toNode + " is waiting to continue for exchangeId: "+ exchange.getExchangeId());
   try {
-    boolean hit=latch.await(fallbackTimeout,TimeUnit.SECONDS);
+    boolean hit=se.getLatch().await(fallbackTimeout,TimeUnit.SECONDS);
     if (!hit) {
       logger.log("StepBreakpoint at node " + toNode + " timed out and is continued exchangeId: "+ exchange.getExchangeId(),LoggingLevel.WARN);
     }
