@@ -5,10 +5,11 @@
   if (isOnCompleteOnly() && isOnFailureOnly()) {
     throw new IllegalArgumentException("Both onCompleteOnly and onFailureOnly cannot be true. Only one of them can be true. On node: " + this);
   }
-  Processor childProcessor=this.createChildProcessor(routeContext,true);
-  childProcessor=new UnitOfWorkProcessor(routeContext,childProcessor);
   String id=routeContext.getRoute().getId();
-  onCompletions.put(id,childProcessor);
+  Processor childProcessor=this.createChildProcessor(routeContext,true);
+  CamelInternalProcessor internal=new CamelInternalProcessor(childProcessor);
+  internal.addTask(new CamelInternalProcessor.UnitOfWorkProcessorTask(id));
+  onCompletions.put(id,internal);
   Predicate when=null;
   if (onWhen != null) {
     when=onWhen.getExpression().createPredicate(routeContext);
@@ -16,6 +17,6 @@
   boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,true);
   ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,true);
   boolean original=getUseOriginalMessagePolicy() != null ? getUseOriginalMessagePolicy() : false;
-  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),childProcessor,threadPool,shutdownThreadPool,isOnCompleteOnly(),isOnFailureOnly(),when,original);
+  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),internal,threadPool,shutdownThreadPool,isOnCompleteOnly(),isOnFailureOnly(),when,original);
   return answer;
 }
