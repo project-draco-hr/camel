@@ -1,3 +1,34 @@
 {
-  return new SolrProducer(this);
+  SolrComponent.SolrServerReference ref=getComponent().getSolrServers(this);
+  if (ref == null) {
+    HttpSolrServer solrServer=new HttpSolrServer(url);
+    ConcurrentUpdateSolrServer solrStreamingServer=new ConcurrentUpdateSolrServer(url,streamingQueueSize,streamingThreadCount);
+    if (maxRetries != null) {
+      solrServer.setMaxRetries(maxRetries);
+    }
+    if (soTimeout != null) {
+      solrServer.setSoTimeout(soTimeout);
+    }
+    if (connectionTimeout != null) {
+      solrServer.setConnectionTimeout(connectionTimeout);
+    }
+    if (defaultMaxConnectionsPerHost != null) {
+      solrServer.setDefaultMaxConnectionsPerHost(defaultMaxConnectionsPerHost);
+    }
+    if (maxTotalConnections != null) {
+      solrServer.setMaxTotalConnections(maxTotalConnections);
+    }
+    if (followRedirects != null) {
+      solrServer.setFollowRedirects(followRedirects);
+    }
+    if (allowCompression != null) {
+      solrServer.setAllowCompression(allowCompression);
+    }
+    ref=new SolrComponent.SolrServerReference(this);
+    ref.setSolrServer(solrServer);
+    ref.setUpdateSolrServer(solrStreamingServer);
+    getComponent().addSolrServers(this,ref);
+  }
+  ref.addReference();
+  return new SolrProducer(this,ref.getSolrServer(),ref.getUpdateSolrServer());
 }
