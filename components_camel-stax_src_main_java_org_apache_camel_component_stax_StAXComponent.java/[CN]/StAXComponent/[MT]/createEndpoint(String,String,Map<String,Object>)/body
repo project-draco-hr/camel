@@ -1,6 +1,13 @@
 {
-  Class<ContentHandler> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(remaining,ContentHandler.class);
-  StAXProcessor processor=new StAXProcessor(clazz);
+  StAXProcessor processor;
+  if (EndpointHelper.isReferenceParameter(remaining)) {
+    ContentHandler handler=EndpointHelper.resolveReferenceParameter(getCamelContext(),remaining.substring(1),ContentHandler.class,true);
+    processor=new StAXProcessor(handler);
+  }
+ else {
+    Class clazz=getCamelContext().getClassResolver().resolveMandatoryClass(remaining,ContentHandler.class);
+    processor=new StAXProcessor(clazz);
+  }
   setProperties(processor,parameters);
   return new ProcessorEndpoint(uri,this,processor);
 }
