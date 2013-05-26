@@ -1,11 +1,14 @@
 {
   Processor processor=this.createChildProcessor(routeContext,true);
   Expression expression=getExpression().createExpression(routeContext);
+  String routeId=routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
+  CamelInternalProcessor internal=new CamelInternalProcessor(processor);
+  internal.addTask(new CamelInternalProcessor.UnitOfWorkProcessorTask(routeId));
   ObjectHelper.notNull(config,"config",this);
   ObjectHelper.notNull(expression,"expression",this);
   ExpressionResultComparator comparator=config.getComparator();
   comparator.setExpression(expression);
-  StreamResequencer resequencer=new StreamResequencer(routeContext.getCamelContext(),processor,comparator);
+  StreamResequencer resequencer=new StreamResequencer(routeContext.getCamelContext(),internal,comparator);
   resequencer.setTimeout(config.getTimeout());
   resequencer.setCapacity(config.getCapacity());
   resequencer.setRejectOld(config.getRejectOld());
