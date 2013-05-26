@@ -1,0 +1,22 @@
+{
+  LOG.debug("Executing Weather Query " + this.query);
+  URL url=new URL(this.query);
+  URLConnection urlConnection=url.openConnection();
+  BufferedReader in=new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+  String inputLine;
+  String answer="";
+  while ((inputLine=in.readLine()) != null) {
+    answer+=inputLine;
+  }
+  LOG.debug("result = " + answer);
+  if (answer != null && !answer.isEmpty()) {
+    Exchange exchange=endpoint.createExchange();
+    exchange.getIn().setBody(answer);
+    exchange.setProperty("query",this.query);
+    getProcessor().process(exchange);
+    return 1;
+  }
+ else {
+    return 0;
+  }
+}
