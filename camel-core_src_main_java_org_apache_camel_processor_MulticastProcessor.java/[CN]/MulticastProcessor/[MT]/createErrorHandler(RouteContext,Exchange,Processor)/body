@@ -12,13 +12,14 @@
     try {
       processor=builder.createErrorHandler(routeContext,processor);
       answer=createUnitOfWorkProcessor(routeContext,processor,exchange);
+      boolean child=exchange.getProperty(Exchange.PARENT_UNIT_OF_WORK,UnitOfWork.class) != null;
       ServiceHelper.startServices(answer);
+      if (!child) {
+        errorHandlers.putIfAbsent(key,answer);
+      }
     }
  catch (    Exception e) {
       throw ObjectHelper.wrapRuntimeCamelException(e);
-    }
-    if (!(answer instanceof ChildUnitOfWorkProcessor)) {
-      errorHandlers.putIfAbsent(key,answer);
     }
   }
  else {

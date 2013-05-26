@@ -1,9 +1,12 @@
 {
+  String routeId=routeContext != null ? routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory()) : null;
+  CamelInternalProcessor internal=new CamelInternalProcessor(processor);
   UnitOfWork parent=exchange.getProperty(Exchange.PARENT_UNIT_OF_WORK,UnitOfWork.class);
   if (parent != null) {
-    return new ChildUnitOfWorkProcessor(parent,routeContext,processor);
+    internal.addTask(new CamelInternalProcessor.ChildUnitOfWorkProcessorTask(routeId,parent));
   }
  else {
-    return new UnitOfWorkProcessor(routeContext,processor);
+    internal.addTask(new CamelInternalProcessor.UnitOfWorkProcessorTask(routeId));
   }
+  return internal;
 }
