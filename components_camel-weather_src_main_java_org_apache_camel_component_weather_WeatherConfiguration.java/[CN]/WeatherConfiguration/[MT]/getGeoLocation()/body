@@ -1,30 +1,11 @@
 {
-  final String LATITUDE="latitude";
-  final String LONGITUDE="longitude";
-  String result="";
-  try {
-    String urlStr="http://freegeoip.net/json/";
-    URL url=new URL(urlStr);
-    HttpURLConnection urlConnection=(HttpURLConnection)url.openConnection();
-    BufferedReader in=new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-    String inputLine;
-    String temp="";
-    while ((inputLine=in.readLine()) != null) {
-      temp+=inputLine;
-    }
-    in.close();
-    urlConnection.disconnect();
-    if (temp != null && !temp.isEmpty()) {
-      ObjectMapper mapper=new ObjectMapper();
-      JsonNode node=mapper.readValue(temp,JsonNode.class);
-      JsonNode latitudeNode=node.get(LATITUDE);
-      JsonNode longitudeNode=node.get(LONGITUDE);
-      if (latitudeNode != null && longitudeNode != null) {
-        result="lat=" + latitudeNode.toString() + "&lon="+ longitudeNode.toString();
-      }
-    }
+  String geoLocation=component.getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,new URL("http://freegeoip.net/json/"));
+  if (isEmpty(geoLocation)) {
+    throw new IllegalStateException("Retrieved an unexpected value: '" + geoLocation + "' for the geographical location");
   }
- catch (  Exception e) {
-  }
-  return result;
+  ObjectMapper mapper=new ObjectMapper();
+  JsonNode node=mapper.readValue(geoLocation,JsonNode.class);
+  JsonNode latitudeNode=notNull(node.get("latitude"),"latitude");
+  JsonNode longitudeNode=notNull(node.get("longitude"),"longitude");
+  return "lat=" + latitudeNode.toString() + "&lon="+ longitudeNode.toString();
 }
