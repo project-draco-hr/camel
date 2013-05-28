@@ -1,3 +1,87 @@
 {
-  return processErrorHandler(exchange,callback,new RedeliveryData());
+  final RedeliveryData data=new RedeliveryData();
+  data.original=defensiveCopyExchangeIfNeeded(exchange);
+  while (true) {
+    if (!isRunAllowed(data)) {
+      log.trace("Run not allowed, will reject executing exchange: {}",exchange);
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      callback.done(data.sync);
+      return data.sync;
+    }
+    boolean handle=shouldHandleException(exchange);
+    if (handle) {
+      handleException(exchange,data);
+    }
+    boolean exhausted=isExhausted(exchange,data);
+    boolean redeliverAllowed=isRedeliveryAllowed(data);
+    if (!redeliverAllowed || exhausted) {
+      Processor target=null;
+      boolean deliver=true;
+      SubUnitOfWorkCallback uowCallback=exchange.getUnitOfWork().getSubUnitOfWorkCallback();
+      if (uowCallback != null) {
+        uowCallback.onExhausted(exchange);
+        deliver=false;
+      }
+      if (deliver) {
+        target=data.failureProcessor != null ? data.failureProcessor : data.deadLetterProcessor;
+      }
+      boolean isDeadLetterChannel=isDeadLetterChannel() && target == data.deadLetterProcessor;
+      boolean sync=deliverToFailureProcessor(target,isDeadLetterChannel,exchange,data,callback);
+      return sync;
+    }
+    if (data.redeliveryCounter > 0) {
+      data.redeliveryDelay=determineRedeliveryDelay(exchange,data.currentRedeliveryPolicy,data.redeliveryDelay,data.redeliveryCounter);
+      if (data.redeliveryDelay > 0) {
+        if (data.currentRedeliveryPolicy.isAsyncDelayedRedelivery() && !exchange.isTransacted()) {
+          ObjectHelper.notNull(executorService,"Redelivery is enabled but ExecutorService has not been configured.",this);
+          data.sync=false;
+          data.redeliverFromSync=true;
+          AsyncRedeliveryTask task=new AsyncRedeliveryTask(exchange,callback,data);
+          if (log.isTraceEnabled()) {
+            log.trace("Scheduling redelivery task to run in {} millis for exchangeId: {}",data.redeliveryDelay,exchange.getExchangeId());
+          }
+          executorService.schedule(task,data.redeliveryDelay,TimeUnit.MILLISECONDS);
+          return false;
+        }
+ else {
+          try {
+            data.currentRedeliveryPolicy.sleep(data.redeliveryDelay);
+          }
+ catch (          InterruptedException e) {
+            exchange.setException(e);
+            exchange.setProperty(Exchange.ROUTE_STOP,Boolean.TRUE);
+            callback.done(data.sync);
+            return data.sync;
+          }
+        }
+      }
+      prepareExchangeForRedelivery(exchange,data);
+      deliverToOnRedeliveryProcessor(exchange,data);
+      EventHelper.notifyExchangeRedelivery(exchange.getContext(),exchange,data.redeliveryCounter);
+    }
+    boolean sync=outputAsync.process(exchange,new AsyncCallback(){
+      public void done(      boolean sync){
+        if (sync) {
+          return;
+        }
+        data.sync=false;
+        if (isDone(exchange)) {
+          callback.done(sync);
+          return;
+        }
+        processAsyncErrorHandler(exchange,callback,data);
+      }
+    }
+);
+    if (!sync) {
+      return false;
+    }
+    boolean done=isDone(exchange);
+    if (done) {
+      callback.done(true);
+      return true;
+    }
+  }
 }
