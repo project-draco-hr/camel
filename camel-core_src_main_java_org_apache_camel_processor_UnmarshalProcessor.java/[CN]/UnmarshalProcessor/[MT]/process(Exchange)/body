@@ -1,27 +1,3 @@
 {
-  ObjectHelper.notNull(dataFormat,"dataFormat");
-  InputStream stream=exchange.getIn().getMandatoryBody(InputStream.class);
-  try {
-    Message out=exchange.getOut();
-    out.copyFrom(exchange.getIn());
-    Object result=dataFormat.unmarshal(exchange,stream);
-    if (result instanceof Exchange) {
-      if (result != exchange) {
-        throw new RuntimeCamelException("The returned exchange " + result + " is not the same as "+ exchange+ " provided to the DataFormat");
-      }
-    }
- else     if (result instanceof Message) {
-      exchange.setOut((Message)result);
-    }
- else {
-      out.setBody(result);
-    }
-  }
- catch (  Exception e) {
-    exchange.setOut(null);
-    throw e;
-  }
- finally {
-    IOHelper.close(stream,"input stream");
-  }
+  AsyncProcessorHelper.process(this,exchange);
 }

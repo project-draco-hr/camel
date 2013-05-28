@@ -1,0 +1,58 @@
+{
+  try {
+    preCheckPoll(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(new CamelExchangeException("Error during pre poll check",exchange,e));
+    callback.done(true);
+    return true;
+  }
+  Exchange resourceExchange;
+  if (timeout < 0) {
+    LOG.debug("Consumer receive: {}",consumer);
+    resourceExchange=consumer.receive();
+  }
+ else   if (timeout == 0) {
+    LOG.debug("Consumer receiveNoWait: {}",consumer);
+    resourceExchange=consumer.receiveNoWait();
+  }
+ else {
+    LOG.debug("Consumer receive with timeout: {} ms. {}",timeout,consumer);
+    resourceExchange=consumer.receive(timeout);
+  }
+  if (resourceExchange == null) {
+    LOG.debug("Consumer received no exchange");
+  }
+ else {
+    LOG.debug("Consumer received: {}",resourceExchange);
+  }
+  if (resourceExchange != null && resourceExchange.isFailed()) {
+    copyResultsPreservePattern(exchange,resourceExchange);
+  }
+ else {
+    prepareResult(exchange);
+    try {
+      ExchangeHelper.prepareAggregation(exchange,resourceExchange);
+      Exchange aggregatedExchange=aggregationStrategy.aggregate(exchange,resourceExchange);
+      if (aggregatedExchange != null) {
+        copyResultsPreservePattern(exchange,aggregatedExchange);
+        if (resourceExchange != null) {
+          resourceExchange.handoverCompletions(exchange);
+        }
+      }
+    }
+ catch (    Throwable e) {
+      exchange.setException(new CamelExchangeException("Error occurred during aggregation",exchange,e));
+      callback.done(true);
+      return true;
+    }
+  }
+  if (exchange.hasOut()) {
+    exchange.getOut().setHeader(Exchange.TO_ENDPOINT,consumer.getEndpoint().getEndpointUri());
+  }
+ else {
+    exchange.getIn().setHeader(Exchange.TO_ENDPOINT,consumer.getEndpoint().getEndpointUri());
+  }
+  callback.done(true);
+  return true;
+}

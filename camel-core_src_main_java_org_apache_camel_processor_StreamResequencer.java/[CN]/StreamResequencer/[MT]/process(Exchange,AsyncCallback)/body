@@ -1,0 +1,26 @@
+{
+  while (engine.size() >= capacity) {
+    try {
+      Thread.sleep(getTimeout());
+    }
+ catch (    InterruptedException e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+  }
+  try {
+    engine.insert(exchange);
+    delivery.request();
+  }
+ catch (  Exception e) {
+    if (isIgnoreInvalidExchanges()) {
+      LOG.debug("Invalid Exchange. This Exchange will be ignored: {}",exchange);
+    }
+ else {
+      exchange.setException(new CamelExchangeException("Error processing Exchange in StreamResequencer",exchange,e));
+    }
+  }
+  callback.done(true);
+  return true;
+}

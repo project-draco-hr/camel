@@ -1,0 +1,55 @@
+{
+  boolean completeAllGroups=exchange.getIn().getHeader(Exchange.AGGREGATION_COMPLETE_ALL_GROUPS,false,boolean.class);
+  if (completeAllGroups) {
+    forceCompletionOfAllGroups();
+    return;
+  }
+  String key=correlationExpression.evaluate(exchange,String.class);
+  if (ObjectHelper.isEmpty(key)) {
+    if (isIgnoreInvalidCorrelationKeys()) {
+      LOG.debug("Invalid correlation key. This Exchange will be ignored: {}",exchange);
+      return;
+    }
+ else {
+      throw new CamelExchangeException("Invalid correlation key",exchange);
+    }
+  }
+  if (closedCorrelationKeys != null && closedCorrelationKeys.containsKey(key)) {
+    throw new ClosedCorrelationKeyException(key,exchange);
+  }
+  if (optimisticLocking) {
+    boolean exhaustedRetries=true;
+    int attempt=0;
+    do {
+      attempt++;
+      Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
+      try {
+        doAggregation(key,copy);
+        exhaustedRetries=false;
+        break;
+      }
+ catch (      OptimisticLockingAggregationRepository.OptimisticLockingException e) {
+        LOG.trace("On attempt {} OptimisticLockingAggregationRepository: {} threw OptimisticLockingException while trying to add() key: {} and exchange: {}",new Object[]{attempt,aggregationRepository,key,copy,e});
+        optimisticLockRetryPolicy.doDelay(attempt);
+      }
+    }
+ while (optimisticLockRetryPolicy.shouldRetry(attempt));
+    if (exhaustedRetries) {
+      throw new CamelExchangeException("Exhausted optimistic locking retry attempts, tried " + attempt + " times",exchange,new OptimisticLockingAggregationRepository.OptimisticLockingException());
+    }
+  }
+ else {
+    Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
+    lock.lock();
+    try {
+      doAggregation(key,copy);
+    }
+  finally {
+      lock.unlock();
+    }
+  }
+  boolean completeAllGroupsInclusive=exchange.getIn().getHeader(Exchange.AGGREGATION_COMPLETE_ALL_GROUPS_INCLUSIVE,false,boolean.class);
+  if (completeAllGroupsInclusive) {
+    forceCompletionOfAllGroups();
+  }
+}

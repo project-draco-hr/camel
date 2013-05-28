@@ -1,0 +1,27 @@
+{
+  try {
+    if (isBatchConsumer()) {
+      int size=exchange.getProperty(Exchange.BATCH_SIZE,Integer.class);
+      if (batchSize != size) {
+        batchSize=size;
+        LOG.trace("Using batch consumer completion, so setting batch size to: {}",batchSize);
+      }
+    }
+    if (!isValid(exchange)) {
+      if (isIgnoreInvalidExchanges()) {
+        LOG.debug("Invalid Exchange. This Exchange will be ignored: {}",exchange);
+      }
+ else {
+        throw new CamelExchangeException("Exchange is not valid to be used by the BatchProcessor",exchange);
+      }
+    }
+ else {
+      sender.enqueueExchange(exchange);
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+  }
+  callback.done(true);
+  return true;
+}

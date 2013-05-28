@@ -1,0 +1,64 @@
+{
+  Schema schema;
+  if (isUseSharedSchema()) {
+    schema=getSchema();
+  }
+ else {
+    schema=createSchema();
+  }
+  Validator validator=schema.newValidator();
+  Source source=null;
+  InputStream is=null;
+  try {
+    Result result=null;
+    if (isInputStreamNeeded(exchange)) {
+      is=getContentToValidate(exchange,InputStream.class);
+      if (is != null) {
+        source=getSource(exchange,is);
+      }
+    }
+ else {
+      Object content=getContentToValidate(exchange);
+      if (content != null) {
+        source=getSource(exchange,content);
+      }
+    }
+    if (shouldUseHeader()) {
+      if (source == null && isFailOnNullHeader()) {
+        throw new NoXmlHeaderValidationException(exchange,headerName);
+      }
+    }
+ else {
+      if (source == null && isFailOnNullBody()) {
+        throw new NoXmlBodyValidationException(exchange);
+      }
+    }
+    if (source instanceof DOMSource) {
+      result=new DOMResult();
+    }
+ else     if (source instanceof StreamSource) {
+      result=new StreamResult(new StringWriter());
+    }
+ else     if (source instanceof SAXSource) {
+      result=new SAXResult();
+    }
+ else     if (source instanceof StAXSource) {
+      result=null;
+    }
+    if (source != null) {
+      ValidatorErrorHandler handler=errorHandler.getClass().newInstance();
+      validator.setErrorHandler(handler);
+      try {
+        LOG.trace("Validating {}",source);
+        validator.validate(source,result);
+        handler.handleErrors(exchange,schema,result);
+      }
+ catch (      SAXParseException e) {
+        throw new SchemaValidationException(exchange,schema,Collections.singletonList(e),Collections.<SAXParseException>emptyList(),Collections.<SAXParseException>emptyList());
+      }
+    }
+  }
+  finally {
+    IOHelper.close(is);
+  }
+}
