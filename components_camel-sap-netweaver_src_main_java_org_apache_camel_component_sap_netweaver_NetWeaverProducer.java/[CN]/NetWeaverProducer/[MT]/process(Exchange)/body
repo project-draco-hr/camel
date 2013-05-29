@@ -1,7 +1,11 @@
 {
+  String command=ExchangeHelper.getMandatoryHeader(exchange,NetWeaverConstants.COMMAND,String.class);
   Exchange dummy=getEndpoint().createExchange();
-  dummy.getIn().setHeader("Accept","application/json");
-  log.info("Calling SAP Net-Weaver");
+  dummy.getIn().setHeader(Exchange.HTTP_PATH,command);
+  if (getEndpoint().isJson()) {
+    dummy.getIn().setHeader("Accept","application/json");
+  }
+  log.debug("Calling SAP Net-Weaver {} with command {}",http,command);
   http.process(dummy);
   String json=dummy.hasOut() ? dummy.getOut().getBody(String.class) : dummy.getIn().getBody(String.class);
   if (json != null) {
