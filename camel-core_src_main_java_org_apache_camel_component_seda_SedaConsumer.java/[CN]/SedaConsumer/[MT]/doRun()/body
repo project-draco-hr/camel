@@ -12,14 +12,20 @@
       continue;
     }
     if (isSuspending() || isSuspended()) {
-      LOG.trace("Consumer is suspended so skip polling");
-      try {
-        Thread.sleep(Math.min(pollTimeout,1000));
+      if (shutdownPending && queue.isEmpty()) {
+        LOG.trace("Consumer is suspended and shutdown is pending, so this consumer thread is breaking out because the task queue is empty.");
+        break;
       }
- catch (      InterruptedException e) {
-        LOG.debug("Sleep interrupted, are we stopping? {}",isStopping() || isStopped());
+ else {
+        LOG.trace("Consumer is suspended so skip polling");
+        try {
+          Thread.sleep(Math.min(pollTimeout,1000));
+        }
+ catch (        InterruptedException e) {
+          LOG.debug("Sleep interrupted, are we stopping? {}",isStopping() || isStopped());
+        }
+        continue;
       }
-      continue;
     }
     Exchange exchange=null;
     try {
