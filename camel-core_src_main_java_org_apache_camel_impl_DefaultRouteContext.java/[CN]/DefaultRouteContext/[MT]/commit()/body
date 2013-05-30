@@ -3,8 +3,8 @@
     Processor target=Pipeline.newInstance(getCamelContext(),eventDrivenProcessors);
     String routeId=route.idOrCreate(getCamelContext().getNodeIdFactory());
     CamelInternalProcessor internal=new CamelInternalProcessor(target);
-    internal.addTask(new CamelInternalProcessor.UnitOfWorkProcessorTask(routeId));
-    internal.addTask(new CamelInternalProcessor.RouteContextTask(this));
+    internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeId));
+    internal.addAdvice(new CamelInternalProcessor.RouteContextAdvice(this));
     List<RoutePolicy> routePolicyList=getRoutePolicyList();
     if (routePolicyList != null && !routePolicyList.isEmpty()) {
       for (      RoutePolicy policy : routePolicyList) {
@@ -17,17 +17,17 @@
           }
         }
       }
-      internal.addTask(new CamelInternalProcessor.RoutePolicyTask(routePolicyList));
+      internal.addAdvice(new CamelInternalProcessor.RoutePolicyAdvice(routePolicyList));
     }
-    internal.addTask(new CamelInternalProcessor.RouteInflightRepositoryTask(camelContext.getInflightRepository(),routeId));
-    internal.addTask(new CamelInternalProcessor.InstrumentationTask("route"));
+    internal.addAdvice(new CamelInternalProcessor.RouteInflightRepositoryAdvice(camelContext.getInflightRepository(),routeId));
+    internal.addAdvice(new CamelInternalProcessor.InstrumentationAdvice("route"));
     Route edcr=new EventDrivenConsumerRoute(this,getEndpoint(),internal);
     edcr.getProperties().put(Route.ID_PROPERTY,routeId);
     edcr.getProperties().put(Route.PARENT_PROPERTY,Integer.toHexString(route.hashCode()));
     if (route.getGroup() != null) {
       edcr.getProperties().put(Route.GROUP_PROPERTY,route.getGroup());
     }
-    CamelInternalProcessor.RoutePolicyTask task=internal.getTask(CamelInternalProcessor.RoutePolicyTask.class);
+    CamelInternalProcessor.RoutePolicyAdvice task=internal.getAdvice(CamelInternalProcessor.RoutePolicyAdvice.class);
     if (task != null) {
       task.setRoute(edcr);
     }
