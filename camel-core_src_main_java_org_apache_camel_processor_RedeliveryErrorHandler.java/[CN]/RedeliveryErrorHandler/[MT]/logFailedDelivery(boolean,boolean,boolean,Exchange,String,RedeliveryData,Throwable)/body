@@ -39,6 +39,12 @@
     if (cause != null) {
       msg=msg + " due: " + cause.getMessage();
     }
+    if (!shouldRedeliver && data.currentRedeliveryPolicy.isLogExhaustedMessageHistory()) {
+      String routeStackTrace=ProcessorDefinitionHelper.dumpMessageHistoryStacktrace(exchange,false);
+      if (routeStackTrace != null) {
+        msg=msg + "\n" + routeStackTrace;
+      }
+    }
     if (newLogLevel == LoggingLevel.ERROR) {
       logger.log(msg,LoggingLevel.WARN);
     }
@@ -46,10 +52,19 @@
       logger.log(msg,newLogLevel);
     }
   }
- else   if (e != null && logStackTrace) {
-    logger.log(message,e,newLogLevel);
-  }
  else {
-    logger.log(message,newLogLevel);
+    String msg=message;
+    if (!shouldRedeliver && data.currentRedeliveryPolicy.isLogExhaustedMessageHistory()) {
+      String routeStackTrace=ProcessorDefinitionHelper.dumpMessageHistoryStacktrace(exchange,e != null && logStackTrace);
+      if (routeStackTrace != null) {
+        msg=msg + "\n" + routeStackTrace;
+      }
+    }
+    if (e != null && logStackTrace) {
+      logger.log(msg,e,newLogLevel);
+    }
+ else {
+      logger.log(msg,newLogLevel);
+    }
   }
 }
