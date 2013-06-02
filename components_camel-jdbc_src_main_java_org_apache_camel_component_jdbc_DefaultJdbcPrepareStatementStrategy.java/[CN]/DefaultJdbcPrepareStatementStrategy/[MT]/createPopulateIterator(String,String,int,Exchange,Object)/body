@@ -1,0 +1,56 @@
+{
+  Map<?,?> map=null;
+  if (exchange.getIn().hasHeaders()) {
+    if (exchange.getIn().getHeader(JdbcConstants.JDBC_PARAMETERS) != null) {
+      map=exchange.getIn().getHeader(JdbcConstants.JDBC_PARAMETERS,Map.class);
+    }
+ else {
+      map=exchange.getIn().getHeaders();
+    }
+  }
+  final Map<?,?> headerMap=map;
+  if (hasNamedParameters(query)) {
+    try {
+      return new Iterator<Object>(){
+        private NamedQueryParser parser=new NamedQueryParser(query);
+        private Object next;
+        private boolean done;
+        @Override public boolean hasNext(){
+          if (done) {
+            return false;
+          }
+          if (next == null) {
+            next=next();
+          }
+          return next != null;
+        }
+        @Override public Object next(){
+          if (next == null) {
+            String key=parser.next();
+            if (key == null) {
+              done=true;
+              return null;
+            }
+            boolean contains=headerMap != null && headerMap.containsKey(key);
+            if (!contains) {
+              throw new RuntimeExchangeException("Cannot find key [" + key + "] in message body or headers to use when setting named parameter in query ["+ query+ "]",exchange);
+            }
+            next=headerMap.get(key);
+          }
+          Object answer=next;
+          next=null;
+          return answer;
+        }
+        @Override public void remove(){
+        }
+      }
+;
+    }
+ catch (    Exception e) {
+      throw new SQLException("Error iterating parameters for the query: " + query,e);
+    }
+  }
+ else {
+    return exchange.getContext().getTypeConverter().convertTo(Iterator.class,headerMap != null ? headerMap.values() : null);
+  }
+}

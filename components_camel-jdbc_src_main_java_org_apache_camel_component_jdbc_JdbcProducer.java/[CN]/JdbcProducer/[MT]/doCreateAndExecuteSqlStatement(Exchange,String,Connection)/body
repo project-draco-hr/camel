@@ -1,0 +1,46 @@
+{
+  Statement stmt=null;
+  ResultSet rs=null;
+  try {
+    stmt=conn.createStatement();
+    if (parameters != null && !parameters.isEmpty()) {
+      IntrospectionSupport.setProperties(stmt,parameters);
+    }
+    LOG.debug("Executing JDBC Statement: {}",sql);
+    Boolean shouldRetrieveGeneratedKeys=exchange.getIn().getHeader(JdbcConstants.JDBC_RETRIEVE_GENERATED_KEYS,false,Boolean.class);
+    boolean stmtExecutionResult;
+    if (shouldRetrieveGeneratedKeys) {
+      Object expectedGeneratedColumns=exchange.getIn().getHeader(JdbcConstants.JDBC_GENERATED_COLUMNS);
+      if (expectedGeneratedColumns == null) {
+        stmtExecutionResult=stmt.execute(sql,Statement.RETURN_GENERATED_KEYS);
+      }
+ else       if (expectedGeneratedColumns instanceof String[]) {
+        stmtExecutionResult=stmt.execute(sql,(String[])expectedGeneratedColumns);
+      }
+ else       if (expectedGeneratedColumns instanceof int[]) {
+        stmtExecutionResult=stmt.execute(sql,(int[])expectedGeneratedColumns);
+      }
+ else {
+        throw new IllegalArgumentException("Header specifying expected returning columns isn't an instance of String[] or int[] but " + expectedGeneratedColumns.getClass());
+      }
+    }
+ else {
+      stmtExecutionResult=stmt.execute(sql);
+    }
+    if (stmtExecutionResult) {
+      rs=stmt.getResultSet();
+      setResultSet(exchange,rs);
+    }
+ else {
+      int updateCount=stmt.getUpdateCount();
+      exchange.getOut().setHeader(JdbcConstants.JDBC_UPDATE_COUNT,updateCount);
+    }
+    if (shouldRetrieveGeneratedKeys) {
+      setGeneratedKeys(exchange,stmt.getGeneratedKeys());
+    }
+  }
+  finally {
+    closeQuietly(rs);
+    closeQuietly(stmt);
+  }
+}

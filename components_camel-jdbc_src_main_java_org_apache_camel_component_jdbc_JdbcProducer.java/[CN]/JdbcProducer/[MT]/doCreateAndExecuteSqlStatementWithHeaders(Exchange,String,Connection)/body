@@ -1,0 +1,27 @@
+{
+  PreparedStatement ps=null;
+  ResultSet rs=null;
+  try {
+    final String preparedQuery=getEndpoint().getPrepareStatementStrategy().prepareQuery(sql,getEndpoint().isAllowNamedParameters());
+    ps=conn.prepareStatement(preparedQuery);
+    int expectedCount=ps.getParameterMetaData().getParameterCount();
+    if (expectedCount > 0) {
+      Iterator<?> it=getEndpoint().getPrepareStatementStrategy().createPopulateIterator(sql,preparedQuery,expectedCount,exchange,exchange.getIn().getBody());
+      getEndpoint().getPrepareStatementStrategy().populateStatement(ps,it,expectedCount);
+    }
+    LOG.debug("Executing JDBC PreparedStatement: {}",sql);
+    boolean stmtExecutionResult=ps.execute();
+    if (stmtExecutionResult) {
+      rs=ps.getResultSet();
+      setResultSet(exchange,rs);
+    }
+ else {
+      int updateCount=ps.getUpdateCount();
+      exchange.getOut().setHeader(JdbcConstants.JDBC_UPDATE_COUNT,updateCount);
+    }
+  }
+  finally {
+    closeQuietly(rs);
+    closeQuietly(ps);
+  }
+}
