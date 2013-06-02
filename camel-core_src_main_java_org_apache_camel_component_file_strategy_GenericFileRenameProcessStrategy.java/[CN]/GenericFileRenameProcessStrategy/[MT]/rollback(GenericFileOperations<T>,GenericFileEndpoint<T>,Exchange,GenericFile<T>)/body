@@ -1,11 +1,19 @@
 {
-  super.rollback(operations,endpoint,exchange,file);
-  if (failureRenamer != null) {
-    Exchange copy=exchange.copy();
-    file.bindToExchange(copy);
-    copy.getIn().setMessageId(exchange.getIn().getMessageId());
-    copy.setExchangeId(exchange.getExchangeId());
-    GenericFile<T> newName=failureRenamer.renameFile(copy,file);
-    renameFile(operations,file,newName);
+  try {
+    operations.releaseRetreivedFileResources(exchange);
+    if (failureRenamer != null) {
+      Exchange copy=exchange.copy();
+      file.bindToExchange(copy);
+      copy.getIn().setMessageId(exchange.getIn().getMessageId());
+      copy.setExchangeId(exchange.getExchangeId());
+      GenericFile<T> newName=failureRenamer.renameFile(copy,file);
+      renameFile(operations,file,newName);
+    }
+  }
+  finally {
+    if (exclusiveReadLockStrategy != null) {
+      exclusiveReadLockStrategy.releaseExclusiveReadLock(operations,file,exchange);
+    }
+    deleteLocalWorkFile(exchange);
   }
 }

@@ -1,11 +1,15 @@
 {
-  super.commit(operations,endpoint,exchange,file);
-  if (commitRenamer != null) {
-    Exchange copy=exchange.copy();
-    file.bindToExchange(copy);
-    copy.getIn().setMessageId(exchange.getIn().getMessageId());
-    copy.setExchangeId(exchange.getExchangeId());
-    GenericFile<T> newName=commitRenamer.renameFile(copy,file);
-    renameFile(operations,file,newName);
+  try {
+    if (commitRenamer != null) {
+      Exchange copy=exchange.copy();
+      file.bindToExchange(copy);
+      copy.getIn().setMessageId(exchange.getIn().getMessageId());
+      copy.setExchangeId(exchange.getExchangeId());
+      GenericFile<T> newName=commitRenamer.renameFile(copy,file);
+      renameFile(operations,file,newName);
+    }
+  }
+  finally {
+    super.commit(operations,endpoint,exchange,file);
   }
 }
