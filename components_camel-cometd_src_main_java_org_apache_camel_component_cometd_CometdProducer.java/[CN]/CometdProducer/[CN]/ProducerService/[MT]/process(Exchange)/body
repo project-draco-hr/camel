@@ -3,9 +3,17 @@
   BayeuxServerImpl bayeux=producer.getBayeux();
   ServerChannel channel=bayeux.getChannel(channelName);
   ServerSession serverSession=getServerSession();
-  if (channel != null) {
-    logDelivery(exchange,channel);
-    ServerMessage.Mutable mutable=binding.createCometdMessage(channel,serverSession,exchange.getIn());
-    channel.publish(serverSession,mutable);
+  try {
+    if (channel != null) {
+      logDelivery(exchange,channel);
+      ServerMessage.Mutable mutable=binding.createCometdMessage(channel,serverSession,exchange.getIn());
+      channel.publish(serverSession,mutable);
+    }
+  }
+  finally {
+    if (disconnectLocalSession && serverSession.isLocalSession()) {
+      LOG.trace("Disconnection local session {}",serverSession);
+      serverSession.disconnect();
+    }
   }
 }
