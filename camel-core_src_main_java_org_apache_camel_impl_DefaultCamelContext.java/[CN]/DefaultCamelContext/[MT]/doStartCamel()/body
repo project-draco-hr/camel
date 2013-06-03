@@ -82,6 +82,23 @@ catch (    Exception e) {
   }
   startServices(components.values());
   startRouteDefinitions(routeDefinitions);
+  boolean streamCachingInUse=isStreamCaching();
+  if (!streamCachingInUse) {
+    for (    RouteDefinition route : routeDefinitions) {
+      StreamCaching cache=StreamCaching.getStreamCaching(route.getInterceptStrategies());
+      if (cache != null) {
+        streamCachingInUse=true;
+        break;
+      }
+    }
+  }
+  if (streamCachingInUse) {
+    Long threshold=CamelContextHelper.convertTo(this,Long.class,getProperties().get("CamelCachedOutputStreamThreshold"));
+    if (threshold == null) {
+      threshold=StreamCache.DEFAULT_SPOOL_THRESHOLD;
+    }
+    log.info("Stream caching is enabled, and using {} kb as threshold for overflow and spooling to disk store.",threshold / 1024);
+  }
   if (doNotStartRoutesOnFirstStart) {
     log.debug("Skip starting of routes as CamelContext has been configured with autoStartup=false");
   }
