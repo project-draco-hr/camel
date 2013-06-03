@@ -22,6 +22,33 @@
         result=status.name();
       }
     }
+ else     if ("stats".equals(action)) {
+      String name=getEndpoint().getCamelContext().getManagementName();
+      if (name == null) {
+        result="JMX is disabled, cannot get stats";
+      }
+ else {
+        ObjectName on;
+        String operation;
+        if (id == null) {
+          CamelContext camelContext=getEndpoint().getCamelContext();
+          on=getEndpoint().getCamelContext().getManagementStrategy().getManagementNamingStrategy().getObjectNameForCamelContext(camelContext);
+          operation="dumpRoutesStatsAsXml";
+        }
+ else {
+          Route route=getEndpoint().getCamelContext().getRoute(id);
+          on=getEndpoint().getCamelContext().getManagementStrategy().getManagementNamingStrategy().getObjectNameForRoute(route);
+          operation="dumpRouteStatsAsXml";
+        }
+        if (on != null) {
+          MBeanServer server=getEndpoint().getCamelContext().getManagementStrategy().getManagementAgent().getMBeanServer();
+          result=server.invoke(on,operation,new Object[]{true,true},new String[]{"boolean","boolean"});
+        }
+ else {
+          result="Cannot lookup route with id " + id;
+        }
+      }
+    }
     if (result != null && !getEndpoint().isAsync()) {
       exchange.getIn().setBody(result);
     }
