@@ -1,0 +1,14 @@
+{
+  DirectEndpoint endpoint=getMandatoryEndpoint("direct:suspended",DirectEndpoint.class);
+  endpoint.getConsumer().suspend();
+  StopWatch watch=new StopWatch();
+  try {
+    template.sendBody("direct:start?block=true&timeout=2000","hello world");
+    fail("Expected CamelExecutionException");
+  }
+ catch (  CamelExecutionException e) {
+    DirectConsumerNotAvailableException cause=assertIsInstanceOf(DirectConsumerNotAvailableException.class,e.getCause());
+    assertIsInstanceOf(CamelExchangeException.class,cause);
+    assertTrue(watch.taken() > 1500);
+  }
+}
