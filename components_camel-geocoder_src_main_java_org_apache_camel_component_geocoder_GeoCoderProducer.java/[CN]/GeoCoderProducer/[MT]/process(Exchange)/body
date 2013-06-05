@@ -1,0 +1,32 @@
+{
+  String address=exchange.getIn().getHeader(GeoCoderConstants.ADDRESS,String.class);
+  if (address == null) {
+    address=endpoint.getAddress();
+  }
+  String latlng=exchange.getIn().getHeader(GeoCoderConstants.LATLNG,String.class);
+  if (latlng == null) {
+    latlng=endpoint.getLatlng();
+  }
+  if (latlng != null) {
+    GeocoderRequest req=new GeocoderRequest();
+    req.setLanguage(endpoint.getLanguage());
+    String lat=ObjectHelper.before(latlng,",");
+    String lng=ObjectHelper.after(latlng,",");
+    req.setLocation(new LatLng(lat,lng));
+    LOG.debug("Geocode for lat/lng {}",latlng);
+    GeocodeResponse res=geocoder.geocode(req);
+    LOG.debug("Geocode response {}",res);
+    if (res != null) {
+      extractGeoResult(res,exchange);
+    }
+  }
+ else   if (address != null) {
+    GeocoderRequest req=new GeocoderRequest(address,endpoint.getLanguage());
+    LOG.debug("Geocode for address {}",address);
+    GeocodeResponse res=geocoder.geocode(req);
+    LOG.debug("Geocode response {}",res);
+    if (res != null) {
+      extractGeoResult(res,exchange);
+    }
+  }
+}

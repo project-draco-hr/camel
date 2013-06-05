@@ -1,0 +1,16 @@
+{
+  exchange.getIn().setHeader(GeoCoderConstants.STATUS,res.getStatus());
+  exchange.getIn().setBody(res);
+  if (res.getStatus() == GeocoderStatus.OK) {
+    exchange.getIn().setHeader(GeoCoderConstants.ADDRESS,res.getResults().get(0).getFormattedAddress());
+    BigDecimal resLat=res.getResults().get(0).getGeometry().getLocation().getLat();
+    BigDecimal resLon=res.getResults().get(0).getGeometry().getLocation().getLng();
+    String resLatlng=resLat.toPlainString() + "," + resLon.toPlainString();
+    exchange.getIn().setHeader(GeoCoderConstants.LATLNG,resLatlng);
+    GeocoderAddressComponent country=getCountry(res);
+    if (country != null) {
+      exchange.getIn().setHeader(GeoCoderConstants.COUNTRY_SHORT,country.getShortName());
+      exchange.getIn().setHeader(GeoCoderConstants.COUNTRY_LONG,country.getLongName());
+    }
+  }
+}
