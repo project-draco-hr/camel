@@ -1,0 +1,54 @@
+{
+  String fileName=description.getName() + JAVA_EXT;
+  BufferedWriter writer=null;
+  try {
+    final File pojoFile=new File(pkgDir,fileName);
+    writer=new BufferedWriter(new FileWriter(pojoFile));
+    VelocityContext context=new VelocityContext();
+    context.put("packageName",packageName);
+    context.put("utility",utility);
+    context.put("desc",description);
+    context.put("generatedDate",generatedDate);
+    Template pojoTemplate=engine.getTemplate(SOBJECT_POJO_VM);
+    pojoTemplate.merge(context,writer);
+    writer.close();
+    for (    SObjectField field : description.getFields()) {
+      if (utility.isPicklist(field)) {
+        fileName=utility.enumTypeName(field.getName()) + JAVA_EXT;
+        File enumFile=new File(pkgDir,fileName);
+        writer=new BufferedWriter(new FileWriter(enumFile));
+        context=new VelocityContext();
+        context.put("packageName",packageName);
+        context.put("utility",utility);
+        context.put("field",field);
+        context.put("generatedDate",generatedDate);
+        Template queryTemplate=engine.getTemplate(SOBJECT_PICKLIST_VM);
+        queryTemplate.merge(context,writer);
+        writer.close();
+      }
+    }
+    fileName="QueryRecords" + description.getName() + JAVA_EXT;
+    File queryFile=new File(pkgDir,fileName);
+    writer=new BufferedWriter(new FileWriter(queryFile));
+    context=new VelocityContext();
+    context.put("packageName",packageName);
+    context.put("desc",description);
+    context.put("generatedDate",generatedDate);
+    Template queryTemplate=engine.getTemplate(SOBJECT_QUERY_RECORDS_VM);
+    queryTemplate.merge(context,writer);
+    writer.close();
+  }
+ catch (  Exception e) {
+    String msg="Error creating " + fileName + ": "+ e.getMessage();
+    throw new MojoExecutionException(msg,e);
+  }
+ finally {
+    if (writer != null) {
+      try {
+        writer.close();
+      }
+ catch (      IOException ignore) {
+      }
+    }
+  }
+}

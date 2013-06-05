@@ -1,0 +1,37 @@
+{
+  final String query=config.getSObjectQuery();
+  LOG.info("Updating Topic {} with Query [{}]",topicName,query);
+  final SyncResponseCallback callback=new SyncResponseCallback();
+  try {
+    final PushTopic topic=new PushTopic();
+    topic.setQuery(query);
+    topic.setNotifyForFields(config.getNotifyForFields());
+    topic.setNotifyForOperations(config.getNotifyForOperations());
+    restClient.updateSObject("PushTopic",topicId,new ByteArrayInputStream(objectMapper.writeValueAsBytes(topic)),callback);
+    if (!callback.await(API_TIMEOUT,TimeUnit.SECONDS)) {
+      throw new SalesforceException("API call timeout!",null);
+    }
+    if (callback.getException() != null) {
+      throw callback.getException();
+    }
+  }
+ catch (  SalesforceException e) {
+    throw new CamelException(String.format("Error updating topic %s with query [%s] : %s",topicName,query,e.getMessage()),e);
+  }
+catch (  InterruptedException e) {
+    Thread.currentThread().interrupt();
+    throw new CamelException(String.format("Error updating topic %s with query [%s] : %s",topicName,query,e.getMessage()),e);
+  }
+catch (  IOException e) {
+    throw new CamelException(String.format("Error updating topic %s with query [%s] : %s",topicName,query,e.getMessage()),e);
+  }
+ finally {
+    if (callback.getResponse() != null) {
+      try {
+        callback.getResponse().close();
+      }
+ catch (      IOException ignore) {
+      }
+    }
+  }
+}

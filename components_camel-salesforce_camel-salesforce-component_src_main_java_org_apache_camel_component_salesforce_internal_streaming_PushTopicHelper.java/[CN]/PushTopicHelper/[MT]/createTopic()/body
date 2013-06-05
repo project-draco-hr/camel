@@ -1,0 +1,43 @@
+{
+  final PushTopic topic=new PushTopic();
+  topic.setName(topicName);
+  topic.setApiVersion(Double.valueOf(config.getApiVersion()));
+  topic.setQuery(config.getSObjectQuery());
+  topic.setDescription("Topic created by Camel Salesforce component");
+  topic.setNotifyForFields(config.getNotifyForFields());
+  topic.setNotifyForOperations(config.getNotifyForOperations());
+  LOG.info("Creating Topic {}: {}",topicName,topic);
+  final SyncResponseCallback callback=new SyncResponseCallback();
+  try {
+    restClient.createSObject(PUSH_TOPIC_OBJECT_NAME,new ByteArrayInputStream(objectMapper.writeValueAsBytes(topic)),callback);
+    if (!callback.await(API_TIMEOUT,TimeUnit.SECONDS)) {
+      throw new SalesforceException("API call timeout!",null);
+    }
+    if (callback.getException() != null) {
+      throw callback.getException();
+    }
+    CreateSObjectResult result=objectMapper.readValue(callback.getResponse(),CreateSObjectResult.class);
+    if (!result.getSuccess()) {
+      final SalesforceException salesforceException=new SalesforceException(result.getErrors(),HttpStatus.BAD_REQUEST_400);
+      throw new CamelException(String.format("Error creating Topic %s: %s",topicName,result.getErrors()),salesforceException);
+    }
+  }
+ catch (  SalesforceException e) {
+    throw new CamelException(String.format("Error creating Topic %s: %s",topicName,e.getMessage()),e);
+  }
+catch (  IOException e) {
+    throw new CamelException(String.format("Un-marshaling error creating Topic %s: %s",topicName,e.getMessage()),e);
+  }
+catch (  InterruptedException e) {
+    throw new CamelException(String.format("Un-marshaling error creating Topic %s: %s",topicName,e.getMessage()),e);
+  }
+ finally {
+    if (callback.getResponse() != null) {
+      try {
+        callback.getResponse().close();
+      }
+ catch (      IOException e) {
+      }
+    }
+  }
+}

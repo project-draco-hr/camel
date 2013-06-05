@@ -1,0 +1,24 @@
+{
+  try {
+    if ("json".equals(format)) {
+      List<RestError> restErrors=objectMapper.readValue(httpExchange.getResponseContent(),new TypeReference<List<RestError>>(){
+      }
+);
+      return new SalesforceException(restErrors,httpExchange.getResponseStatus());
+    }
+ else {
+      RestErrors errors=new RestErrors();
+      xStream.fromXML(httpExchange.getResponseContent(),errors);
+      return new SalesforceException(errors.getErrors(),httpExchange.getResponseStatus());
+    }
+  }
+ catch (  IOException e) {
+    String msg="Unexpected Error parsing " + format + " error response: "+ e.getMessage();
+    LOG.warn(msg,e);
+  }
+catch (  RuntimeException e) {
+    String msg="Unexpected Error parsing " + format + " error response: "+ e.getMessage();
+    LOG.warn(msg,e);
+  }
+  return new SalesforceException("Unexpected error",httpExchange.getResponseStatus());
+}

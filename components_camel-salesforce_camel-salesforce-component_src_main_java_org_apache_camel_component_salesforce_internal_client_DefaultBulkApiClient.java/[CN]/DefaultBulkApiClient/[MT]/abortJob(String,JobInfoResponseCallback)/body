@@ -1,0 +1,25 @@
+{
+  final JobInfo request=new JobInfo();
+  request.setState(JobStateEnum.ABORTED);
+  final ContentExchange post=getContentExchange(HttpMethods.POST,jobUrl(jobId));
+  try {
+    marshalRequest(objectFactory.createJobInfo(request),post,APPLICATION_XML_UTF8);
+  }
+ catch (  SalesforceException e) {
+    callback.onResponse(null,e);
+    return;
+  }
+  doHttpRequest(post,new ClientResponseCallback(){
+    @Override public void onResponse(    InputStream response,    SalesforceException ex){
+      JobInfo value=null;
+      try {
+        value=unmarshalResponse(response,post,JobInfo.class);
+      }
+ catch (      SalesforceException e) {
+        ex=e;
+      }
+      callback.onResponse(value,ex);
+    }
+  }
+);
+}

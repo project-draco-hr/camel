@@ -1,0 +1,31 @@
+{
+  final XStream localXStream=xStream.get();
+  try {
+    Message in=exchange.getIn();
+    InputStream request=in.getBody(InputStream.class);
+    if (request == null) {
+      AbstractSObjectBase sObject=in.getBody(AbstractSObjectBase.class);
+      if (sObject != null) {
+        localXStream.processAnnotations(sObject.getClass());
+        ByteArrayOutputStream out=new ByteArrayOutputStream();
+        localXStream.toXML(sObject,new OutputStreamWriter(out,StringUtil.__UTF8_CHARSET));
+        request=new ByteArrayInputStream(out.toByteArray());
+      }
+ else {
+        final String body=in.getBody(String.class);
+        if (null == body) {
+          String msg="Unsupported request message body " + (in.getBody() == null ? null : in.getBody().getClass());
+          throw new SalesforceException(msg,null);
+        }
+ else {
+          request=new ByteArrayInputStream(body.getBytes(StringUtil.__UTF8_CHARSET));
+        }
+      }
+    }
+    return request;
+  }
+ catch (  XStreamException e) {
+    String msg="Error marshaling request: " + e.getMessage();
+    throw new SalesforceException(msg,e);
+  }
+}

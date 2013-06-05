@@ -1,0 +1,26 @@
+{
+  final HttpClient httpClient=component.getConfig().getHttpClient();
+  Map<String,Object> options=new HashMap<String,Object>();
+  options.put(ClientTransport.TIMEOUT_OPTION,httpClient.getTimeout());
+  if (session.getAccessToken() == null) {
+    session.login(null);
+  }
+  LongPollingTransport transport=new LongPollingTransport(options,httpClient){
+    @Override protected void customize(    ContentExchange exchange){
+      super.customize(exchange);
+      final String accessToken=session.getAccessToken();
+      try {
+        final boolean isHttps=HttpSchemes.HTTPS.equals(String.valueOf(exchange.getScheme()));
+        exchange.setEventListener(new SalesforceSecurityListener(httpClient.getDestination(exchange.getAddress(),isHttps),exchange,session,accessToken));
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(String.format("Error adding SalesforceSecurityListener to exchange %s",e.getMessage()),e);
+      }
+      exchange.addRequestHeader(HttpHeaders.AUTHORIZATION,"OAuth " + accessToken);
+    }
+  }
+;
+  BayeuxClient client=new BayeuxClient(getEndpointUrl(),transport);
+  client.setDebugEnabled(false);
+  return client;
+}

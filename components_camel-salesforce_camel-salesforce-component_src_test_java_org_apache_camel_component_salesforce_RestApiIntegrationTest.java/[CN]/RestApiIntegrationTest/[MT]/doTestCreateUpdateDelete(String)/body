@@ -1,0 +1,18 @@
+{
+  Merchandise__c merchandise__c=new Merchandise__c();
+  merchandise__c.setName("Wee Wee Wee Plane");
+  merchandise__c.setDescription__c("Microlite plane");
+  merchandise__c.setPrice__c(2000.0);
+  merchandise__c.setTotal_Inventory__c(50.0);
+  CreateSObjectResult result=template().requestBody("direct:CreateSObject" + suffix,merchandise__c,CreateSObjectResult.class);
+  assertNotNull(result);
+  assertTrue("Create success",result.getSuccess());
+  LOG.debug("Create: " + result);
+  merchandise__c.setPrice__c(1500.0);
+  merchandise__c.setTotal_Inventory__c(25.0);
+  merchandise__c.setId(result.getId());
+  assertNull(template().requestBodyAndHeader("direct:UpdateSObject" + suffix,merchandise__c,SalesforceEndpointConfig.SOBJECT_ID,result.getId()));
+  LOG.debug("Update successful");
+  assertNull(template().requestBody("direct:deleteSObject" + suffix,result.getId()));
+  LOG.debug("Delete successful");
+}

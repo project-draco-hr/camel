@@ -1,0 +1,18 @@
+{
+  super.doStart();
+  final SalesforceEndpointConfig config=endpoint.getConfiguration();
+  if (config.getSObjectQuery() != null) {
+    SalesforceComponent component=endpoint.getComponent();
+    RestClient restClient=new DefaultRestClient(component.getConfig().getHttpClient(),endpoint.getConfiguration().getApiVersion(),"json",component.getSession());
+    ServiceHelper.startService(restClient);
+    try {
+      PushTopicHelper helper=new PushTopicHelper(config,topicName,restClient);
+      helper.createOrUpdateTopic();
+    }
+  finally {
+      ServiceHelper.stopService(restClient);
+    }
+  }
+  subscriptionHelper.subscribe(topicName,this);
+  subscribed=true;
+}

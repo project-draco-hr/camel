@@ -1,0 +1,42 @@
+{
+  try {
+    if (responseEntity != null) {
+      Object response=null;
+      Class<?> responseClass=exchange.getProperty(RESPONSE_CLASS,Class.class);
+      if (responseClass != null) {
+        response=objectMapper.readValue(responseEntity,responseClass);
+      }
+ else {
+        TypeReference<?> responseType=exchange.getProperty(RESPONSE_TYPE,TypeReference.class);
+        if (responseType != null) {
+          response=objectMapper.readValue(responseEntity,responseType);
+        }
+ else {
+          response=responseEntity;
+        }
+      }
+      exchange.getOut().setBody(response);
+    }
+ else {
+      exchange.setException(ex);
+    }
+    exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    exchange.getOut().getAttachments().putAll(exchange.getIn().getAttachments());
+  }
+ catch (  IOException e) {
+    String msg="Error parsing JSON response: " + e.getMessage();
+    exchange.setException(new SalesforceException(msg,e));
+  }
+ finally {
+    exchange.removeProperty(RESPONSE_CLASS);
+    exchange.removeProperty(RESPONSE_TYPE);
+    try {
+      if (responseEntity != null) {
+        responseEntity.close();
+      }
+    }
+ catch (    IOException ignored) {
+    }
+    callback.done(false);
+  }
+}

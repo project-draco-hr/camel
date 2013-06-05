@@ -1,0 +1,16 @@
+{
+  final HashMap<String,Object> headers=new HashMap<String,Object>();
+  headers.put(SalesforceEndpointConfig.SOBJECT_NAME,"Document");
+  headers.put(SalesforceEndpointConfig.SOBJECT_EXT_ID_NAME,"Name");
+  Document document=template().requestBodyAndHeaders("direct:getSObjectWithId" + suffix,TEST_DOCUMENT_ID,headers,Document.class);
+  assertNotNull(document);
+  LOG.debug("GetWithId: {}",document);
+  InputStream body=template().requestBody("direct:getBlobField" + suffix,document,InputStream.class);
+  assertNotNull(body);
+  LOG.debug("GetBlobField: {}",body);
+  final FileChannel fileChannel=new FileOutputStream("target/getBlobField" + suffix + ".txt").getChannel();
+  final ReadableByteChannel src=Channels.newChannel(body);
+  fileChannel.transferFrom(src,0,document.getBodyLength());
+  fileChannel.close();
+  src.close();
+}

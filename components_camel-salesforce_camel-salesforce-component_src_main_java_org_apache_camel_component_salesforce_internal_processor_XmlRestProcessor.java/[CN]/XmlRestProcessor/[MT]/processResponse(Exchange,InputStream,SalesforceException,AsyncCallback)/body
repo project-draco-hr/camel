@@ -1,0 +1,55 @@
+{
+  final XStream localXStream=xStream.get();
+  try {
+    if (responseEntity != null) {
+      final Class<?> responseClass=exchange.getProperty(RESPONSE_CLASS,Class.class);
+      Object response;
+      if (responseClass != null) {
+        localXStream.processAnnotations(responseClass);
+        final String responseAlias=exchange.getProperty(RESPONSE_ALIAS,String.class);
+        if (responseAlias != null) {
+          final CachingMapper mapper=(CachingMapper)localXStream.getMapper();
+          try {
+            if (mapper.realClass(responseAlias) != responseClass) {
+              mapper.flushCache();
+            }
+          }
+ catch (          CannotResolveClassException ignore) {
+          }
+          localXStream.alias(responseAlias,responseClass);
+        }
+        response=responseClass.newInstance();
+        localXStream.fromXML(responseEntity,response);
+      }
+ else {
+        response=responseEntity;
+      }
+      exchange.getOut().setBody(response);
+    }
+ else {
+      exchange.setException(exception);
+    }
+    exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    exchange.getOut().getAttachments().putAll(exchange.getIn().getAttachments());
+  }
+ catch (  XStreamException e) {
+    String msg="Error parsing XML response: " + e.getMessage();
+    exchange.setException(new SalesforceException(msg,e));
+  }
+catch (  Exception e) {
+    String msg="Error creating XML response: " + e.getMessage();
+    exchange.setException(new SalesforceException(msg,e));
+  }
+ finally {
+    exchange.removeProperty(RESPONSE_CLASS);
+    exchange.removeProperty(RESPONSE_ALIAS);
+    if (responseEntity != null) {
+      try {
+        responseEntity.close();
+      }
+ catch (      IOException ignored) {
+      }
+    }
+    callback.done(false);
+  }
+}

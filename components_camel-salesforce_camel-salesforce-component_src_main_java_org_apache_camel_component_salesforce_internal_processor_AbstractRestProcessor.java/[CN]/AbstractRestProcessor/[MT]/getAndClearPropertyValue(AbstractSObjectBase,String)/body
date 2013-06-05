@@ -1,0 +1,18 @@
+{
+  try {
+    Method getMethod=sObjectBase.getClass().getMethod("get" + propertyName);
+    Object value=getMethod.invoke(sObjectBase);
+    Method setMethod=sObjectBase.getClass().getMethod("set" + propertyName,getMethod.getReturnType());
+    setMethod.invoke(sObjectBase,new Object[]{null});
+    return value;
+  }
+ catch (  NoSuchMethodException e) {
+    throw new SalesforceException(String.format("SObject %s does not have a field %s",sObjectBase.getClass().getSimpleName(),propertyName),e);
+  }
+catch (  InvocationTargetException e) {
+    throw new SalesforceException(String.format("Error getting/setting value %s.%s",sObjectBase.getClass().getSimpleName(),propertyName),e);
+  }
+catch (  IllegalAccessException e) {
+    throw new SalesforceException(String.format("Error accessing value %s.%s",sObjectBase.getClass().getSimpleName(),propertyName),e);
+  }
+}

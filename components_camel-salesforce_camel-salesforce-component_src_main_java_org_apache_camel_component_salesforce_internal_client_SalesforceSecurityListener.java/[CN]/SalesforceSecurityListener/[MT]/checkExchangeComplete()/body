@@ -1,0 +1,29 @@
+{
+  if (retrying && requestComplete && responseComplete) {
+    LOG.debug("Authentication Error, retrying: {}",exchange);
+    requestComplete=false;
+    responseComplete=false;
+    setDelegatingRequests(true);
+    setDelegatingResponses(true);
+    try {
+      currentToken=session.login(currentToken);
+      if (exchange instanceof SalesforceExchange) {
+        final SalesforceExchange salesforceExchange=(SalesforceExchange)exchange;
+        final AbstractClientBase client=salesforceExchange.getClient();
+        client.setAccessToken(currentToken);
+        client.setInstanceUrl(session.getInstanceUrl());
+        client.setAccessToken(exchange);
+      }
+ else {
+        exchange.addRequestHeader(HttpHeaders.AUTHORIZATION,"OAuth " + currentToken);
+      }
+      destination.resend(exchange);
+      return false;
+    }
+ catch (    SalesforceException e) {
+      LOG.error(e.getMessage(),e);
+      setDelegationResult(false);
+    }
+  }
+  return true;
+}

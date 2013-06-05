@@ -1,0 +1,76 @@
+{
+  if ((accessToken == null) || accessToken.equals(oldToken)) {
+    accessToken=oldToken;
+    if (accessToken != null) {
+      try {
+        logout();
+      }
+ catch (      SalesforceException e) {
+        LOG.warn("Error revoking old access token: " + e.getMessage(),e);
+      }
+      accessToken=null;
+    }
+    final StatusExceptionExchange loginPost=new StatusExceptionExchange(true);
+    loginPost.setURL(config.getLoginUrl() + OAUTH2_TOKEN_PATH);
+    loginPost.setMethod(HttpMethods.POST);
+    loginPost.setRequestContentType(FORM_CONTENT_TYPE);
+    final UrlEncoded nvps=new UrlEncoded();
+    nvps.put("grant_type","password");
+    nvps.put("client_id",config.getClientId());
+    nvps.put("client_secret",config.getClientSecret());
+    nvps.put("username",config.getUserName());
+    nvps.put("password",config.getPassword());
+    nvps.put("format","json");
+    try {
+      loginPost.setRequestContent(new ByteArrayBuffer(nvps.encode(StringUtil.__UTF8,true).getBytes(StringUtil.__UTF8)));
+      httpClient.send(loginPost);
+      final int exchangeState=loginPost.waitForDone();
+switch (exchangeState) {
+case HttpExchange.STATUS_COMPLETED:
+        final byte[] responseContent=loginPost.getResponseContentBytes();
+      final int responseStatus=loginPost.getResponseStatus();
+switch (responseStatus) {
+case HttpStatus.OK_200:
+      LoginToken token=objectMapper.readValue(responseContent,LoginToken.class);
+    LOG.info("Login successful");
+  accessToken=token.getAccessToken();
+instanceUrl=token.getInstanceUrl();
+for (SalesforceSessionListener listener : listeners) {
+try {
+  listener.onLogin(accessToken,instanceUrl);
+}
+ catch (Throwable t) {
+  LOG.warn("Unexpected error from listener {}: {}",listener,t.getMessage());
+}
+}
+break;
+case HttpStatus.BAD_REQUEST_400:
+final LoginError error=objectMapper.readValue(responseContent,LoginError.class);
+final String msg=String.format("Login error code:[%s] description:[%s]",error.getError(),error.getErrorDescription());
+final List<RestError> errors=new ArrayList<RestError>();
+errors.add(new RestError(msg,error.getErrorDescription()));
+throw new SalesforceException(errors,HttpStatus.BAD_REQUEST_400);
+default :
+throw new SalesforceException(String.format("Login error status:[%s] reason:[%s]",responseStatus,loginPost.getReason()),responseStatus);
+}
+break;
+case HttpExchange.STATUS_EXCEPTED:
+final Throwable ex=loginPost.getException();
+throw new SalesforceException(String.format("Unexpected login exception: %s",ex.getMessage()),ex);
+case HttpExchange.STATUS_CANCELLED:
+throw new SalesforceException("Login request CANCELLED!",null);
+case HttpExchange.STATUS_EXPIRED:
+throw new SalesforceException("Login request TIMEOUT!",null);
+}
+}
+ catch (IOException e) {
+String msg="Login error: unexpected exception " + e.getMessage();
+throw new SalesforceException(msg,e);
+}
+catch (InterruptedException e) {
+String msg="Login error: unexpected exception " + e.getMessage();
+throw new SalesforceException(msg,e);
+}
+}
+return accessToken;
+}

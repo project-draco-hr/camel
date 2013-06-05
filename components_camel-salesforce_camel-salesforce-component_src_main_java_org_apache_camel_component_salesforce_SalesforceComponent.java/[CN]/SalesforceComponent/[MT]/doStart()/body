@@ -1,0 +1,37 @@
+{
+  super.doStart();
+  ObjectHelper.notNull(loginConfig,"loginConfig");
+  if (null == httpClient) {
+    if (config != null && config.getHttpClient() != null) {
+      httpClient=config.getHttpClient();
+    }
+ else {
+      httpClient=new HttpClient();
+      httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
+      httpClient.setMaxConnectionsPerAddress(MAX_CONNECTIONS_PER_ADDRESS);
+      httpClient.setConnectTimeout(CONNECTION_TIMEOUT);
+      httpClient.setTimeout(RESPONSE_TIMEOUT);
+    }
+  }
+  String listenerClass=RedirectListener.class.getName();
+  if (httpClient.getRegisteredListeners() == null || !httpClient.getRegisteredListeners().contains(listenerClass)) {
+    httpClient.registerListener(listenerClass);
+  }
+  httpClient.start();
+  if (null == this.session) {
+    this.session=new SalesforceSession(httpClient,loginConfig);
+  }
+  if (!loginConfig.isLazyLogin()) {
+    ServiceHelper.startService(session);
+  }
+  if (packages != null && packages.length > 0) {
+    classMap=parsePackages();
+  }
+ else {
+    LOG.warn("Missing property packages, getSObject* operations will NOT work");
+    classMap=Collections.unmodifiableMap(new HashMap<String,Class<?>>());
+  }
+  if (subscriptionHelper != null) {
+    ServiceHelper.startService(subscriptionHelper);
+  }
+}

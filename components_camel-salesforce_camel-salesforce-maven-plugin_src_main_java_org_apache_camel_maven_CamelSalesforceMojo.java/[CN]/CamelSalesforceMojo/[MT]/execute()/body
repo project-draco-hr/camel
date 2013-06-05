@@ -1,0 +1,170 @@
+{
+  Properties velocityProperties=new Properties();
+  velocityProperties.setProperty(RuntimeConstants.RESOURCE_LOADER,"cloader");
+  velocityProperties.setProperty("cloader.resource.loader.class",ClasspathResourceLoader.class.getName());
+  velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS,Log4JLogChute.class.getName());
+  velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM + ".log4j.logger",LOG.getName());
+  engine=new VelocityEngine(velocityProperties);
+  engine.init();
+  if (!engine.resourceExists(SOBJECT_POJO_VM) || !engine.resourceExists(SOBJECT_QUERY_RECORDS_VM)) {
+    throw new MojoExecutionException("Velocity templates not found");
+  }
+  final HttpClient httpClient=new HttpClient();
+  httpClient.registerListener(RedirectListener.class.getName());
+  httpClient.setConnectTimeout(TIMEOUT);
+  httpClient.setTimeout(TIMEOUT);
+  try {
+    httpClient.start();
+  }
+ catch (  Exception e) {
+    throw new MojoExecutionException("Error creating HTTP client: " + e.getMessage(),e);
+  }
+  final SalesforceSession session=new SalesforceSession(httpClient,new SalesforceLoginConfig(SalesforceLoginConfig.DEFAULT_LOGIN_URL,clientId,clientSecret,userName,password,false));
+  getLog().info("Salesforce login...");
+  try {
+    session.login(null);
+  }
+ catch (  SalesforceException e) {
+    String msg="Salesforce login error " + e.getMessage();
+    throw new MojoExecutionException(msg,e);
+  }
+  getLog().info("Salesforce login successful");
+  RestClient restClient=null;
+  try {
+    restClient=new DefaultRestClient(httpClient,version,"json",session);
+    ((DefaultRestClient)restClient).start();
+  }
+ catch (  Exception e) {
+    final String msg="Unexpected exception creating Rest client: " + e.getMessage();
+    throw new MojoExecutionException(msg,e);
+  }
+  try {
+    final ObjectMapper mapper=new ObjectMapper();
+    final Set<String> objectNames=new HashSet<String>();
+    final SyncResponseCallback callback=new SyncResponseCallback();
+    try {
+      getLog().info("Getting Salesforce Objects...");
+      restClient.getGlobalObjects(callback);
+      if (!callback.await(TIMEOUT,TimeUnit.MILLISECONDS)) {
+        throw new MojoExecutionException("Timeout waiting for getGlobalObjects!");
+      }
+      final SalesforceException ex=callback.getException();
+      if (ex != null) {
+        throw ex;
+      }
+      final GlobalObjects globalObjects=mapper.readValue(callback.getResponse(),GlobalObjects.class);
+      for (      SObject sObject : globalObjects.getSobjects()) {
+        objectNames.add(sObject.getName());
+      }
+    }
+ catch (    Exception e) {
+      String msg="Error getting global Objects " + e.getMessage();
+      throw new MojoExecutionException(msg,e);
+    }
+    if ((includes != null && includes.length > 0) || (excludes != null && excludes.length > 0) || (includePattern != null && !includePattern.trim().isEmpty())|| (excludePattern != null && !excludePattern.trim().isEmpty())) {
+      getLog().info("Looking for matching Object names...");
+      final Set<String> includedNames=new HashSet<String>();
+      if (includes != null && includes.length > 0) {
+        for (        String name : includes) {
+          name=name.trim();
+          if (name.isEmpty()) {
+            throw new MojoExecutionException("Invalid empty name in includes");
+          }
+          includedNames.add(name);
+        }
+      }
+      final Set<String> excludedNames=new HashSet<String>();
+      if (excludes != null && excludes.length > 0) {
+        for (        String name : excludes) {
+          name=name.trim();
+          if (name.isEmpty()) {
+            throw new MojoExecutionException("Invalid empty name in excludes");
+          }
+          excludedNames.add(name);
+        }
+      }
+      Pattern incPattern;
+      if (includePattern != null && !includePattern.trim().isEmpty()) {
+        incPattern=Pattern.compile(includePattern.trim());
+      }
+ else       if (includedNames.isEmpty()) {
+        incPattern=Pattern.compile(".*");
+      }
+ else {
+        incPattern=Pattern.compile("^$");
+      }
+      Pattern excPattern;
+      if (excludePattern != null && !excludePattern.trim().isEmpty()) {
+        excPattern=Pattern.compile(excludePattern.trim());
+      }
+ else {
+        excPattern=Pattern.compile("^$");
+      }
+      final Set<String> acceptedNames=new HashSet<String>();
+      for (      String name : objectNames) {
+        if ((includedNames.contains(name) || incPattern.matcher(name).matches()) && !excludedNames.contains(name) && !excPattern.matcher(name).matches()) {
+          acceptedNames.add(name);
+        }
+      }
+      objectNames.clear();
+      objectNames.addAll(acceptedNames);
+      getLog().info(String.format("Found %s matching Objects",objectNames.size()));
+    }
+ else {
+      getLog().warn(String.format("Generating Java classes for all %s Objects, this may take a while...",objectNames.size()));
+    }
+    final Set<SObjectDescription> descriptions=new HashSet<SObjectDescription>();
+    try {
+      getLog().info("Retrieving Object descriptions...");
+      for (      String name : objectNames) {
+        callback.reset();
+        restClient.getDescription(name,callback);
+        if (!callback.await(TIMEOUT,TimeUnit.MILLISECONDS)) {
+          throw new MojoExecutionException("Timeout waiting for getDescription for sObject " + name);
+        }
+        final SalesforceException ex=callback.getException();
+        if (ex != null) {
+          throw ex;
+        }
+        descriptions.add(mapper.readValue(callback.getResponse(),SObjectDescription.class));
+      }
+    }
+ catch (    Exception e) {
+      String msg="Error getting SObject description " + e.getMessage();
+      throw new MojoExecutionException(msg,e);
+    }
+    if (!packageName.matches(PACKAGE_NAME_PATTERN)) {
+      throw new MojoExecutionException("Invalid package name " + packageName);
+    }
+    final File pkgDir=new File(outputDirectory,packageName.trim().replace('.',File.separatorChar));
+    if (!pkgDir.exists()) {
+      if (!pkgDir.mkdirs()) {
+        throw new MojoExecutionException("Unable to create " + pkgDir);
+      }
+    }
+    getLog().info("Generating Java Classes...");
+    final GeneratorUtility utility=new GeneratorUtility();
+    final String generatedDate=new Date().toString();
+    for (    SObjectDescription description : descriptions) {
+      processDescription(pkgDir,description,utility,generatedDate);
+    }
+    getLog().info(String.format("Successfully generated %s Java Classes",(descriptions.size() * 2)));
+  }
+  finally {
+    try {
+      ((DefaultRestClient)restClient).stop();
+    }
+ catch (    Exception ignore) {
+    }
+    try {
+      session.stop();
+    }
+ catch (    Exception ignore) {
+    }
+    try {
+      httpClient.stop();
+    }
+ catch (    Exception ignore) {
+    }
+  }
+}

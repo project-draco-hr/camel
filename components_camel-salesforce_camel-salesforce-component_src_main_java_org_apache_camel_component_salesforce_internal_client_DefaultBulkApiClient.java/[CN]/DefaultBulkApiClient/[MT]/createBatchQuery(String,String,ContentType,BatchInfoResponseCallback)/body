@@ -1,0 +1,19 @@
+{
+  final ContentExchange post=getContentExchange(HttpMethods.POST,batchUrl(jobId,null));
+  byte[] queryBytes=soqlQuery.getBytes(StringUtil.__UTF8_CHARSET);
+  post.setRequestContent(new ByteArrayBuffer(queryBytes));
+  post.setRequestContentType(getContentType(jobContentType) + ";charset=" + StringUtil.__UTF8);
+  doHttpRequest(post,new ClientResponseCallback(){
+    @Override public void onResponse(    InputStream response,    SalesforceException ex){
+      BatchInfo value=null;
+      try {
+        value=unmarshalResponse(response,post,BatchInfo.class);
+      }
+ catch (      SalesforceException e) {
+        ex=e;
+      }
+      callback.onResponse(value,ex);
+    }
+  }
+);
+}

@@ -1,0 +1,29 @@
+{
+  super(endpoint,processor);
+  this.endpoint=endpoint;
+  if (Double.valueOf(endpoint.getConfiguration().getApiVersion()) < MINIMUM_VERSION) {
+    throw new IllegalArgumentException("Minimum supported API version for consumer endpoints is " + 24.0);
+  }
+  this.topicName=endpoint.getTopicName();
+  this.subscriptionHelper=helper;
+  final String sObjectName=endpoint.getConfiguration().getSObjectName();
+  if (sObjectName != null) {
+    sObjectClass=endpoint.getComponent().getClassMap().get(sObjectName);
+    if (sObjectClass == null) {
+      throw new IllegalArgumentException(String.format("SObject Class not found for %s",sObjectName));
+    }
+  }
+ else {
+    final String className=endpoint.getConfiguration().getSObjectClass();
+    if (className != null) {
+      sObjectClass=endpoint.getComponent().getCamelContext().getClassResolver().resolveClass(className);
+      if (sObjectClass == null) {
+        throw new IllegalArgumentException(String.format("SObject Class not found %s",className));
+      }
+    }
+ else {
+      log.warn("Property sObjectName or sObjectClass NOT set, messages will be of type java.lang.Map");
+      sObjectClass=null;
+    }
+  }
+}
