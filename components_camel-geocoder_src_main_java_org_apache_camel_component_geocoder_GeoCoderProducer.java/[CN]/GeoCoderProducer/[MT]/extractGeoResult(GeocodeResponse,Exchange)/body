@@ -1,6 +1,8 @@
 {
   exchange.getIn().setHeader(GeoCoderConstants.STATUS,res.getStatus());
-  exchange.getIn().setBody(res);
+  if (!endpoint.isHeadersOnly()) {
+    exchange.getIn().setBody(res);
+  }
   if (res.getStatus() == GeocoderStatus.OK) {
     exchange.getIn().setHeader(GeoCoderConstants.ADDRESS,res.getResults().get(0).getFormattedAddress());
     BigDecimal resLat=res.getResults().get(0).getGeometry().getLocation().getLat();
@@ -11,6 +13,10 @@
     if (country != null) {
       exchange.getIn().setHeader(GeoCoderConstants.COUNTRY_SHORT,country.getShortName());
       exchange.getIn().setHeader(GeoCoderConstants.COUNTRY_LONG,country.getLongName());
+    }
+    GeocoderAddressComponent city=getCity(res);
+    if (city != null) {
+      exchange.getIn().setHeader(GeoCoderConstants.CITY,city.getLongName());
     }
   }
 }
