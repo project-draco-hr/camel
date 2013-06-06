@@ -1,0 +1,15 @@
+{
+  String q=query;
+  String location=exchange.getIn().getHeader(WeatherConstants.WEATHER_LOCATION,String.class);
+  if (location != null) {
+    q=getEndpoint().getConfiguration().getQuery(location);
+  }
+  log.debug("Going to execute the Weather query {}",q);
+  String weather=getEndpoint().getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,new URL(q));
+  log.debug("Got back the Weather information {}",weather);
+  if (ObjectHelper.isEmpty(weather)) {
+    throw new IllegalStateException("Got the unexpected value '" + weather + "' as the result of the query '"+ q+ "'");
+  }
+  exchange.getIn().setBody(weather);
+  exchange.getIn().setHeader(WeatherConstants.WEATHER_QUERY,q);
+}
