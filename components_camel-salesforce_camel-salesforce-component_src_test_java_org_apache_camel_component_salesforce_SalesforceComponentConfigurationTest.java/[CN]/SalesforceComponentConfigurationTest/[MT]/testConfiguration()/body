@@ -1,0 +1,28 @@
+{
+  Component component=context().getComponent(componentName);
+  ComponentConfiguration configuration=component.createComponentConfiguration();
+  SortedMap<String,ParameterConfiguration> parameterConfigurationMap=configuration.getParameterConfigurationMap();
+  if (verbose) {
+    Set<Map.Entry<String,ParameterConfiguration>> entries=parameterConfigurationMap.entrySet();
+    for (    Map.Entry<String,ParameterConfiguration> entry : entries) {
+      String name=entry.getKey();
+      ParameterConfiguration config=entry.getValue();
+      LOG.info("Has name: {} with type {}",name,config.getParameterType().getName());
+    }
+  }
+  assertParameterConfig(configuration,"format",PayloadFormat.class);
+  assertParameterConfig(configuration,"sObjectName",String.class);
+  assertParameterConfig(configuration,"sObjectFields",String.class);
+  assertParameterConfig(configuration,"updateTopic",boolean.class);
+  configuration.setParameter("format",PayloadFormat.XML);
+  configuration.setParameter("sObjectName","Merchandise__c");
+  configuration.setParameter("sObjectFields","Description__c,Total_Inventory__c");
+  configuration.setParameter("updateTopic",false);
+  configuration.setBaseUri("getSObject");
+  SalesforceEndpoint endpoint=assertIsInstanceOf(SalesforceEndpoint.class,configuration.createEndpoint());
+  final SalesforceEndpointConfig endpointConfig=endpoint.getConfiguration();
+  assertEquals("endpoint.format",PayloadFormat.XML,endpointConfig.getFormat());
+  assertEquals("endpoint.sObjectName","Merchandise__c",endpointConfig.getSObjectName());
+  assertEquals("endpoint.sObjectFields","Description__c,Total_Inventory__c",endpointConfig.getSObjectFields());
+  assertEquals("endpoint.updateTopic",false,endpointConfig.isUpdateTopic());
+}

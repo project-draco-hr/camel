@@ -1,0 +1,56 @@
+{
+  final List<String> result=new ArrayList<String>();
+  final boolean empty=ObjectHelper.isEmpty(completionText);
+  if (empty || completionText.indexOf('?') == -1) {
+    if (empty) {
+      completionText="";
+    }
+    final OperationName[] values=OperationName.values();
+    for (    OperationName val : values) {
+      final String strValue=val.value();
+      if (strValue.startsWith(completionText)) {
+        result.add(strValue);
+      }
+    }
+    if (empty) {
+      result.add("[PushTopicName]");
+    }
+  }
+ else {
+    if (completionText.matches("^.*[\\?&]sObjectName=$")) {
+      result.addAll(classMap.keySet());
+    }
+ else     if (completionText.matches("^.*[\\?&]sObjectFields=$")) {
+      String sObjectName=(String)configuration.getParameter("sObjectName");
+      if (sObjectName == null) {
+        final Matcher matcher=SOBJECT_NAME_PATTERN.matcher(completionText);
+        if (matcher.matches()) {
+          sObjectName=matcher.group(1);
+        }
+      }
+      if (sObjectName != null) {
+        final Class<?> aClass=classMap.get(sObjectName);
+        ReflectionHelper.doWithFields(aClass,new ReflectionHelper.FieldCallback(){
+          @Override public void doWith(          Field field) throws IllegalArgumentException, IllegalAccessException {
+            if ((field.getModifiers() & Modifier.STATIC) == 0) {
+              result.add(field.getName());
+            }
+          }
+        }
+);
+      }
+    }
+ else     if (completionText.matches("^.*[\\?&]sObjectClass=$")) {
+      for (      Class c : classMap.values()) {
+        result.add(c.getName());
+      }
+      Set<Class<?>> classes=getCamelContext().getPackageScanClassResolver().findImplementations(AbstractQueryRecordsBase.class,packages);
+      for (      Class<?> aClass : classes) {
+        if (AbstractQueryRecordsBase.class != aClass) {
+          result.add(aClass.getName());
+        }
+      }
+    }
+  }
+  return result;
+}
