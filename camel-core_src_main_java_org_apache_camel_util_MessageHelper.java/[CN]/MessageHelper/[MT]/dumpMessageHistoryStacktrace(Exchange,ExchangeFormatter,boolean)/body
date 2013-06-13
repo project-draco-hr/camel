@@ -9,12 +9,28 @@
   sb.append("---------------------------------------------------------------------------------------------------------------------------------------\n");
   sb.append(String.format(MESSAGE_HISTORY_HEADER,"RouteId","ProcessorId","Processor","Elapsed (ms)"));
   sb.append("\n");
+  String routeId=exchange.getFromRouteId();
+  String id=routeId;
+  String label=URISupport.sanitizeUri(exchange.getFromEndpoint().getEndpointUri());
+  long elapsed=0;
+  Date created=exchange.getProperty(Exchange.CREATED_TIMESTAMP,Date.class);
+  if (created != null) {
+    elapsed=new StopWatch(created).stop();
+  }
+  sb.append(String.format(MESSAGE_HISTORY_OUTPUT,routeId,id,label,elapsed));
+  sb.append("\n");
   for (  MessageHistory history : list) {
-    String routeId=history.getRouteId();
-    String id=history.getNode().getId();
-    String label=history.getNode().getLabel();
-    long elapsed=history.getElapsed();
+    routeId=history.getRouteId();
+    id=history.getNode().getId();
+    label=history.getNode().getLabel();
+    elapsed=history.getElapsed();
     sb.append(String.format(MESSAGE_HISTORY_OUTPUT,routeId,id,label,elapsed));
+    sb.append("\n");
+  }
+  if (exchangeFormatter != null) {
+    sb.append("\nExchange\n");
+    sb.append("---------------------------------------------------------------------------------------------------------------------------------------\n");
+    sb.append(exchangeFormatter.format(exchange));
     sb.append("\n");
   }
   if (logStackTrace) {
