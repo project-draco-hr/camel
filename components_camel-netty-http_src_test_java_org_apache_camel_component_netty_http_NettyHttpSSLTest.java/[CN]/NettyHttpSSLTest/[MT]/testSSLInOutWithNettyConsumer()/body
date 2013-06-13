@@ -5,7 +5,18 @@
   getMockEndpoint("mock:input").expectedBodiesReceived("Hello World");
   context.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("netty-http:https://localhost:{{port}}?ssl=true&passphrase=changeit&keyStoreResource=jsse/localhost.ks&trustStoreResource=jsse/localhost.ks").to("mock:input").transform().constant("Bye World");
+      from("netty-http:https://localhost:{{port}}?ssl=true&passphrase=changeit&keyStoreResource=jsse/localhost.ks&trustStoreResource=jsse/localhost.ks").to("mock:input").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          SSLSession session=exchange.getIn().getHeader(NettyConstants.NETTY_SSL_SESSION,SSLSession.class);
+          if (session != null) {
+            exchange.getOut().setBody("Bye World");
+          }
+ else {
+            exchange.getOut().setBody("Cannot start conversion without SSLSession");
+          }
+        }
+      }
+);
     }
   }
 );
