@@ -4,10 +4,11 @@
     if (nettyMessage != null) {
       HttpResponse response=nettyMessage.getHttpResponse();
       if (response != null) {
+        String actualUrl=exchange.getIn().getHeader(Exchange.HTTP_URL,String.class);
         int code=response.getStatus() != null ? response.getStatus().getCode() : -1;
         log.debug("Http responseCode: {}",code);
         if (code >= 300 && getConfiguration().isThrowExceptionOnFailure()) {
-          Exception cause=NettyHttpHelper.populateNettyHttpOperationFailedException(exchange,response,code,getConfiguration().isTransferException());
+          Exception cause=NettyHttpHelper.populateNettyHttpOperationFailedException(exchange,actualUrl,response,code,getConfiguration().isTransferException());
           exchange.setException(cause);
         }
       }
