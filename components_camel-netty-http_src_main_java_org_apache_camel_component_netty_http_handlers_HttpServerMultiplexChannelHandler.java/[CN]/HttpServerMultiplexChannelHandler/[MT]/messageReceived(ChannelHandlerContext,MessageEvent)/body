@@ -1,0 +1,16 @@
+{
+  HttpRequest request=(HttpRequest)messageEvent.getMessage();
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Message received: {}",request);
+    LOG.debug("   is keep-alive: {}",isKeepAlive(request));
+  }
+  HttpServerChannelHandler handler=getHandler(request);
+  if (handler != null) {
+    ctx.setAttachment(handler);
+    handler.messageReceived(ctx,messageEvent);
+  }
+ else {
+    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,SERVICE_UNAVAILABLE);
+    messageEvent.getChannel().write(response);
+  }
+}
