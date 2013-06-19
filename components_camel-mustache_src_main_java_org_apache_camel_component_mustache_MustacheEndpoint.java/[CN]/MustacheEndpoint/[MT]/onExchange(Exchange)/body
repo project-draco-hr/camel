@@ -1,0 +1,27 @@
+{
+  String newResourceUri=exchange.getIn().getHeader(MUSTACHE_RESOURCE_URI,String.class);
+  if (newResourceUri == null) {
+    String newTemplate=exchange.getIn().getHeader(MUSTACHE_TEMPLATE,String.class);
+    Mustache newMustache;
+    if (newTemplate == null) {
+      newMustache=getOrCreateMustache();
+    }
+ else {
+      newMustache=createMustache(new StringReader(newTemplate),"mustache:temp#" + newTemplate.hashCode());
+      exchange.getIn().removeHeader(MUSTACHE_TEMPLATE);
+    }
+    Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
+    StringWriter writer=new StringWriter();
+    newMustache.execute(writer,variableMap);
+    writer.flush();
+    Message out=exchange.getOut();
+    out.setBody(writer.toString());
+    out.setHeaders(exchange.getIn().getHeaders());
+    out.setAttachments(exchange.getIn().getAttachments());
+  }
+ else {
+    exchange.getIn().removeHeader(MustacheConstants.MUSTACHE_RESOURCE_URI);
+    MustacheEndpoint newEndpoint=getCamelContext().getEndpoint(MUSTACHE_ENDPOINT_URI_PREFIX + newResourceUri,MustacheEndpoint.class);
+    newEndpoint.onExchange(exchange);
+  }
+}
