@@ -1,0 +1,29 @@
+{
+  ObjectHelper.notNull(target,"target");
+  ObjectHelper.notNull(properties,"properties");
+  boolean rc=false;
+  if (optionPrefix == null) {
+    optionPrefix="";
+  }
+  ClassInfo cache=cacheClass(target.getClass());
+  for (  MethodInfo info : cache.methods) {
+    Method method=info.method;
+    if (info.isGetter && info.hasGetterAndSetter) {
+      String name=info.getterOrSetterShorthandName;
+      try {
+        method.setAccessible(true);
+        Object value=method.invoke(target);
+        if (value != null || includeNull) {
+          properties.put(optionPrefix + name,value);
+          rc=true;
+        }
+      }
+ catch (      Exception e) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Error invoking getter method " + method + ". This exception is ignored.",e);
+        }
+      }
+    }
+  }
+  return rc;
+}
