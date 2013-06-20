@@ -18,6 +18,7 @@
     if (methodName.contains("(")) {
       name=ObjectHelper.before(methodName,"(");
     }
+    boolean emptyParameters=methodName.endsWith("()");
     if ("class".equals(name) || "getClass".equals(name)) {
       try {
         Method method=pojo.getClass().getMethod("getClass");
@@ -31,9 +32,17 @@
       List<MethodInfo> methods=getOperations(name);
       if (methods != null && methods.size() == 1) {
         methodInfo=methods.get(0);
+        if (emptyParameters && methodInfo.hasParameters()) {
+          throw new MethodNotFoundException(exchange,pojo,methodName,"(with no parameters)");
+        }
       }
  else       if (methods != null) {
         methodInfo=chooseMethod(pojo,exchange,methodName);
+        if (emptyParameters) {
+          if (methodInfo == null || methodInfo.hasParameters()) {
+            throw new MethodNotFoundException(exchange,pojo,methodName,"(with no parameters)");
+          }
+        }
         if (methodInfo == null || !name.equals(methodInfo.getMethod().getName())) {
           throw new AmbiguousMethodCallException(exchange,methods);
         }
