@@ -1,9 +1,6 @@
 {
   if (isStreamCaching()) {
-    if (StreamCaching.getStreamCaching(this) == null) {
-      log.info("StreamCaching is enabled on CamelContext: " + getName());
-      addInterceptStrategy(new StreamCaching());
-    }
+    log.info("StreamCaching is enabled on CamelContext: " + getName());
   }
   if (isTracing()) {
     log.info("Tracing is enabled on CamelContext: " + getName());
@@ -85,8 +82,8 @@ catch (    Exception e) {
   boolean streamCachingInUse=isStreamCaching();
   if (!streamCachingInUse) {
     for (    RouteDefinition route : routeDefinitions) {
-      StreamCaching cache=StreamCaching.getStreamCaching(route.getInterceptStrategies());
-      if (cache != null) {
+      Boolean routeCache=CamelContextHelper.parseBoolean(this,route.getStreamCache());
+      if (routeCache != null && routeCache) {
         streamCachingInUse=true;
         break;
       }

@@ -13,6 +13,9 @@
     childDefinition.setParent(outputDefinition);
   }
   RouteDefinitionHelper.forceAssignIds(routeContext.getCamelContext(),definition);
+  if (routeContext.isStreamCaching()) {
+    target=new StreamCachingResetProcessor(target);
+  }
   InterceptStrategy managed=routeContext.getManagedInterceptStrategy();
   if (managed != null) {
     next=target == nextProcessor ? null : nextProcessor;
@@ -65,6 +68,9 @@
       wrapped=new WrapProcessor(wrapped,target);
     }
     target=wrapped;
+  }
+  if (routeContext.isStreamCaching()) {
+    addAdvice(new StreamCachingAdvice(camelContext.getStreamCachingStrategy()));
   }
   output=target;
 }
