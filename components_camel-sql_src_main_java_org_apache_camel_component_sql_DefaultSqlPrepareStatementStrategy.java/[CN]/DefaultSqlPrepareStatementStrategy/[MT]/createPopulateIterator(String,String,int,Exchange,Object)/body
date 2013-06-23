@@ -5,37 +5,35 @@
       final Map<?,?> headerMap=exchange.getIn().hasHeaders() ? exchange.getIn().getHeaders() : null;
       return new Iterator<Object>(){
         private NamedQueryParser parser=new NamedQueryParser(query);
-        private Object next;
+        private Object nextParam;
         private boolean done;
         @Override public boolean hasNext(){
           if (done) {
             return false;
           }
-          if (next == null) {
-            next=next();
+          if (nextParam == null) {
+            nextParam=parser.next();
+            if (nextParam == null) {
+              done=true;
+            }
           }
-          return next != null;
+          return nextParam != null;
         }
         @Override public Object next(){
-          if (next == null) {
-            String key=parser.next();
-            if (key == null) {
-              done=true;
-              return null;
-            }
-            boolean contains=bodyMap != null ? bodyMap.containsKey(key) : false;
-            contains|=headerMap != null ? headerMap.containsKey(key) : false;
-            if (!contains) {
-              throw new RuntimeExchangeException("Cannot find key [" + key + "] in message body or headers to use when setting named parameter in query ["+ query+ "]",exchange);
-            }
-            next=bodyMap != null ? bodyMap.get(key) : null;
-            if (next == null) {
-              next=headerMap != null ? headerMap.get(key) : null;
-            }
+          if (!hasNext()) {
+            throw new NoSuchElementException();
           }
-          Object answer=next;
-          next=null;
-          return answer;
+          boolean contains=bodyMap != null && bodyMap.containsKey(nextParam);
+          contains|=headerMap != null && headerMap.containsKey(nextParam);
+          if (!contains) {
+            throw new RuntimeExchangeException("Cannot find key [" + nextParam + "] in message body or headers to use when setting named parameter in query ["+ query+ "]",exchange);
+          }
+          Object next=bodyMap != null ? bodyMap.get(nextParam) : null;
+          if (next == null) {
+            next=headerMap != null ? headerMap.get(nextParam) : null;
+          }
+          nextParam=null;
+          return next;
         }
         @Override public void remove(){
         }
