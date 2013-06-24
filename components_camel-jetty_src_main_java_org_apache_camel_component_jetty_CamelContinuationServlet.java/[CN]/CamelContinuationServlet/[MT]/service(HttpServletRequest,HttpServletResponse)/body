@@ -45,16 +45,22 @@
     if (contextPath != null && httpPath.startsWith(contextPath)) {
       exchange.getIn().setHeader(Exchange.HTTP_PATH,httpPath.substring(contextPath.length()));
     }
-    log.trace("Suspending continuation of exchangeId: {}",exchange.getExchangeId());
+    if (log.isTraceEnabled()) {
+      log.trace("Suspending continuation of exchangeId: {}",exchange.getExchangeId());
+    }
     continuation.setAttribute(EXCHANGE_ATTRIBUTE_ID,exchange.getExchangeId());
     continuation.suspend();
     ClassLoader oldTccl=overrideTccl(exchange);
-    log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
+    if (log.isTraceEnabled()) {
+      log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
+    }
     consumer.getAsyncProcessor().process(exchange,new AsyncCallback(){
       public void done(      boolean doneSync){
         boolean expired=expiredExchanges.remove(exchange.getExchangeId()) != null;
         if (!expired) {
-          log.trace("Resuming continuation of exchangeId: {}",exchange.getExchangeId());
+          if (log.isTraceEnabled()) {
+            log.trace("Resuming continuation of exchangeId: {}",exchange.getExchangeId());
+          }
           continuation.setAttribute(EXCHANGE_ATTRIBUTE_NAME,exchange);
           continuation.resume();
         }
@@ -70,7 +76,14 @@
     return;
   }
   try {
-    log.trace("Resumed continuation and writing response for exchangeId: {}",result.getExchangeId());
+    if (log.isTraceEnabled()) {
+      log.trace("Resumed continuation and writing response for exchangeId: {}",result.getExchangeId());
+    }
+    Integer bs=consumer.getEndpoint().getResponseBufferSize();
+    if (bs != null) {
+      log.trace("Using response buffer size: {}",bs);
+      response.setBufferSize(bs);
+    }
     consumer.getBinding().writeResponse(result,response);
   }
  catch (  IOException e) {

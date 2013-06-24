@@ -36,14 +36,23 @@
     exchange.getIn().setHeader(Exchange.HTTP_PATH,httpPath.substring(contextPath.length()));
   }
   try {
-    log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
+    if (log.isTraceEnabled()) {
+      log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
+    }
     consumer.getProcessor().process(exchange);
   }
  catch (  Exception e) {
     exchange.setException(e);
   }
   try {
-    log.trace("Writing response for exchangeId: {}",exchange.getExchangeId());
+    if (log.isTraceEnabled()) {
+      log.trace("Writing response for exchangeId: {}",exchange.getExchangeId());
+    }
+    Integer bs=consumer.getEndpoint().getResponseBufferSize();
+    if (bs != null) {
+      log.trace("Using response buffer size: {}",bs);
+      response.setBufferSize(bs);
+    }
     consumer.getBinding().writeResponse(exchange,response);
   }
  catch (  IOException e) {
