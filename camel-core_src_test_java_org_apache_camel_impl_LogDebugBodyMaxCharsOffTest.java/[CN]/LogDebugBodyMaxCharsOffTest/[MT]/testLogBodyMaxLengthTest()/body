@@ -1,0 +1,15 @@
+{
+  StringBuilder sb=new StringBuilder();
+  for (int i=0; i < 1000; i++) {
+    int value=i % 10;
+    sb.append(value);
+  }
+  String body=sb.toString();
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  template.sendBody("direct:start",body);
+  assertMockEndpointsSatisfied();
+  String msg=mock.getReceivedExchanges().get(0).getIn().toString();
+  assertEquals("Message: [Body is not logged]",msg);
+  assertNotSame("clipped log and real body should not be the same",msg,mock.getReceivedExchanges().get(0).getIn().getBody(String.class));
+}
