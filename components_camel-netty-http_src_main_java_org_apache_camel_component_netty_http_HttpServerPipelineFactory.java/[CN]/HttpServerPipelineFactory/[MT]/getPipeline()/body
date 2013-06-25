@@ -13,8 +13,14 @@
   if (supportCompressed()) {
     pipeline.addLast("deflater",new HttpContentCompressor());
   }
-  int port=consumer.getConfiguration().getPort();
-  ChannelHandler handler=consumer.getEndpoint().getComponent().getMultiplexChannelHandler(port);
+  ChannelHandler handler;
+  if (consumer.getSharedNettyHttpServer() != null) {
+    handler=consumer.getSharedNettyHttpServer().getConsumerChannelFactory().getChannelHandler();
+  }
+ else {
+    int port=consumer.getConfiguration().getPort();
+    handler=consumer.getEndpoint().getComponent().getMultiplexChannelHandler(port).getChannelHandler();
+  }
   pipeline.addLast("handler",handler);
   return pipeline;
 }

@@ -1,7 +1,15 @@
 {
   NettyHttpConsumer answer=new NettyHttpConsumer(this,processor,getConfiguration());
   configureConsumer(answer);
-  HttpServerBootstrapFactory factory=getComponent().getOrCreateHttpNettyServerBootstrapFactory(answer);
-  answer.setNettyServerBootstrapFactory(factory);
+  if (sharedNettyHttpServer != null) {
+    answer.setSharedNettyHttpServer(sharedNettyHttpServer);
+    answer.setNettyServerBootstrapFactory(sharedNettyHttpServer.getServerBootstrapFactory());
+    LOG.debug("Created NettyHttpConsumer: {} using SharedNettyHttpServer: {}",answer,sharedNettyHttpServer);
+  }
+ else {
+    HttpServerBootstrapFactory factory=getComponent().getOrCreateHttpNettyServerBootstrapFactory(answer);
+    answer.setNettyServerBootstrapFactory(factory);
+    LOG.debug("Created NettyHttpConsumer: {} using HttpServerBootstrapFactory: {}",answer,factory);
+  }
   return answer;
 }
