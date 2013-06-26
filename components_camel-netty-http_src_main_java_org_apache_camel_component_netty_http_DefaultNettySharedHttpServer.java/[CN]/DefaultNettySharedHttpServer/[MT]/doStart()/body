@@ -3,11 +3,19 @@
   if (configuration.getPort() <= 0) {
     throw new IllegalArgumentException("Port must be configured on NettySharedHttpServerBootstrapConfiguration " + configuration);
   }
-  LOG.info("Starting NettySharedHttpServer using configuration: {} on port: {}",configuration,configuration.getPort());
+  if (ObjectHelper.isEmpty(configuration.getHost())) {
+    throw new IllegalArgumentException("Host must be configured on NettySharedHttpServerBootstrapConfiguration " + configuration);
+  }
+  LOG.debug("NettySharedHttpServer using configuration: {}",configuration);
   configuration.setProtocol("tcp");
   channelFactory=new HttpServerMultiplexChannelHandler();
   channelFactory.init(configuration.getPort());
   ChannelPipelineFactory pipelineFactory=new HttpServerSharedPipelineFactory(configuration,channelFactory,classResolver);
   bootstrapFactory=new HttpServerBootstrapFactory(channelFactory,false);
   bootstrapFactory.init(null,configuration,pipelineFactory);
+  ServiceHelper.startServices(channelFactory);
+  if (startServer) {
+    LOG.info("Starting NettySharedHttpServer on {}:{}",configuration.getHost(),configuration.getPort());
+    ServiceHelper.startServices(bootstrapFactory);
+  }
 }

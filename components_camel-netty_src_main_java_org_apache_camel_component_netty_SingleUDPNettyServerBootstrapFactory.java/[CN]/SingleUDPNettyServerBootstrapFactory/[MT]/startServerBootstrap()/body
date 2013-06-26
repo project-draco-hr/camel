@@ -11,28 +11,29 @@
  else {
     datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor,configuration.getWorkerCount());
   }
-  connectionlessServerBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
-  connectionlessServerBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
-  connectionlessServerBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
-  connectionlessServerBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
-  connectionlessServerBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
-  connectionlessServerBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
-  connectionlessServerBootstrap.setOption("child.broadcast",configuration.isBroadcast());
-  connectionlessServerBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
-  connectionlessServerBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
+  connectionlessBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
+  connectionlessBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+  connectionlessBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+  connectionlessBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
+  connectionlessBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+  connectionlessBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
+  connectionlessBootstrap.setOption("child.broadcast",configuration.isBroadcast());
+  connectionlessBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
+  connectionlessBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
   if (configuration.getReceiveBufferSizePredictor() > 0) {
-    connectionlessServerBootstrap.setOption("receiveBufferSizePredictorFactory",new FixedReceiveBufferSizePredictorFactory(configuration.getReceiveBufferSizePredictor()));
+    connectionlessBootstrap.setOption("receiveBufferSizePredictorFactory",new FixedReceiveBufferSizePredictorFactory(configuration.getReceiveBufferSizePredictor()));
   }
   if (configuration.getBacklog() > 0) {
-    connectionlessServerBootstrap.setOption("backlog",configuration.getBacklog());
+    connectionlessBootstrap.setOption("backlog",configuration.getBacklog());
   }
   if (configuration.getOptions() != null) {
     for (    Map.Entry<String,Object> entry : configuration.getOptions().entrySet()) {
-      connectionlessServerBootstrap.setOption(entry.getKey(),entry.getValue());
+      connectionlessBootstrap.setOption(entry.getKey(),entry.getValue());
     }
   }
-  LOG.info("Created ConnectionlessBootstrap {} with options: {}",connectionlessServerBootstrap,connectionlessServerBootstrap.getOptions());
-  connectionlessServerBootstrap.setPipelineFactory(pipelineFactory);
-  channel=connectionlessServerBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  LOG.debug("Created ConnectionlessBootstrap {} with options: {}",connectionlessBootstrap,connectionlessBootstrap.getOptions());
+  connectionlessBootstrap.setPipelineFactory(pipelineFactory);
+  LOG.info("ConnectionlessBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
+  channel=connectionlessBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
   allChannels.add(channel);
 }
