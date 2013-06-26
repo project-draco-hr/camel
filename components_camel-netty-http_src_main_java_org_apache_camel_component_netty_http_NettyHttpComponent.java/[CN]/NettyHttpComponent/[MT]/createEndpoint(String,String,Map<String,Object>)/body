@@ -15,6 +15,11 @@
   }
   config=parseConfiguration(config,remaining,parameters);
   config.validateConfiguration();
+  NettySharedHttpServer shared=resolveAndRemoveReferenceParameter(parameters,"nettySharedHttpServer",NettySharedHttpServer.class);
+  if (shared != null) {
+    LOG.debug("Using NettySharedHttpServer: {} with port: {}",shared,shared.getPort());
+    config.setPort(shared.getPort());
+  }
   NettyHttpEndpoint answer=new NettyHttpEndpoint(remaining,this,config);
   answer.setTimer(getTimer());
   setProperties(answer.getConfiguration(),parameters);
@@ -28,5 +33,6 @@
   if (answer.getHeaderFilterStrategy() == null) {
     answer.setHeaderFilterStrategy(getHeaderFilterStrategy());
   }
+  answer.setNettySharedHttpServer(shared);
   return answer;
 }
