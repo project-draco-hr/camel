@@ -2,20 +2,16 @@
   if (camelContext != null) {
     bossExecutor=camelContext.getExecutorServiceManager().newCachedThreadPool(this,"NettyTCPBoss");
     workerExecutor=camelContext.getExecutorServiceManager().newCachedThreadPool(this,"NettyTCPWorker");
-    if (configuration.getWorkerCount() <= 0) {
-      channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor);
-    }
- else {
-      channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor,configuration.getWorkerCount());
-    }
   }
  else {
-    if (configuration.getWorkerCount() <= 0) {
-      channelFactory=new NioServerSocketChannelFactory();
-    }
+    bossExecutor=Executors.newCachedThreadPool(threadFactory);
+    workerExecutor=Executors.newCachedThreadPool(threadFactory);
+  }
+  if (configuration.getWorkerCount() <= 0) {
+    channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor);
+  }
  else {
-      channelFactory=new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),Executors.newCachedThreadPool(),configuration.getWorkerCount());
-    }
+    channelFactory=new NioServerSocketChannelFactory(bossExecutor,workerExecutor,configuration.getWorkerCount());
   }
   serverBootstrap=new ServerBootstrap(channelFactory);
   serverBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());

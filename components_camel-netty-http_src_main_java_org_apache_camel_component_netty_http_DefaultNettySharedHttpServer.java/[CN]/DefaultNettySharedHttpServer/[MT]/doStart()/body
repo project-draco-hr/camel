@@ -11,8 +11,12 @@
   channelFactory=new HttpServerMultiplexChannelHandler();
   channelFactory.init(configuration.getPort());
   ChannelPipelineFactory pipelineFactory=new HttpServerSharedPipelineFactory(configuration,channelFactory,classResolver);
+  String port=Matcher.quoteReplacement("" + configuration.getPort());
+  String pattern=threadPattern;
+  pattern=pattern.replaceFirst("#port#",port);
+  ThreadFactory tf=new CamelThreadFactory(pattern,"NettySharedHttpServer",true);
   bootstrapFactory=new HttpServerBootstrapFactory(channelFactory,false);
-  bootstrapFactory.init(null,configuration,pipelineFactory);
+  bootstrapFactory.init(tf,configuration,pipelineFactory);
   ServiceHelper.startServices(channelFactory);
   if (startServer) {
     LOG.info("Starting NettySharedHttpServer on {}:{}",configuration.getHost(),configuration.getPort());
