@@ -26,6 +26,10 @@
     if (offset - 1 <= -1) {
       throw new IllegalArgumentException("Offset/Position of the field " + dataField.toString() + " cannot be negative");
     }
+    if (dataField.pos() > offset) {
+      LOG.debug("skipping ahead [" + (dataField.pos() - offset) + "] chars.");
+      offset=dataField.pos();
+    }
     if (length > 0) {
       token=record.substring(offset - 1,offset + length - 1);
       offset+=length;
@@ -72,7 +76,7 @@ catch (      Exception e) {
     field.set(modelField,value);
     ++pos;
   }
-  if (offset <= record.length() && !(record.substring(offset - 1,record.length())).trim().equals("")) {
+  if (offset <= record.length() && !(record.substring(offset - 1,record.length())).trim().equals("") && !isIgnoreTrailingChars()) {
     throw new IllegalArgumentException("Unexpected / unmapped characters found at the end of the fixed-length record at line : " + line);
   }
   LOG.debug("Counter mandatory fields: {}",counterMandatoryFields);
