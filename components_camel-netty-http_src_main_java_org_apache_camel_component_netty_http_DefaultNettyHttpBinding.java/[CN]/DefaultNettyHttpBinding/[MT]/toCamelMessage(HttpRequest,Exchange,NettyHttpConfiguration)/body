@@ -5,6 +5,12 @@
   if (configuration.isMapHeaders()) {
     populateCamelHeaders(request,answer.getHeaders(),exchange,configuration);
   }
-  answer.setBody(request.getContent());
+  if (configuration.isDisableStreamCache()) {
+    answer.setBody(request.getContent());
+  }
+ else {
+    NettyChannelBufferStreamCache cache=new NettyChannelBufferStreamCache(request.getContent());
+    answer.setBody(cache);
+  }
   return answer;
 }
