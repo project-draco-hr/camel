@@ -1,0 +1,58 @@
+{
+  URL url=new URL(page);
+  File file=new File(targetDir,".manualCache-" + url.getFile().substring(1));
+  try {
+    HttpURLConnection con=(HttpURLConnection)url.openConnection();
+    XMLReader parser=new Parser();
+    parser.setFeature(Parser.namespacesFeature,false);
+    parser.setFeature(Parser.namespacePrefixesFeature,false);
+    parser.setProperty(Parser.schemaProperty,new org.ccil.cowan.tagsoup.HTMLSchema(){
+{
+        elementType("ul",M_LI,M_BLOCK | M_LI,0);
+      }
+    }
+);
+    StringWriter w=new StringWriter();
+    XMLWriter xmlWriter=new XMLWriter(w){
+      int inDiv=Integer.MAX_VALUE;
+      int count;
+      public void characters(      char ch[],      int start,      int len) throws SAXException {
+        if (inDiv <= count) {
+          super.characters(ch,start,len);
+        }
+      }
+      public void startElement(      String uri,      String localName,      String qName,      Attributes atts) throws SAXException {
+        count++;
+        if ("div".equalsIgnoreCase(qName) && "wiki-content maincontent".equalsIgnoreCase(atts.getValue("class"))) {
+          inDiv=count;
+        }
+        if (inDiv <= count) {
+          super.startElement(uri,localName,qName,atts);
+        }
+      }
+      public void endElement(      String uri,      String localName,      String qName) throws SAXException {
+        if (inDiv <= count) {
+          super.endElement(uri,localName,qName);
+        }
+        count--;
+        if (inDiv > count) {
+          inDiv=Integer.MAX_VALUE;
+        }
+      }
+    }
+;
+    xmlWriter.setOutputProperty(XMLWriter.OMIT_XML_DECLARATION,"yes");
+    xmlWriter.setOutputProperty(XMLWriter.METHOD,"html");
+    parser.setContentHandler(xmlWriter);
+    long date=con.getLastModified();
+    parser.parse(new InputSource(new BufferedInputStream(con.getInputStream())));
+    FileWriter writer=new FileWriter(file);
+    writer.write(Long.toString(date));
+    writer.close();
+    return w.toString();
+  }
+ catch (  Throwable e) {
+    e.printStackTrace();
+    throw new RuntimeException("Failed",e);
+  }
+}
