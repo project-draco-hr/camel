@@ -9,14 +9,14 @@
   LOG.info("Creating Topic {}: {}",topicName,topic);
   final SyncResponseCallback callback=new SyncResponseCallback();
   try {
-    restClient.createSObject(PUSH_TOPIC_OBJECT_NAME,new ByteArrayInputStream(objectMapper.writeValueAsBytes(topic)),callback);
+    restClient.createSObject(PUSH_TOPIC_OBJECT_NAME,new ByteArrayInputStream(OBJECT_MAPPER.writeValueAsBytes(topic)),callback);
     if (!callback.await(API_TIMEOUT,TimeUnit.SECONDS)) {
       throw new SalesforceException("API call timeout!",null);
     }
     if (callback.getException() != null) {
       throw callback.getException();
     }
-    CreateSObjectResult result=objectMapper.readValue(callback.getResponse(),CreateSObjectResult.class);
+    CreateSObjectResult result=OBJECT_MAPPER.readValue(callback.getResponse(),CreateSObjectResult.class);
     if (!result.getSuccess()) {
       final SalesforceException salesforceException=new SalesforceException(result.getErrors(),HttpStatus.BAD_REQUEST_400);
       throw new CamelException(String.format("Error creating Topic %s: %s",topicName,result.getErrors()),salesforceException);
