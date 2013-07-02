@@ -1,0 +1,33 @@
+{
+  PrivateKey prvKey=keyPair.getPrivate();
+  Signature sig;
+  try {
+    sig=Signature.getInstance("SHA1withRSA");
+    sig.initSign(prvKey);
+    sig.update(data);
+    byte[] sshRsa=ALGORITHM_TYPE.getBytes();
+    byte[] signature=sig.sign();
+    byte[] result=new byte[sshRsa.length + 4 + signature.length+ 4];
+    int index=0;
+    byte[] intAsByteArray=ByteBuffer.allocate(4).putInt(sshRsa.length).array();
+    System.arraycopy(intAsByteArray,0,result,index,4);
+    index+=4;
+    System.arraycopy(sshRsa,0,result,index,sshRsa.length);
+    index+=sshRsa.length;
+    intAsByteArray=ByteBuffer.allocate(4).putInt(signature.length).array();
+    System.arraycopy(intAsByteArray,0,result,index,4);
+    index+=4;
+    System.arraycopy(signature,0,result,index,signature.length);
+    return result;
+  }
+ catch (  NoSuchAlgorithmException e) {
+    log.error("Cannot sign",e);
+  }
+catch (  InvalidKeyException e) {
+    log.error("Cannot sign",e);
+  }
+catch (  SignatureException e) {
+    log.error("Cannot sign",e);
+  }
+  return null;
+}

@@ -52,6 +52,24 @@
       throw new JSchException("Cannot read resource: " + sftpConfig.getPrivateKeyUri(),e);
     }
   }
+  if (sftpConfig.getKeyPair() != null) {
+    LOG.debug("Using private key information from key pair");
+    KeyPair keyPair=sftpConfig.getKeyPair();
+    if (keyPair.getPrivate() != null && keyPair.getPublic() != null) {
+      if (keyPair.getPrivate() instanceof RSAPrivateKey && keyPair.getPublic() instanceof RSAPublicKey) {
+        jsch.addIdentity(new RSAKeyPairIdentity("ID",keyPair),null);
+      }
+ else       if (keyPair.getPrivate() instanceof DSAPrivateKey && keyPair.getPublic() instanceof DSAPublicKey) {
+        jsch.addIdentity(new DSAKeyPairIdentity("ID",keyPair),null);
+      }
+ else {
+        LOG.warn("Only RSA and DSA key pairs are supported");
+      }
+    }
+ else {
+      LOG.warn("PrivateKey and PublicKey in the KeyPair must be filled");
+    }
+  }
   if (isNotEmpty(sftpConfig.getKnownHostsFile())) {
     LOG.debug("Using knownhosts file: {}",sftpConfig.getKnownHostsFile());
     jsch.setKnownHosts(sftpConfig.getKnownHostsFile());

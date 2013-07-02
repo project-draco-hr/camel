@@ -1,0 +1,34 @@
+{
+  try {
+    PrivateKey prvKey=(PrivateKey)keyPair.getPrivate();
+    Signature sig;
+    sig=Signature.getInstance("SHA1withDSA");
+    sig.initSign(prvKey);
+    sig.update(data);
+    byte[] sshDss=ALGORITHM_TYPE.getBytes();
+    byte[] signature=sig.sign();
+    signature=convertDERToP1363(signature);
+    byte[] result=new byte[sshDss.length + 4 + signature.length+ 4];
+    int index=0;
+    byte[] intAsByteArray=ByteBuffer.allocate(4).putInt(sshDss.length).array();
+    System.arraycopy(intAsByteArray,0,result,index,4);
+    index+=4;
+    System.arraycopy(sshDss,0,result,index,sshDss.length);
+    index+=sshDss.length;
+    intAsByteArray=ByteBuffer.allocate(4).putInt(signature.length).array();
+    System.arraycopy(intAsByteArray,0,result,index,4);
+    index+=4;
+    System.arraycopy(signature,0,result,index,signature.length);
+    return result;
+  }
+ catch (  NoSuchAlgorithmException e) {
+    log.error("Cannot sign",e);
+  }
+catch (  InvalidKeyException e) {
+    log.error("Cannot sign",e);
+  }
+catch (  SignatureException e) {
+    log.error("Cannot sign",e);
+  }
+  return null;
+}
