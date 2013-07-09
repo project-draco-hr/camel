@@ -1,14 +1,18 @@
 {
   if (token.isUnary() && text.startsWith(token.getValue())) {
-    int len=token.getValue().length();
-    char previous=' ';
-    if (index > 0) {
-      previous=expression.charAt(index - 1);
+    SimpleTokenType functionEndToken=getFunctionEndToken();
+    if (functionEndToken != null) {
+      int endLen=functionEndToken.getValue().length();
+      int len=token.getValue().length();
+      String previous="";
+      if (index - endLen >= 0) {
+        previous=expression.substring(index - endLen,index);
+      }
+      String after=text.substring(len);
+      boolean whiteSpace=ObjectHelper.isEmpty(after) || after.startsWith(" ");
+      boolean functionEnd=previous.equals(functionEndToken.getValue());
+      return functionEnd && whiteSpace;
     }
-    String after=text.substring(len);
-    boolean whiteSpace=ObjectHelper.isEmpty(after) || after.startsWith(" ");
-    boolean functionEnd=previous == '}';
-    return functionEnd && whiteSpace;
   }
   return text.startsWith(token.getValue());
 }
