@@ -1,12 +1,15 @@
 {
   if (channelFactory == null) {
-    bossExecutor=context.getExecutorServiceManager().newCachedThreadPool(this,"NettyTCPBoss");
-    workerExecutor=context.getExecutorServiceManager().newCachedThreadPool(this,"NettyTCPWorker");
-    if (configuration.getWorkerCount() <= 0) {
-      channelFactory=new NioClientSocketChannelFactory(bossExecutor,workerExecutor);
+    BossPool bp=configuration.getBossPool();
+    WorkerPool wp=configuration.getWorkerPool();
+    if (bp == null) {
+      bossPool=new NettyClientBossPoolBuilder().withBossCount(configuration.getBossCount()).withName("NettyClientTCPBoss").build();
+      bp=bossPool;
     }
- else {
-      channelFactory=new NioClientSocketChannelFactory(bossExecutor,workerExecutor,configuration.getWorkerCount());
+    if (wp == null) {
+      workerPool=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyClientTCPWorker").build();
+      wp=workerPool;
     }
+    channelFactory=new NioClientSocketChannelFactory(bp,wp);
   }
 }

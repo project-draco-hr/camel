@@ -1,11 +1,7 @@
 {
   if (datagramChannelFactory == null) {
-    workerExecutor=context.getExecutorServiceManager().newCachedThreadPool(this,"NettyUDPWorker");
-    if (configuration.getWorkerCount() <= 0) {
-      datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor);
-    }
- else {
-      datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor,configuration.getWorkerCount());
-    }
+    int count=configuration.getWorkerCount() > 0 ? configuration.getWorkerCount() : NettyHelper.DEFAULT_IO_THREADS;
+    workerPool=new NioDatagramWorkerPool(Executors.newCachedThreadPool(),count);
+    datagramChannelFactory=new NioDatagramChannelFactory(workerPool);
   }
 }
