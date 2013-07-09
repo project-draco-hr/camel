@@ -1,16 +1,7 @@
 {
-  if (camelContext != null) {
-    workerExecutor=camelContext.getExecutorServiceManager().newCachedThreadPool(this,"NettyUDPWorker");
-  }
- else {
-    workerExecutor=Executors.newCachedThreadPool(threadFactory);
-  }
-  if (configuration.getWorkerCount() <= 0) {
-    datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor);
-  }
- else {
-    datagramChannelFactory=new NioDatagramChannelFactory(workerExecutor,configuration.getWorkerCount());
-  }
+  int count=configuration.getWorkerCount() > 0 ? configuration.getWorkerCount() : DEFAULT_IO_THREADS;
+  workerPool=new NioDatagramWorkerPool(Executors.newCachedThreadPool(),count);
+  datagramChannelFactory=new NioDatagramChannelFactory(workerPool);
   connectionlessBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
   connectionlessBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
   connectionlessBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
