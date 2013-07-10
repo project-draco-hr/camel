@@ -1,5 +1,20 @@
 {
   LOG.trace("maybeStart: {}",this);
+  boolean eager="true".equalsIgnoreCase(System.getProperty("registerBlueprintCamelContextEager"));
+  if (eager) {
+    for (    EventNotifier notifer : getManagementStrategy().getEventNotifiers()) {
+      if (notifer instanceof OsgiCamelContextPublisher) {
+        OsgiCamelContextPublisher publisher=(OsgiCamelContextPublisher)notifer;
+        publisher.registerCamelContext(this);
+        break;
+      }
+    }
+  }
+  boolean skip="true".equalsIgnoreCase(System.getProperty("skipStartingCamelContext"));
+  if (skip) {
+    LOG.trace("maybeStart: {} is skipping as System property skipStartingCamelContext is set",this);
+    return;
+  }
   if (!isStarted() && !isStarting()) {
     LOG.debug("Starting {}",this);
     start();
