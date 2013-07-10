@@ -1,0 +1,21 @@
+{
+  Exchange exchange=endpoint.createExchange();
+  try {
+    String jsonBody=endpoint.getConfig().getRequestor(apiUrl).send();
+    if (!endpoint.getConfig().isUseJson()) {
+      ObjectMapper jsonMapper=new ObjectMapper();
+      Relationships relationships=jsonMapper.readValue(jsonBody,Relationships.class);
+      exchange.getIn().setBody(relationships);
+    }
+ else {
+      exchange.getIn().setBody(jsonBody);
+    }
+    getProcessor().process(exchange);
+    return 1;
+  }
+  finally {
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+    }
+  }
+}
