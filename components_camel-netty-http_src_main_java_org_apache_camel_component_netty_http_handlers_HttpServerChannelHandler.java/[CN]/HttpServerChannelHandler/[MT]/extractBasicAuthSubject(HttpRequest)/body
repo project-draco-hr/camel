@@ -2,14 +2,19 @@
   String auth=request.getHeader("Authorization");
   if (auth != null) {
     String constraint=ObjectHelper.before(auth," ");
-    String decoded=ObjectHelper.after(auth," ");
-    ChannelBuffer buf=ChannelBuffers.copiedBuffer(decoded.getBytes());
-    ChannelBuffer out=Base64.decode(buf);
-    String userAndPw=out.toString(Charset.defaultCharset());
-    String username=ObjectHelper.before(userAndPw,":");
-    String password=ObjectHelper.after(userAndPw,":");
-    HttpBasicAuthSubject subject=new HttpBasicAuthSubject(username,password);
-    return subject;
+    if (constraint != null) {
+      if ("Basic".equalsIgnoreCase(constraint.trim())) {
+        String decoded=ObjectHelper.after(auth," ");
+        ChannelBuffer buf=ChannelBuffers.copiedBuffer(decoded.getBytes());
+        ChannelBuffer out=Base64.decode(buf);
+        String userAndPw=out.toString(Charset.defaultCharset());
+        String username=ObjectHelper.before(userAndPw,":");
+        String password=ObjectHelper.after(userAndPw,":");
+        HttpPrincipal principal=new HttpPrincipal(username,password);
+        LOG.debug("Extracted Basic Auth principal from HTTP header: {}",principal);
+        return principal;
+      }
+    }
   }
   return null;
 }

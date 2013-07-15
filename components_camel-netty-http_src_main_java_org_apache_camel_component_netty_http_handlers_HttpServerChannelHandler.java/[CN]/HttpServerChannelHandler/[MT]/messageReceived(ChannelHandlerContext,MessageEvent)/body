@@ -32,18 +32,18 @@
     return;
   }
   NettyHttpSecurityConfiguration security=consumer.getEndpoint().getNettyHttpSecurityConfiguration();
-  if (security != null) {
+  if (security != null && security.isAuthenticate()) {
     String url=request.getUri();
     boolean restricted=security.getContextPathMatcher() == null || security.getContextPathMatcher().matches(url);
     if (restricted) {
-      HttpBasicAuthSubject subject=extractBasicAuthSubject(request);
-      boolean authenticated=subject != null && authenticate(subject);
-      if (subject == null || !authenticated) {
-        if (subject == null) {
+      HttpPrincipal principal=extractBasicAuthSubject(request);
+      boolean authenticated=principal != null && authenticate(security.getSecurityAuthenticator(),principal) != null;
+      if (principal == null || !authenticated) {
+        if (principal == null) {
           LOG.debug("Http Basic Auth required for resource: {}",url);
         }
  else {
-          LOG.debug("Http Basic Auth not authorized for username: {}",subject.getUsername());
+          LOG.debug("Http Basic Auth not authorized for username: {}",principal.getUsername());
         }
         HttpResponse response=new DefaultHttpResponse(HTTP_1_1,UNAUTHORIZED);
         response.setHeader("WWW-Authenticate","Basic realm=\"" + security.getRealm() + "\"");
@@ -54,7 +54,7 @@
         return;
       }
  else {
-        LOG.debug("Http Basic Auth authorized for username: {}",subject.getUsername());
+        LOG.debug("Http Basic Auth authorized for username: {}",principal.getUsername());
       }
     }
   }
