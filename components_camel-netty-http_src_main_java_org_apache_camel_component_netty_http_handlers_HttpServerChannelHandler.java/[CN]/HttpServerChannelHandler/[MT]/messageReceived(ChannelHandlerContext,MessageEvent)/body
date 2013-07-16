@@ -39,16 +39,33 @@
     }
     URI uri=new URI(request.getUri());
     String target=uri.getPath();
-    boolean restricted=security.getConstraintMapping() == null || security.getConstraintMapping().matches(target);
-    if (restricted) {
+    String roles;
+    if (security.getSecurityConstraint() != null) {
+      roles=security.getSecurityConstraint().restricted(target);
+    }
+ else {
+      roles="*";
+    }
+    if (roles != null) {
       HttpPrincipal principal=extractBasicAuthSubject(request);
-      boolean authenticated=principal != null && authenticate(security.getSecurityAuthenticator(),security.getLoginDeniedLoggingLevel(),principal) != null;
-      if (principal == null || !authenticated) {
+      Subject subject=null;
+      boolean inRole=true;
+      if (principal != null) {
+        subject=authenticate(security.getSecurityAuthenticator(),security.getLoginDeniedLoggingLevel(),principal);
+        if (subject != null) {
+          String userRoles=security.getSecurityAuthenticator().getUserRoles(subject);
+          inRole=matchesRoles(roles,userRoles);
+        }
+      }
+      if (principal == null || subject == null || !inRole) {
         if (principal == null) {
           LOG.debug("Http Basic Auth required for resource: {}",url);
         }
- else {
+ else         if (subject == null) {
           LOG.debug("Http Basic Auth not authorized for username: {}",principal.getUsername());
+        }
+ else {
+          LOG.debug("Http Basic Auth not in role for username: {}",principal.getUsername());
         }
         HttpResponse response=new DefaultHttpResponse(HTTP_1_1,UNAUTHORIZED);
         response.setHeader("WWW-Authenticate","Basic realm=\"" + security.getRealm() + "\"");
