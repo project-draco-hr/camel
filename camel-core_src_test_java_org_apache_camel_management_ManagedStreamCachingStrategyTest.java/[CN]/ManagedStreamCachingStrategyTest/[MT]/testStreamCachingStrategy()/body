@@ -1,0 +1,23 @@
+{
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=services,*");
+  Set<ObjectName> names=mbeanServer.queryNames(on,null);
+  ObjectName name=null;
+  for (  ObjectName service : names) {
+    if (service.toString().contains("DefaultStreamCachingStrategy")) {
+      name=service;
+      break;
+    }
+  }
+  assertNotNull("Cannot find DefaultStreamCachingStrategy",name);
+  String dir=(String)mbeanServer.getAttribute(name,"SpoolDirectory");
+  assertEquals("target/cachedir",dir);
+  Long threshold=(Long)mbeanServer.getAttribute(name,"SpoolThreshold");
+  assertEquals(StreamCache.DEFAULT_SPOOL_THRESHOLD,threshold.longValue());
+  Integer size=(Integer)mbeanServer.getAttribute(name,"BufferSize");
+  assertEquals(IOHelper.DEFAULT_BUFFER_SIZE,size.intValue());
+  String chiper=(String)mbeanServer.getAttribute(name,"SpoolChiper");
+  assertNull(chiper);
+  Boolean remove=(Boolean)mbeanServer.getAttribute(name,"RemoveSpoolDirectoryWhenStopping");
+  assertEquals(Boolean.TRUE,remove);
+}
