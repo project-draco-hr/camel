@@ -3,31 +3,39 @@
   String hold=camelContext.getProperty(THRESHOLD);
   String chiper=camelContext.getProperty(CIPHER_TRANSFORMATION);
   String dir=camelContext.getProperty(TEMP_DIR);
+  boolean warn=false;
   if (bufferSize != null) {
+    warn=true;
     this.bufferSize=camelContext.getTypeConverter().convertTo(Integer.class,bufferSize);
   }
   if (hold != null) {
+    warn=true;
     this.spoolThreshold=camelContext.getTypeConverter().convertTo(Long.class,hold);
   }
   if (chiper != null) {
+    warn=true;
     this.spoolChiper=chiper;
   }
   if (dir != null) {
-    this.temporaryDirectory=camelContext.getTypeConverter().convertTo(File.class,dir);
+    warn=true;
+    this.spoolDirectory=camelContext.getTypeConverter().convertTo(File.class,dir);
+  }
+  if (warn) {
+    LOG.warn("Configuring of StreamCaching using CamelContext properties is deprecated - use StreamCachingStrategy instead.");
   }
   LOG.info("StreamCaching in use with {}",this.toString());
-  if (temporaryDirectory == null) {
-    temporaryDirectory=FileUtil.createNewTempDir();
-    LOG.info("Created temporary directory {}",temporaryDirectory);
+  if (spoolDirectory == null) {
+    spoolDirectory=FileUtil.createNewTempDir();
+    LOG.info("Created temporary spool directory {}",spoolDirectory);
   }
  else {
-    if (!temporaryDirectory.exists()) {
-      boolean created=temporaryDirectory.mkdirs();
+    if (!spoolDirectory.exists()) {
+      boolean created=spoolDirectory.mkdirs();
       if (!created) {
-        LOG.warn("Cannot create temporary directory {}",temporaryDirectory);
+        LOG.warn("Cannot create spool directory {}",spoolDirectory);
       }
  else {
-        LOG.info("Created temporary directory {}",temporaryDirectory);
+        LOG.info("Created spool directory {}",spoolDirectory);
       }
     }
   }
