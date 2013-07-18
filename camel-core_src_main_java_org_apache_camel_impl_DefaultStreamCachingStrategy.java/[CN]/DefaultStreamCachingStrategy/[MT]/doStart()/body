@@ -1,6 +1,6 @@
 {
   if (!enabled) {
-    LOG.info("StreamCaching is not enabled");
+    LOG.debug("StreamCaching is not enabled");
     return;
   }
   String bufferSize=camelContext.getProperty(BUFFER_SIZE);
@@ -27,20 +27,34 @@
   if (warn) {
     LOG.warn("Configuring of StreamCaching using CamelContext properties is deprecated - use StreamCachingStrategy instead.");
   }
-  LOG.info("StreamCaching in use with {}",this.toString());
-  if (spoolDirectory == null) {
-    spoolDirectory=FileUtil.createNewTempDir();
-    LOG.info("Created temporary spool directory {}",spoolDirectory);
-  }
- else {
-    if (!spoolDirectory.exists()) {
-      boolean created=spoolDirectory.mkdirs();
-      if (!created) {
-        LOG.warn("Cannot create spool directory {}",spoolDirectory);
+  if (spoolThreshold > 0) {
+    if (spoolDirectory == null) {
+      spoolDirectory=FileUtil.createNewTempDir();
+      LOG.debug("Created temporary spool directory: {}",spoolDirectory);
+    }
+ else     if (spoolDirectory.exists()) {
+      if (spoolDirectory.isDirectory()) {
+        LOG.debug("Using spool directory: {}",spoolDirectory);
       }
  else {
-        LOG.info("Created spool directory {}",spoolDirectory);
+        LOG.warn("Spool directory: {} is not a directory. This may cause problems spooling to disk for the stream caching!",spoolDirectory);
       }
     }
+ else {
+      boolean created=spoolDirectory.mkdirs();
+      if (!created) {
+        LOG.warn("Cannot create spool directory: {}. This may cause problems spooling to disk for the stream caching!",spoolDirectory);
+      }
+ else {
+        LOG.debug("Created spool directory: {}",spoolDirectory);
+      }
+    }
+  }
+  LOG.debug("StreamCaching configuration {}",this.toString());
+  if (spoolThreshold > 0) {
+    LOG.info("StreamCaching in use and overflow to disk enabled when > {} bytes to directory: {}",spoolThreshold,spoolDirectory);
+  }
+ else {
+    LOG.info("StreamCaching in use with no overflow to disk (memory only)");
   }
 }
