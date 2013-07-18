@@ -1,0 +1,29 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from(simpleEndpointURI + "&dataFormat=PAYLOAD").to("log:info").process(new Processor(){
+        @SuppressWarnings("unchecked") public void process(        final Exchange exchange) throws Exception {
+          CxfPayload<SoapHeader> requestPayload=exchange.getIn().getBody(CxfPayload.class);
+          List<Source> inElements=requestPayload.getBodySources();
+          String request=exchange.getIn().getBody(String.class);
+          String documentString=ECHO_RESPONSE;
+          Element in=new XmlConverter().toDOMElement(inElements.get(0));
+          if (!in.getNamespaceURI().equals(ELEMENT_NAMESPACE)) {
+            throw new IllegalArgumentException("Wrong element namespace");
+          }
+          if (in.getLocalName().equals("echoBoolean")) {
+            documentString=ECHO_BOOLEAN_RESPONSE;
+            checkRequest("ECHO_BOOLEAN_REQUEST",request);
+          }
+ else {
+            documentString=ECHO_RESPONSE;
+            checkRequest("ECHO_REQUEST",request);
+          }
+          exchange.getOut().setBody(documentString);
+        }
+      }
+);
+    }
+  }
+;
+}
