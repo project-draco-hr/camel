@@ -1,0 +1,25 @@
+{
+  Matcher matcher=ENV_PATTERN.matcher(path);
+  while (matcher.find()) {
+    String key=matcher.group(1);
+    String value=System.getenv(key);
+    if (ObjectHelper.isEmpty(value)) {
+      throw new IllegalArgumentException("Cannot find system environment with key: " + key);
+    }
+    value=Matcher.quoteReplacement(value);
+    path=matcher.replaceFirst(value);
+    matcher=ENV_PATTERN.matcher(path);
+  }
+  matcher=SYS_PATTERN.matcher(path);
+  while (matcher.find()) {
+    String key=matcher.group(1);
+    String value=System.getProperty(key);
+    if (ObjectHelper.isEmpty(value)) {
+      throw new IllegalArgumentException("Cannot find JVM system property with key: " + key);
+    }
+    value=Matcher.quoteReplacement(value);
+    path=matcher.replaceFirst(value);
+    matcher=SYS_PATTERN.matcher(path);
+  }
+  return path;
+}

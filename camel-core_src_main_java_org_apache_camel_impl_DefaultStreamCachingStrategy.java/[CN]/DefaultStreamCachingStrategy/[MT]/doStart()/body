@@ -28,11 +28,17 @@
     LOG.warn("Configuring of StreamCaching using CamelContext properties is deprecated - use StreamCachingStrategy instead.");
   }
   if (spoolThreshold > 0) {
-    if (spoolDirectory == null) {
-      spoolDirectory=FileUtil.createNewTempDir();
-      LOG.debug("Created temporary spool directory: {}",spoolDirectory);
+    if (spoolDirectory == null && spoolDirectoryName == null) {
+      throw new IllegalArgumentException("SpoolDirectory must be configured when using SpoolThreshold > 0");
     }
- else     if (spoolDirectory.exists()) {
+    if (spoolDirectory == null && spoolDirectoryName != null) {
+      String name=resolveSpoolDirectory(spoolDirectoryName);
+      if (name != null) {
+        spoolDirectory=new File(name);
+        spoolDirectoryName=null;
+      }
+    }
+    if (spoolDirectory.exists()) {
       if (spoolDirectory.isDirectory()) {
         LOG.debug("Using spool directory: {}",spoolDirectory);
       }
