@@ -27,10 +27,10 @@
   if (warn) {
     LOG.warn("Configuring of StreamCaching using CamelContext properties is deprecated - use StreamCachingStrategy instead.");
   }
-  if (spoolHeapMemoryWatermarkThreshold < 0 || spoolHeapMemoryWatermarkThreshold > 100) {
-    throw new IllegalArgumentException("SpoolHeapMemoryWatermarkThreshold must be a value between 0 and 100, was: " + spoolHeapMemoryWatermarkThreshold);
+  if (spoolUsedHeapMemoryThreshold > 99) {
+    throw new IllegalArgumentException("SpoolHeapMemoryWatermarkThreshold must not be higher than 99, was: " + spoolUsedHeapMemoryThreshold);
   }
-  if (spoolThreshold > 0 || spoolHeapMemoryWatermarkThreshold > 0) {
+  if (spoolThreshold > 0 || spoolUsedHeapMemoryThreshold > 0) {
     if (spoolDirectory == null && spoolDirectoryName == null) {
       throw new IllegalArgumentException("SpoolDirectory must be configured when using SpoolThreshold > 0");
     }
@@ -62,17 +62,17 @@
       }
     }
     if (spoolThreshold > 0) {
-      spoolTasks.add(new FixedThresholdShouldSpoolTask(spoolThreshold));
+      spoolRules.add(new FixedThresholdSpoolRule());
     }
-    if (spoolHeapMemoryWatermarkThreshold > 0) {
-      spoolTasks.add(new UsedHeapMemoryShouldSpoolTask(spoolHeapMemoryWatermarkThreshold));
+    if (spoolUsedHeapMemoryThreshold > 0) {
+      spoolRules.add(new UsedHeapMemorySpoolRule());
     }
   }
   LOG.debug("StreamCaching configuration {}",this.toString());
   if (spoolDirectory != null) {
-    LOG.info("StreamCaching in use with spool directory: {} and thresholds: {}",spoolDirectory.getPath(),spoolTasks.toString());
+    LOG.info("StreamCaching in use with spool directory: {} and rules: {}",spoolDirectory.getPath(),spoolRules.toString());
   }
  else {
-    LOG.info("StreamCaching in use with thresholds: {}",spoolTasks.toString());
+    LOG.info("StreamCaching in use with rules: {}",spoolRules.toString());
   }
 }
