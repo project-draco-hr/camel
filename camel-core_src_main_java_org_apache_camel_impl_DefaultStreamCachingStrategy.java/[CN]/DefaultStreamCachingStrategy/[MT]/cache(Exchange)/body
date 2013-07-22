@@ -1,16 +1,21 @@
 {
   StreamCache cache=exchange.getIn().getBody(StreamCache.class);
-  if (cache != null && statistics.isStatisticsEnabled()) {
-    try {
-      if (cache.inMemory()) {
-        statistics.updateMemory(cache.length());
-      }
- else {
-        statistics.updateSpool(cache.length());
-      }
+  if (cache != null) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Cached stream to {} -> {}",cache.inMemory() ? "memory" : "spool",cache);
     }
- catch (    Exception e) {
-      LOG.debug("Error updating cache statistics. This exception is ignored.",e);
+    if (statistics.isStatisticsEnabled()) {
+      try {
+        if (cache.inMemory()) {
+          statistics.updateMemory(cache.length());
+        }
+ else {
+          statistics.updateSpool(cache.length());
+        }
+      }
+ catch (      Exception e) {
+        LOG.debug("Error updating cache statistics. This exception is ignored.",e);
+      }
     }
   }
   return cache;
