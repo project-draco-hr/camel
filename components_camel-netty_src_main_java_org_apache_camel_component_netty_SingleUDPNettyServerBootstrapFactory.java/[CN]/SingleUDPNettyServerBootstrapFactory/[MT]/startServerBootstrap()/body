@@ -24,7 +24,19 @@
   }
   LOG.debug("Created ConnectionlessBootstrap {} with options: {}",connectionlessBootstrap,connectionlessBootstrap.getOptions());
   connectionlessBootstrap.setPipelineFactory(pipelineFactory);
-  LOG.info("ConnectionlessBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
-  channel=connectionlessBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
-  allChannels.add(channel);
+  InetSocketAddress hostAddress=new InetSocketAddress(configuration.getHost(),configuration.getPort());
+  IpV4Subnet multicastSubnet=new IpV4Subnet(MULTICAST_SUBNET);
+  if (multicastSubnet.contains(configuration.getHost())) {
+    DatagramChannel channel=(DatagramChannel)connectionlessBootstrap.bind(hostAddress);
+    String networkInterface=configuration.getNetworkInterface() == null ? LOOPBACK_INTERFACE : configuration.getNetworkInterface();
+    NetworkInterface multicastNetworkInterface=NetworkInterface.getByName(networkInterface);
+    LOG.info("ConnectionlessBootstrap joining {}:{} using network interface: {}",new Object[]{configuration.getHost(),configuration.getPort(),multicastNetworkInterface.getName()});
+    channel.joinGroup(hostAddress,multicastNetworkInterface);
+    allChannels.add(channel);
+  }
+ else {
+    LOG.info("ConnectionlessBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
+    Channel channel=connectionlessBootstrap.bind(hostAddress);
+    allChannels.add(channel);
+  }
 }
