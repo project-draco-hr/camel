@@ -27,15 +27,21 @@
   if (warn) {
     LOG.warn("Configuring of StreamCaching using CamelContext properties is deprecated - use StreamCachingStrategy instead.");
   }
-  if (spoolThreshold > 0) {
+  if (spoolHeapMemoryWatermarkThreshold < 0 || spoolHeapMemoryWatermarkThreshold > 100) {
+    throw new IllegalArgumentException("SpoolHeapMemoryWatermarkThreshold must be a value between 0 and 100, was: " + spoolHeapMemoryWatermarkThreshold);
+  }
+  if (spoolThreshold > 0 || spoolHeapMemoryWatermarkThreshold > 0) {
     if (spoolDirectory == null && spoolDirectoryName == null) {
       throw new IllegalArgumentException("SpoolDirectory must be configured when using SpoolThreshold > 0");
     }
-    if (spoolDirectory == null && spoolDirectoryName != null) {
+    if (spoolDirectory == null) {
       String name=resolveSpoolDirectory(spoolDirectoryName);
       if (name != null) {
         spoolDirectory=new File(name);
         spoolDirectoryName=null;
+      }
+ else {
+        throw new IllegalStateException("Cannot resolve spool directory from pattern: " + spoolDirectoryName);
       }
     }
     if (spoolDirectory.exists()) {
@@ -55,12 +61,18 @@
         LOG.debug("Created spool directory: {}",spoolDirectory);
       }
     }
+    if (spoolThreshold > 0) {
+      spoolTasks.add(new FixedThresholdShouldSpoolTask(spoolThreshold));
+    }
+    if (spoolHeapMemoryWatermarkThreshold > 0) {
+      spoolTasks.add(new UsedHeapMemoryShouldSpoolTask(spoolHeapMemoryWatermarkThreshold));
+    }
   }
   LOG.debug("StreamCaching configuration {}",this.toString());
-  if (spoolThreshold > 0) {
-    LOG.info("StreamCaching in use and overflow to disk enabled when > {} bytes to directory: {}",spoolThreshold,spoolDirectory);
+  if (spoolDirectory != null) {
+    LOG.info("StreamCaching in use with spool directory: {} and thresholds: {}",spoolDirectory.getPath(),spoolTasks.toString());
   }
  else {
-    LOG.info("StreamCaching in use with no overflow to disk (memory only)");
+    LOG.info("StreamCaching in use with thresholds: {}",spoolTasks.toString());
   }
 }
