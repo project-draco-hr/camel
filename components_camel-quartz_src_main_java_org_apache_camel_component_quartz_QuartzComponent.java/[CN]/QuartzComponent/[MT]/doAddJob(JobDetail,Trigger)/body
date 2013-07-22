@@ -8,17 +8,21 @@
  else   if (hasTriggerChanged(existingTrigger,trigger)) {
     LOG.debug("Trigger: {}/{} already exists and will be updated by Quartz.",trigger.getGroup(),trigger.getName());
     trigger.setStartTime(new Date());
+    scheduler.unscheduleJob(trigger.getName(),trigger.getGroup());
     scheduler.addJob(job,true);
-    trigger.setJobName(existingTrigger.getJobName());
-    scheduler.rescheduleJob(trigger.getName(),trigger.getGroup(),trigger);
+    trigger.setJobName(job.getName());
+    trigger.setJobGroup(job.getGroup());
+    scheduler.scheduleJob(trigger);
   }
  else {
     if (!isClustered()) {
       LOG.debug("Trigger: {}/{} already exists and will be resumed by Quartz.",trigger.getGroup(),trigger.getName());
       trigger.setStartTime(new Date());
+      scheduler.unscheduleJob(trigger.getName(),trigger.getGroup());
       scheduler.addJob(job,true);
-      trigger.setJobName(existingTrigger.getJobName());
-      scheduler.rescheduleJob(trigger.getName(),trigger.getGroup(),trigger);
+      trigger.setJobName(job.getName());
+      trigger.setJobGroup(job.getGroup());
+      scheduler.scheduleJob(trigger);
     }
  else {
       LOG.debug("Trigger: {}/{} already exists and is already scheduled by clustered JobStore.",trigger.getGroup(),trigger.getName());

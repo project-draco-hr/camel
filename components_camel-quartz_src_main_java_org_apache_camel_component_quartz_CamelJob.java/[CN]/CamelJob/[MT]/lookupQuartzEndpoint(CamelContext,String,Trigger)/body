@@ -1,0 +1,28 @@
+{
+  String targetTriggerName=trigger.getName();
+  String targetTriggerGroup=trigger.getGroup();
+  LOG.debug("Looking up existing QuartzEndpoint with trigger {}.{}",targetTriggerName,targetTriggerGroup);
+  try {
+    for (    Route route : camelContext.getRoutes()) {
+      if (route.getEndpoint() instanceof QuartzEndpoint) {
+        QuartzEndpoint quartzEndpoint=(QuartzEndpoint)route.getEndpoint();
+        String triggerName=quartzEndpoint.getTrigger().getName();
+        String triggerGroup=quartzEndpoint.getTrigger().getGroup();
+        LOG.trace("Checking route trigger {}.{}",triggerName,triggerGroup);
+        if (triggerName.equals(targetTriggerName) && triggerGroup.equals(targetTriggerGroup)) {
+          return (QuartzEndpoint)route.getEndpoint();
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new JobExecutionException("Error lookup up existing QuartzEndpoint with trigger: " + trigger,e);
+  }
+  if (camelContext.hasEndpoint(endpointUri) != null) {
+    return camelContext.getEndpoint(endpointUri,QuartzEndpoint.class);
+  }
+ else {
+    LOG.warn("Cannot find existing QuartzEndpoint with uri: {}. Creating new endpoint instance.",endpointUri);
+    return camelContext.getEndpoint(endpointUri,QuartzEndpoint.class);
+  }
+}
