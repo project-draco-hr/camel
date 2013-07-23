@@ -6,7 +6,27 @@
   if (cxfHeaders != null) {
     for (    Map.Entry<String,List<String>> entry : cxfHeaders.entrySet()) {
       if (!strategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
-        headers.put(entry.getKey(),entry.getValue().get(0));
+        List<String> values=entry.getValue();
+        Object evalue;
+        if (values.size() > 1) {
+          if (exchange.getProperty(CxfConstants.CAMEL_CXF_PROTOCOL_HEADERS_MERGED,Boolean.FALSE,Boolean.class)) {
+            StringBuilder sb=new StringBuilder();
+            for (Iterator<String> it=values.iterator(); it.hasNext(); ) {
+              sb.append(it.next());
+              if (it.hasNext()) {
+                sb.append(',').append(' ');
+              }
+            }
+            evalue=sb.toString();
+          }
+ else {
+            evalue=values;
+          }
+        }
+ else {
+          evalue=values.get(0);
+        }
+        headers.put(entry.getKey(),evalue);
       }
     }
   }

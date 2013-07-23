@@ -1,0 +1,17 @@
+{
+  Exchange exchange=new DefaultExchange(context);
+  org.apache.cxf.message.Message cxfMessage=new org.apache.cxf.message.MessageImpl();
+  Map<String,List<String>> cxfHeaders=new TreeMap<String,List<String>>(String.CASE_INSENSITIVE_ORDER);
+  cxfHeaders.put("Content-Length",Arrays.asList("241"));
+  cxfHeaders.put("soapAction",Arrays.asList("urn:hello:world"));
+  cxfHeaders.put("myfruitheader",Arrays.asList("peach"));
+  cxfHeaders.put("mybrewheader",Arrays.asList("cappuccino","espresso"));
+  cxfMessage.put(org.apache.cxf.message.Message.PROTOCOL_HEADERS,cxfHeaders);
+  Map<String,Object> camelHeaders=exchange.getIn().getHeaders();
+  CxfHeaderHelper.propagateCxfToCamel(new DefaultHeaderFilterStrategy(),cxfMessage,camelHeaders,exchange);
+  assertEquals("urn:hello:world",camelHeaders.get("soapaction"));
+  assertEquals("urn:hello:world",camelHeaders.get("SoapAction"));
+  assertEquals("241",camelHeaders.get("content-length"));
+  assertEquals("peach",camelHeaders.get("MyFruitHeader"));
+  assertEquals(Arrays.asList("cappuccino","espresso"),camelHeaders.get("MyBrewHeader"));
+}
