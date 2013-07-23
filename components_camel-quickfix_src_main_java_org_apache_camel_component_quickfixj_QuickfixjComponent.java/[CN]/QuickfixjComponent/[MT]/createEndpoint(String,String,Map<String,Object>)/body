@@ -5,6 +5,9 @@ synchronized (engineInstancesLock) {
     if (endpoint == null) {
       engine=engines.get(remaining);
       if (engine == null) {
+        engine=provisionalEngines.get(remaining);
+      }
+      if (engine == null) {
         QuickfixjConfiguration configuration=configurations.get(remaining);
         if (configuration != null) {
           SessionSettings settings=configuration.createSessionSettings();
@@ -13,9 +16,12 @@ synchronized (engineInstancesLock) {
  else {
           engine=new QuickfixjEngine(uri,remaining,messageStoreFactory,logFactory,messageFactory);
         }
-        engines.put(remaining,engine);
         if (getCamelContext().getStatus().isStarted()) {
           startQuickfixjEngine(engine);
+          engines.put(remaining,engine);
+        }
+ else {
+          provisionalEngines.put(remaining,engine);
         }
       }
       endpoint=new QuickfixjEndpoint(engine,uri,this);
