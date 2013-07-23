@@ -1,12 +1,21 @@
 {
   SpringCamelContext context=getContext(false);
   if (context != null) {
+    if (event instanceof ContextRefreshedEvent) {
+      try {
+        setupRoutes();
+      }
+ catch (      Exception e) {
+        throw wrapRuntimeCamelException(e);
+      }
+    }
     context.onApplicationEvent(event);
   }
  else {
     LOG.debug("Publishing spring-event: {}",event);
     if (event instanceof ContextRefreshedEvent) {
       try {
+        setupRoutes();
         LOG.trace("Starting the context now");
         getContext().start();
       }
