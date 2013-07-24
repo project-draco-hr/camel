@@ -1,29 +1,3 @@
 {
-  LOG.debug("Adding key [{}] -> {}",key,exchange);
-  try {
-    final Buffer keyBuffer=codec.marshallKey(key);
-    final Buffer exchangeBuffer=codec.marshallExchange(camelContext,exchange);
-    Buffer rc=hawtDBFile.execute(new Work<Buffer>(){
-      public Buffer execute(      Transaction tx){
-        SortedIndex<Buffer,Buffer> index=hawtDBFile.getRepositoryIndex(tx,repositoryName,true);
-        Buffer buffer=index.put(keyBuffer,exchangeBuffer);
-        LOG.trace("Added key index {}",keyBuffer);
-        return buffer;
-      }
-      @Override public String toString(){
-        return "Adding key [" + key + "]";
-      }
-    }
-);
-    if (rc == null) {
-      return null;
-    }
-    if (isReturnOldExchange()) {
-      return codec.unmarshallExchange(camelContext,rc);
-    }
-  }
- catch (  IOException e) {
-    throw new RuntimeException("Error adding to repository " + repositoryName + " with key "+ key,e);
-  }
-  return null;
+  return doAdd(camelContext,key,exchange,true);
 }

@@ -15,8 +15,14 @@
       done=true;
     }
  catch (    OptimisticUpdateException e) {
-      LOG.warn("OptimisticUpdateException occurred at attempt " + attempt + " executing work "+ work+ ". Will do rollback and retry.");
-      tx.rollback();
+      if (handleOptimisticLockingException) {
+        LOG.warn("OptimisticUpdateException occurred at attempt " + attempt + " executing work "+ work+ ". Will do rollback and retry.");
+        tx.rollback();
+      }
+ else {
+        tx.rollback();
+        throw e;
+      }
     }
 catch (    RuntimeException e) {
       LOG.warn("Error executing work " + work + ". Will do rollback.",e);
