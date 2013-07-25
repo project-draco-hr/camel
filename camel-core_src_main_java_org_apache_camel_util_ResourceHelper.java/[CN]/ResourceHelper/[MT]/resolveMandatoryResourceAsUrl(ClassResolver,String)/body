@@ -1,6 +1,7 @@
 {
   if (uri.startsWith("file:")) {
     String name=ObjectHelper.after(uri,"file:");
+    LOG.trace("Loading resource: {} from file system",uri);
     File file=new File(name);
     if (!file.exists()) {
       throw new FileNotFoundException("File " + file + " not found");
@@ -8,14 +9,17 @@
     return new URL(uri);
   }
  else   if (uri.startsWith("http:")) {
+    LOG.trace("Loading resource: {} from HTTP",uri);
     return new URL(uri);
   }
  else   if (uri.startsWith("classpath:")) {
     uri=ObjectHelper.after(uri,"classpath:");
   }
-  URL url=classResolver.loadResourceAsURL(uri);
+  String resolvedName=resolveUriPath(uri);
+  LOG.trace("Loading resource: {} from classpath",resolvedName);
+  URL url=classResolver.loadResourceAsURL(resolvedName);
   if (url == null) {
-    throw new FileNotFoundException("Cannot find resource in classpath for URI: " + uri);
+    throw new FileNotFoundException("Cannot find resource: " + resolvedName + " in classpath for URI: "+ uri);
   }
  else {
     return url;
