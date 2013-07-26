@@ -2,12 +2,19 @@
   if (scriptText == null && scriptResource == null) {
     throw new IllegalArgumentException("Neither scriptText or scriptResource are specified");
   }
-  if (engine == null) {
-    engine=createScriptEngine();
+  ScriptEngineHolder holder=engineHolder.get();
+  if (holder == null) {
+    holder=new ScriptEngineHolder();
+    engineHolder.set(holder);
+  }
+  holder=engineHolder.get();
+  if (holder.engine == null) {
+    holder.engine=createScriptEngine();
+    engineHolders.put(Thread.currentThread(),holder);
   }
   if (compiledScript == null) {
-    if (engine instanceof Compilable && !isBeanShell()) {
-      compileScript((Compilable)engine,exchange);
+    if (holder.engine instanceof Compilable && !isBeanShell()) {
+      compileScript((Compilable)holder.engine,exchange);
     }
   }
 }
