@@ -5,11 +5,17 @@
   ServiceHelper.startService(producerCache);
   Endpoint lookup=camelContext.hasEndpoint(destination.getEndpointKey());
   if (lookup instanceof InterceptSendToEndpoint) {
-    if (log.isDebugEnabled()) {
-      log.debug("Intercepted sending to {} -> {}",URISupport.sanitizeUri(destination.getEndpointUri()),URISupport.sanitizeUri(lookup.getEndpointUri()));
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Intercepted sending to {} -> {}",URISupport.sanitizeUri(destination.getEndpointUri()),URISupport.sanitizeUri(lookup.getEndpointUri()));
     }
     destination=lookup;
   }
   ServiceHelper.startService(destination);
-  producerCache.startProducer(destination);
+  Producer producer=producerCache.acquireProducer(destination);
+  if (producer instanceof ServicePoolAware || !producer.isSingleton()) {
+    producerCache.releaseProducer(destination,producer);
+  }
+ else {
+    this.producer=AsyncProcessorConverterHelper.convert(producer);
+  }
 }
