@@ -1,0 +1,31 @@
+{
+  Exchange exchange=oldExchange;
+  if (exchange == null) {
+    exchange=ExchangeHelper.createCorrelatedCopy(newExchange,true);
+    injector.prepareAggregationExchange(exchange);
+  }
+  if (conditionPredicate != null && !conditionPredicate.matches(newExchange)) {
+    LOG.trace("Dropped exchange {} from aggregation as predicate {} was not matched",newExchange,conditionPredicate);
+    return exchange;
+  }
+  E picked=null;
+  try {
+    picked=pickExpression.evaluate(newExchange,castAs);
+  }
+ catch (  TypeConversionException exception) {
+    if (!ignoreInvalidCasts) {
+      throw exception;
+    }
+  }
+  if (picked == null && !storeNulls) {
+    LOG.trace("Dropped exchange {} from aggregation as pick expression returned null and storing nulls is not enabled",newExchange);
+    return exchange;
+  }
+  if (collectionType == null) {
+    injectAsRawValue(exchange,picked);
+  }
+ else {
+    injectAsCollection(exchange,picked);
+  }
+  return exchange;
+}
