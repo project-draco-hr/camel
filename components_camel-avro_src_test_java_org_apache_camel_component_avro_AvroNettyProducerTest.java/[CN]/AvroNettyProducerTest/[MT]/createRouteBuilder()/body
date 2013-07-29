@@ -1,8 +1,12 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("direct:in").to("avro:netty:localhost:" + avroPort);
-      from("direct:inout").to("avro:netty:localhost:" + avroPort).to("mock:result-inout");
+      from("direct:in").to("avro:netty:localhost:" + avroPort + "?protocolClassName=org.apache.camel.avro.generated.KeyValueProtocol");
+      from("direct:in-message-name").errorHandler(deadLetterChannel("mock:in-message-name-error")).to("avro:netty:localhost:" + avroPort + "/put?protocolClassName=org.apache.camel.avro.generated.KeyValueProtocol").to("mock:result-in-message-name");
+      from("direct:in-reflection").to("avro:netty:localhost:" + avroPortReflection + "/setName?protocolClassName=org.apache.camel.avro.test.TestReflection");
+      from("direct:inout").to("avro:netty:localhost:" + avroPort + "?protocolClassName=org.apache.camel.avro.generated.KeyValueProtocol").to("mock:result-inout");
+      from("direct:inout-message-name").to("avro:netty:localhost:" + avroPort + "/get?protocolClassName=org.apache.camel.avro.generated.KeyValueProtocol").to("mock:result-inout-message-name");
+      from("direct:inout-reflection").to("avro:netty:localhost:" + avroPortReflection + "/increaseAge?protocolClassName=org.apache.camel.avro.test.TestReflection").to("mock:result-inout-reflection");
     }
   }
 ;

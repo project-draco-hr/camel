@@ -1,0 +1,26 @@
+{
+  Object response;
+  Exchange exchange=consumer.getEndpoint().createExchange(message,params);
+  try {
+    consumer.getProcessor().process(exchange);
+  }
+ catch (  Throwable e) {
+    consumer.getExceptionHandler().handleException(e);
+  }
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    response=exchange.getOut().getBody();
+  }
+ else {
+    response=null;
+  }
+  boolean failed=exchange.isFailed();
+  if (failed) {
+    if (exchange.getException() != null) {
+      throw exchange.getException();
+    }
+ else {
+      throw new AvroComponentException("Camel processing error.");
+    }
+  }
+  return response;
+}
