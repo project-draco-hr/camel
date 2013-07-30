@@ -1,7 +1,13 @@
 {
-  Object key=exchange.getIn().getHeader(RabbitMQConstants.ROUTING_KEY);
-  String exchangeName=exchange.getIn().getHeader(RabbitMQConstants.EXCHANGE_NAME).toString();
-  byte[] messageBodyBytes=exchange.getIn().getBody(byte[].class);
+  String exchangeName=exchange.getIn().getHeader(RabbitMQConstants.EXCHANGE_NAME,String.class);
+  if (exchangeName == null) {
+    exchangeName=getEndpoint().getExchangeName();
+  }
+  if (ObjectHelper.isEmpty(exchangeName)) {
+    throw new IllegalArgumentException("ExchangeName is not provided in header " + RabbitMQConstants.EXCHANGE_NAME);
+  }
+  String key=exchange.getIn().getHeader(RabbitMQConstants.ROUTING_KEY,"",String.class);
+  byte[] messageBodyBytes=exchange.getIn().getMandatoryBody(byte[].class);
   AMQP.BasicProperties.Builder properties=buildProperties(exchange);
-  channel.basicPublish(exchangeName,key == null ? "" : key.toString(),properties.build(),messageBodyBytes);
+  channel.basicPublish(exchangeName,key,properties.build(),messageBodyBytes);
 }
