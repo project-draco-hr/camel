@@ -1,22 +1,16 @@
 {
-  ManagementStrategy answer=null;
+  ManagementStrategy answer;
   if (disableJMX || Boolean.getBoolean(JmxSystemPropertyKeys.DISABLED)) {
-    log.info("JMX is disabled.");
+    answer=new DefaultManagementStrategy(context);
   }
  else {
     try {
       answer=new ManagedManagementStrategy(context,new DefaultManagementAgent(context));
-      ServiceHelper.startService(answer);
-      context.getLifecycleStrategies().add(0,new DefaultManagementLifecycleStrategy(context));
-      log.info("JMX enabled.");
     }
  catch (    Exception e) {
-      answer=null;
       log.warn("Cannot create JMX lifecycle strategy. Will fallback and disable JMX.",e);
+      answer=new DefaultManagementStrategy(context);
     }
-  }
-  if (answer == null) {
-    answer=new DefaultManagementStrategy(context);
   }
   return answer;
 }
