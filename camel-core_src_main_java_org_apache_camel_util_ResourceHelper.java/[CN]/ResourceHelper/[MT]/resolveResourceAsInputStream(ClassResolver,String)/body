@@ -1,0 +1,28 @@
+{
+  if (uri.startsWith("file:")) {
+    uri=ObjectHelper.after(uri,"file:");
+    LOG.trace("Loading resource: {} from file system",uri);
+    return new FileInputStream(uri);
+  }
+ else   if (uri.startsWith("http:")) {
+    URL url=new URL(uri);
+    LOG.trace("Loading resource: {} from HTTP",uri);
+    URLConnection con=url.openConnection();
+    con.setUseCaches(false);
+    try {
+      return con.getInputStream();
+    }
+ catch (    IOException e) {
+      if (con instanceof HttpURLConnection) {
+        ((HttpURLConnection)con).disconnect();
+      }
+      throw e;
+    }
+  }
+ else   if (uri.startsWith("classpath:")) {
+    uri=ObjectHelper.after(uri,"classpath:");
+  }
+  String resolvedName=resolveUriPath(uri);
+  LOG.trace("Loading resource: {} from classpath",resolvedName);
+  return classResolver.loadResourceAsStream(resolvedName);
+}
