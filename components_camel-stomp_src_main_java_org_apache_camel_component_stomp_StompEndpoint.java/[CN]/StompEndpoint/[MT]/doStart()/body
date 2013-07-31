@@ -1,0 +1,28 @@
+{
+  final Promise<CallbackConnection> promise=new Promise<CallbackConnection>();
+  configuration.getStomp().connectCallback(promise);
+  connection=promise.await();
+  connection.getDispatchQueue().execute(new Task(){
+    @Override public void run(){
+      connection.receive(new Callback<StompFrame>(){
+        @Override public void onFailure(        Throwable value){
+          if (started.get()) {
+            connection.close(null);
+          }
+        }
+        @Override public void onSuccess(        StompFrame value){
+          if (!consumers.isEmpty()) {
+            Exchange exchange=createExchange();
+            exchange.getIn().setBody(value.content());
+            for (            StompConsumer consumer : consumers) {
+              consumer.processExchange(exchange);
+            }
+          }
+        }
+      }
+);
+      connection.resume();
+    }
+  }
+);
+}
