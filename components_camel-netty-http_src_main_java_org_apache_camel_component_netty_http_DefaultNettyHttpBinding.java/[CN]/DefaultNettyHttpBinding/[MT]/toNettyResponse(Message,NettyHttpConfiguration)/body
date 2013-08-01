@@ -23,49 +23,53 @@
   }
   Object body=message.getBody();
   Exception cause=message.getExchange().getException();
-  if (body != null || cause != null) {
-    ChannelBuffer buffer;
-    if (cause != null) {
-      if (configuration.isTransferException()) {
-        ByteArrayOutputStream bos=new ByteArrayOutputStream();
-        ObjectOutputStream oos=new ObjectOutputStream(bos);
-        oos.writeObject(cause);
-        oos.flush();
-        IOHelper.close(oos,bos);
-        body=ChannelBuffers.copiedBuffer(bos.toByteArray());
-        message.setHeader(Exchange.CONTENT_TYPE,NettyHttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT);
-      }
- else {
-        StringWriter sw=new StringWriter();
-        PrintWriter pw=new PrintWriter(sw);
-        cause.printStackTrace(pw);
-        body=ChannelBuffers.copiedBuffer(sw.toString().getBytes());
-        message.setHeader(Exchange.CONTENT_TYPE,"text/plain");
-      }
-      ExchangeHelper.setFailureHandled(message.getExchange());
-    }
-    if (body instanceof ChannelBuffer) {
-      buffer=(ChannelBuffer)body;
+  ChannelBuffer buffer;
+  if (cause != null) {
+    if (configuration.isTransferException()) {
+      ByteArrayOutputStream bos=new ByteArrayOutputStream();
+      ObjectOutputStream oos=new ObjectOutputStream(bos);
+      oos.writeObject(cause);
+      oos.flush();
+      IOHelper.close(oos,bos);
+      body=ChannelBuffers.copiedBuffer(bos.toByteArray());
+      message.setHeader(Exchange.CONTENT_TYPE,NettyHttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT);
     }
  else {
-      buffer=message.getBody(ChannelBuffer.class);
-      if (buffer == null) {
-        byte[] data=message.getBody(byte[].class);
-        if (data != null) {
-          buffer=ChannelBuffers.copiedBuffer(data);
+      StringWriter sw=new StringWriter();
+      PrintWriter pw=new PrintWriter(sw);
+      cause.printStackTrace(pw);
+      body=ChannelBuffers.copiedBuffer(sw.toString().getBytes());
+      message.setHeader(Exchange.CONTENT_TYPE,"text/plain");
+    }
+    ExchangeHelper.setFailureHandled(message.getExchange());
+  }
+  if (body instanceof ChannelBuffer) {
+    buffer=(ChannelBuffer)body;
+  }
+ else {
+    buffer=message.getBody(ChannelBuffer.class);
+    if (buffer == null) {
+      byte[] data=message.getBody(byte[].class);
+      if (data != null) {
+        buffer=ChannelBuffers.copiedBuffer(data);
+      }
+ else {
+        String str;
+        if (body != null) {
+          str=message.getMandatoryBody(String.class);
         }
  else {
-          String str=message.getMandatoryBody(String.class);
-          buffer=ChannelBuffers.copiedBuffer(str.getBytes());
+          str="";
         }
+        buffer=ChannelBuffers.copiedBuffer(str.getBytes());
       }
     }
-    if (buffer != null) {
-      response.setContent(buffer);
-      int len=buffer.readableBytes();
-      response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,len);
-      LOG.trace("Content-Length: {}",len);
-    }
+  }
+  if (buffer != null) {
+    response.setContent(buffer);
+    int len=buffer.readableBytes();
+    response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,len);
+    LOG.trace("Content-Length: {}",len);
   }
   String contentType=MessageHelper.getContentType(message);
   if (contentType != null) {
