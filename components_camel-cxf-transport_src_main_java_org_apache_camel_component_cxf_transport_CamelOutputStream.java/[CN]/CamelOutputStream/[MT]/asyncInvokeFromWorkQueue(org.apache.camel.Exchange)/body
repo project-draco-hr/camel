@@ -1,0 +1,50 @@
+{
+  Runnable runnable=new Runnable(){
+    public void run(){
+      try {
+        syncInvoke(exchange);
+      }
+ catch (      Throwable e) {
+        ((PhaseInterceptorChain)outMessage.getInterceptorChain()).abort();
+        outMessage.setContent(Exception.class,e);
+        ((PhaseInterceptorChain)outMessage.getInterceptorChain()).unwind(outMessage);
+        MessageObserver mo=outMessage.getInterceptorChain().getFaultObserver();
+        if (mo == null) {
+          mo=outMessage.getExchange().get(MessageObserver.class);
+        }
+        mo.onMessage(outMessage);
+      }
+    }
+  }
+;
+  try {
+    Executor ex=outMessage.getExchange().get(Executor.class);
+    if (ex != null) {
+      final Executor ex2=ex;
+      final Runnable origRunnable=runnable;
+      runnable=new Runnable(){
+        public void run(){
+          outMessage.getExchange().put(Executor.class.getName() + ".USING_SPECIFIED",Boolean.TRUE);
+          ex2.execute(origRunnable);
+        }
+      }
+;
+    }
+ else {
+      WorkQueueManager mgr=outMessage.getExchange().get(Bus.class).getExtension(WorkQueueManager.class);
+      AutomaticWorkQueue qu=mgr.getNamedWorkQueue("nmr-conduit");
+      if (qu == null) {
+        qu=mgr.getAutomaticWorkQueue();
+      }
+      qu.execute(runnable);
+    }
+  }
+ catch (  RejectedExecutionException rex) {
+    if (!hasLoggedAsyncWarning) {
+      LOG.warn("Executor rejected background task to retrieve the response.  Suggest increasing the workqueue settings.");
+      hasLoggedAsyncWarning=true;
+    }
+    LOG.info("Executor rejected background task to retrieve the response, running on current thread.");
+    syncInvoke(exchange);
+  }
+}
