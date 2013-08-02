@@ -4,7 +4,15 @@
   if (limitConcurrentConsumers && consumers > maxConcurrentConsumers) {
     throw new IllegalArgumentException("The limitConcurrentConsumers flag in set to true. ConcurrentConsumers cannot be set at a value greater than " + maxConcurrentConsumers + " was "+ consumers);
   }
-  SedaEndpoint answer=new SedaEndpoint(uri,this,null,consumers);
+  BlockingQueue<Exchange> queue=resolveAndRemoveReferenceParameter(parameters,"queue",BlockingQueue.class);
+  SedaEndpoint answer;
+  if (queue == null) {
+    BlockingQueueFactory<Exchange> queueFactory=resolveAndRemoveReferenceParameter(parameters,"queueFactory",BlockingQueueFactory.class);
+    answer=new SedaEndpoint(uri,this,queueFactory,consumers);
+  }
+ else {
+    answer=new SedaEndpoint(uri,this,queue,consumers);
+  }
   answer.configureProperties(parameters);
   return answer;
 }
