@@ -1,0 +1,27 @@
+{
+  Trigger result=null;
+  Date startTime=new Date();
+  if (getComponent().getScheduler().isStarted())   startTime=new Date(System.currentTimeMillis() + triggerStartDelay);
+  if (cron != null) {
+    LOG.debug("Creating CronTrigger: {}",cron);
+    result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).build();
+  }
+ else {
+    LOG.debug("Creating SimpleTrigger.");
+    TriggerBuilder<SimpleTrigger> triggerBuilder=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(simpleSchedule().withMisfireHandlingInstructionFireNow());
+    if (fireNow) {
+      String intervalString=(String)triggerParameters.get("repeatInterval");
+      if (intervalString != null) {
+        long interval=Long.valueOf(intervalString);
+        triggerBuilder.startAt(new Date(System.currentTimeMillis() - interval));
+      }
+    }
+    result=triggerBuilder.build();
+  }
+  if (triggerParameters != null && triggerParameters.size() > 0) {
+    LOG.debug("Setting user extra triggerParameters {}",triggerParameters);
+    setProperties(result,triggerParameters);
+  }
+  LOG.debug("Created trigger={}",result);
+  return result;
+}

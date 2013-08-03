@@ -1,0 +1,14 @@
+{
+  QuartzEndpoint endpoint=resolveMandatoryEndpoint("quartz2://myGroup/myTimerName?cron=0+0/5+12-18+?+*+MON-FRI");
+  Scheduler scheduler=endpoint.getComponent().getScheduler();
+  TriggerKey triggerKey=endpoint.getTriggerKey();
+  Trigger trigger=scheduler.getTrigger(triggerKey);
+  JobDetail jobDetail=scheduler.getJobDetail(JobKey.jobKey(triggerKey.getName(),triggerKey.getGroup()));
+  assertEquals("getName()","myTimerName",triggerKey.getName());
+  assertEquals("getGroup()","myGroup",triggerKey.getGroup());
+  assertEquals("getJobName","myTimerName",jobDetail.getKey().getName());
+  assertEquals("getJobGroup","myGroup",jobDetail.getKey().getGroup());
+  assertIsInstanceOf(CronTrigger.class,trigger);
+  CronTrigger cronTrigger=(CronTrigger)trigger;
+  assertEquals("cron expression","0 0/5 12-18 ? * MON-FRI",cronTrigger.getCronExpression());
+}

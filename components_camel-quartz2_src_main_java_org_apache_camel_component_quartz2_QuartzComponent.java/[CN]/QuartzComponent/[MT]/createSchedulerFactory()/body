@@ -1,0 +1,37 @@
+{
+  SchedulerFactory answer;
+  Properties prop=loadProperties();
+  if (prop != null) {
+    prop.put("org.quartz.scheduler.skipUpdateCheck","true");
+    answer=new StdSchedulerFactory(prop);
+  }
+ else {
+    InputStream is=StdSchedulerFactory.class.getClassLoader().getResourceAsStream("org/quartz/quartz.properties");
+    if (is == null) {
+      throw new SchedulerException("Quartz properties file not found in classpath: org/quartz/quartz.properties");
+    }
+    prop=new Properties();
+    try {
+      prop.load(is);
+    }
+ catch (    IOException e) {
+      throw new SchedulerException("Error loading Quartz properties file from classpath: org/quartz/quartz.properties",e);
+    }
+    String identity=getCamelContext().getManagementName();
+    String instName=prop.getProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME);
+    if (instName == null) {
+      instName="scheduler-" + identity;
+    }
+ else {
+      instName=instName + "-" + identity;
+    }
+    prop.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME,instName);
+    prop.put("org.quartz.scheduler.skipUpdateCheck","true");
+    answer=new StdSchedulerFactory(prop);
+  }
+  if (LOG.isDebugEnabled()) {
+    String name=prop.getProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME);
+    LOG.debug("Creating SchedulerFactory: {} with properties: {}",name,prop);
+  }
+  return answer;
+}

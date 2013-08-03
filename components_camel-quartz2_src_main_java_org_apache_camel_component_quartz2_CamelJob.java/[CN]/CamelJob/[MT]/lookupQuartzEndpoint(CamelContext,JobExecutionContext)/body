@@ -1,0 +1,28 @@
+{
+  TriggerKey triggerKey=quartzContext.getTrigger().getKey();
+  if (LOG.isDebugEnabled())   LOG.debug("Looking up existing QuartzEndpoint with triggerKey={}",triggerKey);
+  for (  Route route : camelContext.getRoutes()) {
+    if (route.getEndpoint() instanceof QuartzEndpoint) {
+      QuartzEndpoint quartzEndpoint=(QuartzEndpoint)route.getEndpoint();
+      TriggerKey checkTriggerKey=quartzEndpoint.getTriggerKey();
+      if (LOG.isTraceEnabled())       LOG.trace("Checking route endpoint={} with checkTriggerKey={}",quartzEndpoint,checkTriggerKey);
+      if (triggerKey.equals(checkTriggerKey)) {
+        return quartzEndpoint;
+      }
+    }
+  }
+  String endpointUri=quartzContext.getMergedJobDataMap().getString(QuartzConstants.QUARTZ_ENDPOINT_URI);
+  QuartzEndpoint result=null;
+  if (camelContext.hasEndpoint(endpointUri) != null) {
+    if (LOG.isDebugEnabled())     LOG.debug("Getting Endpoint from camelContext.");
+    result=camelContext.getEndpoint(endpointUri,QuartzEndpoint.class);
+  }
+ else {
+    LOG.warn("Cannot find existing QuartzEndpoint with uri: {}. Creating new endpoint instance.",endpointUri);
+    result=camelContext.getEndpoint(endpointUri,QuartzEndpoint.class);
+  }
+  if (result == null) {
+    throw new JobExecutionException("No QuartzEndpoint could be found with endpointUri: " + endpointUri);
+  }
+  return result;
+}

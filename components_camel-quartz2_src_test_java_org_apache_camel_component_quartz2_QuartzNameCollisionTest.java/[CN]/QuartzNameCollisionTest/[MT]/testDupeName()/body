@@ -1,0 +1,24 @@
+{
+  camel1=new DefaultCamelContext();
+  camel1.setName("camel-1");
+  camel1.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("quartz2://myGroup/myTimerName?cron=0/1+*+*+*+*+?").to("log:one","mock:one");
+    }
+  }
+);
+  camel1.start();
+  try {
+    camel1.addRoutes(new RouteBuilder(){
+      @Override public void configure() throws Exception {
+        from("quartz2://myGroup/myTimerName?cron=0/2+*+*+*+*+?").to("log:two","mock:two");
+      }
+    }
+);
+    Assert.fail("Should have thrown an exception");
+  }
+ catch (  FailedToCreateRouteException e) {
+    String reason=e.getMessage();
+    Assert.assertEquals(reason.indexOf("Trigger key myGroup.myTimerName is already in used") >= 0,true);
+  }
+}

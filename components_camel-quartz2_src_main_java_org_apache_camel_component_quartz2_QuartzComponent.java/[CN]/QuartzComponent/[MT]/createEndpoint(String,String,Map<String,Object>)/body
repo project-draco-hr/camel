@@ -1,0 +1,23 @@
+{
+  Integer startDelayedSeconds=getAndRemoveParameter(parameters,"startDelayedSeconds",Integer.class);
+  if (startDelayedSeconds != null) {
+    if (this.startDelayedSeconds != 0 && !(this.startDelayedSeconds == startDelayedSeconds)) {
+      LOG.warn("A Quartz job is already configured with a different 'startDelayedSeconds' configuration! " + "All Quartz jobs must share the same 'startDelayedSeconds' configuration! Cannot apply the 'startDelayedSeconds' configuration!");
+    }
+ else {
+      this.startDelayedSeconds=startDelayedSeconds;
+    }
+  }
+  Boolean autoStartScheduler=getAndRemoveParameter(parameters,"autoStartScheduler",Boolean.class);
+  if (autoStartScheduler != null)   this.autoStartScheduler=autoStartScheduler;
+  Boolean prefixJobNameWithEndpointId=getAndRemoveParameter(parameters,"prefixJobNameWithEndpointId",Boolean.class);
+  if (prefixJobNameWithEndpointId != null)   this.prefixJobNameWithEndpointId=prefixJobNameWithEndpointId;
+  Map<String,Object> triggerParameters=IntrospectionSupport.extractProperties(parameters,"trigger.");
+  Map<String,Object> jobParameters=IntrospectionSupport.extractProperties(parameters,"job.");
+  QuartzEndpoint result=new QuartzEndpoint(uri,this);
+  TriggerKey triggerKey=createTriggerKey(uri,remaining,result);
+  result.setTriggerKey(triggerKey);
+  result.setTriggerParameters(triggerParameters);
+  result.setJobParameters(jobParameters);
+  return result;
+}

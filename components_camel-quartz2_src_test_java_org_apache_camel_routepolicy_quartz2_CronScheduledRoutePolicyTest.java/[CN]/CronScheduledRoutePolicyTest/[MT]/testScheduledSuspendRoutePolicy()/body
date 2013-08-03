@@ -1,0 +1,16 @@
+{
+  context.getComponent("quartz2",QuartzComponent.class).setPropertiesFile("org/apache/camel/routepolicy/quartz2/myquartz.properties");
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      CronScheduledRoutePolicy policy=new CronScheduledRoutePolicy();
+      policy.setRouteSuspendTime("*/3 * * * * ?");
+      from("direct:start").routeId("test").routePolicy(policy).to("mock:unreachable");
+    }
+  }
+);
+  context.start();
+  Thread.sleep(5000);
+  Consumer consumer=context.getRoute("test").getConsumer();
+  SuspendableService ss=(SuspendableService)consumer;
+  assertTrue("Consumer should be suspended",ss.isSuspended());
+}

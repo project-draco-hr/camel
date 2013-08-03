@@ -1,0 +1,26 @@
+{
+  context.getComponent("quartz2",QuartzComponent.class).setPropertiesFile("org/apache/camel/routepolicy/quartz2/myquartz.properties");
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      SimpleScheduledRoutePolicy policy=new SimpleScheduledRoutePolicy();
+      long startTime=System.currentTimeMillis() + 3000;
+      policy.setRouteStopDate(new Date(startTime));
+      policy.setRouteStopRepeatCount(1);
+      policy.setRouteStopRepeatInterval(3000);
+      from("direct:start").routeId("test").routePolicy(policy).to("mock:unreachable");
+    }
+  }
+);
+  context.start();
+  Thread.sleep(4000);
+  assertTrue(context.getRouteStatus("test") == ServiceStatus.Stopped);
+  boolean consumerStopped=false;
+  try {
+    template.sendBody("direct:start","Ready or not, Here, I come");
+  }
+ catch (  CamelExecutionException e) {
+    consumerStopped=true;
+  }
+  assertTrue(consumerStopped);
+  context.getComponent("quartz2",QuartzComponent.class).stop();
+}

@@ -1,0 +1,14 @@
+{
+  Scheduler scheduler=getComponent().getScheduler();
+  if (scheduler == null)   return;
+  if (deleteJob) {
+    boolean isClustered=scheduler.getMetaData().isJobStoreClustered();
+    if (!scheduler.isShutdown() && !isClustered) {
+      LOG.info("Deleting job {}",triggerKey);
+      scheduler.unscheduleJob(triggerKey);
+      jobAdded.set(false);
+    }
+  }
+  AtomicInteger number=(AtomicInteger)scheduler.getContext().get(QuartzConstants.QUARTZ_CAMEL_JOBS_COUNT);
+  number.decrementAndGet();
+}

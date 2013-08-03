@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:foo").to("log:foo");
+      from("quartz2://myGroup/myTimerName?cron=0/2+*+*+*+*+?").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+          template.sendBody("direct:foo","Quartz triggered");
+        }
+      }
+);
+    }
+  }
+;
+}
