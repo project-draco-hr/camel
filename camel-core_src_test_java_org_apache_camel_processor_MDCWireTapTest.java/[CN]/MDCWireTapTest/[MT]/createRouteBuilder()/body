@@ -6,12 +6,14 @@
         public void process(        Exchange exchange) throws Exception {
           assertEquals("route-a",MDC.get("camel.routeId"));
           assertEquals(exchange.getExchangeId(),MDC.get("camel.exchangeId"));
+          MDC.put("custom.id","1");
         }
       }
 ).to("log:before-wiretap").wireTap("direct:b").delay(2000).process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           assertEquals("route-a",MDC.get("camel.routeId"));
           assertEquals(exchange.getExchangeId(),MDC.get("camel.exchangeId"));
+          assertEquals("1",MDC.get("custom.id"));
         }
       }
 ).to("log:a-done").to("mock:a");
@@ -19,6 +21,7 @@
         public void process(        Exchange exchange) throws Exception {
           assertEquals("route-b",MDC.get("camel.routeId"));
           assertEquals(exchange.getExchangeId(),MDC.get("camel.exchangeId"));
+          assertEquals("1",MDC.get("custom.id"));
         }
       }
 ).to("log:b-done").to("mock:b");
