@@ -1,7 +1,19 @@
 {
   try {
     super.handleException(ctx,ex);
-    camelExchange.setException(ex);
+    if (client instanceof ClientImpl) {
+      ((ClientImpl)client).getConduitSelector().complete(cxfExchange);
+      ex=cxfExchange.getOutMessage().getContent(Exception.class);
+      if (ex == null && cxfExchange.getInMessage() != null) {
+        ex=cxfExchange.getInMessage().getContent(Exception.class);
+      }
+      if (ex != null) {
+        camelExchange.setException(ex);
+      }
+    }
+ else {
+      camelExchange.setException(ex);
+    }
   }
   finally {
     if (!boi.getOperationInfo().isOneWay()) {
