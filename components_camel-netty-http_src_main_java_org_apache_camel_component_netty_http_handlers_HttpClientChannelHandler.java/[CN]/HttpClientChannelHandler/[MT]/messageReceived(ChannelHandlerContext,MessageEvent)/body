@@ -1,12 +1,48 @@
 {
   Object msg=messageEvent.getMessage();
-  if (msg instanceof HttpResponse) {
+  if (msg instanceof HttpChunk) {
+    HttpChunk chunk=(HttpChunk)msg;
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("HttpChunk received: {} isLast: {}",chunk,chunk.isLast());
+    }
+    if (msg instanceof HttpChunkTrailer) {
+      HttpChunkTrailer trailer=(HttpChunkTrailer)msg;
+      for (      Map.Entry<String,String> entry : trailer.getHeaders()) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Adding trailing header {}={}",entry.getKey(),entry.getValue());
+        }
+        response.addHeader(entry.getKey(),entry.getValue());
+      }
+    }
+ else {
+      buffer.writeBytes(chunk.getContent());
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Wrote {} bytes to chunk buffer",buffer.writerIndex());
+      }
+    }
+    if (chunk.isLast()) {
+      int end=buffer.writerIndex();
+      ChannelBuffer copy=buffer.copy(0,end);
+      copy.setIndex(end,end);
+      response.setContent(copy);
+      super.messageReceived(ctx,messageEvent);
+    }
+  }
+ else   if (msg instanceof HttpResponse) {
     response=(HttpResponse)msg;
-    super.messageReceived(ctx,messageEvent);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("HttpResponse received: {} chunked:",response,response.isChunked());
+    }
+    if (!response.isChunked()) {
+      super.messageReceived(ctx,messageEvent);
+    }
+ else {
+      buffer=ChannelBuffers.dynamicBuffer();
+    }
   }
  else {
-    if (msg != null) {
-      LOG.trace("Ignoring non HttpResponse message of type {} -> {}",msg.getClass(),msg);
+    if (LOG.isTraceEnabled() && msg != null) {
+      LOG.trace("Ignoring non supported response message of type {} -> {}",msg.getClass(),msg);
     }
   }
 }
