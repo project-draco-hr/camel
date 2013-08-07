@@ -11,5 +11,13 @@
     throw new CamelMongoDbException("Could not initialise MongoDbComponent. Collection " + collection + " and createCollection is false.");
   }
   dbCollection=db.getCollection(collection);
-  LOG.info("MongoDb component initialised and endpoint bound to MongoDB collection with the following paramters. Address list: {}, Db: {}, Collection: {}",new Object[]{mongoConnection.getAllAddress().toString(),db.getName(),dbCollection.getName()});
+  LOG.debug("MongoDb component initialised and endpoint bound to MongoDB collection with the following parameters. Address list: {}, Db: {}, Collection: {}",new Object[]{mongoConnection.getAllAddress().toString(),db.getName(),dbCollection.getName()});
+  try {
+    if (ObjectHelper.isNotEmpty(collectionIndex)) {
+      ensureIndex(dbCollection,createIndex());
+    }
+  }
+ catch (  Exception e) {
+    throw new CamelMongoDbException("Error creating index",e);
+  }
 }
