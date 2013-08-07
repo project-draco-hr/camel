@@ -1,0 +1,17 @@
+{
+  final int threads=5;
+  getMockEndpoint("mock:task").expectedMinimumMessageCount(20);
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("timer://foo?fixedRate=true&delay=0&period=200").id("timer").threads(threads,threads).maxQueueSize(1).rejectedPolicy(ThreadPoolRejectedPolicy.CallerRuns).to("log:task").to("mock:task").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          TimeUnit.SECONDS.sleep(1);
+        }
+      }
+);
+    }
+  }
+);
+  context.start();
+  assertMockEndpointsSatisfied();
+}

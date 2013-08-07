@@ -1,5 +1,5 @@
 {
-  Exchange exchange=endpoint.createExchange();
+  final Exchange exchange=endpoint.createExchange();
   exchange.setProperty(Exchange.TIMER_COUNTER,counter);
   exchange.setProperty(Exchange.TIMER_NAME,endpoint.getTimerName());
   exchange.setProperty(Exchange.TIMER_TIME,endpoint.getTime());
@@ -7,14 +7,28 @@
   Date now=new Date();
   exchange.setProperty(Exchange.TIMER_FIRED_TIME,now);
   exchange.getIn().setHeader("firedTime",now);
-  LOG.trace("Timer {} is firing #{} count",endpoint.getTimerName(),counter);
-  try {
-    getProcessor().process(exchange);
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Timer {} is firing #{} count",endpoint.getTimerName(),counter);
   }
- catch (  Exception e) {
-    exchange.setException(e);
+  if (!endpoint.isSynchronous()) {
+    getAsyncProcessor().process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        if (exchange.getException() != null) {
+          getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+        }
+      }
+    }
+);
   }
-  if (exchange.getException() != null) {
-    getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+ else {
+    try {
+      getProcessor().process(exchange);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+    }
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+    }
   }
 }
