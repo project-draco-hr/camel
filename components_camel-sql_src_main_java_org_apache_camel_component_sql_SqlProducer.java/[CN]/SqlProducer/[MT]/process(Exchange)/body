@@ -31,11 +31,25 @@
  else {
         boolean isResultSet=ps.execute();
         if (isResultSet) {
-          RowMapperResultSetExtractor<Map<String,Object>> mapper=new RowMapperResultSetExtractor<Map<String,Object>>(new ColumnMapRowMapper());
-          List<Map<String,Object>> result=mapper.extractData(ps.getResultSet());
-          exchange.getOut().setBody(result);
-          exchange.getIn().setHeader(SqlConstants.SQL_ROW_COUNT,result.size());
-          exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+          ResultSet rs=ps.getResultSet();
+          SqlOutputType outputType=getEndpoint().getOutputType();
+          log.trace("Got result list from query: {}, outputType={}",rs,outputType);
+          if (outputType == SqlOutputType.SelectList) {
+            List<Map<String,Object>> data=getEndpoint().queryForList(ps.getResultSet());
+            exchange.getOut().setBody(data);
+            exchange.getOut().setHeader(SqlConstants.SQL_ROW_COUNT,data.size());
+          }
+ else           if (outputType == SqlOutputType.SelectOne) {
+            Object data=getEndpoint().queryForObject(ps.getResultSet());
+            if (data != null) {
+              exchange.getOut().setBody(data);
+              exchange.getOut().setHeader(SqlConstants.SQL_ROW_COUNT,1);
+            }
+          }
+ else {
+            throw new IllegalArgumentException("Invalid outputType=" + outputType);
+          }
+          exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
         }
  else {
           exchange.getIn().setHeader(SqlConstants.SQL_UPDATE_COUNT,ps.getUpdateCount());
