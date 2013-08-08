@@ -1,6 +1,7 @@
 {
-  transactionStrategy.execute(new JpaCallback<Object>(){
-    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+  transactionTemplate.execute(new TransactionCallback<Object>(){
+    public Object doInTransaction(    TransactionStatus status){
+      entityManager.joinTransaction();
       entityManager.createQuery("delete from " + entityName).executeUpdate();
       MultiSteps dummy=new MultiSteps("cheese");
       dummy.setStep(4);
@@ -9,7 +10,7 @@
     }
   }
 );
-  List<?> results=jpaTemplate.find(queryText);
+  List<?> results=entityManager.createQuery(queryText).getResultList();
   assertEquals("Should have no results: " + results,0,results.size());
   template.send(endpoint,new Processor(){
     public void process(    Exchange exchange){
@@ -17,7 +18,7 @@
     }
   }
 );
-  results=jpaTemplate.find(queryText);
+  results=entityManager.createQuery(queryText).getResultList();
   assertEquals("Should have results: " + results,1,results.size());
   MultiSteps mail=(MultiSteps)results.get(0);
   assertEquals("address property","foo@bar.com",mail.getAddress());
@@ -33,8 +34,9 @@
   assertTrue(latch.await(50,TimeUnit.SECONDS));
   assertReceivedResult(receivedExchange);
   Thread.sleep(1000);
-  transactionStrategy.execute(new JpaCallback<Object>(){
-    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+  transactionTemplate.execute(new TransactionCallback<Object>(){
+    public Object doInTransaction(    TransactionStatus status){
+      entityManager.joinTransaction();
       List<?> rows=entityManager.createQuery("select x from MultiSteps x").getResultList();
       assertEquals("Number of entities: " + rows,2,rows.size());
       int counter=1;

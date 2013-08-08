@@ -1,12 +1,13 @@
 {
-  transactionStrategy.execute(new JpaCallback<Object>(){
-    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+  transactionTemplate.execute(new TransactionCallback<Object>(){
+    public Object doInTransaction(    TransactionStatus status){
+      entityManager.joinTransaction();
       entityManager.createQuery("delete from " + entityName).executeUpdate();
       return null;
     }
   }
 );
-  List<?> results=jpaTemplate.find(queryText);
+  List<?> results=entityManager.createQuery(queryText).getResultList();
   assertEquals("Should have no results: " + results,0,results.size());
   template.send(endpoint,new Processor(){
     public void process(    Exchange exchange){
@@ -14,7 +15,7 @@
     }
   }
 );
-  results=jpaTemplate.find(queryText);
+  results=entityManager.createQuery(queryText).getResultList();
   assertEquals("Should have results: " + results,1,results.size());
   SendEmail mail=(SendEmail)results.get(0);
   assertEquals("address property","foo@bar.com",mail.getAddress());
@@ -22,8 +23,8 @@
     public void process(    Exchange e){
       LOG.info("Received exchange: " + e.getIn());
       receivedExchange=e;
-      JpaTemplate template=e.getIn().getHeader(JpaConstants.JPA_TEMPLATE,JpaTemplate.class);
-      assertNotNull("Should have a JpaTemplate as header",template);
+      EntityManager entityManager=e.getIn().getHeader(JpaConstants.ENTITYMANAGER,EntityManager.class);
+      assertNotNull("Should have a EntityManager as header",entityManager);
       latch.countDown();
     }
   }

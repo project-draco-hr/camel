@@ -1,15 +1,14 @@
 {
-  jpaTemplate=applicationContext.getBean("jpaTemplate",JpaTemplate.class);
-  TransactionTemplate transactionTemplate=new TransactionTemplate();
-  transactionTemplate.setTransactionManager(new JpaTransactionManager(jpaTemplate.getEntityManagerFactory()));
-  transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
   transactionTemplate.execute(new TransactionCallback<Object>(){
     public Object doInTransaction(    TransactionStatus arg0){
-      List<?> list=jpaTemplate.find(SELECT_ALL_STRING,PROCESSOR_NAME);
+      entityManager.joinTransaction();
+      Query query=entityManager.createQuery(SELECT_ALL_STRING);
+      query.setParameter(1,PROCESSOR_NAME);
+      List<?> list=query.getResultList();
       for (      Object item : list) {
-        jpaTemplate.remove(item);
+        entityManager.remove(item);
       }
-      jpaTemplate.flush();
+      entityManager.flush();
       return Boolean.TRUE;
     }
   }

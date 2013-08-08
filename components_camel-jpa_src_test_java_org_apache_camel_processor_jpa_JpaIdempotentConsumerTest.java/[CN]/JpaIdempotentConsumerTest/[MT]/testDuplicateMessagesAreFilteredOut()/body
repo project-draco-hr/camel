@@ -1,7 +1,7 @@
 {
   context.addRoutes(new SpringRouteBuilder(){
     @Override public void configure() throws Exception {
-      from("direct:start").idempotentConsumer(header("messageId"),jpaMessageIdRepository(lookup(JpaTemplate.class),PROCESSOR_NAME)).to("mock:result");
+      from("direct:start").idempotentConsumer(header("messageId"),jpaMessageIdRepository(lookup(EntityManagerFactory.class),PROCESSOR_NAME)).to("mock:result");
     }
   }
 );
@@ -15,7 +15,9 @@
   sendMessage("3","three");
   assertMockEndpointsSatisfied();
   Set<String> ids=new HashSet<String>();
-  List<MessageProcessed> list=jpaTemplate.find(SELECT_ALL_STRING,PROCESSOR_NAME);
+  Query query=entityManager.createQuery(SELECT_ALL_STRING);
+  query.setParameter(1,PROCESSOR_NAME);
+  List<MessageProcessed> list=query.getResultList();
   for (  MessageProcessed item : list) {
     ids.add(item.getMessageId());
   }
