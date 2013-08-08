@@ -1,9 +1,10 @@
 {
-  exchange.getIn().setHeader(JpaConstants.JPA_TEMPLATE,endpoint.getTemplate());
+  exchange.getIn().setHeader(JpaConstants.ENTITYMANAGER,entityManager);
   final Object values=expression.evaluate(exchange,Object.class);
   if (values != null) {
-    template.execute(new JpaCallback<Object>(){
-      public Object doInJpa(      EntityManager entityManager) throws PersistenceException {
+    transactionTemplate.execute(new TransactionCallback<Object>(){
+      public Object doInTransaction(      TransactionStatus status){
+        entityManager.joinTransaction();
         if (values.getClass().isArray()) {
           Object[] array=(Object[])values;
           for (int index=0; index < array.length; index++) {
@@ -54,5 +55,5 @@
     }
 );
   }
-  exchange.getIn().removeHeader(JpaConstants.JPA_TEMPLATE);
+  exchange.getIn().removeHeader(JpaConstants.ENTITYMANAGER);
 }

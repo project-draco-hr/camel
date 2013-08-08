@@ -1,14 +1,15 @@
 {
   Boolean rc=transactionTemplate.execute(new TransactionCallback<Boolean>(){
     public Boolean doInTransaction(    TransactionStatus arg0){
-      List<?> list=jpaTemplate.find(QUERY_STRING,processorName,messageId);
+      entityManager.joinTransaction();
+      List<?> list=query(messageId);
       if (list.isEmpty()) {
         MessageProcessed processed=new MessageProcessed();
         processed.setProcessorName(processorName);
         processed.setMessageId(messageId);
         processed.setCreatedAt(new Date());
-        jpaTemplate.persist(processed);
-        jpaTemplate.flush();
+        entityManager.persist(processed);
+        entityManager.flush();
         return Boolean.TRUE;
       }
  else {
