@@ -1,11 +1,20 @@
 {
   client=getConfiguration().getAmazonSQSClient() != null ? getConfiguration().getAmazonSQSClient() : getClient();
-  ListQueuesResult listQueuesResult=client.listQueues();
-  for (  String url : listQueuesResult.getQueueUrls()) {
-    if (url.endsWith("/" + configuration.getQueueName())) {
-      queueUrl=url;
-      LOG.trace("Queue available at '{}'.",queueUrl);
-      break;
+  if (configuration.getQueueOwnerAWSAccountId() != null) {
+    GetQueueUrlRequest getQueueUrlRequest=new GetQueueUrlRequest();
+    getQueueUrlRequest.setQueueName(configuration.getQueueName());
+    getQueueUrlRequest.setQueueOwnerAWSAccountId(configuration.getQueueOwnerAWSAccountId());
+    GetQueueUrlResult getQueueUrlResult=client.getQueueUrl(getQueueUrlRequest);
+    queueUrl=getQueueUrlResult.getQueueUrl();
+  }
+ else {
+    ListQueuesResult listQueuesResult=client.listQueues();
+    for (    String url : listQueuesResult.getQueueUrls()) {
+      if (url.endsWith("/" + configuration.getQueueName())) {
+        queueUrl=url;
+        LOG.trace("Queue available at '{}'.",queueUrl);
+        break;
+      }
     }
   }
   if (queueUrl == null) {
