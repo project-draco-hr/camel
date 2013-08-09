@@ -3,5 +3,36 @@
   this.passPhrase="Just another 24 Byte key".getBytes();
   this.secureTag="";
   this.secureTagContents=true;
+  boolean wasSet=false;
+  try {
+    wasSet=AccessController.doPrivileged(new PrivilegedAction<Boolean>(){
+      public Boolean run(){
+        String lineBreakPropName="org.apache.xml.security.ignoreLineBreaks";
+        if (System.getProperty(lineBreakPropName) == null) {
+          System.setProperty(lineBreakPropName,"true");
+          return false;
+        }
+        return true;
+      }
+    }
+);
+  }
+ catch (  Throwable t) {
+  }
   org.apache.xml.security.Init.init();
+  if (!wasSet) {
+    try {
+      AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>(){
+        public Boolean run() throws Exception {
+          Field f=XMLUtils.class.getDeclaredField("ignoreLineBreaks");
+          f.setAccessible(true);
+          f.set(null,Boolean.TRUE);
+          return false;
+        }
+      }
+);
+    }
+ catch (    Throwable t) {
+    }
+  }
 }
