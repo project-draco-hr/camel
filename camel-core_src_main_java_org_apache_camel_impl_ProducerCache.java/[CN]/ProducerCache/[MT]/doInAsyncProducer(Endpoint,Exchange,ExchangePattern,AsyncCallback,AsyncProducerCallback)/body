@@ -10,16 +10,16 @@
       throw new IllegalStateException("No producer, this processor has not been started: " + this);
     }
   }
-  final StopWatch watch=exchange != null ? new StopWatch() : null;
+  final StopWatch watch=eventNotifierEnabled && exchange != null ? new StopWatch() : null;
   try {
-    if (exchange != null) {
+    if (eventNotifierEnabled && exchange != null) {
       EventHelper.notifyExchangeSending(exchange.getContext(),exchange,endpoint);
     }
     AsyncProcessor asyncProcessor=AsyncProcessorConverterHelper.convert(producer);
     sync=producerCallback.doInAsyncProducer(producer,asyncProcessor,exchange,pattern,new AsyncCallback(){
       @Override public void done(      boolean doneSync){
         try {
-          if (watch != null) {
+          if (eventNotifierEnabled && watch != null) {
             long timeTaken=watch.stop();
             EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
           }

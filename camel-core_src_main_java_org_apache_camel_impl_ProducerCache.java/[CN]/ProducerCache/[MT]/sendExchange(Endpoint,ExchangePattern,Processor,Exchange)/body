@@ -15,9 +15,12 @@
       }
       LOG.debug(">>>> {} {}",endpoint,exchange);
       exchange.setProperty(Exchange.TO_ENDPOINT,endpoint.getEndpointUri());
-      StopWatch watch=new StopWatch();
+      StopWatch watch=null;
       try {
-        EventHelper.notifyExchangeSending(exchange.getContext(),exchange,endpoint);
+        if (eventNotifierEnabled) {
+          watch=new StopWatch();
+          EventHelper.notifyExchangeSending(exchange.getContext(),exchange,endpoint);
+        }
         Producer target=new UnitOfWorkProducer(producer);
         target.process(exchange);
       }
@@ -25,8 +28,10 @@
         exchange.setException(e);
       }
  finally {
-        long timeTaken=watch.stop();
-        EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+        if (eventNotifierEnabled && watch != null) {
+          long timeTaken=watch.stop();
+          EventHelper.notifyExchangeSent(exchange.getContext(),exchange,endpoint,timeTaken);
+        }
       }
       return exchange;
     }
