@@ -17,7 +17,7 @@
     private Object asyncInvoke(    Exchange cxfExchange,    final Continuation continuation){
 synchronized (continuation) {
         if (continuation.isNew()) {
-          final org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
+          final org.apache.camel.Exchange camelExchange=prepareCamelExchange(cxfExchange);
           LOG.trace("Suspending continuation of exchangeId: {}",camelExchange.getExchangeId());
           continuation.suspend(0);
           getAsyncProcessor().process(camelExchange,new AsyncCallback(){
@@ -33,7 +33,12 @@ synchronized (continuation) {
         }
  else         if (continuation.isResumed()) {
           org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
-          setResponseBack(cxfExchange,camelExchange);
+          try {
+            setResponseBack(cxfExchange,camelExchange);
+          }
+  finally {
+            CxfConsumer.this.doneUoW(camelExchange);
+          }
         }
       }
       return null;
@@ -49,22 +54,34 @@ synchronized (continuation) {
       }
     }
     private Object syncInvoke(    Exchange cxfExchange){
-      org.apache.camel.Exchange camelExchange=perpareCamelExchange(cxfExchange);
-      LOG.trace("Processing +++ START +++");
+      org.apache.camel.Exchange camelExchange=prepareCamelExchange(cxfExchange);
       try {
-        getProcessor().process(camelExchange);
+        try {
+          LOG.trace("Processing +++ START +++");
+          getProcessor().process(camelExchange);
+        }
+ catch (        Exception e) {
+          throw new Fault(e);
+        }
+        LOG.trace("Processing +++ END +++");
+        setResponseBack(cxfExchange,camelExchange);
       }
- catch (      Exception e) {
-        throw new Fault(e);
+  finally {
+        doneUoW(camelExchange);
       }
-      LOG.trace("Processing +++ END +++");
-      setResponseBack(cxfExchange,camelExchange);
       return null;
     }
-    private org.apache.camel.Exchange perpareCamelExchange(    Exchange cxfExchange){
+    private org.apache.camel.Exchange prepareCamelExchange(    Exchange cxfExchange){
       CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
       CxfBinding binding=endpoint.getCxfBinding();
       org.apache.camel.Exchange camelExchange=endpoint.createExchange();
+      try {
+        CxfConsumer.this.createUoW(camelExchange);
+      }
+ catch (      Exception e) {
+        log.error("Error processing request",e);
+        throw new Fault(e);
+      }
       DataFormat dataFormat=endpoint.getDataFormat();
       BindingOperationInfo boi=cxfExchange.getBindingOperationInfo();
       if (boi != null && dataFormat == DataFormat.PAYLOAD && boi.isUnwrapped()) {

@@ -4,6 +4,7 @@
     ep=ExchangePattern.InOnly;
   }
   org.apache.camel.Exchange camelExchange=endpoint.createExchange(ep);
+  cxfRsConsumer.createUoW(camelExchange);
   CxfRsBinding binding=endpoint.getBinding();
   binding.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
   try {
@@ -12,5 +13,10 @@
  catch (  Exception exception) {
     camelExchange.setException(exception);
   }
-  return returnResponse(cxfExchange,camelExchange);
+  try {
+    return returnResponse(cxfExchange,camelExchange);
+  }
+  finally {
+    cxfRsConsumer.doneUoW(camelExchange);
+  }
 }

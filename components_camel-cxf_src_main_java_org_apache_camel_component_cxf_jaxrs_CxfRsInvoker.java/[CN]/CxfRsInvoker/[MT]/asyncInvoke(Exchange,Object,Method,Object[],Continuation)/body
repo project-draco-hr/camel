@@ -6,6 +6,7 @@ synchronized (continuation) {
         ep=ExchangePattern.InOnly;
       }
       final org.apache.camel.Exchange camelExchange=endpoint.createExchange(ep);
+      cxfRsConsumer.createUoW(camelExchange);
       CxfRsBinding binding=endpoint.getBinding();
       binding.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
       LOG.trace("Suspending continuation of exchangeId: {}",camelExchange.getExchangeId());
@@ -26,7 +27,12 @@ synchronized (continuation) {
     if (continuation.isResumed()) {
       cxfExchange.put(SUSPENED,Boolean.FALSE);
       org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
-      return returnResponse(cxfExchange,camelExchange);
+      try {
+        return returnResponse(cxfExchange,camelExchange);
+      }
+  finally {
+        cxfRsConsumer.doneUoW(camelExchange);
+      }
     }
   }
   return null;
