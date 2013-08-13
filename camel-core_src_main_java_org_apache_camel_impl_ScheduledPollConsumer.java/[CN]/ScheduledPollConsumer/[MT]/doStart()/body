@@ -1,11 +1,16 @@
 {
   super.doStart();
-  if (scheduledExecutorService == null) {
-    this.scheduledExecutorService=getEndpoint().getCamelContext().getExecutorServiceManager().newScheduledThreadPool(this,getEndpoint().getEndpointUri(),1);
-    this.shutdownExecutor=true;
+  if (scheduler == null) {
+    scheduler=new DefaultScheduledPollConsumerScheduler();
   }
-  ObjectHelper.notNull(scheduledExecutorService,"scheduledExecutorService",this);
+  scheduler.setCamelContext(getEndpoint().getCamelContext());
+  scheduler.scheduleTask(this,this);
+  Map<String,Object> properties=new HashMap<String,Object>();
+  IntrospectionSupport.getProperties(this,properties,null);
+  IntrospectionSupport.setProperties(getEndpoint().getCamelContext().getTypeConverter(),scheduler,properties);
+  ObjectHelper.notNull(scheduler,"scheduler",this);
   ObjectHelper.notNull(pollStrategy,"pollStrategy",this);
+  ServiceHelper.startService(scheduler);
   if (isStartScheduler()) {
     startScheduler();
   }
