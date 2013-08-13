@@ -8,6 +8,13 @@
   Map<String,Object> properties=new HashMap<String,Object>();
   IntrospectionSupport.getProperties(this,properties,null);
   IntrospectionSupport.setProperties(getEndpoint().getCamelContext().getTypeConverter(),scheduler,properties);
+  if (schedulerProperties != null && !schedulerProperties.isEmpty()) {
+    Map<String,Object> copy=new HashMap<String,Object>(schedulerProperties);
+    IntrospectionSupport.setProperties(getEndpoint().getCamelContext().getTypeConverter(),scheduler,copy);
+    if (copy.size() > 0) {
+      throw new FailedToCreateConsumerException(getEndpoint(),"There are " + copy.size() + " scheduler parameters that couldn't be set on the endpoint."+ " Check the uri if the parameters are spelt correctly and that they are properties of the endpoint."+ " Unknown parameters=["+ copy+ "]");
+    }
+  }
   ObjectHelper.notNull(scheduler,"scheduler",this);
   ObjectHelper.notNull(pollStrategy,"pollStrategy",this);
   ServiceHelper.startService(scheduler);
