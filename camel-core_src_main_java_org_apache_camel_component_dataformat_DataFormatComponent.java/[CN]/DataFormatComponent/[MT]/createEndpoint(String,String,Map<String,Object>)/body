@@ -1,0 +1,17 @@
+{
+  String name=ObjectHelper.before(remaining,":");
+  DataFormat df=getCamelContext().resolveDataFormat(name);
+  if (df == null) {
+    throw new IllegalArgumentException("Cannot find data format with name: " + name);
+  }
+  String operation=ObjectHelper.after(remaining,":");
+  if (!"marshal".equals(operation) && !"unmarshal".equals(operation)) {
+    throw new IllegalArgumentException("Operation must be either marshal or unmarshal, was: " + operation);
+  }
+  EndpointHelper.setReferenceProperties(getCamelContext(),df,parameters);
+  EndpointHelper.setProperties(getCamelContext(),df,parameters);
+  DataFormatEndpoint endpoint=new DataFormatEndpoint(uri,this,df);
+  endpoint.setOperation(operation);
+  setProperties(endpoint,parameters);
+  return endpoint;
+}
