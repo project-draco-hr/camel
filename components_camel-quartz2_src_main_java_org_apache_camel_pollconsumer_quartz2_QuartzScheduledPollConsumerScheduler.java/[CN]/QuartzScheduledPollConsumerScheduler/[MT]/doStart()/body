@@ -1,0 +1,17 @@
+{
+  ObjectHelper.notEmpty(cron,"cron",this);
+  if (quartzScheduler == null) {
+    QuartzComponent quartz=getCamelContext().getComponent("quartz2",QuartzComponent.class);
+    setQuartzScheduler(quartz.getScheduler());
+  }
+  JobDataMap map=new JobDataMap();
+  map.put("task",runnable);
+  job=JobBuilder.newJob(QuartzScheduledPollConsumerJob.class).usingJobData(map).build();
+  String id=triggerId;
+  if (id == null) {
+    id="trigger-" + getCamelContext().getUuidGenerator().generateUuid();
+  }
+  trigger=TriggerBuilder.newTrigger().withIdentity(id,triggerGroup).withSchedule(CronScheduleBuilder.cronSchedule(getCron()).inTimeZone(getTimeZone())).build();
+  LOG.debug("Scheduling job: {} with trigger: {}",job,trigger.getKey());
+  quartzScheduler.scheduleJob(job,trigger);
+}
