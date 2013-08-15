@@ -56,7 +56,16 @@
       consumerProperties.put("scheduledExecutorService",scheduledExecutorService);
     }
     if (scheduler != null) {
-      if ("quartz2".equals(scheduler)) {
+      if ("spring".equals(scheduler)) {
+        try {
+          Class<?> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(SPRING_SCHEDULER);
+          scheduler=getCamelContext().getInjector().newInstance(clazz);
+        }
+ catch (        ClassNotFoundException e) {
+          throw new IllegalArgumentException("Cannot load " + SPRING_SCHEDULER + " from classpath. Make sure camel-spring.jar is on the classpath.",e);
+        }
+      }
+ else       if ("quartz2".equals(scheduler)) {
         try {
           Class<?> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(QUARTZ_2_SCHEDULER);
           scheduler=getCamelContext().getInjector().newInstance(clazz);
