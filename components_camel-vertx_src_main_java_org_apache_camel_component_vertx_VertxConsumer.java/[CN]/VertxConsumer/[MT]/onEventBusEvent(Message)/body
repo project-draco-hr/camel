@@ -1,11 +1,15 @@
 {
   LOG.debug("onEvent {}",event);
-  Exchange exchange=endpoint.createExchange();
+  final Exchange exchange=endpoint.createExchange();
   exchange.getIn().setBody(event.body());
   try {
-    getProcessor().process(exchange);
+    getAsyncProcessor().process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+      }
+    }
+);
   }
  catch (  Exception e) {
-    getExceptionHandler().handleException("Error processing vertx message " + event,exchange,e);
+    getExceptionHandler().handleException("Error processing Vertx event: " + event,exchange,e);
   }
 }
