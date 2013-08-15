@@ -1,20 +1,20 @@
 {
-  EventBus eventBus=endpoint.getEventBus();
-  String address=endpoint.getAddress();
+  EventBus eventBus=getEndpoint().getEventBus();
+  String address=getEndpoint().getAddress();
   Message in=exchange.getIn();
   JsonObject jsonObject=in.getBody(JsonObject.class);
   if (jsonObject != null) {
     eventBus.publish(address,jsonObject);
     return;
   }
-  String text=in.getBody(String.class);
-  if (text != null) {
-    eventBus.publish(address,new JsonObject(text));
-    return;
-  }
   JsonArray jsonArray=in.getBody(JsonArray.class);
   if (jsonArray != null) {
     eventBus.publish(address,jsonArray);
+    return;
+  }
+  String text=in.getBody(String.class);
+  if (text != null) {
+    eventBus.publish(address,new JsonObject(text));
     return;
   }
   throw new InvalidPayloadRuntimeException(exchange,String.class);
