@@ -4,6 +4,7 @@
   xmlCipher.init(XMLCipher.DECRYPT_MODE,null);
   xmlCipher.setKEK(keyEncryptionKey);
   if (secureTag.equalsIgnoreCase("")) {
+    checkEncryptionAlgorithm(keyEncryptionKey,encodedDocument.getDocumentElement());
     encodedDocument=xmlCipher.doFinal(encodedDocument,encodedDocument.getDocumentElement());
   }
  else {
@@ -14,6 +15,7 @@
       Node node=nodeList.item(i);
       encodedDocument=node.getOwnerDocument();
       if (getSecureTagContents()) {
+        checkEncryptionAlgorithm(keyEncryptionKey,(Element)node);
         Document temp=xmlCipher.doFinal(encodedDocument,(Element)node,true);
         encodedDocument.importNode(temp.getDocumentElement().cloneNode(true),true);
       }
@@ -22,6 +24,7 @@
         for (int j=0; j < childNodes.getLength(); j++) {
           Node childNode=childNodes.item(j);
           if (childNode.getLocalName().equals("EncryptedData")) {
+            checkEncryptionAlgorithm(keyEncryptionKey,(Element)childNode);
             Document temp=xmlCipher.doFinal(encodedDocument,(Element)childNode,false);
             encodedDocument.importNode(temp.getDocumentElement().cloneNode(true),true);
           }
