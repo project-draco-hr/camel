@@ -6,7 +6,13 @@
   internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeId));
   ObjectHelper.notNull(config,"config",this);
   ObjectHelper.notNull(expression,"expression",this);
-  ExpressionResultComparator comparator=config.getComparator();
+  ExpressionResultComparator comparator;
+  if (config.getComparatorRef() != null) {
+    comparator=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),config.getComparatorRef(),ExpressionResultComparator.class);
+  }
+ else {
+    comparator=config.getComparator();
+  }
   comparator.setExpression(expression);
   StreamResequencer resequencer=new StreamResequencer(routeContext.getCamelContext(),internal,comparator);
   resequencer.setTimeout(config.getTimeout());
