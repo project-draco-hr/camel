@@ -3,9 +3,27 @@
     LOG.trace("Cannot start to poll: {} as its suspended",this.getEndpoint());
     return;
   }
+  if (backoffMultiplier > 0 && (idleCounter >= (backoffIdleThreshold > 0 ? backoffIdleThreshold : Integer.MAX_VALUE)) || errorCounter >= (backoffErrorThreshold > 0 ? backoffErrorThreshold : Integer.MAX_VALUE)) {
+    if (backoffCounter++ < backoffMultiplier) {
+      if (idleCounter > 0) {
+        LOG.debug("doRun() backoff due subsequent {} idles (backoff at {}/{})",new Object[]{idleCounter,backoffCounter,backoffMultiplier});
+      }
+ else {
+        LOG.debug("doRun() backoff due subsequent {} errors (backoff at {}/{})",new Object[]{errorCounter,backoffCounter,backoffMultiplier});
+      }
+      return;
+    }
+ else {
+      idleCounter=0;
+      errorCounter=0;
+      backoffCounter=0;
+      LOG.trace("doRun() backoff finished, resetting counters.");
+    }
+  }
   int retryCounter=-1;
   boolean done=false;
   Throwable cause=null;
+  int polledMessages=0;
   while (!done) {
     try {
       cause=null;
@@ -22,7 +40,7 @@
           boolean begin=pollStrategy.begin(this,getEndpoint());
           if (begin) {
             retryCounter++;
-            int polledMessages=poll();
+            polledMessages=poll();
             if (polledMessages == 0 && isSendEmptyMessageWhenIdle()) {
               processEmptyMessage();
             }
@@ -70,7 +88,15 @@ catch (    Throwable t) {
  catch (      Throwable e) {
         LOG.warn("Error handling exception. This exception will be ignored.",e);
       }
-      cause=null;
     }
   }
+  if (cause != null) {
+    idleCounter=0;
+    errorCounter++;
+  }
+ else {
+    idleCounter=polledMessages == 0 ? ++idleCounter : 0;
+    errorCounter=0;
+  }
+  LOG.trace("doRun() done with idleCounter={}, errorCounter={}",idleCounter,errorCounter);
 }
