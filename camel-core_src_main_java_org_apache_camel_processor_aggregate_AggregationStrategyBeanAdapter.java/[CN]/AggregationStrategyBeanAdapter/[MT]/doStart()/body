@@ -1,0 +1,36 @@
+{
+  Method found=null;
+  if (methodName != null) {
+    for (    Method method : type.getMethods()) {
+      if (isValidMethod(method) && method.getName().equals(methodName)) {
+        if (found == null) {
+          found=method;
+        }
+ else {
+          throw new IllegalArgumentException("The bean " + type + " has 2 or more methods with the name "+ methodName);
+        }
+      }
+    }
+  }
+ else {
+    for (    Method method : type.getMethods()) {
+      if (isValidMethod(method)) {
+        if (found == null) {
+          found=method;
+        }
+ else {
+          throw new IllegalArgumentException("The bean " + type + " has 2 or more methods and no explicit method name was configured.");
+        }
+      }
+    }
+  }
+  if (found == null) {
+    throw new UnsupportedOperationException("Cannot find a valid method with name: " + methodName + " on bean type: "+ type);
+  }
+  if (!isStaticMethod(found) && pojo == null) {
+    pojo=camelContext.getInjector().newInstance(type);
+  }
+  AggregationStrategyBeanInfo bi=new AggregationStrategyBeanInfo(getCamelContext(),type,found);
+  mi=bi.createMethodInfo();
+  ServiceHelper.startService(pojo);
+}
