@@ -1,7 +1,16 @@
 {
   AggregationStrategy strategy=getAggregationStrategy();
   if (strategy == null && strategyRef != null) {
-    strategy=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),strategyRef,AggregationStrategy.class);
+    Object aggStrategy=routeContext.lookup(strategyRef,Object.class);
+    if (aggStrategy instanceof AggregationStrategy) {
+      strategy=(AggregationStrategy)aggStrategy;
+    }
+ else     if (aggStrategy != null) {
+      strategy=new AggregationStrategyBeanAdapter(aggStrategy,strategyMethodName);
+    }
+ else {
+      throw new IllegalArgumentException("Cannot find AggregationStrategy in Registry with name: " + strategyRef);
+    }
   }
   return strategy;
 }

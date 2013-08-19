@@ -1,9 +1,7 @@
 {
-  if (strategyRef != null) {
-    aggregationStrategy=routeContext.mandatoryLookup(strategyRef,AggregationStrategy.class);
-  }
-  if (aggregationStrategy == null) {
-    aggregationStrategy=new UseLatestAggregationStrategy();
+  AggregationStrategy strategy=createAggregationStrategy(routeContext);
+  if (strategy == null) {
+    strategy=new UseLatestAggregationStrategy();
   }
   boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
   ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Multicast",this,isParallelProcessing());
@@ -14,7 +12,7 @@
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
-  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,aggregationStrategy,isParallelProcessing(),threadPool,shutdownThreadPool,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
+  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,strategy,isParallelProcessing(),threadPool,shutdownThreadPool,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork());
   if (isShareUnitOfWork()) {
     CamelInternalProcessor internalProcessor=new CamelInternalProcessor(answer);
     internalProcessor.addAdvice(new CamelInternalProcessor.SubUnitOfWorkProcessorAdvice());
