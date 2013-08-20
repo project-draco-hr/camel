@@ -1,14 +1,20 @@
 {
   Marshaller marshaller=getContext().createMarshaller();
   if (schema != null) {
-    Schema newSchema=SCHEMA_FACTORY.newSchema(getSources());
-    marshaller.setSchema(newSchema);
-    marshaller.setEventHandler(new ValidationEventHandler(){
-      public boolean handleEvent(      ValidationEvent event){
-        return event.getSeverity() == ValidationEvent.WARNING;
+    SchemaFactory factory=getOrCreateSchemaFactory();
+    try {
+      Schema newSchema=factory.newSchema(getSources());
+      marshaller.setSchema(newSchema);
+      marshaller.setEventHandler(new ValidationEventHandler(){
+        public boolean handleEvent(        ValidationEvent event){
+          return event.getSeverity() == ValidationEvent.WARNING;
+        }
       }
-    }
 );
+    }
+  finally {
+      returnSchemaFactory(factory);
+    }
   }
   return marshaller;
 }
