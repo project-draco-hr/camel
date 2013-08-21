@@ -1,6 +1,7 @@
 {
-  transactionStrategy.execute(new JpaCallback<Object>(){
-    public Object doInJpa(    EntityManager entityManager) throws PersistenceException {
+  transactionTemplate.execute(new TransactionCallback<Object>(){
+    public Object doInTransaction(    TransactionStatus status){
+      entityManager.joinTransaction();
       entityManager.createQuery("delete from " + entityName).executeUpdate();
       Customer dummy=new Customer();
       dummy.setName("Test");
@@ -9,7 +10,7 @@
     }
   }
 );
-  List<?> results=jpaTemplate.find(queryText);
+  List<?> results=entityManager.createQuery(queryText).getResultList();
   assertEquals("Should have no results: " + results,0,results.size());
   template.send(endpoint,new Processor(){
     public void process(    Exchange exchange){
@@ -19,7 +20,7 @@
     }
   }
 );
-  results=jpaTemplate.find(queryText);
+  results=entityManager.createQuery(queryText).getResultList();
   assertEquals("Should have results: " + results,1,results.size());
   Customer customer=(Customer)results.get(0);
   assertEquals("name property","Willem",customer.getName());
