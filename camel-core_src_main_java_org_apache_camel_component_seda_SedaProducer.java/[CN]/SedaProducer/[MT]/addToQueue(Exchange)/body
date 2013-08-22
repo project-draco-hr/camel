@@ -1,5 +1,10 @@
 {
-  BlockingQueue<Exchange> queue=endpoint.getQueue();
+  QueueReference queueReference=endpoint.getQueueReference();
+  BlockingQueue<Exchange> queue=queueReference.getQueue();
+  if (endpoint.isFailIfNoConsumers() && !queueReference.hasConsumers()) {
+    LOG.warn("No consumers available on endpoint: " + endpoint + " to process: "+ exchange);
+    throw new SedaConsumerNotAvailableException("No consumers available on endpoint: " + endpoint,exchange);
+  }
   if (blockWhenFull) {
     try {
       queue.put(exchange);

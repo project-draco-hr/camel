@@ -1,3 +1,12 @@
 {
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("seda:foo?timeout=1000");
+    }
+  }
+);
+  context.start();
+  NotifyBuilder notify=new NotifyBuilder(context).whenDone(1).create();
   template.sendBody("direct:start","Hello World");
+  notify.matches(2,TimeUnit.SECONDS);
 }

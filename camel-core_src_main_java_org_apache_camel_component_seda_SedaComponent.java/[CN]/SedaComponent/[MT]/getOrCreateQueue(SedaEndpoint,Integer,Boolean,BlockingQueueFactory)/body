@@ -1,0 +1,33 @@
+{
+  String key=getQueueKey(endpoint.getEndpointUri());
+  QueueReference ref=getQueues().get(key);
+  if (ref != null) {
+    if (size != null && ref.getSize() != size) {
+      throw new IllegalArgumentException("Cannot use existing queue " + key + " as the existing queue size "+ (ref.getSize() != null ? ref.getSize() : Integer.MAX_VALUE)+ " does not match given queue size "+ size);
+    }
+    ref.addReference(endpoint);
+    if (log.isDebugEnabled()) {
+      log.debug("Reusing existing queue {} with size {} and reference count {}",new Object[]{key,size,ref.getCount()});
+    }
+    return ref;
+  }
+  BlockingQueue<Exchange> queue;
+  BlockingQueueFactory<Exchange> queueFactory=customQueueFactory == null ? defaultQueueFactory : customQueueFactory;
+  if (size != null && size > 0) {
+    queue=queueFactory.create(size);
+  }
+ else {
+    if (getQueueSize() > 0) {
+      size=getQueueSize();
+      queue=queueFactory.create(getQueueSize());
+    }
+ else {
+      queue=queueFactory.create();
+    }
+  }
+  log.debug("Created queue {} with size {}",key,size);
+  ref=new QueueReference(queue,size,multipleConsumers);
+  ref.addReference(endpoint);
+  getQueues().put(key,ref);
+  return ref;
+}

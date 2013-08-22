@@ -35,7 +35,14 @@
     }
 );
     log.trace("Adding Exchange to queue: {}",copy);
-    addToQueue(copy);
+    try {
+      addToQueue(copy);
+    }
+ catch (    SedaConsumerNotAvailableException e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
     if (timeout > 0) {
       if (log.isTraceEnabled()) {
         log.trace("Waiting for task to complete using timeout (ms): {} at [{}]",timeout,endpoint.getEndpointUri());
@@ -66,7 +73,14 @@
  else {
     Exchange copy=prepareCopy(exchange,true);
     log.trace("Adding Exchange to queue: {}",copy);
-    addToQueue(copy);
+    try {
+      addToQueue(copy);
+    }
+ catch (    SedaConsumerNotAvailableException e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
   }
   callback.done(true);
   return true;
