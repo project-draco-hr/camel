@@ -47,6 +47,15 @@
   }
 ,new RouteBuilder(){
     public void configure() throws Exception {
+      KeyGenerator generator=KeyGenerator.getInstance("DES");
+      CryptoDataFormat cryptoFormat=new CryptoDataFormat("DES",generator.generateKey());
+      cryptoFormat.setShouldAppendHMAC(true);
+      cryptoFormat.setMacAlgorithm("HmacSHA256");
+      from("direct:hmac-sha-256-algorithm").marshal(cryptoFormat).to("mock:encrypted").unmarshal(cryptoFormat).to("mock:unencrypted");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
       CryptoDataFormat cryptoFormat=new CryptoDataFormat("DES",null);
       from("direct:key-in-header-encrypt").marshal(cryptoFormat).removeHeader(CryptoDataFormat.KEY).to("mock:encrypted");
       from("direct:key-in-header-decrypt").unmarshal(cryptoFormat).process(new Processor(){
@@ -56,6 +65,35 @@
         }
       }
 ).to("mock:unencrypted");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      KeyGenerator generator=KeyGenerator.getInstance("DESede");
+      CryptoDataFormat cryptoFormat=new CryptoDataFormat("DESede/ECB/PKCS5Padding",generator.generateKey());
+      from("direct:3des-ecb-encryption").marshal(cryptoFormat).to("mock:encrypted").unmarshal(cryptoFormat).to("mock:unencrypted");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      KeyGenerator generator=KeyGenerator.getInstance("DES");
+      byte[] iv=new byte[8];
+      SecureRandom random=new SecureRandom();
+      random.nextBytes(iv);
+      Key key=generator.generateKey();
+      CryptoDataFormat encCryptoFormat=new CryptoDataFormat("DES/CBC/PKCS5Padding",key);
+      encCryptoFormat.setInitializationVector(iv);
+      encCryptoFormat.setShouldInlineInitializationVector(true);
+      CryptoDataFormat decCryptoFormat=new CryptoDataFormat("DES/CBC/PKCS5Padding",key);
+      decCryptoFormat.setShouldInlineInitializationVector(true);
+      from("direct:3des-cbc-encryption").marshal(encCryptoFormat).to("mock:encrypted").unmarshal(decCryptoFormat).to("mock:unencrypted");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      KeyGenerator generator=KeyGenerator.getInstance("AES");
+      CryptoDataFormat cryptoFormat=new CryptoDataFormat("AES/ECB/PKCS5Padding",generator.generateKey());
+      from("direct:aes-128-ecb-encryption").marshal(cryptoFormat).to("mock:encrypted").unmarshal(cryptoFormat).to("mock:unencrypted");
     }
   }
 };

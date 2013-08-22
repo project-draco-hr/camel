@@ -6,14 +6,32 @@
   }
 ,new RouteBuilder(){
     public void configure() throws Exception {
-      KeyPairGenerator keyGen=KeyPairGenerator.getInstance("RSA");
-      keyGen.initialize(512,new SecureRandom());
-      keyPair=keyGen.generateKeyPair();
+      keyPair=getKeyPair("RSA");
       PrivateKey privateKey=keyPair.getPrivate();
       PublicKey publicKey=keyPair.getPublic();
       context.getEndpoint("crypto:sign://rsa?algorithm=MD5withRSA",DigitalSignatureEndpoint.class).setPrivateKey(privateKey);
       context.getEndpoint("crypto:verify://rsa?algorithm=MD5withRSA",DigitalSignatureEndpoint.class).setPublicKey(publicKey);
       from("direct:algorithm").to("crypto:sign://rsa?algorithm=MD5withRSA","crypto:verify://rsa?algorithm=MD5withRSA","mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      keyPair=getKeyPair("RSA");
+      PrivateKey privateKey=keyPair.getPrivate();
+      PublicKey publicKey=keyPair.getPublic();
+      context.getEndpoint("crypto:sign://rsa?algorithm=SHA1withRSA",DigitalSignatureEndpoint.class).setPrivateKey(privateKey);
+      context.getEndpoint("crypto:verify://rsa?algorithm=SHA1withRSA",DigitalSignatureEndpoint.class).setPublicKey(publicKey);
+      from("direct:rsa-sha1").to("crypto:sign://rsa?algorithm=SHA1withRSA","crypto:verify://rsa?algorithm=SHA1withRSA","mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      keyPair=getKeyPair("RSA");
+      PrivateKey privateKey=keyPair.getPrivate();
+      PublicKey publicKey=keyPair.getPublic();
+      context.getEndpoint("crypto:sign://rsa?algorithm=SHA256withRSA",DigitalSignatureEndpoint.class).setPrivateKey(privateKey);
+      context.getEndpoint("crypto:verify://rsa?algorithm=SHA256withRSA",DigitalSignatureEndpoint.class).setPublicKey(publicKey);
+      from("direct:rsa-sha256").to("crypto:sign://rsa?algorithm=SHA256withRSA","crypto:verify://rsa?algorithm=SHA256withRSA","mock:result");
     }
   }
 ,new RouteBuilder(){
