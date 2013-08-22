@@ -1,0 +1,31 @@
+{
+  canTest=true;
+  try {
+    sshd=SshServer.setUpDefaultServer();
+    sshd.setPort(getPort());
+    sshd.setKeyPairProvider(new FileKeyPairProvider(new String[]{"src/test/resources/hostkey.pem"}));
+    sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new SftpSubsystem.Factory()));
+    sshd.setCommandFactory(new ScpCommandFactory());
+    sshd.setPasswordAuthenticator(new MyPasswordAuthenticator());
+    PublickeyAuthenticator publickeyAuthenticator=new PublickeyAuthenticator(){
+      @Override public boolean authenticate(      String username,      PublicKey key,      ServerSession session){
+        return true;
+      }
+    }
+;
+    sshd.setPublickeyAuthenticator(publickeyAuthenticator);
+    sshd.start();
+  }
+ catch (  Exception e) {
+    NoSuchAlgorithmException nsae=ObjectHelper.getException(NoSuchAlgorithmException.class,e);
+    if (nsae != null) {
+      canTest=false;
+      String name=System.getProperty("os.name");
+      String message=nsae.getMessage();
+      log.warn("SunX509 is not avail on this platform [{}] Testing is skipped! Real cause: {}",name,message);
+    }
+ else {
+      throw e;
+    }
+  }
+}
