@@ -1,0 +1,17 @@
+{
+  JobInfo jobBody;
+  String jobId;
+  jobBody=exchange.getIn().getBody(JobInfo.class);
+  if (jobBody != null) {
+    jobId=jobBody.getId();
+  }
+ else {
+    jobId=getParameter(JOB_ID,exchange,USE_BODY,NOT_OPTIONAL);
+  }
+  bulkClient.abortJob(jobId,new BulkApiClient.JobInfoResponseCallback(){
+    @Override public void onResponse(    JobInfo jobInfo,    SalesforceException ex){
+      processResponse(exchange,jobInfo,ex,callback);
+    }
+  }
+);
+}

@@ -1,0 +1,19 @@
+{
+  String jobId;
+  ContentType contentType=ContentType.fromValue(getParameter(CONTENT_TYPE,exchange,IGNORE_BODY,NOT_OPTIONAL));
+  jobId=getParameter(JOB_ID,exchange,IGNORE_BODY,NOT_OPTIONAL);
+  InputStream request;
+  try {
+    request=exchange.getIn().getMandatoryBody(InputStream.class);
+  }
+ catch (  CamelException e) {
+    String msg="Error preparing batch request: " + e.getMessage();
+    throw new SalesforceException(msg,e);
+  }
+  bulkClient.createBatch(request,jobId,contentType,new BulkApiClient.BatchInfoResponseCallback(){
+    @Override public void onResponse(    BatchInfo batchInfo,    SalesforceException ex){
+      processResponse(exchange,batchInfo,ex,callback);
+    }
+  }
+);
+}

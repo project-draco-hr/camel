@@ -1,0 +1,17 @@
+{
+  JobInfo jobBody;
+  String jobId;
+  jobBody=exchange.getIn().getBody(JobInfo.class);
+  if (jobBody != null) {
+    jobId=jobBody.getId();
+  }
+ else {
+    jobId=getParameter(JOB_ID,exchange,USE_BODY,NOT_OPTIONAL);
+  }
+  bulkClient.getAllBatches(jobId,new BulkApiClient.BatchInfoListResponseCallback(){
+    @Override public void onResponse(    List<BatchInfo> batchInfoList,    SalesforceException ex){
+      processResponse(exchange,batchInfoList,ex,callback);
+    }
+  }
+);
+}

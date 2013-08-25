@@ -1,0 +1,37 @@
+{
+  String jobId;
+  BatchInfo batchBody;
+  String batchId;
+  batchBody=exchange.getIn().getBody(BatchInfo.class);
+  if (batchBody != null) {
+    jobId=batchBody.getJobId();
+    batchId=batchBody.getId();
+  }
+ else {
+    jobId=getParameter(JOB_ID,exchange,IGNORE_BODY,NOT_OPTIONAL);
+    batchId=getParameter(BATCH_ID,exchange,USE_BODY,NOT_OPTIONAL);
+  }
+  bulkClient.getResults(jobId,batchId,new BulkApiClient.StreamResponseCallback(){
+    @Override public void onResponse(    InputStream inputStream,    SalesforceException ex){
+      StreamCache body=null;
+      if (inputStream != null) {
+        try {
+          body=StreamCacheConverter.convertToStreamCache(inputStream,exchange);
+        }
+ catch (        IOException e) {
+          String msg="Error retrieving batch results: " + e.getMessage();
+          ex=new SalesforceException(msg,e);
+        }
+ finally {
+          try {
+            inputStream.close();
+          }
+ catch (          IOException ignore) {
+          }
+        }
+      }
+      processResponse(exchange,body,ex,callback);
+    }
+  }
+);
+}

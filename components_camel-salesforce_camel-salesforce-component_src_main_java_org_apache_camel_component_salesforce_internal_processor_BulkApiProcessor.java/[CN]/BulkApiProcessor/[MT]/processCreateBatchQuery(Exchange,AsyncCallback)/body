@@ -1,0 +1,23 @@
+{
+  JobInfo jobBody;
+  String jobId;
+  ContentType contentType;
+  jobBody=exchange.getIn().getBody(JobInfo.class);
+  String soqlQuery;
+  if (jobBody != null) {
+    jobId=jobBody.getId();
+    contentType=jobBody.getContentType();
+    soqlQuery=getParameter(SOBJECT_QUERY,exchange,IGNORE_BODY,NOT_OPTIONAL);
+  }
+ else {
+    jobId=getParameter(JOB_ID,exchange,IGNORE_BODY,NOT_OPTIONAL);
+    contentType=ContentType.fromValue(getParameter(CONTENT_TYPE,exchange,IGNORE_BODY,NOT_OPTIONAL));
+    soqlQuery=getParameter(SOBJECT_QUERY,exchange,USE_BODY,NOT_OPTIONAL);
+  }
+  bulkClient.createBatchQuery(jobId,soqlQuery,contentType,new BulkApiClient.BatchInfoResponseCallback(){
+    @Override public void onResponse(    BatchInfo batchInfo,    SalesforceException ex){
+      processResponse(exchange,batchInfo,ex,callback);
+    }
+  }
+);
+}

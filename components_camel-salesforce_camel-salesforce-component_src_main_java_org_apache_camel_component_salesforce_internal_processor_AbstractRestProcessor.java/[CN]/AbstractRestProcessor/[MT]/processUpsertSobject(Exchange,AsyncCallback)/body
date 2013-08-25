@@ -1,0 +1,25 @@
+{
+  String sObjectName;
+  String sObjectExtIdValue;
+  final String sObjectExtIdName=getParameter(SOBJECT_EXT_ID_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
+  Object oldValue=null;
+  final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
+  if (sObjectBase != null) {
+    sObjectName=sObjectBase.getClass().getSimpleName();
+    oldValue=getAndClearPropertyValue(sObjectBase,sObjectExtIdName);
+    sObjectExtIdValue=oldValue.toString();
+    sObjectBase.clearBaseFields();
+  }
+ else {
+    sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
+    sObjectExtIdValue=getParameter(SOBJECT_EXT_ID_VALUE,exchange,IGNORE_BODY,NOT_OPTIONAL);
+  }
+  final Object finalOldValue=oldValue;
+  restClient.upsertSObject(sObjectName,sObjectExtIdName,sObjectExtIdValue,getRequestStream(exchange),new RestClient.ResponseCallback(){
+    @Override public void onResponse(    InputStream response,    SalesforceException exception){
+      processResponse(exchange,response,exception,callback);
+      restoreFields(exchange,sObjectBase,null,sObjectExtIdName,finalOldValue);
+    }
+  }
+);
+}

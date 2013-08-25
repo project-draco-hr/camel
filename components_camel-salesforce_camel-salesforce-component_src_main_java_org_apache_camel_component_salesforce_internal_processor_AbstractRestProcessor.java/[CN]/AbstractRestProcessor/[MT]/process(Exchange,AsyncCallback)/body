@@ -15,265 +15,52 @@ catch (  RuntimeException e) {
   try {
 switch (operationName) {
 case GET_VERSIONS:
-      restClient.getVersions(new RestClient.ResponseCallback(){
-        @Override public void onResponse(        InputStream response,        SalesforceException exception){
-          processResponse(exchange,response,exception,callback);
-        }
-      }
-);
+      processGetVersions(exchange,callback);
     break;
 case GET_RESOURCES:
-  restClient.getResources(new RestClient.ResponseCallback(){
-    @Override public void onResponse(    InputStream response,    SalesforceException exception){
-      processResponse(exchange,response,exception,callback);
-    }
-  }
-);
+  processGetResources(exchange,callback);
 break;
 case GET_GLOBAL_OBJECTS:
-restClient.getGlobalObjects(new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-  processResponse(exchange,response,exception,callback);
-}
-}
-);
+processGetGlobalObjects(exchange,callback);
 break;
 case GET_BASIC_INFO:
-String sObjectName=getParameter(SOBJECT_NAME,exchange,USE_BODY,NOT_OPTIONAL);
-restClient.getBasicInfo(sObjectName,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-}
-}
-);
+processGetBasicInfo(exchange,callback);
 break;
 case GET_DESCRIPTION:
-sObjectName=getParameter(SOBJECT_NAME,exchange,USE_BODY,NOT_OPTIONAL);
-restClient.getDescription(sObjectName,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-}
-}
-);
+processGetDescription(exchange,callback);
 break;
 case GET_SOBJECT:
-{
-String sObjectIdValue;
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-sObjectIdValue=sObjectBase.getId();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectIdValue=getParameter(SOBJECT_ID,exchange,USE_BODY,NOT_OPTIONAL);
-}
-final String sObjectId=sObjectIdValue;
-setResponseClass(exchange,sObjectName);
-String fieldsValue=getParameter(SOBJECT_FIELDS,exchange,IGNORE_BODY,IS_OPTIONAL);
-String[] fields=null;
-if (fieldsValue != null) {
-fields=fieldsValue.split(",");
-}
-restClient.getSObject(sObjectName,sObjectId,fields,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,sObjectId,null,null);
-}
-}
-);
+processGetSobject(exchange,callback);
 break;
-}
 case CREATE_SOBJECT:
-{
-AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-}
-restClient.createSObject(sObjectName,getRequestStream(exchange),new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-}
-}
-);
+processCreateSobject(exchange,callback);
 break;
-}
 case UPDATE_SOBJECT:
-{
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-String sObjectId;
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-sObjectId=sObjectBase.getId();
-sObjectBase.clearBaseFields();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectId=getParameter(SOBJECT_ID,exchange,IGNORE_BODY,NOT_OPTIONAL);
-}
-final String finalsObjectId=sObjectId;
-restClient.updateSObject(sObjectName,sObjectId,getRequestStream(exchange),new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,finalsObjectId,null,null);
-}
-}
-);
+processUpdateSobject(exchange,callback);
 break;
-}
 case DELETE_SOBJECT:
-{
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-String sObjectIdValue;
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-sObjectIdValue=sObjectBase.getId();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectIdValue=getParameter(SOBJECT_ID,exchange,USE_BODY,NOT_OPTIONAL);
-}
-final String sObjectId=sObjectIdValue;
-restClient.deleteSObject(sObjectName,sObjectId,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,sObjectId,null,null);
-}
-}
-);
+processDeleteSobject(exchange,callback);
 break;
-}
 case GET_SOBJECT_WITH_ID:
-{
-Object oldValue=null;
-String sObjectExtIdValue;
-final String sObjectExtIdName=getParameter(SOBJECT_EXT_ID_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-oldValue=getAndClearPropertyValue(sObjectBase,sObjectExtIdName);
-sObjectExtIdValue=oldValue.toString();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectExtIdValue=getParameter(SOBJECT_EXT_ID_VALUE,exchange,USE_BODY,NOT_OPTIONAL);
-}
-setResponseClass(exchange,sObjectName);
-final Object finalOldValue=oldValue;
-restClient.getSObjectWithId(sObjectName,sObjectExtIdName,sObjectExtIdValue,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,null,sObjectExtIdName,finalOldValue);
-}
-}
-);
+processGetSobjectWithId(exchange,callback);
 break;
-}
 case UPSERT_SOBJECT:
-{
-String sObjectExtIdValue;
-final String sObjectExtIdName=getParameter(SOBJECT_EXT_ID_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-Object oldValue=null;
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-oldValue=getAndClearPropertyValue(sObjectBase,sObjectExtIdName);
-sObjectExtIdValue=oldValue.toString();
-sObjectBase.clearBaseFields();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectExtIdValue=getParameter(SOBJECT_EXT_ID_VALUE,exchange,IGNORE_BODY,NOT_OPTIONAL);
-}
-final Object finalOldValue=oldValue;
-restClient.upsertSObject(sObjectName,sObjectExtIdName,sObjectExtIdValue,getRequestStream(exchange),new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,null,sObjectExtIdName,finalOldValue);
-}
-}
-);
+processUpsertSobject(exchange,callback);
 break;
-}
 case DELETE_SOBJECT_WITH_ID:
-{
-final String sObjectExtIdName=getParameter(SOBJECT_EXT_ID_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-Object oldValue=null;
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-String sObjectExtIdValue;
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-oldValue=getAndClearPropertyValue(sObjectBase,sObjectExtIdName);
-sObjectExtIdValue=oldValue.toString();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectExtIdValue=getParameter(SOBJECT_EXT_ID_VALUE,exchange,USE_BODY,NOT_OPTIONAL);
-}
-final Object finalOldValue=oldValue;
-restClient.deleteSObjectWithId(sObjectName,sObjectExtIdName,sObjectExtIdValue,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,null,sObjectExtIdName,finalOldValue);
-}
-}
-);
+processDeleteSobjectWithId(exchange,callback);
 break;
-}
 case GET_BLOB_FIELD:
-{
-final String sObjectBlobFieldName=getParameter(SOBJECT_BLOB_FIELD_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-final AbstractSObjectBase sObjectBase=exchange.getIn().getBody(AbstractSObjectBase.class);
-String sObjectIdValue;
-if (sObjectBase != null) {
-sObjectName=sObjectBase.getClass().getSimpleName();
-sObjectIdValue=sObjectBase.getId();
-}
- else {
-sObjectName=getParameter(SOBJECT_NAME,exchange,IGNORE_BODY,NOT_OPTIONAL);
-sObjectIdValue=getParameter(SOBJECT_ID,exchange,USE_BODY,NOT_OPTIONAL);
-}
-final String sObjectId=sObjectIdValue;
-restClient.getBlobField(sObjectName,sObjectId,sObjectBlobFieldName,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-restoreFields(exchange,sObjectBase,sObjectId,null,null);
-}
-}
-);
+processGetBlobField(exchange,callback);
 break;
-}
 case QUERY:
-final String sObjectQuery=getParameter(SOBJECT_QUERY,exchange,USE_BODY,NOT_OPTIONAL);
-setResponseClass(exchange,null);
-restClient.query(sObjectQuery,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-}
-}
-);
+processQuery(exchange,callback);
 break;
 case QUERY_MORE:
-final String nextRecordsUrl=getParameter(SOBJECT_QUERY,exchange,USE_BODY,NOT_OPTIONAL);
-setResponseClass(exchange,null);
-restClient.queryMore(nextRecordsUrl,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-}
-}
-);
+processQueryMore(exchange,callback);
 break;
 case SEARCH:
-final String sObjectSearch=getParameter(SOBJECT_SEARCH,exchange,USE_BODY,NOT_OPTIONAL);
-restClient.search(sObjectSearch,new RestClient.ResponseCallback(){
-@Override public void onResponse(InputStream response,SalesforceException exception){
-processResponse(exchange,response,exception,callback);
-}
-}
-);
+processSearch(exchange,callback);
 break;
 default :
 throw new SalesforceException("Unknow operation name: " + operationName,null);
