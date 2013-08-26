@@ -11,12 +11,15 @@
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
     final Message mail=exchange.getIn(MailMessage.class).getOriginalMessage();
-    exchange.addOnCompletion(new Synchronization(){
+    exchange.addOnCompletion(new SynchronizationAdapter(){
       public void onComplete(      Exchange exchange){
         processCommit(mail,exchange);
       }
       public void onFailure(      Exchange exchange){
         processRollback(mail,exchange);
+      }
+      @Override public boolean allowHandover(){
+        return false;
       }
       @Override public String toString(){
         return "MailConsumerOnCompletion";
