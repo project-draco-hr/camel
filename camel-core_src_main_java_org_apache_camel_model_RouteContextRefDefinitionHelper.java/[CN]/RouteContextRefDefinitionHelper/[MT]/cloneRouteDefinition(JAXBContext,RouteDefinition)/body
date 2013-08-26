@@ -1,0 +1,32 @@
+{
+  Marshaller marshal=jaxbContext.createMarshaller();
+  ByteArrayOutputStream bos=new ByteArrayOutputStream();
+  marshal.marshal(def,bos);
+  ByteArrayInputStream bis=new ByteArrayInputStream(bos.toByteArray());
+  Unmarshaller unmarshaller=jaxbContext.createUnmarshaller();
+  Object clone=unmarshaller.unmarshal(bis);
+  if (clone != null && clone instanceof RouteDefinition) {
+    RouteDefinition def2=(RouteDefinition)clone;
+    Iterator<ExpressionNode> it=ProcessorDefinitionHelper.filterTypeInOutputs(def.getOutputs(),ExpressionNode.class);
+    Iterator<ExpressionNode> it2=ProcessorDefinitionHelper.filterTypeInOutputs(def2.getOutputs(),ExpressionNode.class);
+    while (it.hasNext() && it2.hasNext()) {
+      ExpressionNode node=it.next();
+      ExpressionNode node2=it2.next();
+      NamespaceAwareExpression name=null;
+      NamespaceAwareExpression name2=null;
+      if (node.getExpression() instanceof NamespaceAwareExpression) {
+        name=(NamespaceAwareExpression)node.getExpression();
+      }
+      if (node2.getExpression() instanceof NamespaceAwareExpression) {
+        name2=(NamespaceAwareExpression)node2.getExpression();
+      }
+      if (name != null && name2 != null && name.getNamespaces() != null && !name.getNamespaces().isEmpty()) {
+        Map<String,String> map=new HashMap<String,String>();
+        map.putAll(name.getNamespaces());
+        name2.setNamespaces(map);
+      }
+    }
+    return def2;
+  }
+  return null;
+}
