@@ -1,0 +1,135 @@
+{
+  return new RouteBuilder[]{new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:enveloping").to("xmlsecurity:sign://enveloping?keyAccessor=#accessor").to("xmlsecurity:verify://enveloping?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:plaintext").to("xmlsecurity:sign://plaintext?keyAccessor=#accessor&plainText=true&plainTextEncoding=UTF-8").to("xmlsecurity:verify://plaintext?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:enveloped").to("xmlsecurity:sign://enveloped?keyAccessor=#accessor&parentLocalName=root&parentNamespace=http://test/test").to("xmlsecurity:verify://enveloped?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      context.getEndpoint("xmlsecurity:sign://canonicalization?canonicalizationMethod=#canonicalizationMethod1",XmlSignerEndpoint.class).setKeyAccessor(getKeyAccessor(keyPair.getPrivate()));
+      context.getEndpoint("xmlsecurity:sign://canonicalization?canonicalizationMethod=#canonicalizationMethod1",XmlSignerEndpoint.class).setSignatureAlgorithm("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256");
+      context.getEndpoint("xmlsecurity:verify://canonicalization",XmlVerifierEndpoint.class).setKeySelector(KeySelector.singletonKeySelector(keyPair.getPublic()));
+      from("direct:canonicalization").to("xmlsecurity:sign://canonicalization?canonicalizationMethod=#canonicalizationMethod1","xmlsecurity:verify://canonicalization","mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:signaturedigestalgorithm").to("xmlsecurity:sign://signaturedigestalgorithm?keyAccessor=#accessor&signatureAlgorithm=http://www.w3.org/2001/04/xmldsig-more#rsa-sha512&digestAlgorithm=http://www.w3.org/2001/04/xmlenc#sha512","xmlsecurity:verify://signaturedigestalgorithm?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:transformsXPath2").to("xmlsecurity:sign://transformsXPath2?keyAccessor=#accessor&transformMethods=#transformsXPath2","xmlsecurity:verify://transformsXPath2?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(false).to("mock:exception");
+      from("direct:transformsXsltXPath").to("xmlsecurity:sign://transformsXsltXPath?keyAccessor=#accessor&transformMethods=#transformsXsltXPath","xmlsecurity:verify://transformsXsltXPath?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:transformsXsltXPathSecureValDisabled").to("xmlsecurity:sign://transformsXsltXPathSecureValDisabled?keyAccessor=#accessor&transformMethods=#transformsXsltXPath","xmlsecurity:verify://transformsXsltXPathSecureValDisabled?keySelector=#selector&secureValidation=false").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(false).to("mock:exception");
+      from("direct:cryptocontextprops").to("xmlsecurity:verify://cryptocontextprops?keySelector=#selectorKeyValue&cryptoContextProperties=#cryptoContextProperties").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:uridereferencer").to("xmlsecurity:sign://uriderferencer?keyAccessor=#accessor&uriDereferencer=#uriDereferencer").to("xmlsecurity:verify://uridereferencer?keySelector=#selector&uriDereferencer=#uriDereferencer").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:keyAccessorKeySelectorDefault").to("xmlsecurity:sign://keyAccessorKeySelectorDefault?keyAccessor=#keyAccessorDefault&addKeyInfoReference=true").to("xmlsecurity:verify://keyAccessorKeySelectorDefault?keySelector=#keySelectorDefault").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureInvalidException.class).handled(false).to("mock:exception");
+      from("direct:xmlSignatureChecker").to("xmlsecurity:verify://xmlSignatureChecker?keySelector=#selectorKeyValue&xmlSignatureChecker=#envelopingSignatureChecker").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:props").to("xmlsecurity:sign://properties?keyAccessor=#accessor&properties=#signatureProperties").to("xmlsecurity:verify://properties?keySelector=#selector&xmlSignature2Message=#xmlSignature2MessageWithTimestampProperty").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:outputnodesearchelementname").to("xmlsecurity:verify://outputnodesearchelementname?keySelector=#selectorKeyValue&outputNodeSearchType=ElementName&outputNodeSearch={http://test/test}root&removeSignatureElements=true").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:outputnodesearchxpath").to("xmlsecurity:verify://outputnodesearchxpath?keySelector=#selectorKeyValue&outputNodeSearchType=XPath&outputNodeSearch=#nodesearchxpath&removeSignatureElements=true").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:validationFailedHandler").to("xmlsecurity:verify://validationFailedHandler?keySelector=#selectorKeyValue&validationFailedHandler=validationFailedHandlerIgnoreManifestFailures").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:furtherparams").to("xmlsecurity:sign://furtherparams?keyAccessor=#accessor&prefixForXmlSignatureNamespace=digsig&disallowDoctypeDecl=false").to("xmlsecurity:verify://bfurtherparams?keySelector=#selector&disallowDoctypeDecl=false").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureInvalidKeyException.class).handled(true).to("mock:exception");
+      from("direct:signexceptioninvalidkey").to("xmlsecurity:sign://signexceptioninvalidkey?signatureAlgorithm=http://www.w3.org/2001/04/xmldsig-more#rsa-sha512").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:signexceptions").to("xmlsecurity:sign://signexceptions?keyAccessor=#accessor&signatureAlgorithm=http://www.w3.org/2001/04/xmldsig-more#rsa-sha512").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(true).to("mock:exception");
+      from("direct:noSuchAlgorithmException").to("xmlsecurity:sign://noSuchAlgorithmException?keyAccessor=#accessor&signatureAlgorithm=wrongalgorithm&digestAlgorithm=http://www.w3.org/2001/04/xmlenc#sha512").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(false).to("mock:exception");
+      from("direct:verifyexceptions").to("xmlsecurity:verify://verifyexceptions?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(false).to("mock:exception");
+      from("direct:verifyInvalidKeyException").to("xmlsecurity:verify://verifyInvalidKeyException?keySelector=#selector").to("mock:result");
+    }
+  }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      onException(XmlSignatureException.class).handled(false).to("mock:exception");
+      from("direct:invalidhash").to("xmlsecurity:verify://invalidhash?keySelector=#selectorKeyValue&baseUri=#baseUri&secureValidation=false").to("mock:result");
+    }
+  }
+};
+}

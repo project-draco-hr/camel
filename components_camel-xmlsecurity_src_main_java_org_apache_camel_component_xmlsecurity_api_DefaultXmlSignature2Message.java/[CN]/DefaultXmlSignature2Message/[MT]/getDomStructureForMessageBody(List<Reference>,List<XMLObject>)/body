@@ -1,0 +1,27 @@
+{
+  List<XMLObject> referencedObjects=getReferencedSameDocumentObjects(relevantReferences,relevantObjects);
+  if (referencedObjects.isEmpty()) {
+    throw new XmlSignatureException(String.format("Unsupported XML signature document: Content object not found in the XML signature. Detached or enveloped signatures are not supported."));
+  }
+  if (referencedObjects.size() > 1) {
+    StringBuilder sb=new StringBuilder();
+    for (int i=0; i < referencedObjects.size(); i++) {
+      XMLObject xmlOb=referencedObjects.get(i);
+      sb.append(xmlOb.getId());
+      if (i < referencedObjects.size() - 1) {
+        sb.append(", ");
+      }
+    }
+    throw new XmlSignatureException(String.format("Unsupported XML signature document: More than one content objects found. Object IDs: %s",sb.toString()));
+  }
+  @SuppressWarnings("unchecked") List<XMLStructure> structures=referencedObjects.get(0).getContent();
+  if (structures.size() == 0) {
+    throw new XmlSignatureException("Unsupported XML signature: XML signature is not enveloping; content not found in XML signature: structure list is empty.");
+  }
+  if (structures.size() > 1) {
+    throw new XmlSignatureException("Unsupported XML signature: more than one structure elements in referenced content object.");
+  }
+  XMLStructure structure=structures.get(0);
+  DOMStructure domStruc=(DOMStructure)structure;
+  return domStruc;
+}

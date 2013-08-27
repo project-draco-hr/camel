@@ -1,0 +1,25 @@
+{
+  ObjectHelper.notNull(getCamelContext(),"CamelContext");
+  String scheme;
+  try {
+    scheme=new URI(remaining).getScheme();
+  }
+ catch (  Exception e) {
+    throw new MalformedURLException(String.format("An invalid xmlsecurity uri was provided '%s'." + " Check the uri matches the format xmlsecurity:sign://<name> or xmlsecurity:verify://<name>",uri));
+  }
+  XmlSignatureEndpoint endpoint;
+  if ("sign".equals(scheme)) {
+    XmlSignerConfiguration config=getSignerConfiguration().copy();
+    endpoint=new XmlSignerEndpoint(uri,this,config);
+  }
+ else   if ("verify".equals(scheme)) {
+    XmlVerifierConfiguration config=getVerifierConfiguration().copy();
+    endpoint=new XmlVerifierEndpoint(uri,this,config);
+  }
+ else {
+    throw new IllegalStateException(String.format("Endpoint uri '%s'" + " is wrong configured. Operation '%s'" + " is not supported. Supported operations are: sign, verify",uri,scheme));
+  }
+  setProperties(endpoint.getConfiguration(),parameters);
+  endpoint.getConfiguration().setCamelContext(getCamelContext());
+  return endpoint;
+}

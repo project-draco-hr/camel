@@ -1,0 +1,31 @@
+{
+  Node node;
+  boolean removeSignatureElements=false;
+  if (OUTPUT_NODE_SEARCH_TYPE_DEFAULT.equals(input.getOutputNodeSearchType())) {
+    LOG.debug("Searching for output node via default search");
+    if (isEnveloped(input)) {
+      node=input.getMessageBodyDocument().getDocumentElement();
+      removeSignatureElements=true;
+    }
+ else {
+      node=getNodeForMessageBodyInNonEnvelopedCase(input);
+    }
+  }
+ else   if (OUTPUT_NODE_SEARCH_TYPE_ELEMENT_NAME.equals(input.getOutputNodeSearchType())) {
+    node=getOutputElementViaLocalNameAndNamespace(input);
+  }
+ else   if (OUTPUT_NODE_SEARCH_TYPE_XPATH.equals(input.getOutputNodeSearchType())) {
+    node=getOutputNodeViaXPath(input);
+  }
+ else {
+    throw new XmlSignatureException(String.format("Wrong configuration: The output node search type %s is not supported.",input.getOutputNodeSearchType()));
+  }
+  LOG.debug("Output node with local name {} and namespace {} found",node.getLocalName(),node.getNamespaceURI());
+  if (!removeSignatureElements) {
+    removeSignatureElements=input.getRemoveSignatureElements() != null && input.getRemoveSignatureElements();
+  }
+  if (removeSignatureElements) {
+    removeSignatureElements(node);
+  }
+  transformNodeToByteArrayAndSetToOutputMessage(input,output,node);
+}

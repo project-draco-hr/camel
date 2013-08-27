@@ -1,0 +1,40 @@
+{
+  ValidationFailedHandler handler=getConfiguration().getValidationFailedHandler();
+  LOG.debug("handleSignatureValidationFailed called");
+  try {
+    handler.start();
+    SignatureValue sigValue=signature.getSignatureValue();
+    boolean sv=sigValue.validate(valContext);
+    if (!sv) {
+      handler.signatureValueValidationFailed(sigValue);
+    }
+    for (    Reference ref : (List<Reference>)signature.getSignedInfo().getReferences()) {
+      boolean refValid=ref.validate(valContext);
+      if (!refValid) {
+        handler.referenceValidationFailed(ref);
+      }
+    }
+    if (Boolean.TRUE.equals(valContext.getProperty("org.jcp.xml.dsig.validateManifests"))) {
+      for (      XMLObject xo : (List<XMLObject>)signature.getObjects()) {
+        List<XMLStructure> content=xo.getContent();
+        for (        XMLStructure xs : content) {
+          if (xs instanceof Manifest) {
+            Manifest man=(Manifest)xs;
+            for (            Reference ref : (List<Reference>)man.getReferences()) {
+              boolean refValid=ref.validate(valContext);
+              if (!refValid) {
+                handler.manifestReferenceValidationFailed(ref);
+              }
+            }
+          }
+        }
+      }
+    }
+    boolean goon=handler.ignoreCoreValidationFailure();
+    LOG.debug("Ignore Core Validation failure: {}",goon);
+    return goon;
+  }
+  finally {
+    handler.end();
+  }
+}

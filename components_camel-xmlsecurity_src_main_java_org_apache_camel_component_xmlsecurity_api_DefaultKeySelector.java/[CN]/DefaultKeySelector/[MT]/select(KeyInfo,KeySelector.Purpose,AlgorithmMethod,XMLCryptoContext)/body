@@ -1,0 +1,44 @@
+{
+  if (keyStoreAndAlias.getKeyStore() == null) {
+    return getNullKeyResult();
+  }
+  if (keyStoreAndAlias.getAlias() == null) {
+    return getNullKeyResult();
+  }
+  if (KeySelector.Purpose.VERIFY.equals(purpose)) {
+    Certificate cert;
+    try {
+      cert=keyStoreAndAlias.getKeyStore().getCertificate(keyStoreAndAlias.getAlias());
+    }
+ catch (    KeyStoreException e) {
+      throw new KeySelectorException(e);
+    }
+    if (cert == null) {
+      return getNullKeyResult();
+    }
+    final Key key=cert.getPublicKey();
+    return getKeySelectorResult(key);
+  }
+ else   if (KeySelector.Purpose.SIGN.equals(purpose)) {
+    if (keyStoreAndAlias.getPassword() == null) {
+      return getNullKeyResult();
+    }
+    Key key;
+    try {
+      key=keyStoreAndAlias.getKeyStore().getKey(keyStoreAndAlias.getAlias(),keyStoreAndAlias.getPassword());
+    }
+ catch (    UnrecoverableKeyException e) {
+      throw new KeySelectorException(e);
+    }
+catch (    KeyStoreException e) {
+      throw new KeySelectorException(e);
+    }
+catch (    NoSuchAlgorithmException e) {
+      throw new KeySelectorException(e);
+    }
+    return getKeySelectorResult(key);
+  }
+ else {
+    throw new IllegalStateException("Purpose " + purpose + " not supported");
+  }
+}

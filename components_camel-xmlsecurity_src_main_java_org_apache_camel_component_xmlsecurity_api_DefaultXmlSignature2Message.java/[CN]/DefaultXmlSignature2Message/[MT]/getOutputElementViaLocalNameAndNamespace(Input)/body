@@ -1,0 +1,28 @@
+{
+  String search=getNonEmptyStringSearchValue(input);
+  String namespace;
+  String localName;
+  if ('{' == search.charAt(0)) {
+    int index=search.indexOf('}');
+    if (index < 1) {
+      throw new XmlSignatureException(String.format("Wrong configuration: Value %s for the output node search %s has wrong format. Value must have the form '{<namespace>}<element local name>' or '<element local name>' if no the element has no namespace.",search,input.getOutputNodeSearchType()));
+    }
+    namespace=search.substring(1,index);
+    if (search.length() < index + 1) {
+      throw new XmlSignatureException(String.format("Wrong configuration: Value %s for the output node search %s has wrong format. Value must have the form '{<namespace>}<element local name>' or '<element local name>' if no the element has no namespace.",search,input.getOutputNodeSearchType()));
+    }
+    localName=search.substring(index + 1);
+  }
+ else {
+    namespace=null;
+    localName=search;
+  }
+  NodeList nodeList=input.getMessageBodyDocument().getElementsByTagNameNS(namespace,localName);
+  if (nodeList.getLength() == 0) {
+    throw new XmlSignatureException(String.format("Cannot extract root element for the output document from the XML signature document. Element with local name %s and namespace %s does not exist.",namespace,localName));
+  }
+  if (nodeList.getLength() > 1) {
+    throw new XmlSignatureException(String.format("Cannot extract root element for the output document from the XML signature document. More than one element found with local name %s and namespace %s.",namespace,localName));
+  }
+  return nodeList.item(0);
+}

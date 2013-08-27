@@ -1,0 +1,18 @@
+{
+  try {
+    LOG.debug("XML signature generation started using algorithm {} and canonicalization method {}",getConfiguration().getSignatureAlgorithm(),getConfiguration().getCanonicalizationMethod().getAlgorithm());
+    Message out=exchange.getOut();
+    out.copyFrom(exchange.getIn());
+    Document outputDoc=sign(out);
+    ByteArrayOutputStream outStream=new ByteArrayOutputStream();
+    XmlSignatureHelper.transformNonTextNodeToOutputStream(outputDoc,outStream,omitXmlDeclaration(out));
+    byte[] data=outStream.toByteArray();
+    out.setBody(data);
+    clearMessageHeaders(out);
+    LOG.debug("XML signature generation finished");
+  }
+ catch (  Exception e) {
+    exchange.setOut(null);
+    throw e;
+  }
+}

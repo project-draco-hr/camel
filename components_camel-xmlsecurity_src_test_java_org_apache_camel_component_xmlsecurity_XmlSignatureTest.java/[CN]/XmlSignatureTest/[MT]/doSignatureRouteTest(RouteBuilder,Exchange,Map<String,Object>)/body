@@ -1,0 +1,21 @@
+{
+  CamelContext context=new DefaultCamelContext();
+  try {
+    context.addRoutes(builder);
+    context.start();
+    MockEndpoint mock=context.getEndpoint("mock:result",MockEndpoint.class);
+    mock.setExpectedMessageCount(1);
+    ProducerTemplate template=context.createProducerTemplate();
+    if (e != null) {
+      template.send("direct:in",e);
+    }
+ else {
+      template.sendBodyAndHeaders("direct:in",payload,headers);
+    }
+    assertMockEndpointsSatisfied();
+    return mock.getReceivedExchanges().get(0);
+  }
+  finally {
+    context.stop();
+  }
+}

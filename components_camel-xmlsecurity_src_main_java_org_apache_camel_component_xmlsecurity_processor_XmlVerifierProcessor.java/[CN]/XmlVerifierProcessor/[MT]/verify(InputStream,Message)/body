@@ -1,0 +1,45 @@
+{
+  LOG.debug("Verification of XML signature document started");
+  final Document doc=parseInput(input);
+  Node signatureNode=getSignatureNode(doc);
+  XMLSignatureFactory fac;
+  try {
+    fac=XMLSignatureFactory.getInstance("DOM","ApacheXMLDSig");
+  }
+ catch (  NoSuchProviderException ex) {
+    fac=XMLSignatureFactory.getInstance("DOM");
+  }
+  KeySelector selector=getConfiguration().getKeySelector();
+  if (selector == null) {
+    throw new IllegalStateException("Wrong configuration. Key selector is missing.");
+  }
+  DOMValidateContext valContext=new DOMValidateContext(selector,signatureNode);
+  valContext.setProperty("javax.xml.crypto.dsig.cacheReference",Boolean.TRUE);
+  valContext.setProperty("org.jcp.xml.dsig.validateManifests",Boolean.TRUE);
+  if (getConfiguration().getSecureValidation() == Boolean.TRUE) {
+    valContext.setProperty("org.apache.jcp.xml.dsig.secureValidation",Boolean.TRUE);
+    valContext.setProperty("org.jcp.xml.dsig.secureValidation",Boolean.TRUE);
+  }
+  setUriDereferencerAndBaseUri(valContext);
+  setCryptoContextProperties(valContext);
+  final XMLSignature signature=fac.unmarshalXMLSignature(valContext);
+  executeApplicationCheck(out,doc,signature);
+  boolean coreValidity;
+  try {
+    coreValidity=signature.validate(valContext);
+  }
+ catch (  XMLSignatureException se) {
+    throw getConfiguration().getValidationFailedHandler().onXMLSignatureException(se);
+  }
+  boolean goon=coreValidity;
+  if (coreValidity == false) {
+    goon=handleSignatureValidationFailed(valContext,signature);
+  }
+  if (goon) {
+    LOG.debug("XML signature verified");
+    map2Message(signature,out,doc);
+  }
+ else {
+    throw new XmlSignatureInvalidException("");
+  }
+}
