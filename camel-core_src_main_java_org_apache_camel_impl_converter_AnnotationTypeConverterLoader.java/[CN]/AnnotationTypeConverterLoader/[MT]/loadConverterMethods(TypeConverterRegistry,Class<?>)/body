@@ -8,10 +8,18 @@
     CachingInjector<?> injector=null;
     for (    Method method : methods) {
       if (ObjectHelper.hasAnnotation(method,Converter.class,true)) {
-        injector=handleHasConverterAnnotation(registry,type,injector,method);
+        boolean allowNull=false;
+        if (method.getAnnotation(Converter.class) != null) {
+          allowNull=method.getAnnotation(Converter.class).allowNull();
+        }
+        injector=handleHasConverterAnnotation(registry,type,injector,method,allowNull);
       }
  else       if (ObjectHelper.hasAnnotation(method,FallbackConverter.class,true)) {
-        injector=handleHasFallbackConverterAnnotation(registry,type,injector,method);
+        boolean allowNull=false;
+        if (method.getAnnotation(FallbackConverter.class) != null) {
+          allowNull=method.getAnnotation(FallbackConverter.class).allowNull();
+        }
+        injector=handleHasFallbackConverterAnnotation(registry,type,injector,method,allowNull);
       }
     }
     Class<?> superclass=type.getSuperclass();
