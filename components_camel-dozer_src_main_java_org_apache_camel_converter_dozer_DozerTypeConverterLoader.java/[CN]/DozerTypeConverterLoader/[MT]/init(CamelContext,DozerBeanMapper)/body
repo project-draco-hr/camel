@@ -9,6 +9,19 @@
   if (mapper != null && !mappers.containsValue(mapper)) {
     mappers.put("parameter",mapper);
   }
+  Map<String,DozerBeanMapperConfiguration> configurations=lookupDozerBeanMapperConfigurations();
+  if (configurations != null) {
+    if (configurations.size() > 1) {
+      log.warn("Loaded " + configurations.size() + " Dozer configurations from Camel registry."+ " Dozer is most efficient when there is a single mapper instance. Consider amalgamating instances.");
+    }
+    for (    Map.Entry<String,DozerBeanMapperConfiguration> entry : configurations.entrySet()) {
+      String id=entry.getKey();
+      DozerBeanMapper beanMapper=createDozerBeanMapper(entry.getValue());
+      if (!mappers.containsValue(beanMapper)) {
+        mappers.put(id,beanMapper);
+      }
+    }
+  }
   if (mappers.size() > 1) {
     log.warn("Loaded " + mappers.size() + " Dozer mappers from Camel registry."+ " Dozer is most efficient when there is a single mapper instance. Consider amalgamating instances.");
   }
