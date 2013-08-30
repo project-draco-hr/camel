@@ -10,10 +10,16 @@
   if (headers != null) {
     transportHeaders.putAll(headers);
   }
+  DataFormat dataFormat=camelExchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.class);
   for (  Map.Entry<String,Object> entry : camelHeaders.entrySet()) {
     if (Message.RESPONSE_CODE.equals(entry.getKey()) || Exchange.HTTP_RESPONSE_CODE.equals(entry.getKey())) {
       LOG.debug("Propagate to CXF header: {} value: {}",Message.RESPONSE_CODE,entry.getValue());
       cxfContext.put(Message.RESPONSE_CODE,entry.getValue());
+      continue;
+    }
+    if (Message.CONTENT_TYPE.equalsIgnoreCase(entry.getKey()) && dataFormat.equals(DataFormat.RAW)) {
+      LOG.debug("Propagate to CXF header: {} value: {}",Message.CONTENT_TYPE,entry.getValue());
+      cxfContext.put(Message.CONTENT_TYPE,entry.getValue().toString());
       continue;
     }
     if (entry.getKey().equalsIgnoreCase("User-Agent")) {
