@@ -2,9 +2,14 @@
   ServiceHelper.stopService(correlation);
   if (listenerContainer != null) {
     log.debug("Stopping reply listener container on endpoint: {}",endpoint);
-    listenerContainer.stop();
-    listenerContainer.destroy();
-    listenerContainer=null;
+    try {
+      listenerContainer.stop();
+      listenerContainer.destroy();
+    }
+  finally {
+      endpoint.onListenerConstainerStopped(listenerContainer);
+      listenerContainer=null;
+    }
   }
   if (executorService != null) {
     camelContext.getExecutorServiceManager().shutdownGraceful(executorService);
