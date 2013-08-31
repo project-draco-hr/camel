@@ -1,24 +1,26 @@
 {
-  Map<String,Object> originalParameters=new HashMap<String,Object>(parameters);
   LoggingLevel level=getLoggingLevel(parameters);
-  String marker=getAndRemoveParameter(parameters,"marker",String.class);
-  Integer groupSize=getAndRemoveParameter(parameters,"groupSize",Integer.class);
-  Long groupInterval=getAndRemoveParameter(parameters,"groupInterval",Long.class);
-  CamelLogger camelLogger=new CamelLogger(remaining,level,marker);
+  LogEndpoint endpoint=new LogEndpoint(uri,this);
+  endpoint.setLevel(level.name());
+  setProperties(endpoint,parameters);
+  CamelLogger camelLogger=new CamelLogger(remaining,level,endpoint.getMarker());
   Processor logger;
-  if (groupSize != null) {
-    logger=new ThroughputLogger(camelLogger,groupSize);
+  if (endpoint.getGroupSize() != null) {
+    logger=new ThroughputLogger(camelLogger,endpoint.getGroupSize());
   }
- else   if (groupInterval != null) {
-    Boolean groupActiveOnly=getAndRemoveParameter(parameters,"groupActiveOnly",Boolean.class,Boolean.TRUE);
-    Long groupDelay=getAndRemoveParameter(parameters,"groupDelay",Long.class);
-    logger=new ThroughputLogger(camelLogger,this.getCamelContext(),groupInterval,groupDelay,groupActiveOnly);
+ else   if (endpoint.getGroupInterval() != null) {
+    Boolean groupActiveOnly=endpoint.getGroupActiveOnly() != null ? endpoint.getGroupActiveOnly() : Boolean.TRUE;
+    Long groupDelay=endpoint.getGroupDelay();
+    logger=new ThroughputLogger(camelLogger,this.getCamelContext(),endpoint.getGroupInterval(),groupDelay,groupActiveOnly);
   }
  else {
     ExchangeFormatter localFormatter=exchangeFormatter;
     if (localFormatter == null) {
       localFormatter=getCamelContext().getRegistry().lookupByNameAndType("logFormatter",ExchangeFormatter.class);
-      exchangeFormatter=localFormatter;
+      if (localFormatter != null) {
+        exchangeFormatter=localFormatter;
+        setProperties(exchangeFormatter,parameters);
+      }
     }
     if (localFormatter == null) {
       localFormatter=new DefaultExchangeFormatter();
@@ -26,7 +28,6 @@
     }
     logger=new CamelLogProcessor(camelLogger,localFormatter);
   }
-  LogEndpoint endpoint=new LogEndpoint(uri,this,logger);
-  setProperties(endpoint,originalParameters);
+  endpoint.setLogger(logger);
   return endpoint;
 }
