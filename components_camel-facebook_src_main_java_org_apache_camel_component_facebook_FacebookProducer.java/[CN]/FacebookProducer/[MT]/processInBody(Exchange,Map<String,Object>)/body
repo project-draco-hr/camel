@@ -1,0 +1,15 @@
+{
+  final String inBodyProperty=(String)properties.remove(FacebookConstants.IN_BODY_PROPERTY);
+  if (inBodyProperty != null) {
+    Object value=exchange.getIn().getBody();
+    try {
+      value=getEndpoint().getCamelContext().getTypeConverter().mandatoryConvertTo(FacebookEndpointConfiguration.class.getDeclaredField(inBodyProperty).getClass(),exchange,value);
+    }
+ catch (    Exception e) {
+      exchange.setException(new RuntimeCamelException(String.format("Error converting value %s to property %s: %s",value,inBodyProperty,e.getMessage()),e));
+      return false;
+    }
+    properties.put(inBodyProperty,value);
+  }
+  return true;
+}

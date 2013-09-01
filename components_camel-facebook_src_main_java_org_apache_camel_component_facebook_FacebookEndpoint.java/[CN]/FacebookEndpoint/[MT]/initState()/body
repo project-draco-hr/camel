@@ -1,0 +1,31 @@
+{
+  final Set<String> arguments=getEndpointPropertyNames(configuration);
+  final String[] argNames=arguments.toArray(new String[arguments.size()]);
+  candidates=new ArrayList<FacebookMethodsType>();
+  candidates.addAll(getCandidateMethods(methodName,argNames));
+  if (!candidates.isEmpty()) {
+    this.nameStyle=FacebookNameStyle.EXACT;
+  }
+ else {
+    candidates.addAll(getCandidateMethods(convertToGetMethod(methodName),argNames));
+    if (!candidates.isEmpty()) {
+      this.nameStyle=FacebookNameStyle.GET;
+    }
+    candidates.addAll(getCandidateMethods(convertToSearchMethod(methodName),argNames));
+    if (candidates.isEmpty()) {
+      throw new IllegalArgumentException(String.format("No matching operation for %s, with arguments %s",methodName,arguments));
+    }
+    if (nameStyle == null) {
+      nameStyle=FacebookNameStyle.SEARCH;
+    }
+ else {
+      nameStyle=FacebookNameStyle.GET_AND_SEARCH;
+    }
+  }
+  if (LOG.isDebugEnabled()) {
+    final Set<String> missing=getMissingProperties(methodName,nameStyle,arguments);
+    if (!missing.isEmpty()) {
+      LOG.debug("Method {} could use one or more properties from {}",methodName,missing);
+    }
+  }
+}

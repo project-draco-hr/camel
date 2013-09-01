@@ -1,0 +1,23 @@
+{
+  for (  String name : noArgNames) {
+    MockEndpoint mock=getMockEndpoint("mock:result" + name);
+    mock.expectedMinimumMessageCount(1);
+    template().sendBody("direct://test" + name,null);
+    if (!idExcludes.contains(name)) {
+      mock=getMockEndpoint("mock:resultId" + name);
+      mock.expectedMinimumMessageCount(1);
+      template().sendBody("direct://testId" + name,null);
+    }
+    if (!readingExcludes.contains(name)) {
+      mock=getMockEndpoint("mock:resultReading" + name);
+      mock.expectedMinimumMessageCount(1);
+      template().sendBody("direct://testReading" + name,null);
+    }
+    if (!(idExcludes.contains(name) || readingExcludes.contains(name))) {
+      mock=getMockEndpoint("mock:resultIdReading" + name);
+      mock.expectedMinimumMessageCount(1);
+      template().sendBody("direct://testIdReading" + name,null);
+    }
+  }
+  assertMockEndpointsSatisfied();
+}

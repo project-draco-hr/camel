@@ -1,0 +1,33 @@
+{
+  Map<String,Object> arguments=new HashMap<String,Object>();
+  arguments.putAll(endpointProperties);
+  Reading reading=(Reading)arguments.remove(READING_PPROPERTY);
+  if (reading == null) {
+    reading=new Reading();
+  }
+ else {
+    try {
+      reading=ReadingBuilder.copy(reading,true);
+    }
+ catch (    NoSuchFieldException e) {
+      throw new IllegalArgumentException(String.format("Error creating property [%s]: %s",READING_PPROPERTY,e.getMessage()),e);
+    }
+catch (    IllegalAccessException e) {
+      throw new IllegalArgumentException(String.format("Error creating property [%s]: %s",READING_PPROPERTY,e.getMessage()),e);
+    }
+  }
+  final SimpleDateFormat dateFormat=new SimpleDateFormat(FACEBOOK_DATE_FORMAT);
+  final long currentMillis=System.currentTimeMillis();
+  if (this.sinceTime == null) {
+    final Date startTime=new Date(currentMillis - TimeUnit.MILLISECONDS.convert(getInitialDelay(),getTimeUnit()));
+    this.sinceTime=dateFormat.format(startTime);
+  }
+ else   if (this.untilTime != null) {
+    this.sinceTime=this.untilTime;
+  }
+  this.untilTime=dateFormat.format(new Date(currentMillis));
+  reading.since(this.sinceTime);
+  reading.until(this.untilTime);
+  arguments.put(READING_PPROPERTY,reading);
+  return arguments;
+}

@@ -1,0 +1,62 @@
+{
+  final String fields=(String)readingProperties.remove("fields");
+  if (fields != null) {
+    reading.fields(fields.toString().split(","));
+  }
+  final Object limit=readingProperties.remove("limit");
+  if (limit != null) {
+    reading.limit(Integer.parseInt(limit.toString()));
+  }
+  final Object offset=readingProperties.remove("offset");
+  if (offset != null) {
+    reading.offset(Integer.parseInt(offset.toString()));
+  }
+  final SimpleDateFormat dateFormat=new SimpleDateFormat(FacebookConstants.FACEBOOK_DATE_FORMAT);
+  final Object until=readingProperties.remove("until");
+  if (until != null) {
+    try {
+      reading.until(dateFormat.parse(until.toString()));
+    }
+ catch (    ParseException e) {
+      throw new RuntimeException("Error parsing property 'until' :" + e.getMessage(),e);
+    }
+  }
+  final Object since=readingProperties.remove("since");
+  if (since != null) {
+    try {
+      reading.since(dateFormat.parse(since.toString()));
+    }
+ catch (    ParseException e) {
+      throw new RuntimeException("Error parsing property 'since' :" + e.getMessage(),e);
+    }
+  }
+  final Object metadata=readingProperties.remove("metadata");
+  if (metadata != null && Boolean.parseBoolean(metadata.toString())) {
+    reading.metadata();
+  }
+  final Object locale=readingProperties.remove("locale");
+  if (locale != null) {
+    String[] args=locale.toString().split(",");
+switch (args.length) {
+case 1:
+      reading.locale(new Locale(args[0]));
+    break;
+case 2:
+  reading.locale(new Locale(args[0],args[1]));
+break;
+case 3:
+reading.locale(new Locale(args[0],args[1],args[2]));
+break;
+default :
+throw new IllegalArgumentException(String.format("Invalid value for property 'locale' %s, " + "must be of the form [language][,country][,variant]",locale.toString()));
+}
+}
+final Object with=readingProperties.remove("with");
+if (with != null && Boolean.parseBoolean(with.toString())) {
+reading.withLocation();
+}
+final Object filter=readingProperties.remove("filter");
+if (filter != null) {
+reading.filter(filter.toString());
+}
+}

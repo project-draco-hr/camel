@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      for (      String name : noArgNames) {
+        from("direct://test" + name).to("facebook://" + name + "?"+ getOauthParams()).to("mock:result" + name);
+        if (!idExcludes.contains(name)) {
+          from("direct://testId" + name).to("facebook://" + name + "?userId=me&"+ getOauthParams()).to("mock:resultId" + name);
+        }
+        if (!readingExcludes.contains(name)) {
+          from("direct://testReading" + name).to("facebook://" + name + "?reading.limit=10&reading.locale=en,US&"+ getOauthParams()).to("mock:resultReading" + name);
+        }
+        if (!(idExcludes.contains(name) || readingExcludes.contains(name))) {
+          from("direct://testIdReading" + name).to("facebook://" + name + "?userId=me&reading.limit=10&reading.locale=en,US&"+ getOauthParams()).to("mock:resultIdReading" + name);
+        }
+      }
+    }
+  }
+;
+}

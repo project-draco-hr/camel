@@ -1,0 +1,31 @@
+{
+  final Map<String,Object> properties=new HashMap<String,Object>();
+  getEndpointProperties(endpoint.getConfiguration(),properties);
+  getExchangeProperties(exchange,properties);
+  final FacebookMethodsType method=findMethod(exchange,properties);
+  if (method == null) {
+    callback.done(true);
+    return true;
+  }
+  Runnable invocation=new Runnable(){
+    @Override public void run(){
+      try {
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Invoking method {} with {}",method.getName(),properties.keySet());
+        }
+        Object result=FacebookMethodsTypeHelper.invokeMethod(endpoint.getConfiguration().getFacebook(),method,properties);
+        exchange.getOut().setBody(result);
+        exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+      }
+ catch (      Throwable t) {
+        exchange.setException(ObjectHelper.wrapRuntimeCamelException(t));
+      }
+ finally {
+        callback.done(false);
+      }
+    }
+  }
+;
+  getExecutorService(getEndpoint().getCamelContext()).submit(invocation);
+  return false;
+}
