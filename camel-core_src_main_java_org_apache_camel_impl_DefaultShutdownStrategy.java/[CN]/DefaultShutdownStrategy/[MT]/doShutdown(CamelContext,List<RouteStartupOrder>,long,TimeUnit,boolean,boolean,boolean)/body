@@ -14,7 +14,7 @@
     Collections.reverse(routesOrdered);
   }
   LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
-  final AtomicBoolean timeoutOccurred=new AtomicBoolean();
+  timeoutOccurred.set(false);
   Future<?> future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,timeout,timeUnit,suspendOnly,abortAfterTimeout,timeoutOccurred));
   try {
     future.get(timeout,timeUnit);
@@ -33,7 +33,7 @@
         shutdownRoutesNow(routesOrdered);
         for (        RouteStartupOrder order : routes) {
           for (          Service service : order.getServices()) {
-            prepareShutdown(service,true,true);
+            prepareShutdown(service,true,true,isSuppressLoggingOnTimeout());
           }
         }
       }
