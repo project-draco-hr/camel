@@ -5,6 +5,18 @@
   if (extra != null) {
     answer.registerService(PropertiesComponent.OVERRIDE_PROPERTIES,extra,null);
   }
+  Map<String,KeyValueHolder<Object,Dictionary>> map=new LinkedHashMap<String,KeyValueHolder<Object,Dictionary>>();
+  addServicesOnStartup(map);
+  for (  Map.Entry<String,KeyValueHolder<Object,Dictionary>> entry : map.entrySet()) {
+    String clazz=entry.getKey();
+    Object service=entry.getValue().getKey();
+    Dictionary dict=entry.getValue().getValue();
+    log.debug("Registering service {} -> {}",clazz,service);
+    ServiceRegistration<?> reg=answer.registerService(clazz,service,dict);
+    if (reg != null) {
+      services.add(reg);
+    }
+  }
   Dictionary props=new Properties();
   String[] file=loadConfigAdminConfigurationFile();
   if (file != null && file.length != 2) {
