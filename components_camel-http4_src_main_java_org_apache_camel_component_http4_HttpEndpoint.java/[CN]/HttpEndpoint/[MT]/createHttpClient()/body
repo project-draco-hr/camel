@@ -1,7 +1,10 @@
 {
   ObjectHelper.notNull(clientParams,"clientParams");
   ObjectHelper.notNull(clientConnectionManager,"httpConnectionManager");
-  HttpClient answer=new DefaultHttpClient(clientConnectionManager,getClientParams());
+  DefaultHttpClient answer=new DefaultHttpClient(clientConnectionManager,getClientParams());
+  if (cookieStore != null) {
+    answer.setCookieStore(cookieStore);
+  }
   if (ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyHost")) && ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyPort"))) {
     String host=getCamelContext().getProperty("http.proxyHost");
     int port=Integer.parseInt(getCamelContext().getProperty("http.proxyPort"));
@@ -22,6 +25,9 @@
   HttpClientConfigurer configurer=getHttpClientConfigurer();
   if (configurer != null) {
     configurer.configureHttpClient(answer);
+  }
+  if (isBridgeEndpoint()) {
+    answer.setCookieStore(new NoopCookieStore());
   }
   LOG.debug("Created HttpClient {}",answer);
   return answer;
