@@ -6,12 +6,22 @@
   }
   if (answer == null && key != null) {
     for (    AbstractPropertyPlaceholder placeholder : placeholders) {
-      answer=(String)ObjectHelper.invokeMethod(method,placeholder,key);
-      if (answer != null) {
-        log.debug("Blueprint parsed property key: {} as value: {}",key,answer);
-        break;
+      boolean isDefault=false;
+      if (placeholders.size() > 1) {
+        if (placeholder instanceof PropertyPlaceholder) {
+          isDefault=((PropertyPlaceholder)placeholder).getDefaultProperties().containsKey(key);
+        }
+        log.trace("Blueprint property key: {} is part of default properties: {}",key,isDefault);
+      }
+      String candidate=(String)ObjectHelper.invokeMethod(method,placeholder,key);
+      if (candidate != null) {
+        if (answer == null || !isDefault) {
+          log.trace("Blueprint parsed candidate property key: {} as value: {}",key,answer);
+          answer=candidate;
+        }
       }
     }
+    log.debug("Blueprint parsed property key: {} as value: {}",key,answer);
   }
   if (delegate != null) {
     String delegateAnswer=delegate.parseProperty(key,answer != null ? answer : value,properties);
