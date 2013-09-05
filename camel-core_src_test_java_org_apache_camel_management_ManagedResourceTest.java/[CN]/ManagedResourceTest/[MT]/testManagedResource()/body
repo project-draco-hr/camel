@@ -1,0 +1,23 @@
+{
+  final ManagementAgent managementAgent=context.getManagementStrategy().getManagementAgent();
+  TestCase.assertNotNull(managementAgent);
+  final MBeanServer mBeanServer=managementAgent.getMBeanServer();
+  TestCase.assertNotNull(mBeanServer);
+  final String mBeanServerDefaultDomain=managementAgent.getMBeanServerDefaultDomain();
+  TestCase.assertEquals("org.apache.camel",mBeanServerDefaultDomain);
+  final String managementName=context.getManagementName();
+  TestCase.assertNotNull("CamelContext should have a management name if JMX is enabled",managementName);
+  LOG.info("managementName = {}",managementName);
+  ObjectName onContext=ObjectName.getInstance(mBeanServerDefaultDomain + ":context=localhost/" + managementName+ ",type=context,name=\""+ context.getName()+ "\"");
+  TestCase.assertTrue("Should be registered",mBeanServer.isRegistered(onContext));
+  ObjectName onManagedBean=ObjectName.getInstance(mBeanServerDefaultDomain + ":context=localhost/" + managementName+ ",type=processors,name=\"myManagedBean\"");
+  LOG.info("Canonical Name = {}",onManagedBean.getCanonicalName());
+  TestCase.assertTrue("Should be registered",mBeanServer.isRegistered(onManagedBean));
+  template.sendBody("direct:start","Hello Camel");
+  template.sendBody("direct:start","Camel Rocks!");
+  int camelsSeenCount=(Integer)mBeanServer.getAttribute(onManagedBean,"CamelsSeenCount");
+  TestCase.assertEquals(2,camelsSeenCount);
+  mBeanServer.invoke(onManagedBean,"resetCamelsSeenCount",null,null);
+  camelsSeenCount=(Integer)mBeanServer.getAttribute(onManagedBean,"CamelsSeenCount");
+  TestCase.assertEquals(0,camelsSeenCount);
+}
