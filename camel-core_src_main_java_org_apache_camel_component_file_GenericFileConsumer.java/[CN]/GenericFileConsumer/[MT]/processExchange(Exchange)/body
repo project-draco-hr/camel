@@ -13,14 +13,14 @@
   finally {
         endpoint.getInProgressRepository().remove(absoluteFileName);
       }
-      return;
+      return false;
     }
   }
  catch (  Exception e) {
     endpoint.getInProgressRepository().remove(absoluteFileName);
     String msg=endpoint + " cannot begin processing file: " + file+ " due to: "+ e.getMessage();
     handleException(msg,e);
-    return;
+    return false;
   }
   final GenericFile<T> target=getExchangeFileProperty(exchange);
   final String name=target.getAbsoluteFilePath();
@@ -29,7 +29,14 @@
       log.trace("Retrieving file: {} from: {}",name,endpoint);
       boolean retrieved=operations.retrieveFile(name,exchange);
       if (!retrieved) {
-        throw new GenericFileOperationFailedException("Cannot retrieve file: " + file + " from: "+ endpoint);
+        if (ignoreCannotRetrieveFile(name,exchange)) {
+          log.trace("Cannot retrieve file {} maybe it does not exists. Ignorning.",name);
+          endpoint.getInProgressRepository().remove(absoluteFileName);
+          return false;
+        }
+ else {
+          throw new GenericFileOperationFailedException("Cannot retrieve file: " + file + " from: "+ endpoint);
+        }
       }
       log.trace("Retrieved file: {} from: {}",name,endpoint);
     }
@@ -53,4 +60,5 @@
     String msg="Error processing file " + file + " due to "+ e.getMessage();
     handleException(msg,e);
   }
+  return true;
 }

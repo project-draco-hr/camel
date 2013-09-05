@@ -1,5 +1,6 @@
 {
   int total=exchanges.size();
+  int answer=total;
   if (maxMessagesPerPoll > 0 && total > maxMessagesPerPoll) {
     log.debug("Limiting to maximum messages to poll {} as there was {} messages in this poll.",maxMessagesPerPoll,total);
     total=maxMessagesPerPoll;
@@ -10,13 +11,17 @@
     exchange.setProperty(Exchange.BATCH_SIZE,total);
     exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
     pendingExchanges=total - index - 1;
+    boolean started;
     if (customProcessor != null) {
-      customProcessExchange(exchange,customProcessor);
+      started=customProcessExchange(exchange,customProcessor);
     }
  else {
-      processExchange(exchange);
+      started=processExchange(exchange);
+    }
+    if (!started) {
+      answer--;
     }
   }
   removeExcessiveInProgressFiles(CastUtils.cast((Deque<?>)exchanges,Exchange.class),0);
-  return total;
+  return answer;
 }
