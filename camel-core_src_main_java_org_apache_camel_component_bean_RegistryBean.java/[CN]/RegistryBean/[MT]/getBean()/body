@@ -1,21 +1,23 @@
 {
   Object value=lookupBean();
-  if (value == null) {
-    value=context.getClassResolver().resolveClass(name);
-    if (value == null) {
-      throw new NoSuchBeanException(name);
-    }
-  }
-  if (value != bean) {
-    if (!ObjectHelper.equal(ObjectHelper.type(bean),ObjectHelper.type(value))) {
-      beanInfo=null;
+  if (value != null) {
+    if (value instanceof Class) {
+      value=context.getInjector().newInstance((Class<?>)value);
     }
     bean=value;
-    processor=null;
+    return value;
+  }
+synchronized (lock) {
+    if (bean != null) {
+      return bean;
+    }
+    bean=context.getClassResolver().resolveClass(name);
+    if (bean == null) {
+      throw new NoSuchBeanException(name);
+    }
     if (bean instanceof Class) {
       bean=context.getInjector().newInstance((Class<?>)bean);
-      value=bean;
     }
   }
-  return value;
+  return bean;
 }
