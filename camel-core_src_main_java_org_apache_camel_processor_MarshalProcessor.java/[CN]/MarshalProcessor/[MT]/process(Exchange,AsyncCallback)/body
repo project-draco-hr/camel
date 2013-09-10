@@ -1,14 +1,28 @@
 {
   ObjectHelper.notNull(dataFormat,"dataFormat");
-  ByteArrayOutputStream buffer=new ByteArrayOutputStream();
+  CachedOutputStream cos;
+  ByteArrayOutputStream os;
+  if (exchange.getContext().getStreamCachingStrategy().isEnabled()) {
+    cos=new CachedOutputStream(exchange);
+    os=null;
+  }
+ else {
+    cos=null;
+    os=new ByteArrayOutputStream();
+  }
   Message in=exchange.getIn();
   Object body=in.getBody();
   Message out=exchange.getOut();
   out.copyFrom(in);
   try {
-    dataFormat.marshal(exchange,body,buffer);
-    byte[] data=buffer.toByteArray();
-    out.setBody(data);
+    dataFormat.marshal(exchange,body,os);
+    if (cos != null) {
+      out.setBody(cos.newStreamCache());
+    }
+ else {
+      byte[] data=os.toByteArray();
+      out.setBody(data);
+    }
   }
  catch (  Exception e) {
     exchange.setOut(null);
