@@ -3,8 +3,15 @@
   if (partialClass != null && getPartNamespace() != null) {
     e=new JAXBElement<Object>(getPartNamespace(),partialClass,graph);
   }
-  if (needFiltering(exchange)) {
-    marshaller.marshal(e,createFilteringWriter(stream));
+  if (asXmlStreamWriter(exchange)) {
+    XMLStreamWriter writer=typeConverter.convertTo(XMLStreamWriter.class,stream);
+    if (needFiltering(exchange)) {
+      writer=new FilteringXmlStreamWriter(writer);
+    }
+    if (xmlStreamWriterWrapper != null) {
+      writer=xmlStreamWriterWrapper.wrapWriter(writer);
+    }
+    marshaller.marshal(e,writer);
   }
  else {
     marshaller.marshal(e,stream);
