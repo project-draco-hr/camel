@@ -1,12 +1,13 @@
 {
   String answer;
   String overrule=exchange.getIn().getHeader(Exchange.OVERRULE_FILE_NAME,String.class);
+  String consumed=exchange.getIn().getHeader(Exchange.FILE_NAME_CONSUMED,String.class);
   String name=overrule == null ? exchange.getIn().getHeader(Exchange.FILE_NAME,String.class) : overrule;
   if (overrule != null) {
     exchange.getIn().setHeader(Exchange.FILE_NAME,name);
   }
   Expression expression=endpoint.getFileName();
-  if (name != null) {
+  if (name != null && !name.equals(consumed)) {
     if (StringHelper.hasStartToken(name,"simple")) {
       log.trace("{} contains a Simple expression: {}",Exchange.FILE_NAME,name);
       Language language=getEndpoint().getCamelContext().resolveLanguage("file");
