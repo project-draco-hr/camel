@@ -27,15 +27,28 @@
   try {
     if (isRetrieveFile()) {
       log.trace("Retrieving file: {} from: {}",name,endpoint);
-      boolean retrieved=operations.retrieveFile(name,exchange);
+      boolean retrieved;
+      Exception cause=null;
+      try {
+        retrieved=operations.retrieveFile(name,exchange);
+      }
+ catch (      Exception e) {
+        retrieved=false;
+        cause=e;
+      }
       if (!retrieved) {
-        if (ignoreCannotRetrieveFile(name,exchange)) {
-          log.trace("Cannot retrieve file {} maybe it does not exists. Ignorning.",name);
+        if (ignoreCannotRetrieveFile(name,exchange,cause)) {
+          log.trace("Cannot retrieve file {} maybe it does not exists. Ignoring.",name);
           endpoint.getInProgressRepository().remove(absoluteFileName);
           return false;
         }
  else {
-          throw new GenericFileOperationFailedException("Cannot retrieve file: " + file + " from: "+ endpoint);
+          if (cause != null && cause instanceof GenericFileOperationFailedException) {
+            throw cause;
+          }
+ else {
+            throw new GenericFileOperationFailedException("Cannot retrieve file: " + file + " from: "+ endpoint,cause);
+          }
         }
       }
       log.trace("Retrieved file: {} from: {}",name,endpoint);
