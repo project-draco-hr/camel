@@ -1,5 +1,10 @@
 {
+  ClassLoader oldcl=Thread.currentThread().getContextClassLoader();
   try {
+    ClassLoader apcl=getCamelContext().getApplicationContextClassLoader();
+    if (apcl != null) {
+      Thread.currentThread().setContextClassLoader(apcl);
+    }
     Mustache newMustache;
     if (startDelimiter != null && endDelimiter != null && mustacheFactory instanceof DefaultMustacheFactory) {
       DefaultMustacheFactory defaultMustacheFactory=(DefaultMustacheFactory)mustacheFactory;
@@ -12,5 +17,8 @@
   }
   finally {
     resourceReader.close();
+    if (oldcl != null) {
+      Thread.currentThread().setContextClassLoader(oldcl);
+    }
   }
 }
