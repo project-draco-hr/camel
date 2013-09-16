@@ -1,6 +1,6 @@
 {
   if (isJava16() && Security.getProvider("BC") == null) {
-    Constructor<?> cons=null;
+    Constructor<?> cons;
     Class<?> c=Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
     cons=c.getConstructor(new Class[]{});
     Provider provider=(java.security.Provider)cons.newInstance();
@@ -8,5 +8,16 @@
   }
   if (isJavaVendor("IBM")) {
     ibmJDK=true;
+  }
+  try {
+    KeyStore keyStore=KeyStore.getInstance(KeyStore.getDefaultType());
+    InputStream in=ECDSASignatureTest.class.getResourceAsStream("/org/apache/camel/component/crypto/ecdsa.jks");
+    keyStore.load(in,"security".toCharArray());
+    privateKey=(PrivateKey)keyStore.getKey("ECDSA","security".toCharArray());
+    x509=(X509Certificate)keyStore.getCertificate("ECDSA");
+  }
+ catch (  Throwable e) {
+    log.warn("Cannot setup keystore for running this test due " + e.getMessage() + ". This test is skipped.",e);
+    canRun=false;
   }
 }
