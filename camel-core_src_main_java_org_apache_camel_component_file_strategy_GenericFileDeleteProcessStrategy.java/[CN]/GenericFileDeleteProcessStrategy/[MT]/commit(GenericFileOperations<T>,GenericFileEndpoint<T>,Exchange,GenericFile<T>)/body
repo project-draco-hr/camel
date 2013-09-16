@@ -1,4 +1,8 @@
 {
+  boolean releaseEager=exclusiveReadLockStrategy instanceof FileLockExclusiveReadLockStrategy;
+  if (releaseEager) {
+    exclusiveReadLockStrategy.releaseExclusiveReadLock(operations,file,exchange);
+  }
   try {
     deleteLocalWorkFile(exchange);
     operations.releaseRetreivedFileResources(exchange);
@@ -24,7 +28,7 @@
     }
   }
   finally {
-    if (exclusiveReadLockStrategy != null) {
+    if (!releaseEager && exclusiveReadLockStrategy != null) {
       exclusiveReadLockStrategy.releaseExclusiveReadLock(operations,file,exchange);
     }
   }
