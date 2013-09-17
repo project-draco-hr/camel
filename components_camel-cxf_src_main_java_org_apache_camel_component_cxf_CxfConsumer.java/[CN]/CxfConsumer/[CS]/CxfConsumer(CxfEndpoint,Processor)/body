@@ -75,13 +75,6 @@ synchronized (continuation) {
       CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
       CxfBinding binding=endpoint.getCxfBinding();
       org.apache.camel.Exchange camelExchange=endpoint.createExchange();
-      try {
-        CxfConsumer.this.createUoW(camelExchange);
-      }
- catch (      Exception e) {
-        log.error("Error processing request",e);
-        throw new Fault(e);
-      }
       DataFormat dataFormat=endpoint.getDataFormat();
       BindingOperationInfo boi=cxfExchange.getBindingOperationInfo();
       if (boi != null && dataFormat == DataFormat.PAYLOAD && boi.isUnwrapped()) {
@@ -105,6 +98,13 @@ synchronized (continuation) {
       Map<String,Object> context=new HashMap<String,Object>();
       binding.extractJaxWsContext(cxfExchange,context);
       camelExchange.setProperty(CxfConstants.JAXWS_CONTEXT,context);
+      try {
+        CxfConsumer.this.createUoW(camelExchange);
+      }
+ catch (      Exception e) {
+        log.error("Error processing request",e);
+        throw new Fault(e);
+      }
       return camelExchange;
     }
     @SuppressWarnings("unchecked") private void setResponseBack(    Exchange cxfExchange,    org.apache.camel.Exchange camelExchange){
