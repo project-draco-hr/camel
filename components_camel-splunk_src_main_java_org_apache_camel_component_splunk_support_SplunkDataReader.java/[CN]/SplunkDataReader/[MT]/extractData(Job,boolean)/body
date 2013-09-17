@@ -1,0 +1,56 @@
+{
+  List<SplunkEvent> result=new ArrayList<SplunkEvent>();
+  HashMap<String,String> data;
+  SplunkEvent splunkData;
+  ResultsReader resultsReader=null;
+  int total=0;
+  if (realtime) {
+  }
+ else {
+    total=job.getResultCount();
+  }
+  if (getCount() == 0 || total < getCount()) {
+    InputStream stream=null;
+    Args outputArgs=new Args();
+    outputArgs.put("output_mode","json");
+    if (realtime) {
+      stream=job.getResultsPreview(outputArgs);
+    }
+ else {
+      stream=job.getResults(outputArgs);
+    }
+    resultsReader=new ResultsReaderJson(stream);
+    while ((data=resultsReader.getNextEvent()) != null) {
+      splunkData=new SplunkEvent(data);
+      result.add(splunkData);
+    }
+    IOHelper.close(stream);
+  }
+ else {
+    int offset=0;
+    while (offset < total) {
+      InputStream stream;
+      Args outputArgs=new Args();
+      outputArgs.put("output_mode","json");
+      outputArgs.put("count",getCount());
+      outputArgs.put("offset",offset);
+      if (realtime) {
+        stream=job.getResultsPreview(outputArgs);
+      }
+ else {
+        stream=job.getResults(outputArgs);
+      }
+      resultsReader=new ResultsReaderJson(stream);
+      while ((data=resultsReader.getNextEvent()) != null) {
+        splunkData=new SplunkEvent(data);
+        result.add(splunkData);
+      }
+      offset+=getCount();
+      IOHelper.close(stream);
+    }
+  }
+  if (resultsReader != null) {
+    resultsReader.close();
+  }
+  return result;
+}
