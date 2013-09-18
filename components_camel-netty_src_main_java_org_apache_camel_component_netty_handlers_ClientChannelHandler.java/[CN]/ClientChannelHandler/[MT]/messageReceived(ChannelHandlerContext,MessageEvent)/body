@@ -1,12 +1,15 @@
 {
+  messageReceived=true;
   if (LOG.isTraceEnabled()) {
     LOG.trace("Message received: {}",messageEvent);
   }
   if (producer.getConfiguration().getRequestTimeout() > 0) {
-    LOG.trace("Removing timeout channel as we received message");
-    ctx.getPipeline().remove("timeout");
+    ChannelHandler handler=ctx.getPipeline().get("timeout");
+    if (handler != null) {
+      LOG.trace("Removing timeout channel as we received message");
+      ctx.getPipeline().remove(handler);
+    }
   }
-  messageReceived=true;
   Exchange exchange=getExchange(ctx);
   AsyncCallback callback=getAsyncCallback(ctx);
   Message message;
