@@ -10,6 +10,13 @@
     for (    InterceptFromDefinition intercept : interceptFromDefinitions) {
       boolean match=true;
       if (intercept.getUri() != null) {
+        String pattern;
+        try {
+          pattern=context.resolvePropertyPlaceholders(intercept.getUri());
+        }
+ catch (        Exception e) {
+          throw ObjectHelper.wrapRuntimeCamelException(e);
+        }
         match=false;
         for (        FromDefinition input : route.getInputs()) {
           String uri=input.getUri();
@@ -19,7 +26,7 @@
  else           if (input.getRef() != null) {
             uri=CamelContextHelper.getMandatoryEndpoint(context,"ref:" + input.getRef()).getEndpointUri();
           }
-          if (EndpointHelper.matchEndpoint(context,uri,intercept.getUri())) {
+          if (EndpointHelper.matchEndpoint(context,uri,pattern)) {
             match=true;
             break;
           }
