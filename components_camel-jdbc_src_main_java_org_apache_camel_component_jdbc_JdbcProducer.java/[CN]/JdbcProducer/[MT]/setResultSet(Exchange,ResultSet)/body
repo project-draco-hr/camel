@@ -1,8 +1,15 @@
 {
-  List<Map<String,Object>> data=extractResultSetData(rs);
-  exchange.getOut().setHeader(JdbcConstants.JDBC_ROW_COUNT,data.size());
-  if (!data.isEmpty()) {
-    exchange.getOut().setHeader(JdbcConstants.JDBC_COLUMN_NAMES,data.get(0).keySet());
+  JdbcOutputType outputType=getEndpoint().getOutputType();
+  if (outputType == JdbcOutputType.SelectList) {
+    List<Map<String,Object>> data=extractResultSetData(rs);
+    exchange.getOut().setHeader(JdbcConstants.JDBC_ROW_COUNT,data.size());
+    if (!data.isEmpty()) {
+      exchange.getOut().setHeader(JdbcConstants.JDBC_COLUMN_NAMES,data.get(0).keySet());
+    }
+    exchange.getOut().setBody(data);
   }
-  exchange.getOut().setBody(data);
+ else   if (outputType == JdbcOutputType.SelectOne) {
+    Object obj=queryForObject(rs);
+    exchange.getOut().setBody(obj);
+  }
 }
