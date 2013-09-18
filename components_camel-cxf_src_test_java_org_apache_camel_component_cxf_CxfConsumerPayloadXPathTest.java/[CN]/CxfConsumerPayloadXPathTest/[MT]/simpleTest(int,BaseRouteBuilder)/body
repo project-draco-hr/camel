@@ -1,0 +1,17 @@
+{
+  setUseRouteBuilder(false);
+  context.addRoutes(builder);
+  startCamelContext();
+  String content=StringUtils.repeat("x",repeat);
+  String msgIn=constructSoapMessage(content);
+  Exchange exchgIn=new DefaultExchange(context);
+  exchgIn.setPattern(ExchangePattern.InOut);
+  exchgIn.getIn().setBody(msgIn);
+  Exchange exchgOut=template.send(builder.getTestAddress(),exchgIn);
+  String result=exchgOut.getOut().getBody(String.class);
+  assertNotNull("response on http call",result);
+  String headerSize=exchgOut.getOut().getHeader(HEADER_SIZE,String.class);
+  assertEquals("" + repeat,headerSize);
+  assertTrue("dataloss in output occurred",result.length() > repeat);
+  stopCamelContext();
+}

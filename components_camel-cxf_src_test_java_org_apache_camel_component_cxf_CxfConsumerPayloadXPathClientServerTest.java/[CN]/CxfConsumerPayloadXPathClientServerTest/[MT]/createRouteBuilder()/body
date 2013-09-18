@@ -1,0 +1,34 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure(){
+      from(simpleEndpointURI + "&dataFormat=PAYLOAD").to("log:info").process(new Processor(){
+        @SuppressWarnings("unchecked") @Override public void process(        final Exchange exchange) throws Exception {
+          Object request=exchange.getIn().getBody();
+          assertIsInstanceOf(CxfPayload.class,request);
+          receivedMessageCxfPayloadApplyingXPath=XPathBuilder.xpath("//*[name()='arg0']/text()").evaluate(context,request,String.class);
+          CxfPayload<SoapHeader> payload=(CxfPayload<SoapHeader>)request;
+          Element el=(Element)payload.getBody().get(0);
+          Element el2=(Element)el.getFirstChild();
+          Text textnode=(Text)el2.getFirstChild();
+          receivedMessageByDom=textnode.getNodeValue();
+          textnode=(Text)textnode.getNextSibling();
+          while (textnode != null) {
+            receivedMessageByDom=receivedMessageByDom + textnode.getNodeValue();
+            textnode=(Text)textnode.getNextSibling();
+          }
+          request=exchange.getIn().getBody(String.class);
+          assertIsInstanceOf(String.class,request);
+          receivedMessageStringApplyingXPath=XPathBuilder.xpath("//*[name()='arg0']/text()").evaluate(context,request,String.class);
+          XmlConverter converter=new XmlConverter();
+          Document outDocument=converter.toDOMDocument(ECHO_RESPONSE);
+          List<Source> outElements=new ArrayList<Source>();
+          outElements.add(new DOMSource(outDocument.getDocumentElement()));
+          CxfPayload<SoapHeader> responsePayload=new CxfPayload<SoapHeader>(null,outElements,null);
+          exchange.getOut().setBody(responsePayload);
+        }
+      }
+);
+    }
+  }
+;
+}
