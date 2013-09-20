@@ -1,0 +1,28 @@
+{
+  AbstractXmlApplicationContext app=new ClassPathXmlApplicationContext("org/apache/camel/routepolicy/quartz2/SpringQuartzClusteredAppOneTest.xml");
+  app.start();
+  AbstractXmlApplicationContext app2=new ClassPathXmlApplicationContext("org/apache/camel/routepolicy/quartz2/SpringQuartzClusteredAppTwoTest.xml");
+  app2.start();
+  CamelContext camel=app.getBean("camelContext",CamelContext.class);
+  assertNotNull(camel);
+  MockEndpoint mock=camel.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(1);
+  mock.expectedBodiesReceived("clustering pings!");
+  Thread.sleep(5000);
+  app.getBean("template",ProducerTemplate.class).sendBody("direct:start","clustering");
+  mock.assertIsSatisfied();
+  CamelContext camel2=app2.getBean("camelContext",CamelContext.class);
+  assertNotNull(camel2);
+  MockEndpoint mock2=camel2.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(0);
+  try {
+    app2.getBean("template",ProducerTemplate.class).sendBody("direct:start","clustering");
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException cee) {
+    assertIsInstanceOf(DirectConsumerNotAvailableException.class,cee.getCause());
+  }
+  mock2.assertIsSatisfied();
+  app2.close();
+  app.close();
+}

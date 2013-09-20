@@ -3,6 +3,16 @@
   Trigger trigger=createTrigger(action,route);
   updateScheduledRouteDetails(action,jobDetail,trigger,route);
   loadCallbackDataIntoSchedulerContext(jobDetail,action,route);
+  boolean isClustered=route.getRouteContext().getCamelContext().getComponent("quartz2",QuartzComponent.class).isClustered();
+  if (isClustered) {
+    JobDetail existingJobDetail=getScheduler().getJobDetail(jobDetail.getKey());
+    if (jobDetail.equals(existingJobDetail)) {
+      if (LOG.isInfoEnabled()) {
+        LOG.info("Skipping to schedule the job: {} for action: {} on route {} as the job: {} already existing!",new Object[]{jobDetail.getKey(),action,route.getId(),existingJobDetail.getKey()});
+      }
+      return;
+    }
+  }
   getScheduler().scheduleJob(jobDetail,trigger);
   if (LOG.isInfoEnabled()) {
     LOG.info("Scheduled trigger: {} for action: {} on route {}",new Object[]{trigger.getKey(),action,route.getId()});
