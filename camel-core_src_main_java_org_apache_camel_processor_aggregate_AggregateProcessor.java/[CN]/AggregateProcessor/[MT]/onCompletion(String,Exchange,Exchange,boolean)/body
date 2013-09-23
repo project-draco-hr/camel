@@ -16,12 +16,15 @@
       ((TimeoutAwareAggregationStrategy)aggregationStrategy).timeout(aggregated,-1,-1,timeout);
     }
   }
+  Exchange answer;
   if (fromTimeout && isDiscardOnCompletionTimeout()) {
     LOG.debug("Aggregation for correlation key {} discarding aggregated exchange: {}",key,aggregated);
     aggregationRepository.confirm(aggregated.getContext(),aggregated.getExchangeId());
     redeliveryState.remove(aggregated.getExchangeId());
+    answer=null;
   }
  else {
-    onSubmitCompletion(key,aggregated);
+    answer=aggregated;
   }
+  return answer;
 }
