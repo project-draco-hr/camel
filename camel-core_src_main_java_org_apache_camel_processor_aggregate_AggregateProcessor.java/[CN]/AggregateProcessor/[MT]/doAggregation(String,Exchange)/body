@@ -31,6 +31,7 @@
   if (!isEagerCheckCompletion()) {
     complete=isCompleted(key,answer);
   }
+  List<Exchange> list=new ArrayList<Exchange>();
   if (complete == null) {
     doAggregationRepositoryAdd(newExchange.getContext(),key,originalExchange,answer);
     answer=null;
@@ -48,7 +49,7 @@
         if (batchAnswer != null) {
           batchAnswer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,complete);
           onCompletion(batchKey,originalExchange,batchAnswer,false);
-          onSubmitCompletion(key,batchAnswer);
+          list.add(batchAnswer);
         }
       }
       batchConsumerCorrelationKeys.clear();
@@ -60,5 +61,8 @@
     }
   }
   LOG.trace("onAggregation +++  end  +++ with correlation key: {}",key);
-  return answer;
+  if (answer != null) {
+    list.add(answer);
+  }
+  return list;
 }

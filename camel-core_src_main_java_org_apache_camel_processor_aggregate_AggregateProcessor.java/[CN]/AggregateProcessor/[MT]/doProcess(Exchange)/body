@@ -18,7 +18,7 @@
     throw new ClosedCorrelationKeyException(key,exchange);
   }
   if (optimisticLocking) {
-    Exchange aggregated=null;
+    List<Exchange> aggregated=null;
     boolean exhaustedRetries=true;
     int attempt=0;
     do {
@@ -39,12 +39,14 @@
       throw new CamelExchangeException("Exhausted optimistic locking retry attempts, tried " + attempt + " times",exchange,new OptimisticLockingAggregationRepository.OptimisticLockingException());
     }
  else     if (aggregated != null) {
-      onSubmitCompletion(key,aggregated);
+      for (      Exchange agg : aggregated) {
+        onSubmitCompletion(key,agg);
+      }
     }
   }
  else {
     Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
-    Exchange aggregated=null;
+    List<Exchange> aggregated=null;
     lock.lock();
     try {
       aggregated=doAggregation(key,copy);
@@ -53,7 +55,9 @@
       lock.unlock();
     }
     if (aggregated != null) {
-      onSubmitCompletion(key,aggregated);
+      for (      Exchange agg : aggregated) {
+        onSubmitCompletion(key,agg);
+      }
     }
   }
   boolean completeAllGroupsInclusive=exchange.getIn().getHeader(Exchange.AGGREGATION_COMPLETE_ALL_GROUPS_INCLUSIVE,false,boolean.class);

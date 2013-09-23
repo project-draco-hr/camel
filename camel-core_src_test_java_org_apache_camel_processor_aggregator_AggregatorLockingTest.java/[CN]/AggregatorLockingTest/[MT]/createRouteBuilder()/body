@@ -1,0 +1,14 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("seda:a?concurrentConsumers=2").aggregate(header("myId"),new UseLatestAggregationStrategy()).completionSize(1).log("Before await with thread: ${threadName} and body: ${body}").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+          latch.await(5,TimeUnit.SECONDS);
+        }
+      }
+).log("After await with thread: ${threadName} and body: ${body}").to("mock:result");
+    }
+  }
+;
+}
