@@ -11,9 +11,12 @@
   }
   if (getCount() == 0 || total < getCount()) {
     InputStream stream=null;
-    Args outputArgs=new Args();
-    outputArgs.put("output_mode","json");
+    JobResultsArgs outputArgs=new JobResultsArgs();
+    outputArgs.setOutputMode(OutputMode.JSON);
     if (realtime) {
+      if (getCount() > 0) {
+        outputArgs.setCount(getCount());
+      }
       stream=job.getResultsPreview(outputArgs);
     }
  else {
@@ -30,10 +33,10 @@
     int offset=0;
     while (offset < total) {
       InputStream stream;
-      Args outputArgs=new Args();
-      outputArgs.put("output_mode","json");
-      outputArgs.put("count",getCount());
-      outputArgs.put("offset",offset);
+      JobResultsArgs outputArgs=new JobResultsArgs();
+      outputArgs.setOutputMode(OutputMode.JSON);
+      outputArgs.setCount(getCount());
+      outputArgs.setOffset(offset);
       if (realtime) {
         stream=job.getResultsPreview(outputArgs);
       }
@@ -52,5 +55,6 @@
   if (resultsReader != null) {
     resultsReader.close();
   }
+  job.cancel();
   return result;
 }

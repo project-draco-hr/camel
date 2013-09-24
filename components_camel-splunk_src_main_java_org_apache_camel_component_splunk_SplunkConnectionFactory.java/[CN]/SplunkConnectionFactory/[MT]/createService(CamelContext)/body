@@ -1,0 +1,49 @@
+{
+  final ServiceArgs args=new ServiceArgs();
+  if (host != null) {
+    args.setHost(host);
+  }
+  if (port > 0) {
+    args.setPort(port);
+  }
+  if (scheme != null) {
+    args.setScheme(scheme);
+  }
+  if (app != null) {
+    args.setApp(app);
+  }
+  if (owner != null) {
+    args.setOwner(owner);
+  }
+  args.setUsername(username);
+  args.setPassword(password);
+  if (isUseSunHttpsHandler()) {
+    args.setHTTPSHandler(new sun.net.www.protocol.https.Handler());
+  }
+  ExecutorService executor=camelContext.getExecutorServiceManager().newSingleThreadExecutor(this,"DefaultSplunkConnectionFactory");
+  Future<Service> future=executor.submit(new Callable<Service>(){
+    public Service call() throws Exception {
+      return Service.connect(args);
+    }
+  }
+);
+  try {
+    Service service=null;
+    if (connectionTimeout > 0) {
+      service=future.get(connectionTimeout,TimeUnit.MILLISECONDS);
+    }
+ else {
+      service=future.get();
+    }
+    LOG.info("Successfully connected to Splunk");
+    return service;
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(String.format("could not connect to Splunk Server @ %s:%d - %s",host,port,e.getMessage()));
+  }
+ finally {
+    if (executor != null) {
+      camelContext.getExecutorServiceManager().shutdownNow(executor);
+    }
+  }
+}
