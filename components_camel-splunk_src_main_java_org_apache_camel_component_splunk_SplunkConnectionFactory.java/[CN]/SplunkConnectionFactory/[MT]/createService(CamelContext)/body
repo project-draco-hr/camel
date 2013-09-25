@@ -18,7 +18,16 @@
   args.setUsername(username);
   args.setPassword(password);
   if (isUseSunHttpsHandler()) {
-    args.setHTTPSHandler(new sun.net.www.protocol.https.Handler());
+    String sunHandlerClassName="sun.net.www.protocol.https.Handler";
+    Class<URLStreamHandler> clazz=camelContext.getClassResolver().resolveClass(sunHandlerClassName,URLStreamHandler.class);
+    if (clazz != null) {
+      URLStreamHandler handler=ObjectHelper.newInstance(clazz);
+      args.setHTTPSHandler(handler);
+      LOG.debug("using the URLStreamHandler {} for {}",handler,args);
+    }
+ else {
+      LOG.warn("could not resolve and use the URLStreamHandler class '{}'",sunHandlerClassName);
+    }
   }
   ExecutorService executor=camelContext.getExecutorServiceManager().newSingleThreadExecutor(this,"DefaultSplunkConnectionFactory");
   Future<Service> future=executor.submit(new Callable<Service>(){
