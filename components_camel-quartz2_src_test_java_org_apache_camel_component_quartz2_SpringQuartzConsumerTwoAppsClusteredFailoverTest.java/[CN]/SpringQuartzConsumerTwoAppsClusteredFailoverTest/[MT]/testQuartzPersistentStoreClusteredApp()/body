@@ -1,0 +1,27 @@
+{
+  AbstractXmlApplicationContext db=new ClassPathXmlApplicationContext("org/apache/camel/component/quartz2/SpringQuartzConsumerClusteredAppDatabase.xml");
+  db.start();
+  AbstractXmlApplicationContext app=new ClassPathXmlApplicationContext("org/apache/camel/component/quartz2/SpringQuartzConsumerClusteredAppOne.xml");
+  app.start();
+  AbstractXmlApplicationContext app2=new ClassPathXmlApplicationContext("org/apache/camel/component/quartz2/SpringQuartzConsumerClusteredAppTwo.xml");
+  app2.start();
+  CamelContext camel=app.getBean("camelContext",CamelContext.class);
+  MockEndpoint mock=camel.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMinimumMessageCount(3);
+  mock.expectedMessagesMatches(new ClusteringPredicate(true));
+  Thread.sleep(5000);
+  mock.assertIsSatisfied();
+  log.warn("The first app is going to crash NOW!");
+  app.close();
+  log.warn("Crashed...");
+  log.warn("Crashed...");
+  log.warn("Crashed...");
+  Thread.sleep(20000);
+  CamelContext camel2=app2.getBean("camelContext2",CamelContext.class);
+  MockEndpoint mock2=camel2.getEndpoint("mock:result",MockEndpoint.class);
+  mock2.expectedMinimumMessageCount(3);
+  mock2.expectedMessagesMatches(new ClusteringPredicate(false));
+  mock2.assertIsSatisfied();
+  app2.close();
+  db.close();
+}
