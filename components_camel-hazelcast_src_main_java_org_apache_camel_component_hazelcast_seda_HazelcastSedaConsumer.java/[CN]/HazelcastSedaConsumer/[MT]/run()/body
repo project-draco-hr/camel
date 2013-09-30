@@ -2,12 +2,12 @@
   final BlockingQueue<?> queue=endpoint.getQueue();
   while (queue != null && isRunAllowed()) {
     final Exchange exchange=this.getEndpoint().createExchange();
-    Transaction transaction=null;
+    TransactionContext transactionCtx=null;
     if (endpoint.getConfiguration().isTransacted()) {
-      transaction=endpoint.getHazelcastInstance().getTransaction();
-      if (transaction != null && transaction.getStatus() == Transaction.TXN_STATUS_NO_TXN) {
-        log.trace("Begin transaction: {}",transaction);
-        transaction.begin();
+      transactionCtx=endpoint.getHazelcastInstance().newTransactionContext();
+      if (transactionCtx != null) {
+        log.trace("Begin transaction: {}",transactionCtx.getTxnId());
+        transactionCtx.beginTransaction();
       }
     }
     try {
@@ -26,23 +26,23 @@
           }
 );
           if (exchange.getException() != null) {
-            if (transaction != null) {
-              transaction.rollback();
+            if (transactionCtx != null) {
+              transactionCtx.rollbackTransaction();
             }
             getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
           }
         }
  catch (        Exception e) {
           LOG.error("Hzlq Exception caught: " + e,e);
-          if (transaction != null) {
-            log.trace("Rollback transaction: {}",transaction);
-            transaction.rollback();
+          if (transactionCtx != null) {
+            log.trace("Rollback transaction: {}",transactionCtx.getTxnId());
+            transactionCtx.rollbackTransaction();
           }
         }
       }
-      if (exchange.getException() == null && transaction != null && transaction.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-        log.trace("Commit transaction: {}",transaction);
-        transaction.commit();
+      if (exchange.getException() == null && transactionCtx != null) {
+        log.trace("Commit transaction: {}",transactionCtx.getTxnId());
+        transactionCtx.commitTransaction();
       }
     }
  catch (    InterruptedException e) {
@@ -52,9 +52,9 @@
       continue;
     }
 catch (    Throwable e) {
-      if (transaction != null) {
-        log.trace("Rollback transaction: {}",transaction);
-        transaction.rollback();
+      if (transactionCtx != null) {
+        log.trace("Rollback transaction: {}",transactionCtx.getTxnId());
+        transactionCtx.rollbackTransaction();
       }
       getExceptionHandler().handleException("Error processing exchange",exchange,e);
     }
