@@ -3,11 +3,18 @@
     IOHelper.close((Closeable)pairs,"pairs",LOG);
   }
   removeAggregationStrategyFromExchange(original);
+  boolean stoppedOnException=false;
   if (original.getException() != null || subExchange != null && subExchange.getException() != null) {
+    stoppedOnException=isStopOnException();
     original.setProperty(Exchange.REDELIVERY_EXHAUSTED,exhaust);
   }
   if (subExchange != null) {
-    ExchangeHelper.copyResults(original,subExchange);
+    if (stoppedOnException) {
+      original.setException(subExchange.getException());
+    }
+ else {
+      ExchangeHelper.copyResults(original,subExchange);
+    }
   }
   callback.done(doneSync);
 }
