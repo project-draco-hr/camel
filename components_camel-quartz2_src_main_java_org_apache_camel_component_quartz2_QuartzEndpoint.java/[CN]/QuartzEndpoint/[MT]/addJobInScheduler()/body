@@ -7,17 +7,16 @@
     trigger=createTrigger();
     updateJobDataMap(jobDetail);
     Date nextFireDate=scheduler.scheduleJob(jobDetail,trigger);
-    LOG.info("Job {} (triggerType={}, jobClass={}) is scheduled. Next fire date is {}",new Object[]{trigger.getKey(),trigger.getClass().getSimpleName(),jobDetail.getJobClass().getSimpleName(),nextFireDate});
+    if (LOG.isInfoEnabled()) {
+      LOG.info("Job {} (triggerType={}, jobClass={}) is scheduled. Next fire date is {}",new Object[]{trigger.getKey(),trigger.getClass().getSimpleName(),jobDetail.getJobClass().getSimpleName(),nextFireDate});
+    }
   }
  else {
     ensureNoDupTriggerKey();
-    jobDetail=scheduler.getJobDetail(trigger.getJobKey());
-    updateJobDataMap(jobDetail);
-    scheduler.addJob(jobDetail,true);
-    Date nextFireDate=trigger.getNextFireTime();
-    LOG.info("Reuse existing Job {} (triggerType={}, jobType={}) is scheduled. Next fire date is {}",new Object[]{trigger.getKey(),trigger.getClass().getSimpleName(),jobDetail.getJobClass().getSimpleName(),nextFireDate});
   }
   AtomicInteger number=(AtomicInteger)scheduler.getContext().get(QuartzConstants.QUARTZ_CAMEL_JOBS_COUNT);
-  number.incrementAndGet();
+  if (number != null) {
+    number.incrementAndGet();
+  }
   jobAdded.set(true);
 }
