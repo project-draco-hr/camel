@@ -1,0 +1,16 @@
+{
+  localServer.register("/",new BasicValidationHandler("PATCH",null,"rocks camel?",getExpectedContent()));
+  Exchange exchange=template.request("http4://" + getHostName() + ":"+ getPort()+ "/?throwExceptionOnFailure=false",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("rocks camel?");
+    }
+  }
+);
+  assertNotNull(exchange);
+  assertTrue(exchange.hasOut());
+  Message out=exchange.getOut();
+  Map<String,Object> headers=out.getHeaders();
+  assertEquals(HttpStatus.SC_METHOD_FAILURE,headers.get(Exchange.HTTP_RESPONSE_CODE));
+  assertEquals("0",headers.get("Content-Length"));
+  assertEquals("",out.getBody(String.class));
+}

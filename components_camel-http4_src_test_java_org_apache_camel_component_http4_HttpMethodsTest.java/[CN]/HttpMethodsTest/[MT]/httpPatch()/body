@@ -1,0 +1,17 @@
+{
+  localServer.register("/",new BasicValidationHandler("PATCH",null,null,getExpectedContent()));
+  Exchange exchange=template.request("http4://" + getHostName() + ":"+ getPort()+ "/?throwExceptionOnFailure=false",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(Exchange.HTTP_METHOD,"PATCH");
+    }
+  }
+);
+  assertNotNull(exchange);
+  assertTrue(exchange.hasOut());
+  Message out=exchange.getOut();
+  Map<String,Object> headers=out.getHeaders();
+  assertEquals(HttpStatus.SC_NOT_IMPLEMENTED,headers.get(Exchange.HTTP_RESPONSE_CODE));
+  assertEquals("26",headers.get("Content-Length"));
+  assertNotNull("Should have Content-Type header",headers.get("Content-Type"));
+  assertEquals("PATCH method not supported",out.getBody(String.class));
+}
