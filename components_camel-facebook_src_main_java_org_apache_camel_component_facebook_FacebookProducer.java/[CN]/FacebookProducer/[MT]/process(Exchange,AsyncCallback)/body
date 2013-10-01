@@ -13,9 +13,23 @@
         if (LOG.isDebugEnabled()) {
           LOG.debug("Invoking method {} with {}",method.getName(),properties.keySet());
         }
-        Object result=FacebookMethodsTypeHelper.invokeMethod(endpoint.getConfiguration().getFacebook(),method,properties);
+        Object result;
+        String rawJSON=null;
+        if (endpoint.getConfiguration().getJsonStoreEnabled() == null || !endpoint.getConfiguration().getJsonStoreEnabled()) {
+          result=FacebookMethodsTypeHelper.invokeMethod(endpoint.getConfiguration().getFacebook(),method,properties);
+        }
+ else {
+          final Facebook facebook=endpoint.getConfiguration().getFacebook();
+synchronized (facebook) {
+            result=FacebookMethodsTypeHelper.invokeMethod(facebook,method,properties);
+            rawJSON=DataObjectFactory.getRawJSON(result);
+          }
+        }
         exchange.getOut().setBody(result);
         exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+        if (rawJSON != null) {
+          exchange.getOut().setHeader(FacebookConstants.FACEBOOK_PROPERTY_PREFIX + "rawJSON",rawJSON);
+        }
       }
  catch (      Throwable t) {
         exchange.setException(ObjectHelper.wrapRuntimeCamelException(t));

@@ -1,13 +1,14 @@
 {
   return new RouteBuilder(){
-    public void configure(){
-      String since=new SimpleDateFormat(FacebookConstants.FACEBOOK_DATE_FORMAT).format(new Date(System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(7,TimeUnit.DAYS)));
+    public void configure() throws Exception {
+      String since="RAW(" + new SimpleDateFormat(FacebookConstants.FACEBOOK_DATE_FORMAT).format(new Date(System.currentTimeMillis() - TimeUnit.MILLISECONDS.convert(30,TimeUnit.DAYS))) + ")";
       for (      String name : searchNames) {
         if (!excludedNames.contains(name)) {
           from("facebook://" + name + "?reading.limit=10&reading.locale=en.US&reading.since="+ since+ "&consumer.initialDelay=1000&consumer.sendEmptyMessageWhenIdle=true&"+ getOauthParams()).to("mock:consumeResult" + name);
         }
         from("facebook://" + name + "?query=cheese&reading.limit=10&reading.locale=en.US&reading.since="+ since+ "&consumer.initialDelay=1000&"+ getOauthParams()).to("mock:consumeQueryResult" + name);
       }
+      from("facebook://me?jsonStoreEnabled=true&" + getOauthParams()).to("mock:testJsonStoreEnabled");
     }
   }
 ;
