@@ -1,6 +1,7 @@
 {
+  SSLContext answer;
   KeyStore ks=KeyStore.getInstance(keyStoreFormat);
-  InputStream is=IOConverter.toInputStream(keyStoreFile);
+  InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(classResolver,keyStoreResource);
   try {
     ks.load(is,passphrase);
   }
@@ -9,10 +10,10 @@
   }
   KeyManagerFactory kmf=KeyManagerFactory.getInstance(securityProvider);
   kmf.init(ks,passphrase);
-  sslContext=SSLContext.getInstance(SSL_PROTOCOL);
-  if (trustStoreFile != null) {
+  answer=SSLContext.getInstance(SSL_PROTOCOL);
+  if (trustStoreResource != null) {
     KeyStore ts=KeyStore.getInstance(keyStoreFormat);
-    is=IOConverter.toInputStream(trustStoreFile);
+    is=ResourceHelper.resolveMandatoryResourceAsInputStream(classResolver,trustStoreResource);
     try {
       ts.load(is,passphrase);
     }
@@ -21,9 +22,10 @@
     }
     TrustManagerFactory tmf=TrustManagerFactory.getInstance(securityProvider);
     tmf.init(ts);
-    sslContext.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
+    answer.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
   }
  else {
-    sslContext.init(kmf.getKeyManagers(),null,null);
+    answer.init(kmf.getKeyManagers(),null,null);
   }
+  return answer;
 }
