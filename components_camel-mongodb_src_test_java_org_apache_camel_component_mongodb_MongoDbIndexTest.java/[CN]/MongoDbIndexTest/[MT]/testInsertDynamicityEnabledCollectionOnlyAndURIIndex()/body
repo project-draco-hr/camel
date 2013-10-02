@@ -3,15 +3,15 @@
   mongo.getDB("otherDB").dropDatabase();
   db.getCollection("otherCollection").drop();
   assertFalse("The otherDB database should not exist",mongo.getDatabaseNames().contains("otherDB"));
-  String body="{\"_id\": \"testInsertDynamicityEnabledCollectionOnlyAndURIIndex\", \"a\" : \"1\", \"b\" : \"2\"}";
+  String body="{\"_id\": \"testInsertDynamicityEnabledCollectionOnlyAndURIIndex\", \"a\" : 1, \"b\" : 2}";
   Map<String,Object> headers=new HashMap<String,Object>();
   headers.put(MongoDbConstants.COLLECTION,"otherCollection");
   Object result=template.requestBodyAndHeaders("direct:dynamicityEnabledWithIndexUri",body,headers);
   assertEquals("Response isn't of type WriteResult",WriteResult.class,result.getClass());
   DBCollection dynamicCollection=db.getCollection("otherCollection");
   List<DBObject> indexInfos=dynamicCollection.getIndexInfo();
-  BasicDBObject key=(BasicDBObject)indexInfos.get(0).get("key");
-  assertTrue("The field _id with the expected value not found",key.containsField("_id") && "1".equals(key.getString("_id")));
+  BasicDBObject key1=(BasicDBObject)indexInfos.get(1).get("key");
+  assertFalse("No index on the field a",key1.containsField("a") && "-1".equals(key1.getString("a")));
   DBObject b=dynamicCollection.findOne("testInsertDynamicityEnabledCollectionOnlyAndURIIndex");
   assertNotNull("No record with 'testInsertDynamicityEnabledCollectionOnlyAndURIIndex' _id",b);
   b=testCollection.findOne("testInsertDynamicityEnabledCollectionOnlyAndURIIndex");
