@@ -82,9 +82,14 @@
         if ("null".equals(parameterValue)) {
           return Void.TYPE;
         }
-        exp=exchange.getContext().getTypeConverter().convertTo(String.class,parameterValue);
-        if (!valid) {
-          valid=parameterValue instanceof String || BeanHelper.isValidParameterValue(exp);
+        if (parameterType.isAssignableFrom(parameterValue.getClass())) {
+          valid=true;
+        }
+ else {
+          exp=exchange.getContext().getTypeConverter().tryConvertTo(String.class,parameterValue);
+          if (!valid) {
+            valid=parameterValue instanceof String || BeanHelper.isValidParameterValue(exp);
+          }
         }
         if (valid) {
           if (parameterValue instanceof String) {
