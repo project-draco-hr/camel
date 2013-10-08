@@ -1,8 +1,10 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("seda:foo").startupOrder(1).delay(1000).to("file://target/deferred");
-      from("file://target/deferred").startupOrder(2).shutdownRoute(Default).to("mock:bar");
+      from("seda:foo").startupOrder(1).to("file://target/deferred");
+      MyDeferFileEndpoint defer=new MyDeferFileEndpoint("file://target/deferred",getContext().getComponent("file"));
+      defer.setFile(new File("target/deferred"));
+      from(defer).startupOrder(2).shutdownRoute(Default).to("mock:bar");
     }
   }
 ;
