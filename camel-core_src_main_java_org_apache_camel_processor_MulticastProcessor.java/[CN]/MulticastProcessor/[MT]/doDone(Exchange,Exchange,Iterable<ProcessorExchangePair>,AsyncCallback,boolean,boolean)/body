@@ -4,9 +4,11 @@
   }
   removeAggregationStrategyFromExchange(original);
   boolean stoppedOnException=false;
+  boolean exception=false;
+  boolean exhaust=forceExhaust || subExchange != null && (subExchange.getException() != null || ExchangeHelper.isRedeliveryExhausted(subExchange));
   if (original.getException() != null || subExchange != null && subExchange.getException() != null) {
     stoppedOnException=isStopOnException();
-    original.setProperty(Exchange.REDELIVERY_EXHAUSTED,exhaust);
+    exception=true;
   }
   if (subExchange != null) {
     if (stoppedOnException) {
@@ -15,6 +17,9 @@
  else {
       ExchangeHelper.copyResults(original,subExchange);
     }
+  }
+  if (exception) {
+    original.setProperty(Exchange.REDELIVERY_EXHAUSTED,exhaust);
   }
   callback.done(doneSync);
 }
