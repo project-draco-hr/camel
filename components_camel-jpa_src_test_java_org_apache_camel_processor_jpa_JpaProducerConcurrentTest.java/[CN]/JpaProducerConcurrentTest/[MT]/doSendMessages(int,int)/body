@@ -2,13 +2,12 @@
   getMockEndpoint("mock:result").expectedMessageCount(files);
   getMockEndpoint("mock:result").assertNoDuplicates(body());
   ExecutorService executor=Executors.newFixedThreadPool(poolSize);
-  Map<Integer,Future<Object>> responses=new ConcurrentHashMap<Integer,Future<Object>>();
+  Map<Integer,Future<SendEmail>> responses=new HashMap<Integer,Future<SendEmail>>();
   for (int i=0; i < files; i++) {
     final int index=i;
-    Future<Object> out=executor.submit(new Callable<Object>(){
-      public Object call() throws Exception {
-        template.sendBody("direct:start",new SendEmail("user" + index + "@somewhere.org"));
-        return null;
+    Future<SendEmail> out=executor.submit(new Callable<SendEmail>(){
+      public SendEmail call() throws Exception {
+        return template.requestBody("direct:start",new SendEmail("user" + index + "@somewhere.org"),SendEmail.class);
       }
     }
 );
@@ -16,8 +15,10 @@
   }
   assertMockEndpointsSatisfied(30,TimeUnit.SECONDS);
   assertEquals(files,responses.size());
-  for (  Future<Object> future : responses.values()) {
-    future.get();
+  for (  Future<SendEmail> future : responses.values()) {
+    SendEmail sendMail=future.get();
+    assertNotNull(sendMail);
+    log.info("Got the managed entity {}",sendMail);
   }
   assertEntityInDB(files);
   executor.shutdownNow();
