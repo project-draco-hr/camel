@@ -1,0 +1,23 @@
+{
+  if (isPlatform("aix")) {
+    return;
+  }
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName throttlerName=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"mythrottler4\"");
+  ObjectName routeName=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=routes,name=\"route4\"");
+  mbeanServer.invoke(routeName,"reset",null,null);
+  getMockEndpoint("mock:endAsyncException").expectedMessageCount(10);
+  NotifyBuilder notifier=new NotifyBuilder(context).from("seda:throttleCountAsyncException").whenReceived(5).create();
+  for (int i=0; i < 10; i++) {
+    template.sendBody("seda:throttleCountAsyncException","Message " + i);
+  }
+  assertTrue(notifier.matches(2,TimeUnit.SECONDS));
+  Integer throttledMessages=(Integer)mbeanServer.getAttribute(throttlerName,"ThrottledCount");
+  assertTrue(throttledMessages.intValue() > 0);
+  assertMockEndpointsSatisfied();
+  Thread.sleep(500);
+  throttledMessages=(Integer)mbeanServer.getAttribute(throttlerName,"ThrottledCount");
+  assertEquals("Should not be any throttled messages left, found: " + throttledMessages,(Integer)0,throttledMessages);
+  Long completed=(Long)mbeanServer.getAttribute(routeName,"ExchangesCompleted");
+  assertEquals(0,completed.longValue());
+}

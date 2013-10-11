@@ -1,7 +1,23 @@
 {
+  final ScheduledExecutorService badService=new ScheduledThreadPoolExecutor(1){
+    @Override public ScheduledFuture<?> schedule(    Runnable command,    long delay,    TimeUnit unit){
+      throw new RejectedExecutionException();
+    }
+  }
+;
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
       from("direct:start").to("log:foo").throttle(10).id("mythrottler").to("mock:result");
+      from("seda:throttleCount").throttle(1).timePeriodMillis(250).id("mythrottler2").to("mock:end");
+      from("seda:throttleCountAsync").throttle(1).asyncDelayed().timePeriodMillis(250).id("mythrottler3").to("mock:endAsync");
+      from("seda:throttleCountAsyncException").throttle(1).asyncDelayed().timePeriodMillis(250).id("mythrottler4").to("mock:endAsyncException").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          throw new RuntimeException("Fail me");
+        }
+      }
+);
+      from("seda:throttleCountRejectExecutionCallerRuns").onException(RejectedExecutionException.class).to("mock:rejectedExceptionEndpoint1").end().throttle(1).timePeriodMillis(250).asyncDelayed().executorService(badService).callerRunsWhenRejected(true).id("mythrottler5").to("mock:endAsyncRejectCallerRuns");
+      from("seda:throttleCountRejectExecution").onException(RejectedExecutionException.class).to("mock:rejectedExceptionEndpoint1").end().throttle(1).timePeriodMillis(250).asyncDelayed().executorService(badService).callerRunsWhenRejected(false).id("mythrottler6").to("mock:endAsyncReject");
     }
   }
 ;

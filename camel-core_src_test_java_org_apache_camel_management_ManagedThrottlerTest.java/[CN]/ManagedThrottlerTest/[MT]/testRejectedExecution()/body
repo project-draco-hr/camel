@@ -1,0 +1,19 @@
+{
+  if (isPlatform("aix")) {
+    return;
+  }
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName throttlerName=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=processors,name=\"mythrottler2\"");
+  ObjectName routeName=ObjectName.getInstance("org.apache.camel:context=localhost/camel-1,type=routes,name=\"route2\"");
+  mbeanServer.invoke(routeName,"reset",null,null);
+  MockEndpoint mock=getMockEndpoint("mock:endAsyncReject");
+  mock.expectedMessageCount(1);
+  MockEndpoint exceptionMock=getMockEndpoint("mock:rejectedExceptionEndpoint1");
+  exceptionMock.expectedMessageCount(9);
+  for (int i=0; i < 10; i++) {
+    template.sendBody("seda:throttleCountRejectExecution","Message " + i);
+  }
+  assertMockEndpointsSatisfied();
+  Integer throttledMessages=(Integer)mbeanServer.getAttribute(throttlerName,"ThrottledCount");
+  assertEquals("Should not be any throttled messages left, found: " + throttledMessages,(Integer)0,throttledMessages);
+}
