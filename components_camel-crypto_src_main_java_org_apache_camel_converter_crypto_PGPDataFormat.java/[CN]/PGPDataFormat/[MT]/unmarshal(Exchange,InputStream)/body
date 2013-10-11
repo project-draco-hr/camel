@@ -2,7 +2,7 @@
   if (encryptedStream == null) {
     return null;
   }
-  PGPPrivateKey key=PGPDataFormatUtil.findPrivateKey(exchange.getContext(),findKeyFileName(exchange),findEncryptionKeyRing(exchange),encryptedStream,findKeyPassword(exchange));
+  PGPPrivateKey key=PGPDataFormatUtil.findPrivateKey(exchange.getContext(),findKeyFileName(exchange),findEncryptionKeyRing(exchange),encryptedStream,findKeyPassword(exchange),getProvider());
   if (key == null) {
     throw new IllegalArgumentException("Private key is null, cannot proceed");
   }
@@ -26,7 +26,7 @@
   }
   IOHelper.close(in);
   PGPPublicKeyEncryptedData pbe=(PGPPublicKeyEncryptedData)enc.get(0);
-  InputStream encData=pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(key));
+  InputStream encData=pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(getProvider()).build(key));
   pgpFactory=new PGPObjectFactory(encData);
   PGPCompressedData comData=(PGPCompressedData)pgpFactory.nextObject();
   pgpFactory=new PGPObjectFactory(comData.getDataStream());

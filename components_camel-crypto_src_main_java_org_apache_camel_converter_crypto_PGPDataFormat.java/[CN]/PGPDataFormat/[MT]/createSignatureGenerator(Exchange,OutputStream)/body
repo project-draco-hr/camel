@@ -6,18 +6,18 @@
   if ((sigKeyFileName == null && sigKeyRing == null) || sigKeyUserid == null || sigKeyPassword == null) {
     return null;
   }
-  PGPSecretKey sigSecretKey=PGPDataFormatUtil.findSecretKey(exchange.getContext(),sigKeyFileName,sigKeyRing,sigKeyPassword);
+  PGPSecretKey sigSecretKey=PGPDataFormatUtil.findSecretKey(exchange.getContext(),sigKeyFileName,sigKeyRing,sigKeyPassword,getProvider());
   if (sigSecretKey == null) {
     throw new IllegalArgumentException("Signature secret key is null, cannot proceed");
   }
-  PGPPrivateKey sigPrivateKey=sigSecretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(sigKeyPassword.toCharArray()));
+  PGPPrivateKey sigPrivateKey=sigSecretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(getProvider()).build(sigKeyPassword.toCharArray()));
   if (sigPrivateKey == null) {
     throw new IllegalArgumentException("Signature private key is null, cannot proceed");
   }
   PGPSignatureSubpacketGenerator spGen=new PGPSignatureSubpacketGenerator();
   spGen.setSignerUserID(false,sigKeyUserid);
   int algorithm=sigSecretKey.getPublicKey().getAlgorithm();
-  PGPSignatureGenerator sigGen=new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(algorithm,HashAlgorithmTags.SHA1).setProvider("BC"));
+  PGPSignatureGenerator sigGen=new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(algorithm,HashAlgorithmTags.SHA1).setProvider(getProvider()));
   sigGen.init(PGPSignature.BINARY_DOCUMENT,sigPrivateKey);
   sigGen.setHashedSubpackets(spGen.generate());
   sigGen.generateOnePassVersion(false).encode(out);
