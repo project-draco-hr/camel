@@ -1,8 +1,10 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      port=AvailablePortFinder.getNextAvailable(8000);
-      from("jetty:http://localhost:" + port + "/test").setHeader("Transfer-Encoding",constant("chunked")).transform().simple("Bye ${body}");
+      port1=AvailablePortFinder.getNextAvailable(8000);
+      port2=AvailablePortFinder.getNextAvailable(9000);
+      from("jetty:http://localhost:" + port1 + "/test").setHeader("Transfer-Encoding",constant("chunked")).transform().simple("Bye ${body}");
+      from("netty-http:http://localhost:" + port2 + "/test").to("netty-http:http://localhost:" + port1 + "/test?bridgeEndpoint=true&throwExceptionOnFailure=false");
     }
   }
 ;
