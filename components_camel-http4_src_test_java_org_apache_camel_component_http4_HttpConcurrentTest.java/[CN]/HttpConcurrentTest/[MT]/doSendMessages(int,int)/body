@@ -1,10 +1,10 @@
 {
   ExecutorService executor=Executors.newFixedThreadPool(poolSize);
-  Map<Integer,Future<Object>> responses=new ConcurrentHashMap<Integer,Future<Object>>();
+  Map<Integer,Future<String>> responses=new HashMap<Integer,Future<String>>();
   for (int i=0; i < files; i++) {
     final int index=i;
-    Future<Object> out=executor.submit(new Callable<Object>(){
-      public Object call() throws Exception {
+    Future<String> out=executor.submit(new Callable<String>(){
+      public String call() throws Exception {
         return template.requestBody("http4://" + getHostName() + ":"+ getPort(),null,String.class);
       }
     }
@@ -12,8 +12,8 @@
     responses.put(index,out);
   }
   assertEquals(files,responses.size());
-  Set<Object> unique=new HashSet<Object>();
-  for (  Future<Object> future : responses.values()) {
+  Set<String> unique=new HashSet<String>();
+  for (  Future<String> future : responses.values()) {
     unique.add(future.get());
   }
   assertEquals("Should be " + files + " unique responses",files,unique.size());
