@@ -5,11 +5,19 @@
   if (Exchange.CONTENT_TYPE.equalsIgnoreCase(k)) {
     String charset=ObjectHelper.after(v,"charset=");
     if (charset != null) {
+      String extra="";
+      if (charset.contains(";")) {
+        extra=ObjectHelper.after(charset,";");
+        charset=ObjectHelper.before(charset,";");
+      }
       charset=charset.trim();
       String s=StringHelper.removeLeadingAndEndingQuotes(charset);
       if (!charset.equals(s)) {
         v=ObjectHelper.before(v,"charset=") + "charset=" + s;
         LOG.debug("Removed quotes from charset in " + Exchange.CONTENT_TYPE + " from {} to {}",charset,s);
+        if (extra != null) {
+          v=v + ";" + extra;
+        }
         value=new ByteArrayBuffer.CaseInsensitive(v);
       }
     }
