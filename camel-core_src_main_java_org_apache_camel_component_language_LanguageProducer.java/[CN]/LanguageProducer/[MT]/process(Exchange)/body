@@ -31,8 +31,17 @@
     }
   }
   ObjectHelper.notNull(exp,"expression");
-  Object result=exp.evaluate(exchange,Object.class);
-  log.debug("Evaluated expression as: {} with: {}",result,exchange);
+  Object result;
+  try {
+    result=exp.evaluate(exchange,Object.class);
+    log.debug("Evaluated expression as: {} with: {}",result,exchange);
+  }
+  finally {
+    if (!getEndpoint().isContentCache()) {
+      ServiceHelper.stopService(exp);
+      getEndpoint().getCamelContext().removeService(exp);
+    }
+  }
   if (getEndpoint().isTransform()) {
     if (exchange.hasOut()) {
       exchange.getOut().setBody(result);
