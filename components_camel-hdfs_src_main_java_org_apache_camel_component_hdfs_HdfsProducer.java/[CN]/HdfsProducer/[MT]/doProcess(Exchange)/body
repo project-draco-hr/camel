@@ -1,7 +1,15 @@
 {
   Object body=exchange.getIn().getBody();
   Object key=exchange.getIn().getHeader(HdfsHeader.KEY.name());
-  if (ostream == null) {
+  if (exchange.getIn().getHeader(Exchange.FILE_NAME) != null) {
+    if (ostream != null) {
+      IOHelper.close(ostream,"output stream",log);
+    }
+    StringBuilder actualPath=new StringBuilder(hdfsPath);
+    actualPath.append(exchange.getIn().getHeader(Exchange.FILE_NAME,String.class));
+    ostream=HdfsOutputStream.createOutputStream(actualPath.toString(),config);
+  }
+ else   if (ostream == null) {
     ostream=setupHdfs(false);
   }
   boolean split=false;
