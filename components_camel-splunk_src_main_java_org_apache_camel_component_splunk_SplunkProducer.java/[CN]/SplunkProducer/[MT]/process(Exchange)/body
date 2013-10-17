@@ -1,10 +1,13 @@
 {
   try {
+    if (!dataWriter.isConnected()) {
+      dataWriter.start();
+    }
     dataWriter.write(exchange.getIn().getMandatoryBody(SplunkEvent.class));
   }
  catch (  Exception e) {
-    if (endpoint.reconnectIfPossible(e)) {
-      dataWriter.start();
+    if (endpoint.reset(e)) {
+      dataWriter.stop();
     }
     throw e;
   }
