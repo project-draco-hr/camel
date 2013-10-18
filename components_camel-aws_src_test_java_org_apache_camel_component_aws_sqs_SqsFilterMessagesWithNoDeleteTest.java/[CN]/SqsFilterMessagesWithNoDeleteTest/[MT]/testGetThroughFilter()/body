@@ -2,7 +2,7 @@
   final String sqsURI=String.format("aws-sqs://MyQueue?amazonSQSClient=#amazonSQSClient" + "&deleteIfFiltered=false" + "&defaultVisibilityTimeout=1");
   AmazonSQSClientMock clientMock=new AmazonSQSClientMock();
   populateMessages(clientMock);
-  JndiRegistry registry=new JndiRegistry(createJndiContext());
+  SimpleRegistry registry=new SimpleRegistry();
   DefaultCamelContext ctx=new DefaultCamelContext(registry);
   ctx.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
@@ -11,11 +11,13 @@
   }
 );
   MockEndpoint result=MockEndpoint.resolve(ctx,"mock:result");
-  registry.bind("amazonSQSClient",clientMock);
+  registry.put("amazonSQSClient",clientMock);
   clientMock.setScheduler(ctx.getExecutorServiceManager().newScheduledThreadPool(clientMock,"ClientMock Scheduler",1));
   result.expectedMessageCount(1);
   ctx.start();
-  result.assertIsSatisfied(1000,TimeUnit.MILLISECONDS);
+  assertIsSatisfied(1000,TimeUnit.MILLISECONDS);
   String response=ctx.createConsumerTemplate().receiveBody(sqsURI,5000,String.class);
   assertNull(response);
+  ctx.stop();
+  clientMock.shutdown();
 }
