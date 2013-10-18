@@ -6,16 +6,12 @@
     template.sendBody("direct:start" + routeNr,"CIAO" + i);
   }
   stopCamelContext();
-  for (int i=0; i < 10; ++i) {
-    InputStream in=null;
-    try {
-      in=new URL("file:///" + BASE_FILE.toUri() + routeNr+ '/'+ HdfsConstants.DEFAULT_SEGMENT_PREFIX+ i).openStream();
-      ByteArrayOutputStream bos=new ByteArrayOutputStream();
-      IOUtils.copyBytes(in,bos,4096,false);
-      assertEquals("CIAO" + i,new String(bos.toByteArray()));
-    }
-  finally {
-      IOUtils.closeStream(in);
-    }
+  FileSystem fs=FileSystem.get(new Configuration());
+  FileStatus[] status=fs.listStatus(new Path("file:///" + BASE_FILE.toUri() + routeNr));
+  assertEquals(10,status.length);
+  for (int i=0; i < status.length; i++) {
+    BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(status[i].getPath())));
+    assertTrue(br.readLine().startsWith("CIAO"));
+    assertNull(br.readLine());
   }
 }
