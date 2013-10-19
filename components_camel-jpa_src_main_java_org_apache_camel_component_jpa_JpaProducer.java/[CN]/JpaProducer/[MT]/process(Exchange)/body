@@ -8,31 +8,22 @@
         if (values.getClass().isArray()) {
           Object[] array=(Object[])values;
           for (int index=0; index < array.length; index++) {
-            Object managedEntity=save(array[index],entityManager);
-            if (!endpoint.isUsePersist()) {
-              array[index]=managedEntity;
-            }
+            save(array[index],entityManager);
           }
         }
  else         if (values instanceof Collection) {
-          @SuppressWarnings("unchecked") Collection<Object> collection=(Collection<Object>)values;
-          List<Object> managedEntities=new ArrayList<Object>();
+          Collection<?> collection=(Collection<?>)values;
           for (          Object entity : collection) {
-            Object managedEntity=save(entity,entityManager);
-            managedEntities.add(managedEntity);
-          }
-          if (!endpoint.isUsePersist()) {
-            collection.clear();
-            collection.addAll(managedEntities);
+            save(entity,entityManager);
           }
         }
  else {
           Object managedEntity=save(values,entityManager);
-          if (!endpoint.isUsePersist()) {
+          if (!getEndpoint().isUsePersist()) {
             exchange.getIn().setBody(managedEntity);
           }
         }
-        if (endpoint.isFlushOnSend()) {
+        if (getEndpoint().isFlushOnSend()) {
           entityManager.joinTransaction();
           entityManager.flush();
         }
@@ -44,7 +35,7 @@
  */
       private Object save(      final Object entity,      EntityManager entityManager){
         entityManager.joinTransaction();
-        if (endpoint.isUsePersist()) {
+        if (getEndpoint().isUsePersist()) {
           entityManager.persist(entity);
           return entity;
         }
