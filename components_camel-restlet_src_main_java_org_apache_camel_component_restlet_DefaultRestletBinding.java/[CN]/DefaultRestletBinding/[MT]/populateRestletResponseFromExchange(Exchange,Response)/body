@@ -61,12 +61,24 @@
     CharacterSet cs=CharacterSet.valueOf(exchange.getProperty(Exchange.CHARSET_NAME,String.class));
     response.getEntity().setCharacterSet(cs);
   }
+  Series<Header> series=new Series<Header>(Header.class);
   for (  Map.Entry<String,Object> entry : out.getHeaders().entrySet()) {
     String key=entry.getKey();
     Object value=entry.getValue();
     if (!headerFilterStrategy.applyFilterToCamelHeaders(key,value,exchange)) {
-      setResponseHeader(exchange,response,key,value);
-      LOG.debug("Populate Restlet HTTP header in response from exchange header: {} value: {}",key,value);
+      boolean added=setResponseHeader(exchange,response,key,value);
+      if (!added) {
+        if (!key.startsWith("Camel") && !key.startsWith("org.restlet")) {
+          String text=exchange.getContext().getTypeConverter().tryConvertTo(String.class,exchange,value);
+          if (text != null) {
+            series.add(key,text);
+          }
+        }
+      }
     }
+  }
+  if (!series.isEmpty()) {
+    Series<Header> httpHeaders=(Series<Header>)response.getAttributes().get(HeaderConstants.ATTRIBUTE_HEADERS);
+    httpHeaders.addAll(series);
   }
 }
