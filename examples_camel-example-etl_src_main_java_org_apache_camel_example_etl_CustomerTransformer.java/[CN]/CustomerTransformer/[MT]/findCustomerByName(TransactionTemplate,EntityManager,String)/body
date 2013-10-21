@@ -1,0 +1,20 @@
+{
+  return transactionTemplate.execute(new TransactionCallback<CustomerEntity>(){
+    public CustomerEntity doInTransaction(    TransactionStatus status){
+      entityManager.joinTransaction();
+      List<CustomerEntity> list=entityManager.createNamedQuery("findCustomerByUsername",CustomerEntity.class).setParameter("userName",userName).getResultList();
+      CustomerEntity answer;
+      if (list.isEmpty()) {
+        answer=new CustomerEntity();
+        answer.setUserName(userName);
+        LOG.info("Created a new CustomerEntity {} as no matching persisted entity found.",answer);
+      }
+ else {
+        answer=list.get(0);
+        LOG.info("Found a matching CustomerEntity {} having the userName {}.",answer,userName);
+      }
+      return answer;
+    }
+  }
+);
+}

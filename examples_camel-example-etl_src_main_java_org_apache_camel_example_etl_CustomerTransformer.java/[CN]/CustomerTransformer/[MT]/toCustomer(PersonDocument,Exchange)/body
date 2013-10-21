@@ -1,11 +1,12 @@
 {
-  JpaTemplate template=exchange.getIn().getHeader("CamelJpaTemplate",JpaTemplate.class);
+  EntityManager entityManager=exchange.getIn().getHeader(JpaConstants.ENTITYMANAGER,EntityManager.class);
+  TransactionTemplate transactionTemplate=exchange.getContext().getRegistry().lookupByNameAndType("transactionTemplate",TransactionTemplate.class);
   String user=doc.getUser();
-  CustomerEntity customer=findCustomerByName(template,user);
+  CustomerEntity customer=findCustomerByName(transactionTemplate,entityManager,user);
   customer.setUserName(user);
   customer.setFirstName(doc.getFirstName());
   customer.setSurname(doc.getLastName());
   customer.setCity(doc.getCity());
-  LOG.debug("Created object customer: " + customer);
+  LOG.info("Created object customer: {}",customer);
   return customer;
 }
