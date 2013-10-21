@@ -20,6 +20,12 @@
     encryptedData=(PGPPublicKeyEncryptedData)encryptedDataObjects.next();
     PGPSecretKey pgpSecKey=pgpSec.getSecretKey(encryptedData.getKeyID());
     if (pgpSecKey != null) {
+      if (passphrase == null && passphraseAccessor != null) {
+        @SuppressWarnings("unchecked") Iterator<String> userIDs=pgpSecKey.getUserIDs();
+        while (passphrase == null && userIDs.hasNext()) {
+          passphrase=passphraseAccessor.getPassphrase(userIDs.next());
+        }
+      }
       privateKey=pgpSecKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphrase.toCharArray()));
     }
   }

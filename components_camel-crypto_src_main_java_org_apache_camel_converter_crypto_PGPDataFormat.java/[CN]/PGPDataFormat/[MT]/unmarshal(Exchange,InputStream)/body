@@ -2,10 +2,6 @@
   if (encryptedStream == null) {
     return null;
   }
-  PGPPrivateKey key=PGPDataFormatUtil.findPrivateKey(exchange.getContext(),findKeyFileName(exchange),findEncryptionKeyRing(exchange),encryptedStream,findKeyPassword(exchange),getProvider());
-  if (key == null) {
-    throw new IllegalArgumentException("Private key is null, cannot proceed");
-  }
   InputStream in;
   try {
     byte[] encryptedData=IOUtils.toByteArray(encryptedStream);
@@ -25,7 +21,15 @@
     enc=(PGPEncryptedDataList)pgpFactory.nextObject();
   }
   IOHelper.close(in);
-  PGPPublicKeyEncryptedData pbe=(PGPPublicKeyEncryptedData)enc.get(0);
+  PGPPublicKeyEncryptedData pbe=null;
+  PGPPrivateKey key=null;
+  for (int i=0; i < enc.size() && key == null; i++) {
+    pbe=(PGPPublicKeyEncryptedData)enc.get(i);
+    key=PGPDataFormatUtil.findPrivateKeyWithKeyId(exchange.getContext(),findKeyFileName(exchange),findEncryptionKeyRing(exchange),pbe.getKeyID(),findKeyPassword(exchange),getPassphraseAccessor(),getProvider());
+  }
+  if (key == null) {
+    throw new PGPException("Provided input is encrypted with unknown pair of keys.");
+  }
   InputStream encData=pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(getProvider()).build(key));
   pgpFactory=new PGPObjectFactory(encData);
   PGPCompressedData comData=(PGPCompressedData)pgpFactory.nextObject();
@@ -51,7 +55,7 @@
   if (signature != null) {
     signature.update(answer);
     PGPSignatureList sigList=(PGPSignatureList)pgpFactory.nextObject();
-    if (!signature.verify(sigList.get(0))) {
+    if (!signature.verify(getSignatureWithKeyId(signature.getKeyID(),sigList))) {
       throw new SignatureException("Cannot verify PGP signature");
     }
   }

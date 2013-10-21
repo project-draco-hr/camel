@@ -1,0 +1,29 @@
+{
+  PGPSecretKey pgpSecKey=null;
+  PGPSecretKeyRingCollection pgpSec=new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyringInput));
+  for (Iterator<?> i=pgpSec.getKeyRings(); i.hasNext() && pgpSecKey == null; ) {
+    Object data=i.next();
+    if (data instanceof PGPSecretKeyRing) {
+      PGPSecretKeyRing keyring=(PGPSecretKeyRing)data;
+      PGPSecretKey secKey=keyring.getSecretKey();
+      if (userId != null) {
+        for (Iterator<String> iterator=secKey.getUserIDs(); iterator.hasNext(); ) {
+          String keyUserId=iterator.next();
+          if (keyUserId != null && keyUserId.contains(userId)) {
+            PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphrase.toCharArray()));
+            if (privateKey != null) {
+              return secKey;
+            }
+          }
+        }
+      }
+ else {
+        PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphrase.toCharArray()));
+        if (privateKey != null) {
+          pgpSecKey=secKey;
+        }
+      }
+    }
+  }
+  return pgpSecKey;
+}

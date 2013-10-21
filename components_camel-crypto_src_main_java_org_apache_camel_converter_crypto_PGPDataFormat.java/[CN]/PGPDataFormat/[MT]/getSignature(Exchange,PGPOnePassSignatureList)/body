@@ -1,9 +1,17 @@
 {
-  PGPPublicKey sigPublicKey=PGPDataFormatUtil.findPublicKey(exchange.getContext(),findSignatureKeyFileName(exchange),findSignatureKeyRing(exchange),findSignatureKeyUserid(exchange),false);
-  if (sigPublicKey == null) {
-    throw new IllegalArgumentException("Signature public key is null, cannot proceed");
+  for (int i=0; i < signatureList.size(); i++) {
+    PGPOnePassSignature signature=signatureList.get(i);
+    PGPPublicKey sigPublicKey=PGPDataFormatUtil.findPublicKeyWithKeyId(exchange.getContext(),findSignatureKeyFileName(exchange),findSignatureKeyRing(exchange),signature.getKeyID(),false);
+    if (sigPublicKey == null) {
+      continue;
+    }
+    signature.init(new JcaPGPContentVerifierBuilderProvider().setProvider(getProvider()),sigPublicKey);
+    return signature;
   }
-  PGPOnePassSignature signature=signatureList.get(0);
-  signature.init(new JcaPGPContentVerifierBuilderProvider().setProvider(getProvider()),sigPublicKey);
-  return signature;
+  if (signatureList.isEmpty()) {
+    return null;
+  }
+ else {
+    throw new IllegalArgumentException("No public key found fitting to the signature key Id; cannot verify the signature");
+  }
 }
