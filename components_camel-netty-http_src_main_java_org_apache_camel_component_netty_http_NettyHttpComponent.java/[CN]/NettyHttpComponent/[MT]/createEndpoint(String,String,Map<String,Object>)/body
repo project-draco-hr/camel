@@ -16,19 +16,17 @@
   NettyHttpSecurityConfiguration securityConfiguration=resolveAndRemoveReferenceParameter(parameters,"securityConfiguration",NettyHttpSecurityConfiguration.class);
   Map<String,Object> securityOptions=IntrospectionSupport.extractProperties(parameters,"securityConfiguration.");
   config=parseConfiguration(config,remaining,parameters);
+  setProperties(config,parameters);
   config.validateConfiguration();
   NettySharedHttpServer shared=resolveAndRemoveReferenceParameter(parameters,"nettySharedHttpServer",NettySharedHttpServer.class);
   if (shared != null) {
     LOG.debug("Using NettySharedHttpServer: {} with port: {}",shared,shared.getPort());
     config.setPort(shared.getPort());
   }
-  NettyHttpEndpoint answer=new NettyHttpEndpoint(remaining,this,config);
+  URI u=new URI(UnsafeUriCharactersEncoder.encode(remaining));
+  String addressUri=URISupport.createRemainingURI(u,parameters).toString();
+  NettyHttpEndpoint answer=new NettyHttpEndpoint(addressUri,this,config);
   answer.setTimer(getTimer());
-  setProperties(answer.getConfiguration(),parameters);
-  if (!parameters.isEmpty()) {
-    String query=URISupport.createQueryString(parameters);
-    answer.setUriParameters(query);
-  }
   if (answer.getNettyHttpBinding() == null) {
     answer.setNettyHttpBinding(getNettyHttpBinding());
   }
