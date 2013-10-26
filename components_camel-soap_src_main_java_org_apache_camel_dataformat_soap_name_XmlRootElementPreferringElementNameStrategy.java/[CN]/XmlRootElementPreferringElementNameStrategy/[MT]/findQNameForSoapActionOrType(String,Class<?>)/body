@@ -1,0 +1,29 @@
+{
+  XmlType xmlType=type.getAnnotation(XmlType.class);
+  if (xmlType == null || xmlType.name() == null) {
+    throw new RuntimeException("The type " + type.getName() + " needs to have an XmlType annotation with name");
+  }
+  String localName=null;
+  String nameSpace=null;
+  XmlRootElement root=type.getAnnotation(XmlRootElement.class);
+  if (root != null) {
+    localName=ObjectHelper.isEmpty(localName) ? root.name() : localName;
+    nameSpace=isInValidNamespace(nameSpace) ? root.namespace() : nameSpace;
+  }
+  if (ObjectHelper.isEmpty(localName)) {
+    localName=xmlType.name();
+  }
+  if (isInValidNamespace(nameSpace)) {
+    XmlSchema xmlSchema=type.getPackage().getAnnotation(XmlSchema.class);
+    if (xmlSchema != null) {
+      nameSpace=xmlSchema.namespace();
+    }
+  }
+  if (isInValidNamespace(nameSpace)) {
+    nameSpace=xmlType.namespace();
+  }
+  if (ObjectHelper.isEmpty(localName) || isInValidNamespace(nameSpace)) {
+    throw new IllegalStateException("Unable to determine localName or namespace for type <" + type.getName() + ">");
+  }
+  return new QName(nameSpace,localName);
+}
