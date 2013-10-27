@@ -1,0 +1,31 @@
+{
+  PackageScanFilter defaultRecordScanFilter=new PackageScanFilter(){
+    @Override public boolean matches(    Class<?> type){
+      FixedLengthRecord record=type.getAnnotation(FixedLengthRecord.class);
+      return record != null && !record.isFooter() && !record.isHeader();
+    }
+  }
+;
+  BindyFixedLengthFactory factory=new BindyFixedLengthFactory(getClassType());
+  if (factory.hasHeader()) {
+    PackageScanFilter headerScanFilter=new PackageScanFilter(){
+      @Override public boolean matches(      Class<?> type){
+        FixedLengthRecord record=type.getAnnotation(FixedLengthRecord.class);
+        return record != null && record.isHeader();
+      }
+    }
+;
+    this.headerFactory=new BindyFixedLengthFactory(getClassType());
+  }
+  if (factory.hasFooter()) {
+    PackageScanFilter footerScanFilter=new PackageScanFilter(){
+      @Override public boolean matches(      Class<?> type){
+        FixedLengthRecord record=type.getAnnotation(FixedLengthRecord.class);
+        return record != null && record.isFooter();
+      }
+    }
+;
+    this.footerFactory=new BindyFixedLengthFactory(getClassType());
+  }
+  return factory;
+}
