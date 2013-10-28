@@ -52,5 +52,17 @@
   if (timestamp != null) {
     properties.timestamp(new Date(Long.parseLong(timestamp.toString())));
   }
+  final Map<String,Object> headers=exchange.getIn().getHeaders();
+  Map<String,Object> filteredHeaders=new HashMap<String,Object>();
+  for (  Map.Entry<String,Object> header : headers.entrySet()) {
+    Object value=getValidRabbitMQHeaderValue(header.getValue());
+    if (value != null) {
+      filteredHeaders.put(header.getKey(),header.getValue());
+    }
+ else     if (log.isDebugEnabled()) {
+      log.debug("Ignoring header: {} of class: {} with value: {}",new Object[]{header.getKey(),header.getValue().getClass().getName(),header.getValue()});
+    }
+  }
+  properties.headers(filteredHeaders);
   return properties;
 }
