@@ -1,34 +1,41 @@
 {
   List<Message> messages=new ArrayList<Message>();
   MessageProducerResources producer=getProducers().borrowObject();
-  if (getProducers() != null) {
-    if (exchange.getIn().getBody() != null) {
-      if (exchange.getIn().getBody() instanceof List) {
-        List<?> payload=(List<?>)exchange.getIn().getBody();
-        for (        Object object : payload) {
-          Message message=null;
-          if (BatchMessage.class.isInstance(object)) {
-            BatchMessage<?> batchMessage=(BatchMessage<?>)object;
-            message=JmsMessageHelper.createMessage(producer.getSession(),batchMessage.getPayload(),batchMessage.getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
-          }
+  try {
+    if (getProducers() != null) {
+      if (exchange.getIn().getBody() != null) {
+        if (exchange.getIn().getBody() instanceof List) {
+          List<?> payload=(List<?>)exchange.getIn().getBody();
+          for (          Object object : payload) {
+            Message message=null;
+            if (BatchMessage.class.isInstance(object)) {
+              BatchMessage<?> batchMessage=(BatchMessage<?>)object;
+              message=JmsMessageHelper.createMessage(producer.getSession(),batchMessage.getPayload(),batchMessage.getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
+            }
  else {
-            message=JmsMessageHelper.createMessage(producer.getSession(),object,exchange.getIn().getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
+              message=JmsMessageHelper.createMessage(producer.getSession(),object,exchange.getIn().getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
+            }
+            messages.add(message);
           }
+        }
+ else {
+          Object payload=exchange.getIn().getBody();
+          Message message=JmsMessageHelper.createMessage(producer.getSession(),payload,exchange.getIn().getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
           messages.add(message);
         }
       }
- else {
-        Object payload=exchange.getIn().getBody();
-        Message message=JmsMessageHelper.createMessage(producer.getSession(),payload,exchange.getIn().getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
-        messages.add(message);
+      if (isEndpointTransacted()) {
+        exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),producer.getCommitStrategy()));
+      }
+      for (      Message message : messages) {
+        producer.getMessageProducer().send(message);
       }
     }
-    if (isEndpointTransacted()) {
-      exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),producer.getCommitStrategy()));
-    }
-    for (    Message message : messages) {
-      producer.getMessageProducer().send(message);
-    }
+  }
+ catch (  Exception e) {
+    exchange.setException(new Exception("Unable to complet sending the message: " + e.getLocalizedMessage()));
+  }
+ finally {
     getProducers().returnObject(producer);
     callback.done(isSynchronous());
   }

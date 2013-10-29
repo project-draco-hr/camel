@@ -1,0 +1,34 @@
+{
+  MessageConsumerResources answer=null;
+  Connection conn=null;
+  try {
+    conn=getConnectionResource().borrowConnection();
+    Session session=null;
+    MessageConsumer messageConsumer=null;
+    if (isTransacted()) {
+      session=conn.createSession(true,Session.SESSION_TRANSACTED);
+    }
+ else {
+      session=conn.createSession(false,Session.AUTO_ACKNOWLEDGE);
+    }
+    messageConsumer=JmsObjectFactory.createMessageConsumer(session,getDestinationName(),getMessageSelector(),isTopic(),getDurableSubscriptionId());
+    MessageListener handler=createMessageHandler(session);
+    messageConsumer.setMessageListener(handler);
+    if (session == null) {
+      throw new CamelException("Message Consumer Creation Exception: Session is NULL");
+    }
+    if (messageConsumer == null) {
+      throw new CamelException("Message Consumer Creation Exception: MessageConsumer is NULL");
+    }
+    answer=new MessageConsumerResources(session,messageConsumer);
+  }
+ catch (  Exception e) {
+    log.error("Unable to create the MessageConsumer: " + e.getLocalizedMessage());
+  }
+ finally {
+    if (conn != null) {
+      getConnectionResource().returnConnection(conn);
+    }
+  }
+  return answer;
+}

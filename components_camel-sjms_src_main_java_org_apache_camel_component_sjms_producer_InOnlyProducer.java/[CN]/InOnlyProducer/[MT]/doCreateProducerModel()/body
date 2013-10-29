@@ -1,26 +1,38 @@
 {
-  Connection conn=getConnectionResource().borrowConnection();
-  TransactionCommitStrategy commitStrategy=null;
-  Session session=null;
-  if (isEndpointTransacted()) {
-    if (getCommitStrategy() != null) {
-      commitStrategy=getCommitStrategy();
+  MessageProducerResources answer=null;
+  Connection conn=null;
+  try {
+    conn=getConnectionResource().borrowConnection();
+    TransactionCommitStrategy commitStrategy=null;
+    Session session=null;
+    MessageProducer messageProducer=null;
+    if (isEndpointTransacted()) {
+      if (getCommitStrategy() != null) {
+        commitStrategy=getCommitStrategy();
+      }
+ else {
+        commitStrategy=new DefaultTransactionCommitStrategy();
+      }
+      session=conn.createSession(true,getAcknowledgeMode());
     }
  else {
-      commitStrategy=new DefaultTransactionCommitStrategy();
+      session=conn.createSession(false,getAcknowledgeMode());
     }
-    session=conn.createSession(true,getAcknowledgeMode());
-  }
+    if (isTopic()) {
+      messageProducer=JmsObjectFactory.createMessageProducer(session,getDestinationName(),isTopic(),isPersistent(),getTtl());
+    }
  else {
-    session=conn.createSession(false,getAcknowledgeMode());
+      messageProducer=JmsObjectFactory.createQueueProducer(session,getDestinationName());
+    }
+    answer=new MessageProducerResources(session,messageProducer,commitStrategy);
   }
-  MessageProducer messageProducer=null;
-  if (isTopic()) {
-    messageProducer=JmsObjectFactory.createMessageProducer(session,getDestinationName(),isTopic(),isPersistent(),getTtl());
+ catch (  Exception e) {
+    log.error("Unable to create the MessageProducer: " + e.getLocalizedMessage());
   }
- else {
-    messageProducer=JmsObjectFactory.createQueueProducer(session,getDestinationName());
+ finally {
+    if (conn != null) {
+      getConnectionResource().returnConnection(conn);
+    }
   }
-  getConnectionResource().returnConnection(conn);
-  return new MessageProducerResources(session,messageProducer,commitStrategy);
+  return answer;
 }
