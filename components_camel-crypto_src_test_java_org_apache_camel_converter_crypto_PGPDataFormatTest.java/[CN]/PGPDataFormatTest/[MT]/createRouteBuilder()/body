@@ -42,7 +42,7 @@
       pgpDecryptByteArray.setEncryptionKeyRing(getSecKeyRing());
       pgpDecryptByteArray.setPassphraseAccessor(passphraseAccessor);
       pgpDecryptByteArray.setProvider(getProvider());
-      from("direct:key-ring-byte-array").marshal(pgpEncryptByteArray).to("mock:encrypted").unmarshal(pgpDecryptByteArray).to("mock:unencrypted");
+      from("direct:key-ring-byte-array").streamCaching().marshal(pgpEncryptByteArray).to("mock:encrypted").unmarshal(pgpDecryptByteArray).to("mock:unencrypted");
       PGPDataFormat pgpSignAndEncryptByteArray=new PGPDataFormat();
       pgpSignAndEncryptByteArray.setKeyUserid(keyUserid);
       pgpSignAndEncryptByteArray.setSignatureKeyRing(getSecKeyRing());
@@ -55,7 +55,7 @@
       pgpVerifyAndDecryptByteArray.setPassphraseAccessor(passphraseAccessor);
       pgpVerifyAndDecryptByteArray.setEncryptionKeyRing(getSecKeyRing());
       pgpVerifyAndDecryptByteArray.setProvider(getProvider());
-      from("direct:sign-key-ring-byte-array").setHeader(PGPDataFormat.ENCRYPTION_KEY_RING).constant(getPublicKeyRing()).marshal(pgpSignAndEncryptByteArray).removeHeader(PGPDataFormat.ENCRYPTION_KEY_RING).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_RING).constant(getPublicKeyRing()).unmarshal(pgpVerifyAndDecryptByteArray).removeHeader(PGPDataFormat.SIGNATURE_KEY_RING).to("mock:unencrypted");
+      from("direct:sign-key-ring-byte-array").streamCaching().setHeader(PGPDataFormat.ENCRYPTION_KEY_RING).constant(getPublicKeyRing()).marshal(pgpSignAndEncryptByteArray).removeHeader(PGPDataFormat.ENCRYPTION_KEY_RING).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_RING).constant(getPublicKeyRing()).unmarshal(pgpVerifyAndDecryptByteArray).removeHeader(PGPDataFormat.SIGNATURE_KEY_RING).to("mock:unencrypted");
     }
   }
 ;
