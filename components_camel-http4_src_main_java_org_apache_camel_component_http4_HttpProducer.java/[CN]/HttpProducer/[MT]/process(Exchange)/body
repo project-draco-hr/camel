@@ -15,6 +15,10 @@
     exchange.getIn().getHeaders().remove("host");
   }
   HttpRequestBase httpRequest=createMethod(exchange);
+  if (getEndpoint().isAuthenticationPreemptive()) {
+    Credentials creds=((DefaultHttpClient)httpClient).getCredentialsProvider().getCredentials(AuthScope.ANY);
+    httpRequest.addHeader(new BasicScheme().authenticate(creds,httpRequest));
+  }
   Message in=exchange.getIn();
   String httpProtocolVersion=in.getHeader(Exchange.HTTP_PROTOCOL_VERSION,String.class);
   if (httpProtocolVersion != null) {
