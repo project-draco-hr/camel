@@ -43,7 +43,7 @@
     Iterator<?> it=ObjectHelper.createIterator(values);
     while (it.hasNext()) {
       Object extracted=it.next();
-      Object decoded=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(extracted.toString(),"UTF-8") : extracted.toString();
+      Object decoded=shouldUrlDecodeHeader(configuration,name,extracted,"UTF-8");
       LOG.trace("HTTP-header: {}",extracted);
       if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,decoded,exchange)) {
         NettyHttpHelper.appendHeader(headers,name,decoded);
@@ -59,7 +59,7 @@
       Iterator<?> it=ObjectHelper.createIterator(values);
       while (it.hasNext()) {
         Object extracted=it.next();
-        Object decoded=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(extracted.toString(),"UTF-8") : extracted.toString();
+        Object decoded=shouldUrlDecodeHeader(configuration,name,extracted,"UTF-8");
         LOG.trace("URI-Parameter: {}",extracted);
         if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,decoded,exchange)) {
           NettyHttpHelper.appendHeader(headers,name,decoded);
@@ -74,8 +74,8 @@
       for (      String param : body.split("&")) {
         String[] pair=param.split("=",2);
         if (pair.length == 2) {
-          String name=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(pair[0],charset) : pair[0];
-          String value=configuration.isUrlDecodeHeaders() ? URLDecoder.decode(pair[1],charset) : pair[1];
+          String name=shouldUrlDecodeHeader(configuration,"",pair[0],charset);
+          String value=shouldUrlDecodeHeader(configuration,name,pair[1],charset);
           if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,value,exchange)) {
             NettyHttpHelper.appendHeader(headers,name,value);
           }
