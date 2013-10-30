@@ -1,16 +1,25 @@
 {
   shutdownRunningTask=null;
   pendingExchanges=0;
+  String fileName=getConfiguration().getFileName();
   String bucketName=getConfiguration().getBucketName();
-  LOG.trace("Queueing objects in bucket [{}]...",bucketName);
-  ListObjectsRequest listObjectsRequest=new ListObjectsRequest();
-  listObjectsRequest.setBucketName(bucketName);
-  listObjectsRequest.setPrefix(getConfiguration().getPrefix());
-  listObjectsRequest.setMaxKeys(maxMessagesPerPoll);
-  ObjectListing listObjects=getAmazonS3Client().listObjects(listObjectsRequest);
-  if (LOG.isTraceEnabled()) {
-    LOG.trace("Found {} objects in bucket [{}]...",listObjects.getObjectSummaries().size(),bucketName);
+  Queue<Exchange> exchanges=null;
+  if (fileName != null) {
+    LOG.trace("Getting object in bucket [{}] with file name [{}]...",bucketName,fileName);
+    S3Object s3Object=getAmazonS3Client().getObject(new GetObjectRequest(bucketName,fileName));
+    exchanges=createExchanges(s3Object);
   }
-  Queue<Exchange> exchanges=createExchanges(listObjects.getObjectSummaries());
+ else {
+    LOG.trace("Queueing objects in bucket [{}]...",bucketName);
+    ListObjectsRequest listObjectsRequest=new ListObjectsRequest();
+    listObjectsRequest.setBucketName(bucketName);
+    listObjectsRequest.setPrefix(getConfiguration().getPrefix());
+    listObjectsRequest.setMaxKeys(maxMessagesPerPoll);
+    ObjectListing listObjects=getAmazonS3Client().listObjects(listObjectsRequest);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Found {} objects in bucket [{}]...",listObjects.getObjectSummaries().size(),bucketName);
+    }
+    exchanges=createExchanges(listObjects.getObjectSummaries());
+  }
   return processBatch(CastUtils.cast(exchanges));
 }
