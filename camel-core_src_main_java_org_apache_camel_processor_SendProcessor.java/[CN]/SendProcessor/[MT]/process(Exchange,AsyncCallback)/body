@@ -10,19 +10,28 @@
     final Exchange target=configureExchange(exchange,pattern);
     EventHelper.notifyExchangeSending(exchange.getContext(),target,destination);
     LOG.debug(">>>> {} {}",destination,exchange);
-    return producer.process(exchange,new AsyncCallback(){
-      @Override public void done(      boolean doneSync){
-        try {
-          target.setPattern(existingPattern);
-          long timeTaken=watch.stop();
-          EventHelper.notifyExchangeSent(target.getContext(),target,destination,timeTaken);
-        }
+    boolean sync=true;
+    try {
+      sync=producer.process(exchange,new AsyncCallback(){
+        @Override public void done(        boolean doneSync){
+          try {
+            target.setPattern(existingPattern);
+            long timeTaken=watch.stop();
+            EventHelper.notifyExchangeSent(target.getContext(),target,destination,timeTaken);
+          }
   finally {
-          callback.done(doneSync);
+            callback.done(doneSync);
+          }
         }
       }
-    }
 );
+    }
+ catch (    Throwable throwable) {
+      if (exchange != null) {
+        exchange.setException(throwable);
+      }
+    }
+    return sync;
   }
   return producerCache.doInAsyncProducer(destination,exchange,pattern,callback,new AsyncProducerCallback(){
     public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    final Exchange exchange,    ExchangePattern pattern,    final AsyncCallback callback){
