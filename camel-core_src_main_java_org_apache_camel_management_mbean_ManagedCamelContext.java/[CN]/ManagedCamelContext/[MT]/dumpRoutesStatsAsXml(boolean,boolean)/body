@@ -5,11 +5,12 @@
   sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
   MBeanServer server=getContext().getManagementStrategy().getManagementAgent().getMBeanServer();
   if (server != null) {
-    ObjectName query=ObjectName.getInstance("org.apache.camel:context=*/" + getContext().getManagementName() + ",type=routes,*");
+    String prefix=getContext().getManagementStrategy().getManagementAgent().getIncludeHostName() ? "*/" : "";
+    ObjectName query=ObjectName.getInstance("org.apache.camel:context=" + prefix + getContext().getManagementName()+ ",type=routes,*");
     Set<ObjectName> routes=server.queryNames(query,null);
     Set<ManagedProcessorMBean> processors=new LinkedHashSet<ManagedProcessorMBean>();
     if (includeProcessors) {
-      query=ObjectName.getInstance("org.apache.camel:context=*/" + getContext().getManagementName() + ",type=processors,*");
+      query=ObjectName.getInstance("org.apache.camel:context=" + prefix + getContext().getManagementName()+ ",type=processors,*");
       Set<ObjectName> names=server.queryNames(query,null);
       for (      ObjectName on : names) {
         ManagedProcessorMBean processor=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedProcessorMBean.class,true);
