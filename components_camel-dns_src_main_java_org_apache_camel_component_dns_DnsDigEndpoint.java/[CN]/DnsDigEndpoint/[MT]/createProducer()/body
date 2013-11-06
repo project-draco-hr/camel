@@ -2,13 +2,16 @@
   return new DefaultProducer(this){
     public void process(    Exchange exchange) throws Exception {
       String server=exchange.getIn().getHeader(DnsConstants.DNS_SERVER,String.class);
-      ObjectHelper.notEmpty(server,"Header " + DnsConstants.DNS_SERVER);
       SimpleResolver resolver=new SimpleResolver(server);
       int type=Type.value(exchange.getIn().getHeader(DnsConstants.DNS_TYPE,String.class));
       if (type == -1) {
         type=Type.A;
       }
-      int dclass=DClass.value(exchange.getIn().getHeader(DnsConstants.DNS_CLASS,String.class));
+      String dclassValue=exchange.getIn().getHeader(DnsConstants.DNS_CLASS,String.class);
+      if (dclassValue == null) {
+        dclassValue="";
+      }
+      int dclass=DClass.value(dclassValue);
       if (dclass == -1) {
         dclass=DClass.IN;
       }
