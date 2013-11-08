@@ -16,7 +16,11 @@
     throw new CamelException("Interrupted while waiting for " + "connection to " + configuration.getAddress());
   }
   if (!channelFuture.isDone() || !channelFuture.isSuccess()) {
-    throw new CamelException("Cannot connect to " + configuration.getAddress(),channelFuture.getCause());
+    ConnectException cause=new ConnectException("Cannot connect to " + configuration.getAddress());
+    if (channelFuture.getCause() != null) {
+      cause.initCause(channelFuture.getCause());
+    }
+    throw cause;
   }
   Channel answer=channelFuture.getChannel();
   ALL_CHANNELS.add(answer);
