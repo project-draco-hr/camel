@@ -1,11 +1,22 @@
 {
-  String[] answer=new String[locations.length];
-  for (int i=0; i < locations.length; i++) {
-    String location=locations[i];
+  List<String> answer=new ArrayList<String>();
+  for (  String location : locations) {
     LOG.trace("Parsing location: {} ",location);
-    location=FilePathResolver.resolvePath(location);
-    LOG.debug("Parsed location: {} ",location);
-    answer[i]=location;
+    try {
+      location=FilePathResolver.resolvePath(location);
+      LOG.debug("Parsed location: {} ",location);
+      if (ObjectHelper.isNotEmpty(location)) {
+        answer.add(location);
+      }
+    }
+ catch (    IllegalArgumentException e) {
+      if (!ignoreMissingLocation) {
+        throw e;
+      }
+ else {
+        LOG.debug("Ignored missing location: {}",location);
+      }
+    }
   }
-  return answer;
+  return answer.toArray(new String[answer.size()]);
 }
