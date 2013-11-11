@@ -9,16 +9,25 @@
     }
     return false;
   }
-  if (!isDirectory && endpoint.isIdempotent()) {
-    String key=file.getAbsoluteFilePath();
-    if (endpoint.getIdempotentKey() != null) {
-      Exchange dummy=endpoint.createExchange(file);
-      key=endpoint.getIdempotentKey().evaluate(dummy,String.class);
-    }
-    if (key != null && endpoint.getIdempotentRepository().contains(key)) {
-      log.trace("This consumer is idempotent and the file has been consumed before. Will skip this file: {}",file);
-      return false;
+  boolean answer=true;
+  String key=null;
+  try {
+    if (!isDirectory && endpoint.isIdempotent()) {
+      key=file.getAbsoluteFilePath();
+      if (endpoint.getIdempotentKey() != null) {
+        Exchange dummy=endpoint.createExchange(file);
+        key=endpoint.getIdempotentKey().evaluate(dummy,String.class);
+      }
+      if (key != null && endpoint.getIdempotentRepository().contains(key)) {
+        log.trace("This consumer is idempotent and the file has been consumed before. Will skip this file: {}",file);
+        answer=false;
+      }
     }
   }
-  return true;
+  finally {
+    if (!answer) {
+      endpoint.getInProgressRepository().remove(key);
+    }
+  }
+  return answer;
 }
