@@ -1,4 +1,5 @@
 {
+  long index=0;
   String line;
   BufferedReader br=initializeStream();
   if (endpoint.isScanStream()) {
@@ -7,7 +8,7 @@
       LOG.trace("Read line: {}",line);
       boolean eos=line == null;
       if (!eos && isRunAllowed()) {
-        processLine(line);
+        index=processLine(line,false,index);
       }
  else       if (eos && isRunAllowed() && endpoint.isRetry()) {
         br=initializeStream();
@@ -23,17 +24,25 @@
   }
  else {
     boolean eos=false;
+    String line2=null;
     while (!eos && isRunAllowed()) {
       if (endpoint.getPromptMessage() != null) {
         doPromptMessage();
       }
-      line=br.readLine();
+      if (line2 == null) {
+        line=br.readLine();
+      }
+ else {
+        line=line2;
+      }
       LOG.trace("Read line: {}",line);
       eos=line == null;
       if (!eos && isRunAllowed()) {
-        processLine(line);
+        line2=br.readLine();
+        boolean last=line2 == null;
+        index=processLine(line,last,index);
       }
     }
-    processLine(null);
+    processLine(null,true,index);
   }
 }
