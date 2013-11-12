@@ -7,6 +7,9 @@
     throw new IllegalArgumentException("ExchangeName is not provided in header " + RabbitMQConstants.EXCHANGE_NAME);
   }
   String key=exchange.getIn().getHeader(RabbitMQConstants.ROUTING_KEY,"",String.class);
+  if (key.trim().length() == 0) {
+    key=getEndpoint().getRoutingKey() == null ? "" : getEndpoint().getRoutingKey();
+  }
   byte[] messageBodyBytes=exchange.getIn().getMandatoryBody(byte[].class);
   AMQP.BasicProperties.Builder properties=buildProperties(exchange);
   channel.basicPublish(exchangeName,key,properties.build(),messageBodyBytes);
