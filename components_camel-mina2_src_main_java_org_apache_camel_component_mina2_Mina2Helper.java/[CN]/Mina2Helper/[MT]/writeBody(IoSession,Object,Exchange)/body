@@ -1,4 +1,7 @@
 {
-  LOG.trace("write exchange [{}] with body [{}]",exchange,body);
-  session.write(body);
+  WriteFuture future=session.write(body);
+  LOG.trace("Waiting for write to complete for body: {} using session: {}",body,session);
+  if (!future.awaitUninterruptibly(10000L)) {
+    throw new CamelExchangeException("Cannot write body: " + body + " using session: "+ session,exchange);
+  }
 }
