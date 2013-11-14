@@ -1,0 +1,19 @@
+{
+  boolean complete=exchange.getProperty(Exchange.BATCH_COMPLETE,false,Boolean.class);
+  if (endpoint.getDoneFileName() != null && !endpoint.isNoop()) {
+    String doneFileName=endpoint.createDoneFileName(absoluteFileName);
+    ObjectHelper.notEmpty(doneFileName,"doneFileName",endpoint);
+    if (endpoint.getDoneFileName().indexOf("{file:name") > 0 || complete) {
+      try {
+        boolean deleted=operations.deleteFile(doneFileName);
+        log.trace("Done file: {} was deleted: {}",doneFileName,deleted);
+        if (!deleted) {
+          log.warn("Done file: " + doneFileName + " could not be deleted");
+        }
+      }
+ catch (      Exception e) {
+        handleException("Error deleting done file: " + doneFileName,exchange,e);
+      }
+    }
+  }
+}
