@@ -1,0 +1,21 @@
+{
+  String candidate=prefix + "-" + getNextCounter();
+  boolean clash=false;
+  do {
+    try {
+      LOG.trace("Checking OSGi Service Registry for existence of existing CamelContext with name: {}",candidate);
+      ServiceReference[] refs=context.getServiceReferences(CamelContext.class.getName(),"(" + CONTEXT_NAME_PROPERTY + "="+ candidate+ ")");
+      clash=refs != null && refs.length > 0;
+      if (clash) {
+        candidate=prefix + "-" + getNextCounter();
+      }
+    }
+ catch (    InvalidSyntaxException e) {
+      LOG.debug("Error finding free Camel name in OSGi Service Registry due " + e.getMessage() + ". This exception is ignored.",e);
+      break;
+    }
+  }
+ while (clash);
+  LOG.debug("Generated CamelContext name for bundle id: {}, clash: {} -> {}",new Object[]{context.getBundle().getBundleId(),clash,name});
+  return candidate;
+}
