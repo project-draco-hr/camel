@@ -1,10 +1,20 @@
 {
-  System.out.println(String.format(HEADER_FORMAT,"camel-id","uri","Status"));
-  List<CamelContext> camelContexts=camelController.getCamelContexts();
-  for (  CamelContext camelContext : camelContexts) {
-    List<Endpoint> endpoints=(List<Endpoint>)camelContext.getEndpoints();
-    for (    Endpoint endpoint : endpoints) {
-      System.out.println(String.format(OUTPUT_FORMAT,camelContext.getName(),endpoint.getEndpointUri(),getState(endpoint)));
+  List<Endpoint> endpoints=camelController.getEndpoints(name);
+  final Map<String,Integer> columnWidths=computeColumnWidths(endpoints);
+  final String headerFormat=buildFormatString(columnWidths,true);
+  final String rowFormat=buildFormatString(columnWidths,false);
+  final PrintStream out=System.out;
+  if (endpoints.size() > 0) {
+    out.println(String.format(headerFormat,CONTEXT_COLUMN_LABEL,URI_COLUMN_LABEL,STATUS_COLUMN_LABEL));
+    for (    final Endpoint endpoint : endpoints) {
+      String contextId=endpoint.getCamelContext().getName();
+      String uri=endpoint.getEndpointUri();
+      if (decode == null || decode) {
+        uri=URLDecoder.decode(uri,"UTF-8");
+      }
+      uri=URISupport.sanitizeUri(uri);
+      String state=getEndpointState(endpoint);
+      out.println(String.format(rowFormat,contextId,uri,state));
     }
   }
   return null;

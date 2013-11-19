@@ -1,19 +1,32 @@
 {
+  List<RouteDefinition> answer=new ArrayList<RouteDefinition>();
   if (camelContextName != null) {
     CamelContext context=this.getCamelContext(camelContextName);
     if (context != null) {
-      return context.getRouteDefinitions();
+      List<RouteDefinition> routes=context.getRouteDefinitions();
+      Collections.sort(routes,new Comparator<RouteDefinition>(){
+        @Override public int compare(        RouteDefinition o1,        RouteDefinition o2){
+          return o1.getId().compareTo(o2.getId());
+        }
+      }
+);
+      answer.addAll(routes);
     }
   }
  else {
-    List<RouteDefinition> routeDefinitions=new ArrayList<RouteDefinition>();
     List<CamelContext> camelContexts=this.getCamelContexts();
     for (    CamelContext camelContext : camelContexts) {
       for (      RouteDefinition routeDefinition : camelContext.getRouteDefinitions()) {
-        routeDefinitions.add(routeDefinition);
+        List<RouteDefinition> routes=new ArrayList<RouteDefinition>();
+        Collections.sort(routes,new Comparator<RouteDefinition>(){
+          @Override public int compare(          RouteDefinition o1,          RouteDefinition o2){
+            return o1.getId().compareTo(o2.getId());
+          }
+        }
+);
+        answer.addAll(routes);
       }
     }
-    return routeDefinitions;
   }
-  return null;
+  return answer;
 }

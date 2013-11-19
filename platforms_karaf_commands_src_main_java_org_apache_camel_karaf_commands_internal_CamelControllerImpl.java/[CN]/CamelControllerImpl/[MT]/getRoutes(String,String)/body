@@ -1,13 +1,10 @@
 {
-  List<Route> routes=null;
+  List<Route> routes=new ArrayList<Route>();
   if (camelContextName != null) {
     CamelContext context=this.getCamelContext(camelContextName);
     if (context != null) {
       for (      Route route : context.getRoutes()) {
-        if (routes == null) {
-          routes=new ArrayList<Route>();
-        }
-        if (route.getId().matches(filter)) {
+        if (filter == null || route.getId().matches(filter)) {
           routes.add(route);
         }
       }
@@ -17,14 +14,23 @@
     List<CamelContext> camelContexts=this.getCamelContexts();
     for (    CamelContext camelContext : camelContexts) {
       for (      Route route : camelContext.getRoutes()) {
-        if (routes == null) {
-          routes=new ArrayList<Route>();
-        }
-        if (route.getId().matches(filter)) {
+        if (filter == null || route.getId().matches(filter)) {
           routes.add(route);
         }
       }
     }
   }
+  Collections.sort(routes,new Comparator<Route>(){
+    @Override public int compare(    Route o1,    Route o2){
+      String c1=o1.getRouteContext().getCamelContext().getName();
+      String c2=o2.getRouteContext().getCamelContext().getName();
+      int answer=c1.compareTo(c2);
+      if (answer == 0) {
+        answer=o1.getId().compareTo(o2.getId());
+      }
+      return answer;
+    }
+  }
+);
   return routes;
 }

@@ -1,20 +1,16 @@
 {
-  System.out.println(String.format(HEADER_FORMAT,ROUTE_ID,CONTEXT_ID,STATUS));
-  List<CamelContext> camelContexts=new LinkedList<CamelContext>();
-  if (name != null && camelController.getCamelContext(name) != null) {
-    camelContexts.add(camelController.getCamelContext(name));
-  }
- else {
-    camelContexts=camelController.getCamelContexts();
-  }
-  for (  CamelContext camelContext : camelContexts) {
-    List<RouteDefinition> routeDefinitions=camelController.getRouteDefinitions(camelContext.getName());
-    if (routeDefinitions != null && !routeDefinitions.isEmpty()) {
-      for (      RouteDefinition routeDefinition : routeDefinitions) {
-        String contextName=camelContext.getName();
-        ServiceStatus status=camelContext.getRouteStatus(routeDefinition.getId());
-        System.out.println(String.format(OUTPUT_FORMAT,routeDefinition.getId(),contextName,status != null ? status.name() : UNKNOWN));
-      }
+  List<Route> routes=camelController.getRoutes(name);
+  final Map<String,Integer> columnWidths=computeColumnWidths(routes);
+  final String headerFormat=buildFormatString(columnWidths,true);
+  final String rowFormat=buildFormatString(columnWidths,false);
+  final PrintStream out=System.out;
+  if (routes.size() > 0) {
+    out.println(String.format(headerFormat,CONTEXT_COLUMN_LABEL,ROUTE_COLUMN_LABEL,STATUS_COLUMN_LABEL));
+    for (    Route route : routes) {
+      String contextId=route.getRouteContext().getCamelContext().getName();
+      String routeId=route.getId();
+      ServiceStatus status=route.getRouteContext().getCamelContext().getRouteStatus(routeId);
+      out.println(String.format(rowFormat,contextId,routeId,status));
     }
   }
   return null;
