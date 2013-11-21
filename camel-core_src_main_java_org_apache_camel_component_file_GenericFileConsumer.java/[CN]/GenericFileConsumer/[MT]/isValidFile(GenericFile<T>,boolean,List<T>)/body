@@ -1,33 +1,28 @@
 {
+  String absoluteFilePath=file.getAbsoluteFilePath();
   if (!isMatched(file,isDirectory,files)) {
     log.trace("File did not match. Will skip this file: {}",file);
     return false;
   }
-  if (!isDirectory && isInProgress(file)) {
+  if (isDirectory) {
+    return true;
+  }
+  if (endpoint.getInProgressRepository().contains(absoluteFilePath)) {
     if (log.isTraceEnabled()) {
       log.trace("Skipping as file is already in progress: {}",file.getFileName());
     }
     return false;
   }
-  boolean answer=true;
-  String key=null;
-  try {
-    if (!isDirectory && endpoint.isIdempotent()) {
-      key=file.getAbsoluteFilePath();
-      if (endpoint.getIdempotentKey() != null) {
-        Exchange dummy=endpoint.createExchange(file);
-        key=endpoint.getIdempotentKey().evaluate(dummy,String.class);
-      }
-      if (key != null && endpoint.getIdempotentRepository().contains(key)) {
-        log.trace("This consumer is idempotent and the file has been consumed before. Will skip this file: {}",file);
-        answer=false;
-      }
+  if (endpoint.isIdempotent()) {
+    String key=file.getAbsoluteFilePath();
+    if (endpoint.getIdempotentKey() != null) {
+      Exchange dummy=endpoint.createExchange(file);
+      key=endpoint.getIdempotentKey().evaluate(dummy,String.class);
+    }
+    if (key != null && endpoint.getIdempotentRepository().contains(key)) {
+      log.trace("This consumer is idempotent and the file has been consumed before matching idempotentKey: {}. Will skip this file: {}",key,file);
+      return false;
     }
   }
-  finally {
-    if (!answer) {
-      endpoint.getInProgressRepository().remove(key);
-    }
-  }
-  return answer;
+  return endpoint.getInProgressRepository().add(absoluteFilePath);
 }
