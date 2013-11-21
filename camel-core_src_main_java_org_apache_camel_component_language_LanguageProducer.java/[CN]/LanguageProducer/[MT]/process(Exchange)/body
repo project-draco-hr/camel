@@ -7,22 +7,33 @@
       exp=getEndpoint().getLanguage().createExpression(script);
     }
   }
-  if (exp == null) {
+  if (exp == null && getEndpoint().isCacheScript()) {
     exp=getEndpoint().getExpression();
   }
   if (exp == null) {
-    if (getEndpoint().getResourceUri() != null) {
-      String script;
-      InputStream is=getEndpoint().getResourceAsInputStream();
+    String script=getEndpoint().getScript();
+    if (script == null && getEndpoint().getResourceUri() == null) {
+      throw new CamelExchangeException("No script to evaluate",exchange);
+    }
+    InputStream is=null;
+    if (script == null) {
+      is=getEndpoint().getResourceAsInputStream();
+    }
+ else     if (ResourceHelper.hasScheme(script)) {
+      is=ResourceHelper.resolveMandatoryResourceAsInputStream(getEndpoint().getCamelContext().getClassResolver(),script);
+    }
+    if (is != null) {
       try {
         script=getEndpoint().getCamelContext().getTypeConverter().convertTo(String.class,exchange,is);
       }
   finally {
         IOHelper.close(is);
       }
+    }
+    if (script != null) {
       exp=getEndpoint().getLanguage().createExpression(script);
       getEndpoint().setContentResolvedFromResource(true);
-      if (getEndpoint().isContentCache()) {
+      if (getEndpoint().isCacheScript()) {
         getEndpoint().setExpression(exp);
       }
     }
@@ -37,7 +48,7 @@
     log.debug("Evaluated expression as: {} with: {}",result,exchange);
   }
   finally {
-    if (!getEndpoint().isContentCache()) {
+    if (!getEndpoint().isCacheScript()) {
       ServiceHelper.stopService(exp);
       getEndpoint().getCamelContext().removeService(exp);
     }

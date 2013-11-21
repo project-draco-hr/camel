@@ -8,7 +8,6 @@
     throw new IllegalArgumentException("Illegal syntax. Name of language not given in uri: " + uri);
   }
   Language language=getCamelContext().resolveLanguage(name);
-  Expression expression=null;
   String resourceUri=null;
   String resource=script;
   if (resource != null) {
@@ -19,8 +18,11 @@
       resourceUri=resource;
     }
  else {
-      expression=language.createExpression(URLDecoder.decode(script,"UTF-8"));
+      script=URLDecoder.decode(script,"UTF-8");
     }
   }
-  return new LanguageEndpoint(uri,this,language,expression,resourceUri);
+  LanguageEndpoint endpoint=new LanguageEndpoint(uri,this,language,null,resourceUri);
+  endpoint.setScript(script);
+  setProperties(endpoint,parameters);
+  return endpoint;
 }
