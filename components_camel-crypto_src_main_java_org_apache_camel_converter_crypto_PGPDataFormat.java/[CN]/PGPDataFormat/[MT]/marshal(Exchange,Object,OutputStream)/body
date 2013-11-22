@@ -1,16 +1,19 @@
 {
-  PGPPublicKey key=PGPDataFormatUtil.findPublicKey(exchange.getContext(),findKeyFileName(exchange),findEncryptionKeyRing(exchange),findKeyUserid(exchange),true);
-  if (key == null) {
-    throw new IllegalArgumentException("Public key is null, cannot proceed");
+  List<String> userids=determineEncryptionUserIds(exchange);
+  List<PGPPublicKey> keys=PGPDataFormatUtil.findPublicKeys(exchange.getContext(),findKeyFileName(exchange),findEncryptionKeyRing(exchange),userids,true);
+  if (keys.isEmpty()) {
+    throw new IllegalArgumentException("Cannot PGP encrypt message. No public encryption key found for the User Ids " + userids + " in the public keyring. Either specify other User IDs or add correct public keys to the keyring.");
   }
   InputStream input=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
   if (armored) {
     outputStream=new ArmoredOutputStream(outputStream);
   }
   PGPEncryptedDataGenerator encGen=new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(findAlgorithm(exchange)).setWithIntegrityPacket(integrity).setSecureRandom(new SecureRandom()).setProvider(getProvider()));
-  encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(key));
+  for (  PGPPublicKey key : keys) {
+    encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(key));
+  }
   OutputStream encOut=encGen.open(outputStream,new byte[BUFFER_SIZE]);
-  PGPCompressedDataGenerator comData=new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
+  PGPCompressedDataGenerator comData=new PGPCompressedDataGenerator(findCompressionAlgorithm(exchange));
   OutputStream comOut=new BufferedOutputStream(comData.open(encOut));
   PGPSignatureGenerator sigGen=createSignatureGenerator(exchange,comOut);
   PGPLiteralDataGenerator litData=new PGPLiteralDataGenerator();

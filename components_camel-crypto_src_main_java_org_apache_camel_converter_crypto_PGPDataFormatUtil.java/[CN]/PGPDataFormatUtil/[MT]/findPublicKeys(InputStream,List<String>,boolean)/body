@@ -1,0 +1,24 @@
+{
+  List<PGPPublicKey> result=new ArrayList<PGPPublicKey>(3);
+  PGPPublicKeyRingCollection pgpSec=new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(input));
+  for (Iterator<PGPPublicKeyRing> keyRingIter=pgpSec.getKeyRings(); keyRingIter.hasNext(); ) {
+    PGPPublicKeyRing keyRing=keyRingIter.next();
+    for (Iterator<PGPPublicKey> keyIter=keyRing.getPublicKeys(); keyIter.hasNext(); ) {
+      PGPPublicKey key=keyIter.next();
+      for (Iterator<String> iterator=key.getUserIDs(); iterator.hasNext(); ) {
+        String keyUserId=iterator.next();
+        for (        String userid : userids) {
+          if (keyUserId != null && keyUserId.contains(userid)) {
+            if (forEncryption && key.isEncryptionKey()) {
+              result.add(key);
+            }
+ else             if (!forEncryption && isSignatureKey(key)) {
+              result.add(key);
+            }
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
