@@ -2,6 +2,17 @@
   String xml=ModelHelper.dumpModelAsXml(context.getRouteDefinition("myRoute"));
   assertNotNull(xml);
   log.info(xml);
-  assertTrue(xml.contains("<simple>Hello ${body}</simple>"));
-  assertTrue(xml.contains("<to uri=\"mock:result\" customId=\"true\" id=\"myMock\"/>"));
+  Document doc=new XmlConverter().toDOMDocument(xml);
+  NodeList nodes=doc.getElementsByTagName("simple");
+  assertEquals(1,nodes.getLength());
+  Element node=(Element)nodes.item(0);
+  assertNotNull("Node <simple> expected to be instanceof Element",node);
+  assertEquals("Hello ${body}",node.getTextContent());
+  nodes=doc.getElementsByTagName("to");
+  assertEquals(1,nodes.getLength());
+  node=(Element)nodes.item(0);
+  assertNotNull("Node <to> expected to be instanceof Element",node);
+  assertEquals("mock:result",node.getAttribute("uri"));
+  assertEquals("myMock",node.getAttribute("id"));
+  assertEquals("true",node.getAttribute("customId"));
 }
