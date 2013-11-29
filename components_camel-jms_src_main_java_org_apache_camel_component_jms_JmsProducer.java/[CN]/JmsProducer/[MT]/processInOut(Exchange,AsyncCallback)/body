@@ -14,11 +14,12 @@
     destinationName=null;
   }
   initReplyManager();
+  final long timeout=exchange.getIn().getHeader(JmsConstants.JMS_REQUEST_TIMEOUT,endpoint.getRequestTimeout(),long.class);
   final boolean msgIdAsCorrId=endpoint.getConfiguration().isUseMessageIDAsCorrelationID();
   final String provisionalCorrelationId=msgIdAsCorrId ? getUuidGenerator().generateUuid() : null;
   MessageSentCallback messageSentCallback=null;
   if (msgIdAsCorrId) {
-    messageSentCallback=new UseMessageIdAsCorrelationIdMessageSentCallback(replyManager,provisionalCorrelationId,endpoint.getRequestTimeout());
+    messageSentCallback=new UseMessageIdAsCorrelationIdMessageSentCallback(replyManager,provisionalCorrelationId,timeout);
   }
   final String originalCorrelationId=in.getHeader("JMSCorrelationID",String.class);
   boolean generateFreshCorrId=(ObjectHelper.isEmpty(originalCorrelationId) && !msgIdAsCorrId) || (originalCorrelationId != null && originalCorrelationId.startsWith(GENERATED_CORRELATION_ID_PREFIX));
@@ -32,12 +33,13 @@
       if (replyTo == null) {
         throw new RuntimeExchangeException("Failed to resolve replyTo destination",exchange);
       }
-      LOG.debug("Using JMSReplyTo destination: {}",replyTo);
       JmsMessageHelper.setJMSReplyTo(answer,replyTo);
       replyManager.setReplyToSelectorHeader(in,answer);
       String correlationId=determineCorrelationId(answer,provisionalCorrelationId);
-      replyManager.registerReply(replyManager,exchange,callback,originalCorrelationId,correlationId,endpoint.getRequestTimeout());
-      LOG.debug("Using JMSCorrelationID: {}",correlationId);
+      replyManager.registerReply(replyManager,exchange,callback,originalCorrelationId,correlationId,timeout);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Using JMSCorrelationID: {}, JMSReplyTo destination: {}, with request timeout: {} ms.",new Object[]{correlationId,replyTo,timeout});
+      }
       LOG.trace("Created javax.jms.Message: {}",answer);
       return answer;
     }
