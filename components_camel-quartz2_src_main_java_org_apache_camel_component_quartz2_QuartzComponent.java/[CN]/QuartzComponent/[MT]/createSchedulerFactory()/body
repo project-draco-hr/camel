@@ -4,6 +4,8 @@
   if (prop != null) {
     prop.put("org.quartz.scheduler.skipUpdateCheck","true");
     prop.put("org.terracotta.quartz.skipUpdateCheck","true");
+    String instName=createInstanceName(prop);
+    prop.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME,instName);
     if (enableJmx && !prop.containsKey("org.quartz.scheduler.jmx.export")) {
       prop.put("org.quartz.scheduler.jmx.export","true");
       LOG.info("Setting org.quartz.scheduler.jmx.export=true to ensure QuartzScheduler(s) will be enlisted in JMX.");
@@ -22,14 +24,7 @@
  catch (    IOException e) {
       throw new SchedulerException("Error loading Quartz properties file from classpath: org/quartz/quartz.properties",e);
     }
-    String identity=getCamelContext().getManagementName();
-    String instName=prop.getProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME);
-    if (instName == null) {
-      instName="scheduler-" + identity;
-    }
- else {
-      instName=instName + "-" + identity;
-    }
+    String instName=createInstanceName(prop);
     prop.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME,instName);
     prop.put("org.quartz.scheduler.skipUpdateCheck","true");
     prop.put("org.terracotta.quartz.skipUpdateCheck=true","true");
