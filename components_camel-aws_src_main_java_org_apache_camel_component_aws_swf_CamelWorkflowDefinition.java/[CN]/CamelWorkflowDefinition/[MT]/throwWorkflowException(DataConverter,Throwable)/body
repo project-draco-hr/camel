@@ -1,0 +1,17 @@
+{
+  if (exception instanceof WorkflowException) {
+    throw (WorkflowException)exception;
+  }
+  String reason=WorkflowExecutionUtils.truncateReason(exception.getMessage());
+  String details=null;
+  try {
+    details=c.toData(exception);
+  }
+ catch (  DataConverterException dataConverterException) {
+    if (dataConverterException.getCause() == null) {
+      dataConverterException.initCause(exception);
+    }
+    throw dataConverterException;
+  }
+  throw new WorkflowException(reason,details);
+}

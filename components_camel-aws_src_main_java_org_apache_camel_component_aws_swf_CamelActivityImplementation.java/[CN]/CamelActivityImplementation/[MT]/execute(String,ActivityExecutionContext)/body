@@ -1,0 +1,27 @@
+{
+  Object[] inputParameters=converter.fromData(input,Object[].class);
+  CurrentActivityExecutionContext.set(context);
+  Object result=null;
+  ActivityExecutionContext executionContext=contextProvider.getActivityExecutionContext();
+  String taskToken=executionContext.getTaskToken();
+  try {
+    result=swfWorkflowConsumer.processActivity(inputParameters,taskToken);
+  }
+ catch (  InvocationTargetException invocationException) {
+    throwActivityFailureException(invocationException.getTargetException() != null ? invocationException.getTargetException() : invocationException);
+  }
+catch (  IllegalArgumentException illegalArgumentException) {
+    throwActivityFailureException(illegalArgumentException);
+  }
+catch (  IllegalAccessException illegalAccessException) {
+    throwActivityFailureException(illegalAccessException);
+  }
+catch (  Exception e) {
+    throwActivityFailureException(e);
+  }
+ finally {
+    CurrentActivityExecutionContext.unset();
+  }
+  String resultSerialized=converter.toData(result);
+  return resultSerialized;
+}

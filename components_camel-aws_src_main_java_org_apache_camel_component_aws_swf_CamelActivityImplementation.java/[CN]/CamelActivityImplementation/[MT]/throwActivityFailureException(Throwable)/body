@@ -1,0 +1,17 @@
+{
+  if (exception instanceof CancellationException) {
+    throw (CancellationException)exception;
+  }
+  String reason=WorkflowExecutionUtils.truncateReason(exception.getMessage());
+  String details=null;
+  try {
+    details=converter.toData(exception);
+  }
+ catch (  DataConverterException dataConverterException) {
+    if (dataConverterException.getCause() == null) {
+      dataConverterException.initCause(exception);
+    }
+    throw dataConverterException;
+  }
+  throw new ActivityFailureException(reason,details);
+}

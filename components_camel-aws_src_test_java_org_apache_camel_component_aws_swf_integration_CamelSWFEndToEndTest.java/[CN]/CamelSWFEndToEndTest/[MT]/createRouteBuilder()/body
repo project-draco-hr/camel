@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("aws-swf://activity?" + options + "&eventName=processActivities").log("FOUND ACTIVITY TASK ${body}").setBody(constant("1")).to("mock:worker");
+      from("aws-swf://workflow?" + options + "&eventName=processWorkflows").log("FOUND WORKFLOW TASK ${body}").filter(header(SWFConstants.ACTION).isEqualTo(SWFConstants.EXECUTE_ACTION)).to("aws-swf://activity?" + options + "&eventName=processActivities").setBody(constant("Message two")).to("aws-swf://activity?" + options + "&eventName=processActivities").log("SENT ACTIVITY TASK ${body}").to("mock:decider");
+      from("direct:start").to("aws-swf://workflow?" + options + "&eventName=processWorkflows").log("SENT WORKFLOW TASK ${body}").to("mock:starter");
+    }
+  }
+;
+}
