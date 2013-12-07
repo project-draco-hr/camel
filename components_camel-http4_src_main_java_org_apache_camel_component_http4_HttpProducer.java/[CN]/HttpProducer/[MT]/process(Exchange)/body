@@ -1,9 +1,6 @@
 {
-  if (getEndpoint().isClearExpiredCookies()) {
-    if (httpClient instanceof DefaultHttpClient) {
-      boolean cleared=((DefaultHttpClient)httpClient).getCookieStore().clearExpired(new Date());
-      log.debug("Any expired cookies cleared: {}",cleared);
-    }
+  if (getEndpoint().isClearExpiredCookies() && !getEndpoint().isBridgeEndpoint()) {
+    getEndpoint().getCookieStore().clearExpired(new Date());
   }
   Map<String,Object> skipRequestHeaders=null;
   if (getEndpoint().isBridgeEndpoint()) {
@@ -15,14 +12,10 @@
     exchange.getIn().getHeaders().remove("host");
   }
   HttpRequestBase httpRequest=createMethod(exchange);
-  if (getEndpoint().isAuthenticationPreemptive()) {
-    Credentials creds=((DefaultHttpClient)httpClient).getCredentialsProvider().getCredentials(AuthScope.ANY);
-    httpRequest.addHeader(new BasicScheme().authenticate(creds,httpRequest));
-  }
   Message in=exchange.getIn();
   String httpProtocolVersion=in.getHeader(Exchange.HTTP_PROTOCOL_VERSION,String.class);
   if (httpProtocolVersion != null) {
-    httpRequest.getParams().setParameter(CoreProtocolPNames.PROTOCOL_VERSION,HttpHelper.parserHttpVersion(httpProtocolVersion));
+    httpRequest.setProtocolVersion(HttpHelper.parserHttpVersion(httpProtocolVersion));
   }
   HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
   for (  Map.Entry<String,Object> entry : in.getHeaders().entrySet()) {

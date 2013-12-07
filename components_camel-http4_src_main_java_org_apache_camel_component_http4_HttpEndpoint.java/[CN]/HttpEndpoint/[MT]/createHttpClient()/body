@@ -1,10 +1,8 @@
 {
-  ObjectHelper.notNull(clientParams,"clientParams");
+  ObjectHelper.notNull(clientBuilder,"httpClientBuilder");
   ObjectHelper.notNull(clientConnectionManager,"httpConnectionManager");
-  DefaultHttpClient answer=new DefaultHttpClient(clientConnectionManager,getClientParams());
-  if (cookieStore != null) {
-    answer.setCookieStore(cookieStore);
-  }
+  clientBuilder.setDefaultCookieStore(cookieStore);
+  clientBuilder.setConnectionManager(clientConnectionManager);
   if (ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyHost")) && ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyPort"))) {
     String host=getCamelContext().getProperty("http.proxyHost");
     int port=Integer.parseInt(getCamelContext().getProperty("http.proxyPort"));
@@ -13,22 +11,19 @@
       scheme=HttpHelper.isSecureConnection(getEndpointUri()) ? "https" : "http";
     }
     LOG.debug("CamelContext properties http.proxyHost, http.proxyPort, and http.proxyScheme detected. Using http proxy host: {} port: {} scheme: {}",new Object[]{host,port,scheme});
-    try {
-      component.registerPort(HttpHelper.isSecureConnection(scheme),component.getX509HostnameVerifier(),port,component.getSslContextParameters());
-    }
- catch (    Exception ex) {
-      throw new RuntimeCamelException(ex);
-    }
     HttpHost proxy=new HttpHost(host,port,scheme);
-    answer.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY,proxy);
+    clientBuilder.setProxy(proxy);
+  }
+  if (isAuthenticationPreemptive()) {
+    clientBuilder.addInterceptorFirst(new PreemptiveAuthInterceptor());
   }
   HttpClientConfigurer configurer=getHttpClientConfigurer();
   if (configurer != null) {
-    configurer.configureHttpClient(answer);
+    configurer.configureHttpClient(clientBuilder);
   }
   if (isBridgeEndpoint()) {
-    answer.setCookieStore(new NoopCookieStore());
+    clientBuilder.setDefaultCookieStore(new NoopCookieStore());
   }
-  LOG.debug("Created HttpClient {}",answer);
-  return answer;
+  LOG.debug("Setup the HttpClientBuilder {}",clientBuilder);
+  return clientBuilder.build();
 }
