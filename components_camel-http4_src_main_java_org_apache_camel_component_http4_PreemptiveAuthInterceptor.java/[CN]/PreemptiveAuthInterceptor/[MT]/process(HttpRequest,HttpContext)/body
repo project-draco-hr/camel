@@ -1,0 +1,14 @@
+{
+  AuthState authState=(AuthState)context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
+  if (authState.getAuthScheme() == null) {
+    AuthScheme authScheme=(AuthScheme)context.getAttribute("preemptive-auth");
+    CredentialsProvider credsProvider=(CredentialsProvider)context.getAttribute(HttpClientContext.CREDS_PROVIDER);
+    if (authScheme != null) {
+      Credentials creds=credsProvider.getCredentials(AuthScope.ANY);
+      if (creds == null) {
+        throw new HttpException("No credentials for preemptive authentication");
+      }
+      authState.update(authScheme,creds);
+    }
+  }
+}
