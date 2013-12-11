@@ -4,15 +4,26 @@
   }
   final List<KeyPair> keys=new ArrayList<KeyPair>(this.resources.length);
   for (  String resource : resources) {
-    PEMReader r=null;
+    PEMParser r=null;
     InputStreamReader isr=null;
     InputStream is=null;
     try {
       is=ResourceHelper.resolveMandatoryResourceAsInputStream(classResolver,resource);
       isr=new InputStreamReader(is);
-      r=new PEMReader(isr,passwordFinder);
+      r=new PEMParser(isr);
       Object o=r.readObject();
-      if (o instanceof KeyPair) {
+      JcaPEMKeyConverter pemConverter=new JcaPEMKeyConverter();
+      pemConverter.setProvider("BC");
+      if (passwordFinder != null && o instanceof PEMEncryptedKeyPair) {
+        JcePEMDecryptorProviderBuilder decryptorBuilder=new JcePEMDecryptorProviderBuilder();
+        PEMDecryptorProvider pemDecryptor=decryptorBuilder.build(passwordFinder.getPassword());
+        o=pemConverter.getKeyPair(((PEMEncryptedKeyPair)o).decryptKeyPair(pemDecryptor));
+      }
+      if (o instanceof PEMKeyPair) {
+        o=pemConverter.getKeyPair((PEMKeyPair)o);
+        keys.add((KeyPair)o);
+      }
+ else       if (o instanceof KeyPair) {
         keys.add((KeyPair)o);
       }
     }
