@@ -19,9 +19,9 @@
     target=managed.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,next);
   }
   InterceptStrategy tracer=getOrCreateBacklogTracer();
+  camelContext.addService(tracer);
   if (tracer instanceof BacklogTracer) {
     BacklogTracer backlogTracer=(BacklogTracer)tracer;
-    backlogTracer.addDefinition(targetOutputDef);
     RouteDefinition route=ProcessorDefinitionHelper.getRoute(definition);
     boolean first=false;
     if (route != null && !route.getOutputs().isEmpty()) {
@@ -29,6 +29,7 @@
     }
     addAdvice(new BacklogTracerAdvice(backlogTracer.getQueue(),backlogTracer,targetOutputDef,route,first));
     InterceptStrategy debugger=getOrCreateBacklogDebugger();
+    camelContext.addService(debugger);
     if (debugger instanceof BacklogDebugger) {
       BacklogDebugger backlogDebugger=(BacklogDebugger)debugger;
       addAdvice(new BacklogDebuggerAdvice(backlogDebugger,target,targetOutputDef));
@@ -38,6 +39,7 @@
     addAdvice(new MessageHistoryAdvice(targetOutputDef));
   }
   tracer=getOrCreateTracer();
+  camelContext.addService(tracer);
   if (tracer != null) {
     TraceInterceptor trace=(TraceInterceptor)tracer.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,target,null);
     trace.setRouteContext(routeContext);
