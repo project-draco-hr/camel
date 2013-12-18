@@ -1,0 +1,27 @@
+{
+  try {
+    final Method getPrincipalMethod=request.getClass().getMethod("getUserPrincipal",new Class[]{});
+    final Method userInRoleMethod=request.getClass().getMethod("isUserInRole",new Class[]{String.class});
+    cxfMessage.put(SecurityContext.class,new SecurityContext(){
+      public Principal getUserPrincipal(){
+        try {
+          return (Principal)getPrincipalMethod.invoke(request,new Object[]{});
+        }
+ catch (        Throwable t) {
+          return null;
+        }
+      }
+      @Override public boolean isUserInRole(      String role){
+        try {
+          return (Boolean)userInRoleMethod.invoke(request,new Object[]{role});
+        }
+ catch (        Throwable t) {
+          return false;
+        }
+      }
+    }
+);
+  }
+ catch (  Throwable t) {
+  }
+}
