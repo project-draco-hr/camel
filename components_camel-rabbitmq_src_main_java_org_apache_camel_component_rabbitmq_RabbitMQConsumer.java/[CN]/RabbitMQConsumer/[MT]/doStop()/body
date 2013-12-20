@@ -1,22 +1,21 @@
 {
-  super.doStop();
-  log.info("Stopping RabbitMQ consumer");
-  if (conn != null) {
-    try {
-      conn.close();
-    }
- catch (    Exception ignored) {
-    }
+  if (channel != null) {
+    log.debug("Closing channel: {}",channel);
+    channel.close();
+    channel=null;
   }
-  channel=null;
-  conn=null;
+  if (conn != null) {
+    log.debug("Closing connection: {} with timeout: {} ms.",conn,closeTimeout);
+    conn.close(closeTimeout);
+    conn=null;
+  }
   if (executor != null) {
-    if (getEndpoint() != null && getEndpoint().getCamelContext() != null) {
-      getEndpoint().getCamelContext().getExecutorServiceManager().shutdownNow(executor);
+    if (endpoint != null && endpoint.getCamelContext() != null) {
+      endpoint.getCamelContext().getExecutorServiceManager().shutdownNow(executor);
     }
  else {
       executor.shutdownNow();
     }
+    executor=null;
   }
-  executor=null;
 }
