@@ -4,27 +4,21 @@
   }
   strategy.setDelimiter(config.getDelimiter());
   InputStreamReader in=new InputStreamReader(inputStream,IOHelper.getCharsetName(exchange));
+  CsvIterator csvIterator;
   try {
-    CSVParser parser=new CSVParser(in,strategy);
-    List<List<String>> list=new ArrayList<List<String>>();
-    boolean isFirstLine=true;
-    while (true) {
-      String[] strings=parser.getLine();
-      if (isFirstLine) {
-        isFirstLine=false;
-        if (skipFirstLine) {
-          continue;
-        }
-      }
-      if (strings == null) {
-        break;
-      }
-      List<String> line=Arrays.asList(strings);
-      list.add(line);
+    CSVParser parser=createParser(in);
+    if (parser == null) {
+      IOHelper.close(in);
+      return Collections.emptyIterator();
     }
-    return list;
+    csvIterator=new CsvIterator(parser,in);
   }
-  finally {
+ catch (  IOException e) {
     IOHelper.close(in);
+    throw e;
   }
+  if (lazyLoad) {
+    return csvIterator;
+  }
+  return loadAllAsList(csvIterator);
 }
