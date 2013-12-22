@@ -1,0 +1,18 @@
+{
+  Object body=exchange.getIn().getBody();
+  if (body != null) {
+    Address destinationAddress=exchange.getIn().getHeader(JGroupsEndpoint.HEADER_JGROUPS_DEST,Address.class);
+    Address sourceAddress=exchange.getIn().getHeader(JGroupsEndpoint.HEADER_JGROUPS_SRC,Address.class);
+    log.debug("Posting: {} to cluster: {}",body,clusterName);
+    if (destinationAddress != null) {
+      log.debug("Posting to custom destination address: {}",destinationAddress);
+    }
+    if (sourceAddress != null) {
+      log.debug("Posting from custom source address: {}",sourceAddress);
+    }
+    channel.send(new Message(destinationAddress,sourceAddress,body));
+  }
+ else {
+    log.debug("Body is null, cannot post to channel.");
+  }
+}
