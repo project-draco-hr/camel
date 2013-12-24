@@ -1,13 +1,15 @@
 {
   TypeConverter converter=exchange.getContext().getTypeConverter();
   Session session=openSession();
-  String operation=determineOperation(exchange);
+  Message message=exchange.getIn();
+  String operation=determineOperation(message);
   try {
     if (JcrConstants.JCR_INSERT.equals(operation)) {
       Node base=findOrCreateNode(session.getRootNode(),getJcrEndpoint().getBase());
-      Node node=findOrCreateNode(base,getNodeName(exchange));
-      for (      String key : exchange.getProperties().keySet()) {
-        Value value=converter.convertTo(Value.class,exchange,exchange.getProperty(key));
+      Node node=findOrCreateNode(base,getNodeName(message));
+      Map<String,Object> headers=filterComponentHeaders(message.getHeaders());
+      for (      String key : headers.keySet()) {
+        Value value=converter.convertTo(Value.class,exchange,message.getHeader(key));
         node.setProperty(key,value);
       }
       node.addMixin("mix:referenceable");
@@ -20,7 +22,7 @@
         Property property=properties.nextProperty();
         Class<?> aClass=classForJCRType(property);
         Object value=converter.convertTo(aClass,exchange,property.getValue());
-        exchange.setProperty(property.getName(),value);
+        message.setHeader(property.getName(),value);
       }
     }
  else {
