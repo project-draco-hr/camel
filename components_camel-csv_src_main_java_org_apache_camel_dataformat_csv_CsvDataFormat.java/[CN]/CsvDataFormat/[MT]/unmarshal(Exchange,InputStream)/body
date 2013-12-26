@@ -4,16 +4,23 @@
   }
   strategy.setDelimiter(config.getDelimiter());
   InputStreamReader in=new InputStreamReader(inputStream,IOHelper.getCharsetName(exchange));
-  CsvIterator csvIterator;
+  boolean closeStream=false;
+  CsvIterator csvIterator=null;
   try {
     CSVParser parser=createParser(in);
     if (parser == null) {
+      closeStream=true;
       return ObjectHelper.createIterator(null);
     }
     csvIterator=new CsvIterator(parser,in);
   }
-  finally {
-    IOHelper.close(in);
+ catch (  IOException ioe) {
+    closeStream=true;
+  }
+ finally {
+    if (closeStream) {
+      IOHelper.close(in);
+    }
   }
   if (lazyLoad) {
     return csvIterator;
