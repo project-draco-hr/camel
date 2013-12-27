@@ -3,27 +3,24 @@
     config.setDelimiter(delimiter.charAt(0));
   }
   strategy.setDelimiter(config.getDelimiter());
-  InputStreamReader in=new InputStreamReader(inputStream,IOHelper.getCharsetName(exchange));
-  boolean closeStream=false;
-  CsvIterator csvIterator=null;
+  InputStreamReader in=null;
+  boolean error=false;
   try {
-    CSVParser parser=createParser(in);
-    if (parser == null) {
-      closeStream=true;
-      return ObjectHelper.createIterator(null);
+    in=new InputStreamReader(inputStream,IOHelper.getCharsetName(exchange));
+    CSVParser parser=new CSVParser(in,strategy);
+    if (skipFirstLine) {
+      parser.getLine();
     }
-    csvIterator=new CsvIterator(parser,in);
+    CsvIterator csvIterator=new CsvIterator(parser,in);
+    return lazyLoad ? csvIterator : loadAllAsList(csvIterator);
   }
- catch (  IOException ioe) {
-    closeStream=true;
+ catch (  Exception e) {
+    error=true;
+    throw e;
   }
  finally {
-    if (closeStream) {
+    if (error) {
       IOHelper.close(in);
     }
   }
-  if (lazyLoad) {
-    return csvIterator;
-  }
-  return loadAllAsList(csvIterator);
 }
