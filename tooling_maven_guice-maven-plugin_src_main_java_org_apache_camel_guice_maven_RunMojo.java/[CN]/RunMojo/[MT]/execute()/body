@@ -7,6 +7,10 @@
     args.add("-o");
     args.add(dotDir);
   }
+  if (jndiProperties != null) {
+    args.add("-j");
+    args.add(jndiProperties);
+  }
   if (debug) {
     args.add("-x");
   }
@@ -41,14 +45,14 @@
   Thread bootstrapThread=new Thread(threadGroup,new Runnable(){
     public void run(){
       try {
-        Method main=Thread.currentThread().getContextClassLoader().loadClass(mainClass).getMethod("main",new Class[]{String[].class});
-        if (!main.isAccessible()) {
-          getLog().debug("Setting accessibility to true in order to invoke main().");
-          main.setAccessible(true);
-        }
-        main.invoke(main,new Object[]{arguments});
+        Method main=Thread.currentThread().getContextClassLoader().loadClass(mainClass).getMethod("main",String[].class);
+        main.invoke(null,new Object[]{arguments});
       }
  catch (      Exception e) {
+        getLog().error("*************************************");
+        getLog().error("Error occurred while running main from: " + mainClass);
+        getLog().error(e);
+        getLog().error("*************************************");
         Thread.currentThread().getThreadGroup().uncaughtException(Thread.currentThread(),e);
       }
     }
@@ -68,7 +72,7 @@
       threadGroup.destroy();
     }
  catch (    IllegalThreadStateException e) {
-      getLog().warn("Couldn't destroy threadgroup " + threadGroup,e);
+      getLog().warn("Couldn't destroy thread group " + threadGroup,e);
     }
   }
   if (originalSystemProperties != null) {

@@ -4,8 +4,11 @@
   }
   File target=new File(file.getAbsoluteFilePath());
   LOG.trace("Waiting for exclusive read lock to file: {}",target);
+  FileChannel channel=null;
+  RandomAccessFile randomAccessFile=null;
   try {
-    FileChannel channel=new RandomAccessFile(target,"rw").getChannel();
+    randomAccessFile=new RandomAccessFile(target,"rw");
+    channel=randomAccessFile.getChannel();
     boolean exclusive=false;
     StopWatch watch=new StopWatch();
     while (!exclusive) {
@@ -43,6 +46,10 @@
     if (interrupted) {
       return false;
     }
+  }
+ finally {
+    IOHelper.close(channel,"while acquiring exclusive read lock for file: " + lockFileName,LOG);
+    IOHelper.close(randomAccessFile,"while acquiring exclusive read lock for file: " + lockFileName,LOG);
   }
   return true;
 }

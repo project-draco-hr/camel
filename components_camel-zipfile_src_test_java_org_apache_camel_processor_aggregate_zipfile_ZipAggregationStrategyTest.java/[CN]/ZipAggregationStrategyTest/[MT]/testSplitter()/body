@@ -1,0 +1,22 @@
+{
+  MockEndpoint aggregateToZipEntry=getMockEndpoint("mock:aggregateToZipEntry");
+  aggregateToZipEntry.expectedMessageCount(1);
+  assertMockEndpointsSatisfied();
+  Exchange out=aggregateToZipEntry.getExchanges().get(0);
+  assertTrue("Result message does not contain GenericFileMessage",GenericFileMessage.class.isAssignableFrom(out.getIn().getClass()));
+  File resultFile=out.getIn().getBody(File.class);
+  assertNotNull(resultFile);
+  assertTrue("Zip file should exist",resultFile.isFile());
+  assertTrue("Result file name does not end with .zip",resultFile.getName().endsWith(".zip"));
+  ZipInputStream zin=new ZipInputStream(new FileInputStream(resultFile));
+  try {
+    int fileCount=0;
+    for (ZipEntry ze=zin.getNextEntry(); ze != null; ze=zin.getNextEntry()) {
+      fileCount++;
+    }
+    assertTrue("Zip file should contains " + ZipAggregationStrategyTest.EXPECTED_NO_FILES + " files",fileCount == ZipAggregationStrategyTest.EXPECTED_NO_FILES);
+  }
+  finally {
+    zin.close();
+  }
+}

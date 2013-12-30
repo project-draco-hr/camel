@@ -1,9 +1,20 @@
 {
-  String answer=toString(source,exchange);
-  if (exchange != null) {
-    return exchange.getContext().getTypeConverter().convertTo(byte[].class,exchange,answer);
+  if (source == null) {
+    return null;
+  }
+ else   if (source instanceof BytesSource) {
+    return ((BytesSource)source).getData();
   }
  else {
-    return answer.getBytes();
+    ByteArrayOutputStream buffer=new ByteArrayOutputStream();
+    if (exchange != null) {
+      Properties properties=ObjectHelper.getCamelPropertiesWithPrefix(OUTPUT_PROPERTIES_PREFIX,exchange.getContext());
+      if (properties.size() > 0) {
+        toResult(source,new StreamResult(buffer),properties);
+        return buffer.toByteArray();
+      }
+    }
+    toResult(source,new StreamResult(buffer));
+    return buffer.toByteArray();
   }
 }

@@ -1,0 +1,49 @@
+{
+  File zipFile;
+  Exchange answer=oldExchange;
+  if (newExchange == null) {
+    return oldExchange;
+  }
+  if (oldExchange == null) {
+    try {
+      zipFile=FileUtil.createTempFile(this.filePrefix,this.fileSuffix);
+    }
+ catch (    IOException e) {
+      throw new GenericFileOperationFailedException(e.getMessage(),e);
+    }
+    DefaultEndpoint endpoint=(DefaultEndpoint)newExchange.getFromEndpoint();
+    answer=endpoint.createExchange();
+    answer.addOnCompletion(new DeleteZipFileOnCompletion(zipFile));
+  }
+ else {
+    zipFile=oldExchange.getIn().getBody(File.class);
+  }
+  if (GenericFileMessage.class.isAssignableFrom(newExchange.getIn().getClass())) {
+    try {
+      File appendFile=newExchange.getIn().getBody(File.class);
+      if (appendFile != null) {
+        addFilesToZip(zipFile,new File[]{appendFile});
+        GenericFile<File> genericFile=FileConsumer.asGenericFile(zipFile.getParent(),zipFile,Charset.defaultCharset().toString());
+        genericFile.bindToExchange(answer);
+      }
+ else {
+        throw new GenericFileOperationFailedException("Could not get body as file.");
+      }
+    }
+ catch (    IOException e) {
+      throw new GenericFileOperationFailedException(e.getMessage(),e);
+    }
+  }
+ else {
+    byte[] buffer=newExchange.getIn().getBody(byte[].class);
+    try {
+      addEntryToZip(zipFile,newExchange.getIn().getMessageId(),buffer,buffer.length);
+      GenericFile<File> genericFile=FileConsumer.asGenericFile(zipFile.getParent(),zipFile,Charset.defaultCharset().toString());
+      genericFile.bindToExchange(answer);
+    }
+ catch (    IOException e) {
+      throw new GenericFileOperationFailedException(e.getMessage(),e);
+    }
+  }
+  return answer;
+}

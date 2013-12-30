@@ -1,6 +1,10 @@
 {
   Map<String,Object> httpClientParameters=new HashMap<String,Object>(parameters);
-  HttpParams clientParams=configureHttpParams(parameters);
+  HttpClientBuilder clientBuilder=HttpClientBuilder.create();
+  IntrospectionSupport.setProperties(clientBuilder,parameters,"httpClient.",true);
+  RequestConfig.Builder requestConfigBuilder=RequestConfig.custom();
+  IntrospectionSupport.setProperties(requestConfigBuilder,parameters,"httpClient.",true);
+  clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
   validateParameters(uri,parameters,"httpClient.");
   HttpBinding httpBinding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
   if (httpBinding == null) {
@@ -34,7 +38,7 @@
       addressUri="http://" + remaining;
     }
   }
-  addressUri=UnsafeUriCharactersEncoder.encode(addressUri);
+  addressUri=UnsafeUriCharactersEncoder.encodeHttpURI(addressUri);
   URI uriHttpUriAddress=new URI(addressUri);
   int pos=uri.indexOf("//");
   if (pos != -1) {
@@ -49,7 +53,11 @@
   endpointUri=URISupport.createRemainingURI(new URI(scheme,endpointUri.getUserInfo(),endpointUri.getHost(),endpointUri.getPort(),endpointUri.getPath(),endpointUri.getQuery(),endpointUri.getFragment()),httpClientParameters);
   String endpointUriString=endpointUri.toString();
   LOG.debug("Creating endpoint uri {}",endpointUriString);
-  HttpEndpoint endpoint=new HttpEndpoint(endpointUriString,this,clientParams,clientConnectionManager,configurer);
+  HttpClientConnectionManager localConnectionManager=clientConnectionManager;
+  if (localConnectionManager == null) {
+    localConnectionManager=createConnectionManager(createConnectionRegistry(x509HostnameVerifier,sslContextParameters));
+  }
+  HttpEndpoint endpoint=new HttpEndpoint(endpointUriString,this,clientBuilder,localConnectionManager,configurer);
   if (urlRewrite != null) {
     getCamelContext().addService(urlRewrite);
     endpoint.setUrlRewrite(urlRewrite);
@@ -78,6 +86,5 @@
   if (endpoint.getCookieStore() == null) {
     endpoint.setCookieStore(getCookieStore());
   }
-  registerPort(secure,x509HostnameVerifier,port,sslContextParameters);
   return endpoint;
 }
