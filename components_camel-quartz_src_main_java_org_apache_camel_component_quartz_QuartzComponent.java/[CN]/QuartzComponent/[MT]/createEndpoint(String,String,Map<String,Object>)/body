@@ -44,6 +44,7 @@
     }
   }
   if (ObjectHelper.isNotEmpty(cron)) {
+    cron=encodeCronExpression(cron);
     trigger=createCronTrigger(cron);
   }
  else {
@@ -58,6 +59,21 @@
   }
   QuartzEndpoint answer=new QuartzEndpoint(uri,this);
   setProperties(answer.getJobDetail(),jobParameters);
+  if (cron != null) {
+    answer.getJobDetail().getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_TYPE,"cron");
+    answer.getJobDetail().getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION,cron);
+  }
+ else {
+    answer.getJobDetail().getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_TYPE,"simple");
+    Long interval=getCamelContext().getTypeConverter().convertTo(Long.class,triggerParameters.get("repeatInterval"));
+    if (interval != null) {
+      answer.getJobDetail().getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_SIMPLE_REPEAT_INTERVAL,interval);
+    }
+    Integer counter=getCamelContext().getTypeConverter().convertTo(Integer.class,triggerParameters.get("repeatCount"));
+    if (counter != null) {
+      answer.getJobDetail().getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_SIMPLE_REPEAT_COUNTER,counter);
+    }
+  }
   setProperties(trigger,triggerParameters);
   trigger.setName(name);
   trigger.setGroup(group);
