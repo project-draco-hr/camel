@@ -7,6 +7,8 @@
   if (cron != null) {
     LOG.debug("Creating CronTrigger: {}",cron);
     result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).build();
+    jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_TYPE,"cron");
+    jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION,cron);
   }
  else {
     LOG.debug("Creating SimpleTrigger.");
@@ -25,6 +27,9 @@
       triggerBuilder.startNow();
     }
     result=triggerBuilder.build();
+    jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_TYPE,"simple");
+    jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_SIMPLE_REPEAT_COUNTER,repeat);
+    jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_SIMPLE_REPEAT_INTERVAL,interval);
   }
   if (triggerParameters != null && triggerParameters.size() > 0) {
     LOG.debug("Setting user extra triggerParameters {}",triggerParameters);
