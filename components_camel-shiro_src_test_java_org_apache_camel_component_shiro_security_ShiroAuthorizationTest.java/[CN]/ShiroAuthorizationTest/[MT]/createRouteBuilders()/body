@@ -1,0 +1,38 @@
+{
+  return new RouteBuilder[]{new RouteBuilder(){
+    public void configure(){
+      List<Permission> permissionsList=new ArrayList<Permission>();
+      Permission permission=new WildcardPermission("zone1:readwrite:*");
+      permissionsList.add(permission);
+      final ShiroSecurityPolicy securityPolicy=new ShiroSecurityPolicy("src/test/resources/securityconfig.ini",passPhrase,true,permissionsList);
+      onException(CamelAuthorizationException.class).to("mock:authorizationException");
+      from("direct:secureEndpoint").policy(securityPolicy).to("log:incoming payload").to("mock:success");
+    }
+  }
+,new RouteBuilder(){
+    public void configure(){
+      List<Permission> permissionsList=new ArrayList<Permission>();
+      Permission permission=new WildcardPermission("zone1:readonly:*");
+      permissionsList.add(permission);
+      permission=new WildcardPermission("zone1:writeonly:*");
+      permissionsList.add(permission);
+      final ShiroSecurityPolicy securityPolicy=new ShiroSecurityPolicy("src/test/resources/securityconfig.ini",passPhrase,true,permissionsList);
+      onException(CamelAuthorizationException.class).to("mock:authorizationException");
+      from("direct:secureAnyEndpoint").policy(securityPolicy).to("log:incoming payload").to("mock:success");
+    }
+  }
+,new RouteBuilder(){
+    public void configure(){
+      List<Permission> permissionsList=new ArrayList<Permission>();
+      Permission permission=new WildcardPermission("zone1:readonly:*");
+      permissionsList.add(permission);
+      permission=new WildcardPermission("zone1:writeonly:*");
+      permissionsList.add(permission);
+      final ShiroSecurityPolicy securityPolicy=new ShiroSecurityPolicy("src/test/resources/securityconfig.ini",passPhrase,true,permissionsList);
+      securityPolicy.setAllPermissionsRequired(true);
+      onException(CamelAuthorizationException.class).to("mock:authorizationException");
+      from("direct:secureAllEndpoint").policy(securityPolicy).to("log:incoming payload").to("mock:success");
+    }
+  }
+};
+}
