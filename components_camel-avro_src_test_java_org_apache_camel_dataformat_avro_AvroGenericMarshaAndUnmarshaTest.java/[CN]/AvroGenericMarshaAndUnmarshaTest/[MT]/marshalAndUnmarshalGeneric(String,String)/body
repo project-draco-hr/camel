@@ -1,0 +1,13 @@
+{
+  GenericRecord input=new GenericData.Record(schema);
+  input.put("name","ceposta");
+  MockEndpoint mock=getMockEndpoint("mock:reverse");
+  mock.expectedMessageCount(1);
+  mock.message(0).body().isInstanceOf(GenericRecord.class);
+  mock.message(0).body().equals(input);
+  Object marshalled=template.requestBody(inURI,input);
+  template.sendBody(outURI,marshalled);
+  mock.assertIsSatisfied();
+  GenericRecord output=mock.getReceivedExchanges().get(0).getIn().getBody(GenericRecord.class);
+  assertEquals(input,output);
+}
