@@ -1,13 +1,13 @@
 {
-  List<Message> messages=new ArrayList<Message>();
+  Collection<Message> messages=new ArrayList<Message>(1);
   MessageProducerResources producer=getProducers().borrowObject();
   try {
-    if (getProducers() != null) {
+    if (producer != null) {
       if (exchange.getIn().getBody() != null) {
         if (exchange.getIn().getBody() instanceof List) {
-          List<?> payload=(List<?>)exchange.getIn().getBody();
-          for (          Object object : payload) {
-            Message message=null;
+          Iterable<?> payload=(Iterable<?>)exchange.getIn().getBody();
+          for (          final Object object : payload) {
+            Message message;
             if (BatchMessage.class.isInstance(object)) {
               BatchMessage<?> batchMessage=(BatchMessage<?>)object;
               message=JmsMessageHelper.createMessage(producer.getSession(),batchMessage.getPayload(),batchMessage.getHeaders(),getSjmsEndpoint().getJmsKeyFormatStrategy());
@@ -27,16 +27,21 @@
       if (isEndpointTransacted()) {
         exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),producer.getCommitStrategy()));
       }
-      for (      Message message : messages) {
+      for (      final Message message : messages) {
         producer.getMessageProducer().send(message);
       }
+    }
+ else {
+      exchange.setException(new Exception("Unable to send message: connection not available"));
     }
   }
  catch (  Exception e) {
     exchange.setException(new Exception("Unable to complete sending the message: " + e.getLocalizedMessage()));
   }
  finally {
-    getProducers().returnObject(producer);
+    if (producer != null) {
+      getProducers().returnObject(producer);
+    }
     callback.done(isSynchronous());
   }
 }

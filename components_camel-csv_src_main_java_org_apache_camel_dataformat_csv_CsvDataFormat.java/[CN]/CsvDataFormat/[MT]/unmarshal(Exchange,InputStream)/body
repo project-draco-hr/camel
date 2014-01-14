@@ -8,10 +8,17 @@
   try {
     reader=IOHelper.buffered(new InputStreamReader(inputStream,IOHelper.getCharsetName(exchange)));
     CSVParser parser=new CSVParser(reader,strategy);
-    if (skipFirstLine) {
-      parser.getLine();
+    CsvLineConverter<?> lineConverter;
+    if (useMaps) {
+      lineConverter=CsvLineConverters.getMapLineConverter(parser.getLine());
     }
-    CsvIterator csvIterator=new CsvIterator(parser,reader);
+ else {
+      lineConverter=CsvLineConverters.getListConverter();
+      if (skipFirstLine) {
+        parser.getLine();
+      }
+    }
+    @SuppressWarnings("unchecked") CsvIterator<?> csvIterator=new CsvIterator(parser,reader,lineConverter);
     return lazyLoad ? csvIterator : loadAllAsList(csvIterator);
   }
  catch (  Exception e) {

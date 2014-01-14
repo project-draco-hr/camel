@@ -1,16 +1,21 @@
 {
-  if (isCorrelationKeyIsPrimary()) {
-    return template.find(getEntityType(),key);
+  EntityManager entityManager=null;
+  try {
+    entityManager=resolveEntityManager(template.getEntityManagerFactory());
+    if (isCorrelationKeyIsPrimary()) {
+      return entityManager.find(getEntityType(),key);
+    }
+ else {
+      List<T> list=entityManager.createQuery(getFindByKeyQuery()).setParameter("key",key).getResultList();
+      if (list.isEmpty()) {
+        return null;
+      }
+ else {
+        return list.get(0);
+      }
+    }
   }
- else {
-    Map<String,Object> params=new HashMap<String,Object>(1);
-    params.put("key",key);
-    List<T> list=template.findByNamedParams(getFindByKeyQuery(),params);
-    if (list.isEmpty()) {
-      return null;
-    }
- else {
-      return list.get(0);
-    }
+  finally {
+    closeNonTransactionalEntityManager(entityManager);
   }
 }

@@ -7,7 +7,15 @@
   request.setAttributeNames(getConfiguration().getAttributeNames() != null ? getConfiguration().getAttributeNames() : null);
   request.setWaitTimeSeconds(getConfiguration().getWaitTimeSeconds() != null ? getConfiguration().getWaitTimeSeconds() : null);
   LOG.trace("Receiving messages with request [{}]...",request);
-  ReceiveMessageResult messageResult=getClient().receiveMessage(request);
+  ReceiveMessageResult messageResult=null;
+  try {
+    messageResult=getClient().receiveMessage(request);
+  }
+ catch (  QueueDoesNotExistException e) {
+    LOG.info("Queue does not exist....recreating now...");
+    reConnectToQueue();
+    messageResult=getClient().receiveMessage(request);
+  }
   if (LOG.isTraceEnabled()) {
     LOG.trace("Received {} messages",messageResult.getMessages().size());
   }

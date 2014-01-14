@@ -1,10 +1,17 @@
 {
   for (  Callback callback : callbacks) {
-    WSPasswordCallback pc=(WSPasswordCallback)callback;
-    String pass=passwords.get(pc.getIdentifier());
-    if (pass != null) {
-      pc.setPassword(pass);
-      return;
+    try {
+      String id=(String)callback.getClass().getMethod("getIdentifier").invoke(callback);
+      String pass=passwords.get(id);
+      if (pass != null) {
+        callback.getClass().getMethod("setPassword",String.class).invoke(callback,pass);
+        return;
+      }
+    }
+ catch (    Exception ex) {
+      UnsupportedCallbackException e=new UnsupportedCallbackException(callback);
+      e.initCause(ex);
+      throw e;
     }
   }
 }

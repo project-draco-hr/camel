@@ -1,17 +1,23 @@
 {
   ScriptEngineManager manager=new ScriptEngineManager();
   ScriptEngine engine=null;
-  try {
-    engine=manager.getEngineByName(scriptEngineName);
-  }
- catch (  NoClassDefFoundError ex) {
-    LOG.error("Cannot load the scriptEngine for " + scriptEngineName + ", the exception is "+ ex+ ", please ensure correct JARs is provided on classpath.");
+  String[] names=getScriptNames(scriptEngineName);
+  for (  String name : names) {
+    try {
+      engine=manager.getEngineByName(name);
+      if (engine != null) {
+        break;
+      }
+    }
+ catch (    NoClassDefFoundError ex) {
+      LOG.error("Cannot load the scriptEngine for " + name + ", the exception is "+ ex+ ", please ensure correct JARs is provided on classpath.");
+    }
   }
   if (engine == null) {
     engine=checkForOSGiEngine();
   }
   if (engine == null) {
-    throw new IllegalArgumentException("No script engine could be created for: " + getScriptEngineName());
+    throw new IllegalArgumentException("No script engine could be created for: " + scriptEngineName);
   }
   if (isPython()) {
     ScriptContext context=engine.getContext();
