@@ -1,14 +1,20 @@
 {
-  Map<String,Object> params=new HashMap<String,Object>(1);
-  params.put("processName",processName);
-  List<ProcessDefinition> list=CastUtils.cast(template.findByNamedParams("select x from " + QueryUtils.getTypeName(ProcessDefinition.class) + " x where x.name = :processName",params));
-  if (!list.isEmpty()) {
-    return list.get(0);
-  }
+  EntityManager entityManager=null;
+  try {
+    entityManager=resolveEntityManager(template.getEntityManagerFactory());
+    String definitionsQuery="select x from " + QueryUtils.getTypeName(ProcessDefinition.class) + " x where x.name = :processName";
+    List<ProcessDefinition> list=entityManager.createQuery(definitionsQuery,ProcessDefinition.class).setParameter("processName",processName).getResultList();
+    if (!list.isEmpty()) {
+      return list.get(0);
+    }
  else {
-    ProcessDefinition answer=new ProcessDefinition();
-    answer.setName(processName);
-    template.persist(answer);
-    return answer;
+      ProcessDefinition answer=new ProcessDefinition();
+      answer.setName(processName);
+      template.persist(answer);
+      return answer;
+    }
+  }
+  finally {
+    closeNonTransactionalEntityManager(entityManager);
   }
 }
