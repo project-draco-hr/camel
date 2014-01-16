@@ -5,6 +5,13 @@
     LOG.warn("No primary key is available!");
     return findOrCreateProcessDefinition(template,definition.getName());
   }
-  definition=template.find(ProcessDefinition.class,id);
+  EntityManager entityManager=null;
+  try {
+    entityManager=resolveEntityManager(template.getEntityManagerFactory());
+    definition=entityManager.find(ProcessDefinition.class,id);
+  }
+  finally {
+    closeNonTransactionalEntityManager(entityManager);
+  }
   return definition;
 }
