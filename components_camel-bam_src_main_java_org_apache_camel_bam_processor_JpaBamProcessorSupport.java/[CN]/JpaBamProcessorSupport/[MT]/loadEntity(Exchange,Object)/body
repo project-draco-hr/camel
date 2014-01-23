@@ -1,23 +1,33 @@
 {
   LOCK.lock();
-  EntityManager entityManager=null;
   try {
     LOG.trace("LoadEntity call");
-    entityManager=resolveEntityManager(template.getEntityManagerFactory());
     T entity=findEntityByCorrelationKey(key);
     if (entity == null) {
       entity=createEntity(exchange,key);
       setKeyProperty(entity,key);
       ProcessDefinition definition=ProcessDefinition.getRefreshedProcessDefinition(template,getActivityRules().getProcessRules().getProcessDefinition());
       setProcessDefinitionProperty(entity,definition);
-      entityManager.persist(entity);
+      final T finalEntity=entity;
+      entityManagerTemplate.execute(new EntityManagerCallback<Object>(){
+        @Override public Object execute(        EntityManager entityManager){
+          entityManager.persist(finalEntity);
+          return null;
+        }
+      }
+);
       LOG.debug("About to flush on entity: {} with key: {}",entity,key);
-      entityManager.flush();
+      entityManagerTemplate.execute(new EntityManagerCallback<Object>(){
+        @Override public Object execute(        EntityManager entityManager){
+          entityManager.flush();
+          return null;
+        }
+      }
+);
     }
     return entity;
   }
   finally {
     LOCK.unlock();
-    closeNonTransactionalEntityManager(entityManager);
   }
 }

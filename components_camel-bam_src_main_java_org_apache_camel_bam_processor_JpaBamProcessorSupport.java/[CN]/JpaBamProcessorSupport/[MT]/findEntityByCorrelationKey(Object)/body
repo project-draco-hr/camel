@@ -1,21 +1,24 @@
 {
-  EntityManager entityManager=null;
-  try {
-    entityManager=resolveEntityManager(template.getEntityManagerFactory());
-    if (isCorrelationKeyIsPrimary()) {
-      return entityManager.find(getEntityType(),key);
-    }
- else {
-      List<T> list=entityManager.createQuery(getFindByKeyQuery()).setParameter("key",key).getResultList();
-      if (list.isEmpty()) {
-        return null;
-      }
- else {
-        return list.get(0);
+  if (isCorrelationKeyIsPrimary()) {
+    return entityManagerTemplate.execute(new EntityManagerCallback<T>(){
+      @Override public T execute(      EntityManager entityManager){
+        return entityManager.find(getEntityType(),key);
       }
     }
+);
   }
-  finally {
-    closeNonTransactionalEntityManager(entityManager);
+ else {
+    List<T> list=entityManagerTemplate.execute(new EntityManagerCallback<List<T>>(){
+      @Override public List<T> execute(      EntityManager entityManager){
+        return entityManager.createQuery(getFindByKeyQuery()).setParameter("key",key).getResultList();
+      }
+    }
+);
+    if (list.isEmpty()) {
+      return null;
+    }
+ else {
+      return list.get(0);
+    }
   }
 }
