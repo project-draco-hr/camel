@@ -9,7 +9,8 @@
         protected void doInTransactionWithoutResult(        TransactionStatus status){
           Map<String,Object> params=new HashMap<String,Object>(1);
           params.put("timeNow",timeNow);
-          List<ActivityState> list=CastUtils.cast(template.findByNamedParams("select x from " + QueryUtils.getTypeName(ActivityState.class) + " x where x.timeOverdue < :timeNow",params));
+          String activityStateQuery="select x from " + QueryUtils.getTypeName(ActivityState.class) + " x where x.timeOverdue < :timeNow";
+          List<ActivityState> list=entityManagerTemplate.find(ActivityState.class,activityStateQuery,params);
           for (          ActivityState activityState : list) {
             fireExpiredEvent(activityState);
           }

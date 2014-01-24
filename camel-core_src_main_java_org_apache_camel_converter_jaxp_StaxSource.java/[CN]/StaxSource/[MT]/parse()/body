@@ -1,0 +1,98 @@
+{
+  try {
+    while (true) {
+switch (streamReader.getEventType()) {
+case XMLStreamConstants.ATTRIBUTE:
+        break;
+case XMLStreamConstants.CDATA:
+{
+        if (lexicalHandler != null) {
+          lexicalHandler.startCDATA();
+        }
+        int length=streamReader.getTextLength();
+        int start=streamReader.getTextStart();
+        char[] chars=streamReader.getTextCharacters();
+        contentHandler.characters(chars,start,length);
+        if (lexicalHandler != null) {
+          lexicalHandler.endCDATA();
+        }
+        break;
+      }
+case XMLStreamConstants.CHARACTERS:
+{
+      int length=streamReader.getTextLength();
+      int start=streamReader.getTextStart();
+      char[] chars=streamReader.getTextCharacters();
+      contentHandler.characters(chars,start,length);
+      break;
+    }
+case XMLStreamConstants.SPACE:
+{
+    int length=streamReader.getTextLength();
+    int start=streamReader.getTextStart();
+    char[] chars=streamReader.getTextCharacters();
+    contentHandler.ignorableWhitespace(chars,start,length);
+    break;
+  }
+case XMLStreamConstants.COMMENT:
+if (lexicalHandler != null) {
+  int length=streamReader.getTextLength();
+  int start=streamReader.getTextStart();
+  char[] chars=streamReader.getTextCharacters();
+  lexicalHandler.comment(chars,start,length);
+}
+break;
+case XMLStreamConstants.DTD:
+break;
+case XMLStreamConstants.END_DOCUMENT:
+contentHandler.endDocument();
+return;
+case XMLStreamConstants.END_ELEMENT:
+{
+String uri=streamReader.getNamespaceURI();
+String localName=streamReader.getLocalName();
+String prefix=streamReader.getPrefix();
+String qname=prefix != null && prefix.length() > 0 ? prefix + ":" + localName : localName;
+contentHandler.endElement(uri,localName,qname);
+break;
+}
+case XMLStreamConstants.ENTITY_DECLARATION:
+case XMLStreamConstants.ENTITY_REFERENCE:
+case XMLStreamConstants.NAMESPACE:
+case XMLStreamConstants.NOTATION_DECLARATION:
+break;
+case XMLStreamConstants.PROCESSING_INSTRUCTION:
+break;
+case XMLStreamConstants.START_DOCUMENT:
+contentHandler.startDocument();
+break;
+case XMLStreamConstants.START_ELEMENT:
+{
+String uri=streamReader.getNamespaceURI();
+String localName=streamReader.getLocalName();
+String prefix=streamReader.getPrefix();
+String qname=prefix != null && prefix.length() > 0 ? prefix + ":" + localName : localName;
+contentHandler.startElement(uri == null ? "" : uri,localName,qname,getAttributes());
+break;
+}
+default :
+break;
+}
+if (!streamReader.hasNext()) {
+return;
+}
+streamReader.next();
+}
+}
+ catch (XMLStreamException e) {
+SAXParseException spe;
+if (e.getLocation() != null) {
+spe=new SAXParseException(e.getMessage(),null,null,e.getLocation().getLineNumber(),e.getLocation().getColumnNumber(),e);
+}
+ else {
+spe=new SAXParseException(e.getMessage(),null,null,-1,-1,e);
+}
+spe.initCause(e);
+throw spe;
+}
+}

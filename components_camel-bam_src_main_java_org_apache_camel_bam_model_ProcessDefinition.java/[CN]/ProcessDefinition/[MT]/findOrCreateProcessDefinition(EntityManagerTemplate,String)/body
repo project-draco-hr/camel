@@ -1,0 +1,18 @@
+{
+  final String definitionsQuery="select x from " + QueryUtils.getTypeName(ProcessDefinition.class) + " x where x.name = :processName";
+  List<ProcessDefinition> list=entityManagerTemplate.execute(new EntityManagerCallback<List<ProcessDefinition>>(){
+    @Override public List<ProcessDefinition> execute(    EntityManager entityManager){
+      return entityManager.createQuery(definitionsQuery,ProcessDefinition.class).setParameter("processName",processName).getResultList();
+    }
+  }
+);
+  if (!list.isEmpty()) {
+    return list.get(0);
+  }
+ else {
+    ProcessDefinition answer=new ProcessDefinition();
+    answer.setName(processName);
+    entityManagerTemplate.persist(answer);
+    return answer;
+  }
+}

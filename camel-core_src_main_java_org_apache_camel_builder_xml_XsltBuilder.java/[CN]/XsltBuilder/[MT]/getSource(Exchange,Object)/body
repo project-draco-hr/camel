@@ -1,14 +1,20 @@
 {
+  Boolean isXalanTransformer=exchange.getProperty("isXalanTransformer",Boolean.class);
   if (body instanceof Source) {
     return (Source)body;
   }
   Source source=null;
-  if (body instanceof InputStream) {
-    return new StreamSource((InputStream)body);
-  }
   if (body != null) {
     if (isAllowStAX()) {
-      source=exchange.getContext().getTypeConverter().tryConvertTo(StAXSource.class,exchange,body);
+      if (isXalanTransformer) {
+        XMLStreamReader reader=exchange.getContext().getTypeConverter().tryConvertTo(XMLStreamReader.class,exchange,body);
+        if (reader != null) {
+          source=new StaxSource(reader);
+        }
+      }
+ else {
+        source=exchange.getContext().getTypeConverter().tryConvertTo(StAXSource.class,exchange,body);
+      }
     }
     if (source == null) {
       source=exchange.getContext().getTypeConverter().tryConvertTo(SAXSource.class,exchange,body);

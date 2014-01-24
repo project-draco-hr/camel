@@ -3,15 +3,15 @@
   Map<String,Object> params=new HashMap<String,Object>(2);
   params.put("definition",definition);
   params.put("name",activityName);
-  List<ActivityDefinition> list=CastUtils.cast(jpaTemplate.findByNamedParams("select x from " + QueryUtils.getTypeName(ActivityDefinition.class) + " x where x.processDefinition = :definition and x.name = :name",params));
+  List<ActivityDefinition> list=entityManagerTemplate.find(ActivityDefinition.class,"select x from " + QueryUtils.getTypeName(ActivityDefinition.class) + " x where x.processDefinition = :definition and x.name = :name",params);
   if (!list.isEmpty()) {
     return list.get(0);
   }
  else {
     ActivityDefinition answer=new ActivityDefinition();
     answer.setName(activityName);
-    answer.setProcessDefinition(ProcessDefinition.getRefreshedProcessDefinition(jpaTemplate,definition));
-    jpaTemplate.persist(answer);
+    answer.setProcessDefinition(ProcessDefinition.getRefreshedProcessDefinition(entityManagerTemplate,definition));
+    entityManagerTemplate.persist(answer);
     return answer;
   }
 }
