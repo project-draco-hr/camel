@@ -5,7 +5,7 @@
  else   if (endpoint instanceof MockEndpoint) {
     return endpoint;
   }
- else   if (uri == null || pattern == null || EndpointHelper.matchEndpoint(endpoint.getCamelContext(),uri,pattern)) {
+ else   if (matchPattern(uri,endpoint,pattern)) {
     InterceptSendToEndpoint proxy=new InterceptSendToEndpoint(endpoint,skip);
     String key="mock:" + endpoint.getEndpointKey().replaceFirst("://",":");
     if (key.contains("?")) {
@@ -13,13 +13,14 @@
     }
     LOG.info("Adviced endpoint [" + uri + "] with mock endpoint ["+ key+ "]");
     MockEndpoint mock=endpoint.getCamelContext().getEndpoint(key,MockEndpoint.class);
-    Processor producer;
+    Producer producer;
     try {
       producer=mock.createProducer();
     }
  catch (    Exception e) {
       throw wrapRuntimeCamelException(e);
     }
+    producer=onInterceptEndpoint(uri,endpoint,mock,producer);
     proxy.setDetour(producer);
     return proxy;
   }
