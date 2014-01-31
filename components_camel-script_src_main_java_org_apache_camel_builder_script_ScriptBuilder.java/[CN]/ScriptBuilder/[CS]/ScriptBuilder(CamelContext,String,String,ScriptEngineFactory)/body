@@ -1,0 +1,50 @@
+{
+  this.camelContext=camelContext;
+  this.scriptLanguage=scriptLanguage;
+  if (ResourceHelper.hasScheme(scriptText)) {
+    this.scriptResource=scriptText;
+    this.scriptText=null;
+  }
+ else {
+    this.scriptResource=null;
+    this.scriptText=scriptText;
+  }
+  if (scriptEngineFactory == null) {
+    this.scriptEngineFactory=lookupScriptEngineFactory(scriptLanguage);
+  }
+ else {
+    this.scriptEngineFactory=scriptEngineFactory;
+  }
+  if (this.scriptEngineFactory == null) {
+    throw new IllegalArgumentException("Cannot lookup ScriptEngineFactory for script language: " + scriptLanguage);
+  }
+  if (isBeanShell(scriptLanguage)) {
+    return;
+  }
+  Reader reader=null;
+  try {
+    if (camelContext != null && scriptResource != null) {
+      reader=createScriptReader(camelContext.getClassResolver(),scriptResource);
+    }
+ else     if (this.scriptText != null) {
+      reader=new StringReader(this.scriptText);
+    }
+    if (reader != null) {
+      ScriptEngine engine=this.scriptEngineFactory.getScriptEngine();
+      if (engine instanceof Compilable) {
+        Compilable compilable=(Compilable)engine;
+        this.compiledScript=compilable.compile(scriptText);
+        LOG.debug("Using compiled script: {}",this.compiledScript);
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new ScriptEvaluationException("Cannot load " + scriptLanguage + " script from resource: "+ scriptResource,e);
+  }
+catch (  ScriptException e) {
+    throw new ScriptEvaluationException("Error compiling " + scriptLanguage + " script: "+ scriptText,e);
+  }
+ finally {
+    IOHelper.close(reader);
+  }
+}
