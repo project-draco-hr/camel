@@ -1,0 +1,18 @@
+{
+  resultEndpoint.expectedMessageCount(messageCount);
+  long start=System.currentTimeMillis();
+  for (int i=0; i < messageCount; i++) {
+    executor.execute(new Runnable(){
+      public void run(){
+        template.sendBodyAndHeader("direct:expressionHeader","<message>payload</message>","throttleValue",throttle);
+      }
+    }
+);
+  }
+  resultEndpoint.assertIsSatisfied();
+  long minimumTime=(messageCount - 1) * INTERVAL / throttle;
+  long delta=System.currentTimeMillis() - start + 200;
+  assertTrue("Should take at least " + minimumTime + "ms, was: "+ delta,delta >= minimumTime);
+  long maxTime=(messageCount - 1) * INTERVAL / throttle * 3;
+  assertTrue("Should take at most " + maxTime + "ms, was: "+ delta,delta <= maxTime);
+}
