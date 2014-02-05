@@ -19,7 +19,10 @@
   try {
     currentShutdownTaskFuture.get(timeout,timeUnit);
   }
- catch (  TimeoutException e) {
+ catch (  ExecutionException e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e.getCause());
+  }
+catch (  Exception e) {
     timeoutOccurred.set(true);
     currentShutdownTaskFuture.cancel(true);
     this.forceShutdown=forceShutdown;
@@ -41,9 +44,6 @@
         LOG.warn("Timeout occurred. Will ignore shutting down the remainder routes.");
       }
     }
-  }
-catch (  ExecutionException e) {
-    throw ObjectHelper.wrapRuntimeCamelException(e.getCause());
   }
  finally {
     currentShutdownTaskFuture=null;
