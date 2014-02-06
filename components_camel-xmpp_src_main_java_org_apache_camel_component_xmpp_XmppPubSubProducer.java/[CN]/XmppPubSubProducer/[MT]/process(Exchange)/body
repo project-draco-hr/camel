@@ -1,0 +1,34 @@
+{
+  try {
+    if (connection == null) {
+      connection=endpoint.createConnection();
+    }
+    if (!connection.isConnected()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Reconnecting to: " + XmppEndpoint.getConnectionMessage(connection));
+      }
+      connection.connect();
+    }
+  }
+ catch (  XMPPException e) {
+    throw new RuntimeExchangeException("Cannot connect to XMPP Server: " + ((connection != null) ? XmppEndpoint.getConnectionMessage(connection) : endpoint.getHost()),exchange,e);
+  }
+  try {
+    Object body=exchange.getIn().getBody(Object.class);
+    if (body instanceof PubSub) {
+      PubSub pubsubpacket=(PubSub)body;
+      endpoint.getBinding().populateXmppPacket(pubsubpacket,exchange);
+      exchange.getIn().setHeader(XmppConstants.docHeader,pubsubpacket);
+      connection.sendPacket(pubsubpacket);
+    }
+ else {
+      throw new Exception("Message does not contain a pubsub packet");
+    }
+  }
+ catch (  XMPPException xmppe) {
+    throw new RuntimeExchangeException("Cannot send XMPP pubsub: from " + endpoint.getUser() + " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,xmppe);
+  }
+catch (  Exception e) {
+    throw new RuntimeExchangeException("Cannot send XMPP pubsub: from " + endpoint.getUser() + " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,e);
+  }
+}

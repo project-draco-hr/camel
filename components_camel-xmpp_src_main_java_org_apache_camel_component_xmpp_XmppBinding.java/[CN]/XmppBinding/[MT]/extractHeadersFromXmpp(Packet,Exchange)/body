@@ -1,0 +1,23 @@
+{
+  Map<String,Object> answer=new HashMap<String,Object>();
+  for (  String name : xmppPacket.getPropertyNames()) {
+    Object value=xmppPacket.getProperty(name);
+    if (!headerFilterStrategy.applyFilterToExternalHeaders(name,value,exchange)) {
+      answer.put(name,value);
+    }
+  }
+  if (xmppPacket instanceof Message) {
+    Message xmppMessage=(Message)xmppPacket;
+    answer.put(XmppConstants.MESSAGE_TYPE,xmppMessage.getType());
+    answer.put(XmppConstants.SUBJECT,xmppMessage.getSubject());
+    answer.put(XmppConstants.THREAD_ID,xmppMessage.getThread());
+  }
+ else   if (xmppPacket instanceof PubSub) {
+    PubSub pubsubPacket=(PubSub)xmppPacket;
+    answer.put(XmppConstants.MESSAGE_TYPE,pubsubPacket.getType());
+  }
+  answer.put(XmppConstants.FROM,xmppPacket.getFrom());
+  answer.put(XmppConstants.PACKET_ID,xmppPacket.getPacketID());
+  answer.put(XmppConstants.TO,xmppPacket.getTo());
+  return answer;
+}
