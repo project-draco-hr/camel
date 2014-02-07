@@ -1,6 +1,7 @@
 {
   return new RouteBuilder(){
     public void configure() throws Exception {
+      onException(IllegalArgumentException.class).handled(true).to("mock:exception");
       String keyFileName=getKeyFileName();
       String keyFileNameSec=getKeyFileNameSec();
       String keyUserid=getKeyUserId();
@@ -23,7 +24,7 @@
       pgpSignAndEncrypt.setKeyUserid(keyUserid);
       pgpSignAndEncrypt.setSignatureKeyFileName(keyFileNameSec);
       PGPPassphraseAccessor passphraseAccessor=getPassphraseAccessor();
-      pgpSignAndEncrypt.setSignatureKeyUserid(keyUserid);
+      pgpSignAndEncrypt.setSignatureKeyUserid("Super <sdude@nowhere.net>");
       pgpSignAndEncrypt.setPassphraseAccessor(passphraseAccessor);
       pgpSignAndEncrypt.setProvider(getProvider());
       pgpSignAndEncrypt.setAlgorithm(getAlgorithm());
@@ -34,7 +35,9 @@
       pgpVerifyAndDecrypt.setPassword(keyPassword);
       pgpVerifyAndDecrypt.setSignatureKeyFileName(keyFileName);
       pgpVerifyAndDecrypt.setProvider(getProvider());
+      pgpVerifyAndDecrypt.setSignatureKeyUserid(keyUserid);
       from("direct:inline-sign").marshal(pgpSignAndEncrypt).to("mock:encrypted").unmarshal(pgpVerifyAndDecrypt).to("mock:unencrypted");
+      from("direct:verify_exception_sig_userids").marshal(pgpSignAndEncrypt).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_USERIDS).constant(Arrays.asList(new String[]{"wrong1","wrong2"})).setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("wrongUserID").unmarshal(pgpVerifyAndDecrypt).to("mock:unencrypted");
       PGPDataFormat pgpEncryptByteArray=new PGPDataFormat();
       pgpEncryptByteArray.setEncryptionKeyRing(getPublicKeyRing());
       pgpEncryptByteArray.setKeyUserids(getKeyUserIds());
@@ -59,7 +62,41 @@
       pgpVerifyAndDecryptByteArray.setPassphraseAccessor(passphraseAccessor);
       pgpVerifyAndDecryptByteArray.setEncryptionKeyRing(getSecKeyRing());
       pgpVerifyAndDecryptByteArray.setProvider(getProvider());
+      pgpVerifyAndDecryptByteArray.setSignatureKeyUserids(getSignatureKeyUserIds());
       from("direct:sign-key-ring-byte-array").streamCaching().setHeader(PGPDataFormat.ENCRYPTION_KEY_RING).constant(getPublicKeyRing()).marshal(pgpSignAndEncryptByteArray).removeHeader(PGPDataFormat.ENCRYPTION_KEY_RING).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_RING).constant(getPublicKeyRing()).unmarshal(pgpVerifyAndDecryptByteArray).removeHeader(PGPDataFormat.SIGNATURE_KEY_RING).to("mock:unencrypted");
+      PGPDataFormat pgpSignAndEncryptSeveralSignerKeys=new PGPDataFormat();
+      pgpSignAndEncryptSeveralSignerKeys.setKeyUserid(keyUserid);
+      pgpSignAndEncryptSeveralSignerKeys.setEncryptionKeyRing(getPublicKeyRing());
+      pgpSignAndEncryptSeveralSignerKeys.setSignatureKeyRing(getSecKeyRing());
+      List<String> signerUserIds=new ArrayList<String>();
+      signerUserIds.add("Third (comment third) <email@third.com>");
+      signerUserIds.add("Second <email@second.com>");
+      pgpSignAndEncryptSeveralSignerKeys.setSignatureKeyUserids(signerUserIds);
+      Map<String,String> userId2Passphrase=new HashMap<String,String>();
+      userId2Passphrase.put("Third (comment third) <email@third.com>","sdude");
+      userId2Passphrase.put("Second <email@second.com>","sdude");
+      PGPPassphraseAccessor passphraseAccessorSeveralKeys=new PGPPassphraseAccessorDefault(userId2Passphrase);
+      pgpSignAndEncryptSeveralSignerKeys.setPassphraseAccessor(passphraseAccessorSeveralKeys);
+      PGPDataFormat pgpVerifyAndDecryptSeveralSignerKeys=new PGPDataFormat();
+      pgpVerifyAndDecryptSeveralSignerKeys.setPassphraseAccessor(passphraseAccessor);
+      pgpVerifyAndDecryptSeveralSignerKeys.setEncryptionKeyRing(getSecKeyRing());
+      pgpVerifyAndDecryptSeveralSignerKeys.setSignatureKeyRing(getPublicKeyRing());
+      pgpVerifyAndDecryptSeveralSignerKeys.setProvider(getProvider());
+      List<String> expectedSigUserIds=new ArrayList<String>();
+      expectedSigUserIds.add("Second <email@second.com>");
+      pgpVerifyAndDecryptSeveralSignerKeys.setSignatureKeyUserids(expectedSigUserIds);
+      from("direct:several-signer-keys").streamCaching().marshal(pgpSignAndEncryptSeveralSignerKeys).to("mock:encrypted").unmarshal(pgpVerifyAndDecryptSeveralSignerKeys).to("mock:unencrypted");
+      PGPDataFormat pgpSignAndEncryptOneUserIdWithServeralKeys=new PGPDataFormat();
+      pgpSignAndEncryptOneUserIdWithServeralKeys.setEncryptionKeyRing(getPublicKeyRing());
+      pgpSignAndEncryptOneUserIdWithServeralKeys.setSignatureKeyRing(getSecKeyRing());
+      pgpSignAndEncryptOneUserIdWithServeralKeys.setPassword(getKeyPassword());
+      PGPDataFormat pgpVerifyAndDecryptOneUserIdWithServeralKeys=new PGPDataFormat();
+      pgpVerifyAndDecryptOneUserIdWithServeralKeys.setPassword(getKeyPassword());
+      pgpVerifyAndDecryptOneUserIdWithServeralKeys.setEncryptionKeyRing(getSecKeyRing());
+      pgpVerifyAndDecryptOneUserIdWithServeralKeys.setSignatureKeyRing(getPublicKeyRing());
+      pgpVerifyAndDecryptOneUserIdWithServeralKeys.setProvider(getProvider());
+      pgpVerifyAndDecryptOneUserIdWithServeralKeys.setSignatureKeyUserids(expectedSigUserIds);
+      from("direct:one-userid-several-keys").setHeader(PGPDataFormat.KEY_USERID).constant("econd").setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("econd").marshal(pgpSignAndEncryptOneUserIdWithServeralKeys).removeHeader(PGPDataFormat.KEY_USERID).removeHeader(PGPDataFormat.SIGNATURE_KEY_USERID).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("Second <email@second.com>").unmarshal(pgpVerifyAndDecryptOneUserIdWithServeralKeys).setHeader(PGPDataFormat.KEY_USERID).constant("econd").setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("econd").marshal(pgpSignAndEncryptOneUserIdWithServeralKeys).removeHeader(PGPDataFormat.KEY_USERID).removeHeader(PGPDataFormat.SIGNATURE_KEY_USERID).setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("Third (comment third) <email@third.com>").unmarshal(pgpVerifyAndDecryptOneUserIdWithServeralKeys).to("mock:unencrypted");
     }
   }
 ;

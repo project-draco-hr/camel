@@ -15,7 +15,7 @@
   OutputStream encOut=encGen.open(outputStream,new byte[BUFFER_SIZE]);
   PGPCompressedDataGenerator comData=new PGPCompressedDataGenerator(findCompressionAlgorithm(exchange));
   OutputStream comOut=new BufferedOutputStream(comData.open(encOut));
-  PGPSignatureGenerator sigGen=createSignatureGenerator(exchange,comOut);
+  List<PGPSignatureGenerator> sigGens=createSignatureGenerator(exchange,comOut);
   PGPLiteralDataGenerator litData=new PGPLiteralDataGenerator();
   String fileName=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
   if (ObjectHelper.isEmpty(fileName)) {
@@ -27,16 +27,21 @@
     int bytesRead;
     while ((bytesRead=input.read(buffer)) != -1) {
       litOut.write(buffer,0,bytesRead);
-      if (sigGen != null) {
-        sigGen.update(buffer,0,bytesRead);
+      if (sigGens != null && !sigGens.isEmpty()) {
+        for (        PGPSignatureGenerator sigGen : sigGens) {
+          sigGen.update(buffer,0,bytesRead);
+        }
       }
       litOut.flush();
     }
   }
   finally {
     IOHelper.close(litOut);
-    if (sigGen != null) {
-      sigGen.generate().encode(comOut);
+    if (sigGens != null && !sigGens.isEmpty()) {
+      for (int i=sigGens.size() - 1; i > -1; i--) {
+        PGPSignatureGenerator sigGen=sigGens.get(i);
+        sigGen.generate().encode(comOut);
+      }
     }
     IOHelper.close(comOut,encOut,outputStream,input);
   }

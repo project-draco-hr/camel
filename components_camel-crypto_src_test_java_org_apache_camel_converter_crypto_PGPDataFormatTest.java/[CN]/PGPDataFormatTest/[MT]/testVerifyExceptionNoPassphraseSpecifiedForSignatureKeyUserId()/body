@@ -1,0 +1,12 @@
+{
+  MockEndpoint exception=setupExpectations(context,1,"mock:exception");
+  String payload="Hi Alice, Be careful Eve is listening, signed Bob";
+  Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put(PGPDataFormat.SIGNATURE_KEY_USERID,"userIDWithNoPassphrase");
+  headers.put(PGPDataFormat.KEY_USERID,"second");
+  template.sendBodyAndHeaders("direct:several-signer-keys",payload,headers);
+  assertMockEndpointsSatisfied();
+  Exception e=(Exception)exception.getExchanges().get(0).getProperty(Exchange.EXCEPTION_CAUGHT);
+  assertNotNull("Expected excpetion  missing",e);
+  assertTrue(e.getMessage().contains("No passphrase specified for signature key user ID"));
+}
