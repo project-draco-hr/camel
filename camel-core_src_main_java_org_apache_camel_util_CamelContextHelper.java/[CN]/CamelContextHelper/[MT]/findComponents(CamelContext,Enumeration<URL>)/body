@@ -10,7 +10,33 @@
         StringTokenizer tok=new StringTokenizer(names);
         while (tok.hasMoreTokens()) {
           String name=tok.nextToken();
-          map.put(name,properties);
+          String className=null;
+          InputStream is=null;
+          try {
+            is=camelContext.getClassResolver().loadResourceAsStream(COMPONENT_BASE + name);
+            if (is != null) {
+              Properties compProperties=new Properties();
+              compProperties.load(is);
+              if (!compProperties.isEmpty()) {
+                className=compProperties.getProperty("class");
+              }
+            }
+          }
+ catch (          Exception e) {
+          }
+ finally {
+            IOHelper.close(is);
+          }
+          Properties prop=new Properties();
+          prop.putAll(properties);
+          if (camelContext.hasComponent(name) != null) {
+            prop.put("component",camelContext.getComponent(name));
+          }
+          if (className != null) {
+            prop.put("class",className);
+          }
+          prop.put("name",name);
+          map.put(name,prop);
         }
       }
     }
@@ -18,16 +44,30 @@
       throw new LoadPropertiesException(url,e);
     }
   }
+  List<String> names=camelContext.getComponentNames();
+  for (  String name : names) {
+    if (!map.containsKey(name)) {
+      Component component=camelContext.getComponent(name);
+      if (component != null) {
+        Properties properties=new Properties();
+        properties.put("component",component);
+        properties.put("class",component.getClass().getName());
+        properties.put("name",name);
+        map.put(name,properties);
+      }
+    }
+  }
   Map<String,Component> beanMap=camelContext.getRegistry().findByTypeWithName(Component.class);
   Set<Map.Entry<String,Component>> entries=beanMap.entrySet();
   for (  Map.Entry<String,Component> entry : entries) {
     String name=entry.getKey();
     if (!map.containsKey(name)) {
-      Properties properties=new Properties();
       Component component=entry.getValue();
       if (component != null) {
-        properties.put("component",component);
+        Properties properties=new Properties();
+        properties.put("component",name);
         properties.put("class",component.getClass().getName());
+        properties.put("name",name);
         map.put(name,properties);
       }
     }
