@@ -1,0 +1,54 @@
+{
+  if (messageFactory == null) {
+    messageFactory=new DefaultMessageFactory();
+  }
+  if (sessionLogFactory == null) {
+    sessionLogFactory=inferLogFactory(settings);
+  }
+  if (messageStoreFactory == null) {
+    messageStoreFactory=inferMessageStoreFactory(settings);
+  }
+  if (!settings.isSetting(Session.SETTING_START_TIME)) {
+    settings.setString(Session.SETTING_START_TIME,DEFAULT_START_TIME);
+  }
+  if (!settings.isSetting(Session.SETTING_END_TIME)) {
+    settings.setString(Session.SETTING_END_TIME,DEFAULT_END_TIME);
+  }
+  if (!settings.isSetting(Session.SETTING_HEARTBTINT)) {
+    settings.setLong(Session.SETTING_HEARTBTINT,DEFAULT_HEARTBTINT);
+  }
+  ThreadModel threadModel=ThreadModel.ThreadPerConnector;
+  if (settings.isSetting(SETTING_THREAD_MODEL)) {
+    threadModel=ThreadModel.valueOf(settings.getString(SETTING_THREAD_MODEL));
+  }
+  if (settings.isSetting(SETTING_USE_JMX) && settings.getBool(SETTING_USE_JMX)) {
+    LOG.info("Enabling JMX for QuickFIX/J");
+    jmxExporter=new JmxExporter();
+  }
+ else {
+    jmxExporter=null;
+  }
+  ClassLoader ccl=Thread.currentThread().getContextClassLoader();
+  try {
+    Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+    if (isConnectorRole(settings,SessionFactory.ACCEPTOR_CONNECTION_TYPE)) {
+      acceptor=createAcceptor(new Dispatcher(),settings,messageStoreFactory,sessionLogFactory,messageFactory,threadModel);
+    }
+ else {
+      acceptor=null;
+    }
+    if (isConnectorRole(settings,SessionFactory.INITIATOR_CONNECTION_TYPE)) {
+      initiator=createInitiator(new Dispatcher(),settings,messageStoreFactory,sessionLogFactory,messageFactory,threadModel);
+    }
+ else {
+      initiator=null;
+    }
+    if (acceptor == null && initiator == null) {
+      throw new ConfigError("No connector role");
+    }
+  }
+  finally {
+    Thread.currentThread().setContextClassLoader(ccl);
+  }
+  initialized.set(true);
+}
