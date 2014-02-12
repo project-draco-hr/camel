@@ -1,5 +1,5 @@
 {
-  return new RouteBuilder(){
+  return new RouteBuilder[]{new RouteBuilder(){
     public void configure() throws Exception {
       onException(IllegalArgumentException.class).handled(true).to("mock:exception");
       String keyFileName=getKeyFileName();
@@ -99,5 +99,16 @@
       from("direct:one-userid-several-keys").setHeader(PGPDataFormat.KEY_USERID).constant("econd").setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("econd").marshal(pgpSignAndEncryptOneUserIdWithServeralKeys).removeHeader(PGPDataFormat.KEY_USERID).removeHeader(PGPDataFormat.SIGNATURE_KEY_USERID).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("Second <email@second.com>").unmarshal(pgpVerifyAndDecryptOneUserIdWithServeralKeys).setHeader(PGPDataFormat.KEY_USERID).constant("econd").setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("econd").marshal(pgpSignAndEncryptOneUserIdWithServeralKeys).removeHeader(PGPDataFormat.KEY_USERID).removeHeader(PGPDataFormat.SIGNATURE_KEY_USERID).setHeader(PGPDataFormat.SIGNATURE_KEY_USERID).constant("Third (comment third) <email@third.com>").unmarshal(pgpVerifyAndDecryptOneUserIdWithServeralKeys).to("mock:unencrypted");
     }
   }
-;
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      PGPDataFormat pgpKeyFlag=new PGPDataFormat();
+      pgpKeyFlag.setKeyFileName("org/apache/camel/component/crypto/pubringSubKeys.gpg");
+      pgpKeyFlag.setSignatureKeyFileName("org/apache/camel/component/crypto/secringSubKeys.gpg");
+      pgpKeyFlag.setSignaturePassword("Abcd1234");
+      pgpKeyFlag.setKeyUserid("keyflag");
+      pgpKeyFlag.setSignatureKeyUserid("keyflag");
+      from("direct:keyflag").marshal(pgpKeyFlag).to("mock:encrypted_keyflag");
+    }
+  }
+};
 }

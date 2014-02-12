@@ -4,20 +4,18 @@
     Object data=i.next();
     if (data instanceof PGPSecretKeyRing) {
       PGPSecretKeyRing keyring=(PGPSecretKeyRing)data;
-      for (Iterator<PGPSecretKey> secKeys=keyring.getSecretKeys(); secKeys.hasNext(); ) {
-        PGPSecretKey secKey=secKeys.next();
-        if (secKey != null && keyid == secKey.getKeyID()) {
-          if (passphrase == null && passphraseAccessor != null) {
-            Iterator<String> userIDs=secKey.getUserIDs();
-            while (passphrase == null && userIDs.hasNext()) {
-              passphrase=passphraseAccessor.getPassphrase(userIDs.next());
-            }
+      PGPSecretKey secKey=keyring.getSecretKey(keyid);
+      if (secKey != null) {
+        if (passphrase == null && passphraseAccessor != null) {
+          Iterator<String> userIDs=keyring.getSecretKey().getUserIDs();
+          while (passphrase == null && userIDs.hasNext()) {
+            passphrase=passphraseAccessor.getPassphrase(userIDs.next());
           }
-          if (passphrase != null) {
-            PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphrase.toCharArray()));
-            if (privateKey != null) {
-              return privateKey;
-            }
+        }
+        if (passphrase != null) {
+          PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphrase.toCharArray()));
+          if (privateKey != null) {
+            return privateKey;
           }
         }
       }
