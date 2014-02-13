@@ -5,13 +5,15 @@
   }
   tracedRouteNodes=new DefaultTracedRouteNodes();
   context=exchange.getContext();
-  if (exchange.getIn().getClass().getName().equals("org.apache.camel.component.jms.JmsMessage")) {
-    this.originalInMessage=new DefaultMessage();
-    this.originalInMessage.setBody(exchange.getIn().getBody());
-    this.originalInMessage.getHeaders().putAll(exchange.getIn().getHeaders());
-  }
+  if (context.isAllowUseOriginalMessage()) {
+    if (exchange.getIn().getClass().getName().equals("org.apache.camel.component.jms.JmsMessage")) {
+      this.originalInMessage=new DefaultMessage();
+      this.originalInMessage.setBody(exchange.getIn().getBody());
+      this.originalInMessage.getHeaders().putAll(exchange.getIn().getHeaders());
+    }
  else {
-    this.originalInMessage=exchange.getIn().copy();
+      this.originalInMessage=exchange.getIn().copy();
+    }
   }
   if (exchange.getProperty(Exchange.CREATED_TIMESTAMP) == null) {
     exchange.setProperty(Exchange.CREATED_TIMESTAMP,new Date());
