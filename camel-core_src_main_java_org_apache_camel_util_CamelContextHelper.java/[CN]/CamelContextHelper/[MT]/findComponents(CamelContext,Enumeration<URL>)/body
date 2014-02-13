@@ -2,6 +2,7 @@
   SortedMap<String,Properties> map=new TreeMap<String,Properties>();
   while (componentDescriptionIter != null && componentDescriptionIter.hasMoreElements()) {
     URL url=componentDescriptionIter.nextElement();
+    LOG.info("Finding components in url: {}",url);
     try {
       Properties properties=new Properties();
       properties.load(url.openStream());
@@ -13,7 +14,10 @@
           String className=null;
           InputStream is=null;
           try {
-            is=camelContext.getClassResolver().loadResourceAsStream(COMPONENT_BASE + name);
+            Enumeration<URL> urls=camelContext.getClassResolver().loadAllResourcesAsURL(COMPONENT_BASE + name);
+            if (urls != null && urls.hasMoreElements()) {
+              is=urls.nextElement().openStream();
+            }
             if (is != null) {
               Properties compProperties=new Properties();
               compProperties.load(is);
