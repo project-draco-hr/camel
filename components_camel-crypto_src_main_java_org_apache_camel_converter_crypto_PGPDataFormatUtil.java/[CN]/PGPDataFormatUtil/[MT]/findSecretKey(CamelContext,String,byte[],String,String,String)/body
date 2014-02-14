@@ -1,11 +1,13 @@
 {
   InputStream keyChainInputStream=determineKeyRingInputStream(context,keychainFilename,secKeyRing,false);
-  PGPSecretKey secKey=null;
   try {
-    secKey=findSecretKey(keyChainInputStream,passphrase,userId,provider);
+    List<PGPSecretKeyAndPrivateKeyAndUserId> secKeys=findSecretKeysWithPrivateKeyAndUserId(keyChainInputStream,Collections.singletonMap(userId,passphrase),provider);
+    if (!secKeys.isEmpty()) {
+      return secKeys.get(0).getSecretKey();
+    }
+    return null;
   }
   finally {
     IOHelper.close(keyChainInputStream);
   }
-  return secKey;
 }

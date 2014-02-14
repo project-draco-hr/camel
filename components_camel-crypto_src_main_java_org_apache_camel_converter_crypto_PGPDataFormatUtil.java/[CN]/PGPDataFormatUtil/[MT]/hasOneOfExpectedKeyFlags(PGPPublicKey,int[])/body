@@ -1,0 +1,23 @@
+{
+  boolean containsKeyFlags=false;
+  for (@SuppressWarnings("unchecked") Iterator<PGPSignature> itsig=key.getSignatures(); itsig.hasNext(); ) {
+    PGPSignature sig=itsig.next();
+    PGPSignatureSubpacketVector subPacks=sig.getHashedSubPackets();
+    if (subPacks != null) {
+      int keyFlag=subPacks.getKeyFlags();
+      if (keyFlag > 0 && !containsKeyFlags) {
+        containsKeyFlags=true;
+      }
+      for (      int expectdKeyFlag : expectedKeyFlags) {
+        int result=keyFlag & expectdKeyFlag;
+        if (result == expectdKeyFlag) {
+          return Boolean.TRUE;
+        }
+      }
+    }
+  }
+  if (containsKeyFlags) {
+    return Boolean.FALSE;
+  }
+  return null;
+}

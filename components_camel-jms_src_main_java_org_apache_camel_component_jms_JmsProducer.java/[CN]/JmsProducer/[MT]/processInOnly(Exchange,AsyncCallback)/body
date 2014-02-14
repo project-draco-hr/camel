@@ -42,18 +42,20 @@
         jmsReplyTo=null;
       }
       if (jmsReplyTo != null && jmsReplyTo instanceof String) {
-        String before=(String)jmsReplyTo;
-        String replyTo=normalizeDestinationName(before);
+        String replyTo=(String)jmsReplyTo;
         jmsReplyTo=null;
-        LOG.trace("Normalized JMSReplyTo destination name {} -> {}",before,replyTo);
+        boolean isPubSub=isTopicPrefix(replyTo) || (!isQueuePrefix(replyTo) && endpoint.isPubSubDomain());
         if (endpoint.getDestinationResolver() != null) {
-          jmsReplyTo=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,endpoint.isPubSubDomain());
+          jmsReplyTo=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,isPubSub);
           if (LOG.isDebugEnabled()) {
-            LOG.debug("Resolved JMSReplyTo destination {} using DestinationResolver {} as PubSubDomain {} -> {}",new Object[]{replyTo,endpoint.getDestinationResolver(),endpoint.isPubSubDomain(),jmsReplyTo});
+            LOG.debug("Resolved JMSReplyTo destination {} using DestinationResolver {} as PubSubDomain {} -> {}",new Object[]{replyTo,endpoint.getDestinationResolver(),isPubSub,jmsReplyTo});
           }
         }
         if (jmsReplyTo == null) {
-          if (endpoint.isPubSubDomain()) {
+          String before=replyTo;
+          replyTo=normalizeDestinationName(replyTo);
+          LOG.trace("Normalized JMSReplyTo destination name {} -> {}",before,replyTo);
+          if (isPubSub) {
             LOG.debug("Creating JMSReplyTo topic: {}",replyTo);
             jmsReplyTo=session.createTopic(replyTo);
           }

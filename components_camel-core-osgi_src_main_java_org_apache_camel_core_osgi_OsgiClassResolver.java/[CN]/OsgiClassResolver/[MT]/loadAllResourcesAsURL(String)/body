@@ -1,0 +1,25 @@
+{
+  ObjectHelper.notEmpty(uri,"uri");
+  Vector<URL> answer=new Vector<URL>();
+  try {
+    Enumeration<URL> e=bundleContext.getBundle().getResources(uri);
+    while (e != null && e.hasMoreElements()) {
+      answer.add(e.nextElement());
+    }
+    String path=FileUtil.onlyPath(uri);
+    String name=FileUtil.stripPath(uri);
+    if (path != null && name != null) {
+      for (      Bundle bundle : bundleContext.getBundles()) {
+        LOG.trace("Finding all entries in path: {} with pattern: {}",path,name);
+        e=bundle.findEntries(path,name,false);
+        while (e != null && e.hasMoreElements()) {
+          answer.add(e.nextElement());
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new RuntimeException("Cannot load resource: " + uri,e);
+  }
+  return answer.elements();
+}

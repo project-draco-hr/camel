@@ -9,13 +9,18 @@ synchronized (engineInstancesLock) {
       }
       if (engine == null) {
         QuickfixjConfiguration configuration=configurations.get(remaining);
+        SessionSettings settings=null;
         if (configuration != null) {
-          SessionSettings settings=configuration.createSessionSettings();
-          engine=new QuickfixjEngine(uri,settings,messageStoreFactory,logFactory,messageFactory);
+          settings=configuration.createSessionSettings();
         }
  else {
-          engine=new QuickfixjEngine(uri,remaining,messageStoreFactory,logFactory,messageFactory);
+          settings=QuickfixjEngine.loadSettings(remaining);
         }
+        Boolean lazyCreateEngineForEndpoint=super.getAndRemoveParameter(parameters,PARAMETER_LAZY_CREATE_ENGINE,Boolean.TYPE);
+        if (lazyCreateEngineForEndpoint == null) {
+          lazyCreateEngineForEndpoint=isLazyCreateEngines();
+        }
+        engine=new QuickfixjEngine(uri,settings,messageStoreFactory,logFactory,messageFactory,lazyCreateEngineForEndpoint);
         if (getCamelContext().getStatus().isStarted()) {
           startQuickfixjEngine(engine);
           engines.put(remaining,engine);

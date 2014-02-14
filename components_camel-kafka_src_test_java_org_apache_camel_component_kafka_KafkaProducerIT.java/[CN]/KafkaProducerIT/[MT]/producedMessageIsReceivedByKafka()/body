@@ -1,0 +1,30 @@
+{
+  final List<String> messages=new ArrayList<String>();
+  Map<String,Integer> topicCountMap=new HashMap<String,Integer>();
+  topicCountMap.put(TOPIC,5);
+  Map<String,List<KafkaStream<byte[],byte[]>>> consumerMap=kafkaConsumer.createMessageStreams(topicCountMap);
+  List<KafkaStream<byte[],byte[]>> streams=consumerMap.get(TOPIC);
+  ExecutorService executor=Executors.newFixedThreadPool(5);
+  for (  final KafkaStream stream : streams) {
+    executor.submit(new Runnable(){
+      @Override public void run(){
+        ConsumerIterator<byte[],byte[]> it=stream.iterator();
+        while (it.hasNext()) {
+          String msg=new String(it.next().message());
+          messages.add(msg);
+        }
+      }
+    }
+);
+  }
+  for (int k=0; k < 10; k++) {
+    template.sendBodyAndHeader("IT test message",KafkaConstants.PARTITION_KEY,"1");
+  }
+  for (int k=0; k < 20; k++) {
+    if (messages.size() == 10) {
+      return;
+    }
+    Thread.sleep(200);
+  }
+  fail();
+}

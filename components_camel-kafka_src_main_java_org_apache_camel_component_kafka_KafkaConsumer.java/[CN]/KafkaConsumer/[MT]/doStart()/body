@@ -1,0 +1,13 @@
+{
+  super.doStart();
+  log.info("Starting Kafka consumer");
+  consumer=kafka.consumer.Consumer.createJavaConsumerConnector(new ConsumerConfig(getProps()));
+  Map<String,Integer> topicCountMap=new HashMap<String,Integer>();
+  topicCountMap.put(endpoint.getTopic(),endpoint.getConsumerStreams());
+  Map<String,List<KafkaStream<byte[],byte[]>>> consumerMap=consumer.createMessageStreams(topicCountMap);
+  List<KafkaStream<byte[],byte[]>> streams=consumerMap.get(endpoint.getTopic());
+  executor=endpoint.createExecutor();
+  for (  final KafkaStream stream : streams) {
+    executor.submit(new ConsumerTask(stream));
+  }
+}

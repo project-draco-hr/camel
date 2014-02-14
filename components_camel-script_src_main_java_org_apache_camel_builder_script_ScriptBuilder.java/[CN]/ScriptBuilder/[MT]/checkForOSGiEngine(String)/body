@@ -1,0 +1,17 @@
+{
+  LOG.debug("No script engine found for " + language + " using standard javax.script auto-registration. Checking OSGi registry...");
+  try {
+    Class<?> c=Class.forName("org.apache.camel.script.osgi.Activator");
+    Method mth=c.getDeclaredMethod("getBundleContext");
+    Object ctx=mth.invoke(null);
+    LOG.debug("Found OSGi BundleContext " + ctx);
+    if (ctx != null) {
+      Method resolveScriptEngine=c.getDeclaredMethod("resolveScriptEngine",String.class);
+      return (ScriptEngine)resolveScriptEngine.invoke(null,language);
+    }
+  }
+ catch (  Throwable t) {
+    LOG.debug("Unable to load OSGi, script engine cannot be found",t);
+  }
+  return null;
+}

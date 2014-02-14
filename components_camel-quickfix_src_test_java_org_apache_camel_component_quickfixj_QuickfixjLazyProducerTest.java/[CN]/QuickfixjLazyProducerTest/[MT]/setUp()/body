@@ -1,0 +1,16 @@
+{
+  mockExchange=Mockito.mock(Exchange.class);
+  mockCamelMessage=Mockito.mock(org.apache.camel.Message.class);
+  Mockito.when(mockExchange.getIn()).thenReturn(mockCamelMessage);
+  Mockito.when(mockExchange.getPattern()).thenReturn(ExchangePattern.InOnly);
+  quickfixjEngine=TestSupport.createEngine(true);
+  endpoint=Mockito.spy(new QuickfixjEndpoint(quickfixjEngine,"",new QuickfixjComponent()));
+  inboundFixMessage=new Message();
+  inboundFixMessage.getHeader().setString(BeginString.FIELD,FixVersions.BEGINSTRING_FIX44);
+  inboundFixMessage.getHeader().setString(SenderCompID.FIELD,"SENDER");
+  inboundFixMessage.getHeader().setString(TargetCompID.FIELD,"TARGET");
+  sessionID=MessageUtils.getSessionID(inboundFixMessage);
+  Mockito.when(mockCamelMessage.getBody(Message.class)).thenReturn(inboundFixMessage);
+  Mockito.when(endpoint.getSessionID()).thenReturn(sessionID);
+  producer=Mockito.spy(new QuickfixjProducer(endpoint));
+}

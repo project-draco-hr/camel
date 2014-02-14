@@ -1,10 +1,18 @@
 {
   LOG.debug("onEvent {}",event);
-  final Exchange exchange=endpoint.createExchange();
+  final boolean reply=event.replyAddress() != null;
+  final Exchange exchange=endpoint.createExchange(reply ? ExchangePattern.InOut : ExchangePattern.InOnly);
   exchange.getIn().setBody(event.body());
   try {
     getAsyncProcessor().process(exchange,new AsyncCallback(){
       @Override public void done(      boolean doneSync){
+        if (reply) {
+          Object body=getVertxBody(exchange);
+          if (body != null) {
+            LOG.debug("Sending reply to: {} with body: {}",event.replyAddress(),body);
+            event.reply(body);
+          }
+        }
       }
     }
 );

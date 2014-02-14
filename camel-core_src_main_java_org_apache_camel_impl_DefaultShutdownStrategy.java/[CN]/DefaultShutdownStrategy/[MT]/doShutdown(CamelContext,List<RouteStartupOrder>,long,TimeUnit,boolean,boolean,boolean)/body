@@ -15,13 +15,16 @@
   }
   LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
   timeoutOccurred.set(false);
-  Future<?> future=getExecutorService().submit(new ShutdownTask(context,routesOrdered,timeout,timeUnit,suspendOnly,abortAfterTimeout,timeoutOccurred));
+  currentShutdownTaskFuture=getExecutorService().submit(new ShutdownTask(context,routesOrdered,timeout,timeUnit,suspendOnly,abortAfterTimeout,timeoutOccurred));
   try {
-    future.get(timeout,timeUnit);
+    currentShutdownTaskFuture.get(timeout,timeUnit);
   }
- catch (  TimeoutException e) {
+ catch (  ExecutionException e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e.getCause());
+  }
+catch (  Exception e) {
     timeoutOccurred.set(true);
-    future.cancel(true);
+    currentShutdownTaskFuture.cancel(true);
     this.forceShutdown=forceShutdown;
     if (!forceShutdown && abortAfterTimeout) {
       LOG.warn("Timeout occurred. Aborting the shutdown now.");
@@ -42,8 +45,8 @@
       }
     }
   }
-catch (  ExecutionException e) {
-    throw ObjectHelper.wrapRuntimeCamelException(e.getCause());
+ finally {
+    currentShutdownTaskFuture=null;
   }
   long seconds=TimeUnit.SECONDS.convert(watch.stop(),TimeUnit.MILLISECONDS);
   LOG.info("Graceful shutdown of " + routesOrdered.size() + " routes completed in "+ seconds+ " seconds");

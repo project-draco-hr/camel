@@ -10,24 +10,32 @@
  catch (  XMPPException e) {
     throw new RuntimeException("Could not connect to XMPP server.",e);
   }
+  String participant=exchange.getIn().getHeader(XmppConstants.TO,String.class);
+  String thread=endpoint.getChatId();
+  if (participant == null) {
+    participant=getParticipant();
+  }
+ else {
+    thread="Chat:" + participant + ":"+ endpoint.getUser();
+  }
   ChatManager chatManager=connection.getChatManager();
-  Chat chat=getOrCreateChat(chatManager);
+  Chat chat=getOrCreateChat(chatManager,participant,thread);
   Message message=null;
   try {
     message=new Message();
-    message.setTo(getParticipant());
-    message.setThread(endpoint.getChatId());
+    message.setTo(participant);
+    message.setThread(thread);
     message.setType(Message.Type.normal);
     endpoint.getBinding().populateXmppMessage(message,exchange);
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Sending XMPP message to {} from {} : {}",new Object[]{endpoint.getParticipant(),endpoint.getUser(),message.getBody()});
+      LOG.debug("Sending XMPP message to {} from {} : {}",new Object[]{participant,endpoint.getUser(),message.getBody()});
     }
     chat.sendMessage(message);
   }
  catch (  XMPPException xmppe) {
-    throw new RuntimeExchangeException("Could not send XMPP message: to " + endpoint.getParticipant() + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,xmppe);
+    throw new RuntimeExchangeException("Could not send XMPP message: to " + participant + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,xmppe);
   }
 catch (  Exception e) {
-    throw new RuntimeExchangeException("Could not send XMPP message to " + endpoint.getParticipant() + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,e);
+    throw new RuntimeExchangeException("Could not send XMPP message to " + participant + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,e);
   }
 }
