@@ -1,28 +1,4 @@
 {
-  List<PGPPublicKey> result=new ArrayList<PGPPublicKey>(3);
   PGPPublicKeyRingCollection pgpSec=new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(input));
-  for (Iterator<PGPPublicKeyRing> keyRingIter=pgpSec.getKeyRings(); keyRingIter.hasNext(); ) {
-    PGPPublicKeyRing keyRing=keyRingIter.next();
-    Set<String> keyUserIds=getUserIds(keyRing);
-    for (Iterator<PGPPublicKey> keyIter=keyRing.getPublicKeys(); keyIter.hasNext(); ) {
-      PGPPublicKey key=keyIter.next();
-      for (      String useridPart : userids) {
-        for (        String keyUserId : keyUserIds) {
-          if (keyUserId != null && keyUserId.contains(useridPart)) {
-            if (forEncryption) {
-              if (isEncryptionKey(key)) {
-                LOG.debug("Public encryption key with key user ID {} and key ID {} found for specified user ID part {}",new Object[]{keyUserId,Long.toString(key.getKeyID()),useridPart});
-                result.add(key);
-              }
-            }
- else             if (!forEncryption && isSignatureKey(key)) {
-              result.add(key);
-              LOG.debug("Public key with key user ID {} and key ID {} found for specified user ID part {}",new Object[]{keyUserId,Long.toString(key.getKeyID()),useridPart});
-            }
-          }
-        }
-      }
-    }
-  }
-  return result;
+  return findPublicKeys(userids,forEncryption,pgpSec);
 }

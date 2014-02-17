@@ -1,12 +1,12 @@
 {
-  String sigKeyFileName=findSignatureKeyFileName(exchange);
-  List<String> sigKeyUserids=determineSignaturenUserIds(exchange);
-  String sigKeyPassword=findSignatureKeyPassword(exchange);
-  byte[] sigKeyRing=findSignatureKeyRing(exchange);
-  if ((sigKeyFileName == null && sigKeyRing == null) || sigKeyUserids == null || sigKeyUserids.isEmpty() || (sigKeyPassword == null && passphraseAccessor == null)) {
+  if (secretKeyAccess == null) {
     return null;
   }
-  List<PGPSecretKeyAndPrivateKeyAndUserId> sigSecretKeysWithPrivateKeyAndUserId=determineSecretKeysWithPrivateKeyAndUserId(exchange,sigKeyFileName,sigKeyUserids,sigKeyPassword,sigKeyRing);
+  List<String> sigKeyUserids=determineSignaturenUserIds(exchange);
+  List<PGPSecretKeyAndPrivateKeyAndUserId> sigSecretKeysWithPrivateKeyAndUserId=secretKeyAccess.getSignerKeys(exchange,sigKeyUserids);
+  if (sigSecretKeysWithPrivateKeyAndUserId.isEmpty()) {
+    return null;
+  }
   exchange.getOut().setHeader(NUMBER_OF_SIGNING_KEYS,Integer.valueOf(sigSecretKeysWithPrivateKeyAndUserId.size()));
   List<PGPSignatureGenerator> sigGens=new ArrayList<PGPSignatureGenerator>();
   for (  PGPSecretKeyAndPrivateKeyAndUserId sigSecretKeyWithPrivateKeyAndUserId : sigSecretKeysWithPrivateKeyAndUserId) {

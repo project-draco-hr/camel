@@ -110,5 +110,21 @@
       from("direct:keyflag").marshal(pgpKeyFlag).to("mock:encrypted_keyflag");
     }
   }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      PGPPublicKeyAccess publicKeyAccess=new PGPPublicKeyAccessDefault(getPublicKeyRing());
+      PGPSecretKeyAccess secretKeyAccess=new PGPSecretKeyAccessDefault(getSecKeyRing(),"sdude",getProvider());
+      PGPKeyAccessDataFormat dfEncryptSignKeyAccess=new PGPKeyAccessDataFormat();
+      dfEncryptSignKeyAccess.setPublicKeyAccess(publicKeyAccess);
+      dfEncryptSignKeyAccess.setSecretKeyAccess(secretKeyAccess);
+      dfEncryptSignKeyAccess.setKeyUserid(getKeyUserId());
+      dfEncryptSignKeyAccess.setSignatureKeyUserid(getKeyUserId());
+      PGPKeyAccessDataFormat dfDecryptVerifyKeyAccess=new PGPKeyAccessDataFormat();
+      dfDecryptVerifyKeyAccess.setPublicKeyAccess(publicKeyAccess);
+      dfDecryptVerifyKeyAccess.setSecretKeyAccess(secretKeyAccess);
+      dfDecryptVerifyKeyAccess.setSignatureKeyUserid(getKeyUserId());
+      from("direct:key_access").marshal(dfEncryptSignKeyAccess).to("mock:encrypted").unmarshal(dfDecryptVerifyKeyAccess).to("mock:unencrypted");
+    }
+  }
 };
 }
