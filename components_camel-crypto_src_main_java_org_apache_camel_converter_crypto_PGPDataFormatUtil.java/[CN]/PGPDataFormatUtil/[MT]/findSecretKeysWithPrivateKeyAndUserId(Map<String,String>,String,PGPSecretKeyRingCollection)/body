@@ -1,0 +1,27 @@
+{
+  List<PGPSecretKeyAndPrivateKeyAndUserId> result=new ArrayList<PGPSecretKeyAndPrivateKeyAndUserId>(sigKeyUserId2Password.size());
+  for (Iterator<?> i=pgpSec.getKeyRings(); i.hasNext(); ) {
+    Object data=i.next();
+    if (data instanceof PGPSecretKeyRing) {
+      PGPSecretKeyRing keyring=(PGPSecretKeyRing)data;
+      Set<String> keyUserIds=getUserIds(keyring);
+      for (      String userIdPart : sigKeyUserId2Password.keySet()) {
+        for (        String keyUserId : keyUserIds) {
+          if (keyUserId.contains(userIdPart)) {
+            for (@SuppressWarnings("unchecked") Iterator<PGPSecretKey> iterKey=keyring.getSecretKeys(); iterKey.hasNext(); ) {
+              PGPSecretKey secKey=iterKey.next();
+              if (isSigningKey(secKey)) {
+                PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(sigKeyUserId2Password.get(userIdPart).toCharArray()));
+                if (privateKey != null) {
+                  result.add(new PGPSecretKeyAndPrivateKeyAndUserId(secKey,privateKey,keyUserId));
+                  LOG.debug("Private key with key user ID {} and key ID {} found for specified user ID part {}",new Object[]{keyUserId,Long.toString(privateKey.getKeyID()),userIdPart});
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return result;
+}

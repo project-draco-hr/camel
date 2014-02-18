@@ -1,0 +1,24 @@
+{
+  if (secretKeyAccess == null) {
+    return null;
+  }
+  List<String> sigKeyUserids=determineSignaturenUserIds(exchange);
+  List<PGPSecretKeyAndPrivateKeyAndUserId> sigSecretKeysWithPrivateKeyAndUserId=secretKeyAccess.getSignerKeys(exchange,sigKeyUserids);
+  if (sigSecretKeysWithPrivateKeyAndUserId.isEmpty()) {
+    return null;
+  }
+  exchange.getOut().setHeader(NUMBER_OF_SIGNING_KEYS,Integer.valueOf(sigSecretKeysWithPrivateKeyAndUserId.size()));
+  List<PGPSignatureGenerator> sigGens=new ArrayList<PGPSignatureGenerator>();
+  for (  PGPSecretKeyAndPrivateKeyAndUserId sigSecretKeyWithPrivateKeyAndUserId : sigSecretKeysWithPrivateKeyAndUserId) {
+    PGPPrivateKey sigPrivateKey=sigSecretKeyWithPrivateKeyAndUserId.getPrivateKey();
+    PGPSignatureSubpacketGenerator spGen=new PGPSignatureSubpacketGenerator();
+    spGen.setSignerUserID(false,sigSecretKeyWithPrivateKeyAndUserId.getUserId());
+    int algorithm=sigSecretKeyWithPrivateKeyAndUserId.getSecretKey().getPublicKey().getAlgorithm();
+    PGPSignatureGenerator sigGen=new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(algorithm,findHashAlgorithm(exchange)).setProvider(getProvider()));
+    sigGen.init(PGPSignature.BINARY_DOCUMENT,sigPrivateKey);
+    sigGen.setHashedSubpackets(spGen.generate());
+    sigGen.generateOnePassVersion(false).encode(out);
+    sigGens.add(sigGen);
+  }
+  return sigGens;
+}

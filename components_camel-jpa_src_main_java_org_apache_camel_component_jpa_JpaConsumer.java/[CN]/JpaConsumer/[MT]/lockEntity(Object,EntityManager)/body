@@ -4,12 +4,20 @@
   }
   try {
     LOG.debug("Acquiring exclusive lock on entity: {}",entity);
-    entityManager.lock(entity,lockModeType);
+    if (isSkipLockedEntity()) {
+      entityManager.lock(entity,lockModeType,NOWAIT);
+    }
+ else {
+      entityManager.lock(entity,lockModeType);
+    }
     return true;
   }
  catch (  Exception e) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Failed to achieve lock on entity: " + entity + ". Reason: "+ e,e);
+    }
+    if (e instanceof PessimisticLockException || e instanceof OptimisticLockException) {
+      throw (PersistenceException)e;
     }
     if (entity.getClass().isArray()) {
       return true;

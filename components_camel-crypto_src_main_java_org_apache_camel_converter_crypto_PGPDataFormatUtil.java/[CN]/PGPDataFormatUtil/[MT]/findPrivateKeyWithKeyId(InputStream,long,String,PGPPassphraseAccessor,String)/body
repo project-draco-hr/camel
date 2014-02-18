@@ -1,25 +1,4 @@
 {
   PGPSecretKeyRingCollection pgpSec=new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyringInput));
-  for (Iterator<?> i=pgpSec.getKeyRings(); i.hasNext(); ) {
-    Object data=i.next();
-    if (data instanceof PGPSecretKeyRing) {
-      PGPSecretKeyRing keyring=(PGPSecretKeyRing)data;
-      PGPSecretKey secKey=keyring.getSecretKey(keyid);
-      if (secKey != null) {
-        if (passphrase == null && passphraseAccessor != null) {
-          Iterator<String> userIDs=keyring.getSecretKey().getUserIDs();
-          while (passphrase == null && userIDs.hasNext()) {
-            passphrase=passphraseAccessor.getPassphrase(userIDs.next());
-          }
-        }
-        if (passphrase != null) {
-          PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphrase.toCharArray()));
-          if (privateKey != null) {
-            return privateKey;
-          }
-        }
-      }
-    }
-  }
-  return null;
+  return findPrivateKeyWithkeyId(keyid,passphrase,passphraseAccessor,provider,pgpSec);
 }

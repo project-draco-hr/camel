@@ -1,0 +1,35 @@
+{
+  if (!getProviders().isEmpty()) {
+    factory.setProviders(getProviders());
+  }
+  if (!getFeatures().isEmpty()) {
+    factory.getFeatures().addAll(getFeatures());
+  }
+  factory.setInInterceptors(interceptorHolder.getInInterceptors());
+  factory.setOutInterceptors(interceptorHolder.getOutInterceptors());
+  factory.setOutFaultInterceptors(interceptorHolder.getOutFaultInterceptors());
+  factory.setInFaultInterceptors(interceptorHolder.getInFaultInterceptors());
+  if (getProperties() != null) {
+    if (factory.getProperties() != null) {
+      factory.getProperties().putAll(getProperties());
+    }
+ else {
+      factory.setProperties(getProperties());
+    }
+    LOG.debug("JAXRS FactoryBean: {} added properties: {}",factory,getProperties());
+  }
+  if (isLoggingFeatureEnabled()) {
+    if (getLoggingSizeLimit() > 0) {
+      factory.getFeatures().add(new LoggingFeature(getLoggingSizeLimit()));
+    }
+ else {
+      factory.getFeatures().add(new LoggingFeature());
+    }
+  }
+  if (this.isSkipFaultLogging()) {
+    if (factory.getProperties() == null) {
+      factory.setProperties(new HashMap<String,Object>());
+    }
+    factory.getProperties().put(FaultListener.class.getName(),new NullFaultListener());
+  }
+}
