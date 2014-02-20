@@ -1,0 +1,23 @@
+{
+  if (isPlatform("aix")) {
+    return;
+  }
+  context.getManagementStrategy().setLoadStatisticsEnabled(true);
+  context.stop();
+  context.start();
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=routes,name=\"route1\"");
+  getMockEndpoint("mock:result").expectedMessageCount(1);
+  template.asyncSendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  Thread.sleep(2000);
+  String load01=(String)mbeanServer.getAttribute(on,"Load01");
+  String load05=(String)mbeanServer.getAttribute(on,"Load05");
+  String load15=(String)mbeanServer.getAttribute(on,"Load15");
+  assertNotNull(load01);
+  assertNotNull(load05);
+  assertNotNull(load15);
+  assertTrue(Double.parseDouble(load01.replace(',','.')) >= 0);
+  assertTrue(Double.parseDouble(load05.replace(',','.')) >= 0);
+  assertTrue(Double.parseDouble(load15.replace(',','.')) >= 0);
+}
