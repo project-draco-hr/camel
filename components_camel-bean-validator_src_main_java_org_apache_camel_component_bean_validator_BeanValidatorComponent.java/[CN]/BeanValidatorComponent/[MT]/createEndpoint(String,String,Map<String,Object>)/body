@@ -1,26 +1,8 @@
 {
   BeanValidator beanValidator=new BeanValidator();
-  ValidationProviderResolver validationProviderResolver=resolveValidationProviderResolver(parameters);
-  MessageInterpolator messageInterpolator=resolveAndRemoveReferenceParameter(parameters,"messageInterpolator",MessageInterpolator.class);
-  TraversableResolver traversableResolver=resolveAndRemoveReferenceParameter(parameters,"traversableResolver",TraversableResolver.class);
-  ConstraintValidatorFactory constraintValidatorFactory=resolveAndRemoveReferenceParameter(parameters,"constraintValidatorFactory",ConstraintValidatorFactory.class);
-  String group=getAndRemoveParameter(parameters,"group",String.class);
-  GenericBootstrap bootstrap=Validation.byDefaultProvider();
-  if (validationProviderResolver != null) {
-    bootstrap.providerResolver(validationProviderResolver);
-  }
-  Configuration<?> configuration=bootstrap.configure();
-  if (messageInterpolator != null) {
-    configuration.messageInterpolator(messageInterpolator);
-  }
-  if (traversableResolver != null) {
-    configuration.traversableResolver(traversableResolver);
-  }
-  if (constraintValidatorFactory != null) {
-    configuration.constraintValidatorFactory(constraintValidatorFactory);
-  }
-  ValidatorFactory validatorFactory=configuration.buildValidatorFactory();
+  ValidatorFactory validatorFactory=buildValidatorFactory(isOsgiContext(),resolveAndRemoveReferenceParameter(parameters,"validationProviderResolver",ValidationProviderResolver.class),resolveAndRemoveReferenceParameter(parameters,"messageInterpolator",MessageInterpolator.class),resolveAndRemoveReferenceParameter(parameters,"traversableResolver",TraversableResolver.class),resolveAndRemoveReferenceParameter(parameters,"constraintValidatorFactory",ConstraintValidatorFactory.class));
   beanValidator.setValidatorFactory(validatorFactory);
+  String group=getAndRemoveParameter(parameters,"group",String.class);
   if (group != null) {
     beanValidator.setGroup(getCamelContext().getClassResolver().resolveMandatoryClass(group));
   }
