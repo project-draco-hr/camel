@@ -108,6 +108,12 @@
       pgpKeyFlag.setKeyUserid("keyflag");
       pgpKeyFlag.setSignatureKeyUserid("keyflag");
       from("direct:keyflag").marshal(pgpKeyFlag).to("mock:encrypted_keyflag");
+      PGPDataFormat pgpDecryptVerifySubkey=new PGPDataFormat();
+      pgpDecryptVerifySubkey.setKeyFileName("org/apache/camel/component/crypto/secringSubKeys.gpg");
+      pgpDecryptVerifySubkey.setSignatureKeyFileName("org/apache/camel/component/crypto/pubringSubKeys.gpg");
+      pgpDecryptVerifySubkey.setPassword("Abcd1234");
+      pgpDecryptVerifySubkey.setSignatureKeyUserid("keyflag");
+      from("direct:subkey").marshal(pgpKeyFlag).to("mock:encrypted").unmarshal(pgpDecryptVerifySubkey).to("mock:unencrypted");
     }
   }
 ,new RouteBuilder(){
