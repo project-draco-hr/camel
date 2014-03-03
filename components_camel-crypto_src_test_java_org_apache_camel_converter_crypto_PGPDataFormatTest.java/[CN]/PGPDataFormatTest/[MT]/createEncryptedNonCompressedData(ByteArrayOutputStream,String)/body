@@ -1,0 +1,15 @@
+{
+  PGPEncryptedDataGenerator encGen=new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(new SecureRandom()).setProvider(getProvider()));
+  encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(readPublicKey(keyringPath)));
+  OutputStream encOut=encGen.open(bos,new byte[512]);
+  PGPLiteralDataGenerator litData=new PGPLiteralDataGenerator();
+  OutputStream litOut=litData.open(encOut,PGPLiteralData.BINARY,PGPLiteralData.CONSOLE,new Date(),new byte[512]);
+  try {
+    litOut.write("Test Message Without Compression".getBytes("UTF-8"));
+    litOut.flush();
+  }
+  finally {
+    IOHelper.close(litOut);
+    IOHelper.close(encOut,bos);
+  }
+}

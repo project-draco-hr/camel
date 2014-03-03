@@ -1,7 +1,7 @@
 {
   return new RouteBuilder[]{new RouteBuilder(){
     public void configure() throws Exception {
-      onException(IllegalArgumentException.class).handled(true).to("mock:exception");
+      onException(Exception.class).handled(true).to("mock:exception");
       String keyFileName=getKeyFileName();
       String keyFileNameSec=getKeyFileNameSec();
       String keyUserid=getKeyUserId();
@@ -101,8 +101,9 @@
   }
 ,new RouteBuilder(){
     public void configure() throws Exception {
+      onException(Exception.class).handled(true).to("mock:exception");
       PGPDataFormat pgpKeyFlag=new PGPDataFormat();
-      pgpKeyFlag.setKeyFileName("org/apache/camel/component/crypto/pubringSubKeys.gpg");
+      pgpKeyFlag.setKeyFileName(PUB_KEY_RING_SUBKEYS_FILE_NAME);
       pgpKeyFlag.setSignatureKeyFileName("org/apache/camel/component/crypto/secringSubKeys.gpg");
       pgpKeyFlag.setSignaturePassword("Abcd1234");
       pgpKeyFlag.setKeyUserid("keyflag");
@@ -110,10 +111,11 @@
       from("direct:keyflag").marshal(pgpKeyFlag).to("mock:encrypted_keyflag");
       PGPDataFormat pgpDecryptVerifySubkey=new PGPDataFormat();
       pgpDecryptVerifySubkey.setKeyFileName("org/apache/camel/component/crypto/secringSubKeys.gpg");
-      pgpDecryptVerifySubkey.setSignatureKeyFileName("org/apache/camel/component/crypto/pubringSubKeys.gpg");
+      pgpDecryptVerifySubkey.setSignatureKeyFileName(PUB_KEY_RING_SUBKEYS_FILE_NAME);
       pgpDecryptVerifySubkey.setPassword("Abcd1234");
       pgpDecryptVerifySubkey.setSignatureKeyUserid("keyflag");
       from("direct:subkey").marshal(pgpKeyFlag).to("mock:encrypted").unmarshal(pgpDecryptVerifySubkey).to("mock:unencrypted");
+      from("direct:subkeyUnmarshal").unmarshal(pgpDecryptVerifySubkey).to("mock:unencrypted");
     }
   }
 ,new RouteBuilder(){

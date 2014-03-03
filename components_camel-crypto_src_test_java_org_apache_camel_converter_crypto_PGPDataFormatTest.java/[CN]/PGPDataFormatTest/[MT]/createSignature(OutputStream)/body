@@ -1,0 +1,14 @@
+{
+  PGPSecretKey pgpSec=readSecretKey();
+  PGPPrivateKey pgpPrivKey=pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(getProvider()).build("sdude".toCharArray()));
+  PGPSignatureGenerator sGen=new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(),PGPUtil.SHA1).setProvider(getProvider()));
+  sGen.init(PGPSignature.BINARY_DOCUMENT,pgpPrivKey);
+  BCPGOutputStream bOut=new BCPGOutputStream(out);
+  InputStream fIn=new ByteArrayInputStream("Test Signature".getBytes("UTF-8"));
+  int ch;
+  while ((ch=fIn.read()) >= 0) {
+    sGen.update((byte)ch);
+  }
+  fIn.close();
+  sGen.generate().encode(bOut);
+}

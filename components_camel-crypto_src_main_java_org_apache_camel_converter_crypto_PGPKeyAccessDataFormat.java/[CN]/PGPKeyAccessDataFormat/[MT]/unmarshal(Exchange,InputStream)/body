@@ -4,29 +4,46 @@
   }
   InputStream in=PGPUtil.getDecoderStream(encryptedStream);
   PGPObjectFactory pgpFactory=new PGPObjectFactory(in);
-  Object o=pgpFactory.nextObject();
+  Object firstObject=pgpFactory.nextObject();
   PGPEncryptedDataList enc;
-  if (o instanceof PGPEncryptedDataList) {
-    enc=(PGPEncryptedDataList)o;
+  if (firstObject instanceof PGPEncryptedDataList) {
+    enc=(PGPEncryptedDataList)firstObject;
   }
  else {
-    enc=(PGPEncryptedDataList)pgpFactory.nextObject();
+    Object secondObject=pgpFactory.nextObject();
+    if (secondObject instanceof PGPEncryptedDataList) {
+      enc=(PGPEncryptedDataList)secondObject;
+    }
+ else {
+      enc=null;
+    }
+  }
+  if (enc == null) {
+    throw getFormatException();
   }
   PGPPublicKeyEncryptedData pbe=null;
   PGPPrivateKey key=null;
   for (int i=0; i < enc.size() && key == null; i++) {
-    pbe=(PGPPublicKeyEncryptedData)enc.get(i);
+    Object encryptedData=enc.get(i);
+    if (!(encryptedData instanceof PGPPublicKeyEncryptedData)) {
+      throw getFormatException();
+    }
+    pbe=(PGPPublicKeyEncryptedData)encryptedData;
     key=secretKeyAccessor.getPrivateKey(exchange,pbe.getKeyID());
     if (key != null) {
       break;
     }
   }
   if (key == null) {
-    throw new PGPException("Provided input is encrypted with unknown pair of keys.");
+    throw new PGPException("Message is encrypted with a key which could not be found in the Secret Key Ring.");
   }
   InputStream encData=pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(getProvider()).build(key));
   pgpFactory=new PGPObjectFactory(encData);
-  PGPCompressedData comData=(PGPCompressedData)pgpFactory.nextObject();
+  Object compObj=pgpFactory.nextObject();
+  if (!(compObj instanceof PGPCompressedData)) {
+    throw getFormatException();
+  }
+  PGPCompressedData comData=(PGPCompressedData)compObj;
   pgpFactory=new PGPObjectFactory(comData.getDataStream());
   Object object=pgpFactory.nextObject();
   PGPOnePassSignature signature;
@@ -37,7 +54,13 @@
  else {
     signature=null;
   }
-  PGPLiteralData ld=(PGPLiteralData)object;
+  PGPLiteralData ld;
+  if (object instanceof PGPLiteralData) {
+    ld=(PGPLiteralData)object;
+  }
+ else {
+    throw getFormatException();
+  }
   InputStream litData=ld.getInputStream();
   CachedOutputStream cos;
   ByteArrayOutputStream bos;
