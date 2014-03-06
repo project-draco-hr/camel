@@ -6,6 +6,7 @@
         return;
       }
       while (continueRouting(processors,exchange)) {
+        exchange.setProperty(Exchange.TRY_ROUTE_BLOCK,true);
         ExchangeHelper.prepareOutToIn(exchange);
         AsyncProcessor processor=AsyncProcessorConverterHelper.convert(processors.next());
         doneSync=process(exchange,callback,processors,processor,lastHandled);
@@ -15,6 +16,7 @@
         }
       }
       ExchangeHelper.prepareOutToIn(exchange);
+      exchange.removeProperty(Exchange.TRY_ROUTE_BLOCK);
       exchange.setProperty(Exchange.EXCEPTION_HANDLED,lastHandled);
       LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
       callback.done(false);

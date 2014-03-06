@@ -3,6 +3,7 @@
   Object lastHandled=exchange.getProperty(Exchange.EXCEPTION_HANDLED);
   exchange.setProperty(Exchange.EXCEPTION_HANDLED,null);
   while (continueRouting(processors,exchange)) {
+    exchange.setProperty(Exchange.TRY_ROUTE_BLOCK,true);
     ExchangeHelper.prepareOutToIn(exchange);
     Processor processor=processors.next();
     AsyncProcessor async=AsyncProcessorConverterHelper.convert(processor);
@@ -14,6 +15,7 @@
     LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
   }
   ExchangeHelper.prepareOutToIn(exchange);
+  exchange.removeProperty(Exchange.TRY_ROUTE_BLOCK);
   exchange.setProperty(Exchange.EXCEPTION_HANDLED,lastHandled);
   LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
   callback.done(true);
