@@ -2,7 +2,13 @@
   LOG.trace("Process exchange: {} in the sync way.",exchange);
   Message in=exchange.getIn();
   String operationName=in.getHeader(XmlRpcConstants.METHOD_NAME,String.class);
-  Object result=client.execute(operationName,in.getBody(List.class));
-  exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
-  exchange.getOut().setBody(result);
+  try {
+    Object result=client.execute(operationName,in.getBody(List.class));
+    exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    exchange.getOut().setBody(result);
+  }
+ catch (  Exception ex) {
+    LOG.warn("Got an exception {0} when invoke the XMLRPC service",ex);
+    exchange.setException(ex);
+  }
 }
