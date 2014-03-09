@@ -3,7 +3,14 @@
   String group=triggerKey.getGroup();
   Class<? extends Job> jobClass=stateful ? StatefulCamelJob.class : CamelJob.class;
   LOG.debug("Creating new {}.",jobClass.getSimpleName());
-  JobDetail result=JobBuilder.newJob(jobClass).withIdentity(name,group).build();
+  JobBuilder builder=JobBuilder.newJob(jobClass).withIdentity(name,group);
+  if (durableJob) {
+    builder=builder.storeDurably();
+  }
+  if (recoverableJob) {
+    builder=builder.requestRecovery();
+  }
+  JobDetail result=builder.build();
   if (jobParameters != null && jobParameters.size() > 0) {
     LOG.debug("Setting user extra jobParameters {}",jobParameters);
     setProperties(result,jobParameters);
