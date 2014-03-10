@@ -1,0 +1,17 @@
+{
+  if (!canTest()) {
+    return;
+  }
+  String txtKey="THEKEY";
+  String txtValue="CIAO MONDO !";
+  template.sendBodyAndHeader("direct:write_text2",txtValue,"KEY",txtKey);
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///" + TEMP_DIR.toUri() + "/test-camel-text2");
+  SequenceFile.Reader reader=new SequenceFile.Reader(conf,SequenceFile.Reader.file(file1));
+  Text key=(Text)ReflectionUtils.newInstance(reader.getKeyClass(),conf);
+  Text value=(Text)ReflectionUtils.newInstance(reader.getValueClass(),conf);
+  reader.next(key,value);
+  assertEquals(key.toString(),txtKey);
+  assertEquals(value.toString(),txtValue);
+  IOHelper.close(reader);
+}

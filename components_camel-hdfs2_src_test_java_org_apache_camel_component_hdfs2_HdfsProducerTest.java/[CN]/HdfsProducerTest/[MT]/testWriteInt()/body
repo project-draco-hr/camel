@@ -1,0 +1,16 @@
+{
+  if (!canTest()) {
+    return;
+  }
+  int anInt=1234;
+  template.sendBody("direct:write_int",anInt);
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///" + TEMP_DIR.toUri() + "/test-camel-int");
+  SequenceFile.Reader reader=new SequenceFile.Reader(conf,SequenceFile.Reader.file(file1));
+  Writable key=(Writable)ReflectionUtils.newInstance(reader.getKeyClass(),conf);
+  Writable value=(Writable)ReflectionUtils.newInstance(reader.getValueClass(),conf);
+  reader.next(key,value);
+  int rInt=((IntWritable)value).get();
+  assertEquals(rInt,anInt);
+  IOHelper.close(reader);
+}

@@ -1,0 +1,24 @@
+{
+  Configuration auth=HdfsComponent.getJAASConfiguration();
+  try {
+    super.doStart();
+    if (getEndpoint().getConfig().isConnectOnStartup()) {
+      ostream=setupHdfs(true);
+    }
+    SplitStrategy idleStrategy=null;
+    for (    SplitStrategy strategy : config.getSplitStrategies()) {
+      if (strategy.type == SplitStrategyType.IDLE) {
+        idleStrategy=strategy;
+        break;
+      }
+    }
+    if (idleStrategy != null) {
+      scheduler=getEndpoint().getCamelContext().getExecutorServiceManager().newSingleThreadScheduledExecutor(this,"HdfsIdleCheck");
+      log.debug("Creating IdleCheck task scheduled to run every {} millis",config.getCheckIdleInterval());
+      scheduler.scheduleAtFixedRate(new IdleCheck(idleStrategy),config.getCheckIdleInterval(),config.getCheckIdleInterval(),TimeUnit.MILLISECONDS);
+    }
+  }
+  finally {
+    HdfsComponent.setJAASConfiguration(auth);
+  }
+}

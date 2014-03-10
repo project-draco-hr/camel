@@ -1,0 +1,16 @@
+{
+  if (!canTest()) {
+    return;
+  }
+  String txt="CIAO MONDO !";
+  template.sendBody("direct:write_text1",txt);
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///" + TEMP_DIR.toUri() + "/test-camel-text1");
+  SequenceFile.Reader reader=new SequenceFile.Reader(conf,SequenceFile.Reader.file(file1));
+  Writable key=(Writable)ReflectionUtils.newInstance(reader.getKeyClass(),conf);
+  Text value=(Text)ReflectionUtils.newInstance(reader.getValueClass(),conf);
+  reader.next(key,value);
+  String rTxt=value.toString();
+  assertEquals(rTxt,txt);
+  IOHelper.close(reader);
+}
