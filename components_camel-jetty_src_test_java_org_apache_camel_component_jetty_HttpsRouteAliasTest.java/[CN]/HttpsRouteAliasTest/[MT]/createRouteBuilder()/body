@@ -1,0 +1,32 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws URISyntaxException {
+      JettyHttpComponent jetty=new JettyHttpComponent();
+      KeyStoreParameters ksp=new KeyStoreParameters();
+      ksp.setResource(this.getClass().getClassLoader().getResource("jsse/localhost-alias.ks").toString());
+      ksp.setPassword(pwd);
+      KeyManagersParameters kmp=new KeyManagersParameters();
+      kmp.setKeyPassword(pwd);
+      kmp.setKeyStore(ksp);
+      SSLContextParameters sslContextParameters=new SSLContextParameters();
+      sslContextParameters.setKeyManagers(kmp);
+      sslContextParameters.setCertAlias("server");
+      jetty.setSslContextParameters(sslContextParameters);
+      jetty.addSslSocketConnectorProperty("keyPassword","sadfasdfasdfas");
+      jetty.addSslSocketConnectorProperty("password","asdfasdfasdfdasfs");
+      jetty.addSslSocketConnectorProperty("keystore","");
+      jetty.addSslSocketConnectorProperty("truststoreType","JKS");
+      context.addComponent("jetty",jetty);
+      from("jetty:https://localhost:" + port1 + "/test").to("mock:a");
+      Processor proc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          exchange.getOut().setBody("<b>Hello World</b>");
+        }
+      }
+;
+      from("jetty:https://localhost:" + port1 + "/hello").process(proc);
+      from("jetty:https://localhost:" + port2 + "/test").to("mock:b");
+    }
+  }
+;
+}
