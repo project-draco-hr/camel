@@ -1,21 +1,17 @@
 {
   for (  Callback callback : callbacks) {
-    WSPasswordCallback pc=(WSPasswordCallback)callback;
-    String pass=passwords.get(pc.getIdentifier());
-    String type=getPasswordType(pc);
-    if (WSConstants.PASSWORD_DIGEST.equals(type)) {
+    String pass=passwords.get(getIdentifier(callback));
+    String type=getPasswordType(callback);
+    if (type.endsWith("#PasswordDigest")) {
       if (pass != null) {
-        pc.setPassword(pass);
+        setPassword(callback,pass);
         return;
       }
     }
-    if (WSConstants.PASSWORD_TEXT.equals(type)) {
-      if (pc.getPassword() == null) {
-        pc.setPassword(pass);
+    if (type.endsWith("#PasswordText")) {
+      if (getPassword(callback) == null) {
+        setPassword(callback,pass);
         return;
-      }
-      if (!pass.equals(pc.getPassword())) {
-        throw new IOException("Wrong password!");
       }
     }
   }
