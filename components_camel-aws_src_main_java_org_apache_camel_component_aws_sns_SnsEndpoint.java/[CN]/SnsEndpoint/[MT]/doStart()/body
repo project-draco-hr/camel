@@ -5,9 +5,13 @@
   CreateTopicResult result=getSNSClient().createTopic(request);
   configuration.setTopicArn(result.getTopicArn());
   LOG.trace("Topic created with Amazon resource name: {}",configuration.getTopicArn());
-  if (configuration.getPolicy() != null) {
+  if (ObjectHelper.isNotEmpty(configuration.getPolicy())) {
     LOG.trace("Updating topic [{}] with policy [{}]",configuration.getTopicArn(),configuration.getPolicy());
     getSNSClient().setTopicAttributes(new SetTopicAttributesRequest(configuration.getTopicArn(),"Policy",configuration.getPolicy()));
     LOG.trace("Topic policy updated");
+  }
+  if (ObjectHelper.isNotEmpty(configuration.getAmazonSNSEndpoint())) {
+    LOG.trace("Updating the SNS region with : {} " + configuration.getAmazonSNSEndpoint());
+    getSNSClient().setEndpoint(configuration.getAmazonSNSEndpoint());
   }
 }
