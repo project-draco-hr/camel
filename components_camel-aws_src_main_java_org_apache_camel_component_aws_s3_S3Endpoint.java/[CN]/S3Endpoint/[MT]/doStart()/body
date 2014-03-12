@@ -1,5 +1,9 @@
 {
   super.doStart();
+  s3Client=configuration.getAmazonS3Client() != null ? configuration.getAmazonS3Client() : createS3Client();
+  if (ObjectHelper.isNotEmpty(configuration.getAmazonS3Endpoint())) {
+    s3Client.setEndpoint(configuration.getAmazonS3Endpoint());
+  }
   String fileName=getConfiguration().getFileName();
   if (fileName != null) {
     LOG.trace("File name [{}] requested, so skipping bucket check...",fileName);
@@ -8,7 +12,7 @@
   String bucketName=getConfiguration().getBucketName();
   LOG.trace("Quering whether bucket [{}] already exists...",bucketName);
   try {
-    getS3Client().listObjects(new ListObjectsRequest(bucketName,null,null,null,0));
+    s3Client.listObjects(new ListObjectsRequest(bucketName,null,null,null,0));
     LOG.trace("Bucket [{}] already exists",bucketName);
     return;
   }
@@ -23,11 +27,11 @@
     createBucketRequest.setRegion(getConfiguration().getRegion());
   }
   LOG.trace("Creating bucket [{}] in region [{}] with request [{}]...",new Object[]{configuration.getBucketName(),configuration.getRegion(),createBucketRequest});
-  getS3Client().createBucket(createBucketRequest);
+  s3Client.createBucket(createBucketRequest);
   LOG.trace("Bucket created");
   if (configuration.getPolicy() != null) {
     LOG.trace("Updating bucket [{}] with policy [{}]",bucketName,configuration.getPolicy());
-    getS3Client().setBucketPolicy(bucketName,configuration.getPolicy());
+    s3Client.setBucketPolicy(bucketName,configuration.getPolicy());
     LOG.trace("Bucket policy updated");
   }
 }
