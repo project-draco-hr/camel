@@ -3,48 +3,9 @@
     return null;
   }
   InputStream in=PGPUtil.getDecoderStream(encryptedStream);
-  PGPObjectFactory pgpFactory=new PGPObjectFactory(in);
-  Object firstObject=pgpFactory.nextObject();
-  PGPEncryptedDataList enc;
-  if (firstObject instanceof PGPEncryptedDataList) {
-    enc=(PGPEncryptedDataList)firstObject;
-  }
- else {
-    Object secondObject=pgpFactory.nextObject();
-    if (secondObject instanceof PGPEncryptedDataList) {
-      enc=(PGPEncryptedDataList)secondObject;
-    }
- else {
-      enc=null;
-    }
-  }
-  if (enc == null) {
-    throw getFormatException();
-  }
-  PGPPublicKeyEncryptedData pbe=null;
-  PGPPrivateKey key=null;
-  for (int i=0; i < enc.size() && key == null; i++) {
-    Object encryptedData=enc.get(i);
-    if (!(encryptedData instanceof PGPPublicKeyEncryptedData)) {
-      throw getFormatException();
-    }
-    pbe=(PGPPublicKeyEncryptedData)encryptedData;
-    key=secretKeyAccessor.getPrivateKey(exchange,pbe.getKeyID());
-    if (key != null) {
-      break;
-    }
-  }
-  if (key == null) {
-    throw new PGPException("Message is encrypted with a key which could not be found in the Secret Key Ring.");
-  }
-  InputStream encData=pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(getProvider()).build(key));
-  pgpFactory=new PGPObjectFactory(encData);
-  Object compObj=pgpFactory.nextObject();
-  if (!(compObj instanceof PGPCompressedData)) {
-    throw getFormatException();
-  }
-  PGPCompressedData comData=(PGPCompressedData)compObj;
-  pgpFactory=new PGPObjectFactory(comData.getDataStream());
+  InputStream encData=getDecryptedData(exchange,in);
+  InputStream uncompressedData=getUncompressedData(encData);
+  PGPObjectFactory pgpFactory=new PGPObjectFactory(uncompressedData);
   Object object=pgpFactory.nextObject();
   PGPOnePassSignature signature;
   if (object instanceof PGPOnePassSignatureList) {
@@ -53,6 +14,9 @@
   }
  else {
     signature=null;
+    if (SIGNATURE_VERIFICATION_OPTION_REQUIRED.equals(getSignatureVerificationOption())) {
+      throw new PGPException("PGP message does not contain any signatures although a signature is expected. Either send a PGP message with signature or change the configuration of the PGP decryptor.");
+    }
   }
   PGPLiteralData ld;
   if (object instanceof PGPLiteralData) {
@@ -89,12 +53,7 @@
   finally {
     IOHelper.close(os,litData,encData,in);
   }
-  if (signature != null) {
-    PGPSignatureList sigList=(PGPSignatureList)pgpFactory.nextObject();
-    if (!signature.verify(getSignatureWithKeyId(signature.getKeyID(),sigList))) {
-      throw new SignatureException("Cannot verify PGP signature");
-    }
-  }
+  verifySignature(pgpFactory,signature);
   if (cos != null) {
     return cos.newStreamCache();
   }

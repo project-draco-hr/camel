@@ -1,0 +1,26 @@
+{
+  PGPObjectFactory pgpFactory=new PGPObjectFactory(encryptedStream);
+  Object firstObject=pgpFactory.nextObject();
+  PGPEncryptedDataList enc=getEcryptedDataList(pgpFactory,firstObject);
+  if (enc == null) {
+    throw getFormatException();
+  }
+  PGPPublicKeyEncryptedData pbe=null;
+  PGPPrivateKey key=null;
+  for (int i=0; i < enc.size() && key == null; i++) {
+    Object encryptedData=enc.get(i);
+    if (!(encryptedData instanceof PGPPublicKeyEncryptedData)) {
+      throw getFormatException();
+    }
+    pbe=(PGPPublicKeyEncryptedData)encryptedData;
+    key=secretKeyAccessor.getPrivateKey(exchange,pbe.getKeyID());
+    if (key != null) {
+      break;
+    }
+  }
+  if (key == null) {
+    throw new PGPException("PGP message is encrypted with a key which could not be found in the Secret Keyring.");
+  }
+  InputStream encData=pbe.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(getProvider()).build(key));
+  return encData;
+}
