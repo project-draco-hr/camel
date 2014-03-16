@@ -1,0 +1,15 @@
+{
+  Book camelBook=new Book("1","Camel","123");
+  Book activeMQBook=new Book("2","ActiveMQ","124");
+  currentCache().put(camelBook.getId(),camelBook);
+  currentCache().put(activeMQBook.getId(),activeMQBook);
+  Exchange exchange=template.send("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.OPERATION,InfinispanConstants.QUERY);
+    }
+  }
+);
+  List<Book> result=exchange.getIn().getHeader(InfinispanConstants.RESULT,List.class);
+  assertThat(result.size(),is(1));
+  assertThat(result.get(0),is(camelBook));
+}
