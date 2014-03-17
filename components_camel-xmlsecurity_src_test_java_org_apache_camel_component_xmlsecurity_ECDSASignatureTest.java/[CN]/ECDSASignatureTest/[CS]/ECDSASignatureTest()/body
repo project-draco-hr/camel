@@ -1,12 +1,19 @@
 {
-  if (isJava16() && Security.getProvider("BC") == null) {
-    Constructor<?> cons=null;
-    Class<?> c=Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
-    cons=c.getConstructor(new Class[]{});
-    Provider provider=(java.security.Provider)cons.newInstance();
-    Security.insertProviderAt(provider,2);
+  try {
+    if (isJava16() && Security.getProvider("BC") == null) {
+      Constructor<?> cons;
+      Class<?> c=Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+      cons=c.getConstructor(new Class[]{});
+      Provider provider=(java.security.Provider)cons.newInstance();
+      Security.insertProviderAt(provider,2);
+    }
+    if (isJavaVendor("IBM")) {
+      canTest=false;
+    }
   }
-  if (isJavaVendor("IBM")) {
-    ibmJDK=true;
+ catch (  Exception e) {
+    System.err.println("Cannot test due " + e.getMessage());
+    log.warn("Cannot test due " + e.getMessage(),e);
+    canTest=false;
   }
 }

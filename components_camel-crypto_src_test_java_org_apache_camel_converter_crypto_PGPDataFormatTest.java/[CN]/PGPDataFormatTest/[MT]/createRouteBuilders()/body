@@ -1,7 +1,7 @@
 {
   return new RouteBuilder[]{new RouteBuilder(){
     public void configure() throws Exception {
-      onException(IllegalArgumentException.class).handled(true).to("mock:exception");
+      onException(Exception.class).handled(true).to("mock:exception");
       String keyFileName=getKeyFileName();
       String keyFileNameSec=getKeyFileNameSec();
       String keyUserid=getKeyUserId();
@@ -17,6 +17,7 @@
       pgpDecrypt.setKeyFileName(keyFileNameSec);
       pgpDecrypt.setPassword(keyPassword);
       pgpDecrypt.setProvider(getProvider());
+      pgpDecrypt.setSignatureVerificationOption(PGPDataFormat.SIGNATURE_VERIFICATION_OPTION_NO_SIGNATURE_ALLOWED);
       from("direct:inline2").marshal(pgpEncrypt).to("mock:encrypted").unmarshal(pgpDecrypt).to("mock:unencrypted");
       from("direct:inline-armor").marshal().pgp(keyFileName,keyUserid,null,true,true).to("mock:encrypted").unmarshal().pgp(keyFileNameSec,null,keyPassword,true,true).to("mock:unencrypted");
       PGPDataFormat pgpSignAndEncrypt=new PGPDataFormat();
@@ -63,6 +64,7 @@
       pgpVerifyAndDecryptByteArray.setEncryptionKeyRing(getSecKeyRing());
       pgpVerifyAndDecryptByteArray.setProvider(getProvider());
       pgpVerifyAndDecryptByteArray.setSignatureKeyUserids(getSignatureKeyUserIds());
+      pgpVerifyAndDecryptByteArray.setSignatureVerificationOption(PGPDataFormat.SIGNATURE_VERIFICATION_OPTION_REQUIRED);
       from("direct:sign-key-ring-byte-array").streamCaching().setHeader(PGPDataFormat.ENCRYPTION_KEY_RING).constant(getPublicKeyRing()).marshal(pgpSignAndEncryptByteArray).removeHeader(PGPDataFormat.ENCRYPTION_KEY_RING).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_RING).constant(getPublicKeyRing()).unmarshal(pgpVerifyAndDecryptByteArray).removeHeader(PGPDataFormat.SIGNATURE_KEY_RING).to("mock:unencrypted");
       PGPDataFormat pgpSignAndEncryptSeveralSignerKeys=new PGPDataFormat();
       pgpSignAndEncryptSeveralSignerKeys.setKeyUserid(keyUserid);
@@ -101,13 +103,10 @@
   }
 ,new RouteBuilder(){
     public void configure() throws Exception {
-      PGPDataFormat pgpKeyFlag=new PGPDataFormat();
-      pgpKeyFlag.setKeyFileName("org/apache/camel/component/crypto/pubringSubKeys.gpg");
-      pgpKeyFlag.setSignatureKeyFileName("org/apache/camel/component/crypto/secringSubKeys.gpg");
-      pgpKeyFlag.setSignaturePassword("Abcd1234");
-      pgpKeyFlag.setKeyUserid("keyflag");
-      pgpKeyFlag.setSignatureKeyUserid("keyflag");
-      from("direct:keyflag").marshal(pgpKeyFlag).to("mock:encrypted_keyflag");
+      onException(Exception.class).handled(true).to("mock:exception");
+      from("direct:keyflag").marshal(encryptor).to("mock:encrypted_keyflag");
+      from("direct:subkey").marshal(encryptor).to("mock:encrypted").unmarshal(decryptor).to("mock:unencrypted");
+      from("direct:subkeyUnmarshal").unmarshal(decryptor).to("mock:unencrypted");
     }
   }
 ,new RouteBuilder(){

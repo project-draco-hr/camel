@@ -1,13 +1,18 @@
 {
   super.doStart();
+  snsClient=configuration.getAmazonSNSClient() != null ? configuration.getAmazonSNSClient() : createSNSClient();
   CreateTopicRequest request=new CreateTopicRequest(configuration.getTopicName());
   LOG.trace("Creating topic [{}] with request [{}]...",configuration.getTopicName(),request);
-  CreateTopicResult result=getSNSClient().createTopic(request);
+  CreateTopicResult result=snsClient.createTopic(request);
   configuration.setTopicArn(result.getTopicArn());
   LOG.trace("Topic created with Amazon resource name: {}",configuration.getTopicArn());
-  if (configuration.getPolicy() != null) {
+  if (ObjectHelper.isNotEmpty(configuration.getPolicy())) {
     LOG.trace("Updating topic [{}] with policy [{}]",configuration.getTopicArn(),configuration.getPolicy());
-    getSNSClient().setTopicAttributes(new SetTopicAttributesRequest(configuration.getTopicArn(),"Policy",configuration.getPolicy()));
+    snsClient.setTopicAttributes(new SetTopicAttributesRequest(configuration.getTopicArn(),"Policy",configuration.getPolicy()));
     LOG.trace("Topic policy updated");
+  }
+  if (ObjectHelper.isNotEmpty(configuration.getAmazonSNSEndpoint())) {
+    LOG.trace("Updating the SNS region with : {} " + configuration.getAmazonSNSEndpoint());
+    snsClient.setEndpoint(configuration.getAmazonSNSEndpoint());
   }
 }

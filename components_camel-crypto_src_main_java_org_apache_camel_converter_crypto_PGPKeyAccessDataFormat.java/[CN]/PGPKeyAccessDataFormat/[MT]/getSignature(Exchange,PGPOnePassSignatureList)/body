@@ -1,20 +1,24 @@
 {
+  if (SIGNATURE_VERIFICATION_OPTION_IGNORE.equals(getSignatureVerificationOption())) {
+    return null;
+  }
+  if (SIGNATURE_VERIFICATION_OPTION_NO_SIGNATURE_ALLOWED.equals(getSignatureVerificationOption())) {
+    throw new PGPException("PGP message contains a signature although a signature is not expected. Either change the configuration of the PGP decryptor or send a PGP message with no signature.");
+  }
   List<String> allowedUserIds=determineSignaturenUserIds(exchange);
   for (int i=0; i < signatureList.size(); i++) {
     PGPOnePassSignature signature=signatureList.get(i);
-    PGPPublicKey sigPublicKey=publicKeyAccessor.getPublicKey(exchange,signature.getKeyID());
+    PGPPublicKey sigPublicKey=publicKeyAccessor.getPublicKey(exchange,signature.getKeyID(),allowedUserIds);
     if (sigPublicKey == null) {
       continue;
     }
-    if (isAllowedVerifyingKey(allowedUserIds,sigPublicKey)) {
-      signature.init(new JcaPGPContentVerifierBuilderProvider().setProvider(getProvider()),sigPublicKey);
-      return signature;
-    }
+    signature.init(new JcaPGPContentVerifierBuilderProvider().setProvider(getProvider()),sigPublicKey);
+    return signature;
   }
   if (signatureList.isEmpty()) {
     return null;
   }
  else {
-    throw new IllegalArgumentException("No public key found fitting to the signature key Id; cannot verify the signature");
+    throw new IllegalArgumentException("Cannot verify the PGP signature: No public key found for the key ID(s) contained in the PGP signature(s). " + "Either the received PGP message contains a signature from an unexpected sender or the Public Keyring does not contain the public key of the sender.");
   }
 }

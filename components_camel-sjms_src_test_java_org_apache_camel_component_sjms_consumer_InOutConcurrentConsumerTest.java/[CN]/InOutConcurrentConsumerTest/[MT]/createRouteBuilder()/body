@@ -1,0 +1,18 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("direct:start").to("sjms:a?consumerCount=5&exchangePattern=InOut&namedReplyTo=myResponse").to("mock:result");
+      from("sjms:a?consumerCount=5&exchangePattern=InOut&namedReplyTo=myResponse").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          Thread.sleep(1000);
+          exchange.getOut().setBody("Bye " + body);
+          exchange.getOut().setHeader("threadName",Thread.currentThread().getName());
+          System.out.println("Thread ID : " + Thread.currentThread().getName());
+        }
+      }
+);
+    }
+  }
+;
+}

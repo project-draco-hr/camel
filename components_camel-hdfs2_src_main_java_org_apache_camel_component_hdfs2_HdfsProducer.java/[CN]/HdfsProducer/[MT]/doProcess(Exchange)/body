@@ -1,0 +1,45 @@
+{
+  Object body=exchange.getIn().getBody();
+  Object key=exchange.getIn().getHeader(HdfsHeader.KEY.name());
+  if (exchange.getIn().getHeader(Exchange.FILE_NAME) != null) {
+    if (ostream != null) {
+      IOHelper.close(ostream,"output stream",log);
+    }
+    StringBuilder actualPath=getHdfsPathUsingFileNameHeader(exchange);
+    ostream=HdfsOutputStream.createOutputStream(actualPath.toString(),config);
+  }
+ else   if (ostream == null) {
+    ostream=setupHdfs(false);
+  }
+  boolean split=false;
+  List<SplitStrategy> strategies=config.getSplitStrategies();
+  for (  SplitStrategy splitStrategy : strategies) {
+    split|=splitStrategy.getType().split(ostream,splitStrategy.value,this);
+  }
+  if (split) {
+    if (ostream != null) {
+      IOHelper.close(ostream,"output stream",log);
+    }
+    StringBuilder actualPath=newFileName();
+    ostream=HdfsOutputStream.createOutputStream(actualPath.toString(),config);
+  }
+  String path=ostream.getActualPath();
+  log.trace("Writing body to hdfs-file {}",path);
+  ostream.append(key,body,exchange.getContext().getTypeConverter());
+  idle.set(false);
+  boolean close=scheduler == null;
+  Boolean closeHeader=exchange.getIn().getHeader(HdfsConstants.HDFS_CLOSE,Boolean.class);
+  if (closeHeader != null) {
+    close=closeHeader;
+  }
+  if (close) {
+    try {
+      HdfsProducer.this.log.trace("Closing stream");
+      ostream.close();
+      ostream=null;
+    }
+ catch (    IOException e) {
+    }
+  }
+  log.debug("Wrote body to hdfs-file {}",path);
+}

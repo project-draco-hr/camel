@@ -1,0 +1,16 @@
+{
+  if (!canTest()) {
+    return;
+  }
+  Double aDouble=12.34D;
+  template.sendBody("direct:write_double",aDouble);
+  Configuration conf=new Configuration();
+  Path file1=new Path("file:///" + TEMP_DIR.toUri() + "/test-camel-double");
+  SequenceFile.Reader reader=new SequenceFile.Reader(conf,SequenceFile.Reader.file(file1));
+  Writable key=(Writable)ReflectionUtils.newInstance(reader.getKeyClass(),conf);
+  Writable value=(Writable)ReflectionUtils.newInstance(reader.getValueClass(),conf);
+  reader.next(key,value);
+  Double rDouble=((DoubleWritable)value).get();
+  assertEquals(rDouble,aDouble);
+  IOHelper.close(reader);
+}

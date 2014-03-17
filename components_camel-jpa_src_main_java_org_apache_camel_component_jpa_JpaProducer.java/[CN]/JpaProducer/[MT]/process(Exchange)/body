@@ -4,7 +4,9 @@
   if (values != null) {
     transactionTemplate.execute(new TransactionCallback<Object>(){
       public Object doInTransaction(      TransactionStatus status){
-        entityManager.joinTransaction();
+        if (getEndpoint().isJoinTransaction()) {
+          entityManager.joinTransaction();
+        }
         if (values.getClass().isArray()) {
           Object[] array=(Object[])values;
           for (int index=0; index < array.length; index++) {
@@ -24,7 +26,9 @@
           }
         }
         if (getEndpoint().isFlushOnSend()) {
-          entityManager.joinTransaction();
+          if (getEndpoint().isJoinTransaction()) {
+            entityManager.joinTransaction();
+          }
           entityManager.flush();
         }
         return null;

@@ -1,0 +1,30 @@
+{
+  final Book camelBook=new Book("1","Camel","123");
+  final Book activeMQBook=new Book("2","ActiveMQ","124");
+  Exchange request=template.request("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,camelBook.getId());
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,camelBook);
+    }
+  }
+);
+  assertNull(request.getException());
+  request=template.request("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,activeMQBook.getId());
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,activeMQBook);
+    }
+  }
+);
+  assertNull(request.getException());
+  Exchange exchange=template.send("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.OPERATION,InfinispanConstants.QUERY);
+    }
+  }
+);
+  List<Book> result=exchange.getIn().getHeader(InfinispanConstants.RESULT,List.class);
+  assertNull(exchange.getException());
+  assertThat(result.size(),is(1));
+  assertThat(result.get(0),is(camelBook));
+}

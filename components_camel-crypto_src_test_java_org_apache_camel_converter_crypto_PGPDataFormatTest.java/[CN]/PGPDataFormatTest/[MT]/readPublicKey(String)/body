@@ -1,0 +1,16 @@
+{
+  InputStream input=new ByteArrayInputStream(getKeyRing(keyringPath));
+  PGPPublicKeyRingCollection pgpPub=new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(input));
+  @SuppressWarnings("rawtypes") Iterator keyRingIter=pgpPub.getKeyRings();
+  while (keyRingIter.hasNext()) {
+    PGPPublicKeyRing keyRing=(PGPPublicKeyRing)keyRingIter.next();
+    @SuppressWarnings("rawtypes") Iterator keyIter=keyRing.getPublicKeys();
+    while (keyIter.hasNext()) {
+      PGPPublicKey key=(PGPPublicKey)keyIter.next();
+      if (key.isEncryptionKey()) {
+        return key;
+      }
+    }
+  }
+  throw new IllegalArgumentException("Can't find encryption key in key ring.");
+}

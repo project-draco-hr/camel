@@ -1,0 +1,18 @@
+{
+  int id=counter.incrementAndGet();
+  String dir="target/activemq-data-" + id;
+  FileUtil.removeDir(new File(dir));
+  String url="vm://test-broker-" + id + "?broker.persistent=true&broker.useJmx=false&broker.dataDirectory="+ dir;
+  if (options != null) {
+    url=url + "&" + options;
+  }
+  ActiveMQConnectionFactory connectionFactory=new ActiveMQConnectionFactory(url);
+  connectionFactory.setCopyMessageOnSend(false);
+  connectionFactory.setOptimizeAcknowledge(true);
+  connectionFactory.setOptimizedMessageDispatch(true);
+  connectionFactory.setUseAsyncSend(true);
+  connectionFactory.setAlwaysSessionAsync(false);
+  PooledConnectionFactory pooled=new PooledConnectionFactory(connectionFactory);
+  pooled.setMaxConnections(8);
+  return pooled;
+}

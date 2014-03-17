@@ -4,20 +4,21 @@
     Object data=i.next();
     if (data instanceof PGPSecretKeyRing) {
       PGPSecretKeyRing keyring=(PGPSecretKeyRing)data;
-      Set<String> keyUserIds=getUserIds(keyring);
-      for (      String userIdPart : sigKeyUserId2Password.keySet()) {
-        for (        String keyUserId : keyUserIds) {
-          if (keyUserId.contains(userIdPart)) {
-            for (@SuppressWarnings("unchecked") Iterator<PGPSecretKey> iterKey=keyring.getSecretKeys(); iterKey.hasNext(); ) {
-              PGPSecretKey secKey=iterKey.next();
-              if (isSigningKey(secKey)) {
-                PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(sigKeyUserId2Password.get(userIdPart).toCharArray()));
-                if (privateKey != null) {
-                  result.add(new PGPSecretKeyAndPrivateKeyAndUserId(secKey,privateKey,keyUserId));
-                  LOG.debug("Private key with key user ID {} and key ID {} found for specified user ID part {}",new Object[]{keyUserId,Long.toString(privateKey.getKeyID()),userIdPart});
-                }
-              }
-            }
+      PGPSecretKey primaryKey=keyring.getSecretKey();
+      List<String> useridParts=new ArrayList<String>(sigKeyUserId2Password.keySet());
+      String[] foundKeyUserIdForUserIdPart=findFirstKeyUserIdContainingOneOfTheParts(useridParts,primaryKey.getPublicKey());
+      if (foundKeyUserIdForUserIdPart == null) {
+        LOG.debug("No User ID found in primary key with key ID {} containing one of the parts {}",primaryKey.getKeyID(),useridParts);
+        continue;
+      }
+      LOG.debug("User ID {} found in primary key with key ID {} containing one of the parts {}",new Object[]{foundKeyUserIdForUserIdPart[0],primaryKey.getKeyID(),useridParts});
+      for (@SuppressWarnings("unchecked") Iterator<PGPSecretKey> iterKey=keyring.getSecretKeys(); iterKey.hasNext(); ) {
+        PGPSecretKey secKey=iterKey.next();
+        if (isSigningKey(secKey)) {
+          PGPPrivateKey privateKey=secKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(sigKeyUserId2Password.get(foundKeyUserIdForUserIdPart[1]).toCharArray()));
+          if (privateKey != null) {
+            result.add(new PGPSecretKeyAndPrivateKeyAndUserId(secKey,privateKey,foundKeyUserIdForUserIdPart[0]));
+            LOG.debug("Private key with user ID {} and key ID {} added to the signing keys",foundKeyUserIdForUserIdPart[0],Long.toString(privateKey.getKeyID()));
           }
         }
       }
