@@ -3,6 +3,7 @@
     private final AtomicLong counter=new AtomicLong();
     @Override public void run(){
       if (!isTaskRunAllowed()) {
+        LOG.debug("Run now allowed for timer: {}",endpoint);
         return;
       }
       try {
@@ -22,6 +23,8 @@
     }
   }
 ;
-  Timer timer=endpoint.getTimer();
-  configureTask(task,timer);
+  if (!configured && endpoint.getCamelContext().getStatus().isStarted()) {
+    Timer timer=endpoint.getTimer();
+    configureTask(task,timer);
+  }
 }
