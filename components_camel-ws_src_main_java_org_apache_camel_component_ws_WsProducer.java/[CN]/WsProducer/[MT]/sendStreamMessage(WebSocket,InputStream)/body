@@ -1,0 +1,24 @@
+{
+  byte[] readbuf=new byte[streamBufferSize];
+  byte[] writebuf=new byte[streamBufferSize];
+  int rn=0;
+  int wn=0;
+  try {
+    while ((rn=in.read(readbuf,0,readbuf.length)) != -1) {
+      if (wn > 0) {
+        webSocket.stream(writebuf,0,writebuf.length,false);
+      }
+      System.arraycopy(readbuf,0,writebuf,0,rn);
+      wn=rn;
+    }
+    if (wn < writebuf.length) {
+      byte[] tmpbuf=writebuf;
+      writebuf=new byte[wn];
+      System.arraycopy(tmpbuf,0,writebuf,0,wn);
+    }
+    webSocket.stream(writebuf,0,wn,true);
+  }
+  finally {
+    in.close();
+  }
+}

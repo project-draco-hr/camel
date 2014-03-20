@@ -1,0 +1,32 @@
+{
+  super.doStart();
+  if (client == null) {
+    AsyncHttpClientConfig config=null;
+    if (clientConfig != null) {
+      AsyncHttpClientConfig.Builder builder=WsComponent.cloneConfig(clientConfig);
+      if (sslContextParameters != null) {
+        SSLContext ssl=sslContextParameters.createSSLContext();
+        builder.setSSLContext(ssl);
+      }
+      config=builder.build();
+    }
+ else {
+      if (sslContextParameters != null) {
+        AsyncHttpClientConfig.Builder builder=new AsyncHttpClientConfig.Builder();
+        SSLContext ssl=sslContextParameters.createSSLContext();
+        builder.setSSLContext(ssl);
+        config=builder.build();
+      }
+    }
+    if (config == null) {
+      config=new AsyncHttpClientConfig.Builder().build();
+    }
+    AsyncHttpProvider ahp=getAsyncHttpProvider(config);
+    if (ahp == null) {
+      client=new AsyncHttpClient(config);
+    }
+ else {
+      client=new AsyncHttpClient(ahp,config);
+    }
+  }
+}
