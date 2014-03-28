@@ -2,7 +2,31 @@
   String queryHeader=exchange.getIn().getHeader(SqlConstants.SQL_QUERY,String.class);
   final String sql=queryHeader != null ? queryHeader : query;
   final String preparedQuery=sqlPrepareStatementStrategy.prepareQuery(sql,getEndpoint().isAllowNamedParameters());
-  jdbcTemplate.execute(preparedQuery,new PreparedStatementCallback<Map<?,?>>(){
+  final Boolean shouldRetrieveGeneratedKeys=exchange.getIn().getHeader(SqlConstants.SQL_RETRIEVE_GENERATED_KEYS,false,Boolean.class);
+  PreparedStatementCreator statementCreator=new PreparedStatementCreator(){
+    @Override public PreparedStatement createPreparedStatement(    Connection con) throws SQLException {
+      if (!shouldRetrieveGeneratedKeys) {
+        return con.prepareStatement(preparedQuery);
+      }
+ else {
+        Object expectedGeneratedColumns=exchange.getIn().getHeader(SqlConstants.SQL_GENERATED_COLUMNS);
+        if (expectedGeneratedColumns == null) {
+          return con.prepareStatement(preparedQuery,Statement.RETURN_GENERATED_KEYS);
+        }
+ else         if (expectedGeneratedColumns instanceof String[]) {
+          return con.prepareStatement(preparedQuery,(String[])expectedGeneratedColumns);
+        }
+ else         if (expectedGeneratedColumns instanceof int[]) {
+          return con.prepareStatement(preparedQuery,(int[])expectedGeneratedColumns);
+        }
+ else {
+          throw new IllegalArgumentException("Header specifying expected returning columns isn't an instance of String[] or int[] but " + expectedGeneratedColumns.getClass());
+        }
+      }
+    }
+  }
+;
+  jdbcTemplate.execute(statementCreator,new PreparedStatementCallback<Map<?,?>>(){
     public Map<?,?> doInPreparedStatement(    PreparedStatement ps) throws SQLException {
       int expected=parametersCount > 0 ? parametersCount : ps.getParameterMetaData().getParameterCount();
       if (alwaysPopulateStatement || expected > 0) {
@@ -20,6 +44,7 @@
           sqlPrepareStatementStrategy.populateStatement(ps,i,expected);
         }
       }
+      boolean isResultSet=false;
       if (batch) {
         int[] updateCounts=ps.executeBatch();
         int total=0;
@@ -29,7 +54,7 @@
         exchange.getIn().setHeader(SqlConstants.SQL_UPDATE_COUNT,total);
       }
  else {
-        boolean isResultSet=ps.execute();
+        isResultSet=ps.execute();
         if (isResultSet) {
           exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
           ResultSet rs=ps.getResultSet();
@@ -63,6 +88,16 @@
         }
  else {
           exchange.getIn().setHeader(SqlConstants.SQL_UPDATE_COUNT,ps.getUpdateCount());
+        }
+      }
+      if (shouldRetrieveGeneratedKeys) {
+        if (isResultSet) {
+          exchange.getOut().setHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER,new GeneratedKeyHolder());
+        }
+ else {
+          List<Map<String,Object>> generatedKeys=getEndpoint().queryForList(ps.getGeneratedKeys());
+          KeyHolder holder=new GeneratedKeyHolder(generatedKeys);
+          exchange.getOut().setHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER,holder);
         }
       }
       return null;

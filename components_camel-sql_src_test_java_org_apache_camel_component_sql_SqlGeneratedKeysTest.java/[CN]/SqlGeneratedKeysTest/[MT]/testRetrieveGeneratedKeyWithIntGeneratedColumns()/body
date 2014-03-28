@@ -1,0 +1,16 @@
+{
+  Endpoint endpoint=context.getEndpoint("direct:insert");
+  Exchange exchange=endpoint.createExchange();
+  exchange.getIn().setBody(new Object[]{"project x","ASF","new project"});
+  exchange.getIn().setHeader(SqlConstants.SQL_RETRIEVE_GENERATED_KEYS,true);
+  exchange.getIn().setHeader(SqlConstants.SQL_GENERATED_COLUMNS,new int[]{1});
+  Exchange out=template.send(endpoint,exchange);
+  assertNotNull(out);
+  assertNotNull(out.getIn().getHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER));
+  KeyHolder generatedKeys=out.getIn().getHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER,KeyHolder.class);
+  assertNotNull("out body could not be converted to a KeyHolder - was: " + out.getIn().getBody(),generatedKeys);
+  assertEquals(1,generatedKeys.getKeyList().get(0).size());
+  Map<String,Object> row=generatedKeys.getKeys();
+  assertEquals("auto increment value should be 3",Integer.valueOf(3),row.get("ID"));
+  assertEquals("generated keys row count should be one",1,generatedKeys.getKeyList().size());
+}

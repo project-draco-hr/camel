@@ -1,0 +1,10 @@
+{
+  Endpoint endpoint=context.getEndpoint("direct:select");
+  Exchange exchange=endpoint.createExchange();
+  exchange.getIn().setHeader(SqlConstants.SQL_RETRIEVE_GENERATED_KEYS,true);
+  Exchange out=template.send(endpoint,exchange);
+  @SuppressWarnings("unchecked") List<Map<String,Object>> result=out.getIn().getBody(List.class);
+  assertEquals("We should get 3 projects",3,result.size());
+  KeyHolder holder=out.getIn().getHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER,KeyHolder.class);
+  assertEquals("We should not get any keys",0,holder.getKeyList().size());
+}

@@ -1,0 +1,22 @@
+{
+  Endpoint endpoint=context.getEndpoint("direct:batch");
+  Exchange exchange=endpoint.createExchange();
+  List<Object[]> payload=new ArrayList<Object[]>(4);
+  payload.add(new Object[]{"project x","ASF","new project x"});
+  payload.add(new Object[]{"project y","ASF","new project y"});
+  payload.add(new Object[]{"project z","ASF","new project z"});
+  payload.add(new Object[]{"project q","ASF","new project q"});
+  exchange.getIn().setBody(payload);
+  exchange.getIn().setHeader(SqlConstants.SQL_RETRIEVE_GENERATED_KEYS,true);
+  Exchange out=template.send(endpoint,exchange);
+  assertNotNull(out);
+  assertNotNull(out.getOut());
+  assertNotNull(out.getIn().getHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER));
+  KeyHolder generatedKeys=out.getIn().getHeader(SqlConstants.SQL_GENERATED_KEY_HOLDER,KeyHolder.class);
+  assertNotNull("out body could not be converted to a KeyHolder - was: " + out.getIn().getBody(),generatedKeys);
+  assertEquals(4,generatedKeys.getKeyList().size());
+  int id=3;
+  for (  Map<String,Object> row : generatedKeys.getKeyList()) {
+    assertEquals("auto increment value should be " + id,Integer.valueOf(id++),row.get("ID"));
+  }
+}
