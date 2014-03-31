@@ -1,28 +1,27 @@
 {
-  if (event instanceof RouteStartedEvent) {
-    RouteStartedEvent rse=(RouteStartedEvent)event;
+  if (event instanceof RouteAddedEvent) {
+    RouteAddedEvent rse=(RouteAddedEvent)event;
     Endpoint endpoint=rse.getRoute().getEndpoint();
     String routeId=rse.getRoute().getId();
-    Set<String> routes=inputs.get(endpoint);
-    if (routeId != null && (routes == null || !routes.contains(routeId))) {
-      if (routes == null) {
-        routes=new ConcurrentSkipListSet<String>();
-      }
-      routes.add(routeId);
-      inputs.put(endpoint.getEndpointUri(),routes);
-    }
+    Set<String> uris=new HashSet<String>();
+    uris.add(endpoint.getEndpointUri());
+    inputs.put(routeId,uris);
+    outputs.put(routeId,new LRUCache<String,String>(limit));
+  }
+ else   if (event instanceof RouteRemovedEvent) {
+    RouteRemovedEvent rse=(RouteRemovedEvent)event;
+    String routeId=rse.getRoute().getId();
+    inputs.remove(routeId);
+    outputs.remove(routeId);
   }
  else {
     ExchangeSendingEvent ese=(ExchangeSendingEvent)event;
     Endpoint endpoint=ese.getEndpoint();
     String routeId=getRouteId(ese.getExchange());
-    Set<String> routes=outputs.get(endpoint);
-    if (routeId != null && (routes == null || !routes.contains(routeId))) {
-      if (routes == null) {
-        routes=new ConcurrentSkipListSet<String>();
-      }
-      routes.add(routeId);
-      outputs.put(endpoint.getEndpointUri(),routes);
+    String uri=endpoint.getEndpointUri();
+    Map<String,String> uris=outputs.get(routeId);
+    if (uris != null && !uris.containsKey(uri)) {
+      uris.put(uri,uri);
     }
   }
 }
