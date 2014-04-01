@@ -1,9 +1,16 @@
 {
   LoggingLevel level=getLoggingLevel(parameters);
+  Logger providedLogger=getLogger(parameters);
   LogEndpoint endpoint=new LogEndpoint(uri,this);
   endpoint.setLevel(level.name());
   setProperties(endpoint,parameters);
-  CamelLogger camelLogger=new CamelLogger(remaining,level,endpoint.getMarker());
+  CamelLogger camelLogger=null;
+  if (providedLogger == null) {
+    camelLogger=new CamelLogger(remaining,level,endpoint.getMarker());
+  }
+ else {
+    camelLogger=new CamelLogger(providedLogger,level,endpoint.getMarker());
+  }
   Processor logger;
   if (endpoint.getGroupSize() != null) {
     logger=new ThroughputLogger(camelLogger,endpoint.getGroupSize());
