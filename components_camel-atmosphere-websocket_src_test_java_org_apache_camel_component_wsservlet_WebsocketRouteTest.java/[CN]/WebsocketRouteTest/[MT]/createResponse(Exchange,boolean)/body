@@ -1,0 +1,21 @@
+{
+  Object msg=exchange.getIn().getBody();
+  if (streaming) {
+    assertTrue("Expects Reader or InputStream",msg instanceof Reader || msg instanceof InputStream);
+  }
+ else {
+    assertTrue("Expects String or byte[]",msg instanceof String || msg instanceof byte[]);
+  }
+  if (msg instanceof String) {
+    exchange.getIn().setBody(RESPONSE_GREETING + msg);
+  }
+ else   if (msg instanceof byte[]) {
+    exchange.getIn().setBody(createByteResponse((byte[])msg));
+  }
+ else   if (msg instanceof Reader) {
+    exchange.getIn().setBody(new StringReader(RESPONSE_GREETING + readAll((Reader)msg)));
+  }
+ else   if (msg instanceof InputStream) {
+    exchange.getIn().setBody(createByteResponse(readAll((InputStream)msg)));
+  }
+}

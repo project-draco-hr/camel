@@ -1,0 +1,15 @@
+{
+  super(endpoint,processor);
+  this.framework=new AtmosphereFramework(false,true);
+  framework.setUseNativeImplementation(false);
+  framework.addInitParameter(ApplicationConfig.WEBSOCKET_SUPPORT,"true");
+  framework.addInitParameter(ApplicationConfig.WEBSOCKET_PROTOCOL,endpoint.isUseStreaming() ? WebsocketStreamHandler.class.getName() : WebsocketHandler.class.getName());
+  framework.init();
+  WebSocketProtocol wsp=framework.getWebSocketProtocol();
+  if (wsp instanceof WebsocketHandler) {
+    ((WebsocketHandler)wsp).setConsumer(this);
+  }
+ else {
+    LOG.error("unexpected WebSocketHandler: {}",wsp);
+  }
+}

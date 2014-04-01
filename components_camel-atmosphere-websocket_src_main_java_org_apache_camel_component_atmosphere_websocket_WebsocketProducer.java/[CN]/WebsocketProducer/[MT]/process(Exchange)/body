@@ -1,0 +1,44 @@
+{
+  Message in=exchange.getIn();
+  Object message=in.getBody();
+  if (message == null) {
+    LOG.info("Ignoring a null message");
+    return;
+  }
+  if (!(message instanceof String || message instanceof byte[] || message instanceof Reader|| message instanceof InputStream)) {
+    if (LOG.isInfoEnabled()) {
+      LOG.info("Using String for unexpected message type {} ",message.getClass());
+    }
+    message=in.getBody(String.class);
+  }
+  if (message instanceof Reader) {
+    message=in.getBody(String.class);
+  }
+ else   if (message instanceof InputStream) {
+    message=in.getBody(byte[].class);
+  }
+  log.debug("Sending to {}",message);
+  if (getEndpoint().isSendToAll()) {
+    log.debug("Sending to all -> {}",message);
+    for (    final WebSocket websocket : getEndpoint().getWebSocketStore().getAllWebSockets()) {
+      final Object msg=message;
+      executor.execute(new Runnable(){
+        @Override public void run(){
+          sendMessage(websocket,msg);
+        }
+      }
+);
+    }
+  }
+ else {
+    String connectionKey=in.getHeader(WebsocketConstants.CONNECTION_KEY,String.class);
+    if (connectionKey != null) {
+      WebSocket websocket=getEndpoint().getWebSocketStore().getWebSocket(connectionKey);
+      log.debug("Sending to connection key {} -> {}",connectionKey,message);
+      sendMessage(websocket,message);
+    }
+ else {
+      throw new IllegalArgumentException("Failed to send message to single connection; connetion key not set.");
+    }
+  }
+}
