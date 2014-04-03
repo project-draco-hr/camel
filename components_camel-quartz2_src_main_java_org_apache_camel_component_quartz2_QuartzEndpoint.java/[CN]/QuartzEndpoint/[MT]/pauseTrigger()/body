@@ -1,10 +1,11 @@
 {
-  if (jobPaused.get()) {
+  Scheduler scheduler=getComponent().getScheduler();
+  boolean isClustered=scheduler.getMetaData().isJobStoreClustered();
+  if (jobPaused.get() || isClustered) {
     return;
   }
   jobPaused.set(true);
-  Scheduler scheduler=getComponent().getScheduler();
-  if (scheduler != null && !scheduler.isShutdown()) {
+  if (!scheduler.isShutdown()) {
     LOG.info("Pausing trigger {}",triggerKey);
     scheduler.pauseTrigger(triggerKey);
   }
