@@ -1,6 +1,15 @@
 {
   LoggingLevel level=getLoggingLevel(parameters);
   Logger providedLogger=getLogger(parameters);
+  if (providedLogger == null) {
+    Map<String,Logger> availableLoggers=getCamelContext().getRegistry().findByTypeWithName(Logger.class);
+    if (availableLoggers.size() == 1) {
+      providedLogger=availableLoggers.values().iterator().next();
+    }
+ else     if (availableLoggers.size() > 1) {
+      LOG.info("More than one {} instance found in the registry. Falling back to creating logger from URI {}.",Logger.class.getName(),uri);
+    }
+  }
   LogEndpoint endpoint=new LogEndpoint(uri,this);
   endpoint.setLevel(level.name());
   setProperties(endpoint,parameters);
