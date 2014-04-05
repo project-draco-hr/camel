@@ -1,0 +1,16 @@
+{
+  expectsMessageCount(2,result);
+  result.whenAnyExchangeReceived(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.setException(new MyExceptionProcessor());
+    }
+  }
+);
+  Exchange exchangeOne=sendMessage("direct:start","message one");
+  Exchange exchangeTwo=sendMessage("direct:start","message two");
+  Exchange exchangeThree=sendMessage("direct:start","message three");
+  assertMockEndpointsSatisfied();
+  assertTrue(exchangeOne.getException() instanceof MyExceptionProcessor);
+  assertTrue(exchangeTwo.getException() instanceof MyExceptionProcessor);
+  assertTrue(exchangeThree.getException() instanceof RejectedExecutionException);
+}
