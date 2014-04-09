@@ -1,12 +1,14 @@
 {
   Exchange exchange=endpoint.createExchange();
   HttpRequestBase method=createMethod(exchange);
+  HttpClientContext httpClientContext=new HttpClientContext();
   if (timeout > 0) {
-    HttpConnectionParams.setSoTimeout(method.getParams(),timeout);
+    RequestConfig requestConfig=RequestConfig.custom().setSocketTimeout(timeout).build();
+    httpClientContext.setRequestConfig(requestConfig);
   }
   HttpEntity responeEntity=null;
   try {
-    HttpResponse response=httpClient.execute(method);
+    HttpResponse response=httpClient.execute(method,httpClientContext);
     int responseCode=response.getStatusLine().getStatusCode();
     responeEntity=response.getEntity();
     Object body=HttpHelper.readResponseBodyFromInputStream(responeEntity.getContent(),exchange);
