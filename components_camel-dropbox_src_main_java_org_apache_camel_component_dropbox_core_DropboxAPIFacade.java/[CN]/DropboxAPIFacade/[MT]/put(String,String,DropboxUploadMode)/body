@@ -1,0 +1,80 @@
+{
+  DropboxResult result=new DropboxFileUploadResult();
+  Map<String,DropboxResultCode> resultEntries=null;
+  String dropboxPath=remotePath == null ? localPath : remotePath;
+  DbxEntry entry=null;
+  try {
+    entry=instance.client.getMetadata(dropboxPath);
+  }
+ catch (  DbxException e) {
+    throw new DropboxException(dropboxPath + " does not exist or can't obtain metadata");
+  }
+  File fileLocalPath=new File(localPath);
+  if (fileLocalPath.isFile()) {
+    if (entry != null && !entry.isFile()) {
+      throw new DropboxException(dropboxPath + " exists on dropbox and is not a file!");
+    }
+    if (entry == null) {
+      if (dropboxPath.endsWith(DROPBOX_FILE_SEPARATOR)) {
+        dropboxPath=dropboxPath + fileLocalPath.getName();
+      }
+    }
+    resultEntries=new HashMap<String,DropboxResultCode>(1);
+    try {
+      DbxEntry.File uploadedFile=putSingleFile(fileLocalPath,dropboxPath,mode);
+      if (uploadedFile == null) {
+        resultEntries.put(dropboxPath,DropboxResultCode.KO);
+      }
+ else {
+        resultEntries.put(dropboxPath,DropboxResultCode.OK);
+      }
+    }
+ catch (    Exception ex) {
+      resultEntries.put(dropboxPath,DropboxResultCode.KO);
+    }
+ finally {
+      result.setResultEntries(resultEntries);
+    }
+    return result;
+  }
+ else {
+    LOG.info("uploading a dir...");
+    if (entry != null && !entry.isFolder()) {
+      throw new DropboxException(dropboxPath + " exists on dropbox and is not a folder!");
+    }
+    if (!dropboxPath.endsWith(DROPBOX_FILE_SEPARATOR)) {
+      dropboxPath=dropboxPath + DROPBOX_FILE_SEPARATOR;
+    }
+    String oldDropboxPath=dropboxPath;
+    Collection<File> listFiles=FileUtils.listFiles(fileLocalPath,null,true);
+    if (listFiles == null || listFiles.isEmpty()) {
+      throw new DropboxException(localPath + " doesn't contain any files");
+    }
+    resultEntries=new HashMap<String,DropboxResultCode>(listFiles.size());
+    for (    File file : listFiles) {
+      String absPath=file.getAbsolutePath();
+      int indexRemainingPath=localPath.length();
+      if (!localPath.endsWith("/")) {
+        indexRemainingPath+=1;
+      }
+      String remainingPath=absPath.substring(indexRemainingPath);
+      dropboxPath=dropboxPath + remainingPath;
+      try {
+        LOG.info("uploading:" + fileLocalPath + ","+ dropboxPath);
+        DbxEntry.File uploadedFile=putSingleFile(file,dropboxPath,mode);
+        if (uploadedFile == null) {
+          resultEntries.put(dropboxPath,DropboxResultCode.KO);
+        }
+ else {
+          resultEntries.put(dropboxPath,DropboxResultCode.OK);
+        }
+      }
+ catch (      Exception ex) {
+        resultEntries.put(dropboxPath,DropboxResultCode.KO);
+      }
+      dropboxPath=oldDropboxPath;
+    }
+    result.setResultEntries(resultEntries);
+    return result;
+  }
+}

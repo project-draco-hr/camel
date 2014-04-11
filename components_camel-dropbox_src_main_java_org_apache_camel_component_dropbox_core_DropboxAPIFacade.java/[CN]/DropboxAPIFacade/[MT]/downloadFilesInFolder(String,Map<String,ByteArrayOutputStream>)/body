@@ -1,0 +1,27 @@
+{
+  DbxEntry.WithChildren listing=null;
+  try {
+    listing=instance.client.getMetadataWithChildren(path);
+  }
+ catch (  DbxException e) {
+    throw new DropboxException(path + " does not exist or can't obtain metadata");
+  }
+  if (listing.children == null) {
+    LOG.info("downloading a single file...");
+    downloadSingleFile(path,resultEntries);
+    return;
+  }
+  for (  DbxEntry entry : listing.children) {
+    if (entry.isFile()) {
+      try {
+        downloadSingleFile(entry.path,resultEntries);
+      }
+ catch (      DropboxException e) {
+        LOG.warn("can't download from " + entry.path);
+      }
+    }
+ else {
+      downloadFilesInFolder(entry.path,resultEntries);
+    }
+  }
+}

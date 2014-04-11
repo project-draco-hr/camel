@@ -1,0 +1,21 @@
+{
+  Map<String,ByteArrayOutputStream> map=(Map<String,ByteArrayOutputStream>)resultEntries;
+  if (map.size() == 1) {
+    String pathExtracted=null;
+    ByteArrayOutputStream baosExtracted=null;
+    for (    Map.Entry<String,ByteArrayOutputStream> entry : map.entrySet()) {
+      pathExtracted=entry.getKey();
+      baosExtracted=entry.getValue();
+    }
+    exchange.getIn().setHeader(DropboxResultHeader.DOWNLOADED_FILE.name(),pathExtracted);
+    exchange.getIn().setBody(baosExtracted);
+  }
+ else {
+    StringBuffer pathsExtracted=new StringBuffer();
+    for (    Map.Entry<String,ByteArrayOutputStream> entry : map.entrySet()) {
+      pathsExtracted.append(entry.getKey() + "\n");
+    }
+    exchange.getIn().setHeader(DropboxResultHeader.DOWNLOADED_FILES.name(),pathsExtracted.toString());
+    exchange.getIn().setBody(map);
+  }
+}

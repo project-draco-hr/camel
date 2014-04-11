@@ -1,0 +1,15 @@
+{
+  Exchange exchange=endpoint.createExchange();
+  DropboxResult result=DropboxAPIFacade.getInstance(configuration.getClient()).search(configuration.getRemotePath(),configuration.getQuery());
+  result.populateExchange(exchange);
+  LOG.info("consumer --> downloaded: " + result.toString());
+  try {
+    getProcessor().process(exchange);
+    return 1;
+  }
+  finally {
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+    }
+  }
+}
