@@ -2,20 +2,15 @@
   DBCollection dbCol=calculateCollection(exchange);
   DBObject query=exchange.getIn().getMandatoryBody(DBObject.class);
   Iterable<DBObject> dbIterator=null;
-  try {
-    AggregationOutput aggregationResult=null;
-    if (query instanceof BasicDBList) {
-      BasicDBList queryList=(BasicDBList)query;
-      aggregationResult=dbCol.aggregate((DBObject)queryList.get(0),queryList.subList(1,queryList.size()).toArray(new BasicDBObject[queryList.size() - 1]));
-    }
+  AggregationOutput aggregationResult=null;
+  if (query instanceof BasicDBList) {
+    BasicDBList queryList=(BasicDBList)query;
+    aggregationResult=dbCol.aggregate((DBObject)queryList.get(0),queryList.subList(1,queryList.size()).toArray(new BasicDBObject[queryList.size() - 1]));
+  }
  else {
-      aggregationResult=dbCol.aggregate(query);
-    }
-    dbIterator=aggregationResult.results();
-    Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.aggregate);
-    resultMessage.setBody(dbIterator);
+    aggregationResult=dbCol.aggregate(query);
   }
- catch (  Exception e) {
-    throw e;
-  }
+  dbIterator=aggregationResult.results();
+  Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.aggregate);
+  resultMessage.setBody(dbIterator);
 }
