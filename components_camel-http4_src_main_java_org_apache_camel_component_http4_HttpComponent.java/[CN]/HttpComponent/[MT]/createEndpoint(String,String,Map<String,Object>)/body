@@ -47,7 +47,9 @@
   LOG.debug("Creating endpoint uri {}",endpointUriString);
   HttpClientConnectionManager localConnectionManager=clientConnectionManager;
   if (localConnectionManager == null) {
-    localConnectionManager=createConnectionManager(createConnectionRegistry(x509HostnameVerifier,sslContextParameters));
+    int maxTotalConnections=getAndRemoveParameter(parameters,"maxTotalConnections",int.class,0);
+    int connectionsPerRoute=getAndRemoveParameter(parameters,"connectionsPerRoute",int.class,0);
+    localConnectionManager=createConnectionManager(createConnectionRegistry(x509HostnameVerifier,sslContextParameters),maxTotalConnections,connectionsPerRoute);
   }
   HttpEndpoint endpoint=new HttpEndpoint(endpointUriString,this,clientBuilder,localConnectionManager,configurer);
   if (urlRewrite != null) {
