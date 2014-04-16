@@ -1,0 +1,18 @@
+{
+  HazelcastAggregationRepository repoOne=new HazelcastAggregationRepository(THREAD_SAFE_REPO,true,getFirstInstance());
+  HazelcastAggregationRepository repoTwo=new HazelcastAggregationRepository(THREAD_SAFE_REPO,true,getSecondInstance());
+  try {
+    repoOne.doStart();
+    repoTwo.doStart();
+    final String testBody="This is an optimistic test body. Sincerely yours, Captain Obvious.";
+    final String key="optimisticKey";
+    Exchange ex=createExchangeWithBody(testBody);
+    repoOne.add(context(),key,null,ex);
+    Exchange gotEx=repoTwo.get(context(),key);
+    assertEquals("ex and gotEx should be equal",gotEx.getIn().getBody(),ex.getIn().getBody());
+  }
+  finally {
+    repoOne.doStop();
+    repoTwo.doStop();
+  }
+}

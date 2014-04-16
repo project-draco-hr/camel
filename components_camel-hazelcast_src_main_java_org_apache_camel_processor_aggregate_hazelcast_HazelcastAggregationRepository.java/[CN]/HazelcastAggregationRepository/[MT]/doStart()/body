@@ -1,0 +1,21 @@
+{
+  if (maximumRedeliveries < 0) {
+    throw new IllegalArgumentException("Maximum redelivery retries must be zero or a positive integer.");
+  }
+  if (recoveryInterval < 0) {
+    throw new IllegalArgumentException("Recovery interval must be zero or a positive integer.");
+  }
+  ObjectHelper.notEmpty(mapName,"repositoryName");
+  if (useLocalHzInstance) {
+    Config cfg=new XmlConfigBuilder().build();
+    cfg.setProperty("hazelcast.version.check.enabled","false");
+    hzInstance=Hazelcast.newHazelcastInstance(cfg);
+  }
+ else {
+    ObjectHelper.notNull(hzInstance,"hzInstanse");
+  }
+  cache=hzInstance.getMap(mapName);
+  if (useRecovery) {
+    persistedCache=hzInstance.getMap(persistenceMapName);
+  }
+}

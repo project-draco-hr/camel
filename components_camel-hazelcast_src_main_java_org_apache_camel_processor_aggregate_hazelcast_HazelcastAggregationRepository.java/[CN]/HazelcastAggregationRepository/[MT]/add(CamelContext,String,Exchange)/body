@@ -1,0 +1,17 @@
+{
+  if (optimistic) {
+    throw new UnsupportedOperationException();
+  }
+  LOG.trace("Adding an Exchange with ID {} for key {} in a thread-safe manner.",exchange.getExchangeId(),key);
+  Lock l=hzInstance.getLock(mapName);
+  try {
+    l.lock();
+    DefaultExchangeHolder newHolder=DefaultExchangeHolder.marshal(exchange);
+    DefaultExchangeHolder oldHolder=cache.put(key,newHolder);
+    return unmarshallExchange(camelContext,oldHolder);
+  }
+  finally {
+    LOG.trace("Added an Exchange with ID {} for key {} in a thread-safe manner.",exchange.getExchangeId(),key);
+    l.unlock();
+  }
+}
