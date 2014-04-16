@@ -1,11 +1,12 @@
 {
-  exchange.getIn().setHeader(JpaConstants.ENTITYMANAGER,entityManager);
+  final EntityManager targetEntityManager=getTargetEntityManager(exchange);
+  exchange.getIn().setHeader(JpaConstants.ENTITYMANAGER,targetEntityManager);
   final Object values=expression.evaluate(exchange,Object.class);
   if (values != null) {
     transactionTemplate.execute(new TransactionCallback<Object>(){
       public Object doInTransaction(      TransactionStatus status){
         if (getEndpoint().isJoinTransaction()) {
-          entityManager.joinTransaction();
+          targetEntityManager.joinTransaction();
         }
         if (values.getClass().isArray()) {
           Object[] array=(Object[])values;
@@ -27,9 +28,9 @@
         }
         if (getEndpoint().isFlushOnSend()) {
           if (getEndpoint().isJoinTransaction()) {
-            entityManager.joinTransaction();
+            targetEntityManager.joinTransaction();
           }
-          entityManager.flush();
+          targetEntityManager.flush();
         }
         return null;
       }
@@ -38,13 +39,13 @@
  * @return the managed entity
  */
       private Object save(      final Object entity){
-        entityManager.joinTransaction();
+        targetEntityManager.joinTransaction();
         if (getEndpoint().isUsePersist()) {
-          entityManager.persist(entity);
+          targetEntityManager.persist(entity);
           return entity;
         }
  else {
-          return entityManager.merge(entity);
+          return targetEntityManager.merge(entity);
         }
       }
     }
