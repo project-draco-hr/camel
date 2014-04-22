@@ -1,18 +1,3 @@
 {
-  Endpoint endpoint=context.getEndpoint("direct:hello");
-  Exchange exchange=endpoint.createExchange();
-  exchange.getIn().setBody("insert into tableWithAutoIncr (content) values ('value2')");
-  exchange.getIn().setHeader(JdbcConstants.JDBC_RETRIEVE_GENERATED_KEYS,true);
-  exchange.getIn().setHeader(JdbcConstants.JDBC_GENERATED_COLUMNS,new int[]{1});
-  Exchange out=template.send(endpoint,exchange);
-  assertNotNull(out);
-  assertNotNull(out.getOut());
-  assertNotNull(out.getOut().getHeader(JdbcConstants.JDBC_GENERATED_KEYS_DATA));
-  assertNotNull(out.getOut().getHeader(JdbcConstants.JDBC_GENERATED_KEYS_ROW_COUNT));
-  List<Map<String,Object>> generatedKeys=out.getOut().getHeader(JdbcConstants.JDBC_GENERATED_KEYS_DATA,List.class);
-  assertNotNull("out body could not be converted to an ArrayList - was: " + out.getOut().getBody(),generatedKeys);
-  assertEquals(1,generatedKeys.size());
-  Map<String,Object> row=generatedKeys.get(0);
-  assertEquals("auto increment value should be 2",BigDecimal.valueOf(2),row.get("1"));
-  assertEquals("generated keys row count should be one",1,out.getOut().getHeader(JdbcConstants.JDBC_GENERATED_KEYS_ROW_COUNT));
+  super.testRetrieveGeneratedKeysWithIntGeneratedColumns("insert into tableWithAutoIncr (content) values ('value2')");
 }
