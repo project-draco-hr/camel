@@ -1,0 +1,36 @@
+{
+  String openshiftServer=new OpenShiftConfiguration().getLibraServer();
+  IOpenShiftConnection connection=new OpenShiftConnectionFactory().getConnection(getEndpoint().getClientId(),getEndpoint().getUsername(),getEndpoint().getPassword(),openshiftServer);
+  IUser user=connection.getUser();
+  IDomain domain;
+  if (getEndpoint().getDomain() != null) {
+    domain=user.getDomain(getEndpoint().getDomain());
+  }
+ else {
+    domain=user.getDefaultDomain();
+  }
+  if (domain == null) {
+    throw new CamelExchangeException("User has no domain with id " + getEndpoint().getDomain(),exchange);
+  }
+  OpenShiftOperation operation=exchange.getIn().getHeader(OpenShiftConstants.OPERATION,getEndpoint().getOperation(),OpenShiftOperation.class);
+switch (operation) {
+case list:
+    doList(exchange,domain);
+  break;
+case start:
+doStart(exchange,domain);
+break;
+case stop:
+doStop(exchange,domain);
+break;
+case restart:
+doRestart(exchange,domain);
+break;
+case state:
+doState(exchange,domain);
+break;
+default :
+doList(exchange,domain);
+break;
+}
+}
