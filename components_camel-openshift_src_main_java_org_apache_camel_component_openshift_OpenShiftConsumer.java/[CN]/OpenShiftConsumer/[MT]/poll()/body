@@ -1,0 +1,21 @@
+{
+  String openshiftServer=OpenShiftHelper.getOpenShiftServer(getEndpoint());
+  IDomain domain=OpenShiftHelper.loginAndGetDomain(getEndpoint(),openshiftServer);
+  if (domain == null) {
+    return 0;
+  }
+  List<IApplication> apps=domain.getApplications();
+  for (  IApplication app : apps) {
+    Exchange exchange=getEndpoint().createExchange(app);
+    try {
+      getProcessor().process(exchange);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+    }
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error during processing exchange.",exchange,exchange.getException());
+    }
+  }
+  return apps.size();
+}
