@@ -1,10 +1,15 @@
 {
-  if (first && inheritNamespaceToken != null) {
+  if (first && inheritNamespaceToken != null && !wrapToken) {
     rootTokenNamespaces=getNamespacesFromNamespaceToken(scanner.findWithinHorizon(inheritNamespaceTokenPattern,0));
   }
   String next=scanner.findWithinHorizon(tagTokenPattern,0);
   if (next == null) {
     return null;
+  }
+  if (first && wrapToken) {
+    MatchResult mres=scanner.match();
+    wrapHead=((RecordableInputStream)in).getText(mres.start());
+    wrapTail=buildXMLTail(wrapHead);
   }
   if (inheritNamespaceToken != null && rootTokenNamespaces != null) {
     String head=ObjectHelper.before(next,">");
@@ -16,6 +21,10 @@
     StringBuilder sb=new StringBuilder();
     String tail=ObjectHelper.after(next,">");
     next=sb.append(head).append(rootTokenNamespaces).append(empty ? "/>" : ">").append(tail).toString();
+  }
+ else   if (wrapToken) {
+    StringBuilder sb=new StringBuilder();
+    next=sb.append(wrapHead).append(next).append(wrapTail).toString();
   }
   return next;
 }
