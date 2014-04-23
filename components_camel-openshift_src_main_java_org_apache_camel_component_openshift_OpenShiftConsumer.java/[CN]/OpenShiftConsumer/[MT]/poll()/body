@@ -4,18 +4,10 @@
   if (domain == null) {
     return 0;
   }
-  List<IApplication> apps=domain.getApplications();
-  for (  IApplication app : apps) {
-    Exchange exchange=getEndpoint().createExchange(app);
-    try {
-      getProcessor().process(exchange);
-    }
- catch (    Exception e) {
-      exchange.setException(e);
-    }
-    if (exchange.getException() != null) {
-      getExceptionHandler().handleException("Error during processing exchange.",exchange,exchange.getException());
-    }
+  if (getEndpoint().getPollMode().equals(OpenShiftPollMode.all.name())) {
+    return doPollAll(domain);
   }
-  return apps.size();
+ else {
+    return doPollOnChange(domain);
+  }
 }

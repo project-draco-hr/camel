@@ -1,0 +1,79 @@
+{
+  Map<ApplicationState,ApplicationState> newState=new HashMap<ApplicationState,ApplicationState>();
+  List<IApplication> apps=domain.getApplications();
+  for (  IApplication app : apps) {
+    ApplicationState state=new ApplicationState(app.getUUID(),app,OpenShiftHelper.getStateForApplication(app));
+    newState.put(state,state);
+  }
+  Map<ApplicationState,ApplicationState> added=new HashMap<ApplicationState,ApplicationState>();
+  Map<ApplicationState,ApplicationState> removed=new HashMap<ApplicationState,ApplicationState>();
+  Map<ApplicationState,ApplicationState> changed=new HashMap<ApplicationState,ApplicationState>();
+  for (  ApplicationState state : newState.keySet()) {
+    if (!oldState.containsKey(state)) {
+      added.put(state,state);
+    }
+ else {
+      ApplicationState old=oldState.get(state);
+      if (old != null && !old.getState().equals(state.getState())) {
+        state.setOldState(old.getState());
+        changed.put(state,state);
+      }
+    }
+  }
+  for (  ApplicationState state : oldState.keySet()) {
+    if (!newState.containsKey(state)) {
+      removed.put(state,state);
+    }
+  }
+  int processed=0;
+  if (!initialPoll || initialPoll && getEndpoint().getPollMode().equals(OpenShiftPollMode.onChangeWithInitial.name())) {
+    for (    ApplicationState add : added.keySet()) {
+      Exchange exchange=getEndpoint().createExchange(add.getApplication());
+      exchange.getIn().setHeader(OpenShiftConstants.EVENT_TYPE,"added");
+      try {
+        processed++;
+        getProcessor().process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+      if (exchange.getException() != null) {
+        getExceptionHandler().handleException("Error during processing exchange.",exchange,exchange.getException());
+      }
+    }
+    for (    ApplicationState remove : removed.keySet()) {
+      Exchange exchange=getEndpoint().createExchange(remove.getApplication());
+      exchange.getIn().setHeader(OpenShiftConstants.EVENT_TYPE,"removed");
+      try {
+        processed++;
+        getProcessor().process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+      if (exchange.getException() != null) {
+        getExceptionHandler().handleException("Error during processing exchange.",exchange,exchange.getException());
+      }
+    }
+    for (    ApplicationState change : changed.keySet()) {
+      Exchange exchange=getEndpoint().createExchange(change.getApplication());
+      exchange.getIn().setHeader(OpenShiftConstants.EVENT_TYPE,"changed");
+      exchange.getIn().setHeader(OpenShiftConstants.EVENT_OLD_STATE,change.getOldState());
+      exchange.getIn().setHeader(OpenShiftConstants.EVENT_NEW_STATE,change.getState());
+      try {
+        processed++;
+        getProcessor().process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+      if (exchange.getException() != null) {
+        getExceptionHandler().handleException("Error during processing exchange.",exchange,exchange.getException());
+      }
+    }
+  }
+  oldState.clear();
+  oldState.putAll(newState);
+  initialPoll=false;
+  return processed;
+}
