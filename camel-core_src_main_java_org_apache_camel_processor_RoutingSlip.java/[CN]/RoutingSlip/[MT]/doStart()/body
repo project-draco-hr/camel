@@ -1,6 +1,17 @@
 {
   if (producerCache == null) {
-    producerCache=new ProducerCache(this,camelContext);
+    if (cacheSize < 0) {
+      producerCache=new EmptyProducerCache(this,camelContext);
+      log.debug("RoutingSlip {} is not using ProducerCache",this);
+    }
+ else     if (cacheSize == 0) {
+      producerCache=new ProducerCache(this,camelContext);
+      log.debug("RoutingSlip {} using ProducerCache with default cache size",this);
+    }
+ else {
+      producerCache=new ProducerCache(this,camelContext,cacheSize);
+      log.debug("RoutingSlip {} using ProducerCache with cacheSize={}",this,cacheSize);
+    }
   }
   ServiceHelper.startService(producerCache);
 }

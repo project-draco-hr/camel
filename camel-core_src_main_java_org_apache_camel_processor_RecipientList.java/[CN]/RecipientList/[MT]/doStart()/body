@@ -1,6 +1,17 @@
 {
   if (producerCache == null) {
-    producerCache=new ProducerCache(this,camelContext);
+    if (cacheSize < 0) {
+      producerCache=new EmptyProducerCache(this,camelContext);
+      LOG.debug("RecipientList {} is not using ProducerCache",this);
+    }
+ else     if (cacheSize == 0) {
+      producerCache=new ProducerCache(this,camelContext);
+      LOG.debug("RecipientList {} using ProducerCache with default cache size",this);
+    }
+ else {
+      producerCache=new ProducerCache(this,camelContext,cacheSize);
+      LOG.debug("RecipientList {} using ProducerCache with cacheSize={}",this,cacheSize);
+    }
   }
   ServiceHelper.startServices(aggregationStrategy,producerCache);
 }
