@@ -5,10 +5,15 @@
   exchange.setException(exception);
   exchange.getIn().setBody(message);
   exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
+  UnitOfWork uow=null;
   try {
+    uow=consumer.createUoW(exchange);
     bridge.process(exchange);
   }
  catch (  Exception e) {
     fallback.handleException("Error handling exception " + exception.getMessage(),exchange,e);
+  }
+ finally {
+    UnitOfWorkHelper.doneUow(uow,exchange);
   }
 }
