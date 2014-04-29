@@ -1,0 +1,28 @@
+{
+  nodeCnt=new AtomicInteger(1);
+  testDir=new File(TEMP_DIR,getClass().getName() + "-" + System.currentTimeMillis());
+  testDir.mkdirs();
+  String zkDir=testDir.getAbsolutePath() + File.separator + "zookeeper/server1/data";
+  zkServer=new ZkTestServer(zkDir);
+  zkServer.run();
+  System.setProperty("solrcloud.skip.autorecovery","true");
+  System.setProperty("zkHost",zkServer.getZkAddress());
+  System.setProperty("jetty.port","0000");
+  System.setProperty("solr.test.sys.prop1","propone");
+  System.setProperty("solr.test.sys.prop2","proptwo");
+  File solrHomeFile=new File(solrHome);
+  buildZooKeeper(zkServer.getZkHost(),zkServer.getZkAddress(),solrHomeFile,"solrconfig.xml","schema.xml");
+  int aShard=nodeCnt.get();
+  String shardName="shard" + aShard;
+  jetty1=createJetty(solrHomeFile,testDir.getAbsolutePath() + "/shard" + aShard+ "/data",shardName,"solrconfig.xml","schema.xml",true);
+  log.info("Waiting for leader for shard: " + shardName);
+  ZkStateReader zkStateReader=((SolrDispatchFilter)jetty1.getDispatchFilter().getFilter()).getCores().getZkController().getZkStateReader();
+  zkStateReader.getLeaderRetry("collection1",shardName,15000);
+  zkStateReader.updateClusterState(true);
+  ClusterState clusterState=zkStateReader.getClusterState();
+  Map<String,Slice> slices=clusterState.getSlicesMap("collection1");
+  solrClient=new CloudSolrServer(zkServer.getZkAddress());
+  solrClient.setDefaultCollection("collection1");
+  solrClient.deleteByQuery("*:*");
+  solrClient.commit();
+}
