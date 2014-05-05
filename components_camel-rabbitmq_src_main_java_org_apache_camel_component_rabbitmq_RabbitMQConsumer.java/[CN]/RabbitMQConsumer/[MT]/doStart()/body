@@ -1,12 +1,14 @@
 {
   executor=endpoint.createExecutor();
   log.debug("Using executor {}",executor);
-  conn=endpoint.connect(executor);
-  log.debug("Using conn {}",conn);
-  channel=conn.createChannel();
-  log.debug("Using channel {}",channel);
-  channel.exchangeDeclare(endpoint.getExchangeName(),endpoint.getExchangeType(),endpoint.isDurable(),endpoint.isAutoDelete(),new HashMap<String,Object>());
-  channel.queueDeclare(endpoint.getQueue(),endpoint.isDurable(),false,endpoint.isAutoDelete(),null);
-  channel.queueBind(endpoint.getQueue(),endpoint.getExchangeName(),endpoint.getRoutingKey() == null ? "" : endpoint.getRoutingKey());
-  channel.basicConsume(endpoint.getQueue(),endpoint.isAutoAck(),new RabbitConsumer(this,channel));
+  try {
+    openConnectionAndChannel();
+    addConsumer();
+  }
+ catch (  Exception e) {
+    Integer networkRecoveryInterval=getEndpoint().getNetworkRecoveryInterval();
+    final long connectionRetryInterval=networkRecoveryInterval != null && networkRecoveryInterval > 0 ? networkRecoveryInterval : 100L;
+    startConsumerCallable=new StartConsumerCallable(connectionRetryInterval);
+    executor.submit(startConsumerCallable);
+  }
 }
