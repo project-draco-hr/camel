@@ -7,6 +7,14 @@
       from("jetty://http://localhost:{{port}}/otherEndpoint?matchOnUriPrefix=true").transform(header(Exchange.HTTP_URI));
       from("jetty://http://localhost:{{port}}/proxyServer").to("http://localhost:{{port2}}/host?bridgeEndpoint=true");
       from("jetty://http://localhost:{{port2}}/host").transform(header("host"));
+      from("jetty://http://localhost:{{port}}/form?bridgeEndpoint=true").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Message in=exchange.getIn();
+          String request=in.getBody(String.class);
+          exchange.getOut().setBody(request);
+        }
+      }
+);
     }
   }
 ;
