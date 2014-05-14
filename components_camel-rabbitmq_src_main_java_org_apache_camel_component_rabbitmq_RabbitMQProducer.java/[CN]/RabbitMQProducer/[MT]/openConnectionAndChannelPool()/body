@@ -1,0 +1,16 @@
+{
+  log.trace("Creating connection...");
+  this.conn=getEndpoint().connect(executorService);
+  log.debug("Created connection: {}",conn);
+  log.trace("Creating channel pool...");
+  channelPool=new GenericObjectPool<>(new PoolableChannelFactory(this.conn),getChannelPoolMaxSize(),GenericObjectPool.WHEN_EXHAUSTED_BLOCK,getChannelPoolMaxWait());
+  if (getEndpoint().isDeclare()) {
+    execute(new ChannelCallback<Void>(){
+      @Override public Void doWithChannel(      Channel channel) throws Exception {
+        getEndpoint().declareExchangeAndQueue(channel);
+        return null;
+      }
+    }
+);
+  }
+}
