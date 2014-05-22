@@ -2,13 +2,14 @@
   String sql=exchange.getIn().getBody(String.class);
   Connection conn=null;
   Boolean autoCommit=null;
+  boolean shouldCloseResources=true;
   try {
     conn=dataSource.getConnection();
     autoCommit=conn.getAutoCommit();
     if (autoCommit) {
       conn.setAutoCommit(false);
     }
-    createAndExecuteSqlStatement(exchange,sql,conn);
+    shouldCloseResources=createAndExecuteSqlStatement(exchange,sql,conn);
     conn.commit();
   }
  catch (  Exception e) {
@@ -23,7 +24,9 @@
     throw e;
   }
  finally {
-    resetAutoCommit(conn,autoCommit);
-    closeQuietly(conn);
+    if (shouldCloseResources) {
+      resetAutoCommit(conn,autoCommit);
+      closeQuietly(conn);
+    }
   }
 }
