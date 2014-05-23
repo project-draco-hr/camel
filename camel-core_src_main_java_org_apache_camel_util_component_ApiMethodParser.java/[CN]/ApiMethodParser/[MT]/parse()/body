@@ -1,0 +1,72 @@
+{
+  List<ApiMethodModel> result=new ArrayList<ApiMethodModel>();
+  for (  String signature : signatures) {
+    signature=signature.replaceAll("<[^>]*>|public|final","");
+    log.debug("Processing " + signature);
+    final Matcher methodMatcher=METHOD_PATTERN.matcher(signature);
+    if (!methodMatcher.matches()) {
+      throw new IllegalArgumentException("Invalid method signature " + signature);
+    }
+    final Class<?> resultType=forName(methodMatcher.group(1));
+    final String name=methodMatcher.group(2);
+    final String argSignature=methodMatcher.group(3);
+    final List<Argument> arguments=new ArrayList<Argument>();
+    List<Class<?>> argTypes=new ArrayList<Class<?>>();
+    final Matcher argsMatcher=ARGS_PATTERN.matcher(argSignature);
+    while (argsMatcher.find()) {
+      final Class<?> type=forName(argsMatcher.group(1));
+      arguments.add(new Argument(argsMatcher.group(2),type));
+      argTypes.add(type);
+    }
+    Method method;
+    try {
+      method=proxyType.getMethod(name,argTypes.toArray(new Class<?>[argTypes.size()]));
+    }
+ catch (    NoSuchMethodException e) {
+      throw new IllegalArgumentException("Method not found [" + signature + "] in type "+ proxyType.getName());
+    }
+    result.add(new ApiMethodModel(name,resultType,arguments,method));
+  }
+  Collections.sort(result,new Comparator<ApiMethodModel>(){
+    @Override public int compare(    ApiMethodModel model1,    ApiMethodModel model2){
+      final int nameCompare=model1.name.compareTo(model2.name);
+      if (nameCompare != 0) {
+        return nameCompare;
+      }
+ else {
+        final int nArgs1=model1.arguments.size();
+        final int nArgsCompare=nArgs1 - model2.arguments.size();
+        if (nArgsCompare != 0) {
+          return nArgsCompare;
+        }
+ else {
+          for (int i=0; i < nArgs1; i++) {
+            final int argCompare=model1.arguments.get(i).name.compareTo(model2.arguments.get(i).name);
+            if (argCompare != 0) {
+              return argCompare;
+            }
+          }
+          log.warn("Duplicate methods found [" + model1 + "], ["+ model2+ "]");
+          return 0;
+        }
+      }
+    }
+  }
+);
+  final Map<String,Integer> dups=new HashMap<String,Integer>();
+  for (  ApiMethodModel model : result) {
+    String uniqueName=model.name.toUpperCase();
+    Integer suffix=dups.get(uniqueName);
+    if (suffix == null) {
+      dups.put(uniqueName,1);
+    }
+ else {
+      dups.put(uniqueName,suffix + 1);
+      StringBuilder builder=new StringBuilder(uniqueName);
+      builder.append("_").append(suffix);
+      uniqueName=builder.toString();
+    }
+    model.uniqueName=uniqueName;
+  }
+  return result;
+}

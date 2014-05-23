@@ -1,0 +1,28 @@
+{
+  final List<ApiMethodModel> result=new ArrayList<ApiMethodModel>();
+  for (  ApiMethodModel model : super.parse()) {
+    for (    Map.Entry<Pattern,Map<Pattern,List<NameReplacement>>> methodEntry : methodMap.entrySet()) {
+      if (methodEntry.getKey().matcher(model.getName()).matches()) {
+        final List<Argument> updatedArguments=new ArrayList<Argument>();
+        final Map<Pattern,List<NameReplacement>> argMap=methodEntry.getValue();
+        for (        Argument argument : model.getArguments()) {
+          for (          Map.Entry<Pattern,List<NameReplacement>> argEntry : argMap.entrySet()) {
+            final Matcher matcher=argEntry.getKey().matcher(argument.getName());
+            if (matcher.find()) {
+              final List<NameReplacement> adapters=argEntry.getValue();
+              for (              NameReplacement adapter : adapters) {
+                if (adapter.type == null || adapter.type.isAssignableFrom(argument.getType())) {
+                  argument=new Argument(matcher.replaceAll(adapter.replacement),argument.getType());
+                }
+              }
+            }
+          }
+          updatedArguments.add(argument);
+        }
+        model=new ApiMethodModel(model.getName(),model.getUniqueName(),model.getResultType(),updatedArguments,model.getMethod());
+      }
+    }
+    result.add(model);
+  }
+  return result;
+}

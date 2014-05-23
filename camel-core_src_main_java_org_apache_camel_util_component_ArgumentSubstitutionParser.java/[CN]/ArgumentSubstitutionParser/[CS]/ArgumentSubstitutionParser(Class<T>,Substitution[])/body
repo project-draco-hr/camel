@@ -1,0 +1,31 @@
+{
+  super(proxyType);
+  Map<String,Map<String,List<NameReplacement>>> regexMap=new HashMap<String,Map<String,List<NameReplacement>>>();
+  for (  Substitution tuple : substitutions) {
+    tuple.validate();
+    final NameReplacement nameReplacement=new NameReplacement();
+    nameReplacement.replacement=tuple.replacement;
+    if (tuple.argType != null) {
+      nameReplacement.type=forName(tuple.argType);
+    }
+    Map<String,List<NameReplacement>> replacementMap=regexMap.get(tuple.method);
+    if (replacementMap == null) {
+      replacementMap=new HashMap<String,List<NameReplacement>>();
+      regexMap.put(tuple.method,replacementMap);
+    }
+    List<NameReplacement> replacements=replacementMap.get(tuple.argName);
+    if (replacements == null) {
+      replacements=new ArrayList<NameReplacement>();
+      replacementMap.put(tuple.argName,replacements);
+    }
+    replacements.add(nameReplacement);
+  }
+  this.methodMap=new LinkedHashMap<Pattern,Map<Pattern,List<NameReplacement>>>();
+  for (  Map.Entry<String,Map<String,List<NameReplacement>>> method : regexMap.entrySet()) {
+    Map<Pattern,List<NameReplacement>> argMap=new LinkedHashMap<Pattern,List<NameReplacement>>();
+    for (    Map.Entry<String,List<NameReplacement>> arg : method.getValue().entrySet()) {
+      argMap.put(Pattern.compile(arg.getKey()),arg.getValue());
+    }
+    methodMap.put(Pattern.compile(method.getKey()),argMap);
+  }
+}
