@@ -1,0 +1,29 @@
+{
+  final File apiMethodFile=getApiMethodFile();
+  apiMethodFile.getParentFile().mkdirs();
+  VelocityContext context=new VelocityContext();
+  context.put("generatedDate",new Date().toString());
+  context.put("packageName",outPackage);
+  context.put("enumName",getEnumName());
+  context.put("models",models);
+  context.put("proxyType",getProxyType());
+  context.put("helper",getClass());
+  final Template template=engine.getTemplate("/api-method-enum.vm","UTF-8");
+  BufferedWriter writer=null;
+  try {
+    writer=new BufferedWriter(new FileWriter(apiMethodFile));
+    template.merge(context,writer);
+  }
+ catch (  IOException e) {
+    throw new MojoExecutionException(e.getMessage(),e);
+  }
+ finally {
+    if (writer != null) {
+      try {
+        writer.close();
+      }
+ catch (      IOException ignore) {
+      }
+    }
+  }
+}
