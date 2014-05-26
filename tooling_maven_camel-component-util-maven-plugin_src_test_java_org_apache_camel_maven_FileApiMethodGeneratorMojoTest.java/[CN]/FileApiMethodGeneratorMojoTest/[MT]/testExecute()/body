@@ -1,0 +1,21 @@
+{
+  final File outFile=new File(OUT_DIR,PACKAGE_PATH + "/TestProxyApiMethod.java");
+  if (outFile.exists()) {
+    outFile.delete();
+  }
+  final FileApiMethodGeneratorMojo mojo=new FileApiMethodGeneratorMojo();
+  mojo.substitutions=new Substitution[1];
+  mojo.substitutions[0]=new Substitution(".+","(.+)","java.util.List","$1List");
+  mojo.outDir=new File(OUT_DIR);
+  mojo.outPackage=AbstractGeneratorMojo.OUT_PACKAGE;
+  mojo.proxyClass=TestProxy.class.getCanonicalName();
+  mojo.project=new MavenProject((Model)null){
+    @Override public List getRuntimeClasspathElements() throws DependencyResolutionRequiredException {
+      return Collections.EMPTY_LIST;
+    }
+  }
+;
+  mojo.signatureFile=new File("src/test/resources/test-proxy-signatures.txt");
+  mojo.execute();
+  assertTrue("Generated file not found " + outFile.getPath(),outFile.exists());
+}

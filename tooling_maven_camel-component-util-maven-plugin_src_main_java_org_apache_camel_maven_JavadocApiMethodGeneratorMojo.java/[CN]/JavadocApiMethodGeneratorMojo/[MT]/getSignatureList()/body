@@ -1,0 +1,43 @@
+{
+  List<String> result=new ArrayList<String>();
+  final Pattern packages=Pattern.compile(excludePackages);
+  Pattern classes=null;
+  if (excludeClasses != null) {
+    classes=Pattern.compile(excludeClasses);
+  }
+  for (Class aClass=getProxyType(); !packages.matcher(aClass.getPackage().getName()).matches() && (classes == null || !classes.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
+    final String javaDocPath=aClass.getName().replaceAll("\\.","/") + ".html";
+    try {
+      final InputStream inputStream=getProjectClassLoader().getResourceAsStream(javaDocPath);
+      if (inputStream == null) {
+        throw new MojoExecutionException("JavaDoc not found using classpath for " + aClass.getName());
+      }
+      final DTD dtd=DTD.getDTD("html.dtd");
+      final JavadocParser htmlParser=new JavadocParser(dtd,javaDocPath);
+      htmlParser.parse(new InputStreamReader(inputStream,"UTF-8"));
+      final Map<String,String> methodMap=htmlParser.getMethodText();
+      for (      String method : htmlParser.getMethods()) {
+        final int leftBracket=method.indexOf('(');
+        final String name=method.substring(0,leftBracket);
+        final String args=method.substring(leftBracket + 1,method.length() - 1);
+        String[] types;
+        if (args.isEmpty()) {
+          types=new String[0];
+        }
+ else {
+          types=args.split(",");
+        }
+        final String resultType=getResultType(aClass,name,types);
+        if (resultType != null) {
+          final StringBuilder signature=new StringBuilder(resultType);
+          signature.append(" ").append(name).append(methodMap.get(method));
+          result.add(signature.toString());
+        }
+      }
+    }
+ catch (    IOException e) {
+      throw new MojoExecutionException(e.getMessage(),e);
+    }
+  }
+  return result;
+}

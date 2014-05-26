@@ -1,0 +1,29 @@
+{
+  Class<?>[] argTypes=new Class<?>[types.length];
+  final ClassLoader classLoader=getProjectClassLoader();
+  for (int i=0; i < types.length; i++) {
+    try {
+      try {
+        argTypes[i]=ApiMethodParser.forName(types[i].trim(),classLoader);
+      }
+ catch (      ClassNotFoundException e) {
+        throw new MojoExecutionException(e.getMessage(),e);
+      }
+    }
+ catch (    IllegalArgumentException e) {
+      throw new MojoExecutionException(e.getCause().getMessage(),e.getCause());
+    }
+  }
+  try {
+    final Method method=aClass.getMethod(name,argTypes);
+    if ((method.getModifiers() & Modifier.PUBLIC) != 0) {
+      return method.getReturnType().getCanonicalName();
+    }
+ else {
+      return null;
+    }
+  }
+ catch (  NoSuchMethodException e) {
+    throw new MojoExecutionException(e.getMessage(),e);
+  }
+}

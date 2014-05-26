@@ -1,0 +1,31 @@
+{
+  if (apis == null || apis.length == 0) {
+    throw new MojoExecutionException("One or more API proxies are required");
+  }
+  for (int i=0; i < apis.length; i++) {
+    apis[i].validate();
+    AbstractApiMethodGeneratorMojo generator;
+    if (apis[i].getSignatureFile() != null) {
+      generator=new FileApiMethodGeneratorMojo();
+      ((FileApiMethodGeneratorMojo)generator).signatureFile=apis[i].getSignatureFile();
+    }
+ else {
+      generator=new JavadocApiMethodGeneratorMojo();
+      ((JavadocApiMethodGeneratorMojo)generator).excludePackages=apis[i].getExcludePackages();
+      ((JavadocApiMethodGeneratorMojo)generator).excludeClasses=apis[i].getExcludeClasses();
+    }
+    generator.proxyClass=apis[i].getProxyClass();
+    generator.substitutions=apis[i].getSubstitutions();
+    generator.outDir=outDir;
+    generator.outPackage=outPackage;
+    generator.setEngine(getEngine());
+    generator.setProjectClassLoader(getProjectClassLoader());
+    try {
+      generator.execute();
+    }
+ catch (    AbstractMojoExecutionException e) {
+      throw new MojoExecutionException("Error generating ApiMethod for " + apis[i].getProxyClass() + ": "+ e.getMessage(),e);
+    }
+  }
+  mergeTemplate(getApiCollectionContext(),getApiCollectionFile(),"/api-collection.vm");
+}
