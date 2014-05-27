@@ -1,0 +1,41 @@
+{
+  StringBuilder sb=new StringBuilder();
+  if (wrap) {
+    for (int i=0; i < segments.size(); i++) {
+      sb.append(segments.get(i));
+    }
+    sb.append(token);
+    for (int i=path.size() - 1; i >= 0; i--) {
+      QName q=path.get(i);
+      sb.append("</").append(makeName(q)).append(">");
+    }
+  }
+ else {
+    final String stag=token.substring(0,token.indexOf('>') + 1);
+    Set<String> skip=new HashSet<String>();
+    Matcher matcher=NAMESPACE_PATTERN.matcher(stag);
+    char quote=0;
+    while (matcher.find()) {
+      String prefix=matcher.group(1);
+      if (prefix.length() > 0) {
+        prefix=prefix.substring(1);
+      }
+      skip.add(prefix);
+      if (quote == 0) {
+        quote=matcher.group(2).charAt(0);
+      }
+    }
+    if (quote == 0) {
+      quote='"';
+    }
+    boolean empty=stag.endsWith("/>");
+    sb.append(token.substring(0,stag.length() - (empty ? 2 : 1)));
+    for (    Entry<String,String> e : getCurrentNamespaceBindings().entrySet()) {
+      if (!skip.contains(e.getKey())) {
+        sb.append(" xmlns:").append(e.getKey()).append("=").append(quote).append(e.getValue()).append(quote);
+      }
+    }
+    sb.append(token.substring(stag.length() - (empty ? 2 : 1)));
+  }
+  return sb.toString();
+}
