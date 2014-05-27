@@ -1,6 +1,7 @@
 {
   Statement stmt=null;
   ResultSet rs=null;
+  boolean shouldCloseResources=true;
   try {
     stmt=conn.createStatement();
     if (parameters != null && !parameters.isEmpty()) {
@@ -30,6 +31,7 @@
     if (stmtExecutionResult) {
       rs=stmt.getResultSet();
       setResultSet(exchange,rs);
+      shouldCloseResources=false;
     }
  else {
       int updateCount=stmt.getUpdateCount();
@@ -40,7 +42,10 @@
     }
   }
   finally {
-    closeQuietly(rs);
-    closeQuietly(stmt);
+    if (shouldCloseResources) {
+      closeQuietly(rs);
+      closeQuietly(stmt);
+    }
   }
+  return shouldCloseResources;
 }

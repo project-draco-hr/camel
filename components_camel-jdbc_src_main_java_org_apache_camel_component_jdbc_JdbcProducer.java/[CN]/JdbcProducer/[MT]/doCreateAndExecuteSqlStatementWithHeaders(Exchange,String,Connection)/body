@@ -1,6 +1,7 @@
 {
   PreparedStatement ps=null;
   ResultSet rs=null;
+  boolean shouldCloseResources=true;
   try {
     final String preparedQuery=getEndpoint().getPrepareStatementStrategy().prepareQuery(sql,getEndpoint().isAllowNamedParameters());
     Boolean shouldRetrieveGeneratedKeys=exchange.getIn().getHeader(JdbcConstants.JDBC_RETRIEVE_GENERATED_KEYS,false,Boolean.class);
@@ -32,6 +33,7 @@
     if (stmtExecutionResult) {
       rs=ps.getResultSet();
       setResultSet(exchange,rs);
+      shouldCloseResources=false;
     }
  else {
       int updateCount=ps.getUpdateCount();
@@ -42,7 +44,10 @@
     }
   }
   finally {
-    closeQuietly(rs);
-    closeQuietly(ps);
+    if (shouldCloseResources) {
+      closeQuietly(rs);
+      closeQuietly(ps);
+    }
   }
+  return shouldCloseResources;
 }
