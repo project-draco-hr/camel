@@ -1,16 +1,15 @@
 {
   when(endpoint.getIncrement()).thenReturn(INCREMENT);
   when(endpoint.getDecrement()).thenReturn(null);
-  when(endpoint.getLongHeader(exchange,HEADER_COUNTER_INCREMENT,INCREMENT)).thenReturn(INCREMENT);
-  when(endpoint.getLongHeader(exchange,HEADER_COUNTER_DECREMENT,null)).thenReturn(null);
-  producer.process(exchange);
-  inOrder.verify(endpoint,times(1)).getMetricsName(exchange);
-  inOrder.verify(endpoint,times(1)).getRegistry();
-  inOrder.verify(registry,times(1)).counter(ENDPOINT_NAME);
+  when(in.getHeader(HEADER_COUNTER_INCREMENT,INCREMENT,Long.class)).thenReturn(INCREMENT);
+  when(in.getHeader(HEADER_COUNTER_DECREMENT,null,Long.class)).thenReturn(null);
+  producer.doProcess(exchange,endpoint,registry,METRICS_NAME);
+  inOrder.verify(exchange,times(1)).getIn();
+  inOrder.verify(registry,times(1)).counter(METRICS_NAME);
   inOrder.verify(endpoint,times(1)).getIncrement();
   inOrder.verify(endpoint,times(1)).getDecrement();
-  inOrder.verify(endpoint,times(1)).getLongHeader(exchange,HEADER_COUNTER_INCREMENT,INCREMENT);
-  inOrder.verify(endpoint,times(1)).getLongHeader(exchange,HEADER_COUNTER_DECREMENT,null);
+  inOrder.verify(in,times(1)).getHeader(HEADER_COUNTER_INCREMENT,INCREMENT,Long.class);
+  inOrder.verify(in,times(1)).getHeader(HEADER_COUNTER_DECREMENT,null,Long.class);
   inOrder.verify(counter,times(1)).inc(INCREMENT);
   inOrder.verifyNoMoreInteractions();
 }
