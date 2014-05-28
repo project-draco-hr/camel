@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure(){
+      DataFormat code1=new BarcodeDataFormat();
+      from("direct:code1").marshal(code1).to(FILE_ENDPOINT);
+      DataFormat code2=new BarcodeDataFormat(200,200);
+      from("direct:code2").marshal(code2).to(FILE_ENDPOINT);
+      DataFormat code3=new BarcodeDataFormat(BarcodeImageType.JPG);
+      from("direct:code3").marshal(code3).to(FILE_ENDPOINT);
+      DataFormat code4=new BarcodeDataFormat(200,200,BarcodeImageType.JPG,BarcodeFormat.PDF_417);
+      from("direct:code4").marshal(code4).to(FILE_ENDPOINT);
+      from(FILE_ENDPOINT + "?noop=true").multicast().to("direct:marshall","mock:image");
+      from("direct:marshall").unmarshal(code1).to("log:OUT").to("mock:out");
+    }
+  }
+;
+}
