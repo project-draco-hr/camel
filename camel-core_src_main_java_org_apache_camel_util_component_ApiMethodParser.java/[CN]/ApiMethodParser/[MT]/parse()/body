@@ -28,6 +28,23 @@
     result.add(new ApiMethodModel(name,resultType,arguments,method));
   }
   result=processResults(result);
+  Map<String,Class<?>> allArguments=new HashMap<String,Class<?>>();
+  for (  ApiMethodModel model : result) {
+    for (    Argument argument : model.getArguments()) {
+      String name=argument.getName();
+      Class<?> argClass=allArguments.get(name);
+      Class<?> type=argument.getType();
+      if (argClass == null) {
+        allArguments.put(name,type);
+      }
+ else {
+        if (argClass != type) {
+          throw new IllegalArgumentException("Argument [" + name + "] is used in multiple methods with different types "+ argClass.getCanonicalName()+ ", "+ type.getCanonicalName());
+        }
+      }
+    }
+  }
+  allArguments.clear();
   Collections.sort(result,new Comparator<ApiMethodModel>(){
     @Override public int compare(    ApiMethodModel model1,    ApiMethodModel model2){
       final int nameCompare=model1.name.compareTo(model2.name);
