@@ -1,11 +1,16 @@
 {
   Map<String,String> result=new HashMap<String,String>();
-  final Pattern packages=Pattern.compile(excludePackages);
-  Pattern classes=null;
+  final Pattern packagePatterns=Pattern.compile(excludePackages);
+  Pattern classPatterns=null;
   if (excludeClasses != null) {
-    classes=Pattern.compile(excludeClasses);
+    classPatterns=Pattern.compile(excludeClasses);
   }
-  for (Class aClass=getProxyType(); aClass != null && !packages.matcher(aClass.getPackage().getName()).matches() && (classes == null || !classes.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
+  Pattern methodPatterns=null;
+  if (excludeMethods != null) {
+    methodPatterns=Pattern.compile(excludeMethods);
+  }
+  for (Class aClass=getProxyType(); aClass != null && !packagePatterns.matcher(aClass.getPackage().getName()).matches() && (classPatterns == null || !classPatterns.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
+    LOG.debug("Processing " + aClass.getName());
     final String javaDocPath=aClass.getName().replaceAll("\\.","/") + ".html";
     InputStream inputStream=null;
     try {
@@ -19,7 +24,7 @@
       htmlParser.parse(new InputStreamReader(inputStream,"UTF-8"));
       final Map<String,String> methodMap=htmlParser.getMethodText();
       for (      String method : htmlParser.getMethods()) {
-        if (!result.containsKey(method)) {
+        if (!result.containsKey(method) && (methodPatterns == null || !methodPatterns.matcher(method).find())) {
           final int leftBracket=method.indexOf('(');
           final String name=method.substring(0,leftBracket);
           final String args=method.substring(leftBracket + 1,method.length() - 1);
