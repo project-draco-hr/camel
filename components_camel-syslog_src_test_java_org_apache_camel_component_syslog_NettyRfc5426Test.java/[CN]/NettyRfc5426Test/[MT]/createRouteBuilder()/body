@@ -1,10 +1,11 @@
 {
+  context().getRegistry(JndiRegistry.class).bind("rfc5426FrameDecoder",new Rfc5426FrameDecoder());
   return new RouteBuilder(){
-    public void configure() throws Exception {
+    @Override public void configure() throws Exception {
       context.setTracing(true);
       DataFormat syslogDataFormat=new SyslogDataFormat();
-      from("netty:udp://127.0.0.1:" + serverPort + "?sync=false&allowDefaultCodec=false").unmarshal(syslogDataFormat).process(new Processor(){
-        public void process(        Exchange ex){
+      from(uri).unmarshal(syslogDataFormat).process(new Processor(){
+        @Override public void process(        Exchange ex){
           assertTrue(ex.getIn().getBody() instanceof SyslogMessage);
         }
       }
