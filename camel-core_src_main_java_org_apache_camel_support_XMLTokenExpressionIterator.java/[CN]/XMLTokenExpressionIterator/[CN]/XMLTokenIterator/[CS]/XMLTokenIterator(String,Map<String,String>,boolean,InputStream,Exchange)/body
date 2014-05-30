@@ -1,12 +1,12 @@
 {
   final String[] sl=path.substring(1).split("/");
-  this.splitpath=new QName[sl.length];
+  this.splitpath=new AttributedQName[sl.length];
   for (int i=0; i < sl.length; i++) {
     String s=sl[i];
     if (s.length() > 0) {
       int d=s.indexOf(':');
       String pfx=d > 0 ? s.substring(0,d) : "";
-      this.splitpath[i]=new QName(nsmap.get(pfx),d > 0 ? s.substring(d + 1) : s,pfx);
+      this.splitpath[i]=new AttributedQName("*".equals(pfx) ? "*" : nsmap.get(pfx),d > 0 ? s.substring(d + 1) : s,pfx);
     }
   }
   this.wrap=wrap;
@@ -14,7 +14,8 @@
   this.in=new RecordableInputStream(in,charset);
   this.reader=new StaxConverter().createXMLStreamReader(this.in,exchange);
   LOG.trace("reader.class: {}",reader.getClass());
-  if (reader.getLocation().getCharacterOffset() < 0) {
+  int coff=reader.getLocation().getCharacterOffset();
+  if (coff != 0) {
     LOG.error("XMLStreamReader {} not supporting Location");
     throw new XMLStreamException("reader not supporting Location");
   }
