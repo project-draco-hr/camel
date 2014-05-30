@@ -1,43 +1,53 @@
 {
-  List<String> result=new ArrayList<String>();
+  Map<String,String> result=new HashMap<String,String>();
   final Pattern packages=Pattern.compile(excludePackages);
   Pattern classes=null;
   if (excludeClasses != null) {
     classes=Pattern.compile(excludeClasses);
   }
-  for (Class aClass=getProxyType(); !packages.matcher(aClass.getPackage().getName()).matches() && (classes == null || !classes.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
+  for (Class aClass=getProxyType(); aClass != null && !packages.matcher(aClass.getPackage().getName()).matches() && (classes == null || !classes.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
     final String javaDocPath=aClass.getName().replaceAll("\\.","/") + ".html";
+    InputStream inputStream=null;
     try {
-      final InputStream inputStream=getProjectClassLoader().getResourceAsStream(javaDocPath);
+      inputStream=getProjectClassLoader().getResourceAsStream(javaDocPath);
       if (inputStream == null) {
-        throw new MojoExecutionException("JavaDoc not found using classpath for " + aClass.getName());
+        LOG.debug("JavaDoc not found on classpath for " + aClass.getName());
+        break;
       }
       final DTD dtd=DTD.getDTD("html.dtd");
       final JavadocParser htmlParser=new JavadocParser(dtd,javaDocPath);
       htmlParser.parse(new InputStreamReader(inputStream,"UTF-8"));
       final Map<String,String> methodMap=htmlParser.getMethodText();
       for (      String method : htmlParser.getMethods()) {
-        final int leftBracket=method.indexOf('(');
-        final String name=method.substring(0,leftBracket);
-        final String args=method.substring(leftBracket + 1,method.length() - 1);
-        String[] types;
-        if (args.isEmpty()) {
-          types=new String[0];
-        }
+        if (!result.containsKey(method)) {
+          final int leftBracket=method.indexOf('(');
+          final String name=method.substring(0,leftBracket);
+          final String args=method.substring(leftBracket + 1,method.length() - 1);
+          String[] types;
+          if (args.isEmpty()) {
+            types=new String[0];
+          }
  else {
-          types=args.split(",");
-        }
-        final String resultType=getResultType(aClass,name,types);
-        if (resultType != null) {
-          final StringBuilder signature=new StringBuilder(resultType);
-          signature.append(" ").append(name).append(methodMap.get(method));
-          result.add(signature.toString());
+            types=args.split(",");
+          }
+          final String resultType=getResultType(aClass,name,types);
+          if (resultType != null) {
+            final StringBuilder signature=new StringBuilder(resultType);
+            signature.append(" ").append(name).append(methodMap.get(method));
+            result.put(method,signature.toString());
+          }
         }
       }
     }
  catch (    IOException e) {
       throw new MojoExecutionException(e.getMessage(),e);
     }
+ finally {
+      IOUtil.close(inputStream);
+    }
   }
-  return result;
+  if (result.isEmpty()) {
+    throw new MojoExecutionException("No public non-static methods found, " + "make sure Javadoc is available as project test dependency");
+  }
+  return new ArrayList<String>(result.values());
 }
