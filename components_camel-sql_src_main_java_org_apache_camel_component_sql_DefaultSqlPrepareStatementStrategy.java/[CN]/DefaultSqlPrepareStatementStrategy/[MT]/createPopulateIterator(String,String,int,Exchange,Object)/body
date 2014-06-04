@@ -1,48 +1,6 @@
 {
   if (hasNamedParameters(query)) {
-    try {
-      final Map<?,?> bodyMap=exchange.getContext().getTypeConverter().tryConvertTo(Map.class,value);
-      final Map<?,?> headerMap=exchange.getIn().hasHeaders() ? exchange.getIn().getHeaders() : null;
-      return new Iterator<Object>(){
-        private NamedQueryParser parser=new NamedQueryParser(query);
-        private Object nextParam;
-        private boolean done;
-        @Override public boolean hasNext(){
-          if (done) {
-            return false;
-          }
-          if (nextParam == null) {
-            nextParam=parser.next();
-            if (nextParam == null) {
-              done=true;
-            }
-          }
-          return nextParam != null;
-        }
-        @Override public Object next(){
-          if (!hasNext()) {
-            throw new NoSuchElementException();
-          }
-          boolean contains=bodyMap != null && bodyMap.containsKey(nextParam);
-          contains|=headerMap != null && headerMap.containsKey(nextParam);
-          if (!contains) {
-            throw new RuntimeExchangeException("Cannot find key [" + nextParam + "] in message body or headers to use when setting named parameter in query ["+ query+ "]",exchange);
-          }
-          Object next=bodyMap != null ? bodyMap.get(nextParam) : null;
-          if (next == null) {
-            next=headerMap != null ? headerMap.get(nextParam) : null;
-          }
-          nextParam=null;
-          return next;
-        }
-        @Override public void remove(){
-        }
-      }
-;
-    }
- catch (    Exception e) {
-      throw new SQLException("The message body must be a java.util.Map type when using named parameters in the query: " + query,e);
-    }
+    return new PopulateIterator(query,exchange,value);
   }
  else {
     if (expectedParams == 1 && value instanceof String) {
