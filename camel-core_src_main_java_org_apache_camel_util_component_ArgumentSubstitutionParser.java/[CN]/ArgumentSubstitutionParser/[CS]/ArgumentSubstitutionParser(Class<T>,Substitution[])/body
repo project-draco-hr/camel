@@ -1,22 +1,23 @@
 {
   super(proxyType);
   Map<String,Map<String,List<NameReplacement>>> regexMap=new LinkedHashMap<String,Map<String,List<NameReplacement>>>();
-  for (  Substitution tuple : substitutions) {
-    tuple.validate();
+  for (  Substitution substitution : substitutions) {
+    substitution.validate();
     final NameReplacement nameReplacement=new NameReplacement();
-    nameReplacement.replacement=tuple.replacement;
-    if (tuple.argType != null) {
-      nameReplacement.type=forName(tuple.argType);
+    nameReplacement.replacement=substitution.replacement;
+    if (substitution.argType != null) {
+      nameReplacement.typePattern=Pattern.compile(substitution.argType);
     }
-    Map<String,List<NameReplacement>> replacementMap=regexMap.get(tuple.method);
+    nameReplacement.replaceWithType=substitution.replaceWithType;
+    Map<String,List<NameReplacement>> replacementMap=regexMap.get(substitution.method);
     if (replacementMap == null) {
       replacementMap=new LinkedHashMap<String,List<NameReplacement>>();
-      regexMap.put(tuple.method,replacementMap);
+      regexMap.put(substitution.method,replacementMap);
     }
-    List<NameReplacement> replacements=replacementMap.get(tuple.argName);
+    List<NameReplacement> replacements=replacementMap.get(substitution.argName);
     if (replacements == null) {
       replacements=new ArrayList<NameReplacement>();
-      replacementMap.put(tuple.argName,replacements);
+      replacementMap.put(substitution.argName,replacements);
     }
     replacements.add(nameReplacement);
   }
