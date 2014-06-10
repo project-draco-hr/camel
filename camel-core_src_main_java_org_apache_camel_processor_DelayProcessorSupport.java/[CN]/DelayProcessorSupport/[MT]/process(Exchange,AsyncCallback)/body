@@ -17,47 +17,5 @@
     callback.done(true);
     return true;
   }
-  if (!isAsyncDelayed() || exchange.isTransacted()) {
-    try {
-      delay(delay,exchange);
-      return processor.process(exchange,callback);
-    }
- catch (    Exception e) {
-      exchange.setException(e);
-      callback.done(true);
-      return true;
-    }
-  }
- else {
-    delayedCount.incrementAndGet();
-    ProcessCall call=new ProcessCall(exchange,callback);
-    try {
-      log.trace("Scheduling delayed task to run in {} millis for exchangeId: {}",delay,exchange.getExchangeId());
-      executorService.schedule(call,delay,TimeUnit.MILLISECONDS);
-      return false;
-    }
- catch (    RejectedExecutionException e) {
-      delayedCount.decrementAndGet();
-      if (isCallerRunsWhenRejected()) {
-        if (!isRunAllowed()) {
-          exchange.setException(new RejectedExecutionException());
-        }
- else {
-          log.debug("Scheduling rejected task, so letting caller run, delaying at first for {} millis for exchangeId: {}",delay,exchange.getExchangeId());
-          try {
-            delay(delay,exchange);
-          }
- catch (          InterruptedException ie) {
-            exchange.setException(ie);
-          }
-          return processor.process(exchange,callback);
-        }
-      }
- else {
-        exchange.setException(e);
-      }
-      callback.done(true);
-      return true;
-    }
-  }
+  return processDelay(exchange,callback,delay);
 }

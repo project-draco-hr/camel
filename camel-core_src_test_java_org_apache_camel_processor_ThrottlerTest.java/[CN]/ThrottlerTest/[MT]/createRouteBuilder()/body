@@ -1,10 +1,12 @@
 {
   return new RouteBuilder(){
     public void configure(){
+      onException(RejectedExecutionException.class).handled(true).to("mock:error");
       from("seda:a").throttle(3).timePeriodMillis(10000).to("log:result","mock:result");
       from("direct:a").throttle(1).timePeriodMillis(INTERVAL).to("log:result","mock:result");
       from("direct:expressionConstant").throttle(constant(1)).timePeriodMillis(INTERVAL).to("log:result","mock:result");
       from("direct:expressionHeader").throttle(header("throttleValue")).timePeriodMillis(INTERVAL).to("log:result","mock:result");
+      from("direct:start").throttle(2).timePeriodMillis(10000).rejectExecution(true).to("log:result","mock:result");
     }
   }
 ;
