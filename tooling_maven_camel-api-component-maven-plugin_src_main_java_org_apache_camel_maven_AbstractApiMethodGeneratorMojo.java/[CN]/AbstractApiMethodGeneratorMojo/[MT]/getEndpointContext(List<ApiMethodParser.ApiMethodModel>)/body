@@ -6,12 +6,14 @@
   Map<String,Class<?>> parameters=new TreeMap<String,Class<?>>();
   for (  ApiMethodParser.ApiMethodModel model : models) {
     for (    ApiMethodParser.Argument argument : model.getArguments()) {
-      if (!parameters.containsKey(argument.getName())) {
-        Class<?> type=argument.getType();
+      final String name=argument.getName();
+      Class<?> type=argument.getType();
+      final String typeName=type.getCanonicalName();
+      if (!parameters.containsKey(name) && (propertyNamePattern == null || !propertyNamePattern.matcher(name).matches()) && (propertyTypePattern == null || !propertyTypePattern.matcher(typeName).matches())) {
         if (type.isPrimitive()) {
           type=ClassUtils.primitiveToWrapper(type);
         }
-        parameters.put(argument.getName(),type);
+        parameters.put(name,type);
       }
     }
   }
