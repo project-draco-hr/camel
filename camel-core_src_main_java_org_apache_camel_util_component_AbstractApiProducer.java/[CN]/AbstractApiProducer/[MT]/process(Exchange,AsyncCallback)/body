@@ -1,0 +1,33 @@
+{
+  final Map<String,Object> properties=new HashMap<String,Object>();
+  propertiesHelper.getEndpointProperties(endpoint.getConfiguration(),properties);
+  propertiesHelper.getExchangeProperties(exchange,properties);
+  interceptProperties(properties);
+  final Enum<? extends ApiMethod> method=findMethod(exchange,properties);
+  if (method == null) {
+    callback.done(true);
+    return true;
+  }
+  Runnable invocation=new Runnable(){
+    @Override public void run(){
+      try {
+        if (log.isDebugEnabled()) {
+          log.debug("Invoking operation {} with {}",((ApiMethod)method).getName(),properties.keySet());
+        }
+        Object result=doInvokeMethod(method,properties);
+        exchange.getOut().setBody(result);
+        exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+        doProcessResult(exchange);
+      }
+ catch (      Throwable t) {
+        exchange.setException(ObjectHelper.wrapRuntimeCamelException(t));
+      }
+ finally {
+        callback.done(false);
+      }
+    }
+  }
+;
+  getExecutorService(getEndpoint().getCamelContext()).submit(invocation);
+  return false;
+}
