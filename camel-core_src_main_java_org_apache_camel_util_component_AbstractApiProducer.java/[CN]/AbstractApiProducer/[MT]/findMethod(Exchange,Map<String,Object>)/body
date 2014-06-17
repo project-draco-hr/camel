@@ -1,9 +1,9 @@
 {
-  Enum<? extends ApiMethod> method=null;
-  final List<Enum<? extends ApiMethod>> candidates=endpoint.getCandidates();
+  ApiMethod method=null;
+  final List<ApiMethod> candidates=endpoint.getCandidates();
   if (processInBody(exchange,properties)) {
     final Set<String> argNames=properties.keySet();
-    final List<Enum<? extends ApiMethod>> filteredMethods=methodHelper.filterMethods(candidates,ApiMethodHelper.MatchType.SUPER_SET,argNames.toArray(new String[argNames.size()]));
+    final List<ApiMethod> filteredMethods=ApiMethodHelper.filterMethods(candidates,ApiMethodHelper.MatchType.SUPER_SET,argNames.toArray(new String[argNames.size()]));
     if (filteredMethods.isEmpty()) {
       final Set<String> missing=methodHelper.getMissingProperties(endpoint.getMethodName(),argNames);
       throw new RuntimeCamelException(String.format("Missing properties for %s, need one or more from %s",endpoint.getMethodName(),missing));
@@ -12,7 +12,7 @@
       method=filteredMethods.get(0);
     }
  else {
-      method=methodHelper.getHighestPriorityMethod(filteredMethods);
+      method=ApiMethodHelper.getHighestPriorityMethod(filteredMethods);
       log.warn("Calling highest priority operation {} from operations {}",method,filteredMethods);
     }
   }

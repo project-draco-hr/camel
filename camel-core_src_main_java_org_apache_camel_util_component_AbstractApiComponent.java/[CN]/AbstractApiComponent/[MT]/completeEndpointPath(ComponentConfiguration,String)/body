@@ -1,0 +1,81 @@
+{
+  final List<String> result=new ArrayList<String>();
+  final Set<String> apiNames=collection.getApiNames();
+  boolean useDefaultName=apiNames.size() == 1 && apiNames.contains("");
+  completionText=ObjectHelper.isEmpty(completionText) ? "" : completionText;
+  final int prefixEnd=completionText.indexOf('/');
+  final int pathEnd=completionText.lastIndexOf('?');
+  final Map<E,? extends ApiMethodHelper<? extends ApiMethod>> apiHelpers=collection.getApiHelpers();
+  if (prefixEnd == -1 && pathEnd == -1) {
+    if (useDefaultName) {
+      final Set<Class<? extends ApiMethod>> apiMethods=collection.getApiMethods().keySet();
+      final Class<? extends ApiMethod> apiMethod=apiMethods.iterator().next();
+      final ApiMethodHelper<? extends ApiMethod> helper=apiHelpers.values().iterator().next();
+      getCompletedMethods(result,completionText,apiMethod,helper);
+    }
+ else {
+      for (      String name : apiNames) {
+        if (!name.isEmpty() || name.startsWith(completionText)) {
+          result.add(name);
+        }
+      }
+    }
+  }
+ else   if (prefixEnd != -1 && pathEnd == -1) {
+    final E apiName=getApiNameOrNull(completionText.substring(0,prefixEnd));
+    if (apiName != null) {
+      final ApiMethodHelper<? extends ApiMethod> helper=apiHelpers.get(apiName);
+      completionText=completionText.substring(prefixEnd + 1);
+      for (      Map.Entry<Class<? extends ApiMethod>,E> entry : collection.getApiMethods().entrySet()) {
+        if (entry.getValue().equals(apiName)) {
+          getCompletedMethods(result,completionText,entry.getKey(),helper);
+          break;
+        }
+      }
+    }
+  }
+ else {
+    final int lastParam=completionText.lastIndexOf('&');
+    String optionText;
+    if (lastParam != -1) {
+      optionText=completionText.substring(lastParam + 1);
+    }
+ else {
+      optionText=completionText.substring(pathEnd);
+    }
+    String methodName=null;
+    ApiMethodHelper<? extends ApiMethod> helper=null;
+    if (useDefaultName) {
+      methodName=completionText.substring(0,pathEnd);
+      helper=apiHelpers.values().iterator().next();
+    }
+ else {
+      final String[] pathElements=completionText.substring(0,pathEnd).split("/");
+      if (pathElements.length == 2) {
+        final E apiName=getApiNameOrNull(pathElements[0]);
+        methodName=pathElements[1];
+        helper=collection.getHelper(apiName);
+      }
+    }
+    if (helper != null && !ObjectHelper.isEmpty(methodName)) {
+      Set<String> existingOptions=configuration.getParameters().keySet();
+      try {
+        final List arguments=helper.getArguments(methodName);
+        final int nArgs=arguments.size();
+        final Set<String> options=new HashSet<String>();
+        for (int i=1; i < nArgs; i+=2) {
+          options.add((String)arguments.get(i));
+        }
+        options.removeAll(existingOptions);
+        for (        String option : options) {
+          if (option.startsWith(optionText)) {
+            result.add(option);
+          }
+        }
+      }
+ catch (      IllegalArgumentException ignore) {
+      }
+    }
+  }
+  return result;
+}
