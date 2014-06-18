@@ -1,0 +1,19 @@
+{
+  String augmentedKey=getAugmentedKey(key);
+  boolean shouldFallback=fallbackToUnaugmentedProperty && !key.equals(augmentedKey);
+  String value=doGetPropertyValue(augmentedKey);
+  if (value == null && shouldFallback) {
+    log.debug("Property with key [{}] not found, attempting with unaugmented key: {}",augmentedKey,key);
+    value=doGetPropertyValue(key);
+  }
+  if (value == null) {
+    StringBuilder esb=new StringBuilder();
+    esb.append("Property with key [").append(augmentedKey).append("] ");
+    if (shouldFallback) {
+      esb.append("(and original key [").append(key).append("]) ");
+    }
+    esb.append("not found in properties from text: ").append(input);
+    throw new IllegalArgumentException(esb.toString());
+  }
+  return value;
+}
