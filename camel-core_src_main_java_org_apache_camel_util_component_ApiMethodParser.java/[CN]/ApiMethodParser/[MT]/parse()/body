@@ -1,21 +1,35 @@
 {
   List<ApiMethodModel> result=new ArrayList<ApiMethodModel>();
   for (  String signature : signatures) {
-    signature=signature.replaceAll("<[^>]*>|\\s*(public|final|synchronized|native)\\s*","");
+    signature=signature.replaceAll(METHOD_PREFIX,"$4 $5(");
+    signature=signature.replaceAll("(\\(|,\\s*)final\\s+","$1");
+    signature=signature.replaceAll("\\s*<\\s*","<").replaceAll("\\s*>",">");
     log.debug("Processing " + signature);
     final Matcher methodMatcher=METHOD_PATTERN.matcher(signature);
     if (!methodMatcher.matches()) {
       throw new IllegalArgumentException("Invalid method signature " + signature);
     }
-    final Class<?> resultType=forName(methodMatcher.group(1));
+    final String resultTypeWithArgs=methodMatcher.group(1);
+    final Matcher resultMatcher=GENERIC_ARG_PATTERN.matcher(resultTypeWithArgs);
+    final Class<?> resultType=(resultMatcher.matches()) ? forName(resultMatcher.group(1)) : forName(resultTypeWithArgs);
     final String name=methodMatcher.group(2);
     final String argSignature=methodMatcher.group(3);
     final List<Argument> arguments=new ArrayList<Argument>();
     List<Class<?>> argTypes=new ArrayList<Class<?>>();
     final Matcher argsMatcher=ARGS_PATTERN.matcher(argSignature);
     while (argsMatcher.find()) {
-      final Class<?> type=forName(argsMatcher.group(1));
-      arguments.add(new Argument(argsMatcher.group(2),type));
+      final String argTypeWithParams=argsMatcher.group(1);
+      final Matcher genericMatcher=GENERIC_ARG_PATTERN.matcher(argTypeWithParams);
+      Class<?> type;
+      String typeArgs=null;
+      if (genericMatcher.matches()) {
+        type=forName(genericMatcher.group(1));
+        typeArgs=genericMatcher.group(2);
+      }
+ else {
+        type=forName(argTypeWithParams);
+      }
+      arguments.add(new Argument(argsMatcher.group(2),type,typeArgs));
       argTypes.add(type);
     }
     Method method;

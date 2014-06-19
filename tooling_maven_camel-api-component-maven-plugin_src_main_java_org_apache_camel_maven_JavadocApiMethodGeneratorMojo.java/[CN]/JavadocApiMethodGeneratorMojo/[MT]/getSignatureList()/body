@@ -1,14 +1,8 @@
 {
   Map<String,String> result=new HashMap<String,String>();
   final Pattern packagePatterns=Pattern.compile(excludePackages);
-  Pattern classPatterns=null;
-  if (excludeClasses != null) {
-    classPatterns=Pattern.compile(excludeClasses);
-  }
-  Pattern methodPatterns=null;
-  if (excludeMethods != null) {
-    methodPatterns=Pattern.compile(excludeMethods);
-  }
+  final Pattern classPatterns=(excludeClasses != null) ? Pattern.compile(excludeClasses) : null;
+  final Pattern methodPatterns=(excludeMethods != null) ? Pattern.compile(excludeMethods) : null;
   for (Class aClass=getProxyType(); aClass != null && !packagePatterns.matcher(aClass.getPackage().getName()).matches() && (classPatterns == null || !classPatterns.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
     log.debug("Processing " + aClass.getName());
     final String javaDocPath=aClass.getName().replaceAll("\\.","/") + ".html";
@@ -22,6 +16,10 @@
       final DTD dtd=DTD.getDTD("html.dtd");
       final JavadocParser htmlParser=new JavadocParser(dtd,javaDocPath);
       htmlParser.parse(new InputStreamReader(inputStream,"UTF-8"));
+      final String parseError=htmlParser.getErrorMessage();
+      if (parseError != null) {
+        throw new MojoExecutionException(parseError);
+      }
       final Map<String,String> methodMap=htmlParser.getMethodText();
       for (      String method : htmlParser.getMethods()) {
         if (!result.containsKey(method) && (methodPatterns == null || !methodPatterns.matcher(method).find())) {
