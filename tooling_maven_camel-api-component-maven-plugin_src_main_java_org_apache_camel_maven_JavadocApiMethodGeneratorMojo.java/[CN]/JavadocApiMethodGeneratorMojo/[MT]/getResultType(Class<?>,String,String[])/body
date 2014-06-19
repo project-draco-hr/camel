@@ -14,17 +14,21 @@
       throw new MojoExecutionException(e.getCause().getMessage(),e.getCause());
     }
   }
+  String result=null;
   try {
     final Method method=aClass.getMethod(name,argTypes);
     int modifiers=method.getModifiers();
-    if (Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers)) {
-      return method.getReturnType().getCanonicalName();
-    }
- else {
-      return null;
+    if (!Modifier.isStatic(modifiers)) {
+      result=method.getReturnType().getCanonicalName();
     }
   }
  catch (  NoSuchMethodException e) {
-    throw new MojoExecutionException(e.getMessage(),e);
+    try {
+      aClass.getDeclaredMethod(name,argTypes);
+    }
+ catch (    NoSuchMethodException e1) {
+      throw new MojoExecutionException(e1.getMessage(),e1);
+    }
   }
+  return result;
 }
