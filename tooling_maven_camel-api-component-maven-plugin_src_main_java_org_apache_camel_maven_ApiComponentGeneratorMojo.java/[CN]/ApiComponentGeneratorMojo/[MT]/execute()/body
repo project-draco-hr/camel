@@ -2,16 +2,44 @@
   if (apis == null || apis.length == 0) {
     throw new MojoExecutionException("One or more API proxies are required");
   }
-  if (!aliases.isEmpty()) {
+  clearSharedProjectState();
+  setSharedProjectState(true);
+  try {
     for (    ApiProxy api : apis) {
-      List<ApiMethodAlias> apiAliases=api.getAliases();
-      if (apiAliases.isEmpty()) {
-        apiAliases=new ArrayList<ApiMethodAlias>();
-        apiAliases.addAll(aliases);
+      api.validate();
+      final AbstractApiMethodGeneratorMojo apiMethodGenerator=getApiMethodGenerator(api);
+      if (apiMethodGenerator != null) {
+        configureMethodGenerator(apiMethodGenerator,api);
+        apiMethodGenerator.execute();
       }
-      api.setAliases(apiAliases);
+ else {
+        final String proxyClass=api.getProxyClass();
+        boolean found=false;
+        for (        ApiProxy other : apis) {
+          if (other != api && proxyClass.equals(other.getProxyClass())) {
+            found=true;
+            break;
+          }
+        }
+        if (!found) {
+          throw new MojoExecutionException("Missing one of fromSignatureFile or fromJavadoc for " + proxyClass);
+        }
+      }
+      if (!aliases.isEmpty()) {
+        final List<ApiMethodAlias> apiAliases=api.getAliases();
+        if (apiAliases.isEmpty()) {
+          api.setAliases(aliases);
+        }
+ else {
+          apiAliases.addAll(aliases);
+        }
+      }
     }
+    mergeTemplate(getApiContext(),getApiCollectionFile(),"/api-collection.vm");
+    mergeTemplate(getApiContext(),getApiNameFile(),"/api-name-enum.vm");
   }
-  mergeTemplate(getApiContext(),getApiCollectionFile(),"/api-collection.vm");
-  mergeTemplate(getApiContext(),getApiNameFile(),"/api-name-enum.vm");
+  finally {
+    setSharedProjectState(false);
+    clearSharedProjectState();
+  }
 }
