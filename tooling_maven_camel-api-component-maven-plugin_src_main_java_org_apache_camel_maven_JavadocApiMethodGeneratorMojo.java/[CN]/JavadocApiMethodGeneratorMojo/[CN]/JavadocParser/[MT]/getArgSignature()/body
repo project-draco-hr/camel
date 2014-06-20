@@ -3,13 +3,26 @@
   if (typeString.isEmpty()) {
     return "()";
   }
-  final String[] types=typeString.split(",");
-  String argText=StringEscapeUtils.unescapeHtml(methodTextBuilder.toString());
-  final String[] args=argText.substring(argText.indexOf('(') + 1,argText.indexOf(')')).split(",");
+  final List<String> typeList=new ArrayList<String>();
+  final Matcher typeMatcher=ARGTYPES_PATTERN.matcher(typeString);
+  while (typeMatcher.find()) {
+    typeList.add(typeMatcher.group(1).replaceAll(" ",""));
+  }
+  final String plainText=unescapeHtml(methodTextBuilder.toString());
+  final String argsString=plainText.substring(plainText.indexOf('(') + 1,plainText.indexOf(')'));
+  final Matcher argMatcher=ApiMethodParser.ARGS_PATTERN.matcher(argsString);
+  final List<String> argNames=new ArrayList<String>();
+  while (argMatcher.find()) {
+    argNames.add(argMatcher.group(3));
+  }
+  if (typeList.size() != argNames.size()) {
+    throw new IllegalArgumentException("Unexpected Javadoc error, different number of arg types and names");
+  }
+  final String[] names=argNames.toArray(new String[argNames.size()]);
   StringBuilder builder=new StringBuilder("(");
-  for (int i=0; i < types.length; i++) {
-    final String[] arg=args[i].trim().split(" |\u00A0");
-    builder.append(types[i]).append(" ").append(arg[1].trim()).append(",");
+  int i=0;
+  for (  String type : typeList) {
+    builder.append(type).append(" ").append(names[i]).append(",");
   }
   builder.deleteCharAt(builder.length() - 1);
   builder.append(")");
