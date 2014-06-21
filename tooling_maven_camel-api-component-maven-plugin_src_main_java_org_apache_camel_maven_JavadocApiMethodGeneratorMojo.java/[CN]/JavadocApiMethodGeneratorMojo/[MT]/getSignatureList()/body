@@ -2,7 +2,8 @@
   Map<String,String> result=new HashMap<String,String>();
   final Pattern packagePatterns=Pattern.compile(excludePackages);
   final Pattern classPatterns=(excludeClasses != null) ? Pattern.compile(excludeClasses) : null;
-  final Pattern methodPatterns=(excludeMethods != null) ? Pattern.compile(excludeMethods) : null;
+  final Pattern includeMethodPatterns=(includeMethods != null) ? Pattern.compile(includeMethods) : null;
+  final Pattern excludeMethodPatterns=(excludeMethods != null) ? Pattern.compile(excludeMethods) : null;
   for (Class aClass=getProxyType(); aClass != null && !packagePatterns.matcher(aClass.getPackage().getName()).matches() && (classPatterns == null || !classPatterns.matcher(aClass.getSimpleName()).matches()); aClass=aClass.getSuperclass()) {
     log.debug("Processing " + aClass.getName());
     final String javaDocPath=aClass.getName().replaceAll("\\.","/") + ".html";
@@ -22,7 +23,7 @@
       }
       final Map<String,String> methodMap=htmlParser.getMethodText();
       for (      String method : htmlParser.getMethods()) {
-        if (!result.containsKey(method) && (methodPatterns == null || !methodPatterns.matcher(method).find())) {
+        if (!result.containsKey(method) && (includeMethodPatterns == null || includeMethodPatterns.matcher(method).find()) && (excludeMethodPatterns == null || !excludeMethodPatterns.matcher(method).find())) {
           final int leftBracket=method.indexOf('(');
           final String name=method.substring(0,leftBracket);
           final String args=method.substring(leftBracket + 1,method.length() - 1);
