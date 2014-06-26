@@ -5,7 +5,21 @@
       answer=exchange.getOut();
       answer.getHeaders().putAll(exchange.getIn().getHeaders());
     }
-    answer.setBody(result);
+    MappedStatement ms=session.getConfiguration().getMappedStatement(statement);
+    if (ms != null && ms.getStatementType() == org.apache.ibatis.mapping.StatementType.CALLABLE) {
+      if (result == null) {
+        LOG.trace("Setting result as existing body as MyBatis statement type is Callable, and there was no result.");
+        answer.setBody(exchange.getIn().getBody());
+      }
+ else {
+        LOG.trace("Setting result as body: {}",result);
+        answer.setBody(result);
+      }
+    }
+ else {
+      LOG.trace("Setting result as body: {}",result);
+      answer.setBody(result);
+    }
     answer.setHeader(MyBatisConstants.MYBATIS_RESULT,result);
     answer.setHeader(MyBatisConstants.MYBATIS_STATEMENT_NAME,statement);
   }
