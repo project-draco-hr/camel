@@ -1,0 +1,32 @@
+{
+  final BoxClient boxClient=cachedBoxClient.getBoxClient();
+synchronized (boxClient) {
+    if (boxClient.isAuthenticated()) {
+      return;
+    }
+    LOG.debug("Getting OAuth token for {}...",cachedBoxClient);
+    final IAuthSecureStorage authSecureStorage=cachedBoxClient.getSecureStorage();
+    if (authSecureStorage != null && authSecureStorage.getAuth() != null) {
+      LOG.debug("Using secure storage for {}",cachedBoxClient);
+      boxClient.authenticateFromSecureStorage(authSecureStorage);
+    }
+ else {
+      LOG.debug("Using OAuth {}",cachedBoxClient);
+      final IAuthFlowUI authFlowUI=new LoginAuthFlowUI(configuration,boxClient);
+      final CountDownLatch latch=new CountDownLatch(1);
+      final LoginAuthFlowListener listener=new LoginAuthFlowListener(latch);
+      boxClient.authenticate(authFlowUI,true,listener);
+      if (!latch.await(configuration.getLoginTimeout(),TimeUnit.SECONDS)) {
+        if (!boxClient.isAuthenticated()) {
+          throw new RuntimeCamelException(String.format("Login timeout for %s",cachedBoxClient));
+        }
+      }
+      final Exception ex=listener.getException();
+      if (ex != null) {
+        throw new RuntimeCamelException(String.format("Login error for %s: %s",cachedBoxClient,ex.getMessage()),ex);
+      }
+    }
+    LOG.debug("OAuth token created for {}",cachedBoxClient);
+    cachedBoxClient.getListener().onRefresh(boxClient.getAuthData());
+  }
+}

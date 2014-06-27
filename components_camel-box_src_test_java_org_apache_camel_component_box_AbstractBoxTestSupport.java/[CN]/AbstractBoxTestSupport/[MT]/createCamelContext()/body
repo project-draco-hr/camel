@@ -1,0 +1,62 @@
+{
+  final InputStream in=getClass().getResourceAsStream(TEST_OPTIONS_PROPERTIES);
+  if (in == null) {
+    throw new IOException(TEST_OPTIONS_PROPERTIES + " could not be found");
+  }
+  final StringBuilder builder=new StringBuilder();
+  final BufferedReader reader=new BufferedReader(new InputStreamReader(in,"UTF-8"));
+  String line;
+  while ((line=reader.readLine()) != null) {
+    builder.append(line).append(LINE_SEPARATOR);
+  }
+  propertyText=builder.toString();
+  final Properties properties=new Properties();
+  try {
+    properties.load(new StringReader(propertyText));
+  }
+ catch (  IOException e) {
+    throw new IOException(String.format("%s could not be loaded: %s",TEST_OPTIONS_PROPERTIES,e.getMessage()),e);
+  }
+  refreshToken=properties.getProperty(REFRESH_TOKEN_PROPERTY);
+  testFolderId=properties.getProperty("testFolderId");
+  testFileId=properties.getProperty("testFileId");
+  testUserId=properties.getProperty("testUserId");
+  Map<String,Object> options=new HashMap<String,Object>();
+  for (  Map.Entry<Object,Object> entry : properties.entrySet()) {
+    options.put(entry.getKey().toString(),entry.getValue());
+  }
+  final BoxConfiguration configuration=new BoxConfiguration();
+  IntrospectionSupport.setProperties(configuration,options);
+  configuration.setAuthSecureStorage(new IAuthSecureStorage(){
+    @Override public void saveAuth(    IAuthData auth){
+      if (auth == null) {
+        refreshToken="";
+      }
+ else {
+        refreshToken=auth.getRefreshToken();
+      }
+    }
+    @Override public IAuthData getAuth(){
+      if (ObjectHelper.isEmpty(refreshToken)) {
+        return null;
+      }
+ else {
+        Map<String,Object> values=new HashMap<String,Object>();
+        values.put(BoxOAuthToken.FIELD_REFRESH_TOKEN,refreshToken);
+        return new BoxOAuthToken(values);
+      }
+    }
+  }
+);
+  configuration.setRefreshListener(new OAuthRefreshListener(){
+    @Override public void onRefresh(    IAuthData newAuthData){
+      log.debug("Refreshed OAuth data: " + ((newAuthData != null) ? newAuthData.getAccessToken() : null));
+    }
+  }
+);
+  final CamelContext context=super.createCamelContext();
+  final BoxComponent component=new BoxComponent(context);
+  component.setConfiguration(configuration);
+  context.addComponent("box",component);
+  return context;
+}
