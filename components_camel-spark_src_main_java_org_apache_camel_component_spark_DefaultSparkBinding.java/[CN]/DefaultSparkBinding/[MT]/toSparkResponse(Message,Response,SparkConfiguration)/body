@@ -1,0 +1,51 @@
+{
+  LOG.trace("toSparkResponse: {}",message);
+  boolean failed=message.getExchange().isFailed();
+  int defaultCode=failed ? 500 : 200;
+  int code=message.getHeader(Exchange.HTTP_RESPONSE_CODE,defaultCode,int.class);
+  response.status(code);
+  LOG.trace("HTTP Status Code: {}",code);
+  TypeConverter tc=message.getExchange().getContext().getTypeConverter();
+  for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    final Iterator<?> it=ObjectHelper.createIterator(value,null);
+    while (it.hasNext()) {
+      String headerValue=tc.convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        LOG.trace("HTTP-Header: {}={}",key,headerValue);
+        response.header(key,headerValue);
+      }
+    }
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (contentType != null) {
+    response.header(Exchange.CONTENT_TYPE,contentType);
+    LOG.trace("Content-Type: {}",contentType);
+  }
+  Object body=message.getBody();
+  Exception cause=message.getExchange().getException();
+  if (cause != null) {
+    if (configuration.isTransferException()) {
+      ByteArrayOutputStream bos=new ByteArrayOutputStream();
+      ObjectOutputStream oos=new ObjectOutputStream(bos);
+      oos.writeObject(cause);
+      oos.flush();
+      IOHelper.close(oos,bos);
+      body=bos.toByteArray();
+      message.setHeader(Exchange.CONTENT_TYPE,SparkConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT);
+    }
+ else {
+      StringWriter sw=new StringWriter();
+      PrintWriter pw=new PrintWriter(sw);
+      cause.printStackTrace(pw);
+      body=sw.toString().getBytes();
+      message.setHeader(Exchange.CONTENT_TYPE,"text/plain");
+    }
+    ExchangeHelper.setFailureHandled(message.getExchange());
+  }
+  if (body != null) {
+    String str=tc.mandatoryConvertTo(String.class,message.getExchange(),body);
+    response.body(str);
+  }
+}
