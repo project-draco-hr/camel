@@ -1,11 +1,14 @@
 {
   Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
-  exchange.getIn().setBody(request);
   try {
+    Message in=endpoint.getSparkBinding().toCamelMessage(request,exchange,endpoint.getSparkConfiguration());
+    exchange.setIn(in);
     processor.process(exchange);
   }
  catch (  Exception e) {
     exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
   }
   if (exchange.hasOut()) {
     return exchange.getOut().getBody();
