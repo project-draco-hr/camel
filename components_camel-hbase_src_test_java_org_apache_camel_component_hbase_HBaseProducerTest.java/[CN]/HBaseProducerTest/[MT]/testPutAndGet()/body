@@ -1,14 +1,15 @@
 {
   testPut();
   if (systemReady) {
-    ProducerTemplate template=context.createProducerTemplate();
-    Endpoint endpoint=context.getEndpoint("direct:start");
-    Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
-    exchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
-    exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
-    exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0][0]);
-    exchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
-    Exchange resp=template.send(endpoint,exchange);
+    Exchange resp=template.request("direct:start",new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0][0]);
+        exchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
+      }
+    }
+);
     assertEquals(body[0][0][0],resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader()));
   }
 }

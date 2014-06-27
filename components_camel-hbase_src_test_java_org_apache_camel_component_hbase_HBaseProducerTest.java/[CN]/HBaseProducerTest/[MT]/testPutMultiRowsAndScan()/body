@@ -1,12 +1,13 @@
 {
   testPutMultiRows();
   if (systemReady) {
-    ProducerTemplate template=context.createProducerTemplate();
-    Endpoint endpoint=context.getEndpoint("direct:scan");
-    Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
-    exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
-    exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0][0]);
-    Exchange resp=template.send(endpoint,exchange);
+    Exchange resp=template.request("direct:scan",new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(),family[0]);
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(),column[0][0]);
+      }
+    }
+);
     Object result1=resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader(1));
     Object result2=resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader(2));
     Object result3=resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader(3));
