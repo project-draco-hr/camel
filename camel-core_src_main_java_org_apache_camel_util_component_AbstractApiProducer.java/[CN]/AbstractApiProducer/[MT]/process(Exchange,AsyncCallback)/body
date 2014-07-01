@@ -1,6 +1,6 @@
 {
   final Map<String,Object> properties=new HashMap<String,Object>();
-  propertiesHelper.getEndpointProperties(endpoint.getConfiguration(),properties);
+  properties.putAll(endpoint.getEndpointProperties());
   propertiesHelper.getExchangeProperties(exchange,properties);
   endpoint.interceptProperties(properties);
   interceptProperties(properties);
@@ -18,7 +18,7 @@
         Object result=doInvokeMethod(method,properties);
         exchange.getOut().setBody(result);
         exchange.getOut().setHeaders(exchange.getIn().getHeaders());
-        doProcessResult(exchange);
+        interceptResult(result,exchange);
       }
  catch (      Throwable t) {
         exchange.setException(ObjectHelper.wrapRuntimeCamelException(t));
@@ -29,6 +29,6 @@
     }
   }
 ;
-  getExecutorService(getEndpoint().getCamelContext()).submit(invocation);
+  endpoint.getExecutorService().submit(invocation);
   return false;
 }

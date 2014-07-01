@@ -1,12 +1,14 @@
 {
+  final String endpointClassName=endpointClass.getName();
+  ExecutorService executorService=executorServiceMap.get(endpointClassName);
   if (executorService == null || executorService.isTerminated() || executorService.isShutdown()) {
     final ExecutorServiceManager manager=context.getExecutorServiceManager();
-    final String threadProfileName=getThreadProfileName();
     ThreadPoolProfile poolProfile=manager.getThreadPoolProfile(threadProfileName);
     if (poolProfile == null) {
       poolProfile=manager.getDefaultThreadPoolProfile();
     }
-    executorService=manager.newScheduledThreadPool(getClass(),threadProfileName,poolProfile);
+    executorService=manager.newScheduledThreadPool(endpointClass,threadProfileName,poolProfile);
+    executorServiceMap.put(endpointClassName,executorService);
   }
   return executorService;
 }
