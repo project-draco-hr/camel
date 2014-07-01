@@ -1,0 +1,107 @@
+{
+  final IBoxEventsManager eventsManager=cachedBoxClient.getBoxClient().getEventsManager();
+  if (BoxEventRequestObject.STREAM_POSITION_NOW == streamPosition) {
+    streamPosition=getCurrentStreamPosition(eventsManager,streamPosition);
+  }
+  ObjectHelper.notNull(streamPosition,"streamPosition");
+  ObjectHelper.notEmpty(streamType,"streamType");
+  ObjectHelper.notNull(callback,"eventCallback");
+  httpClient=new DefaultHttpClient(cachedBoxClient.getClientConnectionManager(),httpParams);
+  LOG.info("Started event polling thread for " + cachedBoxClient);
+  final long startStreamPosition=streamPosition;
+  pollFuture=executorService.submit(new Runnable(){
+    @Override public void run(){
+      final ObjectMapper mapper=new ObjectMapper();
+      long currentStreamPosition=startStreamPosition;
+      BoxRealTimeServer realTimeServer=null;
+      boolean retry=false;
+      int retries=0;
+      int maxRetries=1;
+      while (!done) {
+        try {
+          retry=false;
+          if (realTimeServer == null) {
+            realTimeServer=getBoxRealTimeServer(currentStreamPosition,eventsManager);
+            final int requestTimeout=Integer.parseInt(realTimeServer.getExtraData(RETRY_TIMEOUT).toString());
+            final HttpParams params=httpClient.getParams();
+            HttpConnectionParams.setSoTimeout(params,requestTimeout * 1000);
+            maxRetries=Integer.parseInt(realTimeServer.getExtraData(MAX_RETRIES).toString());
+          }
+          httpGet=getPollRequest(realTimeServer.getUrl(),currentStreamPosition);
+          HttpResponse httpResponse=null;
+          try {
+            httpResponse=httpClient.execute(httpGet,(HttpContext)null);
+          }
+ catch (          SocketTimeoutException e) {
+            LOG.debug("Poll timed out, retrying for " + cachedBoxClient);
+          }
+          if (httpResponse != null) {
+            final StatusLine statusLine=httpResponse.getStatusLine();
+            if (statusLine != null && statusLine.getStatusCode() == HttpStatus.SC_OK) {
+              final HttpEntity entity=httpResponse.getEntity();
+              @SuppressWarnings("unchecked") Map<String,String> rtsResponse=mapper.readValue(entity.getContent(),Map.class);
+              final String message=rtsResponse.get(MESSAGE);
+              if (NEW_CHANGE.equals(message)) {
+                final BoxEventRequestObject requestObject=BoxEventRequestObject.getEventsRequestObject(currentStreamPosition);
+                requestObject.setStreamType(streamType);
+                requestObject.setLimit(limit);
+                final BoxEventCollection events=eventsManager.getEvents(requestObject);
+                callback.onEvent(events);
+                currentStreamPosition=events.getNextStreamPosition();
+              }
+ else               if (RECONNECT.equals(message) || MAX_RETRIES.equals(message)) {
+                LOG.debug("Long poll reconnect for " + cachedBoxClient);
+                realTimeServer=null;
+              }
+ else               if (OUT_OF_DATE.equals(message)) {
+                LOG.debug("Long poll out of date for " + cachedBoxClient);
+                currentStreamPosition=getCurrentStreamPosition(eventsManager,BoxEventRequestObject.STREAM_POSITION_NOW);
+                realTimeServer=null;
+              }
+ else {
+                throw new RuntimeCamelException("Unknown poll response " + message);
+              }
+            }
+ else {
+              String msg="Unknown error";
+              if (statusLine != null) {
+                msg=String.format("Error polling events for %s: code=%s, message=%s",cachedBoxClient,statusLine.getStatusCode(),statusLine.getReasonPhrase());
+              }
+              throw new RuntimeCamelException(msg);
+            }
+          }
+          retry=true;
+        }
+ catch (        InterruptedException e) {
+          LOG.debug("Interrupted event polling thread for {}, exiting...",cachedBoxClient);
+        }
+catch (        BoxSDKException e) {
+          callback.onException(e);
+        }
+catch (        RuntimeCamelException e) {
+          callback.onException(e);
+        }
+catch (        SocketException e) {
+          LOG.debug("Socket exception while event polling for {}",cachedBoxClient);
+          retry=true;
+          realTimeServer=null;
+        }
+catch (        Exception e) {
+          callback.onException(new RuntimeCamelException("Error while polling for " + cachedBoxClient + ": "+ e.getMessage(),e));
+        }
+ finally {
+          if (!retry) {
+            done=true;
+          }
+ else {
+            if (realTimeServer != null && (++retries > maxRetries)) {
+              realTimeServer=null;
+            }
+          }
+        }
+      }
+      LOG.info("Stopped event polling thread for " + cachedBoxClient);
+    }
+  }
+);
+}
