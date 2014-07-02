@@ -12,4 +12,11 @@
   to=assertIsInstanceOf(ToDefinition.class,path.getVerbs().get(1).getOutputs().get(0));
   assertEquals("direct:bye",to.getUri());
   assertEquals(null,path.getVerbs().get(2).getUri());
+  getMockEndpoint("mock:update").expectedMessageCount(1);
+  template.sendBody("seda:post-say","I was here");
+  assertMockEndpointsSatisfied();
+  String out=template.requestBody("seda:get-say-hello","Me",String.class);
+  assertEquals("Hello World",out);
+  String out2=template.requestBody("seda:get-say-bye","Me",String.class);
+  assertEquals("Bye World",out2);
 }
