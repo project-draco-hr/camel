@@ -5,7 +5,7 @@
   DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
   dbf.setNamespaceAware(true);
   DocumentBuilder db=dbf.newDocumentBuilder();
-  Document doc=db.parse(getClass().getClassLoader().getResourceAsStream("test.xml"));
+  Document doc=db.parse(getClass().getClassLoader().getResourceAsStream("test-rest.xml"));
   Element elem=null;
   NodeList nl=doc.getDocumentElement().getChildNodes();
   for (int i=0; i < nl.getLength(); i++) {
@@ -22,12 +22,15 @@
   assertNotNull(object);
   assertTrue(object instanceof CamelContextFactoryBean);
   assertNotNull(((CamelContextFactoryBean)object).getRoutes());
-  assertEquals(1,((CamelContextFactoryBean)object).getRoutes().size());
-  assertNotNull(((CamelContextFactoryBean)object).getRoutes().get(0));
-  assertNotNull(((CamelContextFactoryBean)object).getRoutes().get(0).getInputs());
-  assertEquals(1,((CamelContextFactoryBean)object).getRoutes().get(0).getInputs().size());
-  assertNotNull(((CamelContextFactoryBean)object).getRoutes().get(0).getOutputs());
-  assertEquals(1,((CamelContextFactoryBean)object).getRoutes().get(0).getOutputs().size());
-  assertTrue(((CamelContextFactoryBean)object).getCamelPropertyPlaceholder().isCache());
-  assertTrue(((CamelContextFactoryBean)object).getCamelPropertyPlaceholder().isIgnoreMissingLocation());
+  assertEquals(0,((CamelContextFactoryBean)object).getRoutes().size());
+  CamelContextFactoryBean cfb=(CamelContextFactoryBean)object;
+  assertEquals(1,cfb.getRests().size());
+  assertEquals(1,cfb.getRests().get(0).getPaths().size());
+  assertEquals("/say",cfb.getRests().get(0).getPaths().get(0).getUri());
+  assertEquals(3,cfb.getRests().get(0).getPaths().get(0).getVerbs().size());
+  assertEquals("get",cfb.getRests().get(0).getPaths().get(0).getVerbs().get(0).getMethod());
+  assertEquals("/hello",cfb.getRests().get(0).getPaths().get(0).getVerbs().get(0).getUri());
+  assertEquals("get",cfb.getRests().get(0).getPaths().get(0).getVerbs().get(1).getMethod());
+  assertEquals("/bye",cfb.getRests().get(0).getPaths().get(0).getVerbs().get(1).getUri());
+  assertEquals("post",cfb.getRests().get(0).getPaths().get(0).getVerbs().get(2).getMethod());
 }
