@@ -1,0 +1,19 @@
+{
+  if (isPlatform("aix")) {
+    return;
+  }
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=context,name=\"camel-1\"");
+  String xml=(String)mbeanServer.invoke(on,"dumpRestsAsXml",null,null);
+  assertNotNull(xml);
+  log.info(xml);
+  assertTrue(xml.contains("rests"));
+  assertTrue(xml.contains("rest"));
+  assertTrue(xml.contains("<path uri=\"/say\">"));
+  assertTrue(xml.contains("<get method=\"get\" uri=\"/hello\">"));
+  assertTrue(xml.contains("<get method=\"get\" uri=\"/bye\">"));
+  assertTrue(xml.contains("<post method=\"post\">"));
+  String xml2=(String)mbeanServer.invoke(on,"dumpRoutesAsXml",null,null);
+  log.info(xml2);
+  assertTrue(xml2.contains("rest=\"true\""));
+}
