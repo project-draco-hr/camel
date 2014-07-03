@@ -1,11 +1,16 @@
 {
   final Exchange resourceExchange=createResourceExchange(exchange,ExchangePattern.InOut);
+  final Endpoint destination=producer.getEndpoint();
+  EventHelper.notifyExchangeSending(exchange.getContext(),resourceExchange,destination);
+  final StopWatch watch=new StopWatch();
   AsyncProcessor ap=AsyncProcessorConverterHelper.convert(producer);
   boolean sync=ap.process(resourceExchange,new AsyncCallback(){
     public void done(    boolean doneSync){
       if (doneSync) {
         return;
       }
+      long timeTaken=watch.stop();
+      EventHelper.notifyExchangeSent(resourceExchange.getContext(),resourceExchange,destination,timeTaken);
       if (resourceExchange.isFailed()) {
         copyResultsPreservePattern(exchange,resourceExchange);
       }
@@ -34,6 +39,8 @@
     return false;
   }
   LOG.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
+  long timeTaken=watch.stop();
+  EventHelper.notifyExchangeSent(resourceExchange.getContext(),resourceExchange,destination,timeTaken);
   if (resourceExchange.isFailed()) {
     copyResultsPreservePattern(exchange,resourceExchange);
   }
