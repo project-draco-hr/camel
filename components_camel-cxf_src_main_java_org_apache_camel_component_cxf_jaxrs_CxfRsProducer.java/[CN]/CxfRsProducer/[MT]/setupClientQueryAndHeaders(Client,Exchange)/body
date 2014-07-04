@@ -1,0 +1,21 @@
+{
+  Message inMessage=exchange.getIn();
+  CxfRsEndpoint cxfRsEndpoint=(CxfRsEndpoint)getEndpoint();
+  Map<String,String> maps=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_QUERY_MAP,Map.class);
+  if (maps == null) {
+    String queryString=inMessage.getHeader(Exchange.HTTP_QUERY,String.class);
+    if (queryString != null) {
+      maps=getQueryParametersFromQueryString(queryString,IOHelper.getCharsetName(exchange));
+    }
+  }
+  if (maps == null) {
+    maps=cxfRsEndpoint.getParameters();
+  }
+  if (maps != null) {
+    for (    Map.Entry<String,String> entry : maps.entrySet()) {
+      client.query(entry.getKey(),entry.getValue());
+    }
+  }
+  CxfRsBinding binding=cxfRsEndpoint.getBinding();
+  client.headers(binding.bindCamelHeadersToRequestHeaders(inMessage.getHeaders(),exchange));
+}
