@@ -8,8 +8,10 @@
   if (typeArgs != null) {
     StringBuilder parameterizedType=new StringBuilder(canonicalName);
     parameterizedType.append('<');
-    String[] argTypes=typeArgs.split(",");
+    final String[] argTypes=typeArgs.split(",");
     boolean ignore=false;
+    final int nTypes=argTypes.length;
+    int i=0;
     for (    String argType : argTypes) {
       try {
         parameterizedType.append(getCanonicalName(getProjectClassLoader().loadClass(argType)));
@@ -22,19 +24,18 @@
           parameterizedType.append(getCanonicalName(getProjectClassLoader().loadClass("java.lang." + argType)));
         }
  catch (        ClassNotFoundException e1) {
-          log.warn("Ignoring type parameters < " + typeArgs + "> for argument "+ argument.getName()+ ", unable to load parametric type argument "+ argType,e1);
+          log.warn("Ignoring type parameters <" + typeArgs + "> for argument "+ argument.getName()+ ", unable to load parametric type argument "+ argType,e1);
           ignore=true;
         }
       }
       if (ignore) {
         break;
       }
- else {
+ else       if (++i < nTypes) {
         parameterizedType.append(",");
       }
     }
     if (!ignore) {
-      parameterizedType.deleteCharAt(parameterizedType.length() - 1);
       parameterizedType.append('>');
       canonicalName=parameterizedType.toString();
     }
