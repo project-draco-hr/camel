@@ -1,0 +1,26 @@
+{
+  final String userName=properties.getProperty("userName");
+  final String userPassword=properties.getProperty("userPassword");
+  final String clientId=properties.getProperty("clientId");
+  final String clientSecret=properties.getProperty("clientSecret");
+  final String redirectUri=properties.getProperty("redirectUri");
+  final OAuthScope[] scopes;
+  final String scope=properties.getProperty("scope");
+  if (scope != null) {
+    scopes=OAuthScope.fromValues(scope.split(","));
+  }
+ else {
+    scopes=null;
+  }
+  final OAuthSecureStorage secureStorage=new OAuthSecureStorage(){
+    @Override public OAuthToken getOAuthToken(){
+      return token;
+    }
+    @Override public void saveOAuthToken(    OAuthToken newToken){
+      token=newToken;
+    }
+  }
+;
+  final OAuthParams oAuthParams=new OAuthParams(userName,userPassword,secureStorage,clientId,clientSecret,redirectUri,scopes);
+  return new LinkedInOAuthRequestFilter(oAuthParams,null,false);
+}
