@@ -1,0 +1,33 @@
+{
+  final String typeString=methodWithTypes.substring(methodWithTypes.indexOf('(') + 1,methodWithTypes.indexOf(')'));
+  if (typeString.isEmpty()) {
+    return "()";
+  }
+  final List<String> typeList=new ArrayList<String>();
+  final Matcher typeMatcher=ARGTYPES_PATTERN.matcher(typeString);
+  while (typeMatcher.find()) {
+    typeList.add(typeMatcher.group(1).replaceAll(" ",""));
+  }
+  final String plainText=unescapeHtml(methodTextBuilder.toString());
+  final String argsString=plainText.substring(plainText.indexOf('(') + 1,plainText.indexOf(')'));
+  final Matcher argMatcher=ApiMethodParser.ARGS_PATTERN.matcher(argsString);
+  final List<String> argNames=new ArrayList<String>();
+  while (argMatcher.find()) {
+    argNames.add(argMatcher.group(3));
+  }
+  final int nTypes=typeList.size();
+  if (nTypes != argNames.size()) {
+    throw new IllegalArgumentException("Unexpected Javadoc error, different number of arg types and names");
+  }
+  final String[] names=argNames.toArray(new String[nTypes]);
+  final StringBuilder builder=new StringBuilder("(");
+  int i=0;
+  for (  String type : typeList) {
+    builder.append(type).append(' ').append(names[i++]);
+    if (i < nTypes) {
+      builder.append(',');
+    }
+  }
+  builder.append(')');
+  return builder.toString();
+}

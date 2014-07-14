@@ -13,6 +13,14 @@
 ;
       from("netty-http:http://localhost:" + port2 + "/test/hello").to("http://localhost:" + port1 + "?throwExceptionOnFailure=false&bridgeEndpoint=true");
       from("netty-http:http://localhost:" + port1 + "?matchOnUriPrefix=true").process(serviceProc);
+      from("netty-http:http://localhost:" + port2 + "/form?bridgeEndpoint=true").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Message in=exchange.getIn();
+          String request=in.getBody(String.class);
+          exchange.getOut().setBody(request);
+        }
+      }
+);
     }
   }
 ;

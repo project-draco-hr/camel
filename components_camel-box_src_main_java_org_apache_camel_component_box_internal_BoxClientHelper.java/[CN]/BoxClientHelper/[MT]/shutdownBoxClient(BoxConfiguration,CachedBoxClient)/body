@@ -1,0 +1,23 @@
+{
+  final BoxClient boxClient=cachedBoxClient.getBoxClient();
+synchronized (boxClient) {
+    LOG.debug("Shutting down {} ...",cachedBoxClient);
+    try {
+      if (configuration.isRevokeOnShutdown()) {
+        revokeOAuthToken(configuration,cachedBoxClient);
+      }
+    }
+  finally {
+      boxClient.setConnectionOpen(false);
+      @SuppressWarnings("deprecation") final ClientConnectionManager connectionManager=cachedBoxClient.getClientConnectionManager();
+      if (connectionManager != null) {
+        LOG.debug("Closing connections for {}",cachedBoxClient);
+        connectionManager.shutdown();
+      }
+ else {
+        LOG.debug("ConnectionManager not created for {}",cachedBoxClient);
+      }
+    }
+    LOG.debug("Shutdown successful for {}",cachedBoxClient);
+  }
+}

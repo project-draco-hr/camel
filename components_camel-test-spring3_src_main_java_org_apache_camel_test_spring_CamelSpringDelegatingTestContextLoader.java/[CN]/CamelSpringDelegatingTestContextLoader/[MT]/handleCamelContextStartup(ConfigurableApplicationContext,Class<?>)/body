@@ -1,0 +1,25 @@
+{
+  boolean skip="true".equalsIgnoreCase(System.getProperty("skipStartingCamelContext"));
+  if (skip) {
+    logger.info("Skipping starting CamelContext(s) as system property skipStartingCamelContext is set to be true.");
+  }
+ else   if (testClass.isAnnotationPresent(UseAdviceWith.class)) {
+    if (testClass.getAnnotation(UseAdviceWith.class).value()) {
+      logger.info("Skipping starting CamelContext(s) as UseAdviceWith annotation was found and isUseAdviceWith is set to true.");
+      skip=true;
+    }
+ else {
+      logger.info("Starting CamelContext(s) as UseAdviceWith annotation was found, but isUseAdviceWith is set to false.");
+      skip=false;
+    }
+  }
+  if (!skip) {
+    CamelSpringTestHelper.doToSpringCamelContexts(context,new DoToSpringCamelContextsStrategy(){
+      public void execute(      String contextName,      SpringCamelContext camelContext) throws Exception {
+        logger.info("Starting CamelContext with name [{}].",contextName);
+        camelContext.start();
+      }
+    }
+);
+  }
+}

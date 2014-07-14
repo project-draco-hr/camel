@@ -1,0 +1,14 @@
+{
+  final String tokenUrl=String.format(ACCESS_TOKEN_URL,refreshToken,oAuthParams.getRedirectUri(),oAuthParams.getClientId(),oAuthParams.getClientSecret());
+  final WebRequest webRequest=new WebRequest(new URL(tokenUrl),HttpMethod.POST);
+  final WebResponse webResponse=webClient.loadWebResponse(webRequest);
+  if (webResponse.getStatusCode() != HttpStatus.SC_OK) {
+    throw new IOException(String.format("Error getting access token: [%s: %s]",webResponse.getStatusCode(),webResponse.getStatusMessage()));
+  }
+  final long currentTime=System.currentTimeMillis();
+  final ObjectMapper mapper=new ObjectMapper();
+  final Map map=mapper.readValue(webResponse.getContentAsStream(),Map.class);
+  final String accessToken=map.get("access_token").toString();
+  final Integer expiresIn=Integer.valueOf(map.get("expires_in").toString());
+  return new OAuthToken(refreshToken,accessToken,currentTime + TimeUnit.MILLISECONDS.convert(expiresIn,TimeUnit.SECONDS));
+}

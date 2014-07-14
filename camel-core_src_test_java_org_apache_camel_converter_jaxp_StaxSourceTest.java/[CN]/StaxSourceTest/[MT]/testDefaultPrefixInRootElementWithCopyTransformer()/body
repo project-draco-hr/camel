@@ -1,0 +1,17 @@
+{
+  TransformerFactory trf=TransformerFactory.newInstance();
+  ByteArrayOutputStream baos=new ByteArrayOutputStream();
+  XMLStreamReader reader=context.getTypeConverter().mandatoryConvertTo(XMLStreamReader.class,new StringReader(TEST_XML));
+  Exchange exchange=new DefaultExchange(context);
+  exchange.setProperty(Exchange.CHARSET_NAME,UTF_8.toString());
+  XMLStreamWriter writer=context.getTypeConverter().mandatoryConvertTo(XMLStreamWriter.class,exchange,baos);
+  StaxSource staxSource=new StaxSource(reader);
+  StreamSource templateSource=new StreamSource(getClass().getResourceAsStream("/xslt/common/copy.xsl"));
+  Transformer transformer=trf.newTransformer(templateSource);
+  log.info("Used transformer: {}",transformer.getClass().getName());
+  transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
+  transformer.transform(staxSource,new StreamResult(baos));
+  writer.flush();
+  baos.flush();
+  assertThat(new String(baos.toByteArray()),equalTo(TEST_XML));
+}

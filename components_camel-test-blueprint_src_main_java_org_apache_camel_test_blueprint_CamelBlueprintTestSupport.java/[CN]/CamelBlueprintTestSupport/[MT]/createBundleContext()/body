@@ -1,6 +1,6 @@
 {
-  String symbolicName=getClass().getSimpleName();
-  BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),includeTestBundle(),getBundleFilter(),getBundleVersion(),getBundleDirectives());
+  final String symbolicName=getClass().getSimpleName();
+  final BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),includeTestBundle(),getBundleFilter(),getBundleVersion(),getBundleDirectives());
   Properties extra=useOverridePropertiesWithPropertiesComponent();
   if (extra != null) {
     answer.registerService(PropertiesComponent.OVERRIDE_PROPERTIES,extra,null);
@@ -27,13 +27,31 @@
   }
   String pid=useOverridePropertiesWithConfigAdmin(props);
   if (pid != null) {
+    final CountDownLatch latch=new CountDownLatch(2);
+    answer.registerService(ConfigurationListener.class,new ConfigurationListener(){
+      @Override public void configurationEvent(      ConfigurationEvent event){
+        if (event.getType() == ConfigurationEvent.CM_LOCATION_CHANGED) {
+          latch.countDown();
+        }
+        answer.registerService(BlueprintListener.class,new BlueprintListener(){
+          @Override public void blueprintEvent(          BlueprintEvent event){
+            if (event.getType() == BlueprintEvent.CREATED && event.getBundle().getSymbolicName().equals(symbolicName)) {
+              latch.countDown();
+            }
+          }
+        }
+,null);
+      }
+    }
+,null);
     ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(answer,ConfigurationAdmin.class);
-    Configuration config=configAdmin.getConfiguration(pid);
+    Configuration config=configAdmin.getConfiguration(pid,null);
     if (config == null) {
       throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
     }
     log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
     config.update(props);
+    latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
   }
   return answer;
 }

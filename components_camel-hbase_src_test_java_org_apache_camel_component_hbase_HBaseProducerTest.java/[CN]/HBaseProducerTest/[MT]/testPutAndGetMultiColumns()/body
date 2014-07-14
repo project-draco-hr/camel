@@ -1,16 +1,17 @@
 {
   testPutMultiColumns();
   if (systemReady) {
-    ProducerTemplate template=context.createProducerTemplate();
-    Endpoint endpoint=context.getEndpoint("direct:start");
-    Exchange exchange=endpoint.createExchange(ExchangePattern.InOut);
-    for (int col=0; col < column[0].length; col++) {
-      exchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(col + 1),key[0]);
-      exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(col + 1),family[0]);
-      exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(col + 1),column[0][col]);
+    Exchange resp=template.request("direct:start",new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+        exchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
+        for (int col=0; col < column[0].length; col++) {
+          exchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(col + 1),key[0]);
+          exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(col + 1),family[0]);
+          exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(col + 1),column[0][col]);
+        }
+      }
     }
-    exchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
-    Exchange resp=template.send(endpoint,exchange);
+);
     for (int col=0; col < column[0].length; col++) {
       assertEquals(body[0][col][0],resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader(col + 1)));
     }

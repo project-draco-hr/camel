@@ -1,0 +1,44 @@
+{
+  final Class<?> type=argument.getType();
+  if (type.isPrimitive()) {
+    return getCanonicalName(ClassUtils.primitiveToWrapper(type));
+  }
+  String canonicalName=getCanonicalName(type);
+  final String typeArgs=argument.getTypeArgs();
+  if (typeArgs != null) {
+    StringBuilder parameterizedType=new StringBuilder(canonicalName);
+    parameterizedType.append('<');
+    final String[] argTypes=typeArgs.split(",");
+    boolean ignore=false;
+    final int nTypes=argTypes.length;
+    int i=0;
+    for (    String argType : argTypes) {
+      try {
+        parameterizedType.append(getCanonicalName(getProjectClassLoader().loadClass(argType)));
+      }
+ catch (      ClassNotFoundException e) {
+        try {
+          if (log.isDebugEnabled()) {
+            log.debug("Could not load " + argType + ", trying to load java.lang."+ argType);
+          }
+          parameterizedType.append(getCanonicalName(getProjectClassLoader().loadClass("java.lang." + argType)));
+        }
+ catch (        ClassNotFoundException e1) {
+          log.warn("Ignoring type parameters <" + typeArgs + "> for argument "+ argument.getName()+ ", unable to load parametric type argument "+ argType,e1);
+          ignore=true;
+        }
+      }
+      if (ignore) {
+        break;
+      }
+ else       if (++i < nTypes) {
+        parameterizedType.append(",");
+      }
+    }
+    if (!ignore) {
+      parameterizedType.append('>');
+      canonicalName=parameterizedType.toString();
+    }
+  }
+  return canonicalName;
+}

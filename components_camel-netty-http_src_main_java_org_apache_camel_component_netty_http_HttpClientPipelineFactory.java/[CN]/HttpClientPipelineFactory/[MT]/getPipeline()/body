@@ -7,6 +7,13 @@
     pipeline.addLast("ssl",sslHandler);
   }
   pipeline.addLast("http",new HttpClientCodec());
+  if (producer.getConfiguration().getRequestTimeout() > 0) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Using request timeout {} millis",producer.getConfiguration().getRequestTimeout());
+    }
+    ChannelHandler timeout=new ReadTimeoutHandler(NettyComponent.getTimer(),producer.getConfiguration().getRequestTimeout(),TimeUnit.MILLISECONDS);
+    pipeline.addLast("timeout",timeout);
+  }
   pipeline.addLast("handler",new HttpClientChannelHandler(producer));
   return pipeline;
 }

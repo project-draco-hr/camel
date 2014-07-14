@@ -1,0 +1,17 @@
+{
+  when(mockCamelExchange.getIn()).thenReturn(mockCamelMessage);
+  when(mockCamelMessage.getHeader(GoraAttribute.GORA_OPERATION.value)).thenReturn("query");
+  final Map<String,Object> mockProperties=mock(Map.class);
+  when(mockCamelMessage.getHeaders()).thenReturn(mockProperties);
+  final Message outMessage=mock(Message.class);
+  when(mockCamelExchange.getOut()).thenReturn(outMessage);
+  mockStatic(GoraUtils.class);
+  final Query mockQuery=mock(QueryBase.class);
+  when(GoraUtils.constractQueryFromPropertiesMap(mockProperties,mockDatastore,mockGoraConfiguration)).thenReturn(mockQuery);
+  final GoraProducer producer=new GoraProducer(mockGoraEndpoint,mockGoraConfiguration,mockDatastore);
+  producer.process(mockCamelExchange);
+  verify(mockCamelExchange,atLeastOnce()).getIn();
+  verify(mockCamelMessage,atLeastOnce()).getHeader(GoraAttribute.GORA_OPERATION.value);
+  verify(mockQuery,atLeastOnce()).execute();
+  verifyStatic(times(1));
+}

@@ -1,0 +1,19 @@
+{
+  this.resultSet=resultSet;
+  this.statement=this.resultSet.getStatement();
+  this.connection=this.statement.getConnection();
+  ResultSetMetaData metaData=resultSet.getMetaData();
+  columns=new Column[metaData.getColumnCount()];
+  for (int i=0; i < columns.length; i++) {
+    int columnNumber=i + 1;
+    String columnName=getColumnName(metaData,columnNumber,isJDBC4);
+    int columnType=metaData.getColumnType(columnNumber);
+    if (columnType == Types.CLOB || columnType == Types.BLOB) {
+      columns[i]=new BlobColumn(columnName,columnNumber);
+    }
+ else {
+      columns[i]=new DefaultColumn(columnName,columnNumber);
+    }
+  }
+  loadNext();
+}

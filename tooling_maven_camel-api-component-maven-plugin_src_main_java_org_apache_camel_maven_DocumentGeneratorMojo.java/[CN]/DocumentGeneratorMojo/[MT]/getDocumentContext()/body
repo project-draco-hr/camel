@@ -1,0 +1,70 @@
+{
+  final VelocityContext context=new VelocityContext();
+  context.put("helper",this);
+  context.put("groupId",project.getGroupId());
+  context.put("artifactId",project.getArtifactId());
+  context.put("version",project.getVersion());
+  @SuppressWarnings("unchecked") final Set<String> apiNames=new TreeSet<String>(collection.getApiNames());
+  context.put("apiNames",apiNames);
+  String suffix;
+  if (apiNames.size() == 1 && ((Set)apiNames).contains("")) {
+    suffix="://endpoint?[options]";
+  }
+ else {
+    suffix="://endpoint-prefix/endpoint?[options]";
+  }
+  context.put("uriFormat",scheme + suffix);
+  final Map<String,ApiMethodHelper> apiHelpers=new TreeMap<String,ApiMethodHelper>();
+  for (  Object element : collection.getApiHelpers().entrySet()) {
+    Map.Entry entry=(Map.Entry)element;
+    apiHelpers.put(((ApiName)entry.getKey()).getName(),(ApiMethodHelper)entry.getValue());
+  }
+  context.put("apiHelpers",apiHelpers);
+  final Map<String,Class<? extends ApiMethod>> apiMethods=new TreeMap<String,Class<? extends ApiMethod>>();
+  final Map<String,Class<?>> apiConfigs=new TreeMap<String,Class<?>>();
+  for (  Object element : collection.getApiMethods().entrySet()) {
+    Map.Entry entry=(Map.Entry)element;
+    final String name=((ApiName)entry.getValue()).getName();
+    @SuppressWarnings("unchecked") Class<? extends ApiMethod> apiMethod=(Class<? extends ApiMethod>)entry.getKey();
+    apiMethods.put(name,apiMethod);
+    Class<?> configClass;
+    try {
+      configClass=getProjectClassLoader().loadClass(getEndpointConfigName(apiMethod));
+    }
+ catch (    ClassNotFoundException e) {
+      throw new MavenReportException(e.getMessage(),e);
+    }
+catch (    MojoExecutionException e) {
+      throw new MavenReportException(e.getMessage(),e);
+    }
+    apiConfigs.put(name,configClass);
+  }
+  context.put("apiMethods",apiMethods);
+  context.put("apiConfigs",apiConfigs);
+  context.put("scheme",this.scheme);
+  context.put("componentName",this.componentName);
+  Class<?> configClass;
+  try {
+    configClass=getProjectClassLoader().loadClass(getComponentConfig());
+  }
+ catch (  ClassNotFoundException e) {
+    throw new MavenReportException(e.getMessage(),e);
+  }
+catch (  MojoExecutionException e) {
+    throw new MavenReportException(e.getMessage(),e);
+  }
+  context.put("componentConfig",configClass);
+  final Map<String,String> configFields=new TreeMap<String,String>();
+  do {
+    IntrospectionSupport.ClassInfo classInfo=IntrospectionSupport.cacheClass(configClass);
+    for (    IntrospectionSupport.MethodInfo method : classInfo.methods) {
+      if (method.isSetter) {
+        configFields.put(method.getterOrSetterShorthandName,getCanonicalName(method.method.getParameterTypes()[0]));
+      }
+    }
+    configClass=configClass.getSuperclass();
+  }
+ while (configClass != null && !configClass.equals(Object.class));
+  context.put("componentConfigFields",configFields);
+  return context;
+}

@@ -1,0 +1,25 @@
+{
+  this.endpointPropertyNames=Collections.unmodifiableSet(getPropertiesHelper().getEndpointPropertyNames(configuration));
+  final HashMap<String,Object> properties=new HashMap<String,Object>();
+  getPropertiesHelper().getEndpointProperties(configuration,properties);
+  this.endpointProperties=Collections.unmodifiableMap(properties);
+  final Set<String> arguments=new HashSet<String>();
+  arguments.addAll(endpointPropertyNames);
+  if (inBody != null) {
+    arguments.add(inBody);
+  }
+  interceptPropertyNames(arguments);
+  final String[] argNames=arguments.toArray(new String[arguments.size()]);
+  candidates=new ArrayList<ApiMethod>();
+  candidates.addAll(methodHelper.getCandidateMethods(methodName,argNames));
+  candidates=Collections.unmodifiableList(candidates);
+  if (candidates.isEmpty()) {
+    throw new IllegalArgumentException(String.format("No matching method for %s/%s, with arguments %s",apiName.getName(),methodName,arguments));
+  }
+  if (log.isDebugEnabled()) {
+    final Set<String> missing=methodHelper.getMissingProperties(methodName,arguments);
+    if (!missing.isEmpty()) {
+      log.debug("Method {} could use one or more properties from {}",methodName,missing);
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  String candidate=null;
+  boolean clash=false;
+  do {
+    try {
+      clash=false;
+      if (candidate == null && checkFirst) {
+        candidate=prefix;
+      }
+ else {
+        candidate=prefix + "-" + getNextCounter(counter);
+      }
+      LOG.trace("Checking OSGi Service Registry for existence of existing CamelContext with name: {}",candidate);
+      ServiceReference[] refs=context.getServiceReferences(CamelContext.class.getName(),"(" + key + "="+ candidate+ ")");
+      if (refs != null && refs.length > 0) {
+        for (        ServiceReference ref : refs) {
+          Object id=ref.getProperty(key);
+          if (id != null && candidate.equals(id)) {
+            clash=true;
+            break;
+          }
+        }
+      }
+    }
+ catch (    InvalidSyntaxException e) {
+      LOG.debug("Error finding free Camel name in OSGi Service Registry due " + e.getMessage() + ". This exception is ignored.",e);
+      break;
+    }
+  }
+ while (clash);
+  LOG.debug("Generated free name for bundle id: {}, clash: {} -> {}",new Object[]{context.getBundle().getBundleId(),clash,candidate});
+  return candidate;
+}

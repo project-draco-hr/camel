@@ -1,0 +1,24 @@
+{
+  final String inBodyProperty=endpoint.getInBody();
+  if (inBodyProperty != null) {
+    Object value=exchange.getIn().getBody();
+    if (value != null) {
+      try {
+        value=endpoint.getCamelContext().getTypeConverter().mandatoryConvertTo(endpoint.getConfiguration().getClass().getDeclaredField(inBodyProperty).getType(),exchange,value);
+      }
+ catch (      Exception e) {
+        exchange.setException(new RuntimeCamelException(String.format("Error converting value %s to property %s: %s",value,inBodyProperty,e.getMessage()),e));
+        return false;
+      }
+    }
+ else {
+      if (!methodHelper.getNullableArguments().contains(inBodyProperty)) {
+        exchange.setException(new NullPointerException(inBodyProperty));
+        return false;
+      }
+    }
+    log.debug("Property [{}] has message body value {}",inBodyProperty,value);
+    properties.put(inBodyProperty,value);
+  }
+  return true;
+}

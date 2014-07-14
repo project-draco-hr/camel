@@ -1,0 +1,29 @@
+{
+  if (systemReady) {
+    Map<String,Object> headers=new HashMap<String,Object>();
+    headers.put(HBaseConstants.OPERATION,HBaseConstants.PUT);
+    headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(),"1");
+    headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(),"info");
+    headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(),"id");
+    headers.put(HbaseAttribute.HBASE_VALUE.asHeader(),"3");
+    template.sendBodyAndHeaders("direct:start",null,headers);
+    Configuration configuration=hbaseUtil.getHBaseAdmin().getConfiguration();
+    HTable bar=new HTable(configuration,PERSON_TABLE.getBytes());
+    Get get=new Get("1".getBytes());
+    get.addColumn("info".getBytes(),"id".getBytes());
+    Result result=bar.get(get);
+    assertArrayEquals("3".getBytes(),result.value());
+    IOHelper.close(bar);
+    Exchange resp=template.request("direct:scan",new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(),"info");
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(),"id");
+      }
+    }
+);
+    assertEquals("1",resp.getOut().getHeader(HbaseAttribute.HBASE_ROW_ID.asHeader()));
+    assertEquals("info",resp.getOut().getHeader(HbaseAttribute.HBASE_FAMILY.asHeader()));
+    assertEquals("id",resp.getOut().getHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader()));
+    assertEquals("3",resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader()));
+  }
+}

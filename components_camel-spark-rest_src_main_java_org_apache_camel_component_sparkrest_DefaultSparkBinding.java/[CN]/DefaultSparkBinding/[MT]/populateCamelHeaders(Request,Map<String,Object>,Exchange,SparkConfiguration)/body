@@ -1,0 +1,35 @@
+{
+  headers.put(Exchange.HTTP_METHOD,request.raw().getMethod());
+  headers.put(Exchange.HTTP_QUERY,request.raw().getQueryString());
+  headers.put(Exchange.HTTP_URL,request.raw().getRequestURL().toString());
+  headers.put(Exchange.HTTP_URI,request.raw().getRequestURI());
+  headers.put(Exchange.HTTP_PATH,request.raw().getPathInfo());
+  headers.put(Exchange.CONTENT_TYPE,request.raw().getContentType());
+  for (  String key : request.attributes()) {
+    Object value=request.attribute(key);
+    Object decoded=shouldUrlDecodeHeader(configuration,key,value,"UTF-8");
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(key,decoded,exchange)) {
+      SparkHelper.appendHeader(headers,key,decoded);
+    }
+  }
+  for (  String key : request.headers()) {
+    Object value=request.headers(key);
+    Object decoded=shouldUrlDecodeHeader(configuration,key,value,"UTF-8");
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(key,decoded,exchange)) {
+      SparkHelper.appendHeader(headers,key,decoded);
+    }
+  }
+  for (  Map.Entry<String,String> entry : request.params().entrySet()) {
+    String key=mapKey(entry.getKey());
+    String value=entry.getValue();
+    Object decoded=shouldUrlDecodeHeader(configuration,key,value,"UTF-8");
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(key,decoded,exchange)) {
+      SparkHelper.appendHeader(headers,key,decoded);
+    }
+  }
+  String[] splat=request.splat();
+  String key=SparkConstants.SPLAT;
+  if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(key,splat,exchange)) {
+    SparkHelper.appendHeader(headers,key,splat);
+  }
+}

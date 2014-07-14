@@ -1,11 +1,12 @@
 {
   ObjectHelper.notNull(dataFormat,"dataFormat");
   InputStream stream=null;
+  Object result=null;
   try {
     stream=exchange.getIn().getMandatoryBody(InputStream.class);
     Message out=exchange.getOut();
     out.copyFrom(exchange.getIn());
-    Object result=dataFormat.unmarshal(exchange,stream);
+    result=dataFormat.unmarshal(exchange,stream);
     if (result instanceof Exchange) {
       if (result != exchange) {
         throw new RuntimeCamelException("The returned exchange " + result + " is not the same as "+ exchange+ " provided to the DataFormat");
@@ -23,7 +24,9 @@
     exchange.setException(e);
   }
  finally {
-    IOHelper.close(stream,"input stream");
+    if (!(result instanceof Iterator)) {
+      IOHelper.close(stream,"input stream");
+    }
   }
   callback.done(true);
   return true;

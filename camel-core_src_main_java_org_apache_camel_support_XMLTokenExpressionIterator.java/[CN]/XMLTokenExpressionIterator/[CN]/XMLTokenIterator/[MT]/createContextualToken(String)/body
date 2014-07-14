@@ -1,0 +1,59 @@
+{
+  StringBuilder sb=new StringBuilder();
+  if (mode == 'w') {
+    for (int i=0; i < segments.size(); i++) {
+      sb.append(segments.get(i));
+    }
+    sb.append(token);
+    for (int i=path.size() - 1; i >= 0; i--) {
+      QName q=path.get(i);
+      sb.append("</").append(makeName(q)).append(">");
+    }
+  }
+ else   if (mode == 'i') {
+    final String stag=token.substring(0,token.indexOf('>') + 1);
+    Set<String> skip=new HashSet<String>();
+    Matcher matcher=NAMESPACE_PATTERN.matcher(stag);
+    char quote=0;
+    while (matcher.find()) {
+      String prefix=matcher.group(1);
+      if (prefix.length() > 0) {
+        prefix=prefix.substring(1);
+      }
+      skip.add(prefix);
+      if (quote == 0) {
+        quote=matcher.group(2).charAt(0);
+      }
+    }
+    if (quote == 0) {
+      quote='"';
+    }
+    boolean empty=stag.endsWith("/>");
+    sb.append(token.substring(0,stag.length() - (empty ? 2 : 1)));
+    for (    Entry<String,String> e : getCurrentNamespaceBindings().entrySet()) {
+      if (!skip.contains(e.getKey())) {
+        sb.append(e.getKey().length() == 0 ? " xmlns" : " xmlns:").append(e.getKey()).append("=").append(quote).append(e.getValue()).append(quote);
+      }
+    }
+    sb.append(token.substring(stag.length() - (empty ? 2 : 1)));
+  }
+ else   if (mode == 'u') {
+    int bp=token.indexOf(">");
+    int ep=token.lastIndexOf("</");
+    if (bp > 0 && ep > 0) {
+      sb.append(token.substring(bp + 1,ep));
+    }
+  }
+ else   if (mode == 't') {
+    int bp=0;
+    for (; ; ) {
+      int ep=token.indexOf('>',bp);
+      bp=token.indexOf('<',ep);
+      if (bp < 0) {
+        break;
+      }
+      sb.append(token.substring(ep + 1,bp));
+    }
+  }
+  return sb.toString();
+}

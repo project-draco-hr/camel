@@ -1,0 +1,25 @@
+{
+  final Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put("CamelBox.fileId",testFileId);
+  headers.put("CamelBox.extension",PNG_EXTENSION);
+  headers.put("CamelBox.imageRequest",BOX_IMAGE_REQUEST_OBJECT);
+  com.box.boxjavalibv2.dao.BoxPreview result=null;
+  try {
+    result=requestBodyAndHeaders("direct://GETPREVIEW",null,headers);
+  }
+ catch (  CamelExecutionException e) {
+    boolean ignore=false;
+    if (e.getCause().getCause() instanceof BoxServerException) {
+      BoxServerException exception=(BoxServerException)e.getCause().getCause();
+      if (PREVIEW_UNAVAILABLE.equals(exception.getMessage())) {
+        result=new BoxPreview();
+        ignore=true;
+      }
+    }
+    if (!ignore) {
+      throw e;
+    }
+  }
+  assertNotNull("getPreview result",result);
+  LOG.debug("getPreview: " + result);
+}

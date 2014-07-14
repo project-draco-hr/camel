@@ -1,0 +1,67 @@
+{
+  final WebClient webClient=new WebClient(BrowserVersion.FIREFOX_24);
+  final WebClientOptions options=webClient.getOptions();
+  options.setRedirectEnabled(true);
+  options.setJavaScriptEnabled(false);
+  options.setThrowExceptionOnFailingStatusCode(true);
+  options.setThrowExceptionOnScriptError(true);
+  options.setPrintContentOnFailingStatusCode(LOG.isDebugEnabled());
+  final Map<String,Object> httpParams=configuration.getHttpParams();
+  if (httpParams != null && httpParams.get(ConnRoutePNames.DEFAULT_PROXY) != null) {
+    final HttpHost proxyHost=(HttpHost)httpParams.get(ConnRoutePNames.DEFAULT_PROXY);
+    final Boolean socksProxy=(Boolean)httpParams.get("http.route.socks-proxy");
+    final ProxyConfig proxyConfig=new ProxyConfig(proxyHost.getHostName(),proxyHost.getPort(),socksProxy != null ? socksProxy : false);
+    options.setProxyConfig(proxyConfig);
+  }
+  try {
+    final String csrfId=String.valueOf(new SecureRandom().nextLong());
+    OAuthWebViewData viewData=new OAuthWebViewData(boxClient.getOAuthDataController());
+    viewData.setOptionalState(String.valueOf(csrfId));
+    final HtmlPage authPage=webClient.getPage(viewData.buildUrl().toString());
+    final HtmlForm loginForm=authPage.getFormByName("login_form");
+    final HtmlTextInput login=loginForm.getInputByName("login");
+    login.setText(configuration.getUserName());
+    final HtmlPasswordInput password=loginForm.getInputByName("password");
+    password.setText(configuration.getUserPassword());
+    final HtmlSubmitInput submitInput=loginForm.getInputByName("login_submit");
+    final HtmlPage consentPage=submitInput.click();
+    final HtmlForm consentForm=consentPage.getFormByName("consent_form");
+    final HtmlButton consentAccept=consentForm.getButtonByName("consent_accept");
+    webClient.getOptions().setRedirectEnabled(false);
+    String redirectQuery;
+    try {
+      final Page redirectPage=consentAccept.click();
+      redirectQuery=redirectPage.getUrl().getQuery();
+    }
+ catch (    FailingHttpStatusCodeException e) {
+      if (e.getStatusCode() != HttpStatus.SC_MOVED_TEMPORARILY) {
+        throw e;
+      }
+      final String location=e.getResponse().getResponseHeaderValue("Location");
+      redirectQuery=location.substring(location.indexOf('?') + 1);
+    }
+    final Map<String,String> params=new HashMap<String,String>();
+    final Matcher matcher=QUERY_PARAM_PATTERN.matcher(redirectQuery);
+    while (matcher.find()) {
+      params.put(matcher.group(1),matcher.group(2));
+    }
+    final String state=params.get("state");
+    if (!csrfId.equals(state)) {
+      final SecurityException e=new SecurityException("Invalid CSRF code!");
+      listener.onAuthFlowException(e);
+      this.listener.onAuthFlowException(e);
+    }
+ else {
+      final String authorizationCode=params.get("code");
+      final IBoxOAuthManager oAuthManager=boxClient.getOAuthManager();
+      final BoxOAuthToken oAuthToken=oAuthManager.createOAuth(authorizationCode,configuration.getClientId(),configuration.getClientSecret(),null);
+      final OAuthDataMessage authDataMessage=new OAuthDataMessage(oAuthToken,boxClient.getJSONParser(),boxClient.getResourceHub());
+      listener.onAuthFlowEvent(OAuthEvent.OAUTH_CREATED,authDataMessage);
+      this.listener.onAuthFlowEvent(OAuthEvent.OAUTH_CREATED,authDataMessage);
+    }
+  }
+ catch (  Exception e) {
+    listener.onAuthFlowException(e);
+    this.listener.onAuthFlowException(e);
+  }
+}

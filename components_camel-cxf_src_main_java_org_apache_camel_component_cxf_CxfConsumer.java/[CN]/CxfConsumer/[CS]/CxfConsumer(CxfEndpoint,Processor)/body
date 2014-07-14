@@ -1,5 +1,6 @@
 {
   super(endpoint,processor);
+  cxfEndpoint=endpoint;
   ServerFactoryBean svrBean=endpoint.createServerFactoryBean();
   svrBean.setInvoker(new Invoker(){
     public Object invoke(    Exchange cxfExchange,    Object o){
@@ -19,7 +20,7 @@ synchronized (continuation) {
         if (continuation.isNew()) {
           final org.apache.camel.Exchange camelExchange=prepareCamelExchange(cxfExchange);
           LOG.trace("Suspending continuation of exchangeId: {}",camelExchange.getExchangeId());
-          continuation.suspend(0);
+          continuation.suspend(cxfEndpoint.getContinuationTimeout());
           getAsyncProcessor().process(camelExchange,new AsyncCallback(){
             public void done(            boolean doneSync){
 synchronized (continuation) {

@@ -1,0 +1,25 @@
+{
+  if (projectClassLoader == null) {
+    final List classpathElements;
+    try {
+      classpathElements=project.getTestClasspathElements();
+    }
+ catch (    org.apache.maven.artifact.DependencyResolutionRequiredException e) {
+      throw new MojoExecutionException(e.getMessage(),e);
+    }
+    final URL[] urls=new URL[classpathElements.size()];
+    int i=0;
+    for (Iterator it=classpathElements.iterator(); it.hasNext(); i++) {
+      try {
+        urls[i]=new File((String)it.next()).toURI().toURL();
+        log.debug("Adding project path " + urls[i]);
+      }
+ catch (      MalformedURLException e) {
+        throw new MojoExecutionException(e.getMessage(),e);
+      }
+    }
+    final ClassLoader tccl=Thread.currentThread().getContextClassLoader();
+    projectClassLoader=new URLClassLoader(urls,tccl != null ? tccl : getClass().getClassLoader());
+  }
+  return projectClassLoader;
+}

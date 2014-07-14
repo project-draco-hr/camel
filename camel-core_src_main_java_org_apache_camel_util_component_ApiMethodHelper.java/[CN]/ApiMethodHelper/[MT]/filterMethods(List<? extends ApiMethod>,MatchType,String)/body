@@ -1,0 +1,46 @@
+{
+  final List<String> argsList=Arrays.asList(argNames);
+  final List<String> withNullableArgsList;
+  if (!nullableArguments.isEmpty()) {
+    withNullableArgsList=new ArrayList<String>(argsList);
+    withNullableArgsList.addAll(nullableArguments);
+  }
+ else {
+    withNullableArgsList=null;
+  }
+  final List<ApiMethod> result=new ArrayList<ApiMethod>();
+  final List<ApiMethod> extraArgs=new ArrayList<ApiMethod>();
+  final List<ApiMethod> nullArgs=new ArrayList<ApiMethod>();
+  for (  ApiMethod method : methods) {
+    final List<String> methodArgs=method.getArgNames();
+switch (matchType) {
+case EXACT:
+      if (methodArgs.containsAll(argsList) && argsList.containsAll(methodArgs)) {
+        result.add(method);
+      }
+    break;
+case SUBSET:
+  if (methodArgs.containsAll(argsList)) {
+    result.add(method);
+  }
+break;
+default :
+case SUPER_SET:
+if (argsList.containsAll(methodArgs)) {
+if (methodArgs.containsAll(argsList)) {
+  result.add(method);
+}
+ else {
+  extraArgs.add(method);
+}
+}
+ else if (result.isEmpty() && extraArgs.isEmpty()) {
+if (withNullableArgsList != null && withNullableArgsList.containsAll(methodArgs)) {
+  nullArgs.add(method);
+}
+}
+break;
+}
+}
+return Collections.unmodifiableList(result.isEmpty() ? (extraArgs.isEmpty() ? nullArgs : extraArgs) : result);
+}

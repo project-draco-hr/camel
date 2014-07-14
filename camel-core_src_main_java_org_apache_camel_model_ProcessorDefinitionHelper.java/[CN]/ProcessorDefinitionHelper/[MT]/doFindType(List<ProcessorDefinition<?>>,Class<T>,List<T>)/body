@@ -3,9 +3,6 @@
     return;
   }
   for (  ProcessorDefinition out : outputs) {
-    if (type.isInstance(out)) {
-      found.add((T)out);
-    }
     if (out instanceof SendDefinition) {
       SendDefinition send=(SendDefinition)out;
       List<ProcessorDefinition<?>> children=send.getOutputs();
@@ -21,6 +18,7 @@
         List<ProcessorDefinition<?>> children=choice.getOtherwise().getOutputs();
         doFindType(children,type,found);
       }
+      continue;
     }
     if (out instanceof TryDefinition) {
       TryDefinition doTry=(TryDefinition)out;
@@ -34,6 +32,15 @@
         doFindType(doTry.getFinallyClause().getOutputs(),type,found);
       }
       continue;
+    }
+    if (out instanceof OutputDefinition) {
+      OutputDefinition outDef=(OutputDefinition)out;
+      List<ProcessorDefinition<?>> outDefOut=outDef.getOutputs();
+      doFindType(outDefOut,type,found);
+      continue;
+    }
+    if (type.isInstance(out)) {
+      found.add((T)out);
     }
     List<ProcessorDefinition<?>> children=out.getOutputs();
     doFindType(children,type,found);

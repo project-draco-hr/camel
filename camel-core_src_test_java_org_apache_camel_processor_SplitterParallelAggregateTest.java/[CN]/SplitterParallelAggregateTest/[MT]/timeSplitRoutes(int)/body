@@ -1,0 +1,17 @@
+{
+  String[] endpoints=new String[]{"direct:splitSynchronizedAggregation","direct:splitUnsynchronizedAggregation"};
+  List<Future<File>> futures=new ArrayList<Future<File>>();
+  StopWatch stopWatch=new StopWatch(false);
+  for (int endpointIndex=0; endpointIndex < endpoints.length; endpointIndex++) {
+    stopWatch.restart();
+    for (int requestIndex=0; requestIndex < numberOfRequests; requestIndex++) {
+      futures.add(template.asyncRequestBody(endpoints[endpointIndex],null,File.class));
+    }
+    for (int i=0; i < futures.size(); i++) {
+      Future<File> future=futures.get(i);
+      future.get();
+    }
+    stopWatch.stop();
+    log.info(String.format("test%d.%s=%d\n",numberOfRequests,endpoints[endpointIndex],stopWatch.taken()));
+  }
+}

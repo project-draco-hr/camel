@@ -1,10 +1,16 @@
 {
   LOG.trace("Process exchange: {} in the async way.",exchange);
   Message in=exchange.getIn();
-  String operationName=in.getHeader(XmlRpcConstants.METHOD_NAME,String.class);
+  String methodName=in.getHeader(XmlRpcConstants.METHOD_NAME,String.class);
+  if (ObjectHelper.isEmpty(methodName)) {
+    methodName=endpoint.getDefaultMethodName();
+  }
+  if (ObjectHelper.isEmpty(methodName)) {
+    throw new IllegalArgumentException("CamelXmlRpcMethodName header is empty, please set the message header or defaultMethodName option on the endpoint.");
+  }
   XmlRpcAsyncCallback xmlRpcAsyncCallback=new XmlRpcAsyncCallback(exchange,callback);
   try {
-    client.executeAsync(operationName,in.getBody(List.class),xmlRpcAsyncCallback);
+    client.executeAsync(methodName,in.getBody(List.class),xmlRpcAsyncCallback);
     return false;
   }
  catch (  Exception ex) {

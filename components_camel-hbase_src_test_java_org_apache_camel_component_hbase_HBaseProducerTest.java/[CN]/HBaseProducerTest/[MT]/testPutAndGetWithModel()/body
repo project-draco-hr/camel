@@ -1,26 +1,26 @@
 {
   if (systemReady) {
-    ProducerTemplate template=context.createProducerTemplate();
-    Endpoint startEndpoint=context.getEndpoint("direct:start");
-    Endpoint startWithModelEndpoint=context.getEndpoint("direct:start-with-model");
-    Exchange putExchange=startEndpoint.createExchange(ExchangePattern.InOut);
+    Map<String,Object> headers=new HashMap<String,Object>();
+    headers.put(HBaseConstants.OPERATION,HBaseConstants.PUT);
     int index=1;
     for (int row=0; row < key.length; row++) {
       for (int fam=0; fam < family.length; fam++) {
         for (int col=0; col < column[fam].length; col++) {
-          putExchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(index),key[row]);
-          putExchange.getIn().setHeader(HbaseAttribute.HBASE_FAMILY.asHeader(index),family[fam]);
-          putExchange.getIn().setHeader(HbaseAttribute.HBASE_QUALIFIER.asHeader(index),column[fam][col]);
-          putExchange.getIn().setHeader(HbaseAttribute.HBASE_VALUE.asHeader(index++),body[row][fam][col]);
+          headers.put(HbaseAttribute.HBASE_ROW_ID.asHeader(index),key[row]);
+          headers.put(HbaseAttribute.HBASE_FAMILY.asHeader(index),family[fam]);
+          headers.put(HbaseAttribute.HBASE_QUALIFIER.asHeader(index),column[fam][col]);
+          headers.put(HbaseAttribute.HBASE_VALUE.asHeader(index++),body[row][fam][col]);
         }
       }
     }
-    putExchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.PUT);
-    template.send(startEndpoint,putExchange);
-    Exchange getExchange=startWithModelEndpoint.createExchange(ExchangePattern.InOut);
-    getExchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
-    getExchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
-    Exchange resp=template.send(startWithModelEndpoint,getExchange);
+    template.sendBodyAndHeaders("direct:start",null,headers);
+    Exchange resp=template.request("direct:start-with-model",new Processor(){
+      public void process(      Exchange exchange) throws Exception {
+        exchange.getIn().setHeader(HbaseAttribute.HBASE_ROW_ID.asHeader(),key[0]);
+        exchange.getIn().setHeader(HBaseConstants.OPERATION,HBaseConstants.GET);
+      }
+    }
+);
     assertEquals(body[0][0][0],resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader()));
     assertEquals(body[0][1][2],resp.getOut().getHeader(HbaseAttribute.HBASE_VALUE.asHeader(2)));
   }

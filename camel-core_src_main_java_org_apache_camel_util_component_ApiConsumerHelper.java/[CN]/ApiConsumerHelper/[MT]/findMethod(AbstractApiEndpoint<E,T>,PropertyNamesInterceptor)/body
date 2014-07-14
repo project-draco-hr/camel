@@ -1,0 +1,20 @@
+{
+  ApiMethod result;
+  final Set<String> argNames=new HashSet<String>();
+  argNames.addAll(endpoint.getEndpointPropertyNames());
+  propertyNamesInterceptor.interceptPropertyNames(argNames);
+  final String[] argNamesArray=argNames.toArray(new String[argNames.size()]);
+  List<ApiMethod> filteredMethods=endpoint.methodHelper.filterMethods(endpoint.getCandidates(),ApiMethodHelper.MatchType.SUPER_SET,argNamesArray);
+  if (filteredMethods.isEmpty()) {
+    ApiMethodHelper methodHelper=endpoint.getMethodHelper();
+    throw new IllegalArgumentException(String.format("Missing properties for %s/%s, need one or more from %s",endpoint.getApiName().getName(),endpoint.getMethodName(),methodHelper.getMissingProperties(endpoint.getMethodName(),argNames)));
+  }
+ else   if (filteredMethods.size() == 1) {
+    result=filteredMethods.get(0);
+  }
+ else {
+    result=ApiMethodHelper.getHighestPriorityMethod(filteredMethods);
+    LOG.warn(String.format("Using highest priority operation %s from operations %s for endpoint %s",result,filteredMethods,endpoint.getEndpointUri()));
+  }
+  return result;
+}

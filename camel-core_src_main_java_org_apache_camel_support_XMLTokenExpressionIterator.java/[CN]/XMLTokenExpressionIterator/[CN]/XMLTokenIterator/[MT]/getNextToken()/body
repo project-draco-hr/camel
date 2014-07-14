@@ -1,0 +1,77 @@
+{
+  int code=0;
+  while (code != XMLStreamConstants.END_DOCUMENT) {
+    code=readNext();
+switch (code) {
+case XMLStreamConstants.START_ELEMENT:
+      depth++;
+    QName name=reader.getName();
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("se={}; depth={}; trackdepth={}",new Object[]{name,depth,trackdepth});
+  }
+String token=getCurrenText();
+LOG.trace("token={}",token);
+if (!backtrack && mode == 'w') {
+pushSegment(name,token);
+}
+pushName(name);
+if (mode == 'i') {
+pushNamespaces(reader);
+}
+backtrack=false;
+if (current().matches(name)) {
+if (isBottom()) {
+token=getCurrentToken();
+backtrack=true;
+trackdepth=depth;
+return token;
+}
+ else {
+down();
+}
+}
+ else if (isDoS()) {
+}
+ else {
+readCurrent(false);
+}
+break;
+case XMLStreamConstants.END_ELEMENT:
+depth--;
+QName endname=reader.getName();
+LOG.trace("ee={}",endname);
+popName();
+if (mode == 'i') {
+popNamespaces();
+}
+int pc=0;
+if (backtrack || (trackdepth > 0 && depth == trackdepth - 1)) {
+backtrack=true;
+trackdepth--;
+if (mode == 'w') {
+while (!endname.equals(peekLog())) {
+pc++;
+popLog();
+}
+}
+}
+if (backtrack) {
+if (mode == 'w') {
+for (int i=0; i < pc; i++) {
+popSegment();
+}
+}
+if ((ancestor() == null && !isTop()) || (ancestor() != null && ancestor().matches(endname))) {
+up();
+}
+}
+break;
+case XMLStreamConstants.END_DOCUMENT:
+LOG.trace("depth={}",depth);
+break;
+default :
+break;
+}
+}
+return null;
+}

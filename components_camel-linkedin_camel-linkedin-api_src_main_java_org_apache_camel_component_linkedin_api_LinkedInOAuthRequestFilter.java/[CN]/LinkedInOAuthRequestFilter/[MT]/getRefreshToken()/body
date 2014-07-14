@@ -1,0 +1,59 @@
+{
+  webClient.getOptions().setRedirectEnabled(true);
+  try {
+    final String csrfId=String.valueOf(new SecureRandom().nextLong());
+    final String encodedRedirectUri=URLEncoder.encode(oAuthParams.getRedirectUri(),"UTF-8");
+    final OAuthScope[] scopes=oAuthParams.getScopes();
+    final String url;
+    if (scopes == null || scopes.length == 0) {
+      url=String.format(AUTHORIZATION_URL,oAuthParams.getClientId(),csrfId,encodedRedirectUri);
+    }
+ else {
+      final int nScopes=scopes.length;
+      final StringBuilder builder=new StringBuilder();
+      int i=0;
+      for (      OAuthScope scope : scopes) {
+        builder.append(scope.getValue());
+        if (++i < nScopes) {
+          builder.append("%20");
+        }
+      }
+      url=String.format(AUTHORIZATION_URL_WITH_SCOPE,oAuthParams.getClientId(),csrfId,builder.toString(),encodedRedirectUri);
+    }
+    final HtmlPage authPage=webClient.getPage(url);
+    final HtmlForm loginForm=authPage.getFormByName("oauth2SAuthorizeForm");
+    final HtmlTextInput login=loginForm.getInputByName("session_key");
+    login.setText(oAuthParams.getUserName());
+    final HtmlPasswordInput password=loginForm.getInputByName("session_password");
+    password.setText(oAuthParams.getUserPassword());
+    final HtmlSubmitInput submitInput=loginForm.getInputByName("authorize");
+    webClient.getOptions().setRedirectEnabled(false);
+    String redirectQuery;
+    try {
+      final Page redirectPage=submitInput.click();
+      redirectQuery=redirectPage.getUrl().getQuery();
+    }
+ catch (    FailingHttpStatusCodeException e) {
+      if (e.getStatusCode() != HttpStatus.SC_MOVED_TEMPORARILY) {
+        throw e;
+      }
+      final String location=e.getResponse().getResponseHeaderValue("Location");
+      redirectQuery=location.substring(location.indexOf('?') + 1);
+    }
+    final Map<String,String> params=new HashMap<String,String>();
+    final Matcher matcher=QUERY_PARAM_PATTERN.matcher(redirectQuery);
+    while (matcher.find()) {
+      params.put(matcher.group(1),matcher.group(2));
+    }
+    final String state=params.get("state");
+    if (!csrfId.equals(state)) {
+      throw new SecurityException("Invalid CSRF code!");
+    }
+ else {
+      return params.get("code");
+    }
+  }
+ catch (  IOException e) {
+    throw new IllegalArgumentException("Error authorizing application: " + e.getMessage(),e);
+  }
+}

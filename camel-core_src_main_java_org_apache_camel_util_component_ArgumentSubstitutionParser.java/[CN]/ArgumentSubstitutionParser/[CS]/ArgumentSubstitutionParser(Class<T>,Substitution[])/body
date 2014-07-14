@@ -1,0 +1,32 @@
+{
+  super(proxyType);
+  Map<String,Map<String,List<NameReplacement>>> regexMap=new LinkedHashMap<String,Map<String,List<NameReplacement>>>();
+  for (  Substitution substitution : substitutions) {
+    substitution.validate();
+    final NameReplacement nameReplacement=new NameReplacement();
+    nameReplacement.replacement=substitution.replacement;
+    if (substitution.argType != null) {
+      nameReplacement.typePattern=Pattern.compile(substitution.argType);
+    }
+    nameReplacement.replaceWithType=substitution.replaceWithType;
+    Map<String,List<NameReplacement>> replacementMap=regexMap.get(substitution.method);
+    if (replacementMap == null) {
+      replacementMap=new LinkedHashMap<String,List<NameReplacement>>();
+      regexMap.put(substitution.method,replacementMap);
+    }
+    List<NameReplacement> replacements=replacementMap.get(substitution.argName);
+    if (replacements == null) {
+      replacements=new ArrayList<NameReplacement>();
+      replacementMap.put(substitution.argName,replacements);
+    }
+    replacements.add(nameReplacement);
+  }
+  this.methodMap=new LinkedHashMap<Pattern,Map<Pattern,List<NameReplacement>>>();
+  for (  Map.Entry<String,Map<String,List<NameReplacement>>> method : regexMap.entrySet()) {
+    Map<Pattern,List<NameReplacement>> argMap=new LinkedHashMap<Pattern,List<NameReplacement>>();
+    for (    Map.Entry<String,List<NameReplacement>> arg : method.getValue().entrySet()) {
+      argMap.put(Pattern.compile(arg.getKey()),arg.getValue());
+    }
+    methodMap.put(Pattern.compile(method.getKey()),argMap);
+  }
+}

@@ -1,0 +1,18 @@
+{
+  final BoxFile boxFile=uploadFile();
+  try {
+    final Map<String,Object> headers=new HashMap<String,Object>();
+    headers.put("CamelBox.fileId",boxFile.getId());
+    final BoxFileUploadRequestObject requestObject=BoxFileUploadRequestObject.uploadNewVersionRequestObject(CAMEL_TEST_FILE,getClass().getResourceAsStream(TEST_UPLOAD_FILE));
+    final FileTransferListener fileTransferListener=new FileTransferListener();
+    requestObject.setListener(fileTransferListener);
+    headers.put("CamelBox.fileUploadRequest",requestObject);
+    BoxFile result=requestBodyAndHeaders("direct://UPLOADNEWVERSION",null,headers);
+    assertTransferSuccess(fileTransferListener);
+    assertNotNull("uploadNewVersion result",result);
+    LOG.debug("uploadNewVersion: " + result);
+  }
+  finally {
+    deleteFile(boxFile.getId());
+  }
+}

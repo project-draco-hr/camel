@@ -1,0 +1,16 @@
+{
+  try {
+    return super.doInvokeMethod(args);
+  }
+ catch (  RuntimeCamelException e) {
+    if (e.getCause() instanceof WebApplicationException) {
+      WebApplicationException cause=(WebApplicationException)e.getCause();
+      final Response response=cause.getResponse();
+      if (response.hasEntity()) {
+        final org.apache.camel.component.linkedin.api.model.Error error=response.readEntity(Error.class);
+        throw new RuntimeCamelException(String.format("Error invoking %s: %s",method.getName(),error.getMessage()),new LinkedInException(error,response));
+      }
+    }
+    throw e;
+  }
+}

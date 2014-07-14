@@ -1,0 +1,19 @@
+{
+  final Class proxyType=getProxyType();
+  if (excludeConfigNames != null) {
+    propertyNamePattern=Pattern.compile(excludeConfigNames);
+  }
+  if (excludeConfigTypes != null) {
+    propertyTypePattern=Pattern.compile(excludeConfigTypes);
+  }
+  ApiMethodParser parser=createAdapterParser(proxyType);
+  parser.setSignatures(getSignatureList());
+  parser.setClassLoader(getProjectClassLoader());
+  @SuppressWarnings("unchecked") final List<ApiMethodParser.ApiMethodModel> models=parser.parse();
+  mergeTemplate(getApiMethodContext(models),getApiMethodFile(),"/api-method-enum.vm");
+  mergeTemplate(getEndpointContext(models),getConfigurationFile(),"/api-endpoint-config.vm");
+  final String testFilePath=getTestFilePath();
+  if (!new File(project.getBuild().getTestSourceDirectory(),testFilePath).exists()) {
+    mergeTemplate(getApiTestContext(models),new File(generatedTestDir,testFilePath),"/api-route-test.vm");
+  }
+}

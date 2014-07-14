@@ -1,0 +1,31 @@
+{
+  final String[] pathElements=remaining.split("/");
+  String apiNameStr;
+  String methodName;
+switch (pathElements.length) {
+case 1:
+    apiNameStr="";
+  methodName=pathElements[0];
+break;
+case 2:
+apiNameStr=pathElements[0];
+methodName=pathElements[1];
+break;
+default :
+throw new CamelException("Invalid URI path [" + remaining + "], must be of the format "+ collection.getApiNames()+ "/<operation-name>");
+}
+try {
+final E apiName=getApiName(apiNameStr);
+final T endpointConfiguration=createEndpointConfiguration(apiName);
+final Endpoint endpoint=createEndpoint(uri,methodName,apiName,endpointConfiguration);
+setProperties(endpoint,parameters);
+endpoint.configureProperties(parameters);
+return endpoint;
+}
+ catch (InvocationTargetException e) {
+if (e.getCause() instanceof IllegalArgumentException) {
+throw new CamelException("Invalid URI path prefix [" + remaining + "], must be one of "+ collection.getApiNames());
+}
+throw e;
+}
+}

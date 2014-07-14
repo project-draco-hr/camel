@@ -1,15 +1,18 @@
 {
+  ResultSetIterator iterator=new ResultSetIterator(rs,getEndpoint().isUseJDBC4ColumnNameAndLabelSemantics());
+  exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
   JdbcOutputType outputType=getEndpoint().getOutputType();
-  if (outputType == JdbcOutputType.SelectList) {
-    List<Map<String,Object>> data=extractResultSetData(rs);
-    exchange.getOut().setHeader(JdbcConstants.JDBC_ROW_COUNT,data.size());
-    if (!data.isEmpty()) {
-      exchange.getOut().setHeader(JdbcConstants.JDBC_COLUMN_NAMES,data.get(0).keySet());
-    }
-    exchange.getOut().setBody(data);
+  exchange.getOut().setHeader(JdbcConstants.JDBC_COLUMN_NAMES,iterator.getColumnNames());
+  if (outputType == JdbcOutputType.StreamList) {
+    exchange.getOut().setBody(iterator);
+    exchange.addOnCompletion(new ResultSetIteratorCompletion(iterator));
+  }
+ else   if (outputType == JdbcOutputType.SelectList) {
+    List<Map<String,Object>> list=extractRows(iterator);
+    exchange.getOut().setHeader(JdbcConstants.JDBC_ROW_COUNT,list.size());
+    exchange.getOut().setBody(list);
   }
  else   if (outputType == JdbcOutputType.SelectOne) {
-    Object obj=queryForObject(rs);
-    exchange.getOut().setBody(obj);
+    exchange.getOut().setBody(extractSingleRow(iterator));
   }
 }

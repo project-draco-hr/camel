@@ -1,0 +1,95 @@
+{
+  final Set<String> validOptions=new HashSet<String>();
+  for (  Field field : endpointConfig.getDeclaredFields()) {
+    validOptions.add(field.getName());
+  }
+  final Map<String,List<ApiMethod>> methodMap=new TreeMap<String,List<ApiMethod>>();
+  for (  ApiMethod method : apiMethod.getEnumConstants()) {
+    String methodName=method.getName();
+    List<ApiMethod> apiMethods=methodMap.get(methodName);
+    if (apiMethods == null) {
+      apiMethods=new ArrayList<ApiMethod>();
+      methodMap.put(methodName,apiMethods);
+    }
+    apiMethods.add(method);
+  }
+  final Map<String,Set<String>> aliasMap=new TreeMap<String,Set<String>>();
+  final Map<String,Set<String>> aliasToMethodMap=helper.getAliases();
+  for (  Map.Entry<String,Set<String>> entry : aliasToMethodMap.entrySet()) {
+    final String alias=entry.getKey();
+    for (    String method : entry.getValue()) {
+      Set<String> aliases=aliasMap.get(method);
+      if (aliases == null) {
+        aliases=new TreeSet<String>();
+        aliasMap.put(method,aliases);
+      }
+      aliases.add(alias);
+    }
+  }
+  final Map<String,Set<String>> optionMap=new TreeMap<String,Set<String>>();
+  final Map<String,Set<String>> returnType=new TreeMap<String,Set<String>>();
+  for (  Map.Entry<String,List<ApiMethod>> entry : methodMap.entrySet()) {
+    final String name=entry.getKey();
+    final List<ApiMethod> apiMethods=entry.getValue();
+    final Map<String,Integer> optionCount=new TreeMap<String,Integer>();
+    final TreeSet<String> resultTypes=new TreeSet<String>();
+    returnType.put(name,resultTypes);
+    for (    ApiMethod method : apiMethods) {
+      for (      String arg : method.getArgNames()) {
+        if (validOptions.contains(arg)) {
+          Integer count=optionCount.get(arg);
+          if (count == null) {
+            count=1;
+          }
+ else {
+            count+=1;
+          }
+          optionCount.put(arg,count);
+        }
+      }
+      Class<?> resultType=method.getResultType();
+      if (resultType.isPrimitive()) {
+        resultType=ClassUtils.primitiveToWrapper(resultType);
+      }
+      resultTypes.add(getCanonicalName(resultType));
+    }
+    final TreeSet<String> options=new TreeSet<String>();
+    optionMap.put(name,options);
+    final Set<String> mandatory=new TreeSet<String>();
+    int nMethods=apiMethods.size();
+    for (    ApiMethod method : apiMethods) {
+      final Set<String> optional=new TreeSet<String>();
+      for (      String arg : method.getArgNames()) {
+        if (validOptions.contains(arg)) {
+          final Integer count=optionCount.get(arg);
+          if (count == nMethods) {
+            mandatory.add(arg);
+          }
+ else {
+            optional.add(arg);
+          }
+        }
+      }
+      if (!optional.isEmpty()) {
+        options.add(optional.toString());
+      }
+    }
+    if (!mandatory.isEmpty()) {
+      final String mandatoryOptions=mandatory.toString();
+      options.add(mandatoryOptions.substring(1,mandatoryOptions.length() - 1));
+    }
+  }
+  final List<EndpointInfo> infos=new ArrayList<EndpointInfo>();
+  for (  Map.Entry<String,List<ApiMethod>> methodEntry : methodMap.entrySet()) {
+    final String endpoint=methodEntry.getKey();
+    EndpointInfo info=new EndpointInfo();
+    info.endpoint=endpoint;
+    info.aliases=convertSetToString(aliasMap.get(endpoint));
+    info.options=convertSetToString(optionMap.get(endpoint));
+    final Set<String> resultTypes=returnType.get(endpoint);
+    resultTypes.remove("void");
+    info.resultTypes=convertSetToString(resultTypes);
+    infos.add(info);
+  }
+  return infos;
+}

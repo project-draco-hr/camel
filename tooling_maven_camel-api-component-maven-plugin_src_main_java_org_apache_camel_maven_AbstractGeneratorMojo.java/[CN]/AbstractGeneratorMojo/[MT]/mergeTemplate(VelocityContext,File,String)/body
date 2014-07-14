@@ -1,0 +1,29 @@
+{
+  final File outDir=outFile.getParentFile();
+  if (!outDir.isDirectory() && !outDir.mkdirs()) {
+    throw new MojoExecutionException("Error creating directory " + outDir);
+  }
+  context.put("generatedDate",new Date().toString());
+  context.put("packageName",outPackage);
+  final Template template=getEngine().getTemplate(templateName,"UTF-8");
+  BufferedWriter writer=null;
+  try {
+    writer=new BufferedWriter(new FileWriter(outFile));
+    template.merge(context,writer);
+  }
+ catch (  IOException e) {
+    throw new MojoExecutionException(e.getMessage(),e);
+  }
+catch (  VelocityException e) {
+    throw new MojoExecutionException(e.getMessage(),e);
+  }
+ finally {
+    if (writer != null) {
+      try {
+        writer.close();
+      }
+ catch (      IOException ignore) {
+      }
+    }
+  }
+}
