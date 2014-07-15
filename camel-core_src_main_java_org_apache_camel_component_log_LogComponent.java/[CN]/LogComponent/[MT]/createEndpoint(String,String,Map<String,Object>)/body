@@ -14,37 +14,24 @@
   LogEndpoint endpoint=new LogEndpoint(uri,this);
   endpoint.setLevel(level.name());
   setProperties(endpoint,parameters);
-  CamelLogger camelLogger=null;
   if (providedLogger == null) {
-    camelLogger=new CamelLogger(remaining,level,endpoint.getMarker());
+    endpoint.setLoggerName(remaining);
   }
  else {
-    camelLogger=new CamelLogger(providedLogger,level,endpoint.getMarker());
+    endpoint.setProvidedLogger(providedLogger);
   }
-  Processor logger;
-  if (endpoint.getGroupSize() != null) {
-    logger=new ThroughputLogger(camelLogger,endpoint.getGroupSize());
-  }
- else   if (endpoint.getGroupInterval() != null) {
-    Boolean groupActiveOnly=endpoint.getGroupActiveOnly() != null ? endpoint.getGroupActiveOnly() : Boolean.TRUE;
-    Long groupDelay=endpoint.getGroupDelay();
-    logger=new ThroughputLogger(camelLogger,this.getCamelContext(),endpoint.getGroupInterval(),groupDelay,groupActiveOnly);
-  }
- else {
-    ExchangeFormatter localFormatter=exchangeFormatter;
-    if (localFormatter == null) {
-      localFormatter=getCamelContext().getRegistry().lookupByNameAndType("logFormatter",ExchangeFormatter.class);
-      if (localFormatter != null) {
-        exchangeFormatter=localFormatter;
-        setProperties(exchangeFormatter,parameters);
-      }
+  ExchangeFormatter localFormatter=exchangeFormatter;
+  if (localFormatter == null) {
+    localFormatter=getCamelContext().getRegistry().lookupByNameAndType("logFormatter",ExchangeFormatter.class);
+    if (localFormatter != null) {
+      exchangeFormatter=localFormatter;
+      setProperties(exchangeFormatter,parameters);
     }
-    if (localFormatter == null) {
-      localFormatter=new DefaultExchangeFormatter();
-      setProperties(localFormatter,parameters);
-    }
-    logger=new CamelLogProcessor(camelLogger,localFormatter);
   }
-  endpoint.setLogger(logger);
+  if (localFormatter == null) {
+    localFormatter=new DefaultExchangeFormatter();
+    setProperties(localFormatter,parameters);
+  }
+  endpoint.setLocalFormatter(localFormatter);
   return endpoint;
 }
