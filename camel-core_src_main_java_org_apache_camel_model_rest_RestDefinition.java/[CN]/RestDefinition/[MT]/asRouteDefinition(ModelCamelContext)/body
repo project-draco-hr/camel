@@ -3,7 +3,18 @@
   for (  PathDefinition path : getPaths()) {
     String uri=path.getUri();
     for (    VerbDefinition verb : path.getVerbs()) {
-      String from="rest:" + verb.asVerb() + ":"+ uri+ (getComponent() != null ? "?componentName=" + getComponent() : "");
+      String from="rest:" + verb.asVerb() + ":"+ uri;
+      Map<String,Object> options=new HashMap<String,Object>();
+      if (getComponent() != null) {
+        options.put("componentName",getComponent());
+      }
+      if (verb.getConsumes() != null) {
+        options.put("consumes",verb.getConsumes());
+      }
+      if (!options.isEmpty()) {
+        String query=URISupport.createQueryString(options);
+        from=from + "?" + query;
+      }
       RouteDefinition route=new RouteDefinition();
       route.fromRest(from);
       answer.add(route);
