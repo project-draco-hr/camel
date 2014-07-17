@@ -1,0 +1,17 @@
+{
+  Object body=message;
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Channel: {} received body: {}",new Object[]{ctx.channel(),body});
+  }
+  if (producer.getConfiguration().isTextline()) {
+    body=producer.getContext().getTypeConverter().mandatoryConvertTo(String.class,exchange,message);
+  }
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    NettyPayloadHelper.setOut(exchange,body);
+    return exchange.getOut();
+  }
+ else {
+    NettyPayloadHelper.setIn(exchange,body);
+    return exchange.getIn();
+  }
+}

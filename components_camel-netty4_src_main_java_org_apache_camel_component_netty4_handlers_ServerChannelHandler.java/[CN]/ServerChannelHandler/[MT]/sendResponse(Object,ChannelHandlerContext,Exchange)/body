@@ -1,0 +1,24 @@
+{
+  Object body=getResponseBody(exchange);
+  if (body == null) {
+    noReplyLogger.log("No payload to send as reply for exchange: " + exchange);
+    if (consumer.getConfiguration().isDisconnectOnNoReply()) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Closing channel as no payload to send as reply at address: {}",ctx.channel().remoteAddress());
+      }
+      NettyHelper.close(ctx.channel());
+    }
+  }
+ else {
+    if (consumer.getConfiguration().isTextline()) {
+      body=NettyHelper.getTextlineBody(body,exchange,consumer.getConfiguration().getDelimiter(),consumer.getConfiguration().isAutoAppendDelimiter());
+    }
+    ChannelFutureListener listener=createResponseFutureListener(consumer,exchange,ctx.channel().remoteAddress());
+    if (consumer.getConfiguration().isTcp()) {
+      NettyHelper.writeBodyAsync(LOG,ctx.channel(),null,body,exchange,listener);
+    }
+ else {
+      NettyHelper.writeBodyAsync(LOG,ctx.channel(),ctx.channel().remoteAddress(),body,exchange,listener);
+    }
+  }
+}
