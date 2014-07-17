@@ -1,16 +1,15 @@
 {
   path=FileUtil.stripLeadingSeparator(path);
-  ModelCamelContext model=(ModelCamelContext)getCamelContext();
-  String host="0.0.0.0";
   int port=0;
-  if (model.getRestConfigurationDefinition() != null) {
-    String value=model.getRestConfigurationDefinition().getPort();
-    if (value != null) {
-      port=CamelContextHelper.parseInteger(model,value);
+  String host="0.0.0.0";
+  RestConfiguration config=getCamelContext().getRestConfiguration();
+  if (config != null && (config.getComponent() == null || config.getComponent().equals("restlet"))) {
+    int num=config.getPort();
+    if (num > 0) {
+      port=num;
     }
-    value=model.getRestConfigurationDefinition().getHost();
-    if (value != null) {
-      host=CamelContextHelper.parseText(model,value);
+    if (config.getHost() != null) {
+      host=config.getHost();
     }
   }
   String url=String.format("restlet:http://%s:%s/%s?restletMethod=%s",host,port,path,verb);
