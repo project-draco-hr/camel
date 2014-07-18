@@ -1,0 +1,58 @@
+{
+  messageReceived=true;
+  if (LOG.isTraceEnabled()) {
+    LOG.trace("Message received: {}",messageEvent);
+  }
+  if (producer.getConfiguration().getRequestTimeout() > 0) {
+    ChannelHandler handler=ctx.getPipeline().get("timeout");
+    if (handler != null) {
+      LOG.trace("Removing timeout channel as we received message");
+      ctx.getPipeline().remove(handler);
+    }
+  }
+  Exchange exchange=getExchange(ctx);
+  if (exchange == null) {
+    return;
+  }
+  AsyncCallback callback=getAsyncCallback(ctx);
+  Message message;
+  try {
+    message=getResponseMessage(exchange,messageEvent);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(false);
+    return;
+  }
+  if (ExchangeHelper.isOutCapable(exchange)) {
+    exchange.setOut(message);
+  }
+ else {
+    exchange.setIn(message);
+  }
+  try {
+    Boolean close;
+    if (ExchangeHelper.isOutCapable(exchange)) {
+      close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+    }
+ else {
+      close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+    }
+    if (close == null) {
+      close=exchange.getProperty(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+    }
+    boolean disconnect=producer.getConfiguration().isDisconnect();
+    if (close != null) {
+      disconnect=close;
+    }
+    if (disconnect) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Closing channel when complete at address: {}",producer.getConfiguration().getAddress());
+      }
+      NettyHelper.close(ctx.getChannel());
+    }
+  }
+  finally {
+    callback.done(false);
+  }
+}

@@ -1,0 +1,43 @@
+{
+  int count=configuration.getWorkerCount() > 0 ? configuration.getWorkerCount() : NettyHelper.DEFAULT_IO_THREADS;
+  workerPool=new NioDatagramWorkerPool(Executors.newCachedThreadPool(),count);
+  datagramChannelFactory=new NioDatagramChannelFactory(workerPool);
+  connectionlessBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
+  connectionlessBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
+  connectionlessBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
+  connectionlessBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
+  connectionlessBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
+  connectionlessBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
+  connectionlessBootstrap.setOption("child.broadcast",configuration.isBroadcast());
+  connectionlessBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
+  connectionlessBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
+  if (configuration.getReceiveBufferSizePredictor() > 0) {
+    connectionlessBootstrap.setOption("receiveBufferSizePredictorFactory",new FixedReceiveBufferSizePredictorFactory(configuration.getReceiveBufferSizePredictor()));
+  }
+  if (configuration.getBacklog() > 0) {
+    connectionlessBootstrap.setOption("backlog",configuration.getBacklog());
+  }
+  if (configuration.getOptions() != null) {
+    for (    Map.Entry<String,Object> entry : configuration.getOptions().entrySet()) {
+      connectionlessBootstrap.setOption(entry.getKey(),entry.getValue());
+    }
+  }
+  LOG.debug("Created ConnectionlessBootstrap {} with options: {}",connectionlessBootstrap,connectionlessBootstrap.getOptions());
+  connectionlessBootstrap.setPipelineFactory(pipelineFactory);
+  InetSocketAddress hostAddress=new InetSocketAddress(configuration.getHost(),configuration.getPort());
+  IpV4Subnet multicastSubnet=new IpV4Subnet(MULTICAST_SUBNET);
+  if (multicastSubnet.contains(configuration.getHost())) {
+    datagramChannel=(DatagramChannel)connectionlessBootstrap.bind(hostAddress);
+    String networkInterface=configuration.getNetworkInterface() == null ? LOOPBACK_INTERFACE : configuration.getNetworkInterface();
+    multicastNetworkInterface=NetworkInterface.getByName(networkInterface);
+    ObjectHelper.notNull(multicastNetworkInterface,"No network interface found for '" + networkInterface + "'.");
+    LOG.info("ConnectionlessBootstrap joining {}:{} using network interface: {}",new Object[]{configuration.getHost(),configuration.getPort(),multicastNetworkInterface.getName()});
+    datagramChannel.joinGroup(hostAddress,multicastNetworkInterface).syncUninterruptibly();
+    allChannels.add(datagramChannel);
+  }
+ else {
+    LOG.info("ConnectionlessBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
+    channel=connectionlessBootstrap.bind(hostAddress);
+    allChannels.add(channel);
+  }
+}

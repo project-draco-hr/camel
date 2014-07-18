@@ -1,0 +1,31 @@
+{
+  SSLContext answer;
+  KeyStore ks=KeyStore.getInstance(keyStoreFormat);
+  InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(classResolver,keyStoreResource);
+  try {
+    ks.load(is,passphrase);
+  }
+  finally {
+    IOHelper.close(is);
+  }
+  KeyManagerFactory kmf=KeyManagerFactory.getInstance(securityProvider);
+  kmf.init(ks,passphrase);
+  answer=SSLContext.getInstance(SSL_PROTOCOL);
+  if (trustStoreResource != null) {
+    KeyStore ts=KeyStore.getInstance(keyStoreFormat);
+    is=ResourceHelper.resolveMandatoryResourceAsInputStream(classResolver,trustStoreResource);
+    try {
+      ts.load(is,passphrase);
+    }
+  finally {
+      IOHelper.close(is);
+    }
+    TrustManagerFactory tmf=TrustManagerFactory.getInstance(securityProvider);
+    tmf.init(ts);
+    answer.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
+  }
+ else {
+    answer.init(kmf.getKeyManagers(),null,null);
+  }
+  return answer;
+}

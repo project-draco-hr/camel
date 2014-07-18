@@ -1,0 +1,14 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      sharedWorker=new NettyWorkerPoolBuilder().withWorkerCount(10).build();
+      jndi.bind("sharedWorker",sharedWorker);
+      sharedBoos=new NettyServerBossPoolBuilder().withBossCount(20).build();
+      jndi.bind("sharedBoss",sharedBoos);
+      for (int i=0; i < 100; i++) {
+        from("netty:tcp://localhost:" + getNextPort() + "?textline=true&sync=true&orderedThreadPoolExecutor=false"+ "&bossPool=#sharedBoss&workerPool=#sharedWorker").validate(body().isInstanceOf(String.class)).to("log:result").to("mock:result").transform(body().regexReplaceAll("Hello","Bye"));
+      }
+    }
+  }
+;
+}
