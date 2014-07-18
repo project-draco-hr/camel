@@ -22,10 +22,11 @@
     addToPipeline("decoder-" + x,channelPipeline,decoder);
   }
   if (consumer.getConfiguration().isOrderedThreadPoolExecutor()) {
-    ExecutionHandler executionHandler=new ExecutionHandler(consumer.getEndpoint().getComponent().getExecutorService());
-    addToPipeline("executionHandler",channelPipeline,executionHandler);
-    LOG.debug("Using OrderedMemoryAwareThreadPoolExecutor with core pool size: {}",consumer.getConfiguration().getMaximumPoolSize());
+    EventExecutorGroup applicationExecutor=consumer.getEndpoint().getComponent().getExecutorService();
+    addToPipeline("handler",channelPipeline,applicationExecutor,new ServerChannelHandler(consumer));
   }
-  addToPipeline("handler",channelPipeline,new ServerChannelHandler(consumer));
+ else {
+    addToPipeline("handler",channelPipeline,new ServerChannelHandler(consumer));
+  }
   LOG.trace("Created ChannelPipeline: {}",channelPipeline);
 }

@@ -1,32 +1,28 @@
 {
-  BossPool bp=configuration.getBossPool();
-  WorkerPool wp=configuration.getWorkerPool();
-  if (bp == null) {
-    bossPool=new NettyServerBossPoolBuilder().withBossCount(configuration.getBossCount()).withName("NettyServerTCPBoss").build();
-    bp=bossPool;
+  EventLoopGroup bg=configuration.getBossGroup();
+  EventLoopGroup wg=configuration.getWorkerGroup();
+  if (bg == null) {
+    bossGroup=new NettyServerBossPoolBuilder().withBossCount(configuration.getBossCount()).withName("NettyServerTCPBoss").build();
+    bg=bossGroup;
   }
-  if (wp == null) {
-    workerPool=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
-    wp=workerPool;
+  if (wg == null) {
+    workerGroup=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    wg=workerGroup;
   }
-  channelFactory=new NioServerSocketChannelFactory(bp,wp);
-  serverBootstrap=new ServerBootstrap(channelFactory);
-  serverBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
-  serverBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
-  serverBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
-  serverBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
-  serverBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
+  serverBootstrap=new ServerBootstrap();
+  serverBootstrap.group(bg,wg).channel(NioServerSocketChannel.class);
+  serverBootstrap.childOption(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
+  serverBootstrap.childOption(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());
+  serverBootstrap.option(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+  serverBootstrap.childOption(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+  serverBootstrap.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
   if (configuration.getBacklog() > 0) {
-    serverBootstrap.setOption("backlog",configuration.getBacklog());
+    serverBootstrap.option(ChannelOption.SO_BACKLOG,configuration.getBacklog());
   }
-  if (configuration.getOptions() != null) {
-    for (    Map.Entry<String,Object> entry : configuration.getOptions().entrySet()) {
-      serverBootstrap.setOption(entry.getKey(),entry.getValue());
-    }
-  }
-  LOG.debug("Created ServerBootstrap {} with options: {}",serverBootstrap,serverBootstrap.getOptions());
-  serverBootstrap.setPipelineFactory(pipelineFactory);
+  serverBootstrap.handler(pipelineFactory);
+  LOG.debug("Created ServerBootstrap {}",serverBootstrap);
   LOG.info("ServerBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
-  channel=serverBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  ChannelFuture channelFutrue=serverBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  channel=channelFutrue.channel();
   allChannels.add(channel);
 }
