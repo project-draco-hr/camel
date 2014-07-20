@@ -1,33 +1,26 @@
 {
   int count=configuration.getWorkerCount() > 0 ? configuration.getWorkerCount() : NettyHelper.DEFAULT_IO_THREADS;
-  workerPool=new NioDatagramWorkerPool(Executors.newCachedThreadPool(),count);
-  datagramChannelFactory=new NioDatagramChannelFactory(workerPool);
-  connectionlessBootstrap=new ConnectionlessBootstrap(datagramChannelFactory);
-  connectionlessBootstrap.setOption("child.keepAlive",configuration.isKeepAlive());
-  connectionlessBootstrap.setOption("child.tcpNoDelay",configuration.isTcpNoDelay());
-  connectionlessBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
-  connectionlessBootstrap.setOption("child.reuseAddress",configuration.isReuseAddress());
-  connectionlessBootstrap.setOption("child.connectTimeoutMillis",configuration.getConnectTimeout());
-  connectionlessBootstrap.setOption("child.broadcast",configuration.isBroadcast());
-  connectionlessBootstrap.setOption("sendBufferSize",configuration.getSendBufferSize());
-  connectionlessBootstrap.setOption("receiveBufferSize",configuration.getReceiveBufferSize());
-  if (configuration.getReceiveBufferSizePredictor() > 0) {
-    connectionlessBootstrap.setOption("receiveBufferSizePredictorFactory",new FixedReceiveBufferSizePredictorFactory(configuration.getReceiveBufferSizePredictor()));
+  EventLoopGroup wg=configuration.getWorkerGroup();
+  if (wg == null) {
+    workerGroup=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    wg=workerGroup;
   }
+  Bootstrap bootstrap=new Bootstrap();
+  bootstrap.group(wg).channel(NioDatagramChannel.class);
+  bootstrap.option(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+  bootstrap.option(ChannelOption.SO_SNDBUF,configuration.getSendBufferSize());
+  bootstrap.option(ChannelOption.SO_RCVBUF,configuration.getReceiveBufferSize());
+  bootstrap.option(ChannelOption.SO_BROADCAST,configuration.isBroadcast());
+  bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
   if (configuration.getBacklog() > 0) {
-    connectionlessBootstrap.setOption("backlog",configuration.getBacklog());
+    bootstrap.option(ChannelOption.SO_BACKLOG,configuration.getBacklog());
   }
-  if (configuration.getOptions() != null) {
-    for (    Map.Entry<String,Object> entry : configuration.getOptions().entrySet()) {
-      connectionlessBootstrap.setOption(entry.getKey(),entry.getValue());
-    }
-  }
-  LOG.debug("Created ConnectionlessBootstrap {} with options: {}",connectionlessBootstrap,connectionlessBootstrap.getOptions());
-  connectionlessBootstrap.setPipelineFactory(pipelineFactory);
+  LOG.debug("Created ConnectionlessBootstrap {}",bootstrap);
+  bootstrap.handler(pipelineFactory);
   InetSocketAddress hostAddress=new InetSocketAddress(configuration.getHost(),configuration.getPort());
-  IpV4Subnet multicastSubnet=new IpV4Subnet(MULTICAST_SUBNET);
-  if (multicastSubnet.contains(configuration.getHost())) {
-    datagramChannel=(DatagramChannel)connectionlessBootstrap.bind(hostAddress);
+  SubnetUtils multicastSubnet=new SubnetUtils(MULTICAST_SUBNET);
+  if (multicastSubnet.getInfo().isInRange(configuration.getHost())) {
+    datagramChannel=(DatagramChannel)bootstrap.bind(hostAddress);
     String networkInterface=configuration.getNetworkInterface() == null ? LOOPBACK_INTERFACE : configuration.getNetworkInterface();
     multicastNetworkInterface=NetworkInterface.getByName(networkInterface);
     ObjectHelper.notNull(multicastNetworkInterface,"No network interface found for '" + networkInterface + "'.");
@@ -37,7 +30,9 @@
   }
  else {
     LOG.info("ConnectionlessBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
-    channel=connectionlessBootstrap.bind(hostAddress);
+    ChannelFuture channelFuture=bootstrap.bind(hostAddress);
+    channelFuture.awaitUninterruptibly();
+    channel=channelFuture.channel();
     allChannels.add(channel);
   }
 }
