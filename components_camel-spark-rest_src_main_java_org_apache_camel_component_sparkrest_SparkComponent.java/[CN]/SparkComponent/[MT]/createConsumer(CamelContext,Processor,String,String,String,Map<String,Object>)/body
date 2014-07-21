@@ -3,13 +3,27 @@
     Matcher matcher=pattern.matcher(path);
     path=matcher.replaceAll(":$1");
   }
-  SparkEndpoint endpoint;
+  String uri=String.format("spark-rest:%s:%s",verb,path);
+  Map<String,Object> map=new HashMap<String,Object>();
   if (consumes != null) {
-    endpoint=camelContext.getEndpoint("spark-rest:" + verb + ":"+ path+ "?accept="+ consumes,SparkEndpoint.class);
+    map.put("accept",consumes);
   }
- else {
-    endpoint=camelContext.getEndpoint("spark-rest:" + verb + ":"+ path,SparkEndpoint.class);
+  RestConfiguration config=getCamelContext().getRestConfiguration();
+  if (config != null && (config.getComponent() == null || config.getComponent().equals("spark-rest"))) {
+    if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+      map.putAll(config.getEndpointProperties());
+    }
   }
+  String query=URISupport.createQueryString(map);
+  String url=uri;
+  if (!query.isEmpty()) {
+    url=url + "?" + query;
+  }
+  SparkEndpoint endpoint=camelContext.getEndpoint(url,SparkEndpoint.class);
   setProperties(endpoint,parameters);
-  return endpoint.createConsumer(processor);
+  Consumer consumer=endpoint.createConsumer(processor);
+  if (config != null && config.getConsumerProperties() != null && !config.getConsumerProperties().isEmpty()) {
+    setProperties(consumer,config.getConsumerProperties());
+  }
+  return consumer;
 }
