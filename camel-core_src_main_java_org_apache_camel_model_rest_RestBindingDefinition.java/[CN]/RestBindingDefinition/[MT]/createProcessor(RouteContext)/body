@@ -1,4 +1,7 @@
 {
+  if (ObjectHelper.isEmpty(type) && ObjectHelper.isEmpty(classType)) {
+    throw new IllegalArgumentException("Type must be configured on " + this);
+  }
   CamelContext context=routeContext.getCamelContext();
   String name=jsonDataFormat;
   if (name == null) {
@@ -8,11 +11,11 @@
   if (json == null) {
     throw new IllegalArgumentException("DataFormat " + name + " not found.");
   }
-  if (resolvedClassType == null && classType != null) {
-    resolvedClassType=context.getClassResolver().resolveMandatoryClass(classType);
+  if (classType == null && type != null) {
+    classType=context.getClassResolver().resolveMandatoryClass(type);
   }
-  if (resolvedClassType != null) {
-    IntrospectionSupport.setProperty(context.getTypeConverter(),json,"unmarshalType",resolvedClassType);
+  if (classType != null) {
+    IntrospectionSupport.setProperty(context.getTypeConverter(),json,"unmarshalType",classType);
   }
   context.addService(json);
   name=xmlDataFormat;
@@ -23,11 +26,11 @@
   if (jaxb == null) {
     throw new IllegalArgumentException("DataFormat " + name + " not found.");
   }
-  if (resolvedClassType == null && classType != null) {
-    resolvedClassType=context.getClassResolver().resolveMandatoryClass(classType);
+  if (classType == null && type != null) {
+    classType=context.getClassResolver().resolveMandatoryClass(type);
   }
-  if (resolvedClassType != null) {
-    JAXBContext jc=JAXBContext.newInstance(resolvedClassType);
+  if (classType != null) {
+    JAXBContext jc=JAXBContext.newInstance(classType);
     IntrospectionSupport.setProperty(context.getTypeConverter(),jaxb,"context",jc);
   }
   context.addService(jaxb);
