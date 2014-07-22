@@ -1,0 +1,27 @@
+{
+  if (jsonUnmarshal == null && xmlUnmarshal == null) {
+    callback.done(true);
+    return true;
+  }
+  String contentType=ExchangeHelper.getContentType(exchange);
+  boolean isXml=contentType != null && contentType.toLowerCase(Locale.US).contains("xml");
+  boolean isJson=contentType != null && contentType.toLowerCase(Locale.US).contains("json");
+  if (isXml && xmlUnmarshal != null) {
+    return xmlUnmarshal.process(exchange,callback);
+  }
+ else   if (isJson && jsonUnmarshal != null) {
+    return jsonUnmarshal.process(exchange,callback);
+  }
+  String body=MessageHelper.extractBodyAsString(exchange.getIn());
+  isXml=body.startsWith("<") || body.contains("xml");
+  if (isXml && xmlUnmarshal != null) {
+    return xmlUnmarshal.process(exchange,callback);
+  }
+ else   if (jsonUnmarshal != null) {
+    return jsonUnmarshal.process(exchange,callback);
+  }
+ else {
+    callback.done(true);
+    return true;
+  }
+}

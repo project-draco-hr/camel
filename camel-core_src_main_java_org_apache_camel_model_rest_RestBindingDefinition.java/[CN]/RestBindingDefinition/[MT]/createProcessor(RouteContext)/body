@@ -1,0 +1,35 @@
+{
+  CamelContext context=routeContext.getCamelContext();
+  String name=jsonDataFormat;
+  if (name == null) {
+    name="json-jackson";
+  }
+  DataFormat json=context.resolveDataFormat(name);
+  if (json == null) {
+    throw new IllegalArgumentException("DataFormat " + name + " not found.");
+  }
+  if (resolvedClassType == null && classType != null) {
+    resolvedClassType=context.getClassResolver().resolveMandatoryClass(classType);
+  }
+  if (resolvedClassType != null) {
+    IntrospectionSupport.setProperty(context.getTypeConverter(),json,"unmarshalType",resolvedClassType);
+  }
+  context.addService(json);
+  name=xmlDataFormat;
+  if (name == null) {
+    name="jaxb";
+  }
+  DataFormat jaxb=context.resolveDataFormat(name);
+  if (jaxb == null) {
+    throw new IllegalArgumentException("DataFormat " + name + " not found.");
+  }
+  if (resolvedClassType == null && classType != null) {
+    resolvedClassType=context.getClassResolver().resolveMandatoryClass(classType);
+  }
+  if (resolvedClassType != null) {
+    JAXBContext jc=JAXBContext.newInstance(resolvedClassType);
+    IntrospectionSupport.setProperty(context.getTypeConverter(),jaxb,"context",jc);
+  }
+  context.addService(jaxb);
+  return new RestBindingProcessor(json,jaxb);
+}
