@@ -8,26 +8,31 @@
       fac=XMLSignatureFactory.getInstance("DOM");
     }
     final Node node=getMessageBodyNode(out);
-    Node parent=getParentOfSignature(out,node);
     final KeySelector keySelector=getConfiguration().getKeyAccessor().getKeySelector(out);
     if (keySelector == null) {
       throw new XmlSignatureNoKeyException("Key selector is missing for XML signature generation. Specify a key selector in the configuration.");
     }
-    final KeyInfo keyInfo=getConfiguration().getKeyAccessor().getKeyInfo(out,node,fac.getKeyInfoFactory());
-    final String signatureId="_" + UUID.randomUUID().toString();
-    LOG.debug("Signature Id {}",signatureId);
-    XmlSignatureProperties.Input input=new InputBuilder().contentDigestAlgorithm(getDigestAlgorithmUri()).keyInfo(keyInfo).message(out).messageBodyNode(node).parent(parent).signatureAlgorithm(getConfiguration().getSignatureAlgorithm()).signatureFactory(fac).signatureId(signatureId).build();
-    XmlSignatureProperties.Output properties=getSignatureProperties(input);
-    List<? extends XMLObject> objects=getObjects(input,properties);
-    List<? extends Reference> refs=getReferences(input,properties,getKeyInfoId(keyInfo));
-    SignedInfo si=createSignedInfo(fac,refs);
-    if (parent == null) {
-      parent=XmlSignatureHelper.newDocumentBuilder(Boolean.TRUE).newDocument();
+    SignatureType signatureType=determineSignatureType(out);
+    final List<String> contentReferenceUris=getContentReferenceUris(out,signatureType,node);
+    Node lastParent=null;
+    for (    final String contentReferenceUri : contentReferenceUris) {
+      final KeyInfo keyInfo=getConfiguration().getKeyAccessor().getKeyInfo(out,node,fac.getKeyInfoFactory());
+      String signatureId="_" + UUID.randomUUID().toString();
+      Node parent=getParentOfSignature(out,node,contentReferenceUri,signatureType);
+      XmlSignatureProperties.Input input=new InputBuilder().contentDigestAlgorithm(getDigestAlgorithmUri()).keyInfo(keyInfo).message(out).messageBodyNode(node).parent(parent).signatureAlgorithm(getConfiguration().getSignatureAlgorithm()).signatureFactory(fac).signatureId(signatureId).contentReferenceUri(contentReferenceUri).signatureType(signatureType).build();
+      XmlSignatureProperties.Output properties=getSignatureProperties(input);
+      List<? extends XMLObject> objects=getObjects(input,properties);
+      List<? extends Reference> refs=getReferences(input,properties,getKeyInfoId(keyInfo));
+      SignedInfo si=createSignedInfo(fac,refs);
+      if (parent == null) {
+        parent=XmlSignatureHelper.newDocumentBuilder(Boolean.TRUE).newDocument();
+      }
+      lastParent=parent;
+      DOMSignContext dsc=createAndConfigureSignContext(parent,keySelector);
+      XMLSignature signature=fac.newXMLSignature(si,keyInfo,objects,signatureId,null);
+      signature.sign(dsc);
     }
-    DOMSignContext dsc=createAndConfigureSignContext(parent,keySelector);
-    XMLSignature signature=fac.newXMLSignature(si,keyInfo,objects,signatureId,null);
-    signature.sign(dsc);
-    return XmlSignatureHelper.getDocument(parent);
+    return XmlSignatureHelper.getDocument(lastParent);
   }
  catch (  XMLSignatureException se) {
     if (se.getCause() instanceof InvalidKeyException) {

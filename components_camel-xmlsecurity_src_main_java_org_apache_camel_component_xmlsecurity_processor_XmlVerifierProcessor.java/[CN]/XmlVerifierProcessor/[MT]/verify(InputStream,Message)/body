@@ -1,7 +1,6 @@
 {
   LOG.debug("Verification of XML signature document started");
-  final Document doc=parseInput(input);
-  Node signatureNode=getSignatureNode(doc);
+  final Document doc=parseInput(input,out);
   XMLSignatureFactory fac;
   try {
     fac=XMLSignatureFactory.getInstance("DOM","ApacheXMLDSig");
@@ -13,7 +12,7 @@
   if (selector == null) {
     throw new IllegalStateException("Wrong configuration. Key selector is missing.");
   }
-  DOMValidateContext valContext=new DOMValidateContext(selector,signatureNode);
+  DOMValidateContext valContext=new DOMValidateContext(selector,doc);
   valContext.setProperty("javax.xml.crypto.dsig.cacheReference",Boolean.TRUE);
   valContext.setProperty("org.jcp.xml.dsig.validateManifests",Boolean.TRUE);
   if (getConfiguration().getSecureValidation() == Boolean.TRUE) {
@@ -22,24 +21,37 @@
   }
   setUriDereferencerAndBaseUri(valContext);
   setCryptoContextProperties(valContext);
-  final XMLSignature signature=fac.unmarshalXMLSignature(valContext);
-  executeApplicationCheck(out,doc,signature);
-  boolean coreValidity;
-  try {
-    coreValidity=signature.validate(valContext);
-  }
- catch (  XMLSignatureException se) {
-    throw getConfiguration().getValidationFailedHandler().onXMLSignatureException(se);
-  }
-  boolean goon=coreValidity;
-  if (!coreValidity) {
-    goon=handleSignatureValidationFailed(valContext,signature);
-  }
-  if (goon) {
-    LOG.debug("XML signature verified");
-    map2Message(signature,out,doc);
-  }
+  NodeList signatureNodes=getSignatureNodes(doc);
+  List<XMLObject> collectedObjects=new ArrayList<XMLObject>(3);
+  List<Reference> collectedReferences=new ArrayList<Reference>(3);
+  int totalCount=signatureNodes.getLength();
+  for (int i=0; i < totalCount; i++) {
+    Element signatureNode=(Element)signatureNodes.item(i);
+    valContext.setNode(signatureNode);
+    final XMLSignature signature=fac.unmarshalXMLSignature(valContext);
+    if (getConfiguration().getXmlSignatureChecker() != null) {
+      XmlSignatureChecker.Input checkerInput=new CheckerInputBuilder().message(out).messageBodyDocument(doc).keyInfo(signature.getKeyInfo()).currentCountOfSignatures(i + 1).currentSignatureElement(signatureNode).objects(signature.getObjects()).signatureValue(signature.getSignatureValue()).signedInfo(signature.getSignedInfo()).totalCountOfSignatures(totalCount).xmlSchemaValidationExecuted(getSchemaResourceUri(out) != null).build();
+      getConfiguration().getXmlSignatureChecker().checkBeforeCoreValidation(checkerInput);
+    }
+    boolean coreValidity;
+    try {
+      coreValidity=signature.validate(valContext);
+    }
+ catch (    XMLSignatureException se) {
+      throw getConfiguration().getValidationFailedHandler().onXMLSignatureException(se);
+    }
+    boolean goon=coreValidity;
+    if (!coreValidity) {
+      goon=handleSignatureValidationFailed(valContext,signature);
+    }
+    if (goon) {
+      LOG.debug("XML signature {} verified",i + 1);
+    }
  else {
-    throw new XmlSignatureInvalidException("");
+      throw new XmlSignatureInvalidException("XML signature validation failed");
+    }
+    collectedObjects.addAll((List<XMLObject>)signature.getObjects());
+    collectedReferences.addAll((List<Reference>)signature.getSignedInfo().getReferences());
   }
+  map2Message(collectedReferences,collectedObjects,out,doc);
 }

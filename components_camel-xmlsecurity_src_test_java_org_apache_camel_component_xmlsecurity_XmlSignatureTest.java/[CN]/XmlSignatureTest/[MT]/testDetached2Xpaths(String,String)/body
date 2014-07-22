@@ -1,0 +1,26 @@
+{
+  String detachedPayload="<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<ns:root xmlns:ns=\"http://test\"><test ID=\"myID\"><b>bValue</b><ts:B xmlns:ts=\"http://testB\"><C ID=\"cID\"><D>dvalue</D></C></ts:B></test></ns:root>";
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  MockEndpoint mockVerified=getMockEndpoint("mock:verified");
+  mockVerified.expectedBodiesReceived(detachedPayload);
+  Map<String,Object> headers=new TreeMap<String,Object>();
+  headers.put(XmlSignatureConstants.HEADER_SCHEMA_RESOURCE_URI,(Object)"org/apache/camel/component/xmlsecurity/TestComplex.xsd");
+  Map<String,String> namespaceMap=new TreeMap<String,String>();
+  namespaceMap.put("ns","http://test");
+  namespaceMap.put("ns1","http://testB");
+  XPathFilterParameterSpec xpath1=XmlSignatureHelper.getXpathFilter(xpath1exp,namespaceMap);
+  XPathFilterParameterSpec xpath2=XmlSignatureHelper.getXpathFilter(xpath2exp,namespaceMap);
+  List<XPathFilterParameterSpec> xpaths=new ArrayList<XPathFilterParameterSpec>();
+  xpaths.add(xpath1);
+  xpaths.add(xpath2);
+  headers.put(XmlSignatureConstants.HEADER_XPATHS_TO_ID_ATTRIBUTES,(Object)xpaths);
+  sendBody("direct:detached",detachedPayload,headers);
+  assertMockEndpointsSatisfied();
+  Map<String,String> namespaceMap2=new TreeMap<String,String>();
+  namespaceMap2.put("ns","http://test");
+  namespaceMap2.put("ds",XMLSignature.XMLNS);
+  namespaceMap2.put("nsB","http://testB");
+  checkXpath(mock,"ns:root/test/nsB:B/ds:Signature",namespaceMap2);
+  checkXpath(mock,"ns:root/ds:Signature",namespaceMap2);
+}

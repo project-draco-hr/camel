@@ -1,0 +1,23 @@
+{
+  Message mess=getMessage(mock);
+  InputStream body=mess.getBody(InputStream.class);
+  assertNotNull(body);
+  XPathFactory xpathFactory=XPathFactory.newInstance();
+  XPath xpath=xpathFactory.newXPath();
+  NamespaceContext nc=new NamespaceContext(){
+    @SuppressWarnings("rawtypes") @Override public Iterator getPrefixes(    String namespaceURI){
+      return null;
+    }
+    @Override public String getPrefix(    String namespaceURI){
+      return null;
+    }
+    @Override public String getNamespaceURI(    String prefix){
+      return prefix2Namespace.get(prefix);
+    }
+  }
+;
+  xpath.setNamespaceContext(nc);
+  XPathExpression expr=xpath.compile(xpathString);
+  Object result=expr.evaluate(XmlSignatureHelper.newDocumentBuilder(true).parse(body),XPathConstants.NODE);
+  assertNotNull("The xpath " + xpathString + " returned a null value",result);
+}
