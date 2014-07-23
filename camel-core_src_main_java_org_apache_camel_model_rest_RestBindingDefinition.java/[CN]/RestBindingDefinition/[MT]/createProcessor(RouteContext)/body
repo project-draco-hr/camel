@@ -3,13 +3,17 @@
     throw new IllegalArgumentException("Type must be configured on " + this);
   }
   CamelContext context=routeContext.getCamelContext();
+  String mode=context.getRestConfiguration().getBindingMode().name();
+  if (bindingMode != null) {
+    mode=bindingMode.name();
+  }
   String name=jsonDataFormat;
   if (name == null) {
     name="json-jackson";
   }
   DataFormat json=context.resolveDataFormat(name);
-  if (json == null) {
-    throw new IllegalArgumentException("DataFormat " + name + " not found.");
+  if (mode.contains("json") && json == null) {
+    throw new IllegalArgumentException("JSon DataFormat " + name + " not found.");
   }
   if (classType == null && type != null) {
     classType=context.getClassResolver().resolveMandatoryClass(type);
@@ -27,8 +31,8 @@
     name="jaxb";
   }
   DataFormat jaxb=context.resolveDataFormat(name);
-  if (jaxb == null) {
-    throw new IllegalArgumentException("DataFormat " + name + " not found.");
+  if (mode.contains("xml") && jaxb == null) {
+    throw new IllegalArgumentException("XML DataFormat " + name + " not found.");
   }
   if (classType == null && type != null) {
     classType=context.getClassResolver().resolveMandatoryClass(type);
@@ -41,5 +45,5 @@
     IntrospectionSupport.setProperty(context.getTypeConverter(),jaxb,"context",jc);
   }
   context.addService(jaxb);
-  return new RestBindingProcessor(json,jaxb);
+  return new RestBindingProcessor(json,jaxb,consumes,produces,mode);
 }
