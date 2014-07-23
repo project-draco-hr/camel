@@ -1,0 +1,46 @@
+{
+  super.startTag(tag);
+  final HTML.Tag htmlTag=tag.getHTMLTag();
+  if (htmlTag != null) {
+    if (HTML.Tag.A.equals(htmlTag)) {
+      final SimpleAttributeSet attributes=getAttributes();
+      final Object name=attributes.getAttribute(HTML.Attribute.NAME);
+      if (name != null) {
+        final String nameAttr=(String)name;
+        if (parserState == ParserState.INIT && ("method_summary".equals(nameAttr) || "method.summary".equals(nameAttr))) {
+          parserState=ParserState.METHOD_SUMMARY;
+        }
+ else         if (parserState == ParserState.METHOD) {
+          if (methodWithTypes == null) {
+            final String hrefAttr=(String)attributes.getAttribute(HTML.Attribute.HREF);
+            if (hrefAttr != null && hrefAttr.contains(hrefPattern)) {
+              String methodSignature=hrefAttr.substring(hrefAttr.indexOf('#') + 1);
+              final int firstHyphen=methodSignature.indexOf('-');
+              if (firstHyphen != -1) {
+                final int lastHyphen=methodSignature.lastIndexOf('-');
+                methodSignature=methodSignature.substring(0,firstHyphen) + "(" + methodSignature.substring(firstHyphen + 1,lastHyphen)+ ")";
+                methodSignature=methodSignature.replaceAll("-",",");
+              }
+              if (methodSignature.contains("...)")) {
+                methodSignature=methodSignature.replaceAll("\\.\\.\\.\\)","[])");
+              }
+              if (methodSignature.contains(":A")) {
+                methodSignature=methodSignature.replaceAll(":A","[]");
+              }
+              methodWithTypes=unescapeHtml(methodSignature);
+            }
+          }
+ else {
+            final String title=(String)attributes.getAttribute(HTML.Attribute.TITLE);
+            if (title != null) {
+              methodTextBuilder.append(title.substring(title.lastIndexOf(' '))).append('.');
+            }
+          }
+        }
+      }
+    }
+ else     if (parserState == ParserState.METHOD_SUMMARY && HTML.Tag.CODE.equals(htmlTag)) {
+      parserState=ParserState.METHOD;
+    }
+  }
+}
