@@ -18,6 +18,11 @@
     isXml=consumes != null && consumes.toLowerCase(Locale.US).contains("xml");
     isJson=consumes != null && consumes.toLowerCase(Locale.US).contains("json");
   }
+  if (!isXml && !isJson) {
+    String body=MessageHelper.extractBodyAsString(exchange.getIn());
+    isXml=body.startsWith("<") || body.contains("xml");
+    isJson=!isXml;
+  }
   isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
   isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
   if (isXml && xmlUnmarshal != null) {
@@ -28,26 +33,16 @@
     exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
     return jsonUnmarshal.process(exchange,callback);
   }
-  String body=MessageHelper.extractBodyAsString(exchange.getIn());
-  isXml=body.startsWith("<") || body.contains("xml");
-  if (isXml && xmlUnmarshal != null) {
-    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
-    return xmlUnmarshal.process(exchange,callback);
-  }
- else   if (jsonUnmarshal != null) {
-    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
-    return jsonUnmarshal.process(exchange,callback);
-  }
   if (bindingMode.equals("auto")) {
     callback.done(true);
     return true;
   }
  else {
     if (bindingMode.contains("xml")) {
-      exchange.setException(new IllegalArgumentException("Cannot bind to xml as message body is not xml compatible"));
+      exchange.setException(new BindingException("Cannot bind to xml as message body is not xml compatible",exchange));
     }
  else {
-      exchange.setException(new IllegalArgumentException("Cannot bind to json as message body is not json compatible"));
+      exchange.setException(new BindingException("Cannot bind to json as message body is not json compatible",exchange));
     }
     callback.done(true);
     return true;
