@@ -1,0 +1,12 @@
+{
+  if (testClass.isAnnotationPresent(MockEndpoints.class)) {
+    final String mockEndpoints=testClass.getAnnotation(MockEndpoints.class).value();
+    CamelSpringTestHelper.doToSpringCamelContexts(context,new DoToSpringCamelContextsStrategy(){
+      @Override public void execute(      String contextName,      SpringCamelContext camelContext) throws Exception {
+        LOG.info("Enabling auto mocking of endpoints matching pattern [{}] on CamelContext with name [{}].",mockEndpoints,contextName);
+        camelContext.addRegisterEndpointCallback(new InterceptSendToMockEndpointStrategy(mockEndpoints));
+      }
+    }
+);
+  }
+}

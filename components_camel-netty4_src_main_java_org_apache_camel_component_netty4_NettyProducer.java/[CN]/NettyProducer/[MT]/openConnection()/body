@@ -1,0 +1,37 @@
+{
+  ChannelFuture answer;
+  if (isTcp()) {
+    Bootstrap clientBootstrap=new Bootstrap();
+    clientBootstrap.channel(NioSocketChannel.class);
+    clientBootstrap.group(getWorkerGroup());
+    clientBootstrap.option(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
+    clientBootstrap.option(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());
+    clientBootstrap.option(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+    clientBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
+    clientBootstrap.handler(pipelineFactory);
+    answer=clientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Created new TCP client bootstrap connecting to {}:{} with options: {}",new Object[]{configuration.getHost(),configuration.getPort(),clientBootstrap});
+    }
+    return answer;
+  }
+ else {
+    Bootstrap connectionlessClientBootstrap=new Bootstrap();
+    connectionlessClientBootstrap.channel(NioDatagramChannel.class);
+    connectionlessClientBootstrap.group(getWorkerGroup());
+    connectionlessClientBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
+    connectionlessClientBootstrap.option(ChannelOption.SO_BROADCAST,configuration.isBroadcast());
+    connectionlessClientBootstrap.option(ChannelOption.SO_SNDBUF,configuration.getSendBufferSize());
+    connectionlessClientBootstrap.option(ChannelOption.SO_RCVBUF,configuration.getReceiveBufferSize());
+    connectionlessClientBootstrap.handler(pipelineFactory);
+    ChannelFuture channelFuture=connectionlessClientBootstrap.bind(new InetSocketAddress(0));
+    channelFuture.awaitUninterruptibly();
+    Channel channel=channelFuture.channel();
+    allChannels.add(channel);
+    answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Created new UDP client bootstrap connecting to {}:{} with options: {}",new Object[]{configuration.getHost(),configuration.getPort(),connectionlessClientBootstrap});
+    }
+    return answer;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      sharedWorkerServerGroup=new NettyWorkerPoolBuilder().withWorkerCount(2).withName("NettyServer").build();
+      jndi.bind("sharedServerPool",sharedWorkerServerGroup);
+      sharedWorkerClientGroup=new NettyWorkerPoolBuilder().withWorkerCount(3).withName("NettyClient").build();
+      jndi.bind("sharedClientPool",sharedWorkerClientGroup);
+      port=getPort();
+      port2=getNextPort();
+      port3=getNextPort();
+      from("netty4:tcp://localhost:" + port + "?textline=true&sync=true&workerGroup=#sharedServerPool&orderedThreadPoolExecutor=false").validate(body().isInstanceOf(String.class)).to("log:result").to("mock:result").transform(body().regexReplaceAll("Hello","Bye"));
+      from("netty4:tcp://localhost:" + port2 + "?textline=true&sync=true&workerGroup=#sharedServerPool&orderedThreadPoolExecutor=false").validate(body().isInstanceOf(String.class)).to("log:result").to("mock:result").transform(body().regexReplaceAll("Hello","Hi"));
+      from("netty4:tcp://localhost:" + port3 + "?textline=true&sync=true&workerGroup=#sharedServerPool&orderedThreadPoolExecutor=false").validate(body().isInstanceOf(String.class)).to("log:result").to("mock:result").transform(body().regexReplaceAll("Hello","Hej"));
+    }
+  }
+;
+}

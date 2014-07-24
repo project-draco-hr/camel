@@ -1,0 +1,22 @@
+{
+  String schemaResourceUri=getSchemaResourceUri(message);
+  if (schemaResourceUri == null || schemaResourceUri.isEmpty()) {
+    return null;
+  }
+  InputStream is=ResourceHelper.resolveResourceAsInputStream(getConfiguration().getCamelContext().getClassResolver(),schemaResourceUri);
+  if (is == null) {
+    throw new XmlSignatureException("XML Signature component is wrongly configured: No XML schema found for specified schema resource URI " + schemaResourceUri);
+  }
+  byte[] bytes=null;
+  try {
+    bytes=IOConverter.toBytes(is);
+  }
+  finally {
+    IOHelper.close(is);
+  }
+  SchemaFactory schemaFactory=SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+  schemaFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,true);
+  schemaFactory.setResourceResolver(new DefaultLSResourceResolver(getConfiguration().getCamelContext(),getConfiguration().getSchemaResourceUri()));
+  LOG.debug("Instantiating schema for validation");
+  return schemaFactory.newSchema(new BytesSource(bytes));
+}

@@ -1,0 +1,49 @@
+{
+  if (ObjectHelper.isEmpty(type) && ObjectHelper.isEmpty(classType)) {
+    throw new IllegalArgumentException("Type must be configured on " + this);
+  }
+  CamelContext context=routeContext.getCamelContext();
+  String mode=context.getRestConfiguration().getBindingMode().name();
+  if (bindingMode != null) {
+    mode=bindingMode.name();
+  }
+  String name=jsonDataFormat;
+  if (name == null) {
+    name="json-jackson";
+  }
+  DataFormat json=context.resolveDataFormat(name);
+  if (mode.contains("json") && json == null) {
+    throw new IllegalArgumentException("JSon DataFormat " + name + " not found.");
+  }
+  if (classType == null && type != null) {
+    classType=context.getClassResolver().resolveMandatoryClass(type);
+  }
+  if (classType == null && typeList != null) {
+    classType=context.getClassResolver().resolveMandatoryClass(typeList);
+  }
+  if (classType != null) {
+    IntrospectionSupport.setProperty(context.getTypeConverter(),json,"unmarshalType",classType);
+    IntrospectionSupport.setProperty(context.getTypeConverter(),json,"useList",useList);
+  }
+  context.addService(json);
+  name=xmlDataFormat;
+  if (name == null) {
+    name="jaxb";
+  }
+  DataFormat jaxb=context.resolveDataFormat(name);
+  if (mode.contains("xml") && jaxb == null) {
+    throw new IllegalArgumentException("XML DataFormat " + name + " not found.");
+  }
+  if (classType == null && type != null) {
+    classType=context.getClassResolver().resolveMandatoryClass(type);
+  }
+  if (classType == null && typeList != null) {
+    classType=context.getClassResolver().resolveMandatoryClass(type);
+  }
+  if (classType != null) {
+    JAXBContext jc=JAXBContext.newInstance(classType);
+    IntrospectionSupport.setProperty(context.getTypeConverter(),jaxb,"context",jc);
+  }
+  context.addService(jaxb);
+  return new RestBindingProcessor(json,jaxb,consumes,produces,mode);
+}

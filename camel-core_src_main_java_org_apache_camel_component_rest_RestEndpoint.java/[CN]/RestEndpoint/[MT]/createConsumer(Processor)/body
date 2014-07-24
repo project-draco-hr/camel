@@ -1,0 +1,46 @@
+{
+  RestConsumerFactory factory=null;
+  if (getComponentName() != null) {
+    Object comp=getCamelContext().getRegistry().lookupByName(getComponentName());
+    if (comp != null && comp instanceof RestConsumerFactory) {
+      factory=(RestConsumerFactory)comp;
+    }
+ else {
+      comp=getCamelContext().getComponent(getComponentName());
+      if (comp != null && comp instanceof RestConsumerFactory) {
+        factory=(RestConsumerFactory)comp;
+      }
+    }
+    if (factory == null) {
+      if (comp != null) {
+        throw new IllegalArgumentException("Component " + getComponentName() + " is not a RestConsumerFactory");
+      }
+ else {
+        throw new NoSuchBeanException(getComponentName(),RestConsumerFactory.class.getName());
+      }
+    }
+  }
+  if (factory == null) {
+    for (    String name : getCamelContext().getComponentNames()) {
+      Component comp=getCamelContext().getComponent(name);
+      if (comp != null && comp instanceof RestConsumerFactory) {
+        factory=(RestConsumerFactory)comp;
+        break;
+      }
+    }
+  }
+  if (factory == null) {
+    Set<RestConsumerFactory> factories=getCamelContext().getRegistry().findByType(RestConsumerFactory.class);
+    if (factories != null && factories.size() == 1) {
+      factory=factories.iterator().next();
+    }
+  }
+  if (factory != null) {
+    Consumer consumer=factory.createConsumer(getCamelContext(),processor,getVerb(),getPath(),getConsumes(),getParameters());
+    configureConsumer(consumer);
+    return consumer;
+  }
+ else {
+    throw new IllegalStateException("Cannot find RestConsumerFactory in Registry or as a Component to use");
+  }
+}

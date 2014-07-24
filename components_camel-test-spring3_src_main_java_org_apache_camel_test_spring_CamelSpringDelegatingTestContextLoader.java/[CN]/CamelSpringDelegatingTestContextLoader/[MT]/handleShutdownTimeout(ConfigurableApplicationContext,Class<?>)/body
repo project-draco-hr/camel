@@ -1,0 +1,20 @@
+{
+  final int shutdownTimeout;
+  final TimeUnit shutdownTimeUnit;
+  if (testClass.isAnnotationPresent(ShutdownTimeout.class)) {
+    shutdownTimeout=testClass.getAnnotation(ShutdownTimeout.class).value();
+    shutdownTimeUnit=testClass.getAnnotation(ShutdownTimeout.class).timeUnit();
+  }
+ else {
+    shutdownTimeout=10;
+    shutdownTimeUnit=TimeUnit.SECONDS;
+  }
+  CamelSpringTestHelper.doToSpringCamelContexts(context,new DoToSpringCamelContextsStrategy(){
+    public void execute(    String contextName,    SpringCamelContext camelContext) throws Exception {
+      logger.info("Setting shutdown timeout to [{} {}] on CamelContext with name [{}].",new Object[]{shutdownTimeout,shutdownTimeUnit,contextName});
+      camelContext.getShutdownStrategy().setTimeout(shutdownTimeout);
+      camelContext.getShutdownStrategy().setTimeUnit(shutdownTimeUnit);
+    }
+  }
+);
+}

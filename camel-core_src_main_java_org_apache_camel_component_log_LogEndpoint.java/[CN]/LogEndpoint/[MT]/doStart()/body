@@ -1,3 +1,28 @@
 {
+  if (logger == null) {
+    CamelLogger camelLogger=null;
+    LoggingLevel loggingLevel=LoggingLevel.INFO;
+    if (level != null) {
+      loggingLevel=LoggingLevel.valueOf(level);
+    }
+    if (providedLogger == null) {
+      camelLogger=new CamelLogger(loggerName,loggingLevel,getMarker());
+    }
+ else {
+      camelLogger=new CamelLogger(providedLogger,loggingLevel,getMarker());
+    }
+    if (getGroupSize() != null) {
+      logger=new ThroughputLogger(camelLogger,getGroupSize());
+    }
+ else     if (getGroupInterval() != null) {
+      Boolean groupActiveOnly=getGroupActiveOnly() != null ? getGroupActiveOnly() : Boolean.TRUE;
+      Long groupDelay=getGroupDelay();
+      logger=new ThroughputLogger(camelLogger,this.getCamelContext(),getGroupInterval(),groupDelay,groupActiveOnly);
+    }
+ else {
+      logger=new CamelLogProcessor(camelLogger,localFormatter);
+    }
+    setProcessor(this.logger);
+  }
   ServiceHelper.startService(logger);
 }

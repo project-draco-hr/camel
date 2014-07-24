@@ -1,0 +1,43 @@
+{
+  List<XPathFilterParameterSpec> xpathsToIdAttributes=getXpathToIdAttributes(message);
+  if (xpathsToIdAttributes.isEmpty()) {
+    throw new IllegalStateException("List of XPATHs to ID attributes is empty in detached signature case");
+  }
+  List<ComparableNode> result=new ArrayList<ComparableNode>(xpathsToIdAttributes.size());
+  for (  XPathFilterParameterSpec xp : xpathsToIdAttributes) {
+    XPathExpression exp;
+    try {
+      exp=XmlSignatureHelper.getXPathExpression(xp);
+    }
+ catch (    XPathExpressionException e) {
+      throw new XmlSignatureException("The configured xpath expression " + xp.getXPath() + " is invalid.",e);
+    }
+    NodeList list=(NodeList)exp.evaluate(messageBodyNode,XPathConstants.NODESET);
+    if (list == null) {
+      LOG.warn("No ID attribute found for xpath expression {}. Therfore this xpath expression will be ignored.",xp.getXPath());
+      continue;
+    }
+    int length=list.getLength();
+    for (int i=0; i < length; i++) {
+      Node node=list.item(i);
+      if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
+        Attr attr=(Attr)node;
+        String value=attr.getValue();
+        Element element=messageBodyNode.getOwnerDocument().getElementById(value);
+        if (element == null) {
+          throw new XmlSignatureException("Wrong configured xpath expression for ID attributes: The evaluation of the xpath expression " + xp.getXPath() + " resulted in an attribute which is not of type ID. The attribute value is "+ value+ ".");
+        }
+        result.add(new ComparableNode(element,"#" + value));
+        LOG.debug("ID attribute with value {} found for xpath {}",value,xp.getXPath());
+      }
+ else {
+        throw new XmlSignatureException("Wrong configured xpath expression for ID attributes: The evaluation of the xpath expression " + xp.getXPath() + " returned a node which was not of type Attribute.");
+      }
+    }
+  }
+  if (result.size() == 0) {
+    throw new XmlSignatureException("No element to sign found in the detached case. No node found for the configured xpath expressions " + toString(xpathsToIdAttributes) + ". Either the configuration of the XML signature component is wrong or the incoming message has not the correct structure.");
+  }
+  Collections.sort(result);
+  return ComparableNode.getReferenceUris(result);
+}

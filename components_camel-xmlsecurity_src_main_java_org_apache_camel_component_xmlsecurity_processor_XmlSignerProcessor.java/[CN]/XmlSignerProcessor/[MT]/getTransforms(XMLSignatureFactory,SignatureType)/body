@@ -1,0 +1,24 @@
+{
+  List<AlgorithmMethod> configuredTrafos=getConfiguration().getTransformMethods();
+  if (SignatureType.enveloped == sigType) {
+    if (configuredTrafos.size() > 0) {
+      if (!containsEnvelopedTransform(configuredTrafos)) {
+        configuredTrafos=new ArrayList<AlgorithmMethod>(configuredTrafos.size() + 1);
+        configuredTrafos.add(XmlSignatureHelper.getEnvelopedTransform());
+        configuredTrafos.addAll(getConfiguration().getTransformMethods());
+      }
+    }
+ else {
+      configuredTrafos=new ArrayList<AlgorithmMethod>(2);
+      configuredTrafos.add(XmlSignatureHelper.getEnvelopedTransform());
+      configuredTrafos.add(XmlSignatureHelper.getCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE));
+    }
+  }
+  List<Transform> transforms=new ArrayList<Transform>(configuredTrafos.size());
+  for (  AlgorithmMethod trafo : configuredTrafos) {
+    Transform transform=fac.newTransform(trafo.getAlgorithm(),(TransformParameterSpec)trafo.getParameterSpec());
+    transforms.add(transform);
+    LOG.debug("Transform method: {}",trafo.getAlgorithm());
+  }
+  return transforms;
+}

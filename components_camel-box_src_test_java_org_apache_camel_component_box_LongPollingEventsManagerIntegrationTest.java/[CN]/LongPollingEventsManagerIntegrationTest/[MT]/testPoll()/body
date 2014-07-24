@@ -1,0 +1,31 @@
+{
+  final Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put("CamelBox.fileId",testFileId);
+  final BoxItemCopyRequestObject requestObject=BoxItemCopyRequestObject.copyItemRequestObject("0");
+  requestObject.setName(CAMEL_TEST_FILE);
+  headers.put("CamelBox.itemCopyRequest",requestObject);
+  BoxFile result=requestBodyAndHeaders("direct://COPYFILE",null,headers);
+  assertNotNull("copyFile result",result);
+  LOG.debug("copyFile: " + result);
+  headers.clear();
+  headers.put("CamelBox.fileId",result.getId());
+  headers.put("CamelBox.defaultRequest",null);
+  requestBodyAndHeaders("direct://DELETEFILE",null,headers);
+  MockEndpoint mockEndpoint=getMockEndpoint("mock:boxEvents");
+  mockEndpoint.expectedMinimumMessageCount(2);
+  mockEndpoint.setResultWaitTime(TimeUnit.MILLISECONDS.convert(30,TimeUnit.SECONDS));
+  mockEndpoint.assertIsSatisfied();
+  final List<Exchange> exchanges=mockEndpoint.getExchanges();
+  assertNotNull("poll result",exchanges);
+  assertFalse("poll result",exchanges.isEmpty());
+  LOG.debug("poll result: " + exchanges);
+  for (  Exchange exchange : exchanges) {
+    assertNotNull("poll result " + BoxConstants.CHUNK_SIZE_PROPERTY,exchange.getIn().getHeader(BoxConstants.CHUNK_SIZE_PROPERTY));
+    assertNotNull("poll result " + BoxConstants.NEXT_STREAM_POSITION_PROPERTY,exchange.getIn().getHeader(BoxConstants.NEXT_STREAM_POSITION_PROPERTY));
+    final Object body=exchange.getIn().getBody();
+    assertNotNull("poll result body",body);
+    assertEquals("poll result body type",BoxEvent.class,body.getClass());
+    final String eventType=((BoxEvent)body).getEventType();
+    assertTrue("poll result type",BoxEvent.EVENT_TYPE_ITEM_COPY.equals(eventType) || BoxEvent.EVENT_TYPE_ITEM_TRASH.equals(eventType));
+  }
+}

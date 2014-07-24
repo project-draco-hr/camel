@@ -1,0 +1,23 @@
+{
+  if (!future.isSuccess()) {
+    Exception e=new CamelExchangeException("Cannot write response to " + remoteAddress,exchange,future.cause());
+    consumer.getExceptionHandler().handleException(e);
+  }
+  Boolean close;
+  if (exchange.hasOut()) {
+    close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+  }
+ else {
+    close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+  }
+  boolean disconnect=consumer.getConfiguration().isDisconnect();
+  if (close != null) {
+    disconnect=close;
+  }
+  if (disconnect) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Closing channel when complete at address: {}",remoteAddress);
+    }
+    NettyHelper.close(future.channel());
+  }
+}

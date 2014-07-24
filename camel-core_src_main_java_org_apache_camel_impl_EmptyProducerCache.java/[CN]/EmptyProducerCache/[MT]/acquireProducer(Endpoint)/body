@@ -1,8 +1,13 @@
 {
-  Producer answer=null;
+  Producer answer;
   try {
     answer=endpoint.createProducer();
-    ServiceHelper.startService(answer);
+    if (getCamelContext().isStartingRoutes() && answer.isSingleton()) {
+      getCamelContext().addService(answer);
+    }
+ else {
+      ServiceHelper.startService(answer);
+    }
   }
  catch (  Exception e) {
     throw new FailedToCreateProducerException(endpoint,e);
