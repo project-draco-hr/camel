@@ -1,0 +1,15 @@
+{
+  String detachedPayload="<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<ns:root xmlns:ns=\"http://test\"><a ID=\"myID\"><b>bValue</b></a></ns:root>";
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  MockEndpoint mockVerified=getMockEndpoint("mock:verified");
+  mockVerified.expectedBodiesReceived(detachedPayload);
+  sendBody("direct:detached",detachedPayload);
+  assertMockEndpointsSatisfied();
+  Map<String,String> namespaceMap=new TreeMap<String,String>();
+  namespaceMap.put("ns","http://test");
+  namespaceMap.put("ds",XMLSignature.XMLNS);
+  Object obj=checkXpath(mock,"ns:root/ds:Signature",namespaceMap);
+  Element sigEle=(Element)obj;
+  return sigEle;
+}
