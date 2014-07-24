@@ -12,7 +12,7 @@
   }
   Series<Header> series=(Series<Header>)request.getAttributes().get(HeaderConstants.ATTRIBUTE_HEADERS);
   if (series != null) {
-    String type=series.getFirstValue(Exchange.CONTENT_TYPE);
+    String type=series.getFirstValue(Exchange.CONTENT_TYPE,true);
     if (type != null) {
       inMessage.setHeader(Exchange.CONTENT_TYPE,type);
     }
@@ -44,6 +44,8 @@
     }
   }
  else {
-    inMessage.setBody(request.getEntity().getStream());
+    InputStream is=request.getEntity().getStream();
+    Object body=RestletHelper.readResponseBodyFromInputStream(is,exchange);
+    inMessage.setBody(body);
   }
 }
