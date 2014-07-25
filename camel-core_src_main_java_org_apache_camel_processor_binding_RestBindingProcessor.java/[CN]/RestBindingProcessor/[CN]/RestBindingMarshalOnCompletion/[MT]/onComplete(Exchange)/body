@@ -5,6 +5,9 @@
   if (jsonMmarshal == null && xmlMmarshal == null) {
     return;
   }
+  if (exchange.hasOut() && exchange.getOut().getBody() == null || exchange.getIn().getBody() == null) {
+    return;
+  }
   boolean isXml=false;
   boolean isJson=false;
   String contentType=ExchangeHelper.getContentType(exchange);
@@ -19,8 +22,10 @@
   ExchangeHelper.prepareOutToIn(exchange);
   if (!isXml && !isJson) {
     String body=MessageHelper.extractBodyAsString(exchange.getIn());
-    isXml=body.startsWith("<") || body.contains("xml");
-    isJson=!isXml;
+    if (body != null) {
+      isXml=body.startsWith("<") || body.contains("xml");
+      isJson=!isXml;
+    }
   }
   isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
   isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
