@@ -26,6 +26,18 @@
     IntrospectionSupport.setProperty(context.getTypeConverter(),json,"useList",useList);
   }
   context.addService(json);
+  DataFormat outJson=context.resolveDataFormat(name);
+  if (outClassType == null && outType != null) {
+    outClassType=context.getClassResolver().resolveMandatoryClass(outType);
+  }
+  if (outClassType == null && outTypeList != null) {
+    outClassType=context.getClassResolver().resolveMandatoryClass(outTypeList);
+  }
+  if (outClassType != null) {
+    IntrospectionSupport.setProperty(context.getTypeConverter(),outJson,"unmarshalType",outClassType);
+    IntrospectionSupport.setProperty(context.getTypeConverter(),outJson,"useList",outUseList);
+  }
+  context.addService(outJson);
   name=xmlDataFormat;
   if (name == null) {
     name="jaxb";
@@ -45,5 +57,21 @@
     IntrospectionSupport.setProperty(context.getTypeConverter(),jaxb,"context",jc);
   }
   context.addService(jaxb);
-  return new RestBindingProcessor(json,jaxb,consumes,produces,mode);
+  DataFormat outJaxb=context.resolveDataFormat(name);
+  if (outClassType == null && outType != null) {
+    outClassType=context.getClassResolver().resolveMandatoryClass(outType);
+  }
+  if (outClassType == null && outTypeList != null) {
+    outClassType=context.getClassResolver().resolveMandatoryClass(outTypeList);
+  }
+  if (outClassType != null) {
+    JAXBContext jc=JAXBContext.newInstance(outClassType);
+    IntrospectionSupport.setProperty(context.getTypeConverter(),outJaxb,"context",jc);
+  }
+ else   if (classType != null) {
+    JAXBContext jc=JAXBContext.newInstance(classType);
+    IntrospectionSupport.setProperty(context.getTypeConverter(),outJaxb,"context",jc);
+  }
+  context.addService(outJaxb);
+  return new RestBindingProcessor(json,jaxb,outJson,outJaxb,consumes,produces,mode);
 }
