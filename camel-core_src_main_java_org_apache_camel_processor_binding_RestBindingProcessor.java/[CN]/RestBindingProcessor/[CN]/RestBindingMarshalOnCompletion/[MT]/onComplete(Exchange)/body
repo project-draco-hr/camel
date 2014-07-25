@@ -20,10 +20,10 @@
     isJson=produces != null && produces.toLowerCase(Locale.US).contains("json");
   }
   ExchangeHelper.prepareOutToIn(exchange);
-  if (!isXml && !isJson) {
+  if (!isXml && !isJson || isXml && isJson) {
     String body=MessageHelper.extractBodyAsString(exchange.getIn());
     if (body != null) {
-      isXml=body.startsWith("<") || body.contains("xml");
+      isXml=body.startsWith("<");
       isJson=!isXml;
     }
   }
@@ -35,6 +35,20 @@
     }
  else     if (isJson && jsonMmarshal != null) {
       jsonMmarshal.process(exchange);
+    }
+ else {
+      if (bindingMode.equals("auto")) {
+        return;
+      }
+ else {
+        if (bindingMode.contains("xml")) {
+          exchange.setException(new BindingException("Cannot bind to xml as message body is not xml compatible",exchange));
+        }
+ else {
+          exchange.setException(new BindingException("Cannot bind to json as message body is not json compatible",exchange));
+        }
+      }
+      return;
     }
   }
  catch (  Throwable e) {
