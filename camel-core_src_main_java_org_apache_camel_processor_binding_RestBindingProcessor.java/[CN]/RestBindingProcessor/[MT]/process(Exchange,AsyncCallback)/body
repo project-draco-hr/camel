@@ -22,8 +22,11 @@
     isXml=consumes != null && consumes.toLowerCase(Locale.US).contains("xml");
     isJson=consumes != null && consumes.toLowerCase(Locale.US).contains("json");
   }
+  String body=MessageHelper.extractBodyAsString(exchange.getIn());
+  if (body != null) {
+    exchange.getIn().setBody(body);
+  }
   if (!isXml && !isJson || isXml && isJson) {
-    String body=MessageHelper.extractBodyAsString(exchange.getIn());
     if (body != null) {
       isXml=body.startsWith("<");
       isJson=!isXml;
@@ -33,11 +36,23 @@
   isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
   if (isXml && xmlUnmarshal != null) {
     exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
-    return xmlUnmarshal.process(exchange,callback);
+    if (ObjectHelper.isNotEmpty(body)) {
+      return xmlUnmarshal.process(exchange,callback);
+    }
+ else {
+      callback.done(true);
+      return true;
+    }
   }
  else   if (isJson && jsonUnmarshal != null) {
     exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
-    return jsonUnmarshal.process(exchange,callback);
+    if (ObjectHelper.isNotEmpty(body)) {
+      return jsonUnmarshal.process(exchange,callback);
+    }
+ else {
+      callback.done(true);
+      return true;
+    }
   }
   if (bindingMode.equals("auto")) {
     callback.done(true);
