@@ -1,18 +1,12 @@
 {
-  HttpConsumer answer=super.resolve(request,consumers);
-  if (answer == null) {
-    String path=request.getPathInfo();
-    if (path == null) {
-      return null;
-    }
-    for (    String key : consumers.keySet()) {
-      String consumerPath=normalizePath(key);
-      String requestPath=normalizePath(path);
-      if (matchPaths(requestPath,consumerPath)) {
-        answer=consumers.get(key);
-        break;
-      }
+  String path=request.getPathInfo();
+  if (path == null) {
+    return null;
+  }
+  for (  String key : consumers.keySet()) {
+    if (useRestMatching(key) && matchRestPath(path,key)) {
+      return consumers.get(key);
     }
   }
-  return answer;
+  return super.resolve(request,consumers);
 }
