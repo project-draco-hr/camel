@@ -22,20 +22,25 @@
     isXml=consumes != null && consumes.toLowerCase(Locale.US).contains("xml");
     isJson=consumes != null && consumes.toLowerCase(Locale.US).contains("json");
   }
-  String body=MessageHelper.extractBodyAsString(exchange.getIn());
-  if (body != null) {
-    exchange.getIn().setBody(body);
-  }
-  if (!isXml && !isJson || isXml && isJson) {
-    if (body != null) {
-      isXml=body.startsWith("<");
-      isJson=!isXml;
-    }
-  }
   isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
   isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
+  if (!isJson && !isXml) {
+    isXml=bindingMode.equals("auto") || bindingMode.contains("xml");
+    isJson=bindingMode.equals("auto") || bindingMode.contains("json");
+  }
+  String body=null;
+  if (isXml || isJson) {
+    body=MessageHelper.extractBodyAsString(exchange.getIn());
+    if (body != null) {
+      exchange.getIn().setBody(body);
+      if (isXml && isJson) {
+        isXml=body.startsWith("<");
+        isJson=!isXml;
+      }
+    }
+  }
   if (isXml && xmlUnmarshal != null) {
-    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMmarshal,xmlMmarshal));
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,true));
     if (ObjectHelper.isNotEmpty(body)) {
       return xmlUnmarshal.process(exchange,callback);
     }
@@ -45,7 +50,7 @@
     }
   }
  else   if (isJson && jsonUnmarshal != null) {
-    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMmarshal,xmlMmarshal));
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false));
     if (ObjectHelper.isNotEmpty(body)) {
       return jsonUnmarshal.process(exchange,callback);
     }
