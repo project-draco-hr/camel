@@ -2,22 +2,15 @@
   ServletContextHandler context=server.getChildHandlerByClass(ServletContextHandler.class);
   List<Filter> filters=endpoint.getFilters();
   for (  Filter filter : filters) {
-    if (filter instanceof JettyRestFilter) {
-      FilterHolder filterHolder=new FilterHolder();
-      filterHolder.setFilter(new CamelFilterWrapper(filter));
-      addFilter(context,filterHolder,"*");
+    FilterHolder filterHolder=new FilterHolder();
+    filterHolder.setFilter(new CamelFilterWrapper(filter));
+    String pathSpec=endpoint.getPath();
+    if (pathSpec == null || "".equals(pathSpec)) {
+      pathSpec="/";
     }
- else {
-      FilterHolder filterHolder=new FilterHolder();
-      filterHolder.setFilter(new CamelFilterWrapper(filter));
-      String pathSpec=endpoint.getPath();
-      if (pathSpec == null || "".equals(pathSpec)) {
-        pathSpec="/";
-      }
-      if (endpoint.isMatchOnUriPrefix()) {
-        pathSpec=pathSpec.endsWith("/") ? pathSpec + "*" : pathSpec + "/*";
-      }
-      addFilter(context,filterHolder,pathSpec);
+    if (endpoint.isMatchOnUriPrefix()) {
+      pathSpec=pathSpec.endsWith("/") ? pathSpec + "*" : pathSpec + "/*";
     }
+    addFilter(context,filterHolder,pathSpec);
   }
 }
