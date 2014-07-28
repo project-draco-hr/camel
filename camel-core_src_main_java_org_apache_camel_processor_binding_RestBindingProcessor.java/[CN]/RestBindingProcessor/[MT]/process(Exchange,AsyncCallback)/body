@@ -7,10 +7,6 @@
     callback.done(true);
     return true;
   }
-  if (exchange.getIn().getBody() == null) {
-    callback.done(true);
-    return true;
-  }
   boolean isXml=false;
   boolean isJson=false;
   String contentType=ExchangeHelper.getContentType(exchange);
@@ -29,13 +25,15 @@
     isJson=bindingMode.equals("auto") || bindingMode.contains("json");
   }
   String body=null;
-  if (isXml || isJson) {
-    body=MessageHelper.extractBodyAsString(exchange.getIn());
-    if (body != null) {
-      exchange.getIn().setBody(body);
-      if (isXml && isJson) {
-        isXml=body.startsWith("<");
-        isJson=!isXml;
+  if (exchange.getIn().getBody() != null) {
+    if (isXml || isJson) {
+      body=MessageHelper.extractBodyAsString(exchange.getIn());
+      if (body != null) {
+        exchange.getIn().setBody(body);
+        if (isXml && isJson) {
+          isXml=body.startsWith("<");
+          isJson=!isXml;
+        }
       }
     }
   }
@@ -60,6 +58,7 @@
     }
   }
   if (bindingMode.equals("auto")) {
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false));
     callback.done(true);
     return true;
   }
