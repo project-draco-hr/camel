@@ -1,0 +1,12 @@
+{
+  getInstalledBundle(NAME).start();
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=" + NAME + ")",10000);
+  MockEndpoint mock=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedMessageCount(2);
+  ProducerTemplate myTemplate=ctx.createProducerTemplate();
+  myTemplate.start();
+  myTemplate.sendBodyAndHeader("file:target/foo","Hello World",Exchange.FILE_NAME,"hello.txt");
+  myTemplate.sendBodyAndHeader("file:target/foo","Bye World",Exchange.FILE_NAME,"bye.txt");
+  mock.assertIsSatisfied();
+  myTemplate.stop();
+}
