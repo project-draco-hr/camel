@@ -5,8 +5,8 @@
     LOG.debug("Consumer suspended, cannot service request {}",request);
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,SERVICE_UNAVAILABLE);
     response.setChunked(false);
-    response.setHeader(Exchange.CONTENT_TYPE,"text/plain");
-    response.setHeader(Exchange.CONTENT_LENGTH,0);
+    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+    response.headers().set(Exchange.CONTENT_LENGTH,0);
     response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
     messageEvent.getChannel().write(response);
     return;
@@ -14,8 +14,8 @@
   if (consumer.getEndpoint().getHttpMethodRestrict() != null && !consumer.getEndpoint().getHttpMethodRestrict().contains(request.getMethod().getName())) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
     response.setChunked(false);
-    response.setHeader(Exchange.CONTENT_TYPE,"text/plain");
-    response.setHeader(Exchange.CONTENT_LENGTH,0);
+    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+    response.headers().set(Exchange.CONTENT_LENGTH,0);
     response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
     messageEvent.getChannel().write(response);
     return;
@@ -23,17 +23,17 @@
   if ("TRACE".equals(request.getMethod().getName()) && !consumer.getEndpoint().isTraceEnabled()) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
     response.setChunked(false);
-    response.setHeader(Exchange.CONTENT_TYPE,"text/plain");
-    response.setHeader(Exchange.CONTENT_LENGTH,0);
+    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+    response.headers().set(Exchange.CONTENT_LENGTH,0);
     response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
     messageEvent.getChannel().write(response);
     return;
   }
-  if (!request.getHeaderNames().contains(HttpHeaders.Names.HOST)) {
+  if (!request.headers().names().contains(HttpHeaders.Names.HOST)) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,BAD_REQUEST);
     response.setChunked(false);
-    response.setHeader(Exchange.CONTENT_TYPE,"text/plain");
-    response.setHeader(Exchange.CONTENT_LENGTH,0);
+    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+    response.headers().set(Exchange.CONTENT_LENGTH,0);
     response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
     messageEvent.getChannel().write(response);
     return;
@@ -79,9 +79,9 @@
           LOG.debug("Http Basic Auth not in role for username: {}",principal.getUsername());
         }
         HttpResponse response=new DefaultHttpResponse(HTTP_1_1,UNAUTHORIZED);
-        response.setHeader("WWW-Authenticate","Basic realm=\"" + security.getRealm() + "\"");
-        response.setHeader(Exchange.CONTENT_TYPE,"text/plain");
-        response.setHeader(Exchange.CONTENT_LENGTH,0);
+        response.headers().set("WWW-Authenticate","Basic realm=\"" + security.getRealm() + "\"");
+        response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+        response.headers().set(Exchange.CONTENT_LENGTH,0);
         response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
         messageEvent.getChannel().write(response);
         return;

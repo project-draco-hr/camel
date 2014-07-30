@@ -18,22 +18,47 @@
     isXml=consumes != null && consumes.toLowerCase(Locale.US).contains("xml");
     isJson=consumes != null && consumes.toLowerCase(Locale.US).contains("json");
   }
-  if (!isXml && !isJson) {
-    String body=MessageHelper.extractBodyAsString(exchange.getIn());
-    isXml=body.startsWith("<") || body.contains("xml");
-    isJson=!isXml;
-  }
   isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
   isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
+  if (!isJson && !isXml) {
+    isXml=bindingMode.equals("auto") || bindingMode.contains("xml");
+    isJson=bindingMode.equals("auto") || bindingMode.contains("json");
+  }
+  String body=null;
+  if (exchange.getIn().getBody() != null) {
+    if (isXml || isJson) {
+      body=MessageHelper.extractBodyAsString(exchange.getIn());
+      if (body != null) {
+        exchange.getIn().setBody(body);
+        if (isXml && isJson) {
+          isXml=body.startsWith("<");
+          isJson=!isXml;
+        }
+      }
+    }
+  }
   if (isXml && xmlUnmarshal != null) {
-    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
-    return xmlUnmarshal.process(exchange,callback);
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,true));
+    if (ObjectHelper.isNotEmpty(body)) {
+      return xmlUnmarshal.process(exchange,callback);
+    }
+ else {
+      callback.done(true);
+      return true;
+    }
   }
  else   if (isJson && jsonUnmarshal != null) {
-    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(jsonMmarshal,xmlMmarshal));
-    return jsonUnmarshal.process(exchange,callback);
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false));
+    if (ObjectHelper.isNotEmpty(body)) {
+      return jsonUnmarshal.process(exchange,callback);
+    }
+ else {
+      callback.done(true);
+      return true;
+    }
   }
   if (bindingMode.equals("auto")) {
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false));
     callback.done(true);
     return true;
   }

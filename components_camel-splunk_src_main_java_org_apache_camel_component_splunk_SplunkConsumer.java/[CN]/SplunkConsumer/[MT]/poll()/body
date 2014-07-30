@@ -1,8 +1,36 @@
 {
   try {
-    List<SplunkEvent> events=dataReader.read();
-    Queue<Exchange> exchanges=createExchanges(events);
-    return processBatch(CastUtils.cast(exchanges));
+    if (endpoint.getConfiguration().isStreaming()) {
+      dataReader.read(new SplunkResultProcessor(){
+        @Override public void process(        SplunkEvent splunkEvent){
+          final Exchange exchange=getEndpoint().createExchange();
+          Message message=exchange.getIn();
+          message.setBody(splunkEvent);
+          try {
+            LOG.trace("Processing exchange [{}]...",exchange);
+            getAsyncProcessor().process(exchange,new AsyncCallback(){
+              @Override public void done(              boolean doneSync){
+                LOG.trace("Done processing exchange [{}]...",exchange);
+              }
+            }
+);
+          }
+ catch (          Exception e) {
+            exchange.setException(e);
+          }
+          if (exchange.getException() != null) {
+            getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+          }
+        }
+      }
+);
+      return 0;
+    }
+ else {
+      List<SplunkEvent> events=dataReader.read();
+      Queue<Exchange> exchanges=createExchanges(events);
+      return processBatch(CastUtils.cast(exchanges));
+    }
   }
  catch (  Exception e) {
     endpoint.reset(e);

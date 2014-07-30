@@ -1,0 +1,71 @@
+{
+  List<SplunkEvent> result=new ArrayList<SplunkEvent>();
+  HashMap<String,String> data;
+  SplunkEvent splunkData;
+  ResultsReader resultsReader=null;
+  int total=0;
+  if (realtime) {
+    total=job.getResultPreviewCount();
+  }
+ else {
+    total=job.getResultCount();
+  }
+  if (getCount() == 0 || total < getCount()) {
+    InputStream stream=null;
+    JobResultsArgs outputArgs=new JobResultsArgs();
+    outputArgs.setOutputMode(OutputMode.JSON);
+    if (realtime) {
+      if (getCount() > 0) {
+        outputArgs.setCount(getCount());
+      }
+      stream=job.getResultsPreview(outputArgs);
+    }
+ else {
+      stream=job.getResults(outputArgs);
+    }
+    resultsReader=new ResultsReaderJson(stream);
+    while ((data=resultsReader.getNextEvent()) != null) {
+      splunkData=new SplunkEvent(data);
+      if (callback != null) {
+        callback.process(splunkData);
+      }
+ else {
+        result.add(splunkData);
+      }
+    }
+    IOHelper.close(stream);
+  }
+ else {
+    int offset=0;
+    while (offset < total) {
+      InputStream stream;
+      JobResultsArgs outputArgs=new JobResultsArgs();
+      outputArgs.setOutputMode(OutputMode.JSON);
+      outputArgs.setCount(getCount());
+      outputArgs.setOffset(offset);
+      if (realtime) {
+        stream=job.getResultsPreview(outputArgs);
+      }
+ else {
+        stream=job.getResults(outputArgs);
+      }
+      resultsReader=new ResultsReaderJson(stream);
+      while ((data=resultsReader.getNextEvent()) != null) {
+        splunkData=new SplunkEvent(data);
+        if (callback != null) {
+          callback.process(splunkData);
+        }
+ else {
+          result.add(splunkData);
+        }
+      }
+      offset+=getCount();
+      IOHelper.close(stream);
+    }
+  }
+  if (resultsReader != null) {
+    resultsReader.close();
+  }
+  job.cancel();
+  return result;
+}
