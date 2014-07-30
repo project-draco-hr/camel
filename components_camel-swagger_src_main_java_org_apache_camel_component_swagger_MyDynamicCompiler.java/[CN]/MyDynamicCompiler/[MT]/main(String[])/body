@@ -1,0 +1,24 @@
+{
+  StringBuilder sb=new StringBuilder(64);
+  sb.append("package foobar;\n");
+  sb.append("public class HelloWorld {\n");
+  sb.append("    public void doStuff() {\n");
+  sb.append("        System.out.println(\"Hello world\");\n");
+  sb.append("    }\n");
+  sb.append("}\n");
+  File file=new File("target/foobar/");
+  file.mkdirs();
+  file=new File("target/foobar/HelloWorld.java");
+  Writer writer=new FileWriter("target/foobar/HelloWorld.java");
+  writer.write(sb.toString());
+  writer.flush();
+  JavaCompiler compiler=ToolProvider.getSystemJavaCompiler();
+  StandardJavaFileManager fileManager=compiler.getStandardFileManager(null,null,null);
+  boolean done=compiler.getTask(null,fileManager,null,null,null,fileManager.getJavaFileObjectsFromFiles(Arrays.asList(file))).call();
+  System.out.println(done);
+  URLClassLoader classLoader=new URLClassLoader(new URL[]{new File("target").toURI().toURL()});
+  Class clazz=classLoader.loadClass("foobar.HelloWorld");
+  Object obj=clazz.newInstance();
+  System.out.println(obj);
+  fileManager.close();
+}
