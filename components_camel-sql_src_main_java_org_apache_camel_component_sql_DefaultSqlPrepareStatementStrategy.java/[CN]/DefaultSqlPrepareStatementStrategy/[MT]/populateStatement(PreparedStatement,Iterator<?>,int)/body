@@ -1,14 +1,22 @@
 {
+  if (expectedParams <= 0) {
+    return;
+  }
+  final Object[] args=new Object[expectedParams];
+  int i=0;
   int argNumber=1;
-  if (expectedParams > 0) {
-    while (iterator != null && iterator.hasNext()) {
-      Object value=iterator.next();
-      LOG.trace("Setting parameter #{} with value: {}",argNumber,value);
-      ps.setObject(argNumber,value);
-      argNumber++;
+  while (iterator != null && iterator.hasNext()) {
+    Object value=iterator.next();
+    LOG.trace("Setting parameter #{} with value: {}",argNumber,value);
+    if (argNumber <= expectedParams) {
+      args[i]=value;
     }
+    argNumber++;
+    i++;
   }
   if (argNumber - 1 != expectedParams) {
-    throw new SQLException("Number of parameters mismatch. Expected: " + expectedParams + ", was:"+ (argNumber - 1));
+    throw new SQLException("Number of parameters mismatch. Expected: " + expectedParams + ", was: "+ (argNumber - 1));
   }
+  ArgumentPreparedStatementSetter setter=new ArgumentPreparedStatementSetter(args);
+  setter.setValues(ps);
 }
