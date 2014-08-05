@@ -1,0 +1,20 @@
+{
+  if (isPlatform("aix")) {
+    return;
+  }
+  MBeanServer mbeanServer=getMBeanServer();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=services,*");
+  Set<ObjectName> names=mbeanServer.queryNames(on,null);
+  ObjectName name=null;
+  for (  ObjectName service : names) {
+    if (service.toString().contains("DefaultRestRegistry")) {
+      name=service;
+      break;
+    }
+  }
+  assertNotNull("Cannot find DefaultRestRegistry",name);
+  assertTrue(mbeanServer.isRegistered(name));
+  assertEquals(3,mbeanServer.getAttribute(name,"NumberOfRestServices"));
+  TabularData data=(TabularData)mbeanServer.invoke(name,"listRestServices",null,null);
+  assertEquals(3,data.size());
+}
