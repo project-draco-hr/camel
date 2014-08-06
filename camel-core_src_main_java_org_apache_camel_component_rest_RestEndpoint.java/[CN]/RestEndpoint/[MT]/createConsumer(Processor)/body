@@ -36,7 +36,7 @@
     }
   }
   if (factory != null) {
-    Consumer consumer=factory.createConsumer(getCamelContext(),processor,getVerb(),getPath(),getConsumes(),getProduces(),getParameters());
+    Consumer consumer=factory.createConsumer(getCamelContext(),processor,getVerb(),getPath(),getUriTemplate(),getConsumes(),getProduces(),getParameters());
     configureConsumer(consumer);
     String scheme="http";
     String host="";
@@ -64,10 +64,19 @@
     if (!path.startsWith("/")) {
       path="/" + path;
     }
-    String url=scheme + "://" + host+ (port != 80 ? ":" + port : "")+ path;
+    String baseUrl=scheme + "://" + host+ (port != 80 ? ":" + port : "")+ path;
+    String url=baseUrl;
+    if (uriTemplate != null) {
+      if (uriTemplate.startsWith("/")) {
+        url=url + uriTemplate;
+      }
+ else {
+        url=url + "/" + uriTemplate;
+      }
+    }
     String inType=(String)getParameters().get("inType");
     String outType=(String)getParameters().get("outType");
-    getCamelContext().getRestRegistry().addRestService(consumer,url,getVerb(),getPath(),getConsumes(),getProduces(),inType,outType);
+    getCamelContext().getRestRegistry().addRestService(consumer,url,baseUrl,getPath(),getUriTemplate(),getVerb(),getConsumes(),getProduces(),inType,outType);
     return consumer;
   }
  else {

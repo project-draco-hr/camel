@@ -6,9 +6,22 @@
     throw new IllegalArgumentException("Invalid syntax. Must be rest:verb:path");
   }
   String verb=ObjectHelper.before(remaining,":");
-  String path=ObjectHelper.after(remaining,":");
+  String s=ObjectHelper.after(remaining,":");
+  String path;
+  String uriTemplate;
+  if (s != null && s.contains(":")) {
+    path=ObjectHelper.before(s,":");
+    uriTemplate=ObjectHelper.after(s,":");
+  }
+ else {
+    path=s;
+    uriTemplate=null;
+  }
+  path=FileUtil.stripTrailingSeparator(path);
+  uriTemplate=FileUtil.stripTrailingSeparator(uriTemplate);
   answer.setVerb(verb);
   answer.setPath(path);
+  answer.setUriTemplate(uriTemplate);
   if (answer.getComponentName() == null && getCamelContext().getRestConfiguration() != null) {
     answer.setComponentName(getCamelContext().getRestConfiguration().getComponent());
   }
