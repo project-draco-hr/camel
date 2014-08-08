@@ -1,24 +1,6 @@
 {
   List<RouteDefinition> answer=new ArrayList<RouteDefinition>();
   for (  VerbDefinition verb : getVerbs()) {
-    String from="rest:" + verb.asVerb() + ":"+ buildUri(verb);
-    Map<String,Object> options=new HashMap<String,Object>();
-    if (verb.getConsumes() != null) {
-      options.put("consumes",verb.getConsumes());
-    }
- else     if (getConsumes() != null) {
-      options.put("consumes",getConsumes());
-    }
-    if (verb.getProduces() != null) {
-      options.put("produces",verb.getProduces());
-    }
- else     if (getProduces() != null) {
-      options.put("produces",getProduces());
-    }
-    if (!options.isEmpty()) {
-      String query=URISupport.createQueryString(options);
-      from=from + "?" + query;
-    }
     RouteDefinition route=verb.getRoute();
     if (route == null) {
       route=new RouteDefinition();
@@ -48,6 +30,38 @@
       binding.setBindingMode(getBindingMode());
     }
     route.getOutputs().add(0,binding);
+    String from="rest:" + verb.asVerb() + ":"+ buildUri(verb);
+    Map<String,Object> options=new HashMap<String,Object>();
+    if (verb.getConsumes() != null) {
+      options.put("consumes",verb.getConsumes());
+    }
+ else     if (getConsumes() != null) {
+      options.put("consumes",getConsumes());
+    }
+    if (verb.getProduces() != null) {
+      options.put("produces",verb.getProduces());
+    }
+ else     if (getProduces() != null) {
+      options.put("produces",getProduces());
+    }
+    String inType=binding.getType();
+    if (binding.getList() != null && binding.getList()) {
+      inType="List<" + inType + ">";
+    }
+    if (inType != null) {
+      options.put("inType",inType);
+    }
+    String outType=binding.getOutType();
+    if (binding.getOutList() != null && binding.getOutList()) {
+      outType="List<" + outType + ">";
+    }
+    if (outType != null) {
+      options.put("outType",outType);
+    }
+    if (!options.isEmpty()) {
+      String query=URISupport.createQueryString(options);
+      from=from + "?" + query;
+    }
     route.fromRest(from);
     route.setRestDefinition(this);
     answer.add(route);

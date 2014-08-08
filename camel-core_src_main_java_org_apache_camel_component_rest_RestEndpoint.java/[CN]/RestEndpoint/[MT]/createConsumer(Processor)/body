@@ -36,8 +36,56 @@
     }
   }
   if (factory != null) {
-    Consumer consumer=factory.createConsumer(getCamelContext(),processor,getVerb(),getPath(),getConsumes(),getProduces(),getParameters());
+    Consumer consumer=factory.createConsumer(getCamelContext(),processor,getMethod(),getPath(),getUriTemplate(),getConsumes(),getProduces(),getParameters());
     configureConsumer(consumer);
+    String scheme="http";
+    String host="";
+    int port=80;
+    RestConfiguration config=getCamelContext().getRestConfiguration();
+    if (config.getScheme() != null) {
+      scheme=config.getScheme();
+    }
+    if (config.getHost() != null) {
+      host=config.getHost();
+    }
+    int num=config.getPort();
+    if (num > 0) {
+      port=num;
+    }
+    if (ObjectHelper.isEmpty(host)) {
+      if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localHostName) {
+        host=HostUtils.getLocalHostName();
+      }
+ else       if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localIp) {
+        host=HostUtils.getLocalIp();
+      }
+    }
+    String path=getPath();
+    if (!path.startsWith("/")) {
+      path="/" + path;
+    }
+    String contextPath=config.getContextPath();
+    if (contextPath != null) {
+      if (!contextPath.startsWith("/")) {
+        path="/" + contextPath + path;
+      }
+ else {
+        path=contextPath + path;
+      }
+    }
+    String baseUrl=scheme + "://" + host+ (port != 80 ? ":" + port : "")+ path;
+    String url=baseUrl;
+    if (uriTemplate != null) {
+      if (uriTemplate.startsWith("/")) {
+        url=url + uriTemplate;
+      }
+ else {
+        url=url + "/" + uriTemplate;
+      }
+    }
+    String inType=(String)getParameters().get("inType");
+    String outType=(String)getParameters().get("outType");
+    getCamelContext().getRestRegistry().addRestService(consumer,url,baseUrl,getPath(),getUriTemplate(),getMethod(),getConsumes(),getProduces(),inType,outType);
     return consumer;
   }
  else {

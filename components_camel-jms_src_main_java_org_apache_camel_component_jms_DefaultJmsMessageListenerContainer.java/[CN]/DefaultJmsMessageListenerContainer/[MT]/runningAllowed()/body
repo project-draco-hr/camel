@@ -1,3 +1,17 @@
 {
-  return endpoint.isRunning();
+  boolean quickStop=false;
+  if (isAllowQuickStop() && !endpoint.isAcceptMessagesWhileStopping()) {
+    quickStop=endpoint.getCamelContext().getStatus().isStopping();
+  }
+  if (quickStop) {
+    logger.debug("runningAllowed() -> false due CamelContext is stopping and endpoint configured to not accept messages while stopping");
+    return false;
+  }
+ else {
+    boolean answer=endpoint.isRunning();
+    if (logger.isTraceEnabled()) {
+      logger.trace("runningAllowed() -> " + answer);
+    }
+    return answer;
+  }
 }

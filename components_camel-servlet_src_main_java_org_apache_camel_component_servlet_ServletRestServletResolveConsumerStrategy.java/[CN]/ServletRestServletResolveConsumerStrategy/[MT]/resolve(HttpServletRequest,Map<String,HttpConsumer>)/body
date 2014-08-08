@@ -1,12 +1,44 @@
 {
+  HttpConsumer answer=null;
   String path=request.getPathInfo();
   if (path == null) {
     return null;
   }
-  for (  String key : consumers.keySet()) {
-    if (useRestMatching(key) && matchRestPath(path,key)) {
-      return consumers.get(key);
+  String method=request.getMethod();
+  if (method == null) {
+    return null;
+  }
+  List<HttpConsumer> candidates=new ArrayList<HttpConsumer>();
+  for (  Map.Entry<String,HttpConsumer> entry : consumers.entrySet()) {
+    String restrict=entry.getValue().getEndpoint().getHttpMethodRestrict();
+    if (matchRestMethod(method,restrict)) {
+      candidates.add(entry.getValue());
     }
   }
-  return super.resolve(request,consumers);
+  Iterator<HttpConsumer> it=candidates.iterator();
+  while (it.hasNext()) {
+    HttpConsumer consumer=it.next();
+    String consumerPath=consumer.getPath();
+    if (matchRestPath(path,consumerPath,false)) {
+      answer=consumer;
+      break;
+    }
+  }
+  if (answer == null) {
+    it=candidates.iterator();
+    while (it.hasNext()) {
+      HttpConsumer consumer=it.next();
+      String consumerPath=consumer.getPath();
+      if (!matchRestPath(path,consumerPath,true)) {
+        it.remove();
+      }
+    }
+    if (candidates.size() == 1) {
+      answer=candidates.get(0);
+    }
+  }
+  if (answer == null) {
+    answer=super.resolve(request,consumers);
+  }
+  return answer;
 }

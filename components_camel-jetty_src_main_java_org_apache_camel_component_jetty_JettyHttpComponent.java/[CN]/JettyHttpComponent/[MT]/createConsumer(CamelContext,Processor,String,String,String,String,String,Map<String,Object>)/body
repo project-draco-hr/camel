@@ -1,0 +1,58 @@
+{
+  String path=basePath;
+  if (uriTemplate != null) {
+    if (uriTemplate.startsWith("/")) {
+      path=path + uriTemplate;
+    }
+ else {
+      path=path + "/" + uriTemplate;
+    }
+  }
+  path=FileUtil.stripLeadingSeparator(path);
+  String scheme="http";
+  String host="";
+  int port=0;
+  RestConfiguration config=getCamelContext().getRestConfiguration();
+  if (config.getComponent() == null || config.getComponent().equals("jetty")) {
+    if (config.getScheme() != null) {
+      scheme=config.getScheme();
+    }
+    if (config.getHost() != null) {
+      host=config.getHost();
+    }
+    int num=config.getPort();
+    if (num > 0) {
+      port=num;
+    }
+  }
+  if (ObjectHelper.isEmpty(host)) {
+    if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localHostName) {
+      host=HostUtils.getLocalHostName();
+    }
+ else     if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localIp) {
+      host=HostUtils.getLocalIp();
+    }
+  }
+  Map<String,Object> map=new HashMap<String,Object>();
+  if (config != null && (config.getComponent() == null || config.getComponent().equals("jetty"))) {
+    if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+      map.putAll(config.getEndpointProperties());
+    }
+  }
+  String query=URISupport.createQueryString(map);
+  String url="jetty:%s://%s:%s/%s?httpMethodRestrict=%s";
+  if (!query.isEmpty()) {
+    url=url + "?" + query;
+  }
+  String restrict=verb.toUpperCase(Locale.US);
+  url=String.format(url,scheme,host,port,path,restrict);
+  JettyHttpEndpoint endpoint=camelContext.getEndpoint(url,JettyHttpEndpoint.class);
+  setProperties(endpoint,parameters);
+  endpoint.setEnableMultipartFilter(false);
+  endpoint.setBinding(new JettyRestHttpBinding());
+  Consumer consumer=endpoint.createConsumer(processor);
+  if (config != null && config.getConsumerProperties() != null && !config.getConsumerProperties().isEmpty()) {
+    setProperties(consumer,config.getConsumerProperties());
+  }
+  return consumer;
+}
