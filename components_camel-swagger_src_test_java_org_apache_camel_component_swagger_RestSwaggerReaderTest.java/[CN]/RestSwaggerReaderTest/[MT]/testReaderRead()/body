@@ -1,0 +1,21 @@
+{
+  CamelContext context=new DefaultCamelContext();
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      restConfiguration().component("jetty").host("localhost").port(9090);
+      rest("/hello").get("/hi").to("log:hi");
+    }
+  }
+);
+  context.start();
+  RestDefinition rest=context.getRestDefinitions().get(0);
+  assertNotNull(rest);
+  SwaggerConfig config=new SwaggerConfig();
+  RestSwaggerReader reader=new RestSwaggerReader();
+  Option<ApiListing> option=reader.read(rest,config);
+  assertNotNull(option);
+  ApiListing listing=option.get();
+  assertNotNull(listing);
+  System.out.println(listing);
+  context.stop();
+}
