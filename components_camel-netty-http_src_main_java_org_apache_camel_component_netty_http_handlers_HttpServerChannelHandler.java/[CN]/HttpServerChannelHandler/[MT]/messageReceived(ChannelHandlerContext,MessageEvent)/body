@@ -11,6 +11,22 @@
     messageEvent.getChannel().write(response);
     return;
   }
+  if ("OPTIONS".equals(request.getMethod().getName())) {
+    String s;
+    if (consumer.getEndpoint().getHttpMethodRestrict() != null) {
+      s="OPTIONS," + consumer.getEndpoint().getHttpMethodRestrict();
+    }
+ else {
+      s="GET,HEAD,POST,PUT,DELETE,TRACE,OPTIONS,CONNECT,PATCH";
+    }
+    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,OK);
+    response.setChunked(false);
+    response.headers().set("Allow",s);
+    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+    response.headers().set(Exchange.CONTENT_LENGTH,0);
+    messageEvent.getChannel().write(response);
+    return;
+  }
   if (consumer.getEndpoint().getHttpMethodRestrict() != null && !consumer.getEndpoint().getHttpMethodRestrict().contains(request.getMethod().getName())) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
     response.setChunked(false);
