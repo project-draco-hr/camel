@@ -1,0 +1,26 @@
+{
+  if (exchange.isFailed() && onCompleteOnly) {
+    return;
+  }
+  if (!exchange.isFailed() && onFailureOnly) {
+    return;
+  }
+  if (onWhen != null && !onWhen.matches(exchange)) {
+    return;
+  }
+  final Exchange copy=prepareExchange(exchange);
+  if (executorService != null) {
+    executorService.submit(new Callable<Exchange>(){
+      public Exchange call() throws Exception {
+        LOG.debug("Processing onAfterRoute: {}",copy);
+        doProcess(processor,copy);
+        return copy;
+      }
+    }
+);
+  }
+ else {
+    LOG.debug("Processing onAfterRoute: {}",copy);
+    doProcess(processor,copy);
+  }
+}
