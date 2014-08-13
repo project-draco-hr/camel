@@ -8,8 +8,13 @@
   message.setHeader(SqsConstants.RECEIPT_HANDLE,msg.getReceiptHandle());
   message.setHeader(SqsConstants.ATTRIBUTES,msg.getAttributes());
   message.setHeader(SqsConstants.MESSAGE_ATTRIBUTES,msg.getMessageAttributes());
+  HeaderFilterStrategy headerFilterStrategy=getHeaderFilterStrategy();
   for (  Entry<String,MessageAttributeValue> entry : msg.getMessageAttributes().entrySet()) {
-    message.setHeader(entry.getKey(),translateValue(entry.getValue()));
+    String header=entry.getKey();
+    Object value=translateValue(entry.getValue());
+    if (!headerFilterStrategy.applyFilterToExternalHeaders(header,value,exchange)) {
+      message.setHeader(header,value);
+    }
   }
   return exchange;
 }
