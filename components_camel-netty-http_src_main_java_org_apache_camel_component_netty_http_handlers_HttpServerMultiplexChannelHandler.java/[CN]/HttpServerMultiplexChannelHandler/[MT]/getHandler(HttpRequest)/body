@@ -1,15 +1,50 @@
 {
+  HttpServerChannelHandler answer=null;
   String method=request.getMethod().getName();
+  if (method == null) {
+    return null;
+  }
   String path=request.getUri();
   int idx=path.indexOf(token);
   if (idx > -1) {
     path=path.substring(idx + len);
   }
   path=pathAsKey(path);
+  List<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>> candidates=new ArrayList<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>>();
   for (  Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry : consumers.entrySet()) {
-    if (entry.getKey().matches(method,path)) {
-      return entry.getValue();
+    NettyHttpConsumer consumer=entry.getValue().getConsumer();
+    String restrict=consumer.getEndpoint().getHttpMethodRestrict();
+    if (entry.getKey().matchMethod(method,restrict)) {
+      candidates.add(entry);
     }
   }
-  return null;
+  Iterator<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>> it=candidates.iterator();
+  while (it.hasNext()) {
+    Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
+    if (entry.getKey().matchesRest(path,false)) {
+      answer=entry.getValue();
+      break;
+    }
+  }
+  if (answer == null) {
+    it=candidates.iterator();
+    while (it.hasNext()) {
+      Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
+      if (!entry.getKey().matchesRest(path,true)) {
+        it.remove();
+      }
+    }
+    if (candidates.size() == 1) {
+      answer=candidates.get(0).getValue();
+    }
+  }
+  if (answer == null) {
+    for (    Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry : consumers.entrySet()) {
+      if (entry.getKey().matches(path)) {
+        answer=entry.getValue();
+        break;
+      }
+    }
+  }
+  return answer;
 }
