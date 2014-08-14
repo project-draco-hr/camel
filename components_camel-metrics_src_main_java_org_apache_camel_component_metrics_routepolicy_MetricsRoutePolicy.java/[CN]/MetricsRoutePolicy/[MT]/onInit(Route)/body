@@ -1,0 +1,23 @@
+{
+  super.onInit(route);
+  this.route=route;
+  try {
+    registry=route.getRouteContext().getCamelContext().hasServiceByType(MetricsRegistryService.class);
+    if (registry == null) {
+      registry=new MetricsRegistryService();
+      route.getRouteContext().getCamelContext().addService(registry);
+    }
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+  MetricsStatistics stats=statistics.get(route);
+  if (stats == null) {
+    Counter total=registry.getRegistry().counter(createName("total"));
+    Counter inflight=registry.getRegistry().counter(createName("inflight"));
+    Meter requests=registry.getRegistry().meter(createName("requests"));
+    Timer responses=registry.getRegistry().timer(createName("responses"));
+    stats=new MetricsStatistics(total,inflight,requests,responses);
+    statistics.putIfAbsent(route,stats);
+  }
+}
