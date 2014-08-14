@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      getContext().setTracing(true);
+      getContext().getComponent("sql",SqlComponent.class).setDataSource(db);
+      from("sql:select * from projects where processed = false order by id?maxMessagesPerPoll=2").to("mock:result").to("sql:update projects set processed = true where id = :#id");
+    }
+  }
+;
+}
