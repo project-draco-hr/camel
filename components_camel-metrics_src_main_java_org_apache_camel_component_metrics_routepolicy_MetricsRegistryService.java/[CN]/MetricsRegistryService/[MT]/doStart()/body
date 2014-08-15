@@ -1,9 +1,19 @@
 {
-  registry=new MetricRegistry();
-  MBeanServer server=getCamelContext().getManagementStrategy().getManagementAgent().getMBeanServer();
-  if (server != null) {
-    String domain="org.apache.camel.metrics." + getCamelContext().getManagementName();
-    reporter=JmxReporter.forRegistry(registry).registerWith(server).inDomain(domain).build();
-    reporter.start();
+  if (registry == null) {
+    registry=new MetricRegistry();
+  }
+  if (useJmx) {
+    ManagementAgent agent=getCamelContext().getManagementStrategy().getManagementAgent();
+    if (agent != null) {
+      MBeanServer server=agent.getMBeanServer();
+      if (server != null) {
+        String domain=jmxDomain + "." + getCamelContext().getManagementName();
+        reporter=JmxReporter.forRegistry(registry).registerWith(server).inDomain(domain).build();
+        reporter.start();
+      }
+    }
+ else {
+      throw new IllegalStateException("CamelContext has not enabled JMX");
+    }
   }
 }
