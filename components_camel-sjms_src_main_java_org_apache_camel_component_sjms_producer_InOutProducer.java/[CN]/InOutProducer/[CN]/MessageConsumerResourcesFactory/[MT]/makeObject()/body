@@ -1,0 +1,47 @@
+{
+  MessageConsumerResources answer=null;
+  Connection conn=null;
+  Session session=null;
+  try {
+    conn=getConnectionResource().borrowConnection();
+    if (isEndpointTransacted()) {
+      session=conn.createSession(true,Session.SESSION_TRANSACTED);
+    }
+ else {
+      session=conn.createSession(false,Session.AUTO_ACKNOWLEDGE);
+    }
+    Destination replyToDestination=null;
+    if (ObjectHelper.isEmpty(getNamedReplyTo())) {
+      replyToDestination=JmsObjectFactory.createTemporaryDestination(session,isTopic());
+    }
+ else {
+      replyToDestination=JmsObjectFactory.createDestination(session,getNamedReplyTo(),isTopic());
+    }
+    MessageConsumer messageConsumer=JmsObjectFactory.createMessageConsumer(session,replyToDestination,null,isTopic(),null,true);
+    messageConsumer.setMessageListener(new MessageListener(){
+      @Override public void onMessage(      Message message){
+        if (log.isDebugEnabled()) {
+          log.debug("Message Received in the Consumer Pool");
+          log.debug("  Message : {}",message);
+        }
+        try {
+          Exchanger<Object> exchanger=exchangerMap.get(message.getJMSCorrelationID());
+          exchanger.exchange(message,getResponseTimeOut(),TimeUnit.MILLISECONDS);
+        }
+ catch (        Exception e) {
+          ObjectHelper.wrapRuntimeCamelException(e);
+        }
+      }
+    }
+);
+    answer=new MessageConsumerResources(session,messageConsumer,replyToDestination);
+  }
+ catch (  Exception e) {
+    log.error("Unable to create the MessageConsumerResource: " + e.getLocalizedMessage());
+    throw new CamelException(e);
+  }
+ finally {
+    getConnectionResource().returnConnection(conn);
+  }
+  return answer;
+}

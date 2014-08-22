@@ -1,11 +1,14 @@
 {
   super.doStop();
+  if (asyncStart != null && asyncStart.isDone() == false) {
+    asyncStart.cancel(true);
+  }
   if (consumers != null) {
     if (getEndpoint().isAsyncStopListener()) {
       getEndpoint().getComponent().getAsyncStartStopExecutorService().submit(new Runnable(){
         @Override public void run(){
           try {
-            consumers.drainPool();
+            consumers.close();
             consumers=null;
           }
  catch (          Throwable e) {
@@ -19,7 +22,7 @@
 );
     }
  else {
-      consumers.drainPool();
+      consumers.close();
       consumers=null;
     }
   }
