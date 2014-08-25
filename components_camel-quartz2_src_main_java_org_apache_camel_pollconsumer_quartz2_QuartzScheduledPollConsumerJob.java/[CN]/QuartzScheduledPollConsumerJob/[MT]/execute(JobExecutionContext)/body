@@ -1,6 +1,21 @@
 {
-  LOG.trace("Execute job: {}",jobExecutionContext);
-  Runnable task=(Runnable)jobExecutionContext.getJobDetail().getJobDataMap().get("task");
+  LOG.trace("Execute job: {}",context);
+  CamelContext camelContext=getCamelContext(context);
+  Runnable task=(Runnable)context.getJobDetail().getJobDataMap().get("task");
+  if (task == null) {
+    String routeId=(String)context.getJobDetail().getJobDataMap().get("routeId");
+    if (routeId != null && camelContext != null) {
+      for (      Route route : camelContext.getRoutes()) {
+        if (route.getId().equals(routeId)) {
+          Consumer consumer=route.getConsumer();
+          if (consumer instanceof Runnable) {
+            task=(Runnable)consumer;
+            break;
+          }
+        }
+      }
+    }
+  }
   if (task != null) {
     LOG.trace("Running task: {}",task);
     task.run();
