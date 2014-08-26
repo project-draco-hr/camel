@@ -1,6 +1,16 @@
 {
   if (cacheManager == null) {
     cacheManager=createCacheManagerInstance();
+    LOG.debug("Turning off EHCache update checker ...");
+    Configuration config=cacheManager.getConfiguration();
+    try {
+      System.setProperty("net.sf.ehcache.skipUpdateCheck","true");
+      ReflectionHelper.setField(config.getClass().getDeclaredField("updateCheck"),config,false);
+      LOG.info("Turned off EHCache update checker. updateCheck={}",config.getUpdateCheck());
+    }
+ catch (    Throwable e) {
+      LOG.warn("Error turning off EHCache update checker. Beware information sent over the internet!",e);
+    }
   }
   return cacheManager;
 }
