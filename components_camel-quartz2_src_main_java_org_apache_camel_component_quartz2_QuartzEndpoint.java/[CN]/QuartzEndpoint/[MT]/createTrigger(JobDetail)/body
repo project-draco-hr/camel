@@ -6,7 +6,14 @@
   }
   if (cron != null) {
     LOG.debug("Creating CronTrigger: {}",cron);
-    result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).build();
+    String timeZone=(String)triggerParameters.get("timeZone");
+    if (timeZone != null) {
+      result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed().inTimeZone(TimeZone.getTimeZone(timeZone))).build();
+      jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_CRON_TIMEZONE,timeZone);
+    }
+ else {
+      result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).build();
+    }
     jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_TYPE,"cron");
     jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION,cron);
   }
