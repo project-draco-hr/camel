@@ -13,11 +13,17 @@
   if (response.getEntity() != null) {
     MediaType mediaType=response.getEntity().getMediaType();
     if (mediaType != null) {
+      LOG.debug("Setting the Content-Type to be {}",mediaType.toString());
       exchange.getOut().setHeader(Exchange.CONTENT_TYPE,mediaType.toString());
     }
-    String text=response.getEntity().getText();
-    LOG.debug("Populate exchange from Restlet response: {}",text);
-    exchange.getOut().setBody(text);
+    if (mediaType != null && mediaType.equals(MediaType.APPLICATION_OCTET_STREAM)) {
+      exchange.getOut().setBody(response.getEntity().getStream());
+    }
+ else {
+      String text=response.getEntity().getText();
+      LOG.debug("Populate exchange from Restlet response: {}",text);
+      exchange.getOut().setBody(text);
+    }
   }
   MessageHelper.copyHeaders(exchange.getIn(),exchange.getOut(),false);
 }
