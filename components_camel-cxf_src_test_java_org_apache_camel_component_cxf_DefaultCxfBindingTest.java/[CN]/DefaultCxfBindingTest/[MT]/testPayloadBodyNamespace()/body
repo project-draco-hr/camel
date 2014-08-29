@@ -1,0 +1,18 @@
+{
+  MessageImpl message=new MessageImpl();
+  DocumentBuilderFactory documentBuilderFactory=DocumentBuilderFactory.newInstance();
+  documentBuilderFactory.setNamespaceAware(true);
+  DocumentBuilder documentBuilder=documentBuilderFactory.newDocumentBuilder();
+  Document document=documentBuilder.parse(IOConverter.toInputStream(SOAP_MESSAGE,null));
+  document.getDocumentElement().normalize();
+  message.setContent(Node.class,document);
+  Map<String,String> nsMap=new HashMap<String,String>();
+  DefaultCxfBinding.getPayloadBodyElements(message,nsMap);
+  assertEquals(2,nsMap.size());
+  assertEquals("http://www.mycompany.com/test/",nsMap.get("xmlns"));
+  document=documentBuilder.newDocument();
+  Element element=document.createElement("tag");
+  DefaultCxfBinding.addNamespace(element,nsMap);
+  assertEquals("http://www.mycompany.com/test/",element.getAttribute("xmlns"));
+  assertEquals("http://www.mycompany.com/test/1/",element.getAttribute("xmlns:ns1"));
+}
