@@ -3,13 +3,13 @@
   Class<?> clazz=bean != null ? bean.getClass() : null;
   BeanHolder beanHolder;
   if (ObjectHelper.isNotEmpty(ref)) {
-    if (cache != null && cache) {
+    if (isCacheBean()) {
       beanHolder=new RegistryBean(routeContext.getCamelContext(),ref).createCacheHolder();
+      bean=beanHolder.getBean();
     }
  else {
       beanHolder=new RegistryBean(routeContext.getCamelContext(),ref);
     }
-    bean=beanHolder.getBean();
     answer=new BeanProcessor(beanHolder);
   }
  else {
@@ -28,7 +28,7 @@
  else {
         clazz=beanClass;
       }
-      if (ObjectHelper.hasDefaultPublicNoArgConstructor(clazz)) {
+      if (isCacheBean() && ObjectHelper.hasDefaultPublicNoArgConstructor(clazz)) {
         bean=CamelContextHelper.newInstance(routeContext.getCamelContext(),clazz);
         ObjectHelper.notNull(bean,"bean",this);
       }
@@ -36,7 +36,22 @@
     if (bean instanceof String) {
       throw new IllegalArgumentException("The bean instance is a java.lang.String type: " + bean + ". We suppose you want to refer to a bean instance by its id instead. Please use beanRef.");
     }
-    beanHolder=bean != null ? new ConstantBeanHolder(bean,routeContext.getCamelContext()) : new ConstantTypeBeanHolder(clazz,routeContext.getCamelContext());
+    if (bean != null) {
+      beanHolder=new ConstantBeanHolder(bean,routeContext.getCamelContext());
+    }
+ else {
+      if (isCacheBean() && ObjectHelper.hasDefaultPublicNoArgConstructor(clazz)) {
+        beanHolder=new ConstantTypeBeanHolder(clazz,routeContext.getCamelContext()).createCacheHolder();
+      }
+ else {
+        if (ObjectHelper.hasDefaultPublicNoArgConstructor(clazz)) {
+          beanHolder=new ConstantTypeBeanHolder(clazz,routeContext.getCamelContext());
+        }
+ else {
+          beanHolder=new ConstantStaticTypeBeanHolder(clazz,routeContext.getCamelContext());
+        }
+      }
+    }
     answer=new BeanProcessor(beanHolder);
   }
   if (multiParameterArray != null) {
@@ -44,15 +59,17 @@
   }
   if (method != null) {
     answer.setMethod(method);
-    BeanInfo beanInfo=beanHolder.getBeanInfo();
-    if (bean != null) {
-      if (!beanInfo.hasMethod(method)) {
-        throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+    if (isCacheBean()) {
+      BeanInfo beanInfo=beanHolder.getBeanInfo();
+      if (bean != null) {
+        if (!beanInfo.hasMethod(method)) {
+          throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,bean,method));
+        }
       }
-    }
- else     if (clazz != null) {
-      if (!beanInfo.hasStaticMethod(method)) {
-        throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,clazz,method,true));
+ else       if (clazz != null) {
+        if (!beanInfo.hasStaticMethod(method)) {
+          throw ObjectHelper.wrapRuntimeCamelException(new MethodNotFoundException(null,clazz,method,true));
+        }
       }
     }
   }
