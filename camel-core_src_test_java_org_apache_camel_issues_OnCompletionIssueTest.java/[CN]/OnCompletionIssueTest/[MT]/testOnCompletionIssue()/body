@@ -2,11 +2,20 @@
   MockEndpoint end=getMockEndpoint("mock:end");
   end.expectedMessageCount(1);
   MockEndpoint complete=getMockEndpoint("mock:complete");
-  complete.expectedBodiesReceivedInAnyOrder("finish","stop","faulted","except");
+  complete.expectedBodiesReceivedInAnyOrder("finish","stop","ile");
+  MockEndpoint failed=getMockEndpoint("mock:failed");
+  failed.expectedBodiesReceivedInAnyOrder("faulted","npe");
   template.sendBody("direct:input","finish");
   template.sendBody("direct:input","stop");
   template.sendBody("direct:input","fault");
-  template.sendBody("direct:input","except");
+  template.sendBody("direct:input","ile");
+  try {
+    template.sendBody("direct:input","npe");
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException e) {
+    assertEquals("Darn NPE",e.getCause().getMessage());
+  }
   setAssertPeriod(2000);
   assertMockEndpointsSatisfied();
 }
