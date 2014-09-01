@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").enrich("direct:foo",new MyAggregationStrategy(),true).to("mock:result");
+      from("direct:start2").enrich("direct:foo",new MyAggregationStrategy(),false).to("mock:result");
+      from("direct:foo").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String body=exchange.getIn().getBody(String.class);
+          if (body.startsWith("Kaboom")) {
+            throw new IllegalArgumentException("I cannot do this");
+          }
+          exchange.getIn().setBody("Hello " + body);
+        }
+      }
+);
+    }
+  }
+;
+}
