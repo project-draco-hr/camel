@@ -1,0 +1,21 @@
+{
+  HttpAsyncClientBuilder clientBuilder=configuration.getHttpAsyncClientBuilder();
+  if (clientBuilder == null) {
+    clientBuilder=HttpAsyncClientBuilder.create();
+    final RequestConfig.Builder requestConfigBuilder=RequestConfig.custom();
+    requestConfigBuilder.setConnectTimeout(configuration.getConnectTimeout());
+    requestConfigBuilder.setSocketTimeout(configuration.getSocketTimeout());
+    final HttpHost proxy=configuration.getProxy();
+    if (proxy != null) {
+      requestConfigBuilder.setProxy(proxy);
+    }
+    clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
+    final SSLContext context=configuration.getSslContext();
+    if (context != null) {
+      clientBuilder.setSSLContext(context);
+    }
+  }
+  apiProxy=new Olingo2AppImpl(configuration.getServiceUri(),clientBuilder);
+  apiProxy.setContentType(configuration.getContentType());
+  return apiProxy;
+}

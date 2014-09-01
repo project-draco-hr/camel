@@ -1,0 +1,43 @@
+{
+  UriInfoImpl result;
+  try {
+    final List<PathSegment> pathSegments=new ArrayList<PathSegment>();
+    final String[] segments=new URI(resourcePath).getPath().split(SEPARATOR);
+    if (queryParams == null) {
+      queryParams=Collections.emptyMap();
+    }
+    for (    String segment : segments) {
+      if (segment.indexOf(';') == -1) {
+        pathSegments.add(new ODataPathSegmentImpl(segment,null));
+      }
+ else {
+        final String[] splitSegment=segment.split(";");
+        segment=splitSegment[0];
+        Map<String,List<String>> matrixParams=new HashMap<String,List<String>>();
+        for (int i=1; i < splitSegment.length; i++) {
+          final String[] param=splitSegment[i].split("=");
+          List<String> values=matrixParams.get(param[0]);
+          if (values == null) {
+            values=new ArrayList<String>();
+            matrixParams.put(param[0],values);
+          }
+          if (param[1].indexOf(',') == -1) {
+            values.add(param[1]);
+          }
+ else {
+            values.addAll(Arrays.asList(param[1].split(",")));
+          }
+        }
+        pathSegments.add(new ODataPathSegmentImpl(segment,matrixParams));
+      }
+    }
+    result=(UriInfoImpl)UriParser.parse(edm,pathSegments,queryParams);
+  }
+ catch (  URISyntaxException e) {
+    throw new IllegalArgumentException("resourcePath: " + e.getMessage(),e);
+  }
+catch (  ODataException e) {
+    throw new IllegalArgumentException("resourcePath: " + e.getMessage(),e);
+  }
+  return result;
+}

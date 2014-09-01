@@ -1,0 +1,39 @@
+{
+  final int statusCode=Integer.parseInt(response.getStatusCode());
+  final String statusInfo=response.getStatusInfo();
+  final BasicHttpResponse httpResponse=new BasicHttpResponse(new BasicStatusLine(HttpVersion.HTTP_1_1,statusCode,statusInfo));
+  final Map<String,String> headers=response.getHeaders();
+  for (  Map.Entry<String,String> entry : headers.entrySet()) {
+    httpResponse.setHeader(entry.getKey(),entry.getValue());
+  }
+  ByteArrayInputStream content=null;
+  try {
+    if (response.getBody() != null) {
+      final ContentType partContentType=ContentType.create(headers.get(HttpHeaders.CONTENT_TYPE)).receiveWithCharsetParameter(ContentType.CHARSET_UTF_8);
+      final String charset=partContentType.getParameters().get(ContentType.PARAMETER_CHARSET);
+      final String body=response.getBody();
+      content=body != null ? new ByteArrayInputStream(body.getBytes(charset)) : null;
+      httpResponse.setEntity(new StringEntity(body,charset));
+    }
+    AbstractFutureCallback.checkStatus(httpResponse);
+  }
+ catch (  ODataApplicationException e) {
+    return new Olingo2BatchResponse(statusCode,statusInfo,response.getContentId(),response.getHeaders(),e);
+  }
+catch (  UnsupportedEncodingException e) {
+    return new Olingo2BatchResponse(statusCode,statusInfo,response.getContentId(),response.getHeaders(),e);
+  }
+  final String resourcePath=request.getResourcePath();
+  final String resolvedResourcePath;
+  if (resourcePath.startsWith("$") && !(METADATA.equals(resourcePath) || BATCH.equals(resourcePath))) {
+    resolvedResourcePath=findLocation(resourcePath,contentIdLocationMap);
+  }
+ else {
+    final String resourceLocation=response.getHeader(HttpHeaders.LOCATION);
+    resolvedResourcePath=resourceLocation != null ? resourceLocation.substring(serviceUri.length()) : resourcePath;
+  }
+  final Map<String,String> resolvedQueryParams=request instanceof Olingo2BatchQueryRequest ? ((Olingo2BatchQueryRequest)request).getQueryParams() : null;
+  final UriInfoImpl uriInfo=parseUri(edm,resolvedResourcePath,resolvedQueryParams);
+  final Object resolvedContent=content != null ? readContent(uriInfo,content) : null;
+  return new Olingo2BatchResponse(statusCode,statusInfo,response.getContentId(),response.getHeaders(),resolvedContent);
+}

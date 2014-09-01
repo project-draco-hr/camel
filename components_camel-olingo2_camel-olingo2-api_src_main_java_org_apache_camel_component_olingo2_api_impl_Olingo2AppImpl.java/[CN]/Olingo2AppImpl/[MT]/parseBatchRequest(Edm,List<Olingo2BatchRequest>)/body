@@ -1,0 +1,30 @@
+{
+  final ArrayList<BatchPart> parts=new ArrayList<BatchPart>();
+  final ArrayList<BatchChangeSetPart> changeSetParts=new ArrayList<BatchChangeSetPart>();
+  final Map<String,String> contentIdMap=new HashMap<String,String>();
+  for (  Olingo2BatchRequest batchPart : batchParts) {
+    if (batchPart instanceof Olingo2BatchQueryRequest) {
+      if (!changeSetParts.isEmpty()) {
+        addChangeSetParts(parts,changeSetParts);
+        changeSetParts.clear();
+        contentIdMap.clear();
+      }
+      final UriInfoImpl uriInfo=parseUri(edm,batchPart.getResourcePath(),null);
+      parts.add(createBatchQueryPart(uriInfo,(Olingo2BatchQueryRequest)batchPart));
+    }
+ else {
+      final BatchChangeSetPart changeSetPart=createBatchChangeSetPart(edm,contentIdMap,(Olingo2BatchChangeRequest)batchPart);
+      changeSetParts.add(changeSetPart);
+    }
+  }
+  if (!changeSetParts.isEmpty()) {
+    addChangeSetParts(parts,changeSetParts);
+  }
+  final String boundary=BOUNDARY_PREFIX + UUID.randomUUID();
+  InputStream batchRequest=EntityProvider.writeBatchRequest(parts,boundary);
+  final byte[] bytes=EntityProvider.readBinary(batchRequest);
+  final String batchRequestBody=new String(bytes,ContentType.CHARSET_UTF_8);
+  batchRequest=new ByteArrayInputStream(batchRequestBody.replaceAll("--(batch_)","\r\n\r\n--$1").getBytes(ContentType.CHARSET_UTF_8));
+  final String contentHeader=ContentType.create(BATCH_CONTENT_TYPE,BOUNDARY_PARAMETER,boundary).toString();
+  return ODataResponse.entity(batchRequest).contentHeader(contentHeader).build();
+}

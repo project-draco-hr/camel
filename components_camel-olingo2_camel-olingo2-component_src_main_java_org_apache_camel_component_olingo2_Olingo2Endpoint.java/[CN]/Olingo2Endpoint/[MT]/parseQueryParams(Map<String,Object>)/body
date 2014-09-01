@@ -1,0 +1,24 @@
+{
+  final Map<String,String> queryParams=new HashMap<String,String>();
+  for (Iterator<Map.Entry<String,Object>> it=options.entrySet().iterator(); it.hasNext(); ) {
+    final Map.Entry<String,Object> entry=it.next();
+    final String paramName=entry.getKey();
+    if (!endpointPropertyNames.contains(paramName)) {
+      final Object value=entry.getValue();
+      if (value == null) {
+        throw new IllegalArgumentException("Null value for query parameter " + paramName);
+      }
+      queryParams.put(paramName,value.toString());
+      it.remove();
+    }
+  }
+  if (!queryParams.isEmpty()) {
+    @SuppressWarnings("unchecked") final Map<String,String> oldParams=(Map<String,String>)options.get(QUERY_PARAMS_PROPERTY);
+    if (oldParams == null) {
+      options.put(QUERY_PARAMS_PROPERTY,queryParams);
+    }
+ else {
+      oldParams.putAll(queryParams);
+    }
+  }
+}

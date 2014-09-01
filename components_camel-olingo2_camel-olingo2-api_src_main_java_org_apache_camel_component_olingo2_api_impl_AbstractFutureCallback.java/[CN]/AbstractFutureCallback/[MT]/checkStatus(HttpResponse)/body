@@ -1,0 +1,27 @@
+{
+  final StatusLine statusLine=response.getStatusLine();
+  HttpStatusCodes httpStatusCode=HttpStatusCodes.fromStatusCode(statusLine.getStatusCode());
+  if (400 <= httpStatusCode.getStatusCode() && httpStatusCode.getStatusCode() <= 599) {
+    if (response.getEntity() != null) {
+      try {
+        final ContentType responseContentType=ContentType.create(response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue());
+switch (responseContentType.getODataFormat()) {
+case ATOM:
+case XML:
+case JSON:
+          final ODataErrorContext errorContext=EntityProvider.readErrorDocument(response.getEntity().getContent(),responseContentType.toString());
+        throw new ODataApplicationException(errorContext.getMessage(),errorContext.getLocale(),httpStatusCode,errorContext.getErrorCode(),errorContext.getException());
+default :
+    }
+  }
+ catch (  EntityProviderException e) {
+    throw new ODataApplicationException(e.getMessage(),response.getLocale(),httpStatusCode,e);
+  }
+catch (  IOException e) {
+    throw new ODataApplicationException(e.getMessage(),response.getLocale(),httpStatusCode,e);
+  }
+}
+throw new ODataApplicationException(statusLine.getReasonPhrase(),response.getLocale(),httpStatusCode);
+}
+return httpStatusCode;
+}

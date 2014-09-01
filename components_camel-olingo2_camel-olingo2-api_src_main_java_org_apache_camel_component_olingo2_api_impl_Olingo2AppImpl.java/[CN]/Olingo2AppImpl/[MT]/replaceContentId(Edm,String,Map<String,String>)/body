@@ -1,0 +1,24 @@
+{
+  final int pathSeparator=entityReference.indexOf('/');
+  final StringBuilder referencedEntity;
+  if (pathSeparator == -1) {
+    referencedEntity=new StringBuilder(contentIdMap.get(entityReference));
+  }
+ else {
+    referencedEntity=new StringBuilder(contentIdMap.get(entityReference.substring(0,pathSeparator)));
+  }
+  final EdmEntitySet entitySet=edm.getDefaultEntityContainer().getEntitySet(referencedEntity.toString());
+  final List<EdmProperty> keyProperties=entitySet.getEntityType().getKeyProperties();
+  if (keyProperties.size() == 1) {
+    referencedEntity.append("('dummy')");
+  }
+ else {
+    referencedEntity.append("(");
+    for (    EdmProperty keyProperty : keyProperties) {
+      referencedEntity.append(keyProperty.getName()).append('=').append("'dummy',");
+    }
+    referencedEntity.deleteCharAt(referencedEntity.length() - 1);
+    referencedEntity.append(')');
+  }
+  return pathSeparator == -1 ? referencedEntity.toString() : referencedEntity.append(entityReference.substring(pathSeparator)).toString();
+}

@@ -1,0 +1,44 @@
+{
+  Edm localEdm=edm;
+  if (localEdm == null) {
+synchronized (this) {
+      localEdm=edm;
+      if (localEdm == null) {
+        final CountDownLatch latch=new CountDownLatch(1);
+        final Exception[] error=new Exception[1];
+        apiProxy.read(null,"$metadata",null,new Olingo2ResponseHandler<Edm>(){
+          @Override public void onResponse(          Edm response){
+            edm=response;
+            latch.countDown();
+          }
+          @Override public void onException(          Exception ex){
+            error[0]=ex;
+            latch.countDown();
+          }
+          @Override public void onCanceled(){
+            error[0]=new RuntimeCamelException("OData HTTP request cancelled");
+            latch.countDown();
+          }
+        }
+);
+        try {
+          latch.await();
+          final Exception ex=error[0];
+          if (ex != null) {
+            if (ex instanceof RuntimeCamelException) {
+              throw (RuntimeCamelException)ex;
+            }
+ else {
+              throw new RuntimeCamelException("Error reading EDM " + ex.getMessage(),ex);
+            }
+          }
+        }
+ catch (        InterruptedException e) {
+          throw new RuntimeCamelException(e.getMessage(),e);
+        }
+        localEdm=edm;
+      }
+    }
+  }
+  return localEdm;
+}
