@@ -1,0 +1,20 @@
+{
+  final EntityManager entityManager=getTargetEntityManager(exchange,entityManagerFactory,true);
+  Boolean rc=transactionTemplate.execute(new TransactionCallback<Boolean>(){
+    public Boolean doInTransaction(    TransactionStatus status){
+      if (isJoinTransaction()) {
+        entityManager.joinTransaction();
+      }
+      List<?> list=query(entityManager,messageId);
+      if (list.isEmpty()) {
+        return Boolean.FALSE;
+      }
+ else {
+        return Boolean.TRUE;
+      }
+    }
+  }
+);
+  LOG.debug("contains {} -> {}",messageId,rc);
+  return rc;
+}

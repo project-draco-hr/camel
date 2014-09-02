@@ -1,0 +1,17 @@
+{
+  EntityManager em=null;
+  if (exchange != null && usePassedInEntityManager) {
+    em=exchange.getIn().getHeader(JpaConstants.ENTITY_MANAGER,EntityManager.class);
+  }
+  if (em == null && exchange != null) {
+    em=exchange.getProperty(JpaConstants.ENTITY_MANAGER,EntityManager.class);
+  }
+  if (em == null) {
+    em=entityManagerFactory.createEntityManager();
+    if (exchange != null) {
+      exchange.setProperty(JpaConstants.ENTITY_MANAGER,em);
+      exchange.addOnCompletion(new JpaCloseEntityManagerOnCompletion(em));
+    }
+  }
+  return em;
+}

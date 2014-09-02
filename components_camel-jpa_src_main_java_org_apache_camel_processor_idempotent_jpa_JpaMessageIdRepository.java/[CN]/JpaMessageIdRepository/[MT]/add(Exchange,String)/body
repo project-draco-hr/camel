@@ -1,0 +1,26 @@
+{
+  final EntityManager entityManager=getTargetEntityManager(exchange,entityManagerFactory,true);
+  Boolean rc=transactionTemplate.execute(new TransactionCallback<Boolean>(){
+    public Boolean doInTransaction(    TransactionStatus status){
+      if (isJoinTransaction()) {
+        entityManager.joinTransaction();
+      }
+      List<?> list=query(entityManager,messageId);
+      if (list.isEmpty()) {
+        MessageProcessed processed=new MessageProcessed();
+        processed.setProcessorName(processorName);
+        processed.setMessageId(messageId);
+        processed.setCreatedAt(new Date());
+        entityManager.persist(processed);
+        entityManager.flush();
+        return Boolean.TRUE;
+      }
+ else {
+        return Boolean.FALSE;
+      }
+    }
+  }
+);
+  LOG.debug("add {} -> {}",messageId,rc);
+  return rc;
+}
