@@ -1,0 +1,97 @@
+{
+  LOG.trace("toNettyResponse: {}",message);
+  if (message.getBody() instanceof HttpResponse) {
+    return (HttpResponse)message.getBody();
+  }
+  Object body=message.getBody();
+  Exception cause=message.getExchange().getException();
+  ByteBuf buffer;
+  boolean failed=message.getExchange().isFailed();
+  int defaultCode=failed ? 500 : 200;
+  int code=message.getHeader(Exchange.HTTP_RESPONSE_CODE,defaultCode,int.class);
+  LOG.trace("HTTP Status Code: {}",code);
+  if (cause != null) {
+    if (configuration.isTransferException()) {
+      ByteArrayOutputStream bos=new ByteArrayOutputStream();
+      ObjectOutputStream oos=new ObjectOutputStream(bos);
+      oos.writeObject(cause);
+      oos.flush();
+      IOHelper.close(oos,bos);
+      body=NettyConverter.toByteBuffer(bos.toByteArray());
+      message.setHeader(Exchange.CONTENT_TYPE,NettyHttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT);
+    }
+ else {
+      StringWriter sw=new StringWriter();
+      PrintWriter pw=new PrintWriter(sw);
+      cause.printStackTrace(pw);
+      body=NettyConverter.toByteBuffer(sw.toString().getBytes());
+      message.setHeader(Exchange.CONTENT_TYPE,"text/plain");
+    }
+    ExchangeHelper.setFailureHandled(message.getExchange());
+  }
+  if (body instanceof ByteBuf) {
+    buffer=(ByteBuf)body;
+  }
+ else {
+    buffer=message.getBody(ByteBuf.class);
+    if (buffer == null) {
+      byte[] data=message.getBody(byte[].class);
+      if (data != null) {
+        buffer=NettyConverter.toByteBuffer(data);
+      }
+ else {
+        String str;
+        if (body != null) {
+          str=message.getMandatoryBody(String.class);
+        }
+ else {
+          str="";
+        }
+        buffer=NettyConverter.toByteBuffer(str.getBytes());
+      }
+    }
+  }
+  HttpResponse response=null;
+  if (buffer != null) {
+    response=new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.valueOf(code),buffer);
+    if (buffer.readerIndex() == buffer.writerIndex()) {
+      buffer.setIndex(0,buffer.writerIndex());
+    }
+    int len=buffer.readableBytes();
+    response.headers().set(HttpHeaders.Names.CONTENT_LENGTH,len);
+    LOG.trace("Content-Length: {}",len);
+  }
+ else {
+    response=new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.valueOf(code));
+  }
+  TypeConverter tc=message.getExchange().getContext().getTypeConverter();
+  for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    final Iterator<?> it=ObjectHelper.createIterator(value,null);
+    while (it.hasNext()) {
+      String headerValue=tc.convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        LOG.trace("HTTP-Header: {}={}",key,headerValue);
+        response.headers().add(key,headerValue);
+      }
+    }
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (contentType != null) {
+    response.headers().set(HttpHeaders.Names.CONTENT_TYPE,contentType);
+    LOG.trace("Content-Type: {}",contentType);
+  }
+  String connection=message.getHeader(HttpHeaders.Names.CONNECTION,String.class);
+  if (connection == null) {
+    if (configuration.isKeepAlive()) {
+      connection=HttpHeaders.Values.KEEP_ALIVE;
+    }
+ else {
+      connection=HttpHeaders.Values.CLOSE;
+    }
+  }
+  response.headers().set(HttpHeaders.Names.CONNECTION,connection);
+  LOG.trace("Connection: {}",connection);
+  return response;
+}

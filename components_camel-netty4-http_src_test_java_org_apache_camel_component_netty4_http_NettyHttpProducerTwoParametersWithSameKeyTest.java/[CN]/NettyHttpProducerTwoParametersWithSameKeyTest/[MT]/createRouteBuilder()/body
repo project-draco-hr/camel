@@ -1,0 +1,25 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("netty4-http:http://localhost:{{port}}/myapp").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String from=exchange.getIn().getHeader("from",String.class);
+          assertEquals("me",from);
+          List<?> to=exchange.getIn().getHeader("to",List.class);
+          assertNotNull(to);
+          assertEquals(2,to.size());
+          assertEquals("foo",to.get(0));
+          assertEquals("bar",to.get(1));
+          exchange.getOut().setBody("OK");
+          List<Integer> list=new ArrayList<Integer>();
+          list.add(123);
+          list.add(456);
+          exchange.getOut().setHeader("foo",list);
+          exchange.getOut().setHeader("bar","yes");
+        }
+      }
+);
+    }
+  }
+;
+}

@@ -1,0 +1,14 @@
+{
+  Exchange exchange=createExchange();
+  FullHttpRequest request=(FullHttpRequest)message;
+  Message in=getNettyHttpBinding().toCamelMessage(request,exchange,getConfiguration());
+  exchange.setIn(in);
+  updateMessageHeader(in,ctx);
+  String contentType=in.getHeader(Exchange.CONTENT_TYPE,String.class);
+  String charset=NettyHttpHelper.getCharsetFromContentType(contentType);
+  if (charset != null) {
+    exchange.setProperty(Exchange.CHARSET_NAME,charset);
+    in.setHeader(Exchange.HTTP_CHARACTER_ENCODING,charset);
+  }
+  return exchange;
+}

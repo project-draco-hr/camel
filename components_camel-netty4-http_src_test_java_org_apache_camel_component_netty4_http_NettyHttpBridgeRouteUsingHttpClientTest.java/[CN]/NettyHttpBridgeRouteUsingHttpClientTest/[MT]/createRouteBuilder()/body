@@ -1,0 +1,27 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      port1=getPort();
+      port2=getNextPort();
+      errorHandler(noErrorHandler());
+      Processor serviceProc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String uri=exchange.getIn().getHeader(Exchange.HTTP_URI,String.class);
+          exchange.getOut().setBody(uri);
+        }
+      }
+;
+      from("netty4-http:http://localhost:" + port2 + "/test/hello").to("http://localhost:" + port1 + "?throwExceptionOnFailure=false&bridgeEndpoint=true");
+      from("netty4-http:http://localhost:" + port1 + "?matchOnUriPrefix=true").process(serviceProc);
+      from("netty4-http:http://localhost:" + port2 + "/form?bridgeEndpoint=true").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Message in=exchange.getIn();
+          String request=in.getBody(String.class);
+          exchange.getOut().setBody(request);
+        }
+      }
+);
+    }
+  }
+;
+}
