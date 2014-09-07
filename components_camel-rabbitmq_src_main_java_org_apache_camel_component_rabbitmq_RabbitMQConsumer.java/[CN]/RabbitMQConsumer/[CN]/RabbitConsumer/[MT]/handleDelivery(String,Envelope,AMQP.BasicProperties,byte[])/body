@@ -2,15 +2,25 @@
   Exchange exchange=consumer.endpoint.createRabbitExchange(envelope,properties,body);
   mergeAmqpProperties(exchange,properties);
   log.trace("Created exchange [exchange={}]",exchange);
+  long deliveryTag=0;
   try {
+    deliveryTag=envelope.getDeliveryTag();
     consumer.getProcessor().process(exchange);
-    long deliveryTag=envelope.getDeliveryTag();
     if (!consumer.endpoint.isAutoAck()) {
-      log.trace("Acknowledging receipt [delivery_tag={}]",deliveryTag);
-      channel.basicAck(deliveryTag,false);
+      if (exchange.getException() == null) {
+        log.trace("Acknowledging receipt [delivery_tag={}]",deliveryTag);
+        channel.basicAck(deliveryTag,false);
+      }
+ else {
+        log.trace("Unacknowledging receipt [delivery_tag={}]",deliveryTag);
+        rejectQuicly(String.valueOf(deliveryTag));
+      }
     }
   }
  catch (  Exception e) {
+    if (deliveryTag != 0 && !consumer.endpoint.isAutoAck()) {
+      channel.basicReject(deliveryTag,false);
+    }
     getExceptionHandler().handleException("Error processing exchange",exchange,e);
   }
 }
