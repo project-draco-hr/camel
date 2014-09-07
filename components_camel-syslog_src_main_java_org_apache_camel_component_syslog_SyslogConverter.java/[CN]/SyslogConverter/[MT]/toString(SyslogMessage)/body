@@ -1,0 +1,50 @@
+{
+  boolean isRfc5424=message instanceof Rfc5424SyslogMessage;
+  StringBuilder sbr=new StringBuilder();
+  sbr.append("<");
+  if (message.getFacility() == null) {
+    message.setFacility(SyslogFacility.USER);
+  }
+  if (message.getSeverity() == null) {
+    message.setSeverity(SyslogSeverity.INFO);
+  }
+  if (message.getHostname() == null) {
+    try {
+      message.setHostname(InetAddress.getLocalHost().toString());
+    }
+ catch (    UnknownHostException e) {
+      message.setHostname("UNKNOWN_HOST");
+    }
+  }
+  sbr.append(message.getFacility().ordinal() * 8 + message.getSeverity().ordinal());
+  sbr.append(">");
+  if (isRfc5424) {
+    sbr.append("1");
+    sbr.append(" ");
+  }
+  if (message.getTimestamp() == null) {
+    message.setTimestamp(Calendar.getInstance());
+  }
+  if (isRfc5424) {
+    sbr.append(DatatypeConverter.printDateTime(message.getTimestamp()));
+  }
+ else {
+    addRfc3164TimeStamp(sbr,message);
+  }
+  sbr.append(" ");
+  sbr.append(message.getHostname());
+  sbr.append(" ");
+  if (isRfc5424) {
+    Rfc5424SyslogMessage rfc5424SyslogMessage=(Rfc5424SyslogMessage)message;
+    sbr.append(rfc5424SyslogMessage.getAppName());
+    sbr.append(" ");
+    sbr.append(rfc5424SyslogMessage.getProcId());
+    sbr.append(" ");
+    sbr.append(rfc5424SyslogMessage.getMsgId());
+    sbr.append(" ");
+    sbr.append(rfc5424SyslogMessage.getStructuredData());
+    sbr.append(" ");
+  }
+  sbr.append(message.getLogMessage());
+  return sbr.toString();
+}

@@ -1,0 +1,27 @@
+{
+  if (currentFramelength == null) {
+    int index=indexOf(buffer,ChannelBuffers.wrappedBuffer(new byte[]{' '}));
+    StringBuffer lengthbuffer=new StringBuffer();
+    if (index > -1) {
+      lengthbuffer.append(new String(buffer.readBytes(index).array()));
+    }
+    int length;
+    try {
+      length=Integer.parseInt(lengthbuffer.toString()) + 1;
+    }
+ catch (    NumberFormatException e) {
+      length=-1;
+    }
+    if (length < 0) {
+      buffer.resetReaderIndex();
+      return null;
+    }
+    currentFramelength=length;
+  }
+  if (buffer.readableBytes() < currentFramelength) {
+    return null;
+  }
+  int lengthToRead=currentFramelength;
+  currentFramelength=null;
+  return buffer.readBytes(lengthToRead);
+}
