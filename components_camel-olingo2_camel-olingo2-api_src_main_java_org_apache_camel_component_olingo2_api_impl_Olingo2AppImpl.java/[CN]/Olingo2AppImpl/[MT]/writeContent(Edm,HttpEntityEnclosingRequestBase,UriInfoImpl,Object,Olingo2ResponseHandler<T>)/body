@@ -10,7 +10,11 @@
     execute(httpEntityRequest,contentType,new AbstractFutureCallback<T>(responseHandler){
       @SuppressWarnings("unchecked") @Override public void onCompleted(      HttpResponse result) throws IOException, EntityProviderException, BatchException, ODataApplicationException {
         HttpStatusCodes statusCode=HttpStatusCodes.fromStatusCode(result.getStatusLine().getStatusCode());
-        if (statusCode != HttpStatusCodes.NO_CONTENT) {
+        final boolean noEntity=result.getEntity() == null || result.getEntity().getContentLength() == 0;
+        if (statusCode == HttpStatusCodes.NO_CONTENT || noEntity) {
+          responseHandler.onResponse((T)HttpStatusCodes.fromStatusCode(result.getStatusLine().getStatusCode()));
+        }
+ else {
 switch (uriInfo.getUriType()) {
 case URI9:
             final List<BatchSingleResponse> singleResponses=EntityProvider.parseBatchResponse(result.getEntity().getContent(),result.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue());
@@ -32,13 +36,39 @@ case URI9:
   }
 responseHandler.onResponse((T)responses);
 break;
-default :
-responseHandler.onResponse((T)EntityProvider.readEntry(response.getContentHeader(),uriInfo.getTargetEntitySet(),result.getEntity().getContent(),EntityProviderReadProperties.init().build()));
-break;
-}
+case URI4:
+case URI5:
+final List<EdmProperty> simplePropertyPath=uriInfo.getPropertyPath();
+final EdmProperty simpleProperty=simplePropertyPath.get(simplePropertyPath.size() - 1);
+if (uriInfo.isValue()) {
+responseHandler.onResponse((T)EntityProvider.readPropertyValue(simpleProperty,result.getEntity().getContent()));
 }
  else {
-responseHandler.onResponse((T)HttpStatusCodes.fromStatusCode(result.getStatusLine().getStatusCode()));
+responseHandler.onResponse((T)EntityProvider.readProperty(getContentType(),simpleProperty,result.getEntity().getContent(),EntityProviderReadProperties.init().build()));
+}
+break;
+case URI3:
+final List<EdmProperty> complexPropertyPath=uriInfo.getPropertyPath();
+final EdmProperty complexProperty=complexPropertyPath.get(complexPropertyPath.size() - 1);
+responseHandler.onResponse((T)EntityProvider.readProperty(getContentType(),complexProperty,result.getEntity().getContent(),EntityProviderReadProperties.init().build()));
+break;
+case URI7A:
+final EdmEntitySet targetLinkEntitySet=uriInfo.getTargetEntitySet();
+responseHandler.onResponse((T)EntityProvider.readLink(getContentType(),targetLinkEntitySet,result.getEntity().getContent()));
+break;
+case URI7B:
+final EdmEntitySet targetLinksEntitySet=uriInfo.getTargetEntitySet();
+responseHandler.onResponse((T)EntityProvider.readLinks(getContentType(),targetLinksEntitySet,result.getEntity().getContent()));
+break;
+case URI1:
+case URI2:
+case URI6A:
+case URI6B:
+responseHandler.onResponse((T)EntityProvider.readEntry(response.getContentHeader(),uriInfo.getTargetEntitySet(),result.getEntity().getContent(),EntityProviderReadProperties.init().build()));
+break;
+default :
+throw new ODataApplicationException("Unsupported resource type " + uriInfo.getTargetType(),Locale.ENGLISH);
+}
 }
 }
 }
