@@ -1,8 +1,16 @@
 {
-  boolean isEnveloped=getConfiguration().getParentLocalName() != null;
+  if (getConfiguration().getParentLocalName() != null && getConfiguration().getParentXpath() != null) {
+    throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent local name " + getConfiguration().getParentLocalName() + " and the parent XPath "+ getConfiguration().getParentXpath().getXPath()+ " are specified. You must not specify both parameters.");
+  }
+  boolean isEnveloped=getConfiguration().getParentLocalName() != null || getConfiguration().getParentXpath() != null;
   boolean isDetached=getXpathToIdAttributes(message).size() > 0;
   if (isEnveloped && isDetached) {
-    throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent local name " + getConfiguration().getParentLocalName() + " for an enveloped signature and the XPATHs to ID attributes for a detached signature are specified. You must not specify both parameters.");
+    if (getConfiguration().getParentLocalName() != null) {
+      throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent local name " + getConfiguration().getParentLocalName() + " for an enveloped signature and the XPATHs to ID attributes for a detached signature are specified. You must not specify both parameters.");
+    }
+ else {
+      throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent XPath " + getConfiguration().getParentXpath().getXPath() + " for an enveloped signature and the XPATHs to ID attributes for a detached signature are specified. You must not specify both parameters.");
+    }
   }
   SignatureType result;
   if (isEnveloped) {

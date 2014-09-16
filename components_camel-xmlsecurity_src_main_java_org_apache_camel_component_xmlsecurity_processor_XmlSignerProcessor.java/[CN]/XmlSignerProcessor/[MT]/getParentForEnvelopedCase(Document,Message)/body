@@ -1,7 +1,31 @@
 {
-  NodeList parents=doc.getElementsByTagNameNS(getConfiguration().getParentNamespace(),getConfiguration().getParentLocalName());
-  if (parents == null || parents.getLength() == 0) {
-    throw new XmlSignatureFormatException(String.format("Incoming message has wrong format: The parent element with the local name %s and the namespace %s was not found in the message to build an enveloped XML signature.",getConfiguration().getParentLocalName(),getConfiguration().getParentNamespace()));
+  if (getConfiguration().getParentXpath() != null) {
+    XPathFilterParameterSpec xp=getConfiguration().getParentXpath();
+    XPathExpression exp;
+    try {
+      exp=XmlSignatureHelper.getXPathExpression(xp);
+    }
+ catch (    XPathExpressionException e) {
+      throw new XmlSignatureException("The parent XPath " + getConfiguration().getParentXpath().getXPath() + " is wrongly configured: The XPath "+ xp.getXPath()+ " is invalid.",e);
+    }
+    NodeList list=(NodeList)exp.evaluate(doc.getDocumentElement(),XPathConstants.NODESET);
+    if (list == null || list.getLength() == 0) {
+      throw new XmlSignatureException("The parent XPath " + xp.getXPath() + " returned no result. Check the configuration of the XML signer component.");
+    }
+    int length=list.getLength();
+    for (int i=0; i < length; i++) {
+      Node node=list.item(i);
+      if (node.getNodeType() == Node.ELEMENT_NODE) {
+        return (Element)node;
+      }
+    }
+    throw new XmlSignatureException("The parent XPath " + xp.getXPath() + " returned no element. Check the configuration of the XML signer component.");
   }
-  return (Element)parents.item(0);
+ else {
+    NodeList parents=doc.getElementsByTagNameNS(getConfiguration().getParentNamespace(),getConfiguration().getParentLocalName());
+    if (parents == null || parents.getLength() == 0) {
+      throw new XmlSignatureFormatException(String.format("Incoming message has wrong format: The parent element with the local name %s and the namespace %s was not found in the message to build an enveloped XML signature.",getConfiguration().getParentLocalName(),getConfiguration().getParentNamespace()));
+    }
+    return (Element)parents.item(0);
+  }
 }

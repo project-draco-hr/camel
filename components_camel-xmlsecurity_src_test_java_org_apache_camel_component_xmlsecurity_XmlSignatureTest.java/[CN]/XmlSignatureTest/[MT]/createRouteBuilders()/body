@@ -2,7 +2,7 @@
   return new RouteBuilder[]{new RouteBuilder(){
     public void configure() throws Exception {
       onException(XmlSignatureException.class).handled(true).to("mock:exception");
-      from("direct:enveloping").to("xmlsecurity:sign://enveloping?keyAccessor=#accessor&schemaResourceUri=").to("xmlsecurity:verify://enveloping?keySelector=#selector").to("mock:result");
+      from("direct:enveloping").to(getSignerEndpointURIEnveloping()).to("mock:signed").to(getVerifierEncpointURIEnveloping()).to("mock:result");
     }
   }
 ,new RouteBuilder(){
@@ -14,7 +14,7 @@
 ,new RouteBuilder(){
     public void configure() throws Exception {
       onException(XmlSignatureException.class).handled(true).to("mock:exception");
-      from("direct:enveloped").to("xmlsecurity:sign://enveloped?keyAccessor=#accessor&parentLocalName=root&parentNamespace=http://test/test").to("xmlsecurity:verify://enveloped?keySelector=#selector").to("mock:result");
+      from("direct:enveloped").to(getSignerEndpointURIEnveloped()).to("mock:signed").to(getVerifierEndpointURIEnveloped()).to("mock:result");
     }
   }
 ,new RouteBuilder(){
@@ -131,11 +131,5 @@
       from("direct:invalidhash").to("xmlsecurity:verify://invalidhash?keySelector=#selectorKeyValue&baseUri=#baseUri&secureValidation=false").to("mock:result");
     }
   }
-,new RouteBuilder(){
-    public void configure() throws Exception {
-      onException(Exception.class).handled(false).to("mock:exception");
-      from("direct:detached").to("xmlsecurity:sign://detached?keyAccessor=#keyAccessorDefault&xpathsToIdAttributes=#xpathsToIdAttributes&" + "schemaResourceUri=org/apache/camel/component/xmlsecurity/Test.xsd&signatureId=&clearHeaders=false").to("mock:result").to("xmlsecurity:verify://detached?keySelector=#keySelectorDefault&schemaResourceUri=org/apache/camel/component/xmlsecurity/Test.xsd").to("mock:verified");
-    }
-  }
-};
+,createDetachedRoute(),createRouteForEnvelopedWithParentXpath()};
 }
