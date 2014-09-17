@@ -1,0 +1,17 @@
+{
+  List<RepositoryTag> tags=getRepositoryService().getTags(getRepository());
+  Stack<RepositoryTag> newTags=new Stack<RepositoryTag>();
+  for (  RepositoryTag tag : tags) {
+    if (!tagNames.contains(tag.getName())) {
+      newTags.push(tag);
+      tagNames.add(tag.getName());
+    }
+  }
+  while (!newTags.empty()) {
+    RepositoryTag newTag=newTags.pop();
+    Exchange e=getEndpoint().createExchange();
+    e.getIn().setBody(newTag);
+    getProcessor().process(e);
+  }
+  return newTags.size();
+}

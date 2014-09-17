@@ -1,0 +1,22 @@
+{
+  List<PullRequest> openPullRequests=pullRequestService.getPullRequests(getRepository(),"open");
+  Stack<PullRequest> newPullRequests=new Stack<PullRequest>();
+  for (  PullRequest pullRequest : openPullRequests) {
+    if (pullRequest.getNumber() > lastOpenPullRequest) {
+      newPullRequests.push(pullRequest);
+    }
+ else {
+      break;
+    }
+  }
+  if (newPullRequests.size() > 0) {
+    lastOpenPullRequest=openPullRequests.get(0).getNumber();
+  }
+  while (!newPullRequests.empty()) {
+    PullRequest newPullRequest=newPullRequests.pop();
+    Exchange e=getEndpoint().createExchange();
+    e.getIn().setBody(newPullRequest);
+    getProcessor().process(e);
+  }
+  return newPullRequests.size();
+}

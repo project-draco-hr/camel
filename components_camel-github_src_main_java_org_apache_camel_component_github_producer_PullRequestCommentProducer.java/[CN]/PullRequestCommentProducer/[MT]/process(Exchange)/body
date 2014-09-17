@@ -1,0 +1,16 @@
+{
+  Integer pullRequestNumber=exchange.getIn().getHeader("GitHubPullRequest",Integer.class);
+  Integer inResponseTo=exchange.getIn().getHeader("GitHubInResponseTo",Integer.class);
+  String text=exchange.getIn().getBody(String.class);
+  Comment response;
+  if (inResponseTo != null && inResponseTo > 0) {
+    response=pullRequestService.replyToComment(getRepository(),pullRequestNumber,inResponseTo,text);
+  }
+ else {
+    response=issueService.createComment(getRepository(),pullRequestNumber,text);
+  }
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getOut().copyFrom(exchange.getIn());
+    exchange.getOut().setBody(response);
+  }
+}

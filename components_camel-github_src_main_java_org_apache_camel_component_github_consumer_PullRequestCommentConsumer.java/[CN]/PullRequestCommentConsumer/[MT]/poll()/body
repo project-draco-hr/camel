@@ -1,0 +1,27 @@
+{
+  List<PullRequest> pullRequests=pullRequestService.getPullRequests(getRepository(),"open");
+  Stack<Comment> newComments=new Stack<Comment>();
+  for (  PullRequest pullRequest : pullRequests) {
+    List<CommitComment> commitComments=pullRequestService.getComments(getRepository(),pullRequest.getNumber());
+    for (    Comment comment : commitComments) {
+      if (!commentIds.contains(comment.getId())) {
+        newComments.add(comment);
+        commentIds.add(comment.getId());
+      }
+    }
+    List<Comment> comments=issueService.getComments(getRepository(),pullRequest.getNumber());
+    for (    Comment comment : comments) {
+      if (!commentIds.contains(comment.getId())) {
+        newComments.add(comment);
+        commentIds.add(comment.getId());
+      }
+    }
+  }
+  while (!newComments.empty()) {
+    Comment newComment=newComments.pop();
+    Exchange e=getEndpoint().createExchange();
+    e.getIn().setBody(newComment);
+    getProcessor().process(e);
+  }
+  return newComments.size();
+}

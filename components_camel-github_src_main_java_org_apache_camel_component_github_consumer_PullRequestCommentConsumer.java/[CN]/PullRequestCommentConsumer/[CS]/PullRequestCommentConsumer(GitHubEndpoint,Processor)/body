@@ -1,0 +1,19 @@
+{
+  super(endpoint,processor);
+  pullRequestService=new PullRequestService();
+  initService(pullRequestService);
+  issueService=new IssueService();
+  initService(issueService);
+  LOG.info("GitHub PullRequestCommentConsumer: Indexing current pull request comments...");
+  List<PullRequest> pullRequests=pullRequestService.getPullRequests(getRepository(),"open");
+  for (  PullRequest pullRequest : pullRequests) {
+    List<CommitComment> commitComments=pullRequestService.getComments(getRepository(),pullRequest.getNumber());
+    for (    Comment comment : commitComments) {
+      commentIds.add(comment.getId());
+    }
+    List<Comment> comments=issueService.getComments(getRepository(),pullRequest.getNumber());
+    for (    Comment comment : comments) {
+      commentIds.add(comment.getId());
+    }
+  }
+}
