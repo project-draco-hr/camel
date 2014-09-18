@@ -1,26 +1,30 @@
 {
-  Class<?> entityType=getEndpoint().getEntityType();
+  final Class<?> entityType=getEndpoint().getEntityType();
   if (entityType != null) {
     List<Method> methods=ObjectHelper.findMethodsWithAnnotation(entityType,PreConsumed.class);
     if (methods.size() > 1) {
       throw new IllegalStateException("Only one method can be annotated with the @PreConsumed annotation but found: " + methods);
     }
  else     if (methods.size() == 1) {
-      Class<?>[] parameters=methods.get(0).getParameterTypes();
-      if (parameters.length != 0) {
-        throw new IllegalStateException("@PreConsumed annotated method cannot have parameters!");
-      }
       final Method method=methods.get(0);
+      final boolean useExchangeParameter=checkParameters(method);
       return new DeleteHandler<Object>(){
-        @Override public void deleteObject(        EntityManager entityManager,        Object entityBean){
-          ObjectHelper.invokeMethod(method,entityBean);
+        @Override public void deleteObject(        EntityManager entityManager,        Object entityBean,        Exchange exchange){
+          if (entityType.isInstance(entityBean)) {
+            if (useExchangeParameter) {
+              ObjectHelper.invokeMethod(method,entityBean,exchange);
+            }
+ else {
+              ObjectHelper.invokeMethod(method,entityBean);
+            }
+          }
         }
       }
 ;
     }
   }
   return new DeleteHandler<Object>(){
-    @Override public void deleteObject(    EntityManager entityManager,    Object entityBean){
+    @Override public void deleteObject(    EntityManager entityManager,    Object entityBean,    Exchange exchange){
     }
   }
 ;

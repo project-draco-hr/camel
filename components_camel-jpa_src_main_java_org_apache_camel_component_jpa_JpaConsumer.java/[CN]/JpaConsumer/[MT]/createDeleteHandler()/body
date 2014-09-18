@@ -1,5 +1,5 @@
 {
-  Class<?> entityType=getEndpoint().getEntityType();
+  final Class<?> entityType=getEndpoint().getEntityType();
   if (entityType != null) {
     List<Method> methods=ObjectHelper.findMethodsWithAnnotation(entityType,Consumed.class);
     if (methods.size() > 1) {
@@ -7,9 +7,17 @@
     }
  else     if (methods.size() == 1) {
       final Method method=methods.get(0);
+      final boolean useExchangeParameter=checkParameters(method);
       return new DeleteHandler<Object>(){
-        public void deleteObject(        EntityManager entityManager,        Object entityBean){
-          ObjectHelper.invokeMethod(method,entityBean);
+        public void deleteObject(        EntityManager entityManager,        Object entityBean,        Exchange exchange){
+          if (entityType.isInstance(entityBean)) {
+            if (useExchangeParameter) {
+              ObjectHelper.invokeMethod(method,entityBean,exchange);
+            }
+ else {
+              ObjectHelper.invokeMethod(method,entityBean);
+            }
+          }
         }
       }
 ;
@@ -17,7 +25,7 @@
   }
   if (getEndpoint().isConsumeDelete()) {
     return new DeleteHandler<Object>(){
-      public void deleteObject(      EntityManager entityManager,      Object entityBean){
+      public void deleteObject(      EntityManager entityManager,      Object entityBean,      Exchange exchange){
         entityManager.remove(entityBean);
       }
     }
@@ -25,7 +33,7 @@
   }
  else {
     return new DeleteHandler<Object>(){
-      public void deleteObject(      EntityManager entityManager,      Object entityBean){
+      public void deleteObject(      EntityManager entityManager,      Object entityBean,      Exchange exchange){
       }
     }
 ;
