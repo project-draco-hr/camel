@@ -1,0 +1,34 @@
+{
+  Cluster.Builder clusterBuilder=Cluster.builder();
+  Matcher matcher=HOSTS_PORT_KEYSPACE_PATTERN.matcher(remaining);
+  if (matcher.matches()) {
+    String hostsGroup=matcher.group(1);
+    if (hostsGroup != null && !hostsGroup.isEmpty()) {
+      String[] hosts=hostsGroup.split(",");
+      clusterBuilder=clusterBuilder.addContactPoints(hosts);
+    }
+    String portGroup=matcher.group(2);
+    if (portGroup != null) {
+      Integer port=Integer.valueOf(portGroup);
+      clusterBuilder=clusterBuilder.withPort(port);
+    }
+    String keyspaceGroup=matcher.group(3);
+    if (keyspaceGroup != null && !keyspaceGroup.isEmpty()) {
+      String keyspace=keyspaceGroup;
+      parameters.put("keyspace",keyspace);
+    }
+  }
+ else {
+    throw new IllegalArgumentException("Invalid CQL URI");
+  }
+  String clusterName=getAndRemoveParameter(parameters,"clusterName",String.class);
+  if (clusterName != null) {
+    clusterBuilder=clusterBuilder.withClusterName(clusterName);
+  }
+  String username=getAndRemoveOrResolveReferenceParameter(parameters,"username",String.class);
+  String password=getAndRemoveOrResolveReferenceParameter(parameters,"password",String.class);
+  if (username != null && !username.isEmpty() && password != null) {
+    clusterBuilder.withCredentials(username,password);
+  }
+  return clusterBuilder;
+}

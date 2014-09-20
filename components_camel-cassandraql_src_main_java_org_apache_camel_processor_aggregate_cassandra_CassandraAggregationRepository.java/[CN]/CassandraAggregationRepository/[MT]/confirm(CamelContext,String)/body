@@ -1,0 +1,14 @@
+{
+  Object[] pkValues=getPKValues();
+  String keyColumn=getKeyColumn();
+  LOGGER.debug("Selecting Ids {} ",pkValues);
+  List<Row> rows=selectKeyIds();
+  for (  Row row : rows) {
+    if (row.getString(exchangeIdColumn).equals(exchangeId)) {
+      String key=row.getString(keyColumn);
+      Object[] cqlParams=append(pkValues,key,exchangeId);
+      LOGGER.debug("Deleting If Id {} ",cqlParams);
+      getSession().execute(deleteIfIdStatement.bind(cqlParams));
+    }
+  }
+}

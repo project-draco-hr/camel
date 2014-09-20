@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      AggregationStrategy aggregationStrategy=new AggregationStrategy(){
+        @Override public Exchange aggregate(        Exchange oldExchange,        Exchange newExchange){
+          if (oldExchange == null) {
+            return newExchange;
+          }
+          String oldBody=oldExchange.getIn().getBody(String.class);
+          String newBody=newExchange.getIn().getBody(String.class);
+          oldExchange.getIn().setBody(oldBody + "," + newBody);
+          return oldExchange;
+        }
+      }
+;
+      from("direct:input").aggregate(header("aggregationId"),aggregationStrategy).completionSize(3).completionTimeout(3000L).aggregationRepository(aggregationRepository).to("mock:output");
+    }
+  }
+;
+}

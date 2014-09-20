@@ -1,0 +1,19 @@
+{
+  Session session=getEndpoint().getSession();
+  if (preparedStatement == null) {
+    preparedStatement=getEndpoint().prepareStatement();
+  }
+  ResultSet resultSet=session.execute(preparedStatement.bind());
+  Exchange exchange=getEndpoint().createExchange();
+  Message message=exchange.getIn();
+  getEndpoint().fillMessage(resultSet,message);
+  try {
+    getProcessor().process(exchange);
+    return 1;
+  }
+  finally {
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+    }
+  }
+}
