@@ -1,0 +1,16 @@
+{
+  AbstractApplicationContext context=createApplicationContext();
+  assertNotNull("Should have created a valid Spring application context",context);
+  String[] profiles=activeProfiles();
+  if (profiles != null && profiles.length > 0) {
+    if (context.isActive()) {
+      throw new IllegalStateException("Cannot active profiles: " + Arrays.asList(profiles) + " on active Spring application context: "+ context+ ". The code in your createApplicationContext() method should be adjusted to create the application context with refresh = false as parameter");
+    }
+    log.info("Spring activating profiles: {}",Arrays.asList(profiles));
+    context.getEnvironment().setActiveProfiles(profiles);
+  }
+  if (!context.isActive()) {
+    context.refresh();
+  }
+  return context;
+}
