@@ -27,10 +27,14 @@
   CxfRsEndpoint cxfRsEndpoint=(CxfRsEndpoint)getEndpoint();
   CxfRsBinding binding=cxfRsEndpoint.getBinding();
   Object body=null;
-  if (!"GET".equals(httpMethod) && !"DELETE".equals(httpMethod)) {
-    body=binding.bindCamelMessageBodyToRequestBody(inMessage,exchange);
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Request body = " + body);
+  if (!"GET".equals(httpMethod)) {
+    if ("DELETE".equals(httpMethod) && cxfRsEndpoint.isIgnoreDeleteMethodMessageBody()) {
+    }
+ else {
+      body=binding.bindCamelMessageBodyToRequestBody(inMessage,exchange);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Request body = " + body);
+      }
     }
   }
   setupClientQueryAndHeaders(client,exchange);
