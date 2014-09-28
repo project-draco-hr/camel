@@ -5,6 +5,22 @@
     LOG.debug("Client SSL handler configured and added as an interceptor against the ChannelPipeline: {}",sslHandler);
     pipeline.addLast("ssl",sslHandler);
   }
+  List<ChannelHandler> encoders=producer.getConfiguration().getEncoders();
+  for (int x=0; x < encoders.size(); x++) {
+    ChannelHandler encoder=encoders.get(x);
+    if (encoder instanceof ChannelHandlerFactory) {
+      encoder=((ChannelHandlerFactory)encoder).newChannelHandler();
+    }
+    pipeline.addLast("encoder-" + x,encoder);
+  }
+  List<ChannelHandler> decoders=producer.getConfiguration().getDecoders();
+  for (int x=0; x < decoders.size(); x++) {
+    ChannelHandler decoder=decoders.get(x);
+    if (decoder instanceof ChannelHandlerFactory) {
+      decoder=((ChannelHandlerFactory)decoder).newChannelHandler();
+    }
+    pipeline.addLast("decoder-" + x,decoder);
+  }
   pipeline.addLast("http",new HttpClientCodec());
   pipeline.addLast("aggregator",new HttpObjectAggregator(configuration.getChunkedMaxContentLength()));
   if (producer.getConfiguration().getRequestTimeout() > 0) {
