@@ -1,4 +1,5 @@
 {
+  Map<Long,PullRequest> commentIdToPullRequest=new HashMap<Long,PullRequest>();
   List<PullRequest> pullRequests=pullRequestService.getPullRequests(getRepository(),"open");
   Stack<Comment> newComments=new Stack<Comment>();
   for (  PullRequest pullRequest : pullRequests) {
@@ -7,6 +8,7 @@
       if (!commentIds.contains(comment.getId())) {
         newComments.add(comment);
         commentIds.add(comment.getId());
+        commentIdToPullRequest.put(comment.getId(),pullRequest);
       }
     }
     List<Comment> comments=issueService.getComments(getRepository(),pullRequest.getNumber());
@@ -14,6 +16,7 @@
       if (!commentIds.contains(comment.getId())) {
         newComments.add(comment);
         commentIds.add(comment.getId());
+        commentIdToPullRequest.put(comment.getId(),pullRequest);
       }
     }
   }
@@ -21,6 +24,7 @@
     Comment newComment=newComments.pop();
     Exchange e=getEndpoint().createExchange();
     e.getIn().setBody(newComment);
+    e.getIn().setHeader("GitHubPullRequest",commentIdToPullRequest.get(newComment.getId()));
     getProcessor().process(e);
   }
   return newComments.size();

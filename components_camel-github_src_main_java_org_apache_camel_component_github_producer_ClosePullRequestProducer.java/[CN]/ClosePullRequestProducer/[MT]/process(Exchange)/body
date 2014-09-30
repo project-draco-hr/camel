@@ -1,0 +1,11 @@
+{
+  Integer pullRequestNumber=exchange.getIn().getHeader("GitHubPullRequest",Integer.class);
+  PullRequest pullRequest=pullRequestService.getPullRequest(getRepository(),pullRequestNumber);
+  pullRequest.setState("closed");
+  pullRequest.setClosedAt(Calendar.getInstance().getTime());
+  pullRequest=pullRequestService.editPullRequest(getRepository(),pullRequest);
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getOut().copyFrom(exchange.getIn());
+    exchange.getOut().setBody(pullRequest);
+  }
+}
