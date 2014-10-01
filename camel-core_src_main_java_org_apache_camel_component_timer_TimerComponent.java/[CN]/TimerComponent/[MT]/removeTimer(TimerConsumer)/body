@@ -1,0 +1,16 @@
+{
+  String key=consumer.getEndpoint().getTimerName();
+  if (!consumer.getEndpoint().isDaemon()) {
+    key="nonDaemon:" + key;
+  }
+synchronized (timers) {
+    AtomicInteger counter=refCounts.get(key);
+    if (counter.decrementAndGet() <= 0) {
+      refCounts.remove(key);
+      Timer timer=timers.remove(key);
+      if (timer != null) {
+        timer.cancel();
+      }
+    }
+  }
+}
