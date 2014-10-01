@@ -3,14 +3,7 @@
     public void configure(){
       from("direct:start").marshal().csv().to("mock:result");
       from("direct:startMulti").marshal().csv().to("mock:resultMulti");
-      CsvDataFormat customCsv=new CsvDataFormat();
-      CSVConfig custom=new CSVConfig();
-      custom.setDelimiter(';');
-      custom.addField(new CSVField("foo"));
-      custom.addField(new CSVField("baz"));
-      custom.addField(new CSVField("bar"));
-      customCsv.setConfig(custom);
-      customCsv.setAutogenColumns(false);
+      CsvDataFormat customCsv=new CsvDataFormat().setDelimiter(';').setHeader(new String[]{"foo","baz","bar"}).setSkipHeaderRecord(true);
       from("direct:startMultiCustom").marshal(customCsv).to("mock:resultMultiCustom");
       from("file:src/test/resources/?fileName=daltons.csv&noop=true").unmarshal().csv().to("mock:daltons");
     }

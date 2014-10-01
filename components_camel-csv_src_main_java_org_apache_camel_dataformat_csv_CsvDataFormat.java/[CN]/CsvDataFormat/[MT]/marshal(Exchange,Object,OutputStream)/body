@@ -1,24 +1,6 @@
 {
-  if (delimiter != null) {
-    config.setDelimiter(delimiter.charAt(0));
+  if (marshaller == null) {
+    marshaller=CsvMarshaller.create(getActiveFormat(),this);
   }
-  OutputStreamWriter out=new OutputStreamWriter(outputStream,IOHelper.getCharsetName(exchange));
-  CSVWriter csv=new CSVWriter(config);
-  csv.setWriter(out);
-  try {
-    List<?> list=ExchangeHelper.convertToType(exchange,List.class,object);
-    if (list != null) {
-      for (      Object child : list) {
-        Map<?,?> row=ExchangeHelper.convertToMandatoryType(exchange,Map.class,child);
-        doMarshalRecord(exchange,row,out,csv);
-      }
-    }
- else {
-      Map<?,?> row=ExchangeHelper.convertToMandatoryType(exchange,Map.class,object);
-      doMarshalRecord(exchange,row,out,csv);
-    }
-  }
-  finally {
-    IOHelper.close(out);
-  }
+  marshaller.marshal(exchange,object,outputStream);
 }
