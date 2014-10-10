@@ -1,7 +1,15 @@
 {
   super(endpoint,processor);
   this.endpoint=endpoint;
-  repositoryService=new RepositoryService();
+  Registry registry=endpoint.getCamelContext().getRegistry();
+  Object service=registry.lookupByName("githubRepositoryService");
+  if (service != null) {
+    LOG.debug("Using RepositoryService found in registry " + service.getClass().getCanonicalName());
+    repositoryService=(RepositoryService)service;
+  }
+ else {
+    repositoryService=new RepositoryService();
+  }
   initService(repositoryService);
   repository=repositoryService.getRepository(endpoint.getRepoOwner(),endpoint.getRepoName());
 }

@@ -1,8 +1,22 @@
 {
   super(endpoint,processor);
-  pullRequestService=new PullRequestService();
+  Registry registry=endpoint.getCamelContext().getRegistry();
+  Object service=registry.lookupByName("githubPullRequestService");
+  if (service != null) {
+    LOG.debug("Using PullRequestService found in registry " + service.getClass().getCanonicalName());
+    pullRequestService=(PullRequestService)service;
+  }
+ else {
+    pullRequestService=new PullRequestService();
+  }
   initService(pullRequestService);
-  issueService=new IssueService();
+  service=registry.lookupByName("githbIssueService");
+  if (service != null) {
+    issueService=(IssueService)service;
+  }
+ else {
+    issueService=new IssueService();
+  }
   initService(issueService);
   LOG.info("GitHub PullRequestCommentConsumer: Indexing current pull request comments...");
   List<PullRequest> pullRequests=pullRequestService.getPullRequests(getRepository(),"open");
