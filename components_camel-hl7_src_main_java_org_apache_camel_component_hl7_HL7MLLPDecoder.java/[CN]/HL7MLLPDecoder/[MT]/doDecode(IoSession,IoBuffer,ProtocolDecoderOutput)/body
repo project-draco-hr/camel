@@ -1,10 +1,34 @@
 {
-  boolean foundEnd=scan(session,in);
-  if (foundEnd) {
-    writeString(session,in,out);
+  DecoderState state=decoderState(session);
+  in.position(state.current());
+  while (in.hasRemaining()) {
+    byte current=in.get();
+    if (current == config.getStartByte()) {
+      state.markStart(in.position() - 1);
+    }
+    if (state.previous() == config.getEndByte1() && current == config.getEndByte2()) {
+      int position=in.position();
+      int limit=in.limit();
+      LOG.debug("Message ends at position {} with length {}",position,position - state.start());
+      try {
+        in.position(state.start());
+        in.limit(position);
+        out.write(parseMessage(in.slice(),charsetDecoder(session)));
+      }
+ catch (      CharacterCodingException cce) {
+        throw new IllegalArgumentException("Exception while finalizing the message",cce);
+      }
+ finally {
+        in.limit(limit);
+        in.position(position);
+        state.reset();
+      }
+      return true;
+    }
+    state.markPrevious(current);
   }
- else {
-    LOG.debug("No complete message in this packet");
-  }
-  return foundEnd;
+  LOG.debug("No complete message yet at position {} ",in.position());
+  state.markCurrent(in.position());
+  in.position(0);
+  return false;
 }
