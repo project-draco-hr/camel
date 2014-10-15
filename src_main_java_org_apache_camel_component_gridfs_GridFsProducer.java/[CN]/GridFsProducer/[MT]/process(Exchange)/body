@@ -1,0 +1,27 @@
+{
+  DBObject dbObjQuery=(DBObject)JSON.parse("{_id:'inventory'}");
+  DBObject dbObjUpdate=(DBObject)JSON.parse("{$inc:{seq:1}}");
+  DBObject invID=endpoint.getDbColCounters().findAndModify(dbObjQuery,dbObjUpdate);
+  String TPID=exchange.getIn().getBody().toString();
+  DBObject dbObjTPQuery=(DBObject)JSON.parse("{'tpid':'" + TPID + "'}");
+  DBObject tpName=endpoint.getDbColTP().findOne(dbObjTPQuery);
+  exchange.getIn().setHeader("tpName",tpName.get("name").toString());
+  exchange.getIn().setHeader("tpLoadType",tpName.get("load_type").toString());
+  try {
+    exchange.getIn().setHeader("tpDoLegacy",tpName.get("do_legacy").toString());
+  }
+ catch (  Exception e) {
+    exchange.getIn().setHeader("tpDoLegacy","Y");
+  }
+  exchange.getIn().setHeader("TPID",TPID);
+  String sInv=invID.get("seq").toString();
+  sInv=sInv.substring(0,sInv.lastIndexOf("."));
+  exchange.getIn().setHeader("mInv",sInv);
+  File file=new File(exchange.getIn().getHeader("gridFsInputFile").toString());
+  GridFSInputFile gfsFile=endpoint.getGridFs().createFile(file);
+  gfsFile.setFilename(exchange.getIn().getHeader("gridFsFileName").toString());
+  String metaData="{'inventoryID':" + sInv + ", 'TPID':'"+ TPID+ "', 'doc_type':'original', 'status':'initial_save'}";
+  DBObject dbObject=(DBObject)JSON.parse(metaData);
+  gfsFile.setMetaData(dbObject);
+  gfsFile.save();
+}
