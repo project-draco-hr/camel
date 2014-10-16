@@ -1,0 +1,13 @@
+{
+  String projectKey=exchange.getIn().getHeader("ProjectKey",String.class);
+  Long issueTypeId=exchange.getIn().getHeader("IssueTypeId",Long.class);
+  String issueSummary=exchange.getIn().getHeader("IssueSummary",String.class);
+  IssueInputBuilder issueBuilder=new IssueInputBuilder(projectKey,issueTypeId);
+  issueBuilder.setDescription(exchange.getIn().getBody(String.class));
+  issueBuilder.setSummary(issueSummary);
+  BasicIssue issue=client().getIssueClient().createIssue(issueBuilder.build(),null);
+  if (exchange.getPattern().isOutCapable()) {
+    exchange.getOut().copyFrom(exchange.getIn());
+    exchange.getOut().setBody(issue);
+  }
+}
