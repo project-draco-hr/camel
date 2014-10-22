@@ -1,0 +1,62 @@
+{
+  LOGGER.debug("Executing Docker Start Container Request");
+  String containerId=DockerHelper.getProperty(DockerConstants.DOCKER_CONTAINER_ID,configuration,message,String.class);
+  StartContainerCmd startContainerCmd=client.startContainerCmd(containerId);
+  Bind[] binds=DockerHelper.getArrayProperty(DockerConstants.DOCKER_BINDS,message,Bind.class);
+  if (binds != null) {
+    startContainerCmd.withBinds(binds);
+  }
+  Link[] links=DockerHelper.getArrayProperty(DockerConstants.DOCKER_LINKS,message,Link.class);
+  if (links != null) {
+    startContainerCmd.withLinks(links);
+  }
+  LxcConf[] lxcConf=DockerHelper.getArrayProperty(DockerConstants.DOCKER_LXC_CONF,message,LxcConf.class);
+  if (lxcConf != null) {
+    startContainerCmd.withLxcConf(lxcConf);
+  }
+  Ports ports=DockerHelper.getProperty(DockerConstants.DOCKER_PORT_BINDINGS,configuration,message,Ports.class);
+  if (ports != null) {
+    startContainerCmd.withPortBindings(ports);
+  }
+  Boolean privileged=DockerHelper.getProperty(DockerConstants.DOCKER_PRIVILEGED,configuration,message,Boolean.class);
+  if (privileged != null && privileged) {
+    startContainerCmd.withPrivileged(privileged);
+  }
+  Boolean publishAllPorts=DockerHelper.getProperty(DockerConstants.DOCKER_PUBLISH_ALL_PORTS,configuration,message,Boolean.class);
+  if (publishAllPorts != null && publishAllPorts) {
+    startContainerCmd.withPublishAllPorts(publishAllPorts);
+  }
+  String[] dns=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_DNS,message);
+  if (dns != null) {
+    startContainerCmd.withDns(dns);
+  }
+  String[] dnsSearch=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_DNS_SEARCH,message);
+  if (dnsSearch != null) {
+    startContainerCmd.withDnsSearch(dnsSearch);
+  }
+  String volumesFrom=DockerHelper.getProperty(DockerConstants.DOCKER_VOLUMES_FROM,configuration,message,String.class);
+  if (volumesFrom != null) {
+    startContainerCmd.withVolumesFrom(volumesFrom);
+  }
+  String networkMode=DockerHelper.getProperty(DockerConstants.DOCKER_NETWORK_MODE,configuration,message,String.class);
+  if (networkMode != null) {
+    startContainerCmd.withNetworkMode(networkMode);
+  }
+  Device[] devices=DockerHelper.getArrayProperty(DockerConstants.DOCKER_DEVICES,message,Device.class);
+  if (devices != null) {
+    startContainerCmd.withDevices(devices);
+  }
+  RestartPolicy restartPolicy=DockerHelper.getProperty(DockerConstants.DOCKER_RESTART_POLICY,configuration,message,RestartPolicy.class);
+  if (restartPolicy != null) {
+    startContainerCmd.withRestartPolicy(restartPolicy);
+  }
+  String[] capAdd=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_CAP_ADD,message);
+  if (capAdd != null) {
+    startContainerCmd.withCapAdd(capAdd);
+  }
+  String[] capDrop=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_CAP_DROP,message);
+  if (capDrop != null) {
+    startContainerCmd.withCapDrop(capDrop);
+  }
+  return startContainerCmd;
+}
