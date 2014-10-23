@@ -29,7 +29,14 @@
   MessageCreator messageCreator=new MessageCreator(){
     public Message createMessage(    Session session) throws JMSException {
       Message answer=endpoint.getBinding().makeJmsMessage(exchange,in,session,null);
-      Destination replyTo=replyManager.getReplyTo();
+      Destination replyTo=null;
+      String replyToOverride=endpoint.getConfiguration().getReplyToOverride();
+      if (replyToOverride != null) {
+        replyTo=resolveOrCreateDestination(replyToOverride,session);
+      }
+ else {
+        replyTo=replyManager.getReplyTo();
+      }
       if (replyTo == null) {
         throw new RuntimeExchangeException("Failed to resolve replyTo destination",exchange);
       }

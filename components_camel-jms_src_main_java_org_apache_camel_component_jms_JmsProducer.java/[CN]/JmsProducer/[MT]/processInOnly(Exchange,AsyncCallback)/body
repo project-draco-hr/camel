@@ -43,30 +43,14 @@
       }
       if (jmsReplyTo != null && jmsReplyTo instanceof String) {
         String replyTo=(String)jmsReplyTo;
-        jmsReplyTo=null;
-        boolean isPubSub=isTopicPrefix(replyTo) || (!isQueuePrefix(replyTo) && endpoint.isPubSubDomain());
-        if (endpoint.getDestinationResolver() != null) {
-          jmsReplyTo=endpoint.getDestinationResolver().resolveDestinationName(session,replyTo,isPubSub);
-          if (LOG.isDebugEnabled()) {
-            LOG.debug("Resolved JMSReplyTo destination {} using DestinationResolver {} as PubSubDomain {} -> {}",new Object[]{replyTo,endpoint.getDestinationResolver(),isPubSub,jmsReplyTo});
-          }
-        }
-        if (jmsReplyTo == null) {
-          String before=replyTo;
-          replyTo=normalizeDestinationName(replyTo);
-          LOG.trace("Normalized JMSReplyTo destination name {} -> {}",before,replyTo);
-          if (isPubSub) {
-            LOG.debug("Creating JMSReplyTo topic: {}",replyTo);
-            jmsReplyTo=session.createTopic(replyTo);
-          }
- else {
-            LOG.debug("Creating JMSReplyTo queue: {}",replyTo);
-            jmsReplyTo=session.createQueue(replyTo);
-          }
-        }
+        jmsReplyTo=resolveOrCreateDestination(replyTo,session);
       }
       Destination replyTo=null;
-      if (jmsReplyTo instanceof Destination) {
+      String replyToOverride=endpoint.getConfiguration().getReplyToOverride();
+      if (replyToOverride != null) {
+        replyTo=resolveOrCreateDestination(replyToOverride,session);
+      }
+ else       if (jmsReplyTo instanceof Destination) {
         replyTo=(Destination)jmsReplyTo;
       }
       if (replyTo != null) {
