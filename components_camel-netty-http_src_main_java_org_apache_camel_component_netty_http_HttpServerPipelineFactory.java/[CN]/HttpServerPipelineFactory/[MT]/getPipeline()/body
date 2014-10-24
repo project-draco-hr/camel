@@ -6,6 +6,7 @@
     LOG.debug("Server SSL handler configured and added as an interceptor against the ChannelPipeline: {}",sslHandler);
     pipeline.addLast("ssl",sslHandler);
   }
+  pipeline.addLast("decoder",new HttpRequestDecoder());
   List<ChannelHandler> decoders=consumer.getConfiguration().getDecoders();
   for (int x=0; x < decoders.size(); x++) {
     ChannelHandler decoder=decoders.get(x);
@@ -14,6 +15,8 @@
     }
     pipeline.addLast("decoder-" + x,decoder);
   }
+  pipeline.addLast("aggregator",new HttpChunkAggregator(configuration.getChunkedMaxContentLength()));
+  pipeline.addLast("encoder",new HttpResponseEncoder());
   List<ChannelHandler> encoders=consumer.getConfiguration().getEncoders();
   for (int x=0; x < encoders.size(); x++) {
     ChannelHandler encoder=encoders.get(x);
@@ -22,9 +25,6 @@
     }
     pipeline.addLast("encoder-" + x,encoder);
   }
-  pipeline.addLast("decoder",new HttpRequestDecoder());
-  pipeline.addLast("aggregator",new HttpChunkAggregator(configuration.getChunkedMaxContentLength()));
-  pipeline.addLast("encoder",new HttpResponseEncoder());
   if (supportCompressed()) {
     pipeline.addLast("deflater",new HttpContentCompressor());
   }
