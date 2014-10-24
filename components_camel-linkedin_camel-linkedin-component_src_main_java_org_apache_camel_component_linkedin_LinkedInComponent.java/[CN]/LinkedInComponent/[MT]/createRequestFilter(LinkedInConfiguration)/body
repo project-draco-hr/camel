@@ -1,4 +1,15 @@
 {
   configuration.validate();
-  return new LinkedInOAuthRequestFilter(getOAuthParams(configuration),configuration.getHttpParams(),configuration.isLazyAuth());
+  final String[] enabledProtocols;
+  try {
+    final SSLContext sslContext=new SSLContextParameters().createSSLContext();
+    enabledProtocols=sslContext.createSSLEngine().getEnabledProtocols();
+  }
+ catch (  GeneralSecurityException e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+catch (  IOException e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+  return new LinkedInOAuthRequestFilter(getOAuthParams(configuration),configuration.getHttpParams(),configuration.isLazyAuth(),enabledProtocols);
 }
