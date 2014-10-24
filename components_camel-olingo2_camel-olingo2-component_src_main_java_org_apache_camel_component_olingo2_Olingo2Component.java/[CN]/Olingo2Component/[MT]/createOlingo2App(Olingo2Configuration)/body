@@ -10,9 +10,18 @@
       requestConfigBuilder.setProxy(proxy);
     }
     clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
-    final SSLContext context=configuration.getSslContext();
-    if (context != null) {
-      clientBuilder.setSSLContext(context);
+    SSLContextParameters sslContextParameters=configuration.getSslContextParameters();
+    if (sslContextParameters == null) {
+      sslContextParameters=new SSLContextParameters();
+    }
+    try {
+      clientBuilder.setSSLContext(sslContextParameters.createSSLContext());
+    }
+ catch (    GeneralSecurityException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+catch (    IOException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
     }
   }
   apiProxy=new Olingo2AppWrapper(new Olingo2AppImpl(configuration.getServiceUri(),clientBuilder));
