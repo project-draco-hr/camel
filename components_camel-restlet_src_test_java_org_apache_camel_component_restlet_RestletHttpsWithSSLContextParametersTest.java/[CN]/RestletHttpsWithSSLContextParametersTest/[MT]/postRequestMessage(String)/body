@@ -1,0 +1,11 @@
+{
+  URL trustStoreUrl=this.getClass().getClassLoader().getResource("jsse/localhost.ks");
+  System.setProperty("javax.net.ssl.trustStore",trustStoreUrl.toURI().getPath());
+  HttpPost post=new HttpPost("https://localhost:" + portNum + "/users/");
+  post.addHeader(Exchange.CONTENT_TYPE,"application/xml");
+  post.setEntity(new StringEntity(message));
+  HttpResponse response=doExecute(post);
+  assertHttpResponse(response,200,"application/xml");
+  String s=context.getTypeConverter().convertTo(String.class,response.getEntity().getContent());
+  assertEquals("<status>OK</status>",s);
+}

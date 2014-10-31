@@ -7,6 +7,13 @@ synchronized (servers) {
       server=createServer(endpoint);
       component.getServers().add(server);
       Series<Parameter> params=server.getContext().getParameters();
+      if (endpoint.getProtocol().equals("https")) {
+        SSLContextParameters scp=endpoint.getSslContextParameters();
+        if (endpoint.getSslContextParameters() == null) {
+          throw new InvalidParameterException("Need to specify the SSLContextParameters option here!");
+        }
+        setupServerWithSSLContext(params,scp);
+      }
       if (getControllerDaemon() != null) {
         params.add("controllerDaemon",getControllerDaemon().toString());
       }
