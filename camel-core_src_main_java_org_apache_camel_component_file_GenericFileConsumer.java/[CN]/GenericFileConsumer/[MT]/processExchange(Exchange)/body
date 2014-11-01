@@ -2,24 +2,35 @@
   GenericFile<T> file=getExchangeFileProperty(exchange);
   log.trace("Processing file: {}",file);
   String absoluteFileName=file.getAbsoluteFilePath();
+  final GenericFileProcessStrategy<T> processStrategy=endpoint.getGenericFileProcessStrategy();
+  Exception beginCause=null;
+  boolean begin=false;
   try {
-    final GenericFileProcessStrategy<T> processStrategy=endpoint.getGenericFileProcessStrategy();
-    boolean begin=processStrategy.begin(operations,endpoint,exchange,file);
-    if (!begin) {
-      log.debug("{} cannot begin processing file: {}",endpoint,file);
-      try {
-        processStrategy.abort(operations,endpoint,exchange,file);
-      }
-  finally {
-        endpoint.getInProgressRepository().remove(absoluteFileName);
-      }
-      return false;
-    }
+    begin=processStrategy.begin(operations,endpoint,exchange,file);
   }
  catch (  Exception e) {
-    endpoint.getInProgressRepository().remove(absoluteFileName);
-    String msg=endpoint + " cannot begin processing file: " + file+ " due to: "+ e.getMessage();
-    handleException(msg,e);
+    beginCause=e;
+  }
+  if (!begin) {
+    Exception abortCause=null;
+    log.debug("{} cannot begin processing file: {}",endpoint,file);
+    try {
+      processStrategy.abort(operations,endpoint,exchange,file);
+    }
+ catch (    Exception e) {
+      abortCause=e;
+    }
+ finally {
+      endpoint.getInProgressRepository().remove(absoluteFileName);
+    }
+    if (beginCause != null) {
+      String msg=endpoint + " cannot begin processing file: " + file+ " due to: "+ beginCause.getMessage();
+      handleException(msg,beginCause);
+    }
+    if (abortCause != null) {
+      String msg2=endpoint + " cannot abort processing file: " + file+ " due to: "+ abortCause.getMessage();
+      handleException(msg2,abortCause);
+    }
     return false;
   }
   final GenericFile<T> target=getExchangeFileProperty(exchange);
