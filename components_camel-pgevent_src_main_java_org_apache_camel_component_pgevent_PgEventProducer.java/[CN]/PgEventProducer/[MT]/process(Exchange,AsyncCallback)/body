@@ -1,0 +1,20 @@
+{
+  try {
+    if (dbConnection.isClosed()) {
+      dbConnection=endpoint.initJdbc();
+    }
+  }
+ catch (  Exception e) {
+    throw new InvalidStateException("Database connection closed " + "and could not be re-opened.",e);
+  }
+  boolean retVal;
+  try {
+    dbConnection.createStatement().execute("NOTIFY " + endpoint.getChannel() + ", '"+ exchange.getOut().getBody(String.class)+ "'");
+    retVal=true;
+  }
+ catch (  SQLException e) {
+    retVal=false;
+  }
+  callback.done(retVal);
+  return retVal;
+}
