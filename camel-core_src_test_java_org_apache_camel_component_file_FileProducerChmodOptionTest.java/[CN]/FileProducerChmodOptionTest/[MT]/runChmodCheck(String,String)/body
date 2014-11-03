@@ -1,0 +1,14 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:chmod" + routeSuffix);
+  mock.expectedMessageCount(1);
+  String testFileName="chmod" + routeSuffix + ".txt";
+  String fullTestFileName=TEST_DIRECTORY + testFileName;
+  String testFileContent="Writing file with chmod " + routeSuffix + " option at "+ new Date();
+  mock.expectedFileExists(fullTestFileName,testFileContent);
+  template.sendBodyAndHeader("direct:write" + routeSuffix,testFileContent,Exchange.FILE_NAME,testFileName);
+  File f=new File(fullTestFileName);
+  Set<PosixFilePermission> permissions=Files.getPosixFilePermissions(f.toPath(),LinkOption.NOFOLLOW_LINKS);
+  assertEquals(expectedPermissions,PosixFilePermissions.toString(permissions));
+  assertEquals(expectedPermissions.replace("-","").length(),permissions.size());
+  assertMockEndpointsSatisfied();
+}
