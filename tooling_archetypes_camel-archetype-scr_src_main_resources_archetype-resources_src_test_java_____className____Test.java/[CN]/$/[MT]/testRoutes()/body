@@ -1,0 +1,15 @@
+{
+  List<RouteDefinition> routes=context.getRouteDefinitions();
+  routes.get(0).adviceWith(context,new AdviceWithRouteBuilder(){
+    @Override public void configure() throws Exception {
+      replaceFromWith("direct:start");
+      mockEndpointsAndSkip("log:*");
+    }
+  }
+);
+  MockEndpoint resultEndpoint=context.getEndpoint("mock:log:foo",MockEndpoint.class);
+  resultEndpoint.expectedBodiesReceived("hello");
+  integration.run();
+  context.createProducerTemplate().sendBody("direct:start","hello");
+  resultEndpoint.assertIsSatisfied();
+}

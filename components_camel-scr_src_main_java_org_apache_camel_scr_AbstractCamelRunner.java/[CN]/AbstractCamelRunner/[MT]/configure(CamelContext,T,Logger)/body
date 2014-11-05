@@ -1,0 +1,21 @@
+{
+  Class clazz=target.getClass();
+  log.debug("Configuring " + clazz.getName());
+  Collection<Field> fields=new ArrayList<>();
+  fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+  fields.addAll(Arrays.asList(clazz.getFields()));
+  for (  Field field : fields) {
+    try {
+      String propertyValue=context.resolvePropertyPlaceholders("{{" + field.getName() + "}}");
+      if (!propertyValue.isEmpty()) {
+        Object convertedValue=convertValue(propertyValue,field.getGenericType());
+        ReflectionHelper.setField(field,target,convertedValue);
+        log.debug("Set field " + field.getName() + " with value "+ propertyValue);
+      }
+    }
+ catch (    Exception e) {
+      log.debug("Field " + field.getName() + " skipped: "+ e.getMessage());
+    }
+  }
+  return target;
+}
