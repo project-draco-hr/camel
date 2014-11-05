@@ -1,0 +1,27 @@
+{
+  for (  ChannelHandler encoder : encoders) {
+    if (encoder instanceof ChannelHandlerFactory) {
+      continue;
+    }
+    if (ObjectHelper.getAnnotation(encoder,ChannelHandler.Sharable.class) != null) {
+      continue;
+    }
+    LOG.warn("The encoder {} is not @Shareable or an ChannelHandlerFactory instance. The encoder cannot safely be used.",encoder);
+  }
+  for (  ChannelHandler decoder : decoders) {
+    if (decoder instanceof ChannelHandlerFactory) {
+      continue;
+    }
+    if (ObjectHelper.getAnnotation(decoder,ChannelHandler.Sharable.class) != null) {
+      continue;
+    }
+    LOG.warn("The decoder {} is not @Shareable or an ChannelHandlerFactory instance. The decoder cannot safely be used.",decoder);
+  }
+  if (sslHandler != null) {
+    boolean factory=sslHandler instanceof ChannelHandlerFactory;
+    boolean shareable=ObjectHelper.getAnnotation(sslHandler,ChannelHandler.Sharable.class) != null;
+    if (!factory && !shareable) {
+      LOG.warn("The sslHandler {} is not @Shareable or an ChannelHandlerFactory instance. The sslHandler cannot safely be used.",sslHandler);
+    }
+  }
+}

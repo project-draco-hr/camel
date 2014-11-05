@@ -1,0 +1,19 @@
+{
+  LOG.trace("populateCamelHeaders: {}",response);
+  headers.put(Exchange.HTTP_RESPONSE_CODE,response.getStatus().code());
+  headers.put(NettyHttpConstants.HTTP_RESPONSE_TEXT,response.getStatus().reasonPhrase());
+  for (  String name : response.headers().names()) {
+    if (name.toLowerCase().equals("content-type")) {
+      name=Exchange.CONTENT_TYPE;
+    }
+    List<String> values=response.headers().getAll(name);
+    Iterator<?> it=ObjectHelper.createIterator(values);
+    while (it.hasNext()) {
+      Object extracted=it.next();
+      LOG.trace("HTTP-header: {}",extracted);
+      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,exchange)) {
+        NettyHttpHelper.appendHeader(headers,name,extracted);
+      }
+    }
+  }
+}

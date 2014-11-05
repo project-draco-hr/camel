@@ -1,12 +1,26 @@
 {
+  Set<String> customIds=new HashSet<String>();
   for (  RouteDefinition route : routes) {
-    route.idOrCreate(context.getNodeIdFactory());
     if (route.hasCustomIdAssigned()) {
       String id=route.getId();
       id=context.resolvePropertyPlaceholders(id);
       if (!route.getId().equals(id)) {
         route.setId(id);
       }
+      customIds.add(id);
+    }
+  }
+  for (  RouteDefinition route : routes) {
+    if (route.getId() == null) {
+      boolean done=false;
+      String id=null;
+      while (!done) {
+        id=context.getNodeIdFactory().createId(route);
+        done=!customIds.contains(id);
+      }
+      route.setId(id);
+      route.setCustomId(false);
+      customIds.add(route.getId());
     }
   }
 }

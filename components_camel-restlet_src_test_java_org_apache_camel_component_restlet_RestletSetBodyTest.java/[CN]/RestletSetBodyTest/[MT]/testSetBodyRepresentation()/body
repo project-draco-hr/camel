@@ -1,13 +1,13 @@
 {
   HttpGet get=new HttpGet("http://0.0.0.0:" + portNum + "/images/123");
-  HttpClient httpclient=new DefaultHttpClient();
+  CloseableHttpClient httpclient=HttpClientBuilder.create().build();
   InputStream is=null;
   try {
     HttpResponse response=httpclient.execute(get);
     assertEquals(200,response.getStatusLine().getStatusCode());
     assertEquals("image/png",response.getEntity().getContentType().getValue());
     is=response.getEntity().getContent();
-    assertEquals("Get wrong available size",10,is.available());
+    assertEquals("Get wrong available size",10,response.getEntity().getContentLength());
     byte[] buffer=new byte[10];
     is.read(buffer);
     for (int i=0; i < 10; i++) {
@@ -15,7 +15,7 @@
     }
   }
   finally {
-    httpclient.getConnectionManager().shutdown();
+    httpclient.close();
     if (is != null) {
       is.close();
     }

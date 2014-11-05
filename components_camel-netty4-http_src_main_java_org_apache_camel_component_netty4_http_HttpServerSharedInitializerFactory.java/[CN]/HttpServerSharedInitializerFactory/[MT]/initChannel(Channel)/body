@@ -1,0 +1,17 @@
+{
+  ChannelPipeline pipeline=ch.pipeline();
+  SslHandler sslHandler=configureServerSSLOnDemand();
+  if (sslHandler != null) {
+    LOG.debug("Server SSL handler configured and added as an interceptor against the ChannelPipeline: {}",sslHandler);
+    pipeline.addLast("ssl",sslHandler);
+  }
+  pipeline.addLast("decoder",new HttpRequestDecoder());
+  if (configuration.isChunked()) {
+    pipeline.addLast("aggregator",new HttpObjectAggregator(configuration.getChunkedMaxContentLength()));
+  }
+  pipeline.addLast("encoder",new HttpResponseEncoder());
+  if (configuration.isCompression()) {
+    pipeline.addLast("deflater",new HttpContentCompressor());
+  }
+  pipeline.addLast("handler",channelFactory.getChannelHandler());
+}

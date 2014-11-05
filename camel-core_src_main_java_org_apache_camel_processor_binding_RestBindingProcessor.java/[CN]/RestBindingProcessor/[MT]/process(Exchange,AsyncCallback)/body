@@ -1,0 +1,76 @@
+{
+  if (bindingMode == null || "off".equals(bindingMode)) {
+    callback.done(true);
+    return true;
+  }
+  if (jsonUnmarshal == null && xmlUnmarshal == null) {
+    callback.done(true);
+    return true;
+  }
+  boolean isXml=false;
+  boolean isJson=false;
+  String accept=exchange.getIn().getHeader("Accept",String.class);
+  String contentType=ExchangeHelper.getContentType(exchange);
+  if (contentType != null) {
+    isXml=contentType.toLowerCase(Locale.US).contains("xml");
+    isJson=contentType.toLowerCase(Locale.US).contains("json");
+  }
+  if (!isXml && !isJson) {
+    isXml=consumes != null && consumes.toLowerCase(Locale.US).contains("xml");
+    isJson=consumes != null && consumes.toLowerCase(Locale.US).contains("json");
+  }
+  isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
+  isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
+  if (!isJson && !isXml) {
+    isXml=bindingMode.equals("auto") || bindingMode.contains("xml");
+    isJson=bindingMode.equals("auto") || bindingMode.contains("json");
+  }
+  String body=null;
+  if (exchange.getIn().getBody() != null) {
+    if (isXml || isJson) {
+      body=MessageHelper.extractBodyAsString(exchange.getIn());
+      if (body != null) {
+        exchange.getIn().setBody(body);
+        if (isXml && isJson) {
+          isXml=body.startsWith("<");
+          isJson=!isXml;
+        }
+      }
+    }
+  }
+  if (isJson && jsonUnmarshal != null) {
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false,accept));
+    if (ObjectHelper.isNotEmpty(body)) {
+      return jsonUnmarshal.process(exchange,callback);
+    }
+ else {
+      callback.done(true);
+      return true;
+    }
+  }
+ else   if (isXml && xmlUnmarshal != null) {
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,true,accept));
+    if (ObjectHelper.isNotEmpty(body)) {
+      return xmlUnmarshal.process(exchange,callback);
+    }
+ else {
+      callback.done(true);
+      return true;
+    }
+  }
+  if (bindingMode.equals("auto")) {
+    exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false,accept));
+    callback.done(true);
+    return true;
+  }
+ else {
+    if (bindingMode.contains("xml")) {
+      exchange.setException(new BindingException("Cannot bind to xml as message body is not xml compatible",exchange));
+    }
+ else {
+      exchange.setException(new BindingException("Cannot bind to json as message body is not json compatible",exchange));
+    }
+    callback.done(true);
+    return true;
+  }
+}

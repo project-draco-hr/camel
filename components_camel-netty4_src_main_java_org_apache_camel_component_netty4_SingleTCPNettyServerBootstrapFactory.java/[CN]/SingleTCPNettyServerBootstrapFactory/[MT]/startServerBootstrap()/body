@@ -1,0 +1,29 @@
+{
+  EventLoopGroup bg=configuration.getBossGroup();
+  EventLoopGroup wg=configuration.getWorkerGroup();
+  if (bg == null) {
+    bossGroup=new NettyServerBossPoolBuilder().withBossCount(configuration.getBossCount()).withName("NettyServerTCPBoss").build();
+    bg=bossGroup;
+  }
+  if (wg == null) {
+    workerGroup=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    wg=workerGroup;
+  }
+  serverBootstrap=new ServerBootstrap();
+  serverBootstrap.group(bg,wg).channel(NioServerSocketChannel.class);
+  serverBootstrap.childOption(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
+  serverBootstrap.childOption(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());
+  serverBootstrap.option(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+  serverBootstrap.childOption(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+  serverBootstrap.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
+  if (configuration.getBacklog() > 0) {
+    serverBootstrap.option(ChannelOption.SO_BACKLOG,configuration.getBacklog());
+  }
+  serverBootstrap.childHandler(pipelineFactory);
+  LOG.debug("Created ServerBootstrap {}",serverBootstrap);
+  LOG.info("ServerBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
+  ChannelFuture channelFutrue=serverBootstrap.bind(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  channelFutrue.awaitUninterruptibly();
+  channel=channelFutrue.channel();
+  allChannels.add(channel);
+}

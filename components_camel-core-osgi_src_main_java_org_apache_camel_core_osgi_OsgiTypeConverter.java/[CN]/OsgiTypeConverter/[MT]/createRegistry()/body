@@ -11,14 +11,17 @@
  catch (  Exception e) {
     throw new RuntimeCamelException("Error loading CoreTypeConverter due: " + e.getMessage(),e);
   }
-  Object[] services=this.tracker.getServices();
-  if (services != null) {
-    for (    Object o : services) {
+  ServiceReference<TypeConverterLoader>[] serviceReferences=this.tracker.getServiceReferences();
+  if (serviceReferences != null) {
+    ArrayList<ServiceReference<TypeConverterLoader>> servicesList=new ArrayList<ServiceReference<TypeConverterLoader>>(Arrays.asList(serviceReferences));
+    Collections.sort(servicesList);
+    for (    ServiceReference<TypeConverterLoader> sr : servicesList) {
       try {
-        ((TypeConverterLoader)o).load(answer);
+        LOG.debug("loading the type converter from bundle{} ",sr.getBundle().getSymbolicName());
+        ((TypeConverterLoader)this.tracker.getService(sr)).load(answer);
       }
  catch (      Throwable t) {
-        throw new RuntimeCamelException("Error loading type converters from service: " + o + " due: "+ t.getMessage(),t);
+        throw new RuntimeCamelException("Error loading type converters from service: " + sr + " due: "+ t.getMessage(),t);
       }
     }
   }

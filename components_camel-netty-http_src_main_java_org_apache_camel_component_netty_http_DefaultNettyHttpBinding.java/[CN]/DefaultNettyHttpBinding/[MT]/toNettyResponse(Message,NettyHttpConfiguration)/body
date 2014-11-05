@@ -17,7 +17,7 @@
       String headerValue=tc.convertTo(String.class,it.next());
       if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
         LOG.trace("HTTP-Header: {}={}",key,headerValue);
-        response.addHeader(key,headerValue);
+        response.headers().add(key,headerValue);
       }
     }
   }
@@ -71,12 +71,12 @@
       buffer.setIndex(0,buffer.writerIndex());
     }
     int len=buffer.readableBytes();
-    response.setHeader(HttpHeaders.Names.CONTENT_LENGTH,len);
+    response.headers().set(HttpHeaders.Names.CONTENT_LENGTH,len);
     LOG.trace("Content-Length: {}",len);
   }
   String contentType=MessageHelper.getContentType(message);
   if (contentType != null) {
-    response.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+    response.headers().set(HttpHeaders.Names.CONTENT_TYPE,contentType);
     LOG.trace("Content-Type: {}",contentType);
   }
   String connection=message.getHeader(HttpHeaders.Names.CONNECTION,String.class);
@@ -88,7 +88,10 @@
       connection=HttpHeaders.Values.CLOSE;
     }
   }
-  response.setHeader(HttpHeaders.Names.CONNECTION,connection);
+  response.headers().set(HttpHeaders.Names.CONNECTION,connection);
+  if (connection.equalsIgnoreCase(HttpHeaders.Values.CLOSE)) {
+    message.setHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,true);
+  }
   LOG.trace("Connection: {}",connection);
   return response;
 }

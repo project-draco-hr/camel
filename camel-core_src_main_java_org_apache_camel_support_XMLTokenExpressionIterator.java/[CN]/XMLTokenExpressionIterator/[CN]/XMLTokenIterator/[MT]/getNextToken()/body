@@ -1,8 +1,8 @@
 {
-  int code=0;
-  while (code != XMLStreamConstants.END_DOCUMENT) {
-    code=readNext();
-switch (code) {
+  int xcode=0;
+  while (xcode != XMLStreamConstants.END_DOCUMENT) {
+    xcode=readNext();
+switch (xcode) {
 case XMLStreamConstants.START_ELEMENT:
       depth++;
     QName name=reader.getName();
@@ -24,7 +24,15 @@ if (isBottom()) {
 token=getCurrentToken();
 backtrack=true;
 trackdepth=depth;
+if (group > 1) {
+tokens.add(token);
+if (group == tokens.size()) {
+return getGroupedToken();
+}
+}
+ else {
 return token;
+}
 }
  else {
 down();
@@ -37,6 +45,10 @@ readCurrent(false);
 }
 break;
 case XMLStreamConstants.END_ELEMENT:
+if ((backtrack || (trackdepth > 0 && depth == trackdepth)) && (mode == 'w' && group > 1 && tokens.size() > 0)) {
+code=XMLStreamConstants.END_ELEMENT;
+return getGroupedToken();
+}
 depth--;
 QName endname=reader.getName();
 LOG.trace("ee={}",endname);
@@ -68,6 +80,10 @@ up();
 break;
 case XMLStreamConstants.END_DOCUMENT:
 LOG.trace("depth={}",depth);
+if (group > 1 && tokens.size() > 0) {
+code=XMLStreamConstants.END_DOCUMENT;
+return getGroupedToken();
+}
 break;
 default :
 break;

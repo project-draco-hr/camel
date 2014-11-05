@@ -1,17 +1,21 @@
 {
-  Properties prop=null;
+  Properties prop=new Properties();
+  if (null != initialProperties) {
+    prop.putAll(initialProperties);
+  }
   if (paths != null) {
     String[] locations=parseLocations(paths);
     CacheKey key=new CacheKey(locations);
-    prop=cache ? cacheMap.get(key) : null;
-    if (prop == null) {
-      prop=propertiesResolver.resolveProperties(getCamelContext(),ignoreMissingLocation,locations);
+    Properties locationsProp=cache ? cacheMap.get(key) : null;
+    if (locationsProp == null) {
+      locationsProp=propertiesResolver.resolveProperties(getCamelContext(),ignoreMissingLocation,locations);
       if (cache) {
-        cacheMap.put(key,prop);
+        cacheMap.put(key,locationsProp);
       }
     }
+    prop.putAll(locationsProp);
   }
-  if (prop != null && overrideProperties != null) {
+  if (overrideProperties != null) {
     Properties override=new Properties();
     override.putAll(prop);
     override.putAll(overrideProperties);
@@ -25,7 +29,7 @@
   }
   LOG.trace("Parsing uri {} with properties: {}",uri,prop);
   if (propertiesParser instanceof AugmentedPropertyNameAwarePropertiesParser) {
-    return ((AugmentedPropertyNameAwarePropertiesParser)propertiesParser).parseUri(uri,prop,prefixToken,suffixToken,propertyPrefix,propertySuffix,fallbackToUnaugmentedProperty);
+    return ((AugmentedPropertyNameAwarePropertiesParser)propertiesParser).parseUri(uri,prop,prefixToken,suffixToken,propertyPrefixResolved,propertySuffixResolved,fallbackToUnaugmentedProperty);
   }
  else {
     return propertiesParser.parseUri(uri,prop,prefixToken,suffixToken);

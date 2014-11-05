@@ -1,0 +1,14 @@
+{
+  Exchange exchange=template.request("netty4-http:http://localhost:{{port}}/test",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("Hello World!");
+    }
+  }
+);
+  assertTrue(exchange.isFailed());
+  NettyHttpOperationFailedException exception=exchange.getException(NettyHttpOperationFailedException.class);
+  assertNotNull(exception);
+  assertEquals(500,exception.getStatusCode());
+  String message=context.getTypeConverter().convertTo(String.class,exception.getHttpContent().content());
+  assertEquals("This is a fault",message);
+}

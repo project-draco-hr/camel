@@ -1,0 +1,25 @@
+{
+  if (metricsRegistry == null) {
+    metricsRegistry=new MetricRegistry();
+  }
+  if (useJmx) {
+    ManagementAgent agent=getCamelContext().getManagementStrategy().getManagementAgent();
+    if (agent != null) {
+      MBeanServer server=agent.getMBeanServer();
+      if (server != null) {
+        reporter=JmxReporter.forRegistry(metricsRegistry).registerWith(server).inDomain(jmxDomain).build();
+        reporter.start();
+      }
+    }
+ else {
+      throw new IllegalStateException("CamelContext has not enabled JMX");
+    }
+  }
+  this.mapper=new ObjectMapper().registerModule(new MetricsModule(getRateUnit(),getDurationUnit(),false));
+  if (getRateUnit() == TimeUnit.SECONDS && getDurationUnit() == TimeUnit.SECONDS) {
+    this.secondsMapper=this.mapper;
+  }
+ else {
+    this.secondsMapper=new ObjectMapper().registerModule(new MetricsModule(TimeUnit.SECONDS,TimeUnit.SECONDS,false));
+  }
+}

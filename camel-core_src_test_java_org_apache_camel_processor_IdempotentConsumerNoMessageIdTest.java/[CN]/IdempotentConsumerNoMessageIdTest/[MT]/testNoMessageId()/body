@@ -1,9 +1,17 @@
 {
-  try {
-    template.sendBody("direct:start","Hello World");
-    fail("Should have thrown an exception");
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:dead"));
+      from("direct:start").idempotentConsumer(header("messageId"),MemoryIdempotentRepository.memoryIdempotentRepository(200)).to("mock:result");
+    }
   }
- catch (  CamelExecutionException e) {
-    assertIsInstanceOf(NoMessageIdException.class,e.getCause());
-  }
+);
+  context.start();
+  resultEndpoint.expectedBodiesReceived("one","two");
+  getMockEndpoint("mock:dead").expectedBodiesReceived("Hello World");
+  sendMessage("1","one");
+  template.sendBody("direct:start","Hello World");
+  sendMessage("2","two");
+  sendMessage("1","one");
+  assertMockEndpointsSatisfied();
 }

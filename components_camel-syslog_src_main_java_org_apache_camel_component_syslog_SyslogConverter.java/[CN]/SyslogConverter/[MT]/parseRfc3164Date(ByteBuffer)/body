@@ -1,0 +1,45 @@
+{
+  char charFound;
+  char[] month=new char[3];
+  for (int i=0; i < 3; i++) {
+    month[i]=(char)(byteBuffer.get() & 0xff);
+  }
+  charFound=(char)byteBuffer.get();
+  if (charFound != ' ') {
+    LOG.error("Invalid syslog message, missing a mandatory space after month");
+  }
+  charFound=(char)(byteBuffer.get() & 0xff);
+  int day=0;
+  if (charFound == ' ') {
+  }
+ else {
+    day*=10;
+    day+=Character.digit(charFound,10);
+  }
+  while (Character.isDigit(charFound=(char)(byteBuffer.get() & 0xff))) {
+    day*=10;
+    day+=Character.digit(charFound,10);
+  }
+  int hour=0;
+  while (Character.isDigit(charFound=(char)(byteBuffer.get() & 0xff))) {
+    hour*=10;
+    hour+=Character.digit(charFound,10);
+  }
+  int minute=0;
+  while (Character.isDigit(charFound=(char)(byteBuffer.get() & 0xff))) {
+    minute*=10;
+    minute+=Character.digit(charFound,10);
+  }
+  int second=0;
+  while (Character.isDigit(charFound=(char)(byteBuffer.get() & 0xff))) {
+    second*=10;
+    second+=Character.digit(charFound,10);
+  }
+  Calendar calendar=new GregorianCalendar();
+  calendar.set(Calendar.MONTH,monthValueMap.get(String.valueOf(month).toLowerCase()).ordinal());
+  calendar.set(Calendar.DAY_OF_MONTH,day);
+  calendar.set(Calendar.HOUR_OF_DAY,hour);
+  calendar.set(Calendar.MINUTE,minute);
+  calendar.set(Calendar.SECOND,second);
+  return calendar;
+}

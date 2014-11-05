@@ -1,7 +1,8 @@
 {
+  String script=null;
   Expression exp=exchange.getIn().getHeader(Exchange.LANGUAGE_SCRIPT,Expression.class);
   if (exp == null) {
-    String script=exchange.getIn().getHeader(Exchange.LANGUAGE_SCRIPT,String.class);
+    script=exchange.getIn().getHeader(Exchange.LANGUAGE_SCRIPT,String.class);
     if (script != null) {
       script=getEndpoint().resolveScript(script);
       exp=getEndpoint().getLanguage().createExpression(script);
@@ -10,19 +11,19 @@
   if (exp == null && getEndpoint().isCacheScript()) {
     exp=getEndpoint().getExpression();
   }
+  InputStream is=null;
   if (exp == null) {
-    String script=getEndpoint().getScript();
+    script=getEndpoint().getScript();
     if (script == null && getEndpoint().getResourceUri() == null) {
       throw new CamelExchangeException("No script to evaluate",exchange);
     }
-    InputStream is=null;
     if (script == null) {
       is=getEndpoint().getResourceAsInputStream();
     }
  else     if (ResourceHelper.hasScheme(script)) {
       is=ResourceHelper.resolveMandatoryResourceAsInputStream(getEndpoint().getCamelContext().getClassResolver(),script);
     }
-    if (is != null) {
+    if (is != null && !getEndpoint().isBinary()) {
       try {
         script=getEndpoint().getCamelContext().getTypeConverter().convertTo(String.class,exchange,is);
       }
@@ -30,28 +31,29 @@
         IOHelper.close(is);
       }
     }
-    if (script != null) {
-      exp=getEndpoint().getLanguage().createExpression(script);
-      getEndpoint().setContentResolvedFromResource(true);
-      if (getEndpoint().isCacheScript()) {
-        getEndpoint().setExpression(exp);
+  }
+  if (script != null) {
+    exp=getEndpoint().getLanguage().createExpression(script);
+    getEndpoint().setContentResolvedFromResource(true);
+    if (getEndpoint().isCacheScript()) {
+      getEndpoint().setExpression(exp);
+    }
+  }
+  Object result;
+  if (exp != null) {
+    try {
+      result=exp.evaluate(exchange,Object.class);
+      log.debug("Evaluated expression as: {} with: {}",result,exchange);
+    }
+  finally {
+      if (!getEndpoint().isCacheScript()) {
+        ServiceHelper.stopService(exp);
+        getEndpoint().getCamelContext().removeService(exp);
       }
     }
+  }
  else {
-      throw new CamelExchangeException("No script to evaluate",exchange);
-    }
-  }
-  ObjectHelper.notNull(exp,"expression");
-  Object result;
-  try {
-    result=exp.evaluate(exchange,Object.class);
-    log.debug("Evaluated expression as: {} with: {}",result,exchange);
-  }
-  finally {
-    if (!getEndpoint().isCacheScript()) {
-      ServiceHelper.stopService(exp);
-      getEndpoint().getCamelContext().removeService(exp);
-    }
+    result=is;
   }
   if (getEndpoint().isTransform()) {
     if (exchange.hasOut()) {

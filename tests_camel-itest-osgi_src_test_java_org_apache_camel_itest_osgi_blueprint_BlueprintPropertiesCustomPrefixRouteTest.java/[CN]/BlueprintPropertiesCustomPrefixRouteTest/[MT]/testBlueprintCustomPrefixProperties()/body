@@ -1,0 +1,12 @@
+{
+  getInstalledBundle(name).start();
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=" + name + ")",10000);
+  ProducerTemplate myTemplate=ctx.createProducerTemplate();
+  myTemplate.start();
+  MockEndpoint result=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  result.expectedMessageCount(1);
+  result.expectedBodyReceived().constant("Test Value");
+  myTemplate.sendBody("direct:start","Irrelevant");
+  result.assertIsSatisfied();
+  myTemplate.stop();
+}

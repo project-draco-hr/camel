@@ -1,5 +1,28 @@
 {
   super.doStart();
-  consumers=new MessageConsumerPool();
-  consumers.fillPool();
+  this.executor=getEndpoint().getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this,"SjmsConsumer");
+  if (consumers == null) {
+    consumers=new GenericObjectPool<MessageConsumerResources>(new MessageConsumerResourcesFactory());
+    consumers.setMaxActive(getConsumerCount());
+    consumers.setMaxIdle(getConsumerCount());
+    if (getEndpoint().isAsyncStartListener()) {
+      asyncStart=getEndpoint().getComponent().getAsyncStartStopExecutorService().submit(new Runnable(){
+        @Override public void run(){
+          try {
+            fillConsumersPool();
+          }
+ catch (          Throwable e) {
+            log.warn("Error starting listener container on destination: " + getDestinationName() + ". This exception will be ignored.",e);
+          }
+        }
+        @Override public String toString(){
+          return "AsyncStartListenerTask[" + getDestinationName() + "]";
+        }
+      }
+);
+    }
+ else {
+      fillConsumersPool();
+    }
+  }
 }

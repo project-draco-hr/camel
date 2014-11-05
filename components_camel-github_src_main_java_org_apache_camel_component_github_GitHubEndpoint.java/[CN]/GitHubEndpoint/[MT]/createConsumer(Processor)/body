@@ -1,0 +1,24 @@
+{
+  String uri=getEndpointUri();
+  String[] uriSplit=splitUri(getEndpointUri());
+  if (uriSplit.length > 0) {
+switch (ConsumerType.fromUri(uriSplit[0])) {
+case COMMIT:
+      if (uriSplit.length >= 2 && uriSplit[1].length() > 1) {
+        return new CommitConsumer(uriSplit[1],this,processor);
+      }
+ else {
+        throw new IllegalArgumentException("Must provide a branch name when using the COMMIT consumer.  github://commit/[branch name]?[options]");
+      }
+case PULLREQUEST:
+    return new PullRequestConsumer(this,processor);
+case PULLREQUESTCOMMENT:
+  return new PullRequestCommentConsumer(this,processor);
+case TAG:
+return new TagConsumer(this,processor);
+default :
+break;
+}
+}
+throw new IllegalArgumentException("Cannot create any consumer with uri " + uri + ". A consumer type was not provided (or an incorrect pairing was used).");
+}

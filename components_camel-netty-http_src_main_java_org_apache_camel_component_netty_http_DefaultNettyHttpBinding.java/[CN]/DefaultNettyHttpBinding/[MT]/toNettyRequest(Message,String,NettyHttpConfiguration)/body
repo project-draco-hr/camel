@@ -24,7 +24,7 @@
       String headerValue=tc.convertTo(String.class,it.next());
       if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
         LOG.trace("HTTP-Header: {}={}",key,headerValue);
-        request.addHeader(key,headerValue);
+        request.headers().add(key,headerValue);
       }
     }
   }
@@ -44,7 +44,7 @@
     if (buffer != null) {
       request.setContent(buffer);
       int len=buffer.readableBytes();
-      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH,len);
+      request.headers().set(HttpHeaders.Names.CONTENT_LENGTH,len);
       LOG.trace("Content-Length: {}",len);
     }
  else {
@@ -55,12 +55,12 @@
   request.setMethod(method);
   String contentType=MessageHelper.getContentType(message);
   if (contentType != null) {
-    request.setHeader(HttpHeaders.Names.CONTENT_TYPE,contentType);
+    request.headers().set(HttpHeaders.Names.CONTENT_TYPE,contentType);
     LOG.trace("Content-Type: {}",contentType);
   }
   URI u=new URI(uri);
   String host=u.getHost();
-  request.setHeader(HttpHeaders.Names.HOST,host);
+  request.headers().set(HttpHeaders.Names.HOST,host);
   LOG.trace("Host: {}",host);
   String connection=message.getHeader(HttpHeaders.Names.CONNECTION,String.class);
   if (connection == null) {
@@ -71,7 +71,7 @@
       connection=HttpHeaders.Values.CLOSE;
     }
   }
-  request.setHeader(HttpHeaders.Names.CONNECTION,connection);
+  request.headers().set(HttpHeaders.Names.CONNECTION,connection);
   LOG.trace("Connection: {}",connection);
   return request;
 }

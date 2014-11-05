@@ -1,0 +1,16 @@
+{
+  context().getRegistry(JndiRegistry.class).bind("rfc5426FrameDecoder",new Rfc5425FrameDecoder());
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.setTracing(true);
+      DataFormat syslogDataFormat=new SyslogDataFormat();
+      from(uri).unmarshal(syslogDataFormat).process(new Processor(){
+        @Override public void process(        Exchange ex){
+          assertTrue(ex.getIn().getBody() instanceof SyslogMessage);
+        }
+      }
+).to("mock:syslogReceiver").marshal(syslogDataFormat).to("mock:syslogReceiver2");
+    }
+  }
+;
+}

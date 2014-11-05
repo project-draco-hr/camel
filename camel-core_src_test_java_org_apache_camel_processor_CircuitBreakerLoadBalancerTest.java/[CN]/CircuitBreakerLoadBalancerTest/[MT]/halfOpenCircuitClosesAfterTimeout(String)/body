@@ -1,0 +1,18 @@
+{
+  expectsMessageCount(2,result);
+  result.whenAnyExchangeReceived(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.setException(new MyCustomException());
+    }
+  }
+);
+  sendMessage(endpoint,"message one");
+  sendMessage(endpoint,"message two");
+  sendMessage(endpoint,"message three");
+  assertMockEndpointsSatisfied();
+  result.reset();
+  expectsMessageCount(1,result);
+  Thread.sleep(1000);
+  sendMessage(endpoint,"message four");
+  assertMockEndpointsSatisfied();
+}

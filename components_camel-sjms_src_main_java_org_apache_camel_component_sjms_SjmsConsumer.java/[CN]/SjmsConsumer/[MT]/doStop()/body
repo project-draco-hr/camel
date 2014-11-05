@@ -1,7 +1,32 @@
 {
   super.doStop();
+  if (asyncStart != null && !asyncStart.isDone()) {
+    asyncStart.cancel(true);
+  }
   if (consumers != null) {
-    consumers.drainPool();
-    consumers=null;
+    if (getEndpoint().isAsyncStopListener()) {
+      getEndpoint().getComponent().getAsyncStartStopExecutorService().submit(new Runnable(){
+        @Override public void run(){
+          try {
+            consumers.close();
+            consumers=null;
+          }
+ catch (          Throwable e) {
+            log.warn("Error stopping listener container on destination: " + getDestinationName() + ". This exception will be ignored.",e);
+          }
+        }
+        @Override public String toString(){
+          return "AsyncStopListenerTask[" + getDestinationName() + "]";
+        }
+      }
+);
+    }
+ else {
+      consumers.close();
+      consumers=null;
+    }
+  }
+  if (this.executor != null) {
+    getEndpoint().getCamelContext().getExecutorServiceManager().shutdownGraceful(this.executor);
   }
 }

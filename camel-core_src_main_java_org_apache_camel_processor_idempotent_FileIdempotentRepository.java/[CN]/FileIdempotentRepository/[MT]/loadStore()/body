@@ -1,6 +1,12 @@
 {
-  if (fileStore == null || !fileStore.exists()) {
-    return;
+  if (!fileStore.exists()) {
+    LOG.debug("Creating filestore: {}",fileStore);
+    File parent=fileStore.getParentFile();
+    parent.mkdirs();
+    boolean created=FileUtil.createNewFile(fileStore);
+    if (!created) {
+      throw new IOException("Cannot create filestore: " + fileStore);
+    }
   }
   LOG.trace("Loading to 1st level cache from idempotent filestore: {}",fileStore);
   cache.clear();

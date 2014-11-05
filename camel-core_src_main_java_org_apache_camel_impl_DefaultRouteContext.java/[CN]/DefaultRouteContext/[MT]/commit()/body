@@ -21,15 +21,25 @@
     }
     internal.addAdvice(new CamelInternalProcessor.RouteInflightRepositoryAdvice(camelContext.getInflightRepository(),routeId));
     internal.addAdvice(new CamelInternalProcessor.InstrumentationAdvice("route"));
+    internal.addAdvice(new CamelInternalProcessor.RouteLifecycleAdvice());
     Route edcr=new EventDrivenConsumerRoute(this,getEndpoint(),internal);
     edcr.getProperties().put(Route.ID_PROPERTY,routeId);
     edcr.getProperties().put(Route.PARENT_PROPERTY,Integer.toHexString(route.hashCode()));
     if (route.getGroup() != null) {
       edcr.getProperties().put(Route.GROUP_PROPERTY,route.getGroup());
     }
+    String rest="false";
+    if (route.isRest() != null && route.isRest()) {
+      rest="true";
+    }
+    edcr.getProperties().put(Route.REST_PROPERTY,rest);
     CamelInternalProcessor.RoutePolicyAdvice task=internal.getAdvice(CamelInternalProcessor.RoutePolicyAdvice.class);
     if (task != null) {
       task.setRoute(edcr);
+    }
+    CamelInternalProcessor.RouteLifecycleAdvice task2=internal.getAdvice(CamelInternalProcessor.RouteLifecycleAdvice.class);
+    if (task2 != null) {
+      task2.setRoute(edcr);
     }
     if (routePolicyList != null && !routePolicyList.isEmpty()) {
       for (      RoutePolicy policy : routePolicyList) {

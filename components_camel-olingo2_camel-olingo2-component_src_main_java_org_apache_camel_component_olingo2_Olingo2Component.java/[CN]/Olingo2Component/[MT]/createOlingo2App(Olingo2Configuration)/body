@@ -1,0 +1,31 @@
+{
+  HttpAsyncClientBuilder clientBuilder=configuration.getHttpAsyncClientBuilder();
+  if (clientBuilder == null) {
+    clientBuilder=HttpAsyncClientBuilder.create();
+    final RequestConfig.Builder requestConfigBuilder=RequestConfig.custom();
+    requestConfigBuilder.setConnectTimeout(configuration.getConnectTimeout());
+    requestConfigBuilder.setSocketTimeout(configuration.getSocketTimeout());
+    final HttpHost proxy=configuration.getProxy();
+    if (proxy != null) {
+      requestConfigBuilder.setProxy(proxy);
+    }
+    clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
+    SSLContextParameters sslContextParameters=configuration.getSslContextParameters();
+    if (sslContextParameters == null) {
+      sslContextParameters=new SSLContextParameters();
+    }
+    try {
+      clientBuilder.setSSLContext(sslContextParameters.createSSLContext());
+    }
+ catch (    GeneralSecurityException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+catch (    IOException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+  }
+  apiProxy=new Olingo2AppWrapper(new Olingo2AppImpl(configuration.getServiceUri(),clientBuilder));
+  apiProxy.getOlingo2App().setContentType(configuration.getContentType());
+  apiProxy.getOlingo2App().setHttpHeaders(configuration.getHttpHeaders());
+  return apiProxy;
+}

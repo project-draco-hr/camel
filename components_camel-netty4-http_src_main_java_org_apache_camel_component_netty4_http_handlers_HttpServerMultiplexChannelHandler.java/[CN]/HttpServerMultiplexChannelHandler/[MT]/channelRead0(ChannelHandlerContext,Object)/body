@@ -1,0 +1,20 @@
+{
+  HttpRequest request=(HttpRequest)msg;
+  LOG.debug("Message received: {}",request);
+  HttpServerChannelHandler handler=getHandler(request);
+  if (handler != null) {
+    Attribute<HttpServerChannelHandler> attr=ctx.attr(SERVER_HANDLER_KEY);
+    attr.set(handler);
+    if (msg instanceof HttpContent) {
+      HttpContent httpContent=(HttpContent)msg;
+      httpContent.content().retain();
+    }
+    handler.channelRead(ctx,request);
+  }
+ else {
+    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,NOT_FOUND);
+    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+    response.headers().set(Exchange.CONTENT_LENGTH,0);
+    ctx.writeAndFlush(response);
+  }
+}

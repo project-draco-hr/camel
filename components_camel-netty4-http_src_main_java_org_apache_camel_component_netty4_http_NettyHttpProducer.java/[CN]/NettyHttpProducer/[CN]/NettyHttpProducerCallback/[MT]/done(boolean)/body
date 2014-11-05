@@ -1,0 +1,21 @@
+{
+  try {
+    NettyHttpMessage nettyMessage=exchange.hasOut() ? exchange.getOut(NettyHttpMessage.class) : exchange.getIn(NettyHttpMessage.class);
+    if (nettyMessage != null) {
+      FullHttpResponse response=nettyMessage.getHttpResponse();
+      response.content().retain();
+      if (response != null) {
+        String actualUrl=exchange.getIn().getHeader(Exchange.HTTP_URL,String.class);
+        int code=response.getStatus() != null ? response.getStatus().code() : -1;
+        log.debug("Http responseCode: {}",code);
+        if (code >= 300 && getConfiguration().isThrowExceptionOnFailure()) {
+          Exception cause=NettyHttpHelper.populateNettyHttpOperationFailedException(exchange,actualUrl,response,code,getConfiguration().isTransferException());
+          exchange.setException(cause);
+        }
+      }
+    }
+  }
+  finally {
+    callback.done(doneSync);
+  }
+}

@@ -1,25 +1,32 @@
 {
-  Map<String,RouteService> filtered=new LinkedHashMap<String,RouteService>();
-  for (  Map.Entry<String,RouteService> entry : routeServices.entrySet()) {
-    boolean startable=false;
-    Consumer consumer=entry.getValue().getRoutes().iterator().next().getConsumer();
-    if (consumer instanceof SuspendableService) {
-      startable=((SuspendableService)consumer).isSuspended();
+  isStartingRoutes.set(true);
+  try {
+    Map<String,RouteService> filtered=new LinkedHashMap<String,RouteService>();
+    for (    Map.Entry<String,RouteService> entry : routeServices.entrySet()) {
+      boolean startable=false;
+      Consumer consumer=entry.getValue().getRoutes().iterator().next().getConsumer();
+      if (consumer instanceof SuspendableService) {
+        startable=((SuspendableService)consumer).isSuspended();
+      }
+      if (!startable && consumer instanceof StatefulService) {
+        startable=((StatefulService)consumer).getStatus().isStartable();
+      }
+ else       if (!startable) {
+        startable=entry.getValue().getStatus().isStartable();
+      }
+      if (startable) {
+        filtered.put(entry.getKey(),entry.getValue());
+      }
     }
-    if (!startable && consumer instanceof StatefulService) {
-      startable=((StatefulService)consumer).getStatus().isStartable();
+    if (!filtered.isEmpty()) {
+      safelyStartRouteServices(checkClash,startConsumer,resumeConsumer,addingRoutes,filtered.values());
     }
- else     if (!startable) {
-      startable=entry.getValue().getStatus().isStartable();
-    }
-    if (startable) {
-      filtered.put(entry.getKey(),entry.getValue());
+    isStartingRoutes.remove();
+    for (    StartupListener startup : startupListeners) {
+      startup.onCamelContextStarted(this,isStarted());
     }
   }
-  if (!filtered.isEmpty()) {
-    safelyStartRouteServices(checkClash,startConsumer,resumeConsumer,addingRoutes,filtered.values());
-  }
-  for (  StartupListener startup : startupListeners) {
-    startup.onCamelContextStarted(this,isStarted());
+  finally {
+    isStartingRoutes.remove();
   }
 }

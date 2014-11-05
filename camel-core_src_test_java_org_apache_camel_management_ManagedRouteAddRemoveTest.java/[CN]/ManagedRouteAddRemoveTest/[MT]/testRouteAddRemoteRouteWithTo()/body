@@ -9,7 +9,10 @@
   MBeanServer mbeanServer=getMBeanServer();
   ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=services,*");
   Set<ObjectName> names=mbeanServer.queryNames(on,null);
-  assertEquals(7,names.size());
+  assertEquals(8,names.size());
+  ObjectName onP=ObjectName.getInstance("org.apache.camel:context=camel-1,type=producers,*");
+  Set<ObjectName> namesP=mbeanServer.queryNames(onP,null);
+  assertEquals(1,namesP.size());
   log.info("Adding 2nd route");
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
@@ -22,12 +25,16 @@
   template.sendBody("direct:bar","Hello World");
   bar.assertIsSatisfied();
   names=mbeanServer.queryNames(on,null);
-  assertEquals(7,names.size());
+  assertEquals(8,names.size());
+  namesP=mbeanServer.queryNames(onP,null);
+  assertEquals(2,namesP.size());
   log.info("Removing 2nd route");
   context.stopRoute("bar");
   boolean removed=context.removeRoute("bar");
   assertTrue(removed);
   names=mbeanServer.queryNames(on,null);
-  assertEquals(7,names.size());
+  assertEquals(8,names.size());
+  namesP=mbeanServer.queryNames(onP,null);
+  assertEquals(1,namesP.size());
   log.info("Shutting down...");
 }

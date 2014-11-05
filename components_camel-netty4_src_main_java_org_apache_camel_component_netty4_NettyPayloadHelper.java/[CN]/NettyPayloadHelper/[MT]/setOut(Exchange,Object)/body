@@ -1,0 +1,19 @@
+{
+  if (payload instanceof DefaultExchangeHolder) {
+    DefaultExchangeHolder.unmarshal(exchange,(DefaultExchangeHolder)payload);
+  }
+ else   if (payload instanceof AddressedEnvelope) {
+    @SuppressWarnings("unchecked") AddressedEnvelope<Object,InetSocketAddress> dp=(AddressedEnvelope<Object,InetSocketAddress>)payload;
+    if (dp.content() instanceof DefaultExchangeHolder) {
+      DefaultExchangeHolder.unmarshal(exchange,(DefaultExchangeHolder)dp.content());
+    }
+ else {
+      exchange.getOut().setBody(dp.content());
+    }
+    exchange.setProperty(NettyConstants.NETTY_REMOTE_ADDRESS,dp.sender());
+  }
+ else {
+    exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+    exchange.getOut().setBody(payload);
+  }
+}

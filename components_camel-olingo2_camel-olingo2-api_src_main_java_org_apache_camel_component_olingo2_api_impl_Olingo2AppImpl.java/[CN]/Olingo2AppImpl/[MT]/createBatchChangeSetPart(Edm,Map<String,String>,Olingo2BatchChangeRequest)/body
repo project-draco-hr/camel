@@ -1,0 +1,29 @@
+{
+  String resourcePath=batchRequest.getResourcePath();
+  if (resourcePath.startsWith("$")) {
+    resourcePath=replaceContentId(edm,resourcePath,contentIdMap);
+  }
+  final UriInfoImpl uriInfo=parseUri(edm,resourcePath,null);
+  final Map<String,String> headers=new HashMap<String,String>();
+  byte[] body=null;
+  if (batchRequest.getBody() != null && !Operation.DELETE.equals(batchRequest.getOperation())) {
+    final ODataResponse response=writeContent(edm,uriInfo,batchRequest.getBody());
+    for (    String header : response.getHeaderNames()) {
+      headers.put(header,response.getHeader(header));
+    }
+    body=response.getEntity() instanceof InputStream ? EntityProvider.readBinary((InputStream)response.getEntity()) : null;
+    if (body != null) {
+      headers.put(HttpHeaders.CONTENT_LENGTH,String.valueOf(body.length));
+    }
+  }
+  headers.put(HttpHeaders.ACCEPT,getResourceContentType(uriInfo).toString());
+  if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+    headers.put(HttpHeaders.CONTENT_TYPE,getContentType());
+  }
+  headers.putAll(batchRequest.getHeaders());
+  final String contentId=batchRequest.getContentId();
+  if (contentId != null) {
+    contentIdMap.put("$" + contentId,resourcePath);
+  }
+  return BatchChangeSetPart.uri(createBatchUri(batchRequest)).method(batchRequest.getOperation().getHttpMethod()).contentId(contentId).headers(headers).body(body == null ? null : new String(body,ContentType.CHARSET_UTF_8)).build();
+}

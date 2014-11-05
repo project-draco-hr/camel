@@ -1,0 +1,25 @@
+{
+  List<String> result;
+  if (SignatureType.enveloping == signatureType) {
+    String uri="#" + getConfiguration().getContentObjectId();
+    result=Collections.singletonList(uri);
+  }
+ else   if (SignatureType.enveloped == signatureType) {
+    String uri=message.getHeader(XmlSignatureConstants.HEADER_CONTENT_REFERENCE_URI,String.class);
+    if (uri == null) {
+      uri=getConfiguration().getContentReferenceUri();
+    }
+    if (uri == null) {
+      uri="";
+    }
+    result=Collections.singletonList(uri);
+  }
+ else   if (SignatureType.detached == signatureType) {
+    result=getContentReferenceUrisForDetachedCase(message,messageBodyNode);
+  }
+ else {
+    throw new IllegalStateException("Signature type " + signatureType + " not supported");
+  }
+  LOG.debug("Content reference URI(s): {}",result);
+  return result;
+}

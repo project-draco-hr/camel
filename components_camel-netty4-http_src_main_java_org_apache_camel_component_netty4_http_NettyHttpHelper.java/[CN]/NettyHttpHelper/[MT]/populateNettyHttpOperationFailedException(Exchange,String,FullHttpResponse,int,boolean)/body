@@ -1,0 +1,34 @@
+{
+  String uri=url;
+  String statusText=response.getStatus().reasonPhrase();
+  if (responseCode >= 300 && responseCode < 400) {
+    String redirectLocation=response.headers().get("location");
+    if (redirectLocation != null) {
+      return new NettyHttpOperationFailedException(uri,responseCode,statusText,redirectLocation,response);
+    }
+ else {
+      return new NettyHttpOperationFailedException(uri,responseCode,statusText,null,response);
+    }
+  }
+  if (transferException) {
+    String contentType=response.headers().get(Exchange.CONTENT_TYPE);
+    if (NettyHttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
+      InputStream is=exchange.getContext().getTypeConverter().convertTo(InputStream.class,response);
+      if (is != null) {
+        try {
+          Object body=deserializeJavaObjectFromStream(is);
+          if (body instanceof Exception) {
+            return (Exception)body;
+          }
+        }
+ catch (        Exception e) {
+          return e;
+        }
+ finally {
+          IOHelper.close(is);
+        }
+      }
+    }
+  }
+  return new NettyHttpOperationFailedException(uri,responseCode,statusText,null,response);
+}

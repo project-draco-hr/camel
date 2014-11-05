@@ -1,0 +1,17 @@
+{
+  List<RepositoryCommit> commits=commitService.getCommits(getRepository());
+  Stack<RepositoryCommit> newCommits=new Stack<RepositoryCommit>();
+  for (  RepositoryCommit commit : commits) {
+    if (!commitHashes.contains(commit.getSha())) {
+      newCommits.push(commit);
+      commitHashes.add(commit.getSha());
+    }
+  }
+  while (!newCommits.empty()) {
+    RepositoryCommit newCommit=newCommits.pop();
+    Exchange e=getEndpoint().createExchange();
+    e.getIn().setBody(newCommit);
+    getProcessor().process(e);
+  }
+  return newCommits.size();
+}

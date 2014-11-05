@@ -1,22 +1,33 @@
 {
-  boolean sync=true;
-  final Producer producer=doGetProducer(endpoint,true);
-  if (producer == null) {
-    if (isStopped()) {
-      LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
-      return false;
-    }
+  Producer target;
+  try {
+    target=doGetProducer(endpoint,true);
+    if (target == null) {
+      if (isStopped()) {
+        LOG.warn("Ignoring exchange sent after processor is stopped: " + exchange);
+        callback.done(true);
+        return true;
+      }
  else {
-      throw new IllegalStateException("No producer, this processor has not been started: " + this);
+        exchange.setException(new IllegalStateException("No producer, this processor has not been started: " + this));
+        callback.done(true);
+        return true;
+      }
     }
   }
+ catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+  final Producer producer=target;
   final StopWatch watch=eventNotifierEnabled && exchange != null ? new StopWatch() : null;
   try {
     if (eventNotifierEnabled && exchange != null) {
       EventHelper.notifyExchangeSending(exchange.getContext(),exchange,endpoint);
     }
     AsyncProcessor asyncProcessor=AsyncProcessorConverterHelper.convert(producer);
-    sync=producerCallback.doInAsyncProducer(producer,asyncProcessor,exchange,pattern,new AsyncCallback(){
+    return producerCallback.doInAsyncProducer(producer,asyncProcessor,exchange,pattern,new AsyncCallback(){
       @Override public void done(      boolean doneSync){
         try {
           if (eventNotifierEnabled && watch != null) {
@@ -46,6 +57,7 @@
     if (exchange != null) {
       exchange.setException(e);
     }
+    callback.done(true);
+    return true;
   }
-  return sync;
 }

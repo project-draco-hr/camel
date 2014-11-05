@@ -1,3 +1,17 @@
 {
-  return this.objectMapper.readValue(stream,this.unmarshalType);
+  Class<?> clazz=unmarshalType;
+  String type=exchange.getIn().getHeader(JacksonConstants.UNMARSHAL_TYPE,String.class);
+  if (type == null && isAllowJmsType()) {
+    type=exchange.getIn().getHeader("JMSType",String.class);
+  }
+  if (type != null) {
+    clazz=exchange.getContext().getClassResolver().resolveMandatoryClass(type);
+  }
+  if (collectionType != null) {
+    CollectionType collType=objectMapper.getTypeFactory().constructCollectionType(collectionType,clazz);
+    return this.objectMapper.readValue(stream,collType);
+  }
+ else {
+    return this.objectMapper.readValue(stream,clazz);
+  }
 }

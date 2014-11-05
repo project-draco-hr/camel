@@ -1,0 +1,27 @@
+{
+  Map<String,Class<?>> validParamMap=new HashMap<String,Class<?>>();
+  validParamMap.putAll(DockerConstants.DOCKER_DEFAULT_PARAMETERS);
+  validParamMap.putAll(dockerOperation.getParameters());
+  for (  String key : parameters.keySet()) {
+    String transformedKey=DockerHelper.transformToHeaderName(key);
+    if (!validParamMap.containsKey(transformedKey)) {
+      throw new DockerClientException(key + " is not a valid URI parameter");
+    }
+    try {
+      Class<?> parameterClass=validParamMap.get(transformedKey);
+      Object parameterValue=parameters.get(key);
+      if (parameterClass == null || parameterValue == null) {
+        throw new DockerClientException("Failed to validate parameter type for property " + key);
+      }
+      if (Integer.class == parameterClass) {
+        Integer.parseInt((String)parameterValue);
+      }
+ else       if (Boolean.class == parameterClass) {
+        BooleanUtils.toBooleanObject((String)parameterValue,"true","false","null");
+      }
+    }
+ catch (    Exception e) {
+      throw new DockerClientException("Failed to validate parameter type for property " + key);
+    }
+  }
+}

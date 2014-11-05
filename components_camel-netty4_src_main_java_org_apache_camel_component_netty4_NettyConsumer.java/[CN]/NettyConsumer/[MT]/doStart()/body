@@ -1,0 +1,23 @@
+{
+  super.doStart();
+  LOG.debug("Netty consumer binding to: {}",configuration.getAddress());
+  if (nettyServerBootstrapFactory == null) {
+    ServerInitializerFactory pipelineFactory;
+    ServerInitializerFactory factory=configuration.getServerInitializerFactory();
+    if (factory != null) {
+      pipelineFactory=factory.createPipelineFactory(this);
+    }
+ else {
+      pipelineFactory=new DefaultServerInitializerFactory(this);
+    }
+    if (isTcp()) {
+      nettyServerBootstrapFactory=new SingleTCPNettyServerBootstrapFactory();
+    }
+ else {
+      nettyServerBootstrapFactory=new SingleUDPNettyServerBootstrapFactory();
+    }
+    nettyServerBootstrapFactory.init(context,configuration,pipelineFactory);
+  }
+  ServiceHelper.startServices(nettyServerBootstrapFactory);
+  LOG.info("Netty consumer bound to: " + configuration.getAddress());
+}

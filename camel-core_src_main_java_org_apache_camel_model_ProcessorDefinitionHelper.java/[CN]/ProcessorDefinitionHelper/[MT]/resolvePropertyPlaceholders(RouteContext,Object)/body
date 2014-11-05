@@ -1,0 +1,53 @@
+{
+  LOG.trace("Resolving property placeholders for: {}",definition);
+  Map<String,Object> properties=new HashMap<String,Object>();
+  IntrospectionSupport.getProperties(definition,properties,null);
+  ProcessorDefinition<?> processorDefinition=null;
+  if (definition instanceof ProcessorDefinition) {
+    processorDefinition=(ProcessorDefinition<?>)definition;
+  }
+  if (processorDefinition != null && processorDefinition.getOtherAttributes() != null) {
+    for (    QName key : processorDefinition.getOtherAttributes().keySet()) {
+      if (Constants.PLACEHOLDER_QNAME.equals(key.getNamespaceURI())) {
+        String local=key.getLocalPart();
+        Object value=processorDefinition.getOtherAttributes().get(key);
+        if (value != null && value instanceof String) {
+          String s=(String)value;
+          String prefixToken=routeContext.getCamelContext().getPropertyPrefixToken();
+          String suffixToken=routeContext.getCamelContext().getPropertySuffixToken();
+          if (prefixToken == null) {
+            throw new IllegalArgumentException("Property with name [" + local + "] uses property placeholders; however, no properties component is configured.");
+          }
+          if (!s.startsWith(prefixToken)) {
+            s=prefixToken + s;
+          }
+          if (!s.endsWith(suffixToken)) {
+            s=s + suffixToken;
+          }
+          value=s;
+        }
+        properties.put(local,value);
+      }
+    }
+  }
+  if (!properties.isEmpty()) {
+    LOG.trace("There are {} properties on: {}",properties.size(),definition);
+    for (    Map.Entry<String,Object> entry : properties.entrySet()) {
+      String name=entry.getKey();
+      Object value=entry.getValue();
+      if (value instanceof String) {
+        String text=(String)value;
+        text=routeContext.getCamelContext().resolvePropertyPlaceholders(text);
+        if (text != value) {
+          boolean changed=IntrospectionSupport.setProperty(routeContext.getCamelContext().getTypeConverter(),definition,name,text);
+          if (!changed) {
+            throw new IllegalArgumentException("No setter to set property: " + name + " to: "+ text+ " on: "+ definition);
+          }
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Changed property [{}] from: {} to: {}",new Object[]{name,value,text});
+          }
+        }
+      }
+    }
+  }
+}

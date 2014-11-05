@@ -1,0 +1,14 @@
+{
+  ObjectHelper.notNull(camelContext,"camelContext",this);
+  Transformer t=getTemplate().newTransformer();
+  if (isSaxonTransformer(t)) {
+    try {
+      saxonReceiverClass=getCamelContext().getClassResolver().resolveMandatoryClass("net.sf.saxon.event.Receiver");
+      saxonWarnerClass=getCamelContext().getClassResolver().resolveMandatoryClass("net.sf.saxon.serialize.MessageWarner");
+      setMessageEmitterMethod=t.getClass().getMethod("setMessageEmitter",saxonReceiverClass);
+    }
+ catch (    Exception e) {
+      throw new IllegalStateException("Error pre-loading Saxon classes. Make sure you have saxon on the classpath," + " and the classloader can load the following two classes: net.sf.saxon.event.Receiver, net.sf.saxon.serialize.MessageWarner.",e);
+    }
+  }
+}

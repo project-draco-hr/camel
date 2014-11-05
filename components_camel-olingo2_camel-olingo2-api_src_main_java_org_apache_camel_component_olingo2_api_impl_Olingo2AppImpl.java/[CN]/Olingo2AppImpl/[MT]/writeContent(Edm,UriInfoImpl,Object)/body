@@ -1,0 +1,52 @@
+{
+  String responseContentType=getContentType();
+  ODataResponse response;
+switch (uriInfo.getUriType()) {
+case URI4:
+case URI5:
+    final List<EdmProperty> simplePropertyPath=uriInfo.getPropertyPath();
+  final EdmProperty simpleProperty=simplePropertyPath.get(simplePropertyPath.size() - 1);
+responseContentType=simpleProperty.getMimeType();
+if (uriInfo.isValue()) {
+response=EntityProvider.writePropertyValue(simpleProperty,content);
+responseContentType=ContentType.TEXT_PLAIN_CS_UTF_8.toString();
+}
+ else {
+response=EntityProvider.writeProperty(getContentType(),simpleProperty,content);
+}
+break;
+case URI3:
+final List<EdmProperty> complexPropertyPath=uriInfo.getPropertyPath();
+final EdmProperty complexProperty=complexPropertyPath.get(complexPropertyPath.size() - 1);
+response=EntityProvider.writeProperty(responseContentType,complexProperty,content);
+break;
+case URI7A:
+final EdmEntitySet targetLinkEntitySet=uriInfo.getTargetEntitySet();
+EntityProviderWriteProperties linkProperties=EntityProviderWriteProperties.serviceRoot(new URI(serviceUri + SEPARATOR)).build();
+@SuppressWarnings("unchecked") final Map<String,Object> linkMap=(Map<String,Object>)content;
+response=EntityProvider.writeLink(responseContentType,targetLinkEntitySet,linkMap,linkProperties);
+break;
+case URI7B:
+final EdmEntitySet targetLinksEntitySet=uriInfo.getTargetEntitySet();
+EntityProviderWriteProperties linksProperties=EntityProviderWriteProperties.serviceRoot(new URI(serviceUri + SEPARATOR)).build();
+@SuppressWarnings("unchecked") final List<Map<String,Object>> linksMap=(List<Map<String,Object>>)content;
+response=EntityProvider.writeLinks(responseContentType,targetLinksEntitySet,linksMap,linksProperties);
+break;
+case URI1:
+case URI2:
+case URI6A:
+case URI6B:
+final EdmEntitySet targetEntitySet=uriInfo.getTargetEntitySet();
+EntityProviderWriteProperties properties=EntityProviderWriteProperties.serviceRoot(new URI(serviceUri + SEPARATOR)).build();
+@SuppressWarnings("unchecked") final Map<String,Object> objectMap=(Map<String,Object>)content;
+response=EntityProvider.writeEntry(responseContentType,targetEntitySet,objectMap,properties);
+break;
+case URI9:
+@SuppressWarnings("unchecked") final List<Olingo2BatchRequest> batchParts=(List<Olingo2BatchRequest>)content;
+response=parseBatchRequest(edm,batchParts);
+break;
+default :
+throw new ODataApplicationException("Unsupported resource type " + uriInfo.getTargetType(),Locale.ENGLISH);
+}
+return response.getContentHeader() != null ? response : ODataResponse.fromResponse(response).contentHeader(responseContentType).build();
+}

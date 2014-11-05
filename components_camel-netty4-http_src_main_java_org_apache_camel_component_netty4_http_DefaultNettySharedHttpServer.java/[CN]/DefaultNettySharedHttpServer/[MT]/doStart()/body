@@ -1,0 +1,25 @@
+{
+  ObjectHelper.notNull(configuration,"setNettyServerBootstrapConfiguration() must be called with a NettyServerBootstrapConfiguration instance",this);
+  if (configuration.getPort() <= 0) {
+    throw new IllegalArgumentException("Port must be configured on NettySharedHttpServerBootstrapConfiguration " + configuration);
+  }
+  if (ObjectHelper.isEmpty(configuration.getHost())) {
+    throw new IllegalArgumentException("Host must be configured on NettySharedHttpServerBootstrapConfiguration " + configuration);
+  }
+  LOG.debug("NettySharedHttpServer using configuration: {}",configuration);
+  configuration.setProtocol("tcp");
+  channelFactory=new HttpServerMultiplexChannelHandler();
+  channelFactory.init(configuration.getPort());
+  ChannelInitializer<Channel> pipelineFactory=new HttpServerSharedInitializerFactory(configuration,channelFactory,classResolver);
+  String port=Matcher.quoteReplacement("" + configuration.getPort());
+  String pattern=threadPattern;
+  pattern=pattern.replaceFirst("#port#",port);
+  ThreadFactory tf=new CamelThreadFactory(pattern,"NettySharedHttpServer",true);
+  bootstrapFactory=new HttpServerBootstrapFactory(channelFactory,false);
+  bootstrapFactory.init(tf,configuration,pipelineFactory);
+  ServiceHelper.startServices(channelFactory);
+  if (startServer) {
+    LOG.info("Starting NettySharedHttpServer on {}:{}",configuration.getHost(),configuration.getPort());
+    ServiceHelper.startServices(bootstrapFactory);
+  }
+}

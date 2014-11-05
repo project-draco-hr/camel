@@ -6,8 +6,12 @@
     log.debug("Using {} as the reply to destination.",getNamedReplyTo());
   }
   if (getConsumers() == null) {
-    setConsumers(new MessageConsumerPool(getConsumerCount()));
-    getConsumers().fillPool();
+    setConsumers(new GenericObjectPool<MessageConsumerResources>(new MessageConsumerResourcesFactory()));
+    getConsumers().setMaxActive(getConsumerCount());
+    getConsumers().setMaxIdle(getConsumerCount());
+    while (getConsumers().getNumIdle() < getConsumers().getMaxIdle()) {
+      getConsumers().addObject();
+    }
   }
   super.doStart();
 }

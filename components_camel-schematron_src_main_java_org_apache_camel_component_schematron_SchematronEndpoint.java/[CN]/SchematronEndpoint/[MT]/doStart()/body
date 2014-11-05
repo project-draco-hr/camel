@@ -1,0 +1,19 @@
+{
+  super.doStart();
+  if (rules == null) {
+    try {
+      logger.info("Reading schematron rules from class path {}",remaining);
+      InputStream schRules=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext().getClassResolver(),remaining);
+      rules=TemplatesFactory.newInstance().newTemplates(schRules);
+    }
+ catch (    Exception e) {
+      logger.info("Schamatron rules not found in class path, attempting file system {}",remaining);
+      InputStream schRules=FileUtils.openInputStream(new File(remaining));
+      rules=TemplatesFactory.newInstance().newTemplates(schRules);
+    }
+    if (rules == null) {
+      logger.error("Schematron rules not found {}",remaining);
+      throw new SchematronConfigException("Failed to load rules: " + remaining);
+    }
+  }
+}

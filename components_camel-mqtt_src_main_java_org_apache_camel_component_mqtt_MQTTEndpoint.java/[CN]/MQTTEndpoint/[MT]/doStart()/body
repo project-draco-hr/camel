@@ -12,7 +12,7 @@
       if (!consumers.isEmpty()) {
         Exchange exchange=createExchange();
         exchange.getIn().setBody(body.toByteArray());
-        exchange.setProperty(configuration.getMqttTopicPropertyName(),topic.toString());
+        exchange.getIn().setHeader(MQTTConfiguration.MQTT_SUBSCRIBE_TOPIC,topic.toString());
         for (        MQTTConsumer consumer : consumers) {
           consumer.processExchange(exchange);
         }
@@ -33,33 +33,4 @@
     }
   }
 );
-  final Promise<Object> promise=new Promise<Object>();
-  connection.connect(new Callback<Void>(){
-    public void onSuccess(    Void value){
-      String subscribeTopicName=configuration.getSubscribeTopicName();
-      subscribeTopicName=subscribeTopicName != null ? subscribeTopicName.trim() : null;
-      if (subscribeTopicName != null && !subscribeTopicName.isEmpty()) {
-        Topic[] topics={new Topic(subscribeTopicName,configuration.getQoS())};
-        connection.subscribe(topics,new Callback<byte[]>(){
-          public void onSuccess(          byte[] value){
-            promise.onSuccess(value);
-          }
-          public void onFailure(          Throwable value){
-            promise.onFailure(value);
-            connection.disconnect(null);
-          }
-        }
-);
-      }
- else {
-        promise.onSuccess(value);
-      }
-    }
-    public void onFailure(    Throwable value){
-      promise.onFailure(value);
-      connection.disconnect(null);
-    }
-  }
-);
-  promise.await(configuration.getConnectWaitInSeconds(),TimeUnit.SECONDS);
 }

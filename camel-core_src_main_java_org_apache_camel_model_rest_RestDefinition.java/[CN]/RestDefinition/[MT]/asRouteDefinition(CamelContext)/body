@@ -1,0 +1,62 @@
+{
+  List<RouteDefinition> answer=new ArrayList<RouteDefinition>();
+  for (  VerbDefinition verb : getVerbs()) {
+    RouteDefinition route=verb.getRoute();
+    if (route == null) {
+      route=new RouteDefinition();
+      route.getOutputs().add(verb.getTo());
+    }
+    RestBindingDefinition binding=new RestBindingDefinition();
+    binding.setType(verb.getType());
+    binding.setOutType(verb.getOutType());
+    if (verb.getConsumes() != null) {
+      binding.setConsumes(verb.getConsumes());
+    }
+ else {
+      binding.setConsumes(getConsumes());
+    }
+    if (verb.getProduces() != null) {
+      binding.setProduces(verb.getProduces());
+    }
+ else {
+      binding.setProduces(getProduces());
+    }
+    if (verb.getBindingMode() != null) {
+      binding.setBindingMode(verb.getBindingMode());
+    }
+ else {
+      binding.setBindingMode(getBindingMode());
+    }
+    route.getOutputs().add(0,binding);
+    String from="rest:" + verb.asVerb() + ":"+ buildUri(verb);
+    Map<String,Object> options=new HashMap<String,Object>();
+    if (verb.getConsumes() != null) {
+      options.put("consumes",verb.getConsumes());
+    }
+ else     if (getConsumes() != null) {
+      options.put("consumes",getConsumes());
+    }
+    if (verb.getProduces() != null) {
+      options.put("produces",verb.getProduces());
+    }
+ else     if (getProduces() != null) {
+      options.put("produces",getProduces());
+    }
+    String inType=binding.getType();
+    if (inType != null) {
+      options.put("inType",inType);
+    }
+    String outType=binding.getOutType();
+    if (outType != null) {
+      options.put("outType",outType);
+    }
+    if (!options.isEmpty()) {
+      String query=URISupport.createQueryString(options);
+      from=from + "?" + query;
+    }
+    route.fromRest(from);
+    route.setRestDefinition(this);
+    answer.add(route);
+  }
+  return answer;
+}

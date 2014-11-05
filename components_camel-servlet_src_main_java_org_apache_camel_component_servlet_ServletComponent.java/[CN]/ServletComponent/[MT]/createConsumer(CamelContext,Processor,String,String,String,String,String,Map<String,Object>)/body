@@ -1,0 +1,34 @@
+{
+  String path=basePath;
+  if (uriTemplate != null) {
+    if (uriTemplate.startsWith("/")) {
+      path=path + uriTemplate;
+    }
+ else {
+      path=path + "/" + uriTemplate;
+    }
+  }
+  path=FileUtil.stripLeadingSeparator(path);
+  RestConfiguration config=getCamelContext().getRestConfiguration();
+  Map<String,Object> map=new HashMap<String,Object>();
+  if (config.getComponent() == null || config.getComponent().equals("servlet")) {
+    if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+      map.putAll(config.getEndpointProperties());
+    }
+  }
+  String query=URISupport.createQueryString(map);
+  String url="servlet:///%s?httpMethodRestrict=%s";
+  String restrict=verb.toUpperCase(Locale.US);
+  url=String.format(url,path,restrict);
+  if (!query.isEmpty()) {
+    url=url + "&" + query;
+  }
+  ServletEndpoint endpoint=camelContext.getEndpoint(url,ServletEndpoint.class);
+  setProperties(endpoint,parameters);
+  endpoint.setBinding(new ServletRestHttpBinding());
+  Consumer consumer=endpoint.createConsumer(processor);
+  if (config != null && config.getConsumerProperties() != null && !config.getConsumerProperties().isEmpty()) {
+    setProperties(consumer,config.getConsumerProperties());
+  }
+  return consumer;
+}

@@ -1,0 +1,30 @@
+{
+  if (getConfiguration().getParentLocalName() != null && getConfiguration().getParentXpath() != null) {
+    throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent local name " + getConfiguration().getParentLocalName() + " and the parent XPath "+ getConfiguration().getParentXpath().getXPath()+ " are specified. You must not specify both parameters.");
+  }
+  boolean isEnveloped=getConfiguration().getParentLocalName() != null || getConfiguration().getParentXpath() != null;
+  boolean isDetached=getXpathToIdAttributes(message).size() > 0;
+  if (isEnveloped && isDetached) {
+    if (getConfiguration().getParentLocalName() != null) {
+      throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent local name " + getConfiguration().getParentLocalName() + " for an enveloped signature and the XPATHs to ID attributes for a detached signature are specified. You must not specify both parameters.");
+    }
+ else {
+      throw new XmlSignatureException("The configuration of the XML signer component is wrong. The parent XPath " + getConfiguration().getParentXpath().getXPath() + " for an enveloped signature and the XPATHs to ID attributes for a detached signature are specified. You must not specify both parameters.");
+    }
+  }
+  SignatureType result;
+  if (isEnveloped) {
+    result=SignatureType.enveloped;
+  }
+ else   if (isDetached) {
+    if (getSchemaResourceUri(message) == null) {
+      throw new XmlSignatureException("The configruation of the XML Signature component is wrong: No XML schema specified in the detached case");
+    }
+    result=SignatureType.detached;
+  }
+ else {
+    result=SignatureType.enveloping;
+  }
+  LOG.debug("Signature type: {}",result);
+  return result;
+}

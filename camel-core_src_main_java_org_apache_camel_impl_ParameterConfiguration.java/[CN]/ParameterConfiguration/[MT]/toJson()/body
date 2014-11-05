@@ -1,14 +1,23 @@
 {
-  String typeName=parameterType.getCanonicalName();
   if (parameterType.isEnum()) {
-    typeName="string";
+    String typeName="string";
     CollectionStringBuffer sb=new CollectionStringBuffer();
     for (    Object value : parameterType.getEnumConstants()) {
       sb.append(doubleQuote(value.toString()));
     }
     return doubleQuote(name) + ": { \"type\": " + doubleQuote(typeName)+ ", \"enum\": [ "+ sb.toString()+ " ] }";
   }
- else {
+ else   if (parameterType.isArray()) {
+    String typeName="array";
     return doubleQuote(name) + ": { \"type\": " + doubleQuote(typeName)+ " }";
+  }
+ else {
+    String typeName=JsonSchemaHelper.getType(parameterType);
+    if ("object".equals(typeName)) {
+      return doubleQuote(name) + ": { \"type\": " + doubleQuote(typeName)+ ", \"properties\": { \"javaType\": { \"description\": \""+ parameterType.getCanonicalName()+ "\", \"type\": \"string\" } } }";
+    }
+ else {
+      return doubleQuote(name) + ": { \"type\": " + doubleQuote(typeName)+ " }";
+    }
   }
 }

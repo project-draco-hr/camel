@@ -1,0 +1,13 @@
+{
+  getMockEndpoint("mock:result").expectedMessageCount(0);
+  getMockEndpoint("mock:dead").expectedMessageCount(1);
+  template.sendBody("direct:start",data);
+  assertMockEndpointsSatisfied();
+  Exchange out=getMockEndpoint("mock:dead").getReceivedExchanges().get(0);
+  assertNotNull(out);
+  Exception cause=out.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class);
+  assertNotNull(cause);
+  Exception error=out.getProperty(Exchange.XSLT_ERROR,Exception.class);
+  assertNotNull(error);
+  assertEquals("Error: DOB is an empty string!",error.getMessage());
+}

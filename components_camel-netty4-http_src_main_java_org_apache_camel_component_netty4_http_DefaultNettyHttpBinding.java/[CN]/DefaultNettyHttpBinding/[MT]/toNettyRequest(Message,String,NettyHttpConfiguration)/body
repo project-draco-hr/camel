@@ -1,0 +1,77 @@
+{
+  LOG.trace("toNettyRequest: {}",message);
+  if (message.getBody() instanceof HttpRequest) {
+    return (HttpRequest)message.getBody();
+  }
+  HttpRequest request=new DefaultFullHttpRequest(HttpVersion.HTTP_1_1,HttpMethod.GET,uri);
+  Object body=message.getBody();
+  if (body != null) {
+    ByteBuf buffer;
+    if (body instanceof ByteBuf) {
+      buffer=(ByteBuf)body;
+    }
+ else {
+      buffer=message.getBody(ByteBuf.class);
+      if (buffer == null) {
+        byte[] data=message.getMandatoryBody(byte[].class);
+        buffer=NettyConverter.toByteBuffer(data);
+      }
+    }
+    if (buffer != null) {
+      request=new DefaultFullHttpRequest(HttpVersion.HTTP_1_1,HttpMethod.POST,uri,buffer);
+      int len=buffer.readableBytes();
+      request.headers().set(HttpHeaders.Names.CONTENT_LENGTH,len);
+      LOG.trace("Content-Length: {}",len);
+    }
+ else {
+      throw new NoTypeConversionAvailableException(body,ByteBuf.class);
+    }
+  }
+  HttpMethod method=NettyHttpHelper.createMethod(message,body != null);
+  request.setMethod(method);
+  TypeConverter tc=message.getExchange().getContext().getTypeConverter();
+  Map<String,Object> skipRequestHeaders=null;
+  if (configuration.isBridgeEndpoint()) {
+    String queryString=message.getHeader(Exchange.HTTP_QUERY,String.class);
+    if (queryString != null) {
+      skipRequestHeaders=URISupport.parseQuery(queryString);
+    }
+    message.getHeaders().remove("host");
+  }
+  for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    if (skipRequestHeaders != null && skipRequestHeaders.containsKey(key)) {
+      continue;
+    }
+    final Iterator<?> it=ObjectHelper.createIterator(value,null,true);
+    while (it.hasNext()) {
+      String headerValue=tc.convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        LOG.trace("HTTP-Header: {}={}",key,headerValue);
+        request.headers().add(key,headerValue);
+      }
+    }
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (contentType != null) {
+    request.headers().set(HttpHeaders.Names.CONTENT_TYPE,contentType);
+    LOG.trace("Content-Type: {}",contentType);
+  }
+  URI u=new URI(uri);
+  String host=u.getHost();
+  request.headers().set(HttpHeaders.Names.HOST,host);
+  LOG.trace("Host: {}",host);
+  String connection=message.getHeader(HttpHeaders.Names.CONNECTION,String.class);
+  if (connection == null) {
+    if (configuration.isKeepAlive()) {
+      connection=HttpHeaders.Values.KEEP_ALIVE;
+    }
+ else {
+      connection=HttpHeaders.Values.CLOSE;
+    }
+  }
+  request.headers().set(HttpHeaders.Names.CONNECTION,connection);
+  LOG.trace("Connection: {}",connection);
+  return request;
+}

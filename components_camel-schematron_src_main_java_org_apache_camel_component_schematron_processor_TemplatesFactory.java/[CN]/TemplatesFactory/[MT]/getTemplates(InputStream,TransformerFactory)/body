@@ -1,0 +1,18 @@
+{
+  Node node=null;
+  Source source=new StreamSource(rules);
+  try {
+    for (    String template : PIPELINE) {
+      Source xsl=new StreamSource(ClassLoader.getSystemResourceAsStream(Constants.SCHEMATRON_TEMPLATES_ROOT_DIR.concat(File.separator).concat(template)));
+      Transformer t=fac.newTransformer(xsl);
+      DOMResult result=new DOMResult();
+      t.transform(source,result);
+      source=new DOMSource(node=result.getNode());
+    }
+    return fac.newTemplates(new DOMSource(node));
+  }
+ catch (  Exception e) {
+    logger.error(e.getMessage(),e);
+    throw new SchematronConfigException(e);
+  }
+}

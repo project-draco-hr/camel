@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      port1=getPort();
+      port2=getNextPort();
+      errorHandler(noErrorHandler());
+      Processor serviceProc=new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Object s=exchange.getIn().getHeader("param1");
+          assertTrue(s.equals(" 447777111222") || s.equals("+447777111222") || s.equals("%2B447777111222"));
+          exchange.getOut().setBody(exchange.getIn().getHeader(Exchange.HTTP_QUERY));
+        }
+      }
+;
+      from("netty4-http://http://localhost:" + port2 + "/nettyTestRouteA?matchOnUriPrefix=true").log("Using NettyTestRouteA route: CamelHttpPath=[${header.CamelHttpPath}], CamelHttpUri=[${header.CamelHttpUri}]").to("netty4-http://http://localhost:" + port1 + "/nettyTestRouteB?throwExceptionOnFailure=false&bridgeEndpoint=true");
+      from("netty4-http://http://localhost:" + port1 + "/nettyTestRouteB?matchOnUriPrefix=true").log("Using NettyTestRouteB route: CamelHttpPath=[${header.CamelHttpPath}], CamelHttpUri=[${header.CamelHttpUri}]").process(serviceProc);
+    }
+  }
+;
+}

@@ -15,9 +15,10 @@
   if (onWhen != null) {
     when=onWhen.getExpression().createPredicate(routeContext);
   }
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,true);
-  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,true);
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,isParallelProcessing());
+  boolean afterConsumer=mode == null || mode == OnCompletionMode.AfterConsumer;
   boolean original=getUseOriginalMessagePolicy() != null ? getUseOriginalMessagePolicy() : false;
-  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),internal,threadPool,shutdownThreadPool,isOnCompleteOnly(),isOnFailureOnly(),when,original);
+  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),internal,threadPool,shutdownThreadPool,isOnCompleteOnly(),isOnFailureOnly(),when,original,afterConsumer);
   return answer;
 }

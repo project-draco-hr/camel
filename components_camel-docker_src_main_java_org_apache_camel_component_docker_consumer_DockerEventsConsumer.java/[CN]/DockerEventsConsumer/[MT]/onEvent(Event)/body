@@ -1,0 +1,21 @@
+{
+  LOGGER.debug("Received Docker Event: " + event);
+  final Exchange exchange=getEndpoint().createExchange();
+  Message message=exchange.getIn();
+  message.setBody(event);
+  try {
+    LOGGER.trace("Processing exchange [{}]...",exchange);
+    getAsyncProcessor().process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        LOGGER.trace("Done processing exchange [{}]...",exchange);
+      }
+    }
+);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
+    getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+  }
+}

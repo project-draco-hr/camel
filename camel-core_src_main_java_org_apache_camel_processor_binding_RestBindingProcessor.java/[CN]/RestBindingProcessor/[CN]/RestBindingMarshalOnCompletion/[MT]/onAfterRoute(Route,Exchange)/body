@@ -1,0 +1,76 @@
+{
+  if (!routeId.equals(route.getId())) {
+    return;
+  }
+  if (exchange.getException() != null) {
+    return;
+  }
+  if (bindingMode == null || "off".equals(bindingMode)) {
+    return;
+  }
+  if (jsonMarshal == null && xmlMarshal == null) {
+    return;
+  }
+  if ((exchange.hasOut() && exchange.getOut().getBody() == null) || (!exchange.hasOut() && exchange.getIn().getBody() == null)) {
+    return;
+  }
+  boolean isXml=false;
+  boolean isJson=false;
+  if (accept != null) {
+    isXml=accept.toLowerCase(Locale.US).contains("xml");
+    isJson=accept.toLowerCase(Locale.US).contains("json");
+  }
+  if (!isXml && !isJson) {
+    String contentType=ExchangeHelper.getContentType(exchange);
+    if (contentType != null) {
+      isXml=contentType.toLowerCase(Locale.US).contains("xml");
+      isJson=contentType.toLowerCase(Locale.US).contains("json");
+    }
+  }
+  if (!isXml && !isJson) {
+    isXml=produces != null && produces.toLowerCase(Locale.US).contains("xml");
+    isJson=produces != null && produces.toLowerCase(Locale.US).contains("json");
+  }
+  isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
+  isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
+  if (!isJson && !isXml) {
+    isXml=bindingMode.equals("auto") || bindingMode.contains("xml");
+    isJson=bindingMode.equals("auto") || bindingMode.contains("json");
+  }
+  if (isXml && isJson) {
+    isXml=wasXml;
+    isJson=!wasXml;
+  }
+  ExchangeHelper.prepareOutToIn(exchange);
+  try {
+    if (isJson && jsonMarshal != null) {
+      String type=ExchangeHelper.getContentType(exchange);
+      if (type == null) {
+        exchange.getIn().setHeader(Exchange.CONTENT_TYPE,"application/json");
+      }
+      jsonMarshal.process(exchange);
+    }
+ else     if (isXml && xmlMarshal != null) {
+      String type=ExchangeHelper.getContentType(exchange);
+      if (type == null) {
+        exchange.getIn().setHeader(Exchange.CONTENT_TYPE,"application/xml");
+      }
+      xmlMarshal.process(exchange);
+    }
+ else {
+      if (bindingMode.equals("auto")) {
+      }
+ else {
+        if (bindingMode.contains("xml")) {
+          exchange.setException(new BindingException("Cannot bind to xml as message body is not xml compatible",exchange));
+        }
+ else {
+          exchange.setException(new BindingException("Cannot bind to json as message body is not json compatible",exchange));
+        }
+      }
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+  }
+}

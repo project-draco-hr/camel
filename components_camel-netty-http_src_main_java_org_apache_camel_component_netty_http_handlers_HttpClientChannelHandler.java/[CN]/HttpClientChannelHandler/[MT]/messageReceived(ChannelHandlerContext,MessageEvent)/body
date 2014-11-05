@@ -7,11 +7,11 @@
     }
     if (msg instanceof HttpChunkTrailer) {
       HttpChunkTrailer trailer=(HttpChunkTrailer)msg;
-      for (      Map.Entry<String,String> entry : trailer.getHeaders()) {
+      for (      Map.Entry<String,String> entry : trailer.trailingHeaders()) {
         if (LOG.isTraceEnabled()) {
           LOG.trace("Adding trailing header {}={}",entry.getKey(),entry.getValue());
         }
-        response.addHeader(entry.getKey(),entry.getValue());
+        response.headers().add(entry.getKey(),entry.getValue());
       }
     }
  else {
@@ -30,6 +30,10 @@
   }
  else   if (msg instanceof HttpResponse) {
     response=(HttpResponse)msg;
+    Exchange exchange=super.getExchange(ctx);
+    if (!HttpHeaders.isKeepAlive(response)) {
+      exchange.setProperty(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,true);
+    }
     if (LOG.isTraceEnabled()) {
       LOG.trace("HttpResponse received: {} chunked:",response,response.isChunked());
     }

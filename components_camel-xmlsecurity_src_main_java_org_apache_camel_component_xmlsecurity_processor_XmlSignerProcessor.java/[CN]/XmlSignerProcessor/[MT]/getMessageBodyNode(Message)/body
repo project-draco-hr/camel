@@ -6,7 +6,10 @@
     node=getTextNode(message,is);
   }
  else {
-    Document doc=parseInput(is,getConfiguration().getDisallowDoctypeDecl());
+    ValidatorErrorHandler errorHandler=new DefaultValidationErrorHandler();
+    Schema schema=getSchemaForSigner(message,errorHandler);
+    Document doc=parseInput(is,getConfiguration().getDisallowDoctypeDecl(),schema,errorHandler);
+    errorHandler.handleErrors(message.getExchange(),schema,null);
     node=doc.getDocumentElement();
     LOG.debug("Root element of document to be signed: {}",node);
   }

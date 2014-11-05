@@ -1,0 +1,23 @@
+{
+  final EntityManager entityManager=getTargetEntityManager(exchange,entityManagerFactory,true);
+  Boolean rc=transactionTemplate.execute(new TransactionCallback<Boolean>(){
+    public Boolean doInTransaction(    TransactionStatus status){
+      if (isJoinTransaction()) {
+        entityManager.joinTransaction();
+      }
+      List<?> list=query(entityManager,messageId);
+      if (list.isEmpty()) {
+        return Boolean.FALSE;
+      }
+ else {
+        MessageProcessed processed=(MessageProcessed)list.get(0);
+        entityManager.remove(processed);
+        entityManager.flush();
+        return Boolean.TRUE;
+      }
+    }
+  }
+);
+  LOG.debug("remove {}",messageId);
+  return rc;
+}

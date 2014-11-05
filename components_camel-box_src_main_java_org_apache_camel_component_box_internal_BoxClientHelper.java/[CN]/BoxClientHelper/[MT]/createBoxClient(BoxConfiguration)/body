@@ -15,6 +15,21 @@
     @Override public HttpClient getRawHttpClient(){
       final HttpClient httpClient=super.getRawHttpClient();
       clientConnectionManager[0]=httpClient.getConnectionManager();
+      final SchemeRegistry schemeRegistry=clientConnectionManager[0].getSchemeRegistry();
+      SSLContextParameters sslContextParameters=configuration.getSslContextParameters();
+      if (sslContextParameters == null) {
+        sslContextParameters=new SSLContextParameters();
+      }
+      try {
+        final SSLSocketFactory socketFactory=new SSLSocketFactory(sslContextParameters.createSSLContext(),SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+        schemeRegistry.register(new Scheme("https",socketFactory,443));
+      }
+ catch (      GeneralSecurityException e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+catch (      IOException e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
       final Map<String,Object> configParams=configuration.getHttpParams();
       if (configParams != null && !configParams.isEmpty()) {
         LOG.debug("Setting {} HTTP Params",configParams.size());

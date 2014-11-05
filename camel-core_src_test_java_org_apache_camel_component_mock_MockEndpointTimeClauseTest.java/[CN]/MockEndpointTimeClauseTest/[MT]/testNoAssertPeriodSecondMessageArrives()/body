@@ -2,17 +2,25 @@
   MockEndpoint mock=getMockEndpoint("mock:result");
   mock.expectedMessageCount(1);
   template.sendBody("direct:a","A");
-  Executor executor=Executors.newSingleThreadExecutor();
+  final CountDownLatch latch=new CountDownLatch(1);
+  ExecutorService executor=Executors.newSingleThreadExecutor();
   executor.execute(new Runnable(){
     public void run(){
       try {
         Thread.sleep(2000);
+        if (isStarted(template)) {
+          template.sendBody("direct:a","B");
+        }
       }
  catch (      Exception e) {
       }
-      template.sendBody("direct:a","B");
+ finally {
+        latch.countDown();
+      }
     }
   }
 );
   assertMockEndpointsSatisfied();
+  assertTrue(latch.await(10,TimeUnit.SECONDS));
+  executor.shutdownNow();
 }

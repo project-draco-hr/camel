@@ -1,8 +1,9 @@
 {
   try {
-    ValidationContext context=validatorExpression.evaluate(exchange,ValidationContext.class);
+    Message message=exchange.getIn().getBody(Message.class);
+    ValidationContext context=validatorExpression != null ? validatorExpression.evaluate(exchange,ValidationContext.class) : dynamicValidationContext(message,exchange.getIn().getHeader(HL7Constants.HL7_CONTEXT,HapiContext.class));
     MessageValidator validator=new MessageValidator(context,false);
-    return validator.validate(exchange.getIn().getBody(Message.class));
+    return validator.validate(message);
   }
  catch (  HL7Exception e) {
     throw ObjectHelper.wrapRuntimeCamelException(e);

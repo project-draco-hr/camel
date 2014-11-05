@@ -1,0 +1,28 @@
+{
+  byte[] inputPayload=getPayloadForEncoding(inputEncoding);
+  byte[] expectedPayload=getPayloadForEncoding(outputEncoding);
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived(expectedPayload);
+  MockEndpoint mockSigned=getMockEndpoint("mock:signed");
+  mock.expectedMessageCount(1);
+  XmlSignerEndpoint endpointSigner=(XmlSignerEndpoint)context().getEndpoint(signerEndpointUri);
+  XmlVerifierEndpoint endpoinVerifier=(XmlVerifierEndpoint)context().getEndpoint(verifierEndpointUri);
+  try {
+    endpointSigner.setOutputXmlEncoding(signerEncoding);
+    endpoinVerifier.setOutputXmlEncoding(outputEncoding);
+    sendBody(directStart,inputPayload);
+    assertMockEndpointsSatisfied();
+    Message signedMessage=mockSigned.getExchanges().get(0).getIn();
+    byte[] signedBytes=signedMessage.getBody(byte[].class);
+    String signedPayload=new String(signedBytes,signerEncoding);
+    assertTrue(signedPayload.contains(signerEncoding));
+    String charsetHeaderSigner=signedMessage.getHeader(Exchange.CHARSET_NAME,String.class);
+    assertEquals(signerEncoding,charsetHeaderSigner);
+    String charsetHeaderVerifier=mock.getExchanges().get(0).getIn().getHeader(Exchange.CHARSET_NAME,String.class);
+    assertEquals(outputEncoding,charsetHeaderVerifier);
+  }
+  finally {
+    endpointSigner.setOutputXmlEncoding(null);
+    endpoinVerifier.setOutputXmlEncoding(null);
+  }
+}

@@ -1,0 +1,23 @@
+{
+  String uri=endpoint.getEndpointUri();
+  try {
+    uri=exchange.getContext().resolvePropertyPlaceholders(uri);
+  }
+ catch (  Exception e) {
+    throw new RuntimeExchangeException("Cannot resolve property placeholders with uri: " + uri,exchange,e);
+  }
+  String path=exchange.getIn().getHeader(Exchange.HTTP_PATH,String.class);
+  if (path != null) {
+    if (path.startsWith("/")) {
+      path=path.substring(1);
+    }
+    if (path.length() > 0) {
+      if (!uri.endsWith("/")) {
+        uri=uri + "/";
+      }
+      uri=uri.concat(path);
+    }
+  }
+  uri=UnsafeUriCharactersEncoder.encodeHttpURI(uri);
+  return uri;
+}

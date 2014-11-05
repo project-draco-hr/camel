@@ -19,17 +19,12 @@
   try {
     int count=folder.getMessageCount();
     if (count > 0) {
-      Message[] messages;
-      if (getEndpoint().getSearchTerm() != null) {
-        messages=folder.search(getEndpoint().getSearchTerm());
-      }
- else       if (getEndpoint().getConfiguration().isUnseen()) {
-        messages=folder.search(new SearchTermBuilder().unseen().build());
-      }
- else {
-        messages=folder.getMessages();
-      }
+      Message[] messages=retrieveMessages();
       polledMessages=processBatch(CastUtils.cast(createExchanges(messages)));
+      final MailBoxPostProcessAction postProcessor=getEndpoint().getPostProcessAction();
+      if (postProcessor != null) {
+        postProcessor.process(folder);
+      }
     }
  else     if (count == -1) {
       throw new MessagingException("Folder: " + folder.getFullName() + " is closed");

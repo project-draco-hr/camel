@@ -1,0 +1,17 @@
+{
+  super(endpoint,processor);
+  this.endpoint=endpoint;
+  setDelay(endpoint.getDelay());
+  JerseyJiraRestClientFactory factory;
+  Registry registry=endpoint.getCamelContext().getRegistry();
+  Object target=registry.lookupByName("JerseyJiraRestClientFactory");
+  if (target != null) {
+    LOG.debug("JerseyJiraRestClientFactory found in registry " + target.getClass().getCanonicalName());
+    factory=(JerseyJiraRestClientFactory)target;
+  }
+ else {
+    factory=new JerseyJiraRestClientFactory();
+  }
+  final URI jiraServerUri=URI.create(endpoint.getServerUrl());
+  client=factory.createWithBasicHttpAuthentication(jiraServerUri,endpoint.getUsername(),endpoint.getPassword());
+}

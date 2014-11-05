@@ -1,0 +1,26 @@
+{
+  this.oAuthParams=oAuthParams;
+  this.oAuthToken=null;
+  webClient=new WebClient(BrowserVersion.FIREFOX_24);
+  final WebClientOptions options=webClient.getOptions();
+  options.setRedirectEnabled(true);
+  options.setJavaScriptEnabled(false);
+  options.setThrowExceptionOnFailingStatusCode(true);
+  options.setThrowExceptionOnScriptError(true);
+  options.setPrintContentOnFailingStatusCode(LOG.isDebugEnabled());
+  options.setSSLClientProtocols(enabledProtocols);
+  if (httpParams != null && httpParams.get(ConnRoutePNames.DEFAULT_PROXY) != null) {
+    final HttpHost proxyHost=(HttpHost)httpParams.get(ConnRoutePNames.DEFAULT_PROXY);
+    final Boolean socksProxy=(Boolean)httpParams.get("http.route.socks-proxy");
+    final ProxyConfig proxyConfig=new ProxyConfig(proxyHost.getHostName(),proxyHost.getPort(),socksProxy != null ? socksProxy : false);
+    options.setProxyConfig(proxyConfig);
+  }
+  if (!lazyAuth) {
+    try {
+      updateOAuthToken();
+    }
+ catch (    IOException e) {
+      throw new IllegalArgumentException(String.format("Error authorizing user %s: %s",oAuthParams.getUserName(),e.getMessage()),e);
+    }
+  }
+}

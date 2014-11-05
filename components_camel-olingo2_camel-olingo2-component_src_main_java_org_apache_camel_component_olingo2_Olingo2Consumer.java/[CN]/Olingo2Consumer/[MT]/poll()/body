@@ -1,0 +1,35 @@
+{
+  final Map<String,Object> args=new HashMap<String,Object>();
+  args.putAll(endpoint.getEndpointProperties());
+  endpoint.interceptProperties(args);
+  interceptProperties(args);
+  try {
+    final CountDownLatch latch=new CountDownLatch(1);
+    final Object[] result=new Object[1];
+    final Exception[] error=new Exception[1];
+    args.put(Olingo2Endpoint.RESPONSE_HANDLER_PROPERTY,new Olingo2ResponseHandler<Object>(){
+      @Override public void onResponse(      Object response){
+        result[0]=response;
+        latch.countDown();
+      }
+      @Override public void onException(      Exception ex){
+        error[0]=ex;
+        latch.countDown();
+      }
+      @Override public void onCanceled(){
+        error[0]=new RuntimeCamelException("OData HTTP Request cancelled");
+        latch.countDown();
+      }
+    }
+);
+    doInvokeMethod(args);
+    latch.await();
+    if (error[0] != null) {
+      throw error[0];
+    }
+    return ApiConsumerHelper.getResultsProcessed(this,result[0],isSplitResult());
+  }
+ catch (  Throwable t) {
+    throw ObjectHelper.wrapRuntimeCamelException(t);
+  }
+}

@@ -1,0 +1,31 @@
+{
+  LOGGER.debug("Executing Docker Build Image Request");
+  Object body=message.getBody();
+  BuildImageCmd buildImageCmd;
+  if (body != null && body instanceof InputStream) {
+    buildImageCmd=client.buildImageCmd((InputStream)body);
+  }
+ else   if (body != null && body instanceof File) {
+    buildImageCmd=client.buildImageCmd((File)body);
+  }
+ else {
+    throw new DockerException("Unable to location source Image");
+  }
+  Boolean noCache=DockerHelper.getProperty(DockerConstants.DOCKER_NO_CACHE,configuration,message,Boolean.class);
+  if (noCache != null && noCache) {
+    buildImageCmd.withNoCache();
+  }
+  Boolean quiet=DockerHelper.getProperty(DockerConstants.DOCKER_QUIET,configuration,message,Boolean.class);
+  if (quiet != null && quiet) {
+    buildImageCmd.withQuiet();
+  }
+  Boolean remove=DockerHelper.getProperty(DockerConstants.DOCKER_REMOVE,configuration,message,Boolean.class);
+  if (remove != null && remove) {
+    buildImageCmd.withRemove();
+  }
+  String tag=DockerHelper.getProperty(DockerConstants.DOCKER_TAG,configuration,message,String.class);
+  if (tag != null) {
+    buildImageCmd.withTag(tag);
+  }
+  return buildImageCmd;
+}

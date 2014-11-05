@@ -1,0 +1,41 @@
+{
+  final Map<String,Object> properties=new HashMap<String,Object>();
+  properties.putAll(endpoint.getEndpointProperties());
+  propertiesHelper.getExchangeProperties(exchange,properties);
+  endpoint.interceptProperties(properties);
+  interceptProperties(properties);
+  properties.put(Olingo2Endpoint.RESPONSE_HANDLER_PROPERTY,new Olingo2ResponseHandler<Object>(){
+    @Override public void onResponse(    Object response){
+      exchange.getOut().setBody(response);
+      exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+      interceptResult(response,exchange);
+      callback.done(false);
+    }
+    @Override public void onException(    Exception ex){
+      exchange.setException(ex);
+      callback.done(false);
+    }
+    @Override public void onCanceled(){
+      exchange.setException(new RuntimeCamelException("OData HTTP Request cancelled!"));
+      callback.done(false);
+    }
+  }
+);
+  final ApiMethod method=findMethod(exchange,properties);
+  if (method == null) {
+    callback.done(true);
+    return true;
+  }
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Invoking operation {} with {}",method.getName(),properties.keySet());
+  }
+  try {
+    doInvokeMethod(method,properties);
+  }
+ catch (  Throwable t) {
+    exchange.setException(ObjectHelper.wrapRuntimeCamelException(t));
+    callback.done(true);
+    return true;
+  }
+  return false;
+}

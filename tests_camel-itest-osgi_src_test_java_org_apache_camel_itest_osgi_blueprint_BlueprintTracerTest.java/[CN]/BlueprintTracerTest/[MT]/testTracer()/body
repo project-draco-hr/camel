@@ -1,0 +1,28 @@
+{
+  getInstalledBundle(name).start();
+  CamelContext ctx=getOsgiService(CamelContext.class,"(camel.context.symbolicname=" + name + ")",30000);
+  ProducerTemplate myTemplate=ctx.createProducerTemplate();
+  myTemplate.start();
+  MockEndpoint result=ctx.getEndpoint("mock:result",MockEndpoint.class);
+  result.expectedMessageCount(1);
+  MockEndpoint tracer=ctx.getEndpoint("mock:traced",MockEndpoint.class);
+  myTemplate.sendBody("direct:start","Hello World");
+  result.assertIsSatisfied();
+  DefaultTraceEventMessage em=tracer.getReceivedExchanges().get(0).getIn().getBody(DefaultTraceEventMessage.class);
+  assertEquals("Hello Camel",em.getBody());
+  assertEquals("String",em.getBodyType());
+  assertEquals(null,em.getCausedByException());
+  assertNotNull(em.getExchangeId());
+  assertNotNull(em.getShortExchangeId());
+  assertNotNull(em.getExchangePattern());
+  assertEquals("direct://start",em.getFromEndpointUri());
+  assertNotNull(em.getHeaders());
+  assertNotNull(em.getProperties());
+  assertNull(em.getOutBody());
+  assertNull(em.getOutBodyType());
+  assertNull(em.getOutHeaders());
+  assertNull(em.getPreviousNode());
+  assertNotNull(em.getToNode());
+  assertNotNull(em.getTimestamp());
+  myTemplate.stop();
+}

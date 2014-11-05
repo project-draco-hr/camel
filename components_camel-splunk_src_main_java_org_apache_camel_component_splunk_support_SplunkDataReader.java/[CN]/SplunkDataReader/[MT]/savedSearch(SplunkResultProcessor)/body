@@ -1,0 +1,37 @@
+{
+  LOG.trace("saved search start");
+  ServiceArgs queryArgs=new ServiceArgs();
+  queryArgs.setApp("search");
+  if (ObjectHelper.isNotEmpty(endpoint.getConfiguration().getOwner())) {
+    queryArgs.setOwner(endpoint.getConfiguration().getOwner());
+  }
+  if (ObjectHelper.isNotEmpty(endpoint.getConfiguration().getApp())) {
+    queryArgs.setApp(endpoint.getConfiguration().getApp());
+  }
+  Calendar startTime=Calendar.getInstance();
+  SavedSearch search=null;
+  Job job=null;
+  String latestTime=getLatestTime(startTime,false);
+  String earliestTime=getEarliestTime(startTime,false);
+  Service service=endpoint.getService();
+  SavedSearchCollection savedSearches=service.getSavedSearches(queryArgs);
+  for (  SavedSearch s : savedSearches.values()) {
+    if (s.getName().equals(getSavedSearch())) {
+      search=s;
+      break;
+    }
+  }
+  if (search != null) {
+    SavedSearchDispatchArgs args=new SavedSearchDispatchArgs();
+    args.setForceDispatch(true);
+    args.setDispatchEarliestTime(earliestTime);
+    args.setDispatchLatestTime(latestTime);
+    job=search.dispatch(args);
+  }
+  while (!job.isDone()) {
+    Thread.sleep(2000);
+  }
+  List<SplunkEvent> data=extractData(job,false,callback);
+  this.lastSuccessfulReadTime=startTime;
+  return data;
+}

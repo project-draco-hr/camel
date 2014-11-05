@@ -1,0 +1,36 @@
+{
+  StringBuilder b=new StringBuilder();
+  Set<Map.Entry<String,Object>> entries=properties.entrySet();
+  for (  Map.Entry<String,Object> entry : entries) {
+    indent(b,level);
+    b.append(entry.getKey()).append(": ");
+    Object value=entry.getValue();
+    if (value instanceof Map) {
+      @SuppressWarnings("unchecked") final Map<String,Object> objectMap=(Map<String,Object>)value;
+      value=prettyPrint(objectMap,level + 1);
+      b.append(value).append(NEW_LINE);
+    }
+ else     if (value instanceof Calendar) {
+      Calendar cal=(Calendar)value;
+      value=SimpleDateFormat.getInstance().format(cal.getTime());
+      b.append(value).append(NEW_LINE);
+    }
+ else     if (value instanceof ODataDeltaFeed) {
+      ODataDeltaFeed feed=(ODataDeltaFeed)value;
+      List<ODataEntry> inlineEntries=feed.getEntries();
+      b.append("{");
+      for (      ODataEntry oDataEntry : inlineEntries) {
+        value=prettyPrint(oDataEntry.getProperties(),level + 1);
+        b.append("\n[\n").append(value).append("\n],");
+      }
+      b.deleteCharAt(b.length() - 1);
+      indent(b,level);
+      b.append("}\n");
+    }
+ else {
+      b.append(value).append(NEW_LINE);
+    }
+  }
+  b.deleteCharAt(b.length() - 1);
+  return b.toString();
+}

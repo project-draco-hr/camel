@@ -1,0 +1,18 @@
+{
+  LOG.debug("Stopping producer at address: {}",configuration.getAddress());
+  LOG.trace("Closing {} channels",allChannels.size());
+  ChannelGroupFuture future=allChannels.close();
+  future.awaitUninterruptibly();
+  if (workerGroup != null) {
+    workerGroup.shutdownGracefully();
+    workerGroup=null;
+  }
+  if (pool != null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Stopping producer with channel pool[active={}, idle={}]",pool.getNumActive(),pool.getNumIdle());
+    }
+    pool.close();
+    pool=null;
+  }
+  super.doStop();
+}

@@ -1,15 +1,12 @@
 {
-  jpaTemplate=applicationContext.getBean("jpaTemplate",JpaTemplate.class);
-  TransactionTemplate transactionTemplate=new TransactionTemplate();
-  transactionTemplate.setTransactionManager(new JpaTransactionManager(jpaTemplate.getEntityManagerFactory()));
-  transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
-  transactionTemplate.execute(new TransactionCallback<Boolean>(){
-    public Boolean doInTransaction(    TransactionStatus arg0){
-      @SuppressWarnings("rawtypes") List list=jpaTemplate.find(SELECT_ALL_STRING);
+  transactionTemplate.execute(new TransactionCallback<Object>(){
+    public Object doInTransaction(    TransactionStatus arg0){
+      entityManager.joinTransaction();
+      List<?> list=entityManager.createQuery(SELECT_ALL_STRING).getResultList();
       for (      Object item : list) {
-        jpaTemplate.remove(item);
+        entityManager.remove(item);
       }
-      jpaTemplate.flush();
+      entityManager.flush();
       return Boolean.TRUE;
     }
   }

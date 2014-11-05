@@ -1,0 +1,94 @@
+{
+  RestConsumerFactory factory=null;
+  if (getComponentName() != null) {
+    Object comp=getCamelContext().getRegistry().lookupByName(getComponentName());
+    if (comp != null && comp instanceof RestConsumerFactory) {
+      factory=(RestConsumerFactory)comp;
+    }
+ else {
+      comp=getCamelContext().getComponent(getComponentName());
+      if (comp != null && comp instanceof RestConsumerFactory) {
+        factory=(RestConsumerFactory)comp;
+      }
+    }
+    if (factory == null) {
+      if (comp != null) {
+        throw new IllegalArgumentException("Component " + getComponentName() + " is not a RestConsumerFactory");
+      }
+ else {
+        throw new NoSuchBeanException(getComponentName(),RestConsumerFactory.class.getName());
+      }
+    }
+  }
+  if (factory == null) {
+    for (    String name : getCamelContext().getComponentNames()) {
+      Component comp=getCamelContext().getComponent(name);
+      if (comp != null && comp instanceof RestConsumerFactory) {
+        factory=(RestConsumerFactory)comp;
+        break;
+      }
+    }
+  }
+  if (factory == null) {
+    Set<RestConsumerFactory> factories=getCamelContext().getRegistry().findByType(RestConsumerFactory.class);
+    if (factories != null && factories.size() == 1) {
+      factory=factories.iterator().next();
+    }
+  }
+  if (factory != null) {
+    Consumer consumer=factory.createConsumer(getCamelContext(),processor,getMethod(),getPath(),getUriTemplate(),getConsumes(),getProduces(),getParameters());
+    configureConsumer(consumer);
+    String scheme="http";
+    String host="";
+    int port=80;
+    RestConfiguration config=getCamelContext().getRestConfiguration();
+    if (config.getScheme() != null) {
+      scheme=config.getScheme();
+    }
+    if (config.getHost() != null) {
+      host=config.getHost();
+    }
+    int num=config.getPort();
+    if (num > 0) {
+      port=num;
+    }
+    if (ObjectHelper.isEmpty(host)) {
+      if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localHostName) {
+        host=HostUtils.getLocalHostName();
+      }
+ else       if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localIp) {
+        host=HostUtils.getLocalIp();
+      }
+    }
+    String path=getPath();
+    if (!path.startsWith("/")) {
+      path="/" + path;
+    }
+    String contextPath=config.getContextPath();
+    if (contextPath != null) {
+      if (!contextPath.startsWith("/")) {
+        path="/" + contextPath + path;
+      }
+ else {
+        path=contextPath + path;
+      }
+    }
+    String baseUrl=scheme + "://" + host+ (port != 80 ? ":" + port : "")+ path;
+    String url=baseUrl;
+    if (uriTemplate != null) {
+      if (uriTemplate.startsWith("/")) {
+        url=url + uriTemplate;
+      }
+ else {
+        url=url + "/" + uriTemplate;
+      }
+    }
+    String inType=(String)getParameters().get("inType");
+    String outType=(String)getParameters().get("outType");
+    getCamelContext().getRestRegistry().addRestService(consumer,url,baseUrl,getPath(),getUriTemplate(),getMethod(),getConsumes(),getProduces(),inType,outType);
+    return consumer;
+  }
+ else {
+    throw new IllegalStateException("Cannot find RestConsumerFactory in Registry or as a Component to use");
+  }
+}

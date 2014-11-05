@@ -1,0 +1,17 @@
+{
+  final List<String> args=buildArgs(commandArgument);
+  final String javaAbsolutePath=buildJavaExecutablePath();
+  return producerTemplate.send(endpoint,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody(body);
+      exchange.getIn().setHeader(EXEC_COMMAND_EXECUTABLE,javaAbsolutePath);
+      exchange.getIn().setHeader(EXEC_COMMAND_TIMEOUT,timeout);
+      exchange.getIn().setHeader(EXEC_COMMAND_ARGS,args);
+      exchange.getIn().setHeader("whereTo","exec:java");
+      if (useStderrOnEmptyStdout) {
+        exchange.getIn().setHeader(EXEC_USE_STDERR_ON_EMPTY_STDOUT,true);
+      }
+    }
+  }
+);
+}

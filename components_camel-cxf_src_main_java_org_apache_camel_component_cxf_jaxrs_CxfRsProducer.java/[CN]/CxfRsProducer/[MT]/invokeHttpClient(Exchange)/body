@@ -9,6 +9,7 @@
   String httpMethod=inMessage.getHeader(Exchange.HTTP_METHOD,String.class);
   Class<?> responseClass=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_RESPONSE_CLASS,Class.class);
   Type genericType=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_RESPONSE_GENERIC_TYPE,Type.class);
+  Object[] pathValues=inMessage.getHeader(CxfConstants.CAMEL_CXF_RS_VAR_VALUES,Object[].class);
   String path=inMessage.getHeader(Exchange.HTTP_PATH,String.class);
   if (LOG.isTraceEnabled()) {
     LOG.trace("HTTP method = {}",httpMethod);
@@ -16,15 +17,24 @@
     LOG.trace("responseClass = {}",responseClass);
   }
   if (path != null) {
-    client.path(path);
+    if (ObjectHelper.isNotEmpty(pathValues) && pathValues.length > 0) {
+      client.path(path,pathValues);
+    }
+ else {
+      client.path(path);
+    }
   }
   CxfRsEndpoint cxfRsEndpoint=(CxfRsEndpoint)getEndpoint();
   CxfRsBinding binding=cxfRsEndpoint.getBinding();
   Object body=null;
   if (!"GET".equals(httpMethod)) {
-    body=binding.bindCamelMessageBodyToRequestBody(inMessage,exchange);
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Request body = " + body);
+    if ("DELETE".equals(httpMethod) && cxfRsEndpoint.isIgnoreDeleteMethodMessageBody()) {
+    }
+ else {
+      body=binding.bindCamelMessageBodyToRequestBody(inMessage,exchange);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Request body = " + body);
+      }
     }
   }
   setupClientQueryAndHeaders(client,exchange);

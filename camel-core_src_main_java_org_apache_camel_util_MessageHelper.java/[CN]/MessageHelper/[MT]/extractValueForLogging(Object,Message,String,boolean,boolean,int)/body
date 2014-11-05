@@ -35,26 +35,40 @@
       return prepend + "[Body is file based: " + obj+ "]";
     }
   }
-  StreamCache cache;
+  StreamCache cache=null;
+  InputStream is=null;
   if (obj instanceof StreamCache) {
     cache=(StreamCache)obj;
+    is=null;
   }
- else {
+ else   if (obj instanceof InputStream) {
     cache=null;
+    is=(InputStream)obj;
   }
   String body=null;
   if (message.getExchange() != null) {
     try {
-      body=message.getExchange().getContext().getTypeConverter().convertTo(String.class,message.getExchange(),obj);
+      body=message.getExchange().getContext().getTypeConverter().tryConvertTo(String.class,message.getExchange(),obj);
     }
- catch (    Exception e) {
+ catch (    Throwable e) {
     }
   }
   if (body == null) {
-    body=obj.toString();
+    try {
+      body=obj.toString();
+    }
+ catch (    Throwable e) {
+    }
   }
   if (cache != null) {
     cache.reset();
+  }
+ else   if (is != null && is.markSupported()) {
+    try {
+      is.reset();
+    }
+ catch (    IOException e) {
+    }
   }
   if (body == null) {
     return prepend + "[Body is null]";

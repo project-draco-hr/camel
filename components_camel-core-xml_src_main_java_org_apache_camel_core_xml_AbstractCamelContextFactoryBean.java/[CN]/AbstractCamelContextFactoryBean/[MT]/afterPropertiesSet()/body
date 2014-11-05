@@ -34,7 +34,7 @@
     LOG.info("Using custom HandleFault: {}",handleFault);
     getContext().addInterceptStrategy(handleFault);
   }
-  Delayer delayer=getBeanForType(Delayer.class);
+  @SuppressWarnings("deprecation") org.apache.camel.processor.interceptor.Delayer delayer=getBeanForType(org.apache.camel.processor.interceptor.Delayer.class);
   if (delayer != null) {
     LOG.info("Using custom Delayer: {}",delayer);
     getContext().addInterceptStrategy(delayer);
@@ -110,6 +110,14 @@
         LOG.info("Using custom LifecycleStrategy with id: {} and implementation: {}",entry.getKey(),strategy);
         getContext().addLifecycleStrategy(strategy);
       }
+    }
+  }
+  Map<String,RoutePolicyFactory> routePolicyFactories=getContext().getRegistry().findByTypeWithName(RoutePolicyFactory.class);
+  if (routePolicyFactories != null && !routePolicyFactories.isEmpty()) {
+    for (    Entry<String,RoutePolicyFactory> entry : routePolicyFactories.entrySet()) {
+      RoutePolicyFactory factory=entry.getValue();
+      LOG.info("Using custom RoutePolicyFactory with id: {} and implementation: {}",entry.getKey(),factory);
+      getContext().addRoutePolicyFactory(factory);
     }
   }
   initThreadPoolProfiles(getContext());

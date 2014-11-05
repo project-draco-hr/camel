@@ -1,0 +1,21 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("netty4-http:http://localhost:{{port}}/myapp/mytest").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Map<String,Object> map=new LinkedHashMap<String,Object>();
+          map.putAll(exchange.getIn().getHeaders());
+          assertEquals("123",map.get("OTHER"));
+          assertEquals(null,map.get("other"));
+          assertEquals("Carlsberg",map.get("beer"));
+          assertEquals(null,map.get("Beer"));
+          exchange.getOut().setBody("Bye World");
+          exchange.getOut().setHeader("MyCaseHeader","aBc123");
+          exchange.getOut().setHeader("otherCaseHeader","456DEf");
+        }
+      }
+);
+    }
+  }
+;
+}

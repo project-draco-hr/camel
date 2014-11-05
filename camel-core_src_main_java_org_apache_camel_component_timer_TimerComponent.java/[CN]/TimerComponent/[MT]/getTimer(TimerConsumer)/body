@@ -1,0 +1,23 @@
+{
+  String key=consumer.getEndpoint().getTimerName();
+  if (!consumer.getEndpoint().isDaemon()) {
+    key="nonDaemon:" + key;
+  }
+  Timer answer;
+synchronized (timers) {
+    answer=timers.get(key);
+    if (answer == null) {
+      String name=consumer.getEndpoint().getCamelContext().getExecutorServiceManager().resolveThreadName("timer://" + consumer.getEndpoint().getTimerName());
+      answer=new Timer(name,consumer.getEndpoint().isDaemon());
+      timers.put(key,answer);
+      refCounts.put(key,new AtomicInteger(1));
+    }
+ else {
+      AtomicInteger counter=refCounts.get(key);
+      if (counter != null) {
+        counter.incrementAndGet();
+      }
+    }
+  }
+  return answer;
+}

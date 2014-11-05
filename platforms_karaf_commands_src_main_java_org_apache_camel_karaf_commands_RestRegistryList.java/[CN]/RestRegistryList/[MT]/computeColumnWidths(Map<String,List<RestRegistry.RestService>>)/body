@@ -1,0 +1,36 @@
+{
+  int maxContextLen=0;
+  int maxUriLen=0;
+  int maxBasePathLen=0;
+  int maxUriTemplateLen=0;
+  int maxMethodLen=0;
+  int maxStatusLen=0;
+  for (  Map.Entry<String,List<RestRegistry.RestService>> entry : services.entrySet()) {
+    String contextName=entry.getKey();
+    for (    final RestRegistry.RestService service : entry.getValue()) {
+      maxContextLen=Math.max(maxContextLen,contextName == null ? 0 : contextName.length());
+      String uri=service.getUrl();
+      if (decode == null || decode) {
+        uri=URLDecoder.decode(uri,"UTF-8");
+      }
+      uri=URISupport.sanitizeUri(uri);
+      maxUriLen=Math.max(maxUriLen,uri == null ? 0 : uri.length());
+      String basePath=service.getBasePath();
+      maxBasePathLen=Math.max(maxBasePathLen,basePath == null ? 0 : basePath.length());
+      String uriTemplate=service.getUriTemplate();
+      maxUriTemplateLen=Math.max(maxUriTemplateLen,uriTemplate == null ? 0 : uriTemplate.length());
+      String method=service.getMethod();
+      maxMethodLen=Math.max(maxMethodLen,method == null ? 0 : method.length());
+      String status=service.getState();
+      maxStatusLen=Math.max(maxStatusLen,status == null ? 0 : status.length());
+    }
+  }
+  final Map<String,Integer> retval=new Hashtable<String,Integer>(6);
+  retval.put(CONTEXT_COLUMN_LABEL,maxContextLen);
+  retval.put(URL_COLUMN_NAME,maxUriLen);
+  retval.put(BASE_PATH_LABEL,maxBasePathLen);
+  retval.put(URI_TEMPLATE_LABEL,maxUriTemplateLen);
+  retval.put(METHOD_COLUMN_LABEL,maxMethodLen);
+  retval.put(STATE_COLUMN_LABEL,maxStatusLen);
+  return retval;
+}

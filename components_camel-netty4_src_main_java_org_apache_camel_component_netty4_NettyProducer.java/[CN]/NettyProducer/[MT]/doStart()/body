@@ -1,0 +1,35 @@
+{
+  super.doStart();
+  if (configuration.isProducerPoolEnabled()) {
+    GenericObjectPool.Config config=new GenericObjectPool.Config();
+    config.maxActive=configuration.getProducerPoolMaxActive();
+    config.minIdle=configuration.getProducerPoolMinIdle();
+    config.maxIdle=configuration.getProducerPoolMaxIdle();
+    config.testOnBorrow=true;
+    config.testWhileIdle=true;
+    config.timeBetweenEvictionRunsMillis=30 * 1000L;
+    config.minEvictableIdleTimeMillis=configuration.getProducerPoolMinEvictableIdle();
+    config.whenExhaustedAction=GenericObjectPool.WHEN_EXHAUSTED_FAIL;
+    pool=new GenericObjectPool<Channel>(new NettyProducerPoolableObjectFactory(),config);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Created NettyProducer pool[maxActive={}, minIdle={}, maxIdle={}, minEvictableIdleTimeMillis={}] -> {}",new Object[]{config.maxActive,config.minIdle,config.maxIdle,config.minEvictableIdleTimeMillis,pool});
+    }
+  }
+ else {
+    pool=new SharedSingletonObjectPool<Channel>(new NettyProducerPoolableObjectFactory());
+    if (LOG.isDebugEnabled()) {
+      LOG.info("Created NettyProducer shared singleton pool -> {}",pool);
+    }
+  }
+  ClientInitializerFactory factory=configuration.getClientInitializerFactory();
+  if (factory != null) {
+    pipelineFactory=factory.createPipelineFactory(this);
+  }
+ else {
+    pipelineFactory=new DefaultClientInitializerFactory(this);
+  }
+  if (!configuration.isLazyChannelCreation()) {
+    Channel channel=pool.borrowObject();
+    pool.returnObject(channel);
+  }
+}

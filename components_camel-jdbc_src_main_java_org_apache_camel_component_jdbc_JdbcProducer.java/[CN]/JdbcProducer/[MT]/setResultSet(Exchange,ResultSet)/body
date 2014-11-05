@@ -1,4 +1,5 @@
 {
+  boolean answer=true;
   ResultSetIterator iterator=new ResultSetIterator(rs,getEndpoint().isUseJDBC4ColumnNameAndLabelSemantics());
   exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
   JdbcOutputType outputType=getEndpoint().getOutputType();
@@ -6,13 +7,15 @@
   if (outputType == JdbcOutputType.StreamList) {
     exchange.getOut().setBody(iterator);
     exchange.addOnCompletion(new ResultSetIteratorCompletion(iterator));
+    answer=false;
   }
  else   if (outputType == JdbcOutputType.SelectList) {
-    List<Map<String,Object>> list=extractRows(iterator);
+    List<?> list=extractRows(iterator);
     exchange.getOut().setHeader(JdbcConstants.JDBC_ROW_COUNT,list.size());
     exchange.getOut().setBody(list);
   }
  else   if (outputType == JdbcOutputType.SelectOne) {
     exchange.getOut().setBody(extractSingleRow(iterator));
   }
+  return answer;
 }

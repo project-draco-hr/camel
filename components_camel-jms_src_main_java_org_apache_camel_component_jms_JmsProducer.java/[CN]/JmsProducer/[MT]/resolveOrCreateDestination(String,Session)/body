@@ -1,0 +1,24 @@
+{
+  Destination dest=null;
+  boolean isPubSub=isTopicPrefix(destinationName) || (!isQueuePrefix(destinationName) && endpoint.isPubSubDomain());
+  if (endpoint.getDestinationResolver() != null) {
+    dest=endpoint.getDestinationResolver().resolveDestinationName(session,destinationName,isPubSub);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Resolved JMSReplyTo destination {} using DestinationResolver {} as PubSubDomain {} -> {}",new Object[]{destinationName,endpoint.getDestinationResolver(),isPubSub,dest});
+    }
+  }
+  if (dest == null) {
+    String before=destinationName;
+    destinationName=normalizeDestinationName(destinationName);
+    LOG.trace("Normalized JMSReplyTo destination name {} -> {}",before,destinationName);
+    if (isPubSub) {
+      LOG.debug("Creating JMSReplyTo topic: {}",destinationName);
+      dest=session.createTopic(destinationName);
+    }
+ else {
+      LOG.debug("Creating JMSReplyTo queue: {}",destinationName);
+      dest=session.createQueue(destinationName);
+    }
+  }
+  return dest;
+}

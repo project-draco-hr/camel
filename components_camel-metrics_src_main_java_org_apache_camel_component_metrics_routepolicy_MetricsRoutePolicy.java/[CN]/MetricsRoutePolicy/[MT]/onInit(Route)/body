@@ -1,0 +1,22 @@
+{
+  super.onInit(route);
+  this.route=route;
+  try {
+    registryService=route.getRouteContext().getCamelContext().hasService(MetricsRegistryService.class);
+    if (registryService == null) {
+      registryService=new MetricsRegistryService();
+      registryService.setMetricsRegistry(getMetricsRegistry());
+      registryService.setUseJmx(isUseJmx());
+      registryService.setJmxDomain(getJmxDomain());
+      registryService.setPrettyPrint(isPrettyPrint());
+      registryService.setRateUnit(getRateUnit());
+      registryService.setDurationUnit(getDurationUnit());
+      route.getRouteContext().getCamelContext().addService(registryService);
+    }
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+  Timer responses=registryService.getMetricsRegistry().timer(createName("responses"));
+  statistics=new MetricsStatistics(responses);
+}

@@ -1,14 +1,26 @@
 {
   final String messageId=messageIdExpression.evaluate(exchange,String.class);
   if (messageId == null) {
-    throw new NoMessageIdException(exchange,messageIdExpression);
+    exchange.setException(new NoMessageIdException(exchange,messageIdExpression));
+    callback.done(true);
+    return true;
   }
   boolean newKey;
   if (eager) {
-    newKey=idempotentRepository.add(messageId);
+    if (idempotentRepository instanceof ExchangeIdempotentRepository) {
+      newKey=((ExchangeIdempotentRepository<String>)idempotentRepository).add(exchange,messageId);
+    }
+ else {
+      newKey=idempotentRepository.add(messageId);
+    }
   }
  else {
-    newKey=!idempotentRepository.contains(messageId);
+    if (idempotentRepository instanceof ExchangeIdempotentRepository) {
+      newKey=((ExchangeIdempotentRepository<String>)idempotentRepository).contains(exchange,messageId);
+    }
+ else {
+      newKey=!idempotentRepository.contains(messageId);
+    }
   }
   if (!newKey) {
     exchange.setProperty(Exchange.DUPLICATE_MESSAGE,Boolean.TRUE);

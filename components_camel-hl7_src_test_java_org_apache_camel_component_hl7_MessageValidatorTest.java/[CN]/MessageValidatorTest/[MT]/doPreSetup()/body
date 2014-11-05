@@ -1,28 +1,14 @@
 {
-  defaultContext=new DefaultValidation();
-  customContext=new DefaultValidation();
-  MessageRule rule=new MessageRule(){
-    private static final long serialVersionUID=1L;
-    @Override public String getDescription(){
-      return null;
-    }
-    @Override public String getSectionReference(){
-      return null;
-    }
-    @Override public ValidationException[] test(    Message msg){
-      ADT_A01 a01=(ADT_A01)msg;
-      if (a01.getPID().getAdministrativeSex().getValue() == null) {
-        ValidationException[] e=new ValidationException[1];
-        e[0]=new ValidationException("No gender provided!");
-        return e;
-      }
-      return VALIDATION_OK;
-    }
-    @Override public ValidationException[] apply(    Message msg){
-      return test(msg);
+  defaultValidationContext=ValidationContextFactory.defaultValidation();
+  defaultContext=new DefaultHapiContext(defaultValidationContext);
+  defaultContext.getParserConfiguration().setValidating(false);
+  ValidationRuleBuilder builder=new ValidationRuleBuilder(){
+    @Override protected void configure(){
+      forVersion(Version.V24).message("ADT","A01").terser("PID-8",not(empty()));
     }
   }
 ;
-  MessageRuleBinding binding=new MessageRuleBinding("2.4","ADT","A01",rule);
-  customContext.getMessageRuleBindings().add(binding);
+  customValidationContext=ValidationContextFactory.fromBuilder(builder);
+  customContext=new DefaultHapiContext(customValidationContext);
+  customContext.getParserConfiguration().setValidating(false);
 }
