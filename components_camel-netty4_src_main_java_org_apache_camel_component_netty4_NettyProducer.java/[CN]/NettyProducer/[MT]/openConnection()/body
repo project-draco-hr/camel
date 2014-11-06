@@ -24,11 +24,13 @@
     connectionlessClientBootstrap.option(ChannelOption.SO_SNDBUF,configuration.getSendBufferSize());
     connectionlessClientBootstrap.option(ChannelOption.SO_RCVBUF,configuration.getReceiveBufferSize());
     connectionlessClientBootstrap.handler(pipelineFactory);
-    ChannelFuture channelFuture=connectionlessClientBootstrap.bind(new InetSocketAddress(0));
-    channelFuture.awaitUninterruptibly();
-    Channel channel=channelFuture.channel();
+    answer=connectionlessClientBootstrap.bind(new InetSocketAddress(0));
+    answer.awaitUninterruptibly();
+    Channel channel=answer.channel();
     allChannels.add(channel);
-    answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    if (!configuration.isUdpConnectionlessSend()) {
+      answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Created new UDP client bootstrap connecting to {}:{} with options: {}",new Object[]{configuration.getHost(),configuration.getPort(),connectionlessClientBootstrap});
     }
