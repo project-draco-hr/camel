@@ -1,0 +1,36 @@
+{
+  URI u=new URI(uri);
+  String json=getComponentParameterJsonSchema(u.getScheme());
+  if (json == null) {
+    return null;
+  }
+  StringBuilder buffer=new StringBuilder("{\n  \"properties\": {");
+  boolean first=true;
+  Map<String,Object> options=URISupport.parseParameters(u);
+  for (  Map.Entry<String,Object> entry : options.entrySet()) {
+    if (first) {
+      first=false;
+    }
+ else {
+      buffer.append(",");
+    }
+    buffer.append("\n    ");
+    String option=entry.getKey();
+    String value="";
+    if (entry.getValue() != null) {
+      value=entry.getValue().toString();
+    }
+    value=URISupport.sanitizePath(value);
+    String description=null;
+    description=JsonSchemaHelper.getDescription(json,option);
+    description=ObjectHelper.isEmpty(description) ? null : description;
+    buffer.append(doubleQuote(option) + ": { ");
+    buffer.append("\"value\": \"" + value + "\"");
+    if (description != null) {
+      buffer.append(", \"description\": \"" + description + "\"");
+    }
+    buffer.append(" }");
+  }
+  buffer.append("\n  }\n}\n");
+  return buffer.toString();
+}
