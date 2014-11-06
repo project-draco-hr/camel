@@ -1,26 +1,24 @@
 {
   String classDoc=processingEnv.getElementUtils().getDocComment(classElement);
   if (!Strings.isNullOrEmpty(classDoc)) {
-    writer.println("<p>" + classDoc.trim() + "</p>");
+    classDoc=classDoc.replaceFirst("\\@version","");
+    classDoc=classDoc.trim();
+    writer.println("<p>" + classDoc + "</p>");
   }
-  SortedMap<String,List<String>> sortedMap=new TreeMap<String,List<String>>();
-  findClassProperties(roundEnv,sortedMap,classElement,prefix);
-  if (!sortedMap.isEmpty()) {
+  Set<EndpointOption> endpointOptions=new LinkedHashSet<>();
+  findClassProperties(roundEnv,endpointOptions,classElement,prefix);
+  if (!endpointOptions.isEmpty()) {
     writer.println("<table class='table'>");
     writer.println("  <tr>");
     writer.println("    <th>Name</th>");
     writer.println("    <th>Type</th>");
     writer.println("    <th>Description</th>");
     writer.println("  </tr>");
-    Set<Map.Entry<String,List<String>>> entries=sortedMap.entrySet();
-    for (    Map.Entry<String,List<String>> entry : entries) {
-      String name=entry.getKey();
-      List<String> values=entry.getValue();
+    for (    EndpointOption option : endpointOptions) {
       writer.println("  <tr>");
-      writer.println("    <td>" + name + "</td>");
-      for (      String value : values) {
-        writer.println(value);
-      }
+      writer.println("    <td>" + option.getName() + "</td>");
+      writer.println("    <td>" + option.getType() + "</td>");
+      writer.println("    <td>" + option.getDocumentation() + "</td>");
       writer.println("  </tr>");
     }
     writer.println("</table>");
