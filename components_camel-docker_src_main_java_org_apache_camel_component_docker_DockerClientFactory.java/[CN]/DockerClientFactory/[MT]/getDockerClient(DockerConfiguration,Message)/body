@@ -13,6 +13,7 @@
   Integer requestTimeout=DockerHelper.getProperty(DockerConstants.DOCKER_API_REQUEST_TIMEOUT,dockerConfiguration,message,Integer.class);
   String serverAddress=DockerHelper.getProperty(DockerConstants.DOCKER_SERVER_ADDRESS,dockerConfiguration,message,String.class);
   Boolean secure=DockerHelper.getProperty(DockerConstants.DOCKER_SECURE,dockerConfiguration,message,Boolean.class);
+  String certPath=DockerHelper.getProperty(DockerConstants.DOCKER_CERT_PATH,dockerConfiguration,message,String.class);
   DockerClientProfile clientProfile=new DockerClientProfile();
   clientProfile.setHost(uriHost);
   clientProfile.setPort(uriPort);
@@ -21,6 +22,7 @@
   clientProfile.setPassword(password);
   clientProfile.setRequestTimeout(requestTimeout);
   clientProfile.setServerAddress(serverAddress);
+  clientProfile.setCertPath(certPath);
   if (secure != null && secure) {
     clientProfile.setSecure(secure);
   }
@@ -28,7 +30,8 @@
   if (client != null) {
     return client;
   }
-  DockerClientConfig.DockerClientConfigBuilder configBuilder=new DockerClientConfig.DockerClientConfigBuilder().withUsername(username).withPassword(password).withEmail(email).withReadTimeout(requestTimeout).withUri(clientProfile.toUrl());
+  DockerClientConfig.DockerClientConfigBuilder configBuilder=new DockerClientConfig.DockerClientConfigBuilder().withUsername(username).withPassword(password).withEmail(email).withReadTimeout(requestTimeout).withDockerCertPath(certPath).withUri(clientProfile.toUrl());
   DockerClientConfig config=configBuilder.build();
-  return DockerClientBuilder.getInstance(config).build();
+  DockerCmdExecFactory dockerClientFactory=new DockerCmdExecFactoryImpl();
+  return DockerClientBuilder.getInstance(config).withDockerCmdExecFactory(dockerClientFactory).build();
 }
