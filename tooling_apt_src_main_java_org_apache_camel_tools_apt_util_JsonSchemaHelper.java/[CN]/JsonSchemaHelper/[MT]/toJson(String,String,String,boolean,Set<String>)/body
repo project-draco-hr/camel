@@ -1,0 +1,32 @@
+{
+  String typeName=JsonSchemaHelper.getType(type,enumType);
+  StringBuilder sb=new StringBuilder();
+  sb.append(doubleQuote(name));
+  sb.append(": { \"type\":");
+  if ("enum".equals(typeName)) {
+    sb.append(doubleQuote("string"));
+    CollectionStringBuffer enumValues=new CollectionStringBuffer();
+    for (    Object value : enums) {
+      enumValues.append(doubleQuote(value.toString()));
+    }
+    sb.append(", \"enum\": [ ");
+    sb.append(enumValues.toString());
+    sb.append(" ]");
+  }
+ else   if ("array".equals(typeName)) {
+    sb.append(doubleQuote("array"));
+  }
+ else {
+    sb.append(doubleQuote(typeName));
+  }
+  if (!Strings.isNullOrEmpty(description)) {
+    sb.append(", \"description\": ");
+    String text=sanitizeDescription(description);
+    sb.append(doubleQuote(text));
+  }
+  if ("object".equals(typeName)) {
+    sb.append(", \"properties\": { \"javaType\": { \"description\": \"" + type + "\", \"type\": \"string\" } }");
+  }
+  sb.append(" }");
+  return sb.toString();
+}

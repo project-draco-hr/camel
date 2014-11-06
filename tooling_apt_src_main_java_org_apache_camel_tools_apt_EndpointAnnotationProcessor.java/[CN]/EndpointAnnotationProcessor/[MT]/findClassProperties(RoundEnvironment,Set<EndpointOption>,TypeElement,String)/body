@@ -51,7 +51,19 @@
           if (docComment == null) {
             docComment="";
           }
-          EndpointOption option=new EndpointOption(name,fieldTypeName,docComment.trim());
+          Set<String> enums=new LinkedHashSet<>();
+          boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+          if (isEnum) {
+            TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+            List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+            for (            VariableElement var : fields) {
+              if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+                String val=var.toString();
+                enums.add(val);
+              }
+            }
+          }
+          EndpointOption option=new EndpointOption(name,fieldTypeName,docComment.trim(),isEnum,enums);
           endpointOptions.add(option);
         }
       }
