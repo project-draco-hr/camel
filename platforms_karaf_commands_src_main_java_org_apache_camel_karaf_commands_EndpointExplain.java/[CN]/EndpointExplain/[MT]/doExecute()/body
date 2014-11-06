@@ -1,0 +1,49 @@
+{
+  List<Endpoint> endpoints=camelController.getEndpoints(name);
+  if (endpoints == null || endpoints.isEmpty()) {
+    return null;
+  }
+  if (schemes != null && schemes.length > 0) {
+    Iterator<Endpoint> it=endpoints.iterator();
+    while (it.hasNext()) {
+      Endpoint endpoint=it.next();
+      boolean match=false;
+      for (      String scheme : schemes) {
+        if (endpoint.getEndpointUri().startsWith(scheme)) {
+          match=true;
+        }
+      }
+      if (!match) {
+        it.remove();
+      }
+    }
+  }
+  final PrintStream out=System.out;
+  for (  Endpoint endpoint : endpoints) {
+    String json=camelController.explainEndpoint(name,endpoint.getEndpointUri(),allOptions);
+    String uri=URISupport.sanitizeUri(endpoint.getEndpointUri());
+    String header="Uri:            " + uri;
+    out.println(header);
+    for (int i=0; i < header.length(); i++) {
+      out.print('-');
+    }
+    out.println();
+    List<String[]> options=EndpointHelper.parseEndpointExplainJson(json);
+    for (    String[] option : options) {
+      out.print("Option:\t\t");
+      out.println(option[0]);
+      String value=option[1];
+      if (value != null) {
+        out.print("Value:\t\t");
+        out.println(value);
+      }
+      String description=option[2];
+      if (description != null) {
+        out.print("Description:\t");
+        out.println(description);
+      }
+    }
+    out.println();
+  }
+  return null;
+}
