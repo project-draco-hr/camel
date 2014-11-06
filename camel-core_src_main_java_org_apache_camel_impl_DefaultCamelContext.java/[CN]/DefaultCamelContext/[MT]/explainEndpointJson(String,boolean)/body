@@ -4,10 +4,35 @@
   if (json == null) {
     return null;
   }
-  StringBuilder buffer=new StringBuilder("{\n  \"properties\": {");
-  boolean first=true;
+  Map<String,String[]> selected=new LinkedHashMap<>();
   Map<String,Object> options=URISupport.parseParameters(u);
   for (  Map.Entry<String,Object> entry : options.entrySet()) {
+    String option=entry.getKey();
+    String value="";
+    if (entry.getValue() != null) {
+      value=entry.getValue().toString();
+    }
+    value=URISupport.sanitizePath(value);
+    String description;
+    description=JsonSchemaHelper.getDescription(json,option);
+    description=ObjectHelper.isEmpty(description) ? null : description;
+    selected.put(option,new String[]{option,value,description});
+  }
+  if (includeAllOptions) {
+    List<String[]> rows=JsonSchemaHelper.parseEndpointExplainJson(json);
+    for (    String[] row : rows) {
+      String option=row[0];
+      String value=row[1];
+      value=URISupport.sanitizePath(value);
+      String description=row[2];
+      if (!selected.containsKey(option)) {
+        selected.put(option,new String[]{option,value,description});
+      }
+    }
+  }
+  StringBuilder buffer=new StringBuilder("{\n  \"properties\": {");
+  boolean first=true;
+  for (  String[] row : selected.values()) {
     if (first) {
       first=false;
     }
@@ -15,15 +40,9 @@
       buffer.append(",");
     }
     buffer.append("\n    ");
-    String option=entry.getKey();
-    String value="";
-    if (entry.getValue() != null) {
-      value=entry.getValue().toString();
-    }
-    value=URISupport.sanitizePath(value);
-    String description=null;
-    description=JsonSchemaHelper.getDescription(json,option);
-    description=ObjectHelper.isEmpty(description) ? null : description;
+    String option=row[0];
+    String value=row[1];
+    String description=row[2];
     buffer.append(doubleQuote(option) + ": { ");
     buffer.append("\"value\": \"" + value + "\"");
     if (description != null) {
