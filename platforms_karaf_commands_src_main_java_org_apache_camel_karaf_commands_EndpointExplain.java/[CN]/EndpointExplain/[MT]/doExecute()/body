@@ -20,7 +20,8 @@
   }
   final PrintStream out=System.out;
   for (  Endpoint endpoint : endpoints) {
-    String json=camelController.explainEndpoint(name,endpoint.getEndpointUri(),allOptions);
+    String json=camelController.explainEndpoint(endpoint.getCamelContext().getName(),endpoint.getEndpointUri(),verbose);
+    out.println("Context:\t" + endpoint.getCamelContext().getName());
     String uri=URISupport.sanitizeUri(endpoint.getEndpointUri());
     String header="Uri:            " + uri;
     out.println(header);
@@ -29,6 +30,12 @@
     }
     out.println();
     List<Map<String,String>> options=JsonSchemaHelper.parseJsonSchema(json);
+    Collections.sort(options,new Comparator<Map<String,String>>(){
+      @Override public int compare(      Map<String,String> o1,      Map<String,String> o2){
+        return o1.get("name").compareTo(o2.get("name"));
+      }
+    }
+);
     for (    Map<String,String> option : options) {
       out.print("Option:\t\t");
       out.println(option.get("name"));
@@ -36,6 +43,11 @@
       if (type != null) {
         out.print("Type:\t\t");
         out.println(type);
+      }
+      String javaType=option.get("javaType");
+      if (javaType != null) {
+        out.print("Java Type:\t");
+        out.println(javaType);
       }
       String value=option.get("value");
       if (value != null) {
@@ -47,8 +59,11 @@
         out.print("Description:\t");
         out.println(description);
       }
+      out.println();
     }
-    out.println();
+    if (options.isEmpty()) {
+      out.println();
+    }
   }
   return null;
 }
