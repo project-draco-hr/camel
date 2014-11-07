@@ -1,81 +1,86 @@
 {
-  URI u=new URI(uri);
-  String json=getComponentParameterJsonSchema(u.getScheme());
-  if (json == null) {
+  try {
+    URI u=new URI(uri);
+    String json=getComponentParameterJsonSchema(u.getScheme());
+    if (json == null) {
+      return null;
+    }
+    List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema(json);
+    Map<String,String[]> selected=new LinkedHashMap<>();
+    Map<String,Object> options=URISupport.parseParameters(u);
+    Map<String,Object> consumerOptions=IntrospectionSupport.extractProperties(options,"consumer.");
+    options.putAll(consumerOptions);
+    for (    Map.Entry<String,Object> entry : options.entrySet()) {
+      String name=entry.getKey();
+      String value="";
+      if (entry.getValue() != null) {
+        value=entry.getValue().toString();
+      }
+      value=URISupport.sanitizePath(value);
+      String type=null;
+      String javaType=null;
+      String description=null;
+      for (      Map<String,String> row : rows) {
+        if (name.equals(row.get("name"))) {
+          type=row.get("type");
+          javaType=row.get("javaType");
+          description=row.get("description");
+          break;
+        }
+      }
+      selected.put(name,new String[]{name,type,javaType,value,description});
+    }
+    if (includeAllOptions) {
+      for (      Map<String,String> row : rows) {
+        String name=row.get("name");
+        String value=row.get("value");
+        String type=row.get("type");
+        String javaType=row.get("javaType");
+        value=URISupport.sanitizePath(value);
+        String description=row.get("description");
+        if (!selected.containsKey(name)) {
+          selected.put(name,new String[]{name,type,javaType,value,description});
+        }
+      }
+    }
+    StringBuilder buffer=new StringBuilder("{\n  \"properties\": {");
+    boolean first=true;
+    for (    String[] row : selected.values()) {
+      if (first) {
+        first=false;
+      }
+ else {
+        buffer.append(",");
+      }
+      buffer.append("\n    ");
+      String name=row[0];
+      String type=row[1];
+      String javaType=row[2];
+      String value=row[3];
+      String description=row[4];
+      buffer.append(doubleQuote(name) + ": { ");
+      CollectionStringBuffer csb=new CollectionStringBuffer();
+      if (type != null) {
+        csb.append("\"type\": \"" + type + "\"");
+      }
+      if (javaType != null) {
+        csb.append("\"javaType\": \"" + javaType + "\"");
+      }
+      if (value != null) {
+        csb.append("\"value\": \"" + value + "\"");
+      }
+      if (description != null) {
+        csb.append("\"description\": \"" + description + "\"");
+      }
+      if (!csb.isEmpty()) {
+        buffer.append(csb.toString());
+      }
+      buffer.append(" }");
+    }
+    buffer.append("\n  }\n}\n");
+    return buffer.toString();
+  }
+ catch (  Exception e) {
     return null;
   }
-  List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema(json);
-  Map<String,String[]> selected=new LinkedHashMap<>();
-  Map<String,Object> options=URISupport.parseParameters(u);
-  Map<String,Object> consumerOptions=IntrospectionSupport.extractProperties(options,"consumer.");
-  options.putAll(consumerOptions);
-  for (  Map.Entry<String,Object> entry : options.entrySet()) {
-    String name=entry.getKey();
-    String value="";
-    if (entry.getValue() != null) {
-      value=entry.getValue().toString();
-    }
-    value=URISupport.sanitizePath(value);
-    String type=null;
-    String javaType=null;
-    String description=null;
-    for (    Map<String,String> row : rows) {
-      if (name.equals(row.get("name"))) {
-        type=row.get("type");
-        javaType=row.get("javaType");
-        description=row.get("description");
-        break;
-      }
-    }
-    selected.put(name,new String[]{name,type,javaType,value,description});
-  }
-  if (includeAllOptions) {
-    for (    Map<String,String> row : rows) {
-      String name=row.get("name");
-      String value=row.get("value");
-      String type=row.get("type");
-      String javaType=row.get("javaType");
-      value=URISupport.sanitizePath(value);
-      String description=row.get("description");
-      if (!selected.containsKey(name)) {
-        selected.put(name,new String[]{name,type,javaType,value,description});
-      }
-    }
-  }
-  StringBuilder buffer=new StringBuilder("{\n  \"properties\": {");
-  boolean first=true;
-  for (  String[] row : selected.values()) {
-    if (first) {
-      first=false;
-    }
- else {
-      buffer.append(",");
-    }
-    buffer.append("\n    ");
-    String name=row[0];
-    String type=row[1];
-    String javaType=row[2];
-    String value=row[3];
-    String description=row[4];
-    buffer.append(doubleQuote(name) + ": { ");
-    CollectionStringBuffer csb=new CollectionStringBuffer();
-    if (type != null) {
-      csb.append("\"type\": \"" + type + "\"");
-    }
-    if (javaType != null) {
-      csb.append("\"javaType\": \"" + javaType + "\"");
-    }
-    if (value != null) {
-      csb.append("\"value\": \"" + value + "\"");
-    }
-    if (description != null) {
-      csb.append("\"description\": \"" + description + "\"");
-    }
-    if (!csb.isEmpty()) {
-      buffer.append(csb.toString());
-    }
-    buffer.append(" }");
-  }
-  buffer.append("\n  }\n}\n");
-  return buffer.toString();
 }
