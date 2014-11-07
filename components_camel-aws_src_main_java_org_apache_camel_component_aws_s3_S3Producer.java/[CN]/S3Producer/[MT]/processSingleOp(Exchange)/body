@@ -2,10 +2,14 @@
   ObjectMetadata objectMetadata=determineMetadata(exchange);
   File filePayload=null;
   Object obj=exchange.getIn().getMandatoryBody();
+  PutObjectRequest putObjectRequest=null;
   if (obj instanceof File) {
     filePayload=(File)obj;
+    putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),filePayload);
   }
-  PutObjectRequest putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),exchange.getIn().getMandatoryBody(InputStream.class),objectMetadata);
+ else {
+    putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),exchange.getIn().getMandatoryBody(InputStream.class),objectMetadata);
+  }
   String storageClass=determineStorageClass(exchange);
   if (storageClass != null) {
     putObjectRequest.setStorageClass(storageClass);
