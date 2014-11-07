@@ -13,8 +13,8 @@
   Object responseObject=null;
   Exchanger<Object> messageExchanger=new Exchanger<Object>();
   SjmsExchangeMessageHelper.setCorrelationId(request,correlationId);
+  lock.writeLock().lock();
   try {
-    lock.writeLock().lock();
     exchangerMap.put(correlationId,messageExchanger);
   }
   finally {
@@ -31,8 +31,8 @@
   }
   try {
     responseObject=messageExchanger.exchange(null,getResponseTimeOut(),TimeUnit.MILLISECONDS);
+    lock.writeLock().lock();
     try {
-      lock.writeLock().lock();
       exchangerMap.remove(correlationId);
     }
   finally {

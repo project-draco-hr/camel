@@ -1,21 +1,20 @@
 {
-  MessageConsumerResources answer=null;
-  Connection conn=null;
-  Session session=null;
+  MessageConsumerResources answer;
+  Connection conn=getConnectionResource().borrowConnection();
   try {
-    conn=getConnectionResource().borrowConnection();
+    Session session;
     if (isEndpointTransacted()) {
       session=conn.createSession(true,Session.SESSION_TRANSACTED);
     }
  else {
       session=conn.createSession(false,Session.AUTO_ACKNOWLEDGE);
     }
-    Destination replyToDestination=null;
+    Destination replyToDestination;
     if (ObjectHelper.isEmpty(getNamedReplyTo())) {
-      replyToDestination=JmsObjectFactory.createTemporaryDestination(session,isTopic());
+      replyToDestination=getEndpoint().getDestinationCreationStrategy().createTemporaryDestination(session,isTopic());
     }
  else {
-      replyToDestination=JmsObjectFactory.createDestination(session,getNamedReplyTo(),isTopic());
+      replyToDestination=getEndpoint().getDestinationCreationStrategy().createDestination(session,getNamedReplyTo(),isTopic());
     }
     MessageConsumer messageConsumer=JmsObjectFactory.createMessageConsumer(session,replyToDestination,null,isTopic(),null,true);
     messageConsumer.setMessageListener(new MessageListener(){

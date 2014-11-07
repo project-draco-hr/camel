@@ -1,32 +1,18 @@
 {
-  MessageProducerResources answer=null;
-  Connection conn=null;
+  MessageProducerResources answer;
+  Connection conn=getConnectionResource().borrowConnection();
   try {
-    MessageProducer messageProducer=null;
-    Session session=null;
-    conn=getConnectionResource().borrowConnection();
-    if (isEndpointTransacted()) {
-      session=conn.createSession(true,getAcknowledgeMode());
-    }
- else {
-      session=conn.createSession(false,getAcknowledgeMode());
-    }
-    messageProducer=JmsObjectFactory.createMessageProducer(session,getDestinationName(),isTopic(),isPersistent(),getTtl());
-    if (session == null) {
-      throw new CamelException("Message Consumer Creation Exception: Session is NULL");
-    }
-    if (messageProducer == null) {
-      throw new CamelException("Message Consumer Creation Exception: MessageProducer is NULL");
-    }
+    Session session=conn.createSession(isEndpointTransacted(),getAcknowledgeMode());
+    Destination destination=getEndpoint().getDestinationCreationStrategy().createDestination(session,getDestinationName(),isTopic());
+    MessageProducer messageProducer=JmsObjectFactory.createMessageProducer(session,destination,isPersistent(),getTtl());
     answer=new MessageProducerResources(session,messageProducer);
   }
  catch (  Exception e) {
-    log.error("Unable to create the MessageProducer: " + e.getLocalizedMessage());
+    log.error("Unable to create the MessageProducer",e);
+    throw e;
   }
  finally {
-    if (conn != null) {
-      getConnectionResource().returnConnection(conn);
-    }
+    getConnectionResource().returnConnection(conn);
   }
   return answer;
 }
