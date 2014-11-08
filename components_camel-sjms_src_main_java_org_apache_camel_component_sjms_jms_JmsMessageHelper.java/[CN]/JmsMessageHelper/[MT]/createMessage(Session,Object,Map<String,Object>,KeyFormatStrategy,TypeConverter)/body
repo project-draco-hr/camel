@@ -1,11 +1,11 @@
 {
   Message answer=null;
-  JmsMessageType messageType=JmsMessageHelper.discoverMessgeTypeFromPayload(payload);
+  JmsMessageType messageType=JmsMessageHelper.discoverMessageTypeFromPayload(payload);
   try {
 switch (messageType) {
 case Bytes:
       BytesMessage bytesMessage=session.createBytesMessage();
-    bytesMessage.writeBytes((byte[])payload);
+    bytesMessage=typeConverter.convertTo(BytesMessage.class,payload);
   answer=bytesMessage;
 break;
 case Map:
@@ -30,7 +30,7 @@ answer=textMessage;
 break;
 case Stream:
 ByteArrayOutputStream baos=new ByteArrayOutputStream();
-InputStream is=(InputStream)payload;
+InputStream is=typeConverter.convertTo(InputStream.class,payload);
 int reads=is.read();
 while (reads != -1) {
 baos.write(reads);
