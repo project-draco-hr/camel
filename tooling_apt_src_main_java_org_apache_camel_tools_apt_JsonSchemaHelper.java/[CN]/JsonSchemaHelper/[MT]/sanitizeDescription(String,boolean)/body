@@ -8,17 +8,26 @@
       continue;
     }
     line=line.replaceAll("<.*?>","");
-    line=line.replaceAll("\\{\\@\\w+\\s(\\w+)\\}","$1");
+    line=line.replaceAll("\\{\\@\\w+\\s([\\w.]+)\\}","$1");
     if (!first) {
       sb.append(' ');
     }
+    StringBuilder cb=new StringBuilder();
     for (    char c : line.toCharArray()) {
       if (Character.isJavaIdentifierPart(c) || VALID_CHARS.indexOf(c) != -1) {
-        sb.append(c);
+        cb.append(c);
       }
  else       if (Character.isWhitespace(c)) {
-        sb.append(' ');
+        cb.append(' ');
       }
+    }
+    String s=cb.toString().trim();
+    sb.append(s);
+    boolean empty=Strings.isNullOrEmpty(s);
+    boolean endWithDot=s.endsWith(".");
+    boolean haveText=sb.length() > 0;
+    if (haveText && summary && (empty || endWithDot)) {
+      break;
     }
     first=false;
   }
