@@ -1,0 +1,13 @@
+{
+  Exchange result=template.request("direct:insert",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setBody("{\"_id\":\"testInsertString\", \"scientist\":\"Einstein\"}");
+      exchange.getIn().setHeader("abc","def");
+    }
+  }
+);
+  assertTrue(result.getOut().getBody() instanceof WriteResult);
+  assertEquals("An input header was not returned","def",result.getOut().getHeader("abc"));
+  DBObject b=testCollection.findOne("testInsertString");
+  assertNotNull("No record with 'testInsertString' _id",b);
+}
