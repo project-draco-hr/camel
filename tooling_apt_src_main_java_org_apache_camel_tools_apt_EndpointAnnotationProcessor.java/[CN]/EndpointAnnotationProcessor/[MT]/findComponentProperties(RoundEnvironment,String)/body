@@ -8,10 +8,31 @@
   data=loadResource("META-INF/services/org/apache/camel","component.properties");
   if (data != null) {
     Map<String,String> map=parseAsMap(data);
-    model.setDescription(map.get("projectDescription"));
-    model.setGroupId(map.get("groupId"));
-    model.setArtifactId(map.get("artifactId"));
-    model.setVersionId(map.get("version"));
+    String doc=map.get("projectDescription");
+    if (doc != null) {
+      model.setDescription(sanitizeDescription(doc));
+    }
+ else {
+      model.setDescription("");
+    }
+    if (map.containsKey("groupId")) {
+      model.setGroupId(map.get("groupId"));
+    }
+ else {
+      model.setGroupId("");
+    }
+    if (map.containsKey("artifactId")) {
+      model.setArtifactId(map.get("artifactId"));
+    }
+ else {
+      model.setArtifactId("");
+    }
+    if (map.containsKey("version")) {
+      model.setVersionId(map.get("version"));
+    }
+ else {
+      model.setVersionId("");
+    }
   }
   if (model.getJavaType() != null) {
     Elements elementUtils=processingEnv.getElementUtils();
@@ -19,6 +40,7 @@
     if (typeElement != null) {
       String doc=elementUtils.getDocComment(typeElement);
       if (doc != null) {
+        doc=sanitizeDescription(doc);
         int idx=doc.indexOf('.');
         if (idx != -1) {
           doc=doc.substring(0,idx);
