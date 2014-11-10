@@ -35,7 +35,12 @@
     connectionlessClientBootstrap.setPipelineFactory(pipelineFactory);
     Channel channel=connectionlessClientBootstrap.bind(new InetSocketAddress(0));
     allChannels.add(channel);
-    answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    if (!configuration.isUdpConnectionlessSending()) {
+      answer=connectionlessClientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+    }
+ else {
+      answer=new SucceededChannelFuture(channel);
+    }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Created new UDP client bootstrap connecting to {}:{} with options: {}",new Object[]{configuration.getHost(),configuration.getPort(),connectionlessClientBootstrap.getOptions()});
     }
