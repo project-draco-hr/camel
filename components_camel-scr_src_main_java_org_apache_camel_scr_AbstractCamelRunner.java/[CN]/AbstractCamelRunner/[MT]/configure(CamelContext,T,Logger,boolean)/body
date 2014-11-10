@@ -1,0 +1,24 @@
+{
+  Class clazz=target.getClass();
+  log.debug("Configuring {}",clazz.getName());
+  Collection<Field> fields=new ArrayList<Field>();
+  fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+  if (deep) {
+    fields.addAll(Arrays.asList(clazz.getFields()));
+    fields.addAll(Arrays.asList(clazz.getSuperclass().getDeclaredFields()));
+  }
+  for (  Field field : fields) {
+    try {
+      String propertyValue=context.resolvePropertyPlaceholders("{{" + field.getName() + "}}");
+      if (!propertyValue.isEmpty()) {
+        Object convertedValue=convertValue(propertyValue,field.getGenericType());
+        ReflectionHelper.setField(field,target,convertedValue);
+        log.debug("Set field {} with value {}",field.getName(),propertyValue);
+      }
+    }
+ catch (    Exception e) {
+      log.debug("Error setting field " + field.getName() + " due: "+ e.getMessage()+ ". This exception is ignored.",e);
+    }
+  }
+  return target;
+}
