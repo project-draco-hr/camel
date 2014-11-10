@@ -1,0 +1,41 @@
+{
+  try {
+    Map<String,Properties> components=context.findComponents();
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.listComponentsTabularType());
+    for (    Map.Entry<String,Properties> entry : components.entrySet()) {
+      String name=entry.getKey();
+      String description=null;
+      String status=context.hasComponent(name) != null ? "loaded" : "classpath";
+      String type=null;
+      String groupId=null;
+      String artifactId=null;
+      String version=null;
+      String json=context.getComponentParameterJsonSchema(name);
+      List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("component",json,false);
+      for (      Map<String,String> row : rows) {
+        if (row.containsKey("description")) {
+          description=row.get("description");
+        }
+ else         if (row.containsKey("javaType")) {
+          type=row.get("javaType");
+        }
+ else         if (row.containsKey("groupId")) {
+          groupId=row.get("groupId");
+        }
+ else         if (row.containsKey("artifactId")) {
+          artifactId=row.get("artifactId");
+        }
+ else         if (row.containsKey("version")) {
+          version=row.get("version");
+        }
+      }
+      CompositeType ct=CamelOpenMBeanTypes.listComponentsCompositeType();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"name","description","status","type","groupId","artifactId","version"},new Object[]{name,description,status,type,groupId,artifactId,version});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}
