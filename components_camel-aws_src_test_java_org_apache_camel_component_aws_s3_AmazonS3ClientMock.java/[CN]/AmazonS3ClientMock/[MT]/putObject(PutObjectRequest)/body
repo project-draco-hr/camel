@@ -3,7 +3,17 @@
   S3Object s3Object=new S3Object();
   s3Object.setBucketName(putObjectRequest.getBucketName());
   s3Object.setKey(putObjectRequest.getKey());
-  s3Object.setObjectContent(putObjectRequest.getInputStream());
+  if (putObjectRequest.getFile() != null) {
+    try {
+      s3Object.setObjectContent(new FileInputStream(putObjectRequest.getFile()));
+    }
+ catch (    FileNotFoundException e) {
+      throw new AmazonServiceException("Cannot store the file object.",e);
+    }
+  }
+ else {
+    s3Object.setObjectContent(putObjectRequest.getInputStream());
+  }
   objects.add(s3Object);
   PutObjectResult putObjectResult=new PutObjectResult();
   putObjectResult.setETag("3a5c8b1ad448bca04584ecb55b836264");
