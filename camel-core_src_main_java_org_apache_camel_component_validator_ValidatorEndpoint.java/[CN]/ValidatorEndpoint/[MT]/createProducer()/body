@@ -1,0 +1,16 @@
+{
+  ValidatingProcessor validator=new ValidatingProcessor();
+  InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext().getClassResolver(),resourceUri);
+  byte[] bytes=null;
+  try {
+    bytes=IOConverter.toBytes(is);
+  }
+  finally {
+    IOHelper.close(is);
+  }
+  validator.setSchemaAsByteArray(bytes);
+  LOG.debug("{} using schema resource: {}",this,resourceUri);
+  configureValidator(validator);
+  validator.loadSchema();
+  return new ValidatorProducer(this,validator);
+}
