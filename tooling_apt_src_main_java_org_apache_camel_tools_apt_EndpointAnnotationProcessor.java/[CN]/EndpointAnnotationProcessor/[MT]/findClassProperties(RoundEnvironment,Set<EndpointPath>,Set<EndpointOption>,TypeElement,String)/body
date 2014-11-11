@@ -3,8 +3,42 @@
   while (true) {
     List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
     for (    VariableElement fieldElement : fieldElements) {
-      UriParam param=fieldElement.getAnnotation(UriParam.class);
+      UriPath path=fieldElement.getAnnotation(UriPath.class);
       String fieldName=fieldElement.getSimpleName().toString();
+      if (path != null) {
+        String name=path.name();
+        if (isNullOrEmpty(name)) {
+          name=fieldName;
+        }
+        name=prefix + name;
+        TypeMirror fieldType=fieldElement.asType();
+        String fieldTypeName=fieldType.toString();
+        String docComment=elementUtils.getDocComment(fieldElement);
+        if (isNullOrEmpty(docComment)) {
+          String setter="set" + fieldName.substring(0,1).toUpperCase();
+          if (fieldName.length() > 1) {
+            setter+=fieldName.substring(1);
+          }
+          List<ExecutableElement> methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
+          for (          ExecutableElement method : methods) {
+            String methodName=method.getSimpleName().toString();
+            if (setter.equals(methodName) && method.getParameters().size() == 1) {
+              String doc=elementUtils.getDocComment(method);
+              if (!isNullOrEmpty(doc)) {
+                docComment=doc;
+                break;
+              }
+            }
+          }
+        }
+        if (isNullOrEmpty(docComment)) {
+          docComment=path.description();
+        }
+        EndpointPath ep=new EndpointPath(name,fieldTypeName,docComment);
+        endpointPaths.add(ep);
+      }
+      UriParam param=fieldElement.getAnnotation(UriParam.class);
+      fieldName=fieldElement.getSimpleName().toString();
       if (param != null) {
         String name=param.name();
         if (isNullOrEmpty(name)) {
@@ -26,7 +60,7 @@
           if (!isNullOrEmpty(extraPrefix)) {
             nestedPrefix+=extraPrefix;
           }
-          findClassProperties(roundEnv,endpointOptions,fieldTypeElement,nestedPrefix);
+          findClassProperties(roundEnv,endpointPaths,endpointOptions,fieldTypeElement,nestedPrefix);
         }
  else {
           String docComment=elementUtils.getDocComment(fieldElement);
