@@ -17,14 +17,18 @@
  catch (        Exception e) {
           throw ObjectHelper.wrapRuntimeCamelException(e);
         }
+        boolean isRefPattern=pattern.startsWith("ref*") || pattern.startsWith("ref:");
         match=false;
         for (        FromDefinition input : route.getInputs()) {
           String uri=input.getUri();
-          if (uri != null && uri.startsWith("ref:")) {
-            uri=CamelContextHelper.getMandatoryEndpoint(context,uri).getEndpointUri();
-          }
- else           if (input.getRef() != null) {
-            uri=CamelContextHelper.getMandatoryEndpoint(context,"ref:" + input.getRef()).getEndpointUri();
+          if (!isRefPattern) {
+            if (uri != null && uri.startsWith("ref:")) {
+              String ref=uri.substring(4);
+              uri=CamelContextHelper.getMandatoryEndpoint(context,ref).getEndpointUri();
+            }
+ else             if (input.getRef() != null) {
+              uri=CamelContextHelper.getMandatoryEndpoint(context,input.getRef()).getEndpointUri();
+            }
           }
           if (EndpointHelper.matchEndpoint(context,uri,pattern)) {
             match=true;
