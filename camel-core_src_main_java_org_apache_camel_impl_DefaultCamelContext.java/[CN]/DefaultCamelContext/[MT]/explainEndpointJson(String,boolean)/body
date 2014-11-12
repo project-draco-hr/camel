@@ -34,16 +34,20 @@
       }
       selected.put(name,new String[]{name,kind,type,javaType,value,defaultValue,description});
     }
-    if (includeAllOptions) {
-      for (      Map<String,String> row : rows) {
-        String name=row.get("name");
-        String kind=row.get("kind");
-        String value=row.get("value");
-        String defaultValue=row.get("defaultValue");
-        String type=row.get("type");
-        String javaType=row.get("javaType");
+    for (    Map<String,String> row : rows) {
+      String name=row.get("name");
+      String kind=row.get("kind");
+      String value=row.get("value");
+      String defaultValue=row.get("defaultValue");
+      String type=row.get("type");
+      String javaType=row.get("javaType");
+      value=URISupport.sanitizePath(value);
+      String description=row.get("description");
+      if ("path".equals(kind)) {
+        value=URISupport.extractRemainderPath(u,false);
         value=URISupport.sanitizePath(value);
-        String description=row.get("description");
+      }
+      if (includeAllOptions || "path".equals(kind)) {
         if (!selected.containsKey(name)) {
           selected.put(name,new String[]{name,kind,type,javaType,value,defaultValue,description});
         }
@@ -66,7 +70,7 @@
       String value=row[4];
       String defaultValue=row[5];
       String description=row[6];
-      buffer.append(doubleQuote(name) + ": { ");
+      buffer.append(doubleQuote(name)).append(": { ");
       CollectionStringBuffer csb=new CollectionStringBuffer();
       if (kind != null) {
         csb.append("\"kind\": \"" + kind + "\"");
