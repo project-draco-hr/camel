@@ -3,26 +3,29 @@
   if (uriEndpoint != null) {
     String scheme=uriEndpoint.scheme();
     if (!isNullOrEmpty(scheme)) {
-      String name=canonicalClassName(classElement.getQualifiedName().toString());
-      String packageName=name.substring(0,name.lastIndexOf("."));
-      String fileName=scheme + ".html";
-      Func1<PrintWriter,Void> handler=new Func1<PrintWriter,Void>(){
-        @Override public Void call(        PrintWriter writer){
-          writeHtmlDocumentation(writer,roundEnv,classElement,uriEndpoint);
-          return null;
+      String[] schemes=scheme.split(",");
+      for (      final String alias : schemes) {
+        String name=canonicalClassName(classElement.getQualifiedName().toString());
+        String packageName=name.substring(0,name.lastIndexOf("."));
+        String fileName=alias + ".html";
+        Func1<PrintWriter,Void> handler=new Func1<PrintWriter,Void>(){
+          @Override public Void call(          PrintWriter writer){
+            writeHtmlDocumentation(writer,roundEnv,classElement,uriEndpoint,alias);
+            return null;
+          }
         }
-      }
 ;
-      processFile(packageName,scheme,fileName,handler);
-      fileName=scheme + ".json";
-      handler=new Func1<PrintWriter,Void>(){
-        @Override public Void call(        PrintWriter writer){
-          writeJSonSchemeDocumentation(writer,roundEnv,classElement,uriEndpoint);
-          return null;
+        processFile(packageName,alias,fileName,handler);
+        fileName=alias + ".json";
+        handler=new Func1<PrintWriter,Void>(){
+          @Override public Void call(          PrintWriter writer){
+            writeJSonSchemeDocumentation(writer,roundEnv,classElement,uriEndpoint,alias);
+            return null;
+          }
         }
-      }
 ;
-      processFile(packageName,scheme,fileName,handler);
+        processFile(packageName,alias,fileName,handler);
+      }
     }
   }
 }
