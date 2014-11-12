@@ -1,52 +1,14 @@
 {
+  XsltEndpoint endpoint=new XsltEndpoint(uri,this);
+  endpoint.setConverter(getXmlConverter());
+  endpoint.setContentCache(isContentCache());
+  endpoint.setSaxon(isSaxon());
   String resourceUri=remaining;
-  LOG.debug("{} using schema resource: {}",this,resourceUri);
-  final XsltBuilder xslt=getCamelContext().getInjector().newInstance(XsltBuilder.class);
-  XmlConverter converter=resolveAndRemoveReferenceParameter(parameters,"converter",XmlConverter.class);
-  if (converter == null) {
-    converter=getXmlConverter();
-  }
-  if (converter != null) {
-    xslt.setConverter(converter);
-  }
-  String transformerFactoryClassName=getAndRemoveParameter(parameters,"transformerFactoryClass",String.class);
-  Boolean saxon=getAndRemoveParameter(parameters,"saxon",Boolean.class,isSaxon());
-  if (transformerFactoryClassName == null && saxon) {
-    transformerFactoryClassName=SAXON_TRANSFORMER_FACTORY_CLASS_NAME;
-  }
-  TransformerFactory factory=null;
-  if (transformerFactoryClassName != null) {
-    Class<?> factoryClass=getCamelContext().getClassResolver().resolveMandatoryClass(transformerFactoryClassName,XsltComponent.class.getClassLoader());
-    LOG.debug("Using TransformerFactoryClass {}",factoryClass);
-    factory=(TransformerFactory)getCamelContext().getInjector().newInstance(factoryClass);
-  }
-  if (parameters.get("transformerFactory") != null) {
-    factory=resolveAndRemoveReferenceParameter(parameters,"transformerFactory",TransformerFactory.class);
-  }
-  if (factory != null) {
-    LOG.debug("Using TransformerFactory {}",factory);
-    xslt.getConverter().setTransformerFactory(factory);
-  }
-  ResultHandlerFactory resultHandlerFactory=resolveAndRemoveReferenceParameter(parameters,"resultHandlerFactory",ResultHandlerFactory.class);
-  if (resultHandlerFactory != null) {
-    xslt.setResultHandlerFactory(resultHandlerFactory);
-  }
-  Boolean failOnNullBody=getAndRemoveParameter(parameters,"failOnNullBody",Boolean.class);
-  if (failOnNullBody != null) {
-    xslt.setFailOnNullBody(failOnNullBody);
-  }
-  String output=getAndRemoveParameter(parameters,"output",String.class);
-  configureOutput(xslt,output);
-  Integer cs=getAndRemoveParameter(parameters,"transformerCacheSize",Integer.class,0);
-  xslt.transformerCacheSize(cs);
-  ErrorListener errorListener=resolveAndRemoveReferenceParameter(parameters,"errorListener",ErrorListener.class);
-  if (errorListener != null) {
-    xslt.errorListener(errorListener);
-  }
-  boolean cache=getAndRemoveParameter(parameters,"contentCache",Boolean.class,contentCache);
   if (ResourceHelper.isHttpUri(resourceUri)) {
     resourceUri=ResourceHelper.appendParameters(resourceUri,parameters);
   }
+  LOG.debug("{} using schema resource: {}",this,resourceUri);
+  endpoint.setResourceUri(resourceUri);
   URIResolver resolver=resolveAndRemoveReferenceParameter(parameters,"uriResolver",URIResolver.class);
   if (resolver == null) {
     resolver=getUriResolver();
@@ -54,7 +16,10 @@
   if (resolver == null) {
     resolver=new XsltUriResolver(getCamelContext().getClassResolver(),remaining);
   }
-  xslt.setUriResolver(resolver);
-  configureXslt(xslt,uri,remaining,parameters);
-  return new XsltEndpoint(uri,this,xslt,resourceUri,cache);
+  endpoint.setUriResolver(resolver);
+  setProperties(endpoint,parameters);
+  if (!parameters.isEmpty()) {
+    endpoint.setParameters(parameters);
+  }
+  return endpoint;
 }

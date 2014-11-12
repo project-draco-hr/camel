@@ -1,6 +1,41 @@
 {
   super.doStart();
+  LOG.debug("{} using schema resource: {}",this,resourceUri);
+  this.xslt=getCamelContext().getInjector().newInstance(XsltBuilder.class);
+  if (converter != null) {
+    xslt.setConverter(converter);
+  }
+  if (transformerFactoryClass == null && saxon) {
+    transformerFactoryClass=SAXON_TRANSFORMER_FACTORY_CLASS_NAME;
+  }
+  TransformerFactory factory=transformerFactory;
+  if (factory == null && transformerFactoryClass != null) {
+    Class<?> factoryClass=getCamelContext().getClassResolver().resolveMandatoryClass(transformerFactoryClass,XsltComponent.class.getClassLoader());
+    LOG.debug("Using TransformerFactoryClass {}",factoryClass);
+    factory=(TransformerFactory)getCamelContext().getInjector().newInstance(factoryClass);
+  }
+  if (factory != null) {
+    LOG.debug("Using TransformerFactory {}",factory);
+    xslt.getConverter().setTransformerFactory(factory);
+  }
+  if (resultHandlerFactory != null) {
+    xslt.setResultHandlerFactory(resultHandlerFactory);
+  }
+  if (errorListener != null) {
+    xslt.errorListener(errorListener);
+  }
+  xslt.setFailOnNullBody(failOnNullBody);
+  xslt.transformerCacheSize(transformerCacheSize);
+  xslt.setUriResolver(uriResolver);
+  xslt.setAllowStAX(allowStAX);
+  xslt.setDeleteOutputFile(deleteOutputFile);
+  configureOutput(xslt,output.name());
+  if (parameters != null) {
+    Map<String,Object> copy=new HashMap<>(parameters);
+    xslt.setParameters(copy);
+  }
   loadResource(resourceUri);
   xslt.setCamelContext(getCamelContext());
+  setProcessor(xslt);
   ServiceHelper.startService(xslt);
 }
