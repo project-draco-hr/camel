@@ -60,7 +60,7 @@
           if (!isNullOrEmpty(extraPrefix)) {
             nestedPrefix+=extraPrefix;
           }
-          findClassProperties(roundEnv,endpointPaths,endpointOptions,fieldTypeElement,nestedPrefix);
+          findClassProperties(writer,roundEnv,endpointPaths,endpointOptions,fieldTypeElement,nestedPrefix);
         }
  else {
           String docComment=elementUtils.getDocComment(fieldElement);
@@ -106,6 +106,16 @@
     if (superclass != null) {
       String superClassName=canonicalClassName(superclass.toString());
       baseTypeElement=findTypeElement(roundEnv,superClassName);
+      if (baseTypeElement == null) {
+        int idx=superClassName.lastIndexOf('.');
+        String name=superClassName.substring(0,idx);
+        if (!"java.lang".equals(name)) {
+          PackageElement pe=elementUtils.getPackageElement(name);
+          if (pe != null) {
+            baseTypeElement=findTypeElement(pe,superClassName);
+          }
+        }
+      }
     }
     if (baseTypeElement != null) {
       classElement=baseTypeElement;
