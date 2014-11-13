@@ -1,0 +1,20 @@
+{
+  List<Route> camelRoutes=camelController.getRoutes(getContext(),RegexUtil.wildcardAsRegex(getRoute()));
+  if (camelRoutes == null || camelRoutes.isEmpty()) {
+    err.println("Camel routes using " + getRoute() + " not found.");
+    return null;
+  }
+  Collections.sort(camelRoutes,new RouteComparator());
+  for (  Route camelRoute : camelRoutes) {
+    CamelContext camelContext=camelRoute.getRouteContext().getCamelContext();
+    ClassLoader oldClassloader=Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(camelContext.getApplicationContextClassLoader());
+    try {
+      executeOnRoute(camelContext,camelRoute,out,err);
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(oldClassloader);
+    }
+  }
+  return null;
+}
