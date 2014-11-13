@@ -1,0 +1,24 @@
+{
+  expectsMessageCount(2,result);
+  result.whenAnyExchangeReceived(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.setException(new MyCustomException());
+    }
+  }
+);
+  Exchange exchangeOne=sendMessage(endpoint,"message one");
+  Exchange exchangeTwo=sendMessage(endpoint,"message two");
+  Exchange exchangeThree=sendMessage(endpoint,"message three");
+  assertMockEndpointsSatisfied();
+  Thread.sleep(1000);
+  result.reset();
+  expectsMessageCount(2,result);
+  Exchange exchangeFour=sendMessage(endpoint,"message four");
+  Exchange exchangeFive=sendMessage(endpoint,"message five");
+  assertMockEndpointsSatisfied();
+  assertTrue(exchangeOne.getException() instanceof MyCustomException);
+  assertTrue(exchangeTwo.getException() instanceof MyCustomException);
+  assertTrue(exchangeThree.getException() instanceof RejectedExecutionException);
+  assertTrue(exchangeFour.getException() == null);
+  assertTrue(exchangeFive.getException() == null);
+}

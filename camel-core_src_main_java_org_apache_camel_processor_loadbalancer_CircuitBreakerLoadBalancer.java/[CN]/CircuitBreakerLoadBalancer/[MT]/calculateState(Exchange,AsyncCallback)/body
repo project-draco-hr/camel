@@ -1,0 +1,34 @@
+{
+  boolean output=false;
+  if (state.get() == STATE_HALF_OPEN) {
+    if (failures.get() == 0) {
+      output=closeCircuit(exchange,callback);
+    }
+ else {
+      output=openCircuit(exchange,callback);
+    }
+  }
+ else   if (state.get() == STATE_OPEN) {
+    if (failures.get() >= threshold && System.currentTimeMillis() - lastFailure < halfOpenAfter) {
+      output=openCircuit(exchange,callback);
+    }
+ else {
+      output=halfOpenCircuit(exchange,callback);
+    }
+  }
+ else   if (state.get() == STATE_CLOSED) {
+    if (failures.get() >= threshold && System.currentTimeMillis() - lastFailure < halfOpenAfter) {
+      output=openCircuit(exchange,callback);
+    }
+ else     if (failures.get() >= threshold && System.currentTimeMillis() - lastFailure >= halfOpenAfter) {
+      output=halfOpenCircuit(exchange,callback);
+    }
+ else {
+      output=closeCircuit(exchange,callback);
+    }
+  }
+ else {
+    throw new IllegalStateException("Unrecognised circuitBreaker state " + state.get());
+  }
+  return output;
+}

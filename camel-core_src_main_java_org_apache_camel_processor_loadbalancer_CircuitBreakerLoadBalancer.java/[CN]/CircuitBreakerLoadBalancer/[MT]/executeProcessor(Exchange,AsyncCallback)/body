@@ -1,0 +1,25 @@
+{
+  Processor processor=getProcessors().get(0);
+  if (processor == null) {
+    throw new IllegalStateException("No processors could be chosen to process CircuitBreaker");
+  }
+  AsyncProcessor albp=AsyncProcessorConverterHelper.convert(processor);
+  boolean sync=albp.process(exchange,new CircuitBreakerCallback(exchange,callback));
+  if (sync) {
+    boolean failed=hasFailed(exchange);
+    if (!failed) {
+      failures.set(0);
+    }
+ else {
+      failures.incrementAndGet();
+      lastFailure=System.currentTimeMillis();
+    }
+  }
+ else {
+    log.trace("Processing exchangeId: {} is continued being processed asynchronously",exchange.getExchangeId());
+    return false;
+  }
+  log.trace("Processing exchangeId: {} is continued being processed synchronously",exchange.getExchangeId());
+  callback.done(true);
+  return true;
+}
