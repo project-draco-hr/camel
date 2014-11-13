@@ -1,0 +1,35 @@
+{
+  List<Map<String,String>> components=camelController.listComponents(context);
+  if (components == null || components.isEmpty()) {
+    return null;
+  }
+  final Map<String,Integer> columnWidths=computeColumnWidths(components);
+  final String headerFormat=buildFormatString(columnWidths,true,verbose);
+  final String rowFormat=buildFormatString(columnWidths,false,verbose);
+  if (verbose) {
+    out.println(String.format(headerFormat,NAME_COLUMN_LABEL,STATUS_COLUMN_LABEL,MAVEN_COLUMN_LABEL,DESCRIPTION_COLUMN_LABEL));
+    out.println(String.format(headerFormat,"----","------","----------------","-----------"));
+  }
+ else {
+    out.println(String.format(headerFormat,NAME_COLUMN_LABEL,DESCRIPTION_COLUMN_LABEL));
+    out.println(String.format(headerFormat,"----","-----------"));
+  }
+  for (  final Map<String,String> component : components) {
+    if (verbose) {
+      String name=safeNull(component.get("name"));
+      String status=safeNull(component.get("status"));
+      String maven="";
+      if (component.containsKey("groupId") && component.containsKey("artifactId") && component.containsKey("version")) {
+        maven=component.get("groupId") + "/" + component.get("artifactId")+ "/"+ component.get("version");
+      }
+      String description=safeNull(component.get("description"));
+      out.println(String.format(rowFormat,name,status,maven,description));
+    }
+ else {
+      String name=safeNull(component.get("name"));
+      String description=safeNull(component.get("description"));
+      out.println(String.format(rowFormat,name,description));
+    }
+  }
+  return null;
+}
