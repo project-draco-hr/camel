@@ -1,18 +1,24 @@
 {
   Scheduler scheduler=getComponent().getScheduler();
   JobDetail jobDetail;
-  Trigger trigger=scheduler.getTrigger(triggerKey);
-  if (trigger == null) {
-    jobDetail=createJobDetail();
-    trigger=createTrigger(jobDetail);
-    QuartzHelper.updateJobDataMap(getCamelContext(),jobDetail,getEndpointUri());
-    Date nextFireDate=scheduler.scheduleJob(jobDetail,trigger);
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Job {} (triggerType={}, jobClass={}) is scheduled. Next fire date is {}",new Object[]{trigger.getKey(),trigger.getClass().getSimpleName(),jobDetail.getJobClass().getSimpleName(),nextFireDate});
+  Trigger oldTrigger=scheduler.getTrigger(triggerKey);
+  boolean triggerExisted=oldTrigger != null;
+  if (triggerExisted) {
+    ensureNoDupTriggerKey();
+  }
+  jobDetail=createJobDetail();
+  Trigger trigger=createTrigger(jobDetail);
+  QuartzHelper.updateJobDataMap(getCamelContext(),jobDetail,getEndpointUri());
+  if (triggerExisted) {
+    if (hasTriggerChanged(oldTrigger,trigger)) {
+      scheduler.rescheduleJob(triggerKey,trigger);
     }
   }
  else {
-    ensureNoDupTriggerKey();
+    scheduler.scheduleJob(jobDetail,trigger);
+  }
+  if (LOG.isInfoEnabled()) {
+    LOG.info("Job {} (triggerType={}, jobClass={}) is scheduled. Next fire date is {}",new Object[]{trigger.getKey(),trigger.getClass().getSimpleName(),jobDetail.getJobClass().getSimpleName(),trigger.getNextFireTime()});
   }
   AtomicInteger number=(AtomicInteger)scheduler.getContext().get(QuartzConstants.QUARTZ_CAMEL_JOBS_COUNT);
   if (number != null) {
