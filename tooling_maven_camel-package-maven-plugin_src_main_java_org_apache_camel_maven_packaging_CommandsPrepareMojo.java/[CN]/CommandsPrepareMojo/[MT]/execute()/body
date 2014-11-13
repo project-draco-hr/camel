@@ -1,5 +1,32 @@
 {
   getLog().info("Copying all Camel component json descriptors");
+  Set<File> files=new LinkedHashSet<File>();
+  if (componentsDir != null && componentsDir.isDirectory()) {
+    File[] components=componentsDir.listFiles();
+    if (components != null) {
+      for (      File dir : components) {
+        if (dir.isDirectory()) {
+          File target=new File(dir,"target/classes");
+          findFilesRecursive(target,files,new JsonAndDirFileFilter());
+        }
+      }
+    }
+  }
+  if (coreDir != null && coreDir.isDirectory()) {
+    File target=new File(coreDir,"target/classes");
+    findFilesRecursive(target,files,new JsonAndDirFileFilter());
+  }
+  getLog().info("Found " + files.size() + " component json files");
+  outDir.mkdirs();
+  for (  File file : files) {
+    File to=new File(outDir,file.getName());
+    try {
+      copyFile(file,to);
+    }
+ catch (    IOException e) {
+      throw new MojoFailureException("Cannot copy file from " + file + " -> "+ to,e);
+    }
+  }
   File all=new File(outDir,"../components-catalog");
   try {
     FileOutputStream fos=new FileOutputStream(all,false);
@@ -17,7 +44,7 @@
       fos.write("\n".getBytes());
     }
     fos.close();
-    getLog().info("Found " + components.size() + " components to include in file: "+ all);
+    getLog().info("Camel components catalog includes " + files.size() + " components");
   }
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
