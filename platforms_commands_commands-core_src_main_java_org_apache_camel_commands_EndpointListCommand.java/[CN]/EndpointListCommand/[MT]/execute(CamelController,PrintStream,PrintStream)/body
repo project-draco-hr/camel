@@ -1,0 +1,72 @@
+{
+  List<Endpoint> endpoints=camelController.getEndpoints(name);
+  final Map<String,Integer> columnWidths=computeColumnWidths(endpoints);
+  final String headerFormat=buildFormatString(columnWidths,true);
+  final String rowFormat=buildFormatString(columnWidths,false);
+  if (endpoints.size() > 0) {
+    out.println(String.format(headerFormat,CONTEXT_COLUMN_LABEL,URI_COLUMN_LABEL,STATUS_COLUMN_LABEL));
+    out.println(String.format(headerFormat,"-------","---","------"));
+    for (    final Endpoint endpoint : endpoints) {
+      String contextId=endpoint.getCamelContext().getName();
+      String uri=endpoint.getEndpointUri();
+      if (decode) {
+        uri=URLDecoder.decode(uri,"UTF-8");
+      }
+      uri=URISupport.sanitizeUri(uri);
+      String state=getEndpointState(endpoint);
+      out.println(String.format(rowFormat,contextId,uri,state));
+      if (explain) {
+        boolean first=true;
+        String json=camelController.explainEndpoint(endpoint.getCamelContext().getName(),endpoint.getEndpointUri(),verbose);
+        List<Map<String,String>> options=JsonSchemaHelper.parseJsonSchema("properties",json,true);
+        Collections.sort(options,new Comparator<Map<String,String>>(){
+          @Override public int compare(          Map<String,String> o1,          Map<String,String> o2){
+            int answer=-1 * o1.get("kind").compareTo(o2.get("kind"));
+            if (answer == 0) {
+              answer=o1.get("name").compareTo(o2.get("name"));
+            }
+            return answer;
+          }
+        }
+);
+        for (        Map<String,String> option : options) {
+          String key=option.get("name");
+          String kind=option.get("kind");
+          String type=option.get("type");
+          String javaType=option.get("javaType");
+          String value=option.get("value");
+          if (ObjectHelper.isEmpty(value)) {
+            value=option.get("defaultValue");
+          }
+          String desc=option.get("description");
+          if (key != null && value != null) {
+            if (first) {
+              out.println();
+              first=false;
+            }
+            String line;
+            if ("path".equals(kind)) {
+              line="\t" + key + " (endpoint path) = "+ value;
+            }
+ else {
+              line="\t" + key + " = "+ value;
+            }
+            out.println(String.format(rowFormat,"",line,""));
+            if (type != null) {
+              String displayType=type;
+              if (javaType != null && !displayType.equals(javaType)) {
+                displayType=type + " (" + javaType+ ")";
+              }
+              out.println(String.format(rowFormat,"","\t" + displayType,""));
+            }
+            if (desc != null) {
+              out.println(String.format(rowFormat,"","\t" + desc,""));
+            }
+            out.println();
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
