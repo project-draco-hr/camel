@@ -1,25 +1,46 @@
 {
   getLog().info("Copying all Camel component json descriptors");
-  Set<File> files=new LinkedHashSet<File>();
+  Set<File> jsonFiles=new LinkedHashSet<File>();
+  Set<File> duplicateJsonFiles=new LinkedHashSet<File>();
+  Set<File> componentFiles=new LinkedHashSet<File>();
+  Set<File> missingComponents=new LinkedHashSet<File>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
     if (components != null) {
       for (      File dir : components) {
-        if (dir.isDirectory()) {
+        if (dir.isDirectory() && !"target".equals(dir.getName())) {
           File target=new File(dir,"target/classes");
-          findFilesRecursive(target,files,new JsonAndDirFileFilter());
+          int before=componentFiles.size();
+          int before2=jsonFiles.size();
+          findFilesRecursive(target,jsonFiles,componentFiles,new CamelComponentsFileFilter());
+          int after=componentFiles.size();
+          int after2=jsonFiles.size();
+          if (before != after && before2 == after2) {
+            missingComponents.add(dir);
+          }
         }
       }
     }
   }
   if (coreDir != null && coreDir.isDirectory()) {
     File target=new File(coreDir,"target/classes");
-    findFilesRecursive(target,files,new JsonAndDirFileFilter());
+    int before=componentFiles.size();
+    int before2=jsonFiles.size();
+    findFilesRecursive(target,jsonFiles,componentFiles,new CamelComponentsFileFilter());
+    int after=componentFiles.size();
+    int after2=jsonFiles.size();
+    if (before != after && before2 == after2) {
+      missingComponents.add(coreDir);
+    }
   }
-  getLog().info("Found " + files.size() + " component json files");
+  getLog().info("Found " + jsonFiles.size() + " component json files");
   outDir.mkdirs();
-  for (  File file : files) {
+  for (  File file : jsonFiles) {
     File to=new File(outDir,file.getName());
+    if (to.exists()) {
+      duplicateJsonFiles.add(to);
+      getLog().warn("Duplicate component name detected: " + to);
+    }
     try {
       copyFile(file,to);
     }
@@ -44,9 +65,9 @@
       fos.write("\n".getBytes());
     }
     fos.close();
-    getLog().info("Camel components catalog includes " + files.size() + " components");
   }
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
+  printReport(jsonFiles,duplicateJsonFiles,missingComponents);
 }
