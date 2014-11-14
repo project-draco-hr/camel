@@ -13,6 +13,7 @@
         name=prefix + name;
         TypeMirror fieldType=fieldElement.asType();
         String fieldTypeName=fieldType.toString();
+        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
         String docComment=elementUtils.getDocComment(fieldElement);
         if (isNullOrEmpty(docComment)) {
           String setter="set" + fieldName.substring(0,1).toUpperCase();
@@ -34,7 +35,19 @@
         if (isNullOrEmpty(docComment)) {
           docComment=path.description();
         }
-        EndpointPath ep=new EndpointPath(name,fieldTypeName,docComment);
+        Set<String> enums=new LinkedHashSet<>();
+        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+        if (isEnum) {
+          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+          for (          VariableElement var : fields) {
+            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+              String val=var.toString();
+              enums.add(val);
+            }
+          }
+        }
+        EndpointPath ep=new EndpointPath(name,fieldTypeName,docComment,isEnum,enums);
         endpointPaths.add(ep);
       }
       UriParam param=fieldElement.getAnnotation(UriParam.class);
