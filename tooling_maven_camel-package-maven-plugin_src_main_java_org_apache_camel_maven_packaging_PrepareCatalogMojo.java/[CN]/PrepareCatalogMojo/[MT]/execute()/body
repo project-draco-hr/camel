@@ -4,6 +4,7 @@
   Set<File> duplicateJsonFiles=new LinkedHashSet<File>();
   Set<File> componentFiles=new LinkedHashSet<File>();
   Set<File> missingComponents=new LinkedHashSet<File>();
+  Set<File> missingLabels=new LinkedHashSet<File>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
     if (components != null) {
@@ -47,6 +48,14 @@
  catch (    IOException e) {
       throw new MojoFailureException("Cannot copy file from " + file + " -> "+ to,e);
     }
+    try {
+      String text=loadText(new FileInputStream(file));
+      if (text.contains("\"label\": \"\"")) {
+        missingLabels.add(file);
+      }
+    }
+ catch (    IOException e) {
+    }
   }
   File all=new File(outDir,"../components.properties");
   try {
@@ -69,5 +78,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printReport(jsonFiles,duplicateJsonFiles,missingComponents);
+  printReport(jsonFiles,duplicateJsonFiles,missingComponents,missingLabels);
 }
