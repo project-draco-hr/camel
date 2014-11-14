@@ -1,14 +1,15 @@
 {
-  @SuppressWarnings("unchecked") T endpoint=(T)getEndpoint();
   Message in=exchange.getIn();
-  String defaultMetricsName=endpoint.getMetricsName();
+  String defaultMetricsName=getEndpoint().getMetricsName();
   String finalMetricsName=getMetricsName(in,defaultMetricsName);
-  MetricRegistry registry=endpoint.getRegistry();
+  MetricRegistry registry=getEndpoint().getRegistry();
   try {
-    doProcess(exchange,endpoint,registry,finalMetricsName);
+    doProcess(exchange,getEndpoint(),registry,finalMetricsName);
   }
  catch (  Exception e) {
-    LOG.warn("Failed to produce metrics for {} in {} - {}",new Object[]{finalMetricsName,getClass().getSimpleName(),e.getMessage()});
+    exchange.setException(e);
   }
-  clearMetricsHeaders(in);
+ finally {
+    clearMetricsHeaders(in);
+  }
 }
