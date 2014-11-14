@@ -1,0 +1,73 @@
+{
+  getLog().info("Copying all Camel component json descriptors");
+  Set<File> jsonFiles=new LinkedHashSet<File>();
+  Set<File> duplicateJsonFiles=new LinkedHashSet<File>();
+  Set<File> componentFiles=new LinkedHashSet<File>();
+  Set<File> missingComponents=new LinkedHashSet<File>();
+  if (componentsDir != null && componentsDir.isDirectory()) {
+    File[] components=componentsDir.listFiles();
+    if (components != null) {
+      for (      File dir : components) {
+        if (dir.isDirectory() && !"target".equals(dir.getName())) {
+          File target=new File(dir,"target/classes");
+          int before=componentFiles.size();
+          int before2=jsonFiles.size();
+          findFilesRecursive(target,jsonFiles,componentFiles,new CamelComponentsFileFilter());
+          int after=componentFiles.size();
+          int after2=jsonFiles.size();
+          if (before != after && before2 == after2) {
+            missingComponents.add(dir);
+          }
+        }
+      }
+    }
+  }
+  if (coreDir != null && coreDir.isDirectory()) {
+    File target=new File(coreDir,"target/classes");
+    int before=componentFiles.size();
+    int before2=jsonFiles.size();
+    findFilesRecursive(target,jsonFiles,componentFiles,new CamelComponentsFileFilter());
+    int after=componentFiles.size();
+    int after2=jsonFiles.size();
+    if (before != after && before2 == after2) {
+      missingComponents.add(coreDir);
+    }
+  }
+  getLog().info("Found " + jsonFiles.size() + " component json files");
+  outDir.mkdirs();
+  for (  File file : jsonFiles) {
+    File to=new File(outDir,file.getName());
+    if (to.exists()) {
+      duplicateJsonFiles.add(to);
+      getLog().warn("Duplicate component name detected: " + to);
+    }
+    try {
+      copyFile(file,to);
+    }
+ catch (    IOException e) {
+      throw new MojoFailureException("Cannot copy file from " + file + " -> "+ to,e);
+    }
+  }
+  File all=new File(outDir,"../components.properties");
+  try {
+    FileOutputStream fos=new FileOutputStream(all,false);
+    String[] names=outDir.list();
+    List<String> components=new ArrayList<String>();
+    for (    String name : names) {
+      if (name.endsWith(".json")) {
+        String componentName=name.substring(0,name.length() - 5);
+        components.add(componentName);
+      }
+    }
+    Collections.sort(components);
+    for (    String name : components) {
+      fos.write(name.getBytes());
+      fos.write("\n".getBytes());
+    }
+    fos.close();
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error writing to file " + all);
+  }
+  printReport(jsonFiles,duplicateJsonFiles,missingComponents);
+}
