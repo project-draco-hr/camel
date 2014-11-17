@@ -6,6 +6,7 @@
   Set<File> missingComponents=new LinkedHashSet<File>();
   Set<File> missingLabels=new LinkedHashSet<File>();
   Set<File> missingUriPaths=new LinkedHashSet<File>();
+  Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
     if (components != null) {
@@ -54,6 +55,22 @@
       if (text.contains("\"label\": \"\"")) {
         missingLabels.add(file);
       }
+ else {
+        String name=asComponentName(file);
+        Matcher matcher=LABEL_PATTERN.matcher(text);
+        if (matcher.find()) {
+          String label=matcher.group(1);
+          String[] labels=label.split(",");
+          for (          String s : labels) {
+            Set<String> components=usedLabels.get(s);
+            if (components == null) {
+              components=new TreeSet<String>();
+              usedLabels.put(s,components);
+            }
+            components.add(name);
+          }
+        }
+      }
       if (!text.contains("\"kind\": \"path\"")) {
         missingUriPaths.add(file);
       }
@@ -82,5 +99,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printReport(jsonFiles,duplicateJsonFiles,missingComponents,missingUriPaths,missingLabels);
+  printReport(jsonFiles,duplicateJsonFiles,missingComponents,missingUriPaths,missingLabels,usedLabels);
 }
