@@ -1,29 +1,63 @@
 {
-  Server server=new Server();
-  ContextHandlerCollection collection=new ContextHandlerCollection();
-  server.setHandler(collection);
+  Server s=null;
+  ThreadPool tp=threadPool;
+  QueuedThreadPool qtp=null;
   if (minThreads != null || maxThreads != null) {
     if (getThreadPool() != null) {
       throw new IllegalArgumentException("You cannot configure both minThreads/maxThreads and a custom threadPool on JettyHttpComponent: " + this);
     }
-    QueuedThreadPool qtp=new QueuedThreadPool();
+    qtp=new QueuedThreadPool();
     if (minThreads != null) {
       qtp.setMinThreads(minThreads.intValue());
     }
     if (maxThreads != null) {
       qtp.setMaxThreads(maxThreads.intValue());
     }
-    qtp.setName("CamelJettyServer(" + ObjectHelper.getIdentityHashCode(server) + ")");
+    tp=qtp;
+  }
+  if (tp != null) {
+    try {
+      if (!Server.getVersion().startsWith("8")) {
+        s=Server.class.getConstructor(ThreadPool.class).newInstance(tp);
+      }
+ else {
+        s=new Server();
+        Server.class.getMethod("setThreadPool",ThreadPool.class).invoke(s,tp);
+      }
+    }
+ catch (    Exception e) {
+    }
+  }
+  if (s == null) {
+    s=new Server();
+  }
+  if (qtp != null) {
+    qtp.setName("CamelJettyServer(" + ObjectHelper.getIdentityHashCode(s) + ")");
     try {
       qtp.start();
     }
  catch (    Exception e) {
       throw new RuntimeCamelException("Error starting JettyServer thread pool: " + qtp,e);
     }
-    server.setThreadPool(qtp);
   }
-  if (getThreadPool() != null) {
-    server.setThreadPool(getThreadPool());
+  ContextHandlerCollection collection=new ContextHandlerCollection();
+  s.setHandler(collection);
+  if (!Server.getVersion().startsWith("8")) {
+    ErrorHandler eh=new ErrorHandler(){
+      public void handle(      String target,      Request baseRequest,      HttpServletRequest request,      HttpServletResponse response) throws IOException {
+        String msg=HttpStatus.getMessage(response.getStatus());
+        request.setAttribute(RequestDispatcher.ERROR_MESSAGE,msg);
+        if (response instanceof Response) {
+          ((Response)response).setStatus(response.getStatus(),msg);
+        }
+        super.handle(target,baseRequest,request,response);
+      }
+      protected void writeErrorPage(      HttpServletRequest request,      Writer writer,      int code,      String message,      boolean showStacks) throws IOException {
+        super.writeErrorPage(request,writer,code,message,false);
+      }
+    }
+;
+    s.addBean(eh);
   }
-  return server;
+  return s;
 }

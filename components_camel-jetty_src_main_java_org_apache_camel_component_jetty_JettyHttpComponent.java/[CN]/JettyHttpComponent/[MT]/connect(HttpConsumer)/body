@@ -4,25 +4,15 @@
 synchronized (CONNECTORS) {
     ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
     if (connectorRef == null) {
-      Connector connector;
-      if ("https".equals(endpoint.getProtocol())) {
-        connector=getSslSocketConnector(endpoint);
-      }
- else {
-        connector=getSocketConnector(endpoint.getPort());
-      }
-      connector.setPort(endpoint.getPort());
-      connector.setHost(endpoint.getHttpUri().getHost());
+      Server server=createServer();
+      Connector connector=getConnector(server,endpoint);
       if ("localhost".equalsIgnoreCase(endpoint.getHttpUri().getHost())) {
         LOG.warn("You use localhost interface! It means that no external connections will be available." + " Don't you want to use 0.0.0.0 instead (all network interfaces)? " + endpoint);
       }
-      Server server=createServer();
       if (endpoint.isEnableJmx()) {
         enableJmx(server);
       }
-      server.setSendServerVersion(endpoint.isSendServerVersion());
       server.addConnector(connector);
-      server.setSendDateHeader(endpoint.isSendDateHeader());
       connectorRef=new ConnectorRef(server,connector,createServletForConnector(server,connector,endpoint.getHandlers(),endpoint));
       if (endpoint.isSessionSupport()) {
         enableSessionSupport(connectorRef.server,connectorKey);

@@ -1,0 +1,35 @@
+{
+  AbstractConnector result=null;
+  try {
+    if (sslcf == null && !"https".equals(endpoint.getProtocol())) {
+      result=(AbstractConnector)ObjectHelper.loadClass("org.eclipse.jetty.server.nio.SelectChannelConnector",Server.class.getClassLoader()).newInstance();
+    }
+ else     if (sslcf == null) {
+      result=(AbstractConnector)ObjectHelper.loadClass("org.eclipse.jetty.server.ssl.SslSelectChannelConnector",Server.class.getClassLoader()).newInstance();
+    }
+ else {
+      result=(AbstractConnector)ObjectHelper.loadClass("org.eclipse.jetty.server.ssl.SslSelectChannelConnector",Server.class.getClassLoader()).getConstructor(SslContextFactory.class).newInstance(sslcf);
+    }
+    Server.class.getMethod("setSendServerVersion",Boolean.TYPE).invoke(server,endpoint.isSendServerVersion());
+    Server.class.getMethod("setSendDateHeader",Boolean.TYPE).invoke(server,endpoint.isSendDateHeader());
+    if (result != null && requestBufferSize != null) {
+      result.setRequestBufferSize(requestBufferSize);
+    }
+    if (result != null && requestHeaderSize != null) {
+      result.setRequestHeaderSize(requestHeaderSize);
+    }
+    if (result != null && responseBufferSize != null) {
+      result.setResponseBufferSize(responseBufferSize);
+    }
+    if (result != null && responseHeaderSize != null) {
+      result.setResponseBufferSize(responseHeaderSize);
+    }
+  }
+ catch (  RuntimeException rex) {
+    throw rex;
+  }
+catch (  Exception ex) {
+    throw new RuntimeException(ex);
+  }
+  return result;
+}

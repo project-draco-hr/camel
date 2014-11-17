@@ -6,17 +6,19 @@
       if (connectorRef != null && connectorRef.getRefCount() == 0) {
         connectorRef.server.removeConnector(connectorRef.connector);
         connectorRef.connector.stop();
+        removeServerMBean(connectorRef.server);
         connectorRef.server.stop();
-        if (mbContainer != null) {
-          mbContainer.removeBean(connectorRef.server);
-          mbContainer.removeBean(connectorRef.connector);
-        }
         CONNECTORS.remove(connectorKey);
       }
     }
   }
   if (mbContainer != null) {
-    mbContainer.stop();
+    try {
+      mbContainer.getClass().getMethod("stop").invoke(mbContainer);
+    }
+ catch (    Throwable t) {
+      mbContainer.getClass().getMethod("destroy").invoke(mbContainer);
+    }
     mbContainer=null;
   }
 }
