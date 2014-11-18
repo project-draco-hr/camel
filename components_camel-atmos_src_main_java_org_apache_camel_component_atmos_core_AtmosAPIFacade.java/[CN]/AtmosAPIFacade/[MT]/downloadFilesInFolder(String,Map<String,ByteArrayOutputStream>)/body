@@ -1,0 +1,26 @@
+{
+  ObjectPath atmosEntry=new ObjectPath(atmosPath);
+  if (AtmosAPIFacade.client.getSystemMetadata(atmosEntry) == null) {
+    throw new AtmosException(atmosPath + " does not exist or can't obtain metadata");
+  }
+  if (!atmosEntry.isDirectory()) {
+    LOG.info("downloading a single file...");
+    downloadSingleFile(atmosPath,resultEntries);
+    return;
+  }
+  ListDirectoryRequest listRequest=new ListDirectoryRequest().path(atmosEntry);
+  AtmosAPIFacade.client.listDirectory(listRequest);
+  for (  DirectoryEntry entry : AtmosAPIFacade.client.listDirectory(listRequest).getEntries()) {
+    if (!entry.isDirectory()) {
+      try {
+        downloadSingleFile(atmosEntry.getPath().concat(entry.getFilename()),resultEntries);
+      }
+ catch (      AtmosException e) {
+        LOG.warn("can't download from " + entry.getFilename());
+      }
+    }
+ else {
+      downloadFilesInFolder(atmosEntry.getPath().concat(entry.getFilename()),resultEntries);
+    }
+  }
+}

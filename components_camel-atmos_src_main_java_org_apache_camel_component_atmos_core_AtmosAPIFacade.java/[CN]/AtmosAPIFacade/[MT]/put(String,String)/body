@@ -1,0 +1,75 @@
+{
+  AtmosResult result=new AtmosFileUploadResult();
+  Map<String,AtmosResultCode> resultEntries=null;
+  String atmosPath=remotePath == null ? localPath : remotePath;
+  if (!atmosPath.endsWith(ATMOS_FILE_SEPARATOR)) {
+    atmosPath+=ATMOS_FILE_SEPARATOR;
+  }
+  ObjectPath atmosEntry=new ObjectPath(atmosPath);
+  if (!atmosPath.equals(ATMOS_FILE_SEPARATOR)) {
+    if (AtmosAPIFacade.client.getSystemMetadata(atmosEntry) == null) {
+      throw new AtmosException(atmosPath + " does not exist or can't obtain metadata");
+    }
+  }
+  File fileLocalPath=new File(localPath);
+  if (fileLocalPath.isFile()) {
+    if (atmosEntry != null && !atmosEntry.isDirectory()) {
+      throw new AtmosException(atmosPath + " exists on atmos and is not a folder!");
+    }
+    atmosPath=atmosPath + fileLocalPath.getName();
+    resultEntries=new HashMap<String,AtmosResultCode>(1);
+    try {
+      ObjectId uploadedFile=putSingleFile(fileLocalPath,atmosPath);
+      if (uploadedFile == null) {
+        resultEntries.put(atmosPath,AtmosResultCode.KO);
+      }
+ else {
+        resultEntries.put(atmosPath,AtmosResultCode.OK);
+      }
+    }
+ catch (    Exception ex) {
+      resultEntries.put(atmosPath,AtmosResultCode.KO);
+    }
+ finally {
+      result.setResultEntries(resultEntries);
+    }
+    return result;
+  }
+ else {
+    LOG.info("uploading a dir...");
+    if (atmosEntry != null && !atmosEntry.isDirectory()) {
+      throw new AtmosException(atmosPath + " exists on atmos and is not a folder!");
+    }
+    String oldAtmosPath=atmosPath;
+    Collection<File> listFiles=FileUtils.listFiles(fileLocalPath,null,true);
+    if (listFiles == null || listFiles.isEmpty()) {
+      throw new AtmosException(localPath + " doesn't contain any files");
+    }
+    resultEntries=new HashMap<String,AtmosResultCode>(listFiles.size());
+    for (    File file : listFiles) {
+      String absPath=file.getAbsolutePath();
+      int indexRemainingPath=localPath.length();
+      if (!localPath.endsWith("/")) {
+        indexRemainingPath+=1;
+      }
+      String remainingPath=absPath.substring(indexRemainingPath);
+      atmosPath=atmosPath + remainingPath;
+      try {
+        LOG.info("uploading:" + fileLocalPath + ","+ atmosPath);
+        ObjectId uploadedFile=putSingleFile(file,atmosPath);
+        if (uploadedFile == null) {
+          resultEntries.put(atmosPath,AtmosResultCode.KO);
+        }
+ else {
+          resultEntries.put(atmosPath,AtmosResultCode.OK);
+        }
+      }
+ catch (      Exception ex) {
+        resultEntries.put(atmosPath,AtmosResultCode.KO);
+      }
+      atmosPath=oldAtmosPath;
+    }
+    result.setResultEntries(resultEntries);
+    return result;
+  }
+}
