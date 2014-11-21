@@ -1,0 +1,41 @@
+{
+  AbstractConnector result=null;
+  try {
+    Class<?> configClass=ObjectHelper.loadClass("org.eclipse.jetty.server.HttpConfiguration",Server.class.getClassLoader());
+    Object httpConfig=configClass.newInstance();
+    httpConfig.getClass().getMethod("setSendServerVersion",Boolean.TYPE).invoke(httpConfig,endpoint.isSendServerVersion());
+    httpConfig.getClass().getMethod("setSendDateHeader",Boolean.TYPE).invoke(httpConfig,endpoint.isSendDateHeader());
+    httpConfig.getClass().getMethod("setSendDateHeader",Boolean.TYPE).invoke(httpConfig,endpoint.isSendDateHeader());
+    if (requestBufferSize != null) {
+      configClass.getMethod("setRequestBufferSize",Integer.TYPE).invoke(result,requestBufferSize);
+    }
+    if (requestHeaderSize != null) {
+      configClass.getMethod("setRequestHeaderSize",Integer.TYPE).invoke(result,requestHeaderSize);
+    }
+    if (responseBufferSize != null) {
+      configClass.getMethod("setOutputBufferSize",Integer.TYPE).invoke(result,responseBufferSize);
+    }
+    if (responseHeaderSize != null) {
+      configClass.getMethod("setResponseHeaderSize",Integer.TYPE).invoke(result,responseHeaderSize);
+    }
+    Object httpFactory=ObjectHelper.loadClass("org.eclipse.jetty.server.HttpConnectionFactory",Server.class.getClassLoader()).getConstructor(configClass).newInstance(httpConfig);
+    Collection<Object> connectionFactories=new ArrayList<Object>();
+    result=(AbstractConnector)ObjectHelper.loadClass("org.eclipse.jetty.server.ServerConnector",Server.class.getClassLoader()).getConstructor(Server.class).newInstance(server);
+    if (sslcf != null) {
+      Class<?> src=ObjectHelper.loadClass("org.eclipse.jetty.server.SecureRequestCustomizer",Server.class.getClassLoader());
+      httpConfig.getClass().getMethod("addCustomizer",src.getInterfaces()[0]).invoke(httpConfig,src.newInstance());
+      Object scf=ObjectHelper.loadClass("org.eclipse.jetty.server.SslConnectionFactory",Server.class.getClassLoader()).getConstructor(SslContextFactory.class,String.class).newInstance(sslcf,"HTTP/1.1");
+      connectionFactories.add(scf);
+      result.getClass().getMethod("setDefaultProtocol",String.class).invoke(result,"SSL-HTTP/1.1");
+    }
+    connectionFactories.add(httpFactory);
+    result.getClass().getMethod("setConnectionFactories",Collection.class).invoke(result,connectionFactories);
+  }
+ catch (  RuntimeException rex) {
+    throw rex;
+  }
+catch (  Exception ex) {
+    throw new RuntimeException(ex);
+  }
+  return result;
+}

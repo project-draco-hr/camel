@@ -1,0 +1,42 @@
+{
+  writer.println("<html>");
+  writer.println("<header>");
+  String title=scheme + " endpoint";
+  writer.println("<title>" + title + "</title>");
+  writer.println("</header>");
+  writer.println("<body>");
+  writer.println("<h1>" + title + "</h1>");
+  if (label != null) {
+    String[] labels=label.split(",");
+    writer.println("<ul>");
+    for (    String text : labels) {
+      writer.println("<li>" + text + "</li>");
+    }
+    writer.println("</ul>");
+  }
+  showDocumentationAndFieldInjections(writer,roundEnv,classElement,"");
+  TypeMirror consumerType=null;
+  try {
+    uriEndpoint.consumerClass();
+  }
+ catch (  MirroredTypeException mte) {
+    consumerType=mte.getTypeMirror();
+  }
+  boolean found=false;
+  String consumerClassName=null;
+  String consumerPrefix=getOrElse(uriEndpoint.consumerPrefix(),"");
+  if (consumerType != null) {
+    consumerClassName=consumerType.toString();
+    TypeElement consumerElement=findTypeElement(roundEnv,consumerClassName);
+    if (consumerElement != null) {
+      writer.println("<h2>" + scheme + " consumer"+ "</h2>");
+      showDocumentationAndFieldInjections(writer,roundEnv,consumerElement,consumerPrefix);
+      found=true;
+    }
+  }
+  if (!found && consumerClassName != null) {
+    warning("APT could not find consumer class " + consumerClassName);
+  }
+  writer.println("</body>");
+  writer.println("</html>");
+}

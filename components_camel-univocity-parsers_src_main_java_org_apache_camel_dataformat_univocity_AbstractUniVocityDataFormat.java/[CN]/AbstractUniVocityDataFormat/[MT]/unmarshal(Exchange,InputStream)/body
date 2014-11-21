@@ -1,0 +1,21 @@
+{
+  if (parserSettings == null) {
+synchronized (parserSettingsToken) {
+      if (parserSettings == null) {
+        parserSettings=new ThreadLocal<CPS>(){
+          @Override protected CPS initialValue(){
+            return createAndConfigureParserSettings();
+          }
+        }
+;
+        unmarshaller=new Unmarshaller<>(lazyLoad,asMap);
+      }
+    }
+  }
+  try (Reader reader=new InputStreamReader(stream,getCharsetName(exchange))){
+    HeaderRowProcessor headerRowProcessor=new HeaderRowProcessor();
+    CPS settings=parserSettings.get();
+    settings.setRowProcessor(headerRowProcessor);
+    return unmarshaller.unmarshal(reader,createParser(settings),headerRowProcessor);
+  }
+ }

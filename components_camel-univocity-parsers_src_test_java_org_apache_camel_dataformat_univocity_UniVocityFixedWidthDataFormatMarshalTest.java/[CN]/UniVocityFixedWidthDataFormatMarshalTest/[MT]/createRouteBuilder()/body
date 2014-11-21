@@ -1,0 +1,14 @@
+{
+  final Map<String,DataFormat> tests=new HashMap<>();
+  tests.put("default",new UniVocityFixedWidthDataFormat().setFieldLengths(new int[]{3,3,5}));
+  tests.put("header",new UniVocityFixedWidthDataFormat().setFieldLengths(new int[]{3,5}).setHeaders(new String[]{"A","C"}));
+  tests.put("advanced",new UniVocityFixedWidthDataFormat().setFieldLengths(new int[]{5,5}).setNullValue("N/A").setEmptyValue("empty").setPadding('_'));
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      for (      Map.Entry<String,DataFormat> test : tests.entrySet()) {
+        from("direct:" + test.getKey()).marshal(test.getValue()).convertBodyTo(String.class).to("mock:result");
+      }
+    }
+  }
+;
+}

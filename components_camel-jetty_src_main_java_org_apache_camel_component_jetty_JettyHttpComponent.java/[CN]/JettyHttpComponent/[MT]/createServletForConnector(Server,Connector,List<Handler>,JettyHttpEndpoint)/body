@@ -1,6 +1,8 @@
 {
   ServletContextHandler context=new ServletContextHandler(server,"/",ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
-  context.setConnectorNames(new String[]{connector.getName()});
+  if (Server.getVersion().startsWith("8")) {
+    context.getClass().getMethod("setConnectorNames",new Class[]{String[].class}).invoke(context,new Object[]{new String[]{connector.getName()}});
+  }
   addJettyHandlers(server,handlers);
   CamelServlet camelServlet;
   boolean jetty=endpoint.getUseContinuation() != null ? endpoint.getUseContinuation() : isUseContinuation();

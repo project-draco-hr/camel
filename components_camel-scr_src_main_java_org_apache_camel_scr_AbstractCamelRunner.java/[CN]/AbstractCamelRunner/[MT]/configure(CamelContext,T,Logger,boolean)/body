@@ -1,5 +1,5 @@
 {
-  Class clazz=target.getClass();
+  Class<?> clazz=target.getClass();
   log.debug("Configuring {}",clazz.getName());
   Collection<Field> fields=new ArrayList<Field>();
   fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
@@ -8,16 +8,23 @@
     fields.addAll(Arrays.asList(clazz.getSuperclass().getDeclaredFields()));
   }
   for (  Field field : fields) {
+    String propertyValue;
     try {
-      String propertyValue=context.resolvePropertyPlaceholders("{{" + field.getName() + "}}");
+      propertyValue=context.resolvePropertyPlaceholders("{{" + field.getName() + "}}");
+    }
+ catch (    Exception e) {
+      log.debug("Skipped field {}",field.getName());
+      continue;
+    }
+    try {
       if (!propertyValue.isEmpty()) {
         Object convertedValue=convertValue(propertyValue,field.getGenericType());
         ReflectionHelper.setField(field,target,convertedValue);
-        log.debug("Set field {} with value {}",field.getName(),propertyValue);
+        log.debug("Configured field {} with value {}",field.getName(),propertyValue);
       }
     }
  catch (    Exception e) {
-      log.debug("Error setting field " + field.getName() + " due: "+ e.getMessage()+ ". This exception is ignored.");
+      log.error("Error setting field " + field.getName() + " due: "+ e.getMessage()+ ". This exception is ignored.",e);
     }
   }
   return target;
