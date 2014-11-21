@@ -8,14 +8,27 @@
   }
   jobDetail=createJobDetail();
   Trigger trigger=createTrigger(jobDetail);
-  QuartzHelper.updateJobDataMap(getCamelContext(),jobDetail,getEndpointUri());
+  QuartzHelper.updateJobDataMap(getCamelContext(),jobDetail,getEndpointUri(),isUsingFixedCamelContextName());
   if (triggerExisted) {
     if (hasTriggerChanged(oldTrigger,trigger)) {
       scheduler.rescheduleJob(triggerKey,trigger);
     }
   }
  else {
-    scheduler.scheduleJob(jobDetail,trigger);
+    try {
+      scheduler.scheduleJob(jobDetail,trigger);
+    }
+ catch (    ObjectAlreadyExistsException ex) {
+      if (!(getComponent().isClustered())) {
+        throw ex;
+      }
+ else {
+        trigger=scheduler.getTrigger(triggerKey);
+        if (trigger == null) {
+          throw new SchedulerException("Trigger could not be found in quartz scheduler.");
+        }
+      }
+    }
   }
   if (LOG.isInfoEnabled()) {
     LOG.info("Job {} (triggerType={}, jobClass={}) is scheduled. Next fire date is {}",new Object[]{trigger.getKey(),trigger.getClass().getSimpleName(),jobDetail.getJobClass().getSimpleName(),trigger.getNextFireTime()});
