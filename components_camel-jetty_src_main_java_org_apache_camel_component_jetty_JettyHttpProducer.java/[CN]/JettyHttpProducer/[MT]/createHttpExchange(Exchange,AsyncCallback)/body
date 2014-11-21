@@ -22,7 +22,7 @@
       ByteArrayOutputStream bos=new ByteArrayOutputStream();
       try {
         HttpHelper.writeObjectToStream(bos,obj);
-        httpExchange.setRequestContent(new ByteArrayBuffer(bos.toByteArray()));
+        httpExchange.setRequestContent(bos.toByteArray());
       }
   finally {
         IOHelper.close(bos,"body",LOG);
@@ -33,16 +33,11 @@
       if (body instanceof String) {
         String data=(String)body;
         String charset=IOHelper.getCharsetName(exchange,false);
-        if (charset != null) {
-          httpExchange.setRequestContent(new ByteArrayBuffer(data,charset));
-        }
- else {
-          httpExchange.setRequestContent(new ByteArrayBuffer(data));
-        }
+        httpExchange.setRequestContent(data,charset);
       }
  else {
         InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,exchange,exchange.getIn().getBody());
-        httpExchange.setRequestContentSource(is);
+        httpExchange.setRequestContent(is);
       }
     }
   }

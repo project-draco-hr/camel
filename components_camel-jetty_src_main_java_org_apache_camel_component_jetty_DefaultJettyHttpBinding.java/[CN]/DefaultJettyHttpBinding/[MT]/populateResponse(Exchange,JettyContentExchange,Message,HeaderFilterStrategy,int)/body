@@ -1,12 +1,11 @@
 {
   Message answer=exchange.getOut();
   answer.setHeader(Exchange.HTTP_RESPONSE_CODE,responseCode);
-  Enumeration<String> names=httpExchange.getResponseFields().getFieldNames();
-  while (names.hasMoreElements()) {
-    String name=names.nextElement();
-    Enumeration<String> values=httpExchange.getResponseFields().getValues(name);
-    while (values.hasMoreElements()) {
-      String value=values.nextElement();
+  Map<String,Collection<String>> headers=httpExchange.getResponseHeaders();
+  for (  Map.Entry<String,Collection<String>> ent : headers.entrySet()) {
+    String name=ent.getKey();
+    Collection<String> values=ent.getValue();
+    for (    String value : values) {
       if (name.toLowerCase().equals("content-type")) {
         name=Exchange.CONTENT_TYPE;
         exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.getCharsetNameFromContentType(value));
