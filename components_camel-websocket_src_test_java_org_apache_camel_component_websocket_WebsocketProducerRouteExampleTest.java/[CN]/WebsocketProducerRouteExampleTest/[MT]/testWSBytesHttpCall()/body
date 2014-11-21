@@ -1,12 +1,12 @@
 {
   AsyncHttpClient c=new AsyncHttpClient();
-  WebSocket websocket=c.prepareGet("ws://localhost:" + port + "/shop").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketTextListener(){
-    @Override public void onMessage(    String message){
+  WebSocket websocket=c.prepareGet("ws://localhost:" + port + "/shop").execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(new WebSocketByteListener(){
+    @Override public void onMessage(    byte[] message){
       received.add(message);
       log.info("received --> " + message);
       latch.countDown();
     }
-    @Override public void onFragment(    String fragment,    boolean last){
+    @Override public void onFragment(    byte[] fragment,    boolean last){
     }
     @Override public void onOpen(    WebSocket websocket){
     }
@@ -17,12 +17,13 @@
     }
   }
 ).build()).get();
-  producer.sendBodyAndHeader("Beer on stock at Apache Mall",WebsocketConstants.SEND_TO_ALL,"true");
+  byte[] testmessage="Beer on stock at Apache Mall".getBytes("utf-8");
+  producer.sendBodyAndHeader(testmessage,WebsocketConstants.SEND_TO_ALL,"true");
   assertTrue(latch.await(10,TimeUnit.SECONDS));
   assertEquals(1,received.size());
   Object r=received.get(0);
-  assertTrue(r instanceof String);
-  assertEquals("Beer on stock at Apache Mall",r);
+  assertTrue(r instanceof byte[]);
+  assertArrayEquals(testmessage,(byte[])r);
   websocket.close();
   c.close();
 }
