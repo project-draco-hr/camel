@@ -1,6 +1,47 @@
 {
-  super(true);
+  super();
   this.exchange=exchange;
   this.jettyBinding=jettyBinding;
   this.client=client;
+  this.ce=new ContentExchange(true);
+  HttpEventListener old=ce.getEventListener();
+  ce.setEventListener(new HttpEventListenerWrapper(old,true){
+    public void onRequestComplete() throws IOException {
+      JettyContentExchange.this.onRequestComplete();
+      super.onRequestComplete();
+    }
+    public void onResponseHeader(    Buffer name,    Buffer value) throws IOException {
+      JettyContentExchange.this.onResponseHeader(name,value);
+      super.onResponseHeader(name,value);
+    }
+    @Override public void onResponseComplete() throws IOException {
+      super.onResponseComplete();
+      JettyContentExchange.this.onResponseComplete();
+    }
+    @Override public void onConnectionFailed(    Throwable ex){
+      try {
+        super.onConnectionFailed(ex);
+      }
+  finally {
+        JettyContentExchange.this.onConnectionFailed(ex);
+      }
+    }
+    @Override public void onException(    Throwable ex){
+      try {
+        super.onException(ex);
+      }
+  finally {
+        JettyContentExchange.this.onException(ex);
+      }
+    }
+    @Override public void onExpire(){
+      try {
+        super.onExpire();
+      }
+  finally {
+        JettyContentExchange.this.onExpire();
+      }
+    }
+  }
+);
 }
