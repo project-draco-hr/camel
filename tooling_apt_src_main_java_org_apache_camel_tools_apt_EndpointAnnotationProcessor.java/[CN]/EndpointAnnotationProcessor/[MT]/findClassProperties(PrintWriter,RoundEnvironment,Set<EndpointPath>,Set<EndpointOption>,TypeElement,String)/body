@@ -14,24 +14,7 @@
         TypeMirror fieldType=fieldElement.asType();
         String fieldTypeName=fieldType.toString();
         TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-        String docComment=elementUtils.getDocComment(fieldElement);
-        if (isNullOrEmpty(docComment)) {
-          String setter="set" + fieldName.substring(0,1).toUpperCase();
-          if (fieldName.length() > 1) {
-            setter+=fieldName.substring(1);
-          }
-          List<ExecutableElement> methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
-          for (          ExecutableElement method : methods) {
-            String methodName=method.getSimpleName().toString();
-            if (setter.equals(methodName) && method.getParameters().size() == 1) {
-              String doc=elementUtils.getDocComment(method);
-              if (!isNullOrEmpty(doc)) {
-                docComment=doc;
-                break;
-              }
-            }
-          }
-        }
+        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement);
         if (isNullOrEmpty(docComment)) {
           docComment=path.description();
         }
@@ -76,24 +59,7 @@
           findClassProperties(writer,roundEnv,endpointPaths,endpointOptions,fieldTypeElement,nestedPrefix);
         }
  else {
-          String docComment=elementUtils.getDocComment(fieldElement);
-          if (isNullOrEmpty(docComment)) {
-            String setter="set" + fieldName.substring(0,1).toUpperCase();
-            if (fieldName.length() > 1) {
-              setter+=fieldName.substring(1);
-            }
-            List<ExecutableElement> methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
-            for (            ExecutableElement method : methods) {
-              String methodName=method.getSimpleName().toString();
-              if (setter.equals(methodName) && method.getParameters().size() == 1) {
-                String doc=elementUtils.getDocComment(method);
-                if (!isNullOrEmpty(doc)) {
-                  docComment=doc;
-                  break;
-                }
-              }
-            }
-          }
+          String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement);
           if (isNullOrEmpty(docComment)) {
             docComment=param.description();
           }
