@@ -1,0 +1,13 @@
+{
+  int messageInTopic=10;
+  int messageInOtherTopic=5;
+  CountDownLatch messagesLatch=new CountDownLatch(messageInTopic + messageInOtherTopic);
+  Map<String,Integer> topicCountMap=new HashMap<String,Integer>();
+  topicCountMap.put(TOPIC,5);
+  topicCountMap.put(TOPIC_IN_HEADER,5);
+  createKafkaMessageConsumer(messagesLatch,topicCountMap);
+  sendMessagesInRoute(messageInTopic,"IT test message",KafkaConstants.PARTITION_KEY,"1");
+  sendMessagesInRoute(messageInOtherTopic,"IT test message in other topic",KafkaConstants.PARTITION_KEY,"1",KafkaConstants.TOPIC,TOPIC_IN_HEADER);
+  boolean allMessagesReceived=messagesLatch.await(200,TimeUnit.MILLISECONDS);
+  assertTrue("Not all messages were published to the kafka topics. Not received: " + messagesLatch.getCount(),allMessagesReceived);
+}

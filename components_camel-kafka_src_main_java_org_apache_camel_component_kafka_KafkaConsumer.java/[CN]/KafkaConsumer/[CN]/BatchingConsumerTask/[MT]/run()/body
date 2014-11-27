@@ -1,0 +1,30 @@
+{
+  ConsumerIterator<byte[],byte[]> it=stream.iterator();
+  int processed=0;
+  while (it.hasNext()) {
+    MessageAndMetadata<byte[],byte[]> mm=it.next();
+    Exchange exchange=endpoint.createKafkaExchange(mm);
+    try {
+      processor.process(exchange);
+    }
+ catch (    Exception e) {
+      LOG.error(e.getMessage(),e);
+    }
+    processed++;
+    if (processed >= endpoint.getBatchSize()) {
+      try {
+        berrier.await(10,TimeUnit.SECONDS);
+        processed=0;
+      }
+ catch (      InterruptedException e) {
+        LOG.error(e.getMessage(),e);
+      }
+catch (      BrokenBarrierException e) {
+        LOG.error(e.getMessage(),e);
+      }
+catch (      TimeoutException e) {
+        LOG.error(e.getMessage(),e);
+      }
+    }
+  }
+}

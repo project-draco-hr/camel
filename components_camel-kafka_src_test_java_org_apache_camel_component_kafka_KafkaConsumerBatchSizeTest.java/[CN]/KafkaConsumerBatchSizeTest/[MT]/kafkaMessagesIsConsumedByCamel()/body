@@ -1,0 +1,25 @@
+{
+  to.expectedMessageCount(2);
+  to.expectedBodiesReceivedInAnyOrder("m1","m2");
+  for (int k=1; k <= 2; k++) {
+    String msg="m" + k;
+    KeyedMessage<String,String> data=new KeyedMessage<String,String>(TOPIC,"1",msg);
+    producer.send(data);
+  }
+  to.assertIsSatisfied(3000);
+  from.getCamelContext().stop();
+  from.getCamelContext().start();
+  to.reset();
+  to.expectedMessageCount(10);
+  to.expectedBodiesReceivedInAnyOrder("m1","m2","m3","m4","m5","m6","m7","m8","m9","m10");
+  for (int k=3; k <= 10; k++) {
+    String msg="m" + k;
+    KeyedMessage<String,String> data=new KeyedMessage<String,String>(TOPIC,"1",msg);
+    producer.send(data);
+  }
+  to.assertIsSatisfied(3000);
+  from.getCamelContext().stop();
+  from.getCamelContext().start();
+  to.reset();
+  to.expectedMessageCount(1);
+}
