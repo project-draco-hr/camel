@@ -25,7 +25,18 @@
     }
     Key key;
     try {
-      key=keyStoreAndAlias.getKeyStore().getKey(keyStoreAndAlias.getAlias(),keyStoreAndAlias.getPassword());
+      if (this.getCamelContext() != null && keyStoreAndAlias.getPassword() != null) {
+        try {
+          String passwordProperty=this.getCamelContext().resolvePropertyPlaceholders(new String(keyStoreAndAlias.getPassword()));
+          key=keyStoreAndAlias.getKeyStore().getKey(keyStoreAndAlias.getAlias(),passwordProperty.toCharArray());
+        }
+ catch (        Exception e) {
+          throw new RuntimeCamelException("Error parsing property value: " + new String(keyStoreAndAlias.getPassword()),e);
+        }
+      }
+ else {
+        key=keyStoreAndAlias.getKeyStore().getKey(keyStoreAndAlias.getAlias(),keyStoreAndAlias.getPassword());
+      }
     }
  catch (    UnrecoverableKeyException e) {
       throw new KeySelectorException(e);
