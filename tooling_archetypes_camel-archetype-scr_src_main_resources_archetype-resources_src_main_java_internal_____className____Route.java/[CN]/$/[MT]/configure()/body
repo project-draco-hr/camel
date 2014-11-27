@@ -1,5 +1,6 @@
 {
   checkProperties();
   errorHandler(defaultErrorHandler().retryAttemptedLogLevel(LoggingLevel.WARN).maximumRedeliveries(maximumRedeliveries).redeliveryDelay(redeliveryDelay).backOffMultiplier(backOffMultiplier).maximumRedeliveryDelay(maximumRedeliveryDelay));
-  from("{{from}}").routeId(camelRouteId).to("{{to}}");
+  from("{{from}}").startupOrder(2).routeId(camelRouteId).onCompletion().to("direct:processCompletion").end().removeHeaders("CamelHttp*").to("{{to}}");
+  from("direct:processCompletion").startupOrder(1).routeId(camelRouteId + ".completion").choice().when(simple("${exception} == null")).log("{{messageOk}}").otherwise().log(LoggingLevel.ERROR,"{{messageError}}").end();
 }
