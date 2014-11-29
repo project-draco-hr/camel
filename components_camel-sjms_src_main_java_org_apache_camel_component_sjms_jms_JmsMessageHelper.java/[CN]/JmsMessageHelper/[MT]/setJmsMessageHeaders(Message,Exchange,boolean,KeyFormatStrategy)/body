@@ -1,0 +1,37 @@
+{
+  Map<String,Object> headers=new HashMap<>();
+  if (jmsMessage != null) {
+    try {
+      headers.put(JMS_CORRELATION_ID,jmsMessage.getJMSCorrelationID());
+      headers.put(JMS_DELIVERY_MODE,jmsMessage.getJMSDeliveryMode());
+      headers.put(JMS_DESTINATION,jmsMessage.getJMSDestination());
+      headers.put(JMS_EXPIRATION,jmsMessage.getJMSExpiration());
+      headers.put(JMS_MESSAGE_ID,jmsMessage.getJMSMessageID());
+      headers.put(JMS_PRIORITY,jmsMessage.getJMSPriority());
+      headers.put(JMS_REDELIVERED,jmsMessage.getJMSRedelivered());
+      headers.put(JMS_TIMESTAMP,jmsMessage.getJMSTimestamp());
+      headers.put(JMS_REPLY_TO,getJMSReplyTo(jmsMessage));
+      headers.put(JMS_TYPE,getJMSType(jmsMessage));
+      headers.put(JMSX_GROUP_ID,jmsMessage.getStringProperty(JMSX_GROUP_ID));
+    }
+ catch (    JMSException e) {
+      throw new RuntimeCamelException(e);
+    }
+    for (final Enumeration<String> enumeration=jmsMessage.getPropertyNames(); enumeration.hasMoreElements(); ) {
+      String key=enumeration.nextElement();
+      if (hasIllegalHeaderKey(key)) {
+        throw new IllegalHeaderException("Header " + key + " is not a legal JMS header name value");
+      }
+      Object value=jmsMessage.getObjectProperty(key);
+      String decodedName=keyFormatStrategy.decodeKey(key);
+      headers.put(decodedName,value);
+    }
+  }
+  if (out) {
+    exchange.getOut().setHeaders(headers);
+  }
+ else {
+    exchange.getIn().setHeaders(headers);
+  }
+  return exchange;
+}

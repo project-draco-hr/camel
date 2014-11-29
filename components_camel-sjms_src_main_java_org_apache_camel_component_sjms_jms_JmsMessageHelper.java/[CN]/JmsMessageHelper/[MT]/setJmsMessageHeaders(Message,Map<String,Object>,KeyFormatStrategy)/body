@@ -1,15 +1,8 @@
 {
-  KeyFormatStrategy localKeyFormatStrategy=null;
-  if (keyFormatStrategy == null) {
-    localKeyFormatStrategy=new DefaultJmsKeyFormatStrategy();
-  }
- else {
-    localKeyFormatStrategy=keyFormatStrategy;
-  }
-  Map<String,Object> headers=new HashMap<String,Object>(messageHeaders);
-  Set<String> keys=headers.keySet();
-  for (  String headerName : keys) {
-    Object headerValue=headers.get(headerName);
+  Map<String,Object> headers=new HashMap<>(messageHeaders);
+  for (  final Map.Entry<String,Object> entry : headers.entrySet()) {
+    String headerName=entry.getKey();
+    Object headerValue=entry.getValue();
     if (headerName.equalsIgnoreCase(JMS_CORRELATION_ID)) {
       if (headerValue == null) {
         setCorrelationId(jmsMessage,null);
@@ -74,12 +67,12 @@
     }
  else {
       LOGGER.trace("Ignoring JMS header: {} with value: {}",headerName,headerValue);
-      if (headerName.equalsIgnoreCase(JMS_DESTINATION) || headerName.equalsIgnoreCase(JMS_MESSAGE_ID) || headerName.equalsIgnoreCase("JMSTimestamp")|| headerName.equalsIgnoreCase("JMSRedelivered")) {
+      if (headerName.equalsIgnoreCase(JMS_DESTINATION) || headerName.equalsIgnoreCase(JMS_MESSAGE_ID) || headerName.equalsIgnoreCase(JMS_TIMESTAMP)|| headerName.equalsIgnoreCase(JMS_REDELIVERED)) {
         LOGGER.trace("Ignoring JMS header: {} with value: {}",headerName,headerValue);
       }
  else {
         if (!(headerValue instanceof JmsMessageType)) {
-          String encodedName=localKeyFormatStrategy.encodeKey(headerName);
+          String encodedName=keyFormatStrategy.encodeKey(headerName);
           try {
             JmsMessageHelper.setProperty(jmsMessage,encodedName,headerValue);
           }

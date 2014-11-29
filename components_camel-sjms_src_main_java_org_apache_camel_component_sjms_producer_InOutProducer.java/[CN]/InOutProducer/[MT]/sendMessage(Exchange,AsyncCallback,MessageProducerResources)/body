@@ -2,26 +2,20 @@
   if (isEndpointTransacted()) {
     exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),getCommitStrategy()));
   }
-  Message request=SjmsExchangeMessageHelper.createMessage(exchange,producer.getSession(),getSjmsEndpoint().getJmsKeyFormatStrategy(),getSjmsEndpoint().getCamelContext().getTypeConverter());
-  String correlationId=null;
-  if (exchange.getIn().getHeader("JMSCorrelationID",String.class) == null) {
+  Message request=JmsMessageHelper.createMessage(exchange,producer.getSession(),getEndpoint());
+  String correlationId;
+  if (exchange.getIn().getHeader(JmsConstants.JMS_CORRELATION_ID,String.class) == null) {
     correlationId=UUID.randomUUID().toString().replace("-","");
   }
  else {
-    correlationId=exchange.getIn().getHeader("JMSCorrelationID",String.class);
+    correlationId=exchange.getIn().getHeader(JmsConstants.JMS_CORRELATION_ID,String.class);
   }
   Object responseObject=null;
-  Exchanger<Object> messageExchanger=new Exchanger<Object>();
-  SjmsExchangeMessageHelper.setCorrelationId(request,correlationId);
-  lock.writeLock().lock();
-  try {
-    exchangerMap.put(correlationId,messageExchanger);
-  }
-  finally {
-    lock.writeLock().unlock();
-  }
+  Exchanger<Object> messageExchanger=new Exchanger<>();
+  JmsMessageHelper.setCorrelationId(request,correlationId);
+  EXCHANGERS.put(correlationId,messageExchanger);
   MessageConsumerResources consumer=consumers.borrowObject();
-  SjmsExchangeMessageHelper.setJMSReplyTo(request,consumer.getReplyToDestination());
+  JmsMessageHelper.setJMSReplyTo(request,consumer.getReplyToDestination());
   consumers.returnObject(consumer);
   producer.getMessageProducer().send(request);
   try {
@@ -31,13 +25,7 @@
   }
   try {
     responseObject=messageExchanger.exchange(null,getResponseTimeOut(),TimeUnit.MILLISECONDS);
-    lock.writeLock().lock();
-    try {
-      exchangerMap.remove(correlationId);
-    }
-  finally {
-      lock.writeLock().unlock();
-    }
+    EXCHANGERS.remove(correlationId);
   }
  catch (  InterruptedException e) {
     log.debug("Exchanger was interrupted while waiting on response",e);
@@ -53,7 +41,7 @@ catch (  TimeoutException e) {
     }
  else     if (responseObject instanceof Message) {
       Message response=(Message)responseObject;
-      SjmsExchangeMessageHelper.populateExchange(response,exchange,true,getEndpoint().getJmsKeyFormatStrategy());
+      JmsMessageHelper.populateExchange(response,exchange,true,getEndpoint().getJmsKeyFormatStrategy());
     }
  else {
       exchange.setException(new CamelException("Unknown response type: " + responseObject));
