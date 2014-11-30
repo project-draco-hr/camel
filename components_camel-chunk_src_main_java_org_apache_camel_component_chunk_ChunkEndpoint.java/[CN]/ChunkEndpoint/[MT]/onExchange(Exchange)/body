@@ -1,0 +1,34 @@
+{
+  boolean fromTemplate=false;
+  String newResourceUri=exchange.getIn().getHeader(CHUNK_RESOURCE_URI,String.class);
+  if (theme == null) {
+    theme=getOrCreateTheme();
+  }
+  if (newResourceUri == null) {
+    String newTemplate=exchange.getIn().getHeader(CHUNK_TEMPLATE,String.class);
+    Chunk newChunk;
+    if (newTemplate == null) {
+      fromTemplate=false;
+      newChunk=getOrCreateChunk(theme,fromTemplate);
+    }
+ else {
+      fromTemplate=true;
+      newChunk=createChunk(new StringReader(newTemplate),theme,fromTemplate);
+      exchange.getIn().removeHeader(CHUNK_TEMPLATE);
+    }
+    Map<String,Object> variableMap=ExchangeHelper.createVariableMap(exchange);
+    StringWriter writer=new StringWriter();
+    newChunk.putAll(variableMap);
+    newChunk.render(writer);
+    writer.flush();
+    Message out=exchange.getOut();
+    out.setBody(newChunk.toString());
+    out.setHeaders(exchange.getIn().getHeaders());
+    out.setAttachments(exchange.getIn().getAttachments());
+  }
+ else {
+    exchange.getIn().removeHeader(ChunkConstants.CHUNK_RESOURCE_URI);
+    ChunkEndpoint newEndpoint=getCamelContext().getEndpoint(CHUNK_ENDPOINT_URI_PREFIX + newResourceUri,ChunkEndpoint.class);
+    newEndpoint.onExchange(exchange);
+  }
+}
