@@ -8,7 +8,12 @@
     bossPool=null;
   }
   if (workerPool != null) {
-    workerPool.shutdown();
+    if (workerPool instanceof ExternalResourceReleasable) {
+      ((ExternalResourceReleasable)workerPool).releaseExternalResources();
+    }
+ else {
+      workerPool.shutdown();
+    }
     workerPool=null;
   }
   if (pool != null) {
@@ -19,11 +24,11 @@
     pool=null;
   }
   if (channelFactory != null) {
-    channelFactory.shutdown();
+    channelFactory.releaseExternalResources();
     channelFactory=null;
   }
   if (datagramChannelFactory != null) {
-    datagramChannelFactory.shutdown();
+    datagramChannelFactory.releaseExternalResources();
     datagramChannelFactory=null;
   }
   super.doStop();
