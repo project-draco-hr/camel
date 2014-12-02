@@ -1,5 +1,5 @@
 {
-  ServiceTracker<?,?> tracker=null;
+  ServiceTracker<T,T> tracker;
   try {
     String flt;
     if (filter != null) {
@@ -14,9 +14,9 @@
       flt="(" + Constants.OBJECTCLASS + "="+ type.getName()+ ")";
     }
     Filter osgiFilter=FrameworkUtil.createFilter(flt);
-    tracker=new ServiceTracker<Object,Object>(bundleContext,osgiFilter,null);
+    tracker=new ServiceTracker<T,T>(bundleContext,osgiFilter,null);
     tracker.open(true);
-    Object svc=type.cast(tracker.waitForService(timeout));
+    T svc=tracker.waitForService(timeout);
     if (svc == null) {
       @SuppressWarnings("rawtypes") Dictionary dic=bundleContext.getBundle().getHeaders();
       LOG.warn("Test bundle headers: " + explode(dic));
@@ -28,7 +28,7 @@
       }
       throw new RuntimeException("Gave up waiting for service " + flt);
     }
-    return type.cast(svc);
+    return svc;
   }
  catch (  InvalidSyntaxException e) {
     throw new IllegalArgumentException("Invalid filter",e);
