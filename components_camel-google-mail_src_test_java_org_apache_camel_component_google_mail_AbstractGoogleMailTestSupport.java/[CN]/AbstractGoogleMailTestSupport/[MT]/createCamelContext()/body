@@ -1,0 +1,20 @@
+{
+  final CamelContext context=super.createCamelContext();
+  final Properties properties=new Properties();
+  try {
+    properties.load(getClass().getResourceAsStream(TEST_OPTIONS_PROPERTIES));
+  }
+ catch (  Exception e) {
+    throw new IOException(String.format("%s could not be loaded: %s",TEST_OPTIONS_PROPERTIES,e.getMessage()),e);
+  }
+  Map<String,Object> options=new HashMap<String,Object>();
+  for (  Map.Entry<Object,Object> entry : properties.entrySet()) {
+    options.put(entry.getKey().toString(),entry.getValue());
+  }
+  final GoogleMailConfiguration configuration=new GoogleMailConfiguration();
+  IntrospectionSupport.setProperties(configuration,options);
+  final GoogleMailComponent component=new GoogleMailComponent(context);
+  component.setConfiguration(configuration);
+  context.addComponent("google-mail",component);
+  return context;
+}

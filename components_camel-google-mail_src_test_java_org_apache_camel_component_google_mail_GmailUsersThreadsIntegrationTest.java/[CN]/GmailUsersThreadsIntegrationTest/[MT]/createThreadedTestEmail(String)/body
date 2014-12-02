@@ -1,0 +1,17 @@
+{
+  com.google.api.services.gmail.model.Profile profile=requestBody("google-mail://users/getProfile?inBody=userId",CURRENT_USERID);
+  Properties props=new Properties();
+  Session session=Session.getDefaultInstance(props,null);
+  MimeMessage mm=new MimeMessage(session);
+  mm.addRecipients(RecipientType.TO,profile.getEmailAddress());
+  mm.setSubject("Hello from camel-google-mail");
+  mm.setContent("Camel rocks!","text/plain");
+  Message createMessageWithEmail=createMessageWithEmail(mm);
+  if (previousThreadId != null) {
+    createMessageWithEmail.setThreadId(previousThreadId);
+  }
+  Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put("CamelGoogleMail.userId",CURRENT_USERID);
+  headers.put("CamelGoogleMail.content",createMessageWithEmail);
+  return requestBodyAndHeaders("google-mail://messages/send",null,headers);
+}
