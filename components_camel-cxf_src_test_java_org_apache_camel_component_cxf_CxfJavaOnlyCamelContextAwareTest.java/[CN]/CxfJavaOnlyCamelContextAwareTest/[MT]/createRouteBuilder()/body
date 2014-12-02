@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      CxfEndpoint endpoint=new CxfEndpoint();
+      endpoint.setAddress("http://localhost:" + port1 + "/PersonService");
+      endpoint.setServiceName(new QName("http://camel.apache.org/wsdl-first","PersonService"));
+      endpoint.setPortName(new QName("http://camel.apache.org/wsdl-first","soap"));
+      endpoint.setWsdlURL("classpath:person.wsdl");
+      endpoint.setDataFormat(DataFormat.PAYLOAD);
+      context.addEndpoint("personService",endpoint);
+      from(endpoint).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String s="<GetPersonResponse xmlns=\"http://camel.apache.org/wsdl-first/types\">" + "<personId>123</personId><ssn>456</ssn><name>Donald Duck</name>" + "</GetPersonResponse>";
+          Document xml=context.getTypeConverter().convertTo(Document.class,s);
+          exchange.getOut().setBody(xml);
+        }
+      }
+);
+    }
+  }
+;
+}
