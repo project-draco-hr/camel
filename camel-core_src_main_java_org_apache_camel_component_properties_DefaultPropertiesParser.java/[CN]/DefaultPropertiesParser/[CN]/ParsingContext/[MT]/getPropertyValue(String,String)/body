@@ -1,10 +1,19 @@
 {
+  String defaultValue=null;
+  if (key.contains(GET_OR_ELSE_TOKEN)) {
+    defaultValue=ObjectHelper.after(key,GET_OR_ELSE_TOKEN);
+    key=ObjectHelper.before(key,GET_OR_ELSE_TOKEN);
+  }
   String augmentedKey=getAugmentedKey(key);
   boolean shouldFallback=fallbackToUnaugmentedProperty && !key.equals(augmentedKey);
   String value=doGetPropertyValue(augmentedKey);
   if (value == null && shouldFallback) {
     log.debug("Property with key [{}] not found, attempting with unaugmented key: {}",augmentedKey,key);
     value=doGetPropertyValue(key);
+  }
+  if (value == null && defaultValue != null) {
+    log.debug("Property with key [{}] not found, using default value: {}",augmentedKey,defaultValue);
+    value=defaultValue;
   }
   if (value == null) {
     StringBuilder esb=new StringBuilder();
