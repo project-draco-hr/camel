@@ -1,5 +1,7 @@
 {
   TriggerKey triggerKey=quartzContext.getTrigger().getKey();
+  JobDetail jobDetail=quartzContext.getJobDetail();
+  JobKey jobKey=jobDetail.getKey();
   if (LOG.isDebugEnabled()) {
     LOG.debug("Looking up existing QuartzEndpoint with triggerKey={}",triggerKey);
   }
@@ -14,7 +16,7 @@
       if (LOG.isTraceEnabled()) {
         LOG.trace("Checking route endpoint={} with checkTriggerKey={}",quartzEndpoint,checkTriggerKey);
       }
-      if (triggerKey.equals(checkTriggerKey)) {
+      if (triggerKey.equals(checkTriggerKey) || (jobDetail.requestsRecovery() && jobKey.getGroup().equals(checkTriggerKey.getGroup()) && jobKey.getName().equals(checkTriggerKey.getName()))) {
         return quartzEndpoint;
       }
     }
