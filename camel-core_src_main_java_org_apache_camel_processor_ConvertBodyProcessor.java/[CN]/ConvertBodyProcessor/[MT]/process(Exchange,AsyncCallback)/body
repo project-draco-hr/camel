@@ -1,6 +1,7 @@
 {
-  Message in=exchange.getIn();
-  if (in.getBody() == null) {
+  boolean out=exchange.hasOut();
+  Message old=out ? exchange.getOut() : exchange.getIn();
+  if (old.getBody() == null) {
     callback.done(true);
     return true;
   }
@@ -9,21 +10,22 @@
   }
   Object value;
   try {
-    value=in.getMandatoryBody(type);
+    value=old.getMandatoryBody(type);
   }
  catch (  Exception e) {
     exchange.setException(e);
     callback.done(true);
     return true;
   }
-  Message msg=new DefaultMessage();
-  msg.copyFrom(in);
-  msg.setBody(value);
-  if (exchange.getPattern().isOutCapable()) {
-    exchange.setOut(msg);
+  boolean copyNeeded=!(old.getClass().equals(DefaultMessage.class));
+  if (copyNeeded) {
+    Message msg=new DefaultMessage();
+    msg.copyFrom(old);
+    msg.setBody(value);
+    ExchangeHelper.replaceMessage(exchange,msg,false);
   }
  else {
-    exchange.setIn(msg);
+    old.setBody(value);
   }
   if (charset != null) {
     exchange.removeProperty(Exchange.CHARSET_NAME);

@@ -1,11 +1,21 @@
 {
   try {
     Object newBody=expression.evaluate(exchange,Object.class);
-    Message old=exchange.getIn();
-    Message msg=new DefaultMessage();
-    msg.copyFrom(old);
-    msg.setBody(newBody);
-    exchange.setOut(msg);
+    boolean out=exchange.hasOut();
+    Message old=out ? exchange.getOut() : exchange.getIn();
+    boolean copyNeeded=!(old.getClass().equals(DefaultMessage.class));
+    if (copyNeeded) {
+      Message msg=new DefaultMessage();
+      msg.copyFrom(old);
+      msg.setBody(newBody);
+      ExchangeHelper.replaceMessage(exchange,msg,true);
+    }
+ else {
+      old.setBody(newBody);
+      if (!exchange.hasOut()) {
+        exchange.setOut(exchange.getIn());
+      }
+    }
   }
  catch (  Exception e) {
     exchange.setException(e);

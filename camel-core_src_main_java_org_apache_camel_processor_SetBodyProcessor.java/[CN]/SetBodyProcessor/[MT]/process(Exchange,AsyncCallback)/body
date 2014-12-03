@@ -3,14 +3,15 @@
     Object newBody=expression.evaluate(exchange,Object.class);
     boolean out=exchange.hasOut();
     Message old=out ? exchange.getOut() : exchange.getIn();
-    Message msg=new DefaultMessage();
-    msg.copyFrom(old);
-    msg.setBody(newBody);
-    if (out) {
-      exchange.setOut(msg);
+    boolean copyNeeded=!(old.getClass().equals(DefaultMessage.class));
+    if (copyNeeded) {
+      Message msg=new DefaultMessage();
+      msg.copyFrom(old);
+      msg.setBody(newBody);
+      ExchangeHelper.replaceMessage(exchange,msg,false);
     }
  else {
-      exchange.setIn(msg);
+      old.setBody(newBody);
     }
   }
  catch (  Exception e) {
