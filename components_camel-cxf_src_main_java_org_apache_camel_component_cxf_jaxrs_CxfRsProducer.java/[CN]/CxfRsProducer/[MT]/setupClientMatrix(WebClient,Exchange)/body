@@ -1,0 +1,22 @@
+{
+  org.apache.cxf.message.Message cxfMessage=(org.apache.cxf.message.Message)exchange.getIn().getHeader("CamelCxfMessage");
+  if (cxfMessage != null) {
+    String requestURL=(String)cxfMessage.get("org.apache.cxf.request.uri");
+    String matrixParam=null;
+    int matrixStart=requestURL.indexOf(";");
+    int matrixEnd=requestURL.indexOf("?") > -1 ? requestURL.indexOf("?") : requestURL.length();
+    Map<String,String> maps=null;
+    if (requestURL != null && matrixStart > 0) {
+      matrixParam=requestURL.substring(matrixStart + 1,matrixEnd);
+      if (matrixParam != null) {
+        maps=getMatrixParametersFromMatrixString(matrixParam,IOHelper.getCharsetName(exchange));
+      }
+    }
+    if (maps != null) {
+      for (      Map.Entry<String,String> entry : maps.entrySet()) {
+        client.matrix(entry.getKey(),entry.getValue());
+        LOG.debug("Matrix param " + entry.getKey() + " :: "+ entry.getValue());
+      }
+    }
+  }
+}
