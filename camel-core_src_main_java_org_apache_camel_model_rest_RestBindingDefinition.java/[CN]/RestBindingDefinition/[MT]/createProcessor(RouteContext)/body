@@ -8,18 +8,18 @@
   if (mode == null || "off".equals(mode)) {
     return new RestBindingProcessor(null,null,null,null,consumes,produces,mode,skip);
   }
-  DataFormat json;
-  DataFormat outJson;
   String name=context.getRestConfiguration().getJsonDataFormat();
-  if (name == null) {
-    name="json-jackson";
-    json=context.resolveDataFormat(name);
-    outJson=context.resolveDataFormat(name);
+  if (name != null) {
+    Object instance=context.getRegistry().lookupByName(name);
+    if (instance != null) {
+      throw new IllegalArgumentException("JsonDataFormat name: " + name + " must not be an existing bean instance from the registry");
+    }
   }
  else {
-    json=context.resolveDataFormat(name);
-    outJson=context.getInjector().newInstance(json.getClass(),json);
+    name="json-jackson";
   }
+  DataFormat json=context.resolveDataFormat(name);
+  DataFormat outJson=context.resolveDataFormat(name);
   if (mode.contains("json") && json == null) {
     throw new IllegalArgumentException("JSon DataFormat " + name + " not found.");
   }
@@ -47,18 +47,18 @@
     setAdditionalConfiguration(context,outJson);
     context.addService(outJson);
   }
-  DataFormat jaxb;
-  DataFormat outJaxb;
   name=context.getRestConfiguration().getXmlDataFormat();
-  if (name == null) {
-    name="jaxb";
-    jaxb=context.resolveDataFormat(name);
-    outJaxb=context.resolveDataFormat(name);
+  if (name != null) {
+    Object instance=context.getRegistry().lookupByName(name);
+    if (instance != null) {
+      throw new IllegalArgumentException("XmlDataFormat name: " + name + " must not be an existing bean instance from the registry");
+    }
   }
  else {
-    jaxb=context.resolveDataFormat(name);
-    outJaxb=context.getInjector().newInstance(jaxb.getClass(),json);
+    name="jaxb";
   }
+  DataFormat jaxb=context.resolveDataFormat(name);
+  DataFormat outJaxb=context.resolveDataFormat(name);
   if (mode.contains("xml") && jaxb == null) {
     throw new IllegalArgumentException("XML DataFormat " + name + " not found.");
   }
