@@ -1,0 +1,34 @@
+{
+  String key=endpoint.getEndpointUri();
+  PollingConsumer answer=consumers.get(key);
+  if (pooled && answer == null) {
+    pool.acquire(endpoint);
+  }
+  if (answer == null) {
+    try {
+      answer=endpoint.createPollingConsumer();
+      answer.start();
+    }
+ catch (    Exception e) {
+      throw new FailedToCreateConsumerException(endpoint,e);
+    }
+    if (pooled && answer instanceof ServicePoolAware) {
+      LOG.debug("Adding to producer service pool with key: {} for producer: {}",endpoint,answer);
+      answer=pool.addAndAcquire(endpoint,answer);
+    }
+ else {
+      boolean singleton=false;
+      if (answer instanceof IsSingleton) {
+        singleton=((IsSingleton)answer).isSingleton();
+      }
+      if (singleton) {
+        LOG.debug("Adding to consumer cache with key: {} for consumer: {}",endpoint,answer);
+        consumers.put(key,answer);
+      }
+ else {
+        LOG.debug("Consumer for endpoint: {} is not singleton and thus not added to consumer cache",key);
+      }
+    }
+  }
+  return answer;
+}
