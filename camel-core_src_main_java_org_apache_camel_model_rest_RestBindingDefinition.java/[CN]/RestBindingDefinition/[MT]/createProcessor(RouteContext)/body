@@ -4,9 +4,17 @@
   if (bindingMode != null) {
     mode=bindingMode.name();
   }
-  boolean skip=skipBindingOnErrorCode == null || skipBindingOnErrorCode;
+  boolean cors=context.getRestConfiguration().isEnableCORS();
+  if (enableCORS != null) {
+    cors=enableCORS;
+  }
+  boolean skip=context.getRestConfiguration().isSkipBindingOnErrorCode();
+  if (skipBindingOnErrorCode != null) {
+    skip=skipBindingOnErrorCode;
+  }
+  Map<String,String> corsHeaders=context.getRestConfiguration().getCorsHeaders();
   if (mode == null || "off".equals(mode)) {
-    return new RestBindingProcessor(null,null,null,null,consumes,produces,mode,skip);
+    return new RestBindingProcessor(null,null,null,null,consumes,produces,mode,skip,cors,corsHeaders);
   }
   String name=context.getRestConfiguration().getJsonDataFormat();
   if (name != null) {
@@ -93,5 +101,5 @@
     setAdditionalConfiguration(context,outJaxb);
     context.addService(outJaxb);
   }
-  return new RestBindingProcessor(json,jaxb,outJson,outJaxb,consumes,produces,mode,skip);
+  return new RestBindingProcessor(json,jaxb,outJson,outJaxb,consumes,produces,mode,skip,cors,corsHeaders);
 }
