@@ -3,17 +3,29 @@
   if (partialClass != null && getPartNamespace() != null) {
     e=new JAXBElement<Object>(getPartNamespace(),partialClass,graph);
   }
-  if (asXmlStreamWriter(exchange)) {
-    XMLStreamWriter writer=typeConverter.convertTo(XMLStreamWriter.class,stream);
-    if (needFiltering(exchange)) {
-      writer=new FilteringXmlStreamWriter(writer);
+  if (introspector.isElement(e)) {
+    if (asXmlStreamWriter(exchange)) {
+      XMLStreamWriter writer=typeConverter.convertTo(XMLStreamWriter.class,stream);
+      if (needFiltering(exchange)) {
+        writer=new FilteringXmlStreamWriter(writer);
+      }
+      if (xmlStreamWriterWrapper != null) {
+        writer=xmlStreamWriterWrapper.wrapWriter(writer);
+      }
+      marshaller.marshal(e,writer);
     }
-    if (xmlStreamWriterWrapper != null) {
-      writer=xmlStreamWriterWrapper.wrapWriter(writer);
+ else {
+      marshaller.marshal(e,stream);
     }
-    marshaller.marshal(e,writer);
+  }
+ else   if (!mustBeJAXBElement) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Attempt to marshalling non JAXBElement with type {} as InputStream",ObjectHelper.classCanonicalName(graph));
+    }
+    InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,exchange,graph);
+    IOHelper.copyAndCloseInput(is,stream);
   }
  else {
-    marshaller.marshal(e,stream);
+    throw new InvalidPayloadException(exchange,JAXBElement.class);
   }
 }
