@@ -3,23 +3,20 @@
     throw new IllegalArgumentException("Unable to determine column widths from null Iterable<Endpoint>");
   }
  else {
-    int maxContextLen=0;
     int maxUriLen=0;
     int maxStatusLen=0;
-    for (    final Endpoint endpoint : endpoints) {
-      final String name=endpoint.getCamelContext().getName();
-      maxContextLen=java.lang.Math.max(maxContextLen,name == null ? 0 : name.length());
-      String uri=endpoint.getEndpointUri();
+    for (    Map<String,String> row : endpoints) {
+      final String name=row.get("camelContextName");
+      String uri=row.get("uri");
       if (decode) {
         uri=URLDecoder.decode(uri,"UTF-8");
       }
       uri=URISupport.sanitizeUri(uri);
       maxUriLen=java.lang.Math.max(maxUriLen,uri == null ? 0 : uri.length());
-      final String status=getEndpointState(endpoint);
+      final String status=row.get("state");
       maxStatusLen=java.lang.Math.max(maxStatusLen,status == null ? 0 : status.length());
     }
-    final Map<String,Integer> retval=new Hashtable<String,Integer>(3);
-    retval.put(CONTEXT_COLUMN_LABEL,maxContextLen);
+    final Map<String,Integer> retval=new Hashtable<String,Integer>();
     retval.put(URI_COLUMN_LABEL,maxUriLen);
     retval.put(STATUS_COLUMN_LABEL,maxStatusLen);
     return retval;

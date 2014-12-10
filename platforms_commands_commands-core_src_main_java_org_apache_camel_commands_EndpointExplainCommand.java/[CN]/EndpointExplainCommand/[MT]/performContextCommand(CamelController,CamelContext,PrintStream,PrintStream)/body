@@ -1,21 +1,21 @@
 {
-  List<Endpoint> endpoints=camelController.getEndpoints(name);
+  List<Map<String,String>> endpoints=camelController.getEndpoints(context);
   if (endpoints == null || endpoints.isEmpty()) {
     return null;
   }
   if (filter != null) {
-    Iterator<Endpoint> it=endpoints.iterator();
+    Iterator<Map<String,String>> it=endpoints.iterator();
     while (it.hasNext()) {
-      Endpoint endpoint=it.next();
-      if (!EndpointHelper.matchPattern(endpoint.getEndpointUri(),filter)) {
+      Map<String,String> row=it.next();
+      if (!EndpointHelper.matchPattern(row.get("uri"),filter)) {
         it.remove();
       }
     }
   }
-  for (  Endpoint endpoint : endpoints) {
-    String json=camelController.explainEndpointAsJSon(endpoint.getCamelContext().getName(),endpoint.getEndpointUri(),verbose);
-    out.println("Context:\t" + endpoint.getCamelContext().getName());
-    String uri=URISupport.sanitizeUri(endpoint.getEndpointUri());
+  for (  Map<String,String> row : endpoints) {
+    String json=camelController.explainEndpointAsJSon(context,row.get("uri"),verbose);
+    out.println("Context:\t" + context);
+    String uri=URISupport.sanitizeUri(row.get("uri"));
     String header="Uri:            " + uri;
     out.println(header);
     for (int i=0; i < header.length(); i++) {
