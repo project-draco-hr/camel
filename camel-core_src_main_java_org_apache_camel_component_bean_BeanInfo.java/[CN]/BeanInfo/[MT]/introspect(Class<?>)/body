@@ -2,13 +2,19 @@
   clazz=getTargetClass(clazz);
   ObjectHelper.notNull(clazz,"clazz",this);
   LOG.trace("Introspecting class: {}",clazz);
-  List<Method> methods=Arrays.asList(clazz.getDeclaredMethods());
-  if (!Modifier.isPublic(clazz.getModifiers())) {
-    LOG.trace("Preferring interface methods as class: {} is not public accessible",clazz);
-    List<Method> interfaceMethods=getInterfaceMethods(clazz);
-    interfaceMethods.addAll(methods);
-    methods=interfaceMethods;
+  List<Method> interfaceMethods=getInterfaceMethods(clazz);
+  Set<Method> overrides=new HashSet<Method>();
+  Set<Method> extraMethods=new HashSet<Method>(Arrays.asList(clazz.getDeclaredMethods()));
+  for (  Method target : extraMethods) {
+    for (    Method interfaceMethod : interfaceMethods) {
+      if (ObjectHelper.isOverridingMethod(interfaceMethod,target,false)) {
+        overrides.add(target);
+      }
+    }
   }
+  extraMethods.removeAll(overrides);
+  List<Method> methods=interfaceMethods;
+  methods.addAll(extraMethods);
   for (  Method method : methods) {
     boolean valid=isValidMethod(clazz,method);
     LOG.trace("Method: {} is valid: {}",method,valid);
