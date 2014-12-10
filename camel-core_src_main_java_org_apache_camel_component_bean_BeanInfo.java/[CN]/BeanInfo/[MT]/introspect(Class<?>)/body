@@ -2,18 +2,29 @@
   clazz=getTargetClass(clazz);
   ObjectHelper.notNull(clazz,"clazz",this);
   LOG.trace("Introspecting class: {}",clazz);
-  List<Method> interfaceMethods=getInterfaceMethods(clazz);
+  Set<Method> methods=new HashSet<Method>(Arrays.asList(clazz.getDeclaredMethods()));
   Set<Method> overrides=new HashSet<Method>();
-  Set<Method> extraMethods=new HashSet<Method>(Arrays.asList(clazz.getDeclaredMethods()));
+  for (  Method source : methods) {
+    for (    Method target : methods) {
+      if (ObjectHelper.isOverridingMethod(source,target,true)) {
+        continue;
+      }
+      if (ObjectHelper.isOverridingMethod(source,target,false)) {
+        overrides.add(target);
+      }
+    }
+  }
+  methods.removeAll(overrides);
+  overrides.clear();
+  List<Method> extraMethods=getInterfaceMethods(clazz);
   for (  Method target : extraMethods) {
-    for (    Method interfaceMethod : interfaceMethods) {
-      if (ObjectHelper.isOverridingMethod(interfaceMethod,target,false)) {
+    for (    Method source : methods) {
+      if (ObjectHelper.isOverridingMethod(source,target,false)) {
         overrides.add(target);
       }
     }
   }
   extraMethods.removeAll(overrides);
-  List<Method> methods=interfaceMethods;
   methods.addAll(extraMethods);
   for (  Method method : methods) {
     boolean valid=isValidMethod(clazz,method);
