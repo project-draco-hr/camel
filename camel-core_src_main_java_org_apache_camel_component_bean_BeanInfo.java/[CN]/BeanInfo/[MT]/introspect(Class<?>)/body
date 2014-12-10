@@ -14,18 +14,21 @@
     methods.addAll(extraMethods);
   }
   Set<Method> overrides=new HashSet<Method>();
-  for (  Method source : methods) {
-    for (    Method target : methods) {
-      if (ObjectHelper.isOverridingMethod(source,target,true)) {
-        continue;
-      }
-      if (ObjectHelper.isOverridingMethod(source,target,false)) {
-        overrides.add(target);
+  boolean javaClass=clazz.getName().startsWith("java.") || clazz.getName().startsWith("javax.");
+  if (!javaClass) {
+    for (    Method source : methods) {
+      for (      Method target : methods) {
+        if (ObjectHelper.isOverridingMethod(source,target,true)) {
+          continue;
+        }
+        if (ObjectHelper.isOverridingMethod(source,target,false)) {
+          overrides.add(target);
+        }
       }
     }
+    methods.removeAll(overrides);
+    overrides.clear();
   }
-  methods.removeAll(overrides);
-  overrides.clear();
   if (Modifier.isPublic(clazz.getModifiers())) {
     List<Method> extraMethods=getInterfaceMethods(clazz);
     for (    Method target : extraMethods) {
