@@ -1,0 +1,42 @@
+{
+  List<Map<String,String>> services=camelController.getRestServices(context);
+  if (services.isEmpty()) {
+    out.print("There are no REST services");
+    return null;
+  }
+  final Map<String,Integer> columnWidths=computeColumnWidths(services);
+  final String headerFormat=buildFormatString(columnWidths,true,verbose);
+  final String rowFormat=buildFormatString(columnWidths,false,verbose);
+  if (services.size() > 0) {
+    if (verbose) {
+      out.println(String.format(headerFormat,URL_COLUMN_NAME,BASE_PATH_LABEL,URI_TEMPLATE_LABEL,METHOD_COLUMN_LABEL,STATE_COLUMN_LABEL,ROUTE_COLUMN_LABEL));
+      out.println(String.format(headerFormat,"---","---------","------------","------","-----","--------"));
+    }
+ else {
+      out.println(String.format(headerFormat,BASE_PATH_LABEL,URI_TEMPLATE_LABEL,METHOD_COLUMN_LABEL,STATE_COLUMN_LABEL));
+      out.println(String.format(headerFormat,"---------","------------","------","-----"));
+    }
+    for (    Map<String,String> row : services) {
+      String uri=null;
+      if (verbose) {
+        uri=row.get("url");
+        if (decode == null || decode) {
+          uri=URLDecoder.decode(uri,"UTF-8");
+        }
+        uri=URISupport.sanitizeUri(uri);
+      }
+      String basePath=row.get("basePath");
+      String uriTemplate=row.get("uriTemplate") != null ? row.get("uriTemplate") : "";
+      String method=row.get("method");
+      String state=row.get("state");
+      String route=row.get("routeId");
+      if (verbose) {
+        out.println(String.format(rowFormat,uri,basePath,uriTemplate,method,state,route));
+      }
+ else {
+        out.println(String.format(rowFormat,basePath,uriTemplate,method,state));
+      }
+    }
+  }
+  return null;
+}
