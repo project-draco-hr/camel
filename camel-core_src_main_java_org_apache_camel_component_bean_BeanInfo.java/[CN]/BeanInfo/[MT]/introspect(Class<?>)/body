@@ -2,7 +2,15 @@
   clazz=getTargetClass(clazz);
   ObjectHelper.notNull(clazz,"clazz",this);
   LOG.trace("Introspecting class: {}",clazz);
-  Set<Method> methods=new HashSet<Method>(Arrays.asList(clazz.getDeclaredMethods()));
+  List<Method> methods;
+  if (Modifier.isPublic(clazz.getModifiers())) {
+    LOG.trace("Preferring class methods as class: {} is public accessible",clazz);
+    methods=new ArrayList<Method>(Arrays.asList(clazz.getDeclaredMethods()));
+  }
+ else {
+    LOG.trace("Preferring interface methods as class: {} is not public accessible",clazz);
+    methods=getInterfaceMethods(clazz);
+  }
   Set<Method> overrides=new HashSet<Method>();
   for (  Method source : methods) {
     for (    Method target : methods) {
@@ -16,16 +24,18 @@
   }
   methods.removeAll(overrides);
   overrides.clear();
-  List<Method> extraMethods=getInterfaceMethods(clazz);
-  for (  Method target : extraMethods) {
-    for (    Method source : methods) {
-      if (ObjectHelper.isOverridingMethod(source,target,false)) {
-        overrides.add(target);
+  if (Modifier.isPublic(clazz.getModifiers())) {
+    List<Method> extraMethods=getInterfaceMethods(clazz);
+    for (    Method target : extraMethods) {
+      for (      Method source : methods) {
+        if (ObjectHelper.isOverridingMethod(source,target,false)) {
+          overrides.add(target);
+        }
       }
     }
+    extraMethods.removeAll(overrides);
+    methods.addAll(extraMethods);
   }
-  extraMethods.removeAll(overrides);
-  methods.addAll(extraMethods);
   for (  Method method : methods) {
     boolean valid=isValidMethod(clazz,method);
     LOG.trace("Method: {} is valid: {}",method,valid);
