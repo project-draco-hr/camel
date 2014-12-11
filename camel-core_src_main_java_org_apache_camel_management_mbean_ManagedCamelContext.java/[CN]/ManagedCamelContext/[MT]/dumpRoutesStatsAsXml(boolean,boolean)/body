@@ -2,6 +2,7 @@
   StringBuilder sb=new StringBuilder();
   sb.append("<camelContextStat").append(String.format(" id=\"%s\" state=\"%s\"",getCamelId(),getState()));
   String stat=dumpStatsAsXml(fullStats);
+  sb.append(" exchangesInflight=\"").append(getInflightExchanges()).append("\"");
   sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
   MBeanServer server=getContext().getManagementStrategy().getManagementAgent().getMBeanServer();
   if (server != null) {
@@ -22,6 +23,7 @@
       ManagedRouteMBean route=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedRouteMBean.class,true);
       sb.append("    <routeStat").append(String.format(" id=\"%s\" state=\"%s\"",route.getRouteId(),route.getState()));
       stat=route.dumpStatsAsXml(fullStats);
+      sb.append(" exchangesInflight=\"").append(context.getInflightRepository().size(route.getRouteId())).append("\"");
       sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
       if (includeProcessors) {
         sb.append("      <processorStats>\n");
