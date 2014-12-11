@@ -1,15 +1,23 @@
 {
-  CamelContext camelContext=camelController.getCamelContext(context);
-  if (camelContext == null) {
-    err.println("Camel context " + context + " not found.");
-    return null;
+  if (camelController instanceof LocalCamelController) {
+    return executeLocal((LocalCamelController)camelController,out,err);
   }
-  ClassLoader oldClassloader=Thread.currentThread().getContextClassLoader();
-  Thread.currentThread().setContextClassLoader(camelContext.getApplicationContextClassLoader());
-  try {
-    return performContextCommand(camelController,camelContext.getName(),out,err);
-  }
-  finally {
-    Thread.currentThread().setContextClassLoader(oldClassloader);
+ else {
+    boolean found=false;
+    List<Map<String,String>> contexts=camelController.getCamelContexts();
+    for (    Map<String,String> entry : contexts) {
+      String name=entry.get("name");
+      if (context.equals(name)) {
+        found=true;
+        break;
+      }
+    }
+    if (!found) {
+      err.println("Camel context " + context + " not found.");
+      return null;
+    }
+ else {
+      return performContextCommand(camelController,context,out,err);
+    }
   }
 }

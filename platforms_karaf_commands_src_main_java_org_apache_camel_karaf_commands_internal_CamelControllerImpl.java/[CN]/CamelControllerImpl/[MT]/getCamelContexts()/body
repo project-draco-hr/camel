@@ -1,26 +1,12 @@
 {
-  List<CamelContext> camelContexts=new ArrayList<CamelContext>();
-  try {
-    ServiceReference<?>[] references=bundleContext.getServiceReferences(CamelContext.class.getName(),null);
-    if (references != null) {
-      for (      ServiceReference<?> reference : references) {
-        if (reference != null) {
-          CamelContext camelContext=(CamelContext)bundleContext.getService(reference);
-          if (camelContext != null) {
-            camelContexts.add(camelContext);
-          }
-        }
-      }
-    }
+  List<Map<String,String>> answer=new ArrayList<Map<String,String>>();
+  List<CamelContext> camelContexts=getLocalCamelContexts();
+  for (  CamelContext camelContext : camelContexts) {
+    Map<String,String> row=new LinkedHashMap<String,String>();
+    row.put("name",camelContext.getName());
+    row.put("state",camelContext.getStatus().name());
+    row.put("uptime",camelContext.getUptime());
+    answer.add(row);
   }
- catch (  Exception e) {
-    LOG.warn("Cannot retrieve the list of Camel contexts.",e);
-  }
-  Collections.sort(camelContexts,new Comparator<CamelContext>(){
-    @Override public int compare(    CamelContext o1,    CamelContext o2){
-      return o1.getName().compareTo(o2.getName());
-    }
-  }
-);
-  return camelContexts;
+  return answer;
 }

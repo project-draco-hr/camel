@@ -1,0 +1,18 @@
+{
+  CamelContext context=this.getLocalCamelContext(camelContextName);
+  if (context == null) {
+    return;
+  }
+  ManagementAgent agent=context.getManagementStrategy().getManagementAgent();
+  if (agent != null) {
+    MBeanServer mBeanServer=agent.getMBeanServer();
+    ObjectName query=ObjectName.getInstance(agent.getMBeanObjectDomainName() + ":type=routes,*");
+    Set<ObjectName> set=mBeanServer.queryNames(query,null);
+    for (    ObjectName routeMBean : set) {
+      String camelId=(String)mBeanServer.getAttribute(routeMBean,"CamelId");
+      if (camelId != null && camelId.equals(context.getName())) {
+        mBeanServer.invoke(routeMBean,"reset",new Object[]{true},new String[]{"boolean"});
+      }
+    }
+  }
+}
