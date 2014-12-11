@@ -9,8 +9,34 @@
     ObjectName on=ObjectName.getInstance(pattern);
     J4pExecResponse response=jolokia.execute(new J4pExecRequest(on,"listRestServices()"));
     if (response != null) {
-      JSONObject data=response.asJSONObject();
+      JSONObject data=response.getValue();
+      for (      Object obj : data.values()) {
+        JSONObject data2=(JSONObject)obj;
+        JSONObject service=(JSONObject)data2.values().iterator().next();
+        Map<String,String> row=new LinkedHashMap<String,String>();
+        row.put("basePath",asString(service.get("basePath")));
+        row.put("baseUrl",asString(service.get("baseUrl")));
+        row.put("consumes",asString(service.get("consumes")));
+        row.put("description",asString(service.get("description")));
+        row.put("inType",asString(service.get("inType")));
+        row.put("method",asString(service.get("method")));
+        row.put("outType",asString(service.get("outType")));
+        row.put("produces",asString(service.get("produces")));
+        row.put("routeId",asString(service.get("routeId")));
+        row.put("state",asString(service.get("state")));
+        row.put("uriTemplate",asString(service.get("uriTemplate")));
+        row.put("url",asString(service.get("url")));
+        answer.add(row);
+      }
     }
+    Collections.sort(answer,new Comparator<Map<String,String>>(){
+      @Override public int compare(      Map<String,String> service1,      Map<String,String> service2){
+        String url1=service1.get("url");
+        String url2=service2.get("url");
+        return url1.compareTo(url2);
+      }
+    }
+);
   }
   return answer;
 }
