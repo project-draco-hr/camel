@@ -1,0 +1,22 @@
+{
+  ObjectName on=cache.get(camelContextName);
+  if (on == null) {
+    ObjectName found=null;
+    J4pSearchResponse sr=jolokia.execute(new J4pSearchRequest("*:type=context,*"));
+    if (sr != null) {
+      for (      ObjectName name : sr.getObjectNames()) {
+        String id=name.getKeyProperty("name");
+        id=StringHelper.removeLeadingAndEndingQuotes(id);
+        if (camelContextName.equals(id)) {
+          found=name;
+          break;
+        }
+      }
+    }
+    if (found != null) {
+      on=found;
+      cache.put(camelContextName,on);
+    }
+  }
+  return on;
+}

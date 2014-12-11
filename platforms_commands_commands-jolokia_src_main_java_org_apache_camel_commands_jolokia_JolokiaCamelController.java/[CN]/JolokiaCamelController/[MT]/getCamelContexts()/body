@@ -1,0 +1,20 @@
+{
+  if (jolokia == null) {
+    throw new IllegalStateException("Need to connect to remote jolokia first");
+  }
+  List<Map<String,String>> answer=new ArrayList<Map<String,String>>();
+  J4pSearchResponse sr=jolokia.execute(new J4pSearchRequest("*:type=context,*"));
+  List<J4pReadRequest> list=new ArrayList<J4pReadRequest>();
+  for (  ObjectName on : sr.getObjectNames()) {
+    list.add(new J4pReadRequest(on,"CamelId","State","Uptime"));
+  }
+  List<J4pReadResponse> lrr=jolokia.execute(list);
+  for (  J4pReadResponse rr : lrr) {
+    Map<String,String> row=new LinkedHashMap<String,String>();
+    row.put("name",rr.getValue("CamelId").toString());
+    row.put("state",rr.getValue("State").toString());
+    row.put("uptime",rr.getValue("Uptime").toString());
+    answer.add(row);
+  }
+  return answer;
+}

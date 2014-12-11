@@ -1,0 +1,44 @@
+{
+  if (jolokia == null) {
+    throw new IllegalStateException("Need to connect to remote jolokia first");
+  }
+  List<Map<String,String>> answer=new ArrayList<Map<String,String>>();
+  if (camelContextName != null) {
+    J4pSearchResponse sr=jolokia.execute(new J4pSearchRequest("*:type=routes,*"));
+    List<J4pReadRequest> list=new ArrayList<J4pReadRequest>();
+    for (    ObjectName on : sr.getObjectNames()) {
+      list.add(new J4pReadRequest(on,"CamelId","RouteId","State"));
+    }
+    List<J4pReadResponse> lrr=jolokia.execute(list);
+    for (    J4pReadResponse rr : lrr) {
+      String routeId=rr.getValue("RouteId").toString();
+      if (filter == null || routeId.matches(filter)) {
+        Map<String,String> row=new LinkedHashMap<String,String>();
+        row.put("camelContextName",rr.getValue("CamelId").toString());
+        row.put("routeId",routeId);
+        row.put("state",rr.getValue("State").toString());
+        answer.add(row);
+      }
+    }
+  }
+ else {
+    List<Map<String,String>> camelContexts=this.getCamelContexts();
+    for (    Map<String,String> row : camelContexts) {
+      List<Map<String,String>> routes=getRoutes(row.get("name"),filter);
+      answer.addAll(routes);
+    }
+  }
+  Collections.sort(answer,new Comparator<Map<String,String>>(){
+    @Override public int compare(    Map<String,String> o1,    Map<String,String> o2){
+      String c1=o1.get("camelContextName");
+      String c2=o2.get("camelContextName");
+      int answer=c1.compareTo(c2);
+      if (answer == 0) {
+        answer=o1.get("routeId").compareTo(o2.get("routeId"));
+      }
+      return answer;
+    }
+  }
+);
+  return answer;
+}
