@@ -1,5 +1,15 @@
 {
   RestletEndpoint endpoint=(RestletEndpoint)getEndpoint();
+  if (endpoint.isSynchronous()) {
+    try {
+      process(exchange);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+    }
+    return true;
+  }
+  LOG.trace("Processing asynchronously");
   final RestletBinding binding=endpoint.getRestletBinding();
   Request request;
   try {
@@ -12,10 +22,10 @@
     callback.done(true);
     return true;
   }
-  LOG.debug("Sending request: {} for exchangeId: {}",request,exchange.getExchangeId());
+  LOG.debug("Sending request asynchronously: {} for exchangeId: {}",request,exchange.getExchangeId());
   client.handle(request,new Uniform(){
     @Override public void handle(    Request request,    Response response){
-      LOG.debug("Received response: {} for exchangeId: {}",response,exchange.getExchangeId());
+      LOG.debug("Received response asynchronously: {} for exchangeId: {}",response,exchange.getExchangeId());
       try {
         if (response != null) {
           Integer respCode=response.getStatus().getCode();
