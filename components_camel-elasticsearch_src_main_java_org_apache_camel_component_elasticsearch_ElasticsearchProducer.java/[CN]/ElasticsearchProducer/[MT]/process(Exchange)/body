@@ -1,25 +1,48 @@
 {
-  String operation=exchange.getIn().getHeader(ElasticsearchConfiguration.PARAM_OPERATION,String.class);
-  if (operation == null) {
-    operation=getEndpoint().getConfig().getOperation();
+  Message message=exchange.getIn();
+  ElasticsearchConfiguration config=getEndpoint().getConfig();
+  final String operation=resolveOperation(exchange);
+  boolean configIndexName=false;
+  String indexName=message.getHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME,String.class);
+  if (indexName == null) {
+    message.setHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME,getEndpoint().getConfig().getIndexName());
+    configIndexName=true;
   }
-  if (operation == null) {
-    throw new IllegalArgumentException(ElasticsearchConfiguration.PARAM_OPERATION + " is missing");
+  boolean configIndexType=false;
+  String indexType=message.getHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE,String.class);
+  if (indexType == null) {
+    message.setHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE,getEndpoint().getConfig().getIndexName());
+    configIndexType=true;
   }
   Client client=getEndpoint().getClient();
-  if (operation.equalsIgnoreCase(ElasticsearchConfiguration.OPERATION_INDEX)) {
-    addToIndex(client,exchange);
+  if (ElasticsearchConfiguration.OPERATION_INDEX.equals(operation)) {
+    IndexRequest indexRequest=message.getBody(IndexRequest.class);
+    message.setBody(client.index(indexRequest).actionGet().getId());
   }
- else   if (operation.equalsIgnoreCase(ElasticsearchConfiguration.OPERATION_GET_BY_ID)) {
-    getById(client,exchange);
+ else   if (ElasticsearchConfiguration.OPERATION_GET_BY_ID.equals(operation)) {
+    GetRequest getRequest=message.getBody(GetRequest.class);
+    message.setBody(client.get(getRequest));
   }
- else   if (operation.equalsIgnoreCase(ElasticsearchConfiguration.OPERATION_DELETE)) {
-    deleteById(client,exchange);
+ else   if (ElasticsearchConfiguration.OPERATION_BULK_INDEX.equals(operation)) {
+    BulkRequest bulkRequest=message.getBody(BulkRequest.class);
+    List<String> indexedIds=new LinkedList<String>();
+    for (    BulkItemResponse response : client.bulk(bulkRequest).actionGet().getItems()) {
+      indexedIds.add(response.getId());
+    }
+    log.debug("List of successfully indexed document ids : {}",indexedIds);
+    message.setBody(indexedIds);
   }
- else   if (operation.equalsIgnoreCase(ElasticsearchConfiguration.OPERATION_BULK_INDEX)) {
-    addToIndexUsingBulk(client,exchange);
+ else   if (ElasticsearchConfiguration.OPERATION_DELETE.equals(operation)) {
+    DeleteRequest deleteRequest=message.getBody(DeleteRequest.class);
+    message.setBody(client.delete(deleteRequest).actionGet());
   }
  else {
     throw new IllegalArgumentException(ElasticsearchConfiguration.PARAM_OPERATION + " value '" + operation+ "' is not supported");
+  }
+  if (configIndexName) {
+    message.removeHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME);
+  }
+  if (configIndexType) {
+    message.removeHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE);
   }
 }
