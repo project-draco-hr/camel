@@ -1,0 +1,18 @@
+{
+  final String listValue=reader.getValue();
+  final Class<?> requiredArrayType=context.getRequiredType();
+  final Class<?> requiredType=requiredArrayType.getComponentType();
+  try {
+    Method factoryMethod=requiredType.getMethod(FACTORY_METHOD,String.class);
+    final String[] value=listValue.split(";");
+    final int length=value.length;
+    final Object resultArray=Array.newInstance(requiredType,length);
+    for (int i=0; i < length; i++) {
+      Array.set(resultArray,i,factoryMethod.invoke(null,value[i].trim()));
+    }
+    return resultArray;
+  }
+ catch (  Exception e) {
+    throw new ConversionException(String.format("Exception reading pick list value %s of type %s: %s",listValue,requiredArrayType.getName(),e.getMessage()),e);
+  }
+}
