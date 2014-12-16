@@ -34,6 +34,7 @@
     out.println(stringEscape.unescapeJava("\tPackageScanClassResolver: " + row.get("packageScanClassResolver")));
     out.println(stringEscape.unescapeJava("\tApplicationContextClassLoader: " + row.get("applicationContextClassLoader")));
     printStatistics(camelController,out);
+    out.println(stringEscape.unescapeJava("\tNumber of type converters: " + row.get("typeConverter.numberOfTypeConverters")));
     boolean enabled=false;
     if (row.get("typeConverter.statisticsEnabled") != null) {
       enabled=(boolean)row.get("typeConverter.statisticsEnabled");
@@ -43,7 +44,31 @@
       long hit=(long)row.get("typeConverter.hitCounter");
       long miss=(long)row.get("typeConverter.missCounter");
       long failed=(long)row.get("typeConverter.failedCounter");
-      out.println(stringEscape.unescapeJava(String.format("\tTypeConverterRegistry utilization: [attempts=%s, hits=%s, misses=%s, failures=%s]",attempt,hit,miss,failed)));
+      out.println(stringEscape.unescapeJava(String.format("\tType converter usage: [attempts=%s, hits=%s, misses=%s, failures=%s]",attempt,hit,miss,failed)));
+    }
+    enabled=(boolean)row.get("streamCachingEnabled");
+    if (enabled) {
+      Object spoolDirectory=safeNull(row.get("streamCaching.spoolDirectory"));
+      Object spoolChiper=safeNull(row.get("streamCaching.spoolChiper"));
+      Object spoolThreshold=safeNull(row.get("streamCaching.spoolThreshold"));
+      Object spoolUsedHeapMemoryThreshold=safeNull(row.get("streamCaching.spoolUsedHeapMemoryThreshold"));
+      Object spoolUsedHeapMemoryLimit=safeNull(row.get("streamCaching.spoolUsedHeapMemoryLimit"));
+      Object anySpoolRules=safeNull(row.get("streamCaching.anySpoolRules"));
+      Object bufferSize=safeNull(row.get("streamCaching.bufferSize"));
+      Object removeSpoolDirectoryWhenStopping=safeNull(row.get("streamCaching.removeSpoolDirectoryWhenStopping"));
+      boolean statisticsEnabled=(boolean)row.get("streamCaching.statisticsEnabled");
+      String text=String.format("\tStream caching: [spoolDirectory=%s, spoolChiper=%s, spoolThreshold=%s, spoolUsedHeapMemoryThreshold=%s, " + "spoolUsedHeapMemoryLimit=%s, anySpoolRules=%s, bufferSize=%s, removeSpoolDirectoryWhenStopping=%s, statisticsEnabled=%s]",spoolDirectory,spoolChiper,spoolThreshold,spoolUsedHeapMemoryThreshold,spoolUsedHeapMemoryLimit,anySpoolRules,bufferSize,removeSpoolDirectoryWhenStopping,statisticsEnabled);
+      out.println(stringEscape.unescapeJava(text));
+      if (statisticsEnabled) {
+        Object cacheMemoryCounter=safeNull(row.get("streamCaching.cacheMemoryCounter"));
+        Object cacheMemorySize=safeNull(row.get("streamCaching.cacheMemorySize"));
+        Object cacheMemoryAverageSize=safeNull(row.get("streamCaching.cacheMemoryAverageSize"));
+        Object cacheSpoolCounter=safeNull(row.get("streamCaching.cacheSpoolCounter"));
+        Object cacheSpoolSize=safeNull(row.get("streamCaching.cacheSpoolSize"));
+        Object cacheSpoolAverageSize=safeNull(row.get("streamCaching.cacheSpoolAverageSize"));
+        text=String.format("\t                       [cacheMemoryCounter=%s, cacheMemorySize=%s, cacheMemoryAverageSize=%s, cacheSpoolCounter=%s, " + "cacheSpoolSize=%s, cacheSpoolAverageSize=%s]",cacheMemoryCounter,cacheMemorySize,cacheMemoryAverageSize,cacheSpoolCounter,cacheSpoolSize,cacheSpoolAverageSize);
+        out.println(stringEscape.unescapeJava(text));
+      }
     }
     long totalRoutes=(long)row.get("totalRoutes");
     long startedRoutes=(long)row.get("totalRoutes");
