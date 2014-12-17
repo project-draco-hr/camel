@@ -1,0 +1,38 @@
+{
+  XmlSignatureProperties.Output result=new Output();
+  if (!isAddSignedSignatureProperties() && !isAddSignedDataObjectPropeties()) {
+    LOG.debug("XAdES signature properties are empty. Therefore no XAdES element will be added to the signature.");
+    return result;
+  }
+  String signedPropertiesId="_" + UUID.randomUUID().toString();
+  Reference ref=input.getSignatureFactory().newReference("#" + signedPropertiesId,input.getSignatureFactory().newDigestMethod(input.getContentDigestAlgorithm(),null),Collections.emptyList(),"http://uri.etsi.org/01903#SignedProperties",null);
+  Node parent=input.getParent();
+  Document doc;
+  if (Node.DOCUMENT_NODE == parent.getNodeType()) {
+    doc=(Document)parent;
+  }
+ else {
+    doc=parent.getOwnerDocument();
+  }
+  Element qualifyingProperties=createElement("QualifyingProperties",doc,input);
+  setIdAttributeFromHeader(XmlSignatureConstants.HEADER_XADES_QUALIFYING_PROPERTIES_ID,qualifyingProperties,input);
+  String signatureId=input.getSignatureId();
+  if (signatureId == null || signatureId.isEmpty()) {
+    LOG.debug("No signature Id configured. Therefore a value is generated.");
+    signatureId="_" + UUID.randomUUID().toString();
+    result.setSignatureId(signatureId);
+  }
+  setAttribute(qualifyingProperties,"Target","#" + signatureId);
+  Element signedProperties=createElement("SignedProperties",doc,input);
+  qualifyingProperties.appendChild(signedProperties);
+  setAttribute(signedProperties,"Id",signedPropertiesId);
+  signedProperties.setIdAttribute("Id",true);
+  addSignedSignatureProperties(doc,signedProperties,input);
+  String contentReferenceId=addSignedDataObjectProperties(doc,signedProperties,input);
+  result.setContentReferenceId(contentReferenceId);
+  DOMStructure structure=new DOMStructure(qualifyingProperties);
+  XMLObject propertiesObject=input.getSignatureFactory().newXMLObject(Collections.singletonList(structure),null,null,null);
+  result.setReferences(Collections.singletonList(ref));
+  result.setObjects(Collections.singletonList(propertiesObject));
+  return result;
+}

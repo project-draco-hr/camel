@@ -1,0 +1,25 @@
+{
+  if (getSigningCertificate() == null && (getSigningCertificateChain() == null || getSigningCertificateChain().length == 0)) {
+    return;
+  }
+  Element signedCertificate=createElement("SigningCertificate",doc,input);
+  signedProperties.appendChild(signedCertificate);
+  if (getSigningCertificate() != null) {
+    LOG.debug("Adding signing certificate");
+    X509Certificate cert=getSigningCertificate();
+    addCertificate(cert,signedCertificate,doc,0,input);
+  }
+ else   if (getSigningCertificateChain() != null && getSigningCertificateChain().length > 0) {
+    Certificate[] certs=getSigningCertificateChain();
+    int index=0;
+    for (    Certificate cert : certs) {
+      LOG.debug("Adding chain certtificate {}",index);
+      X509Certificate x509Cert=(X509Certificate)cert;
+      addCertificate(x509Cert,signedCertificate,doc,index,input);
+      index++;
+    }
+  }
+ else {
+    throw new IllegalStateException("Unexpected exception");
+  }
+}

@@ -1,0 +1,29 @@
+{
+  Element elCert=createElement("Cert",doc,input);
+  signedCertificate.appendChild(elCert);
+  String algorithm=getMessageDigestAlgorithm(getDigestAlgorithmForSigningCertificate(),"The digest algorithm '%s' for the signing certificate is invalid");
+  String digest=calculateDigest(algorithm,cert.getEncoded());
+  Element certDigest=createElement("CertDigest",doc,input);
+  elCert.appendChild(certDigest);
+  Element digestMethod=createDigSigElement("DigestMethod",doc,input.getPrefixForXmlSignatureNamespace());
+  certDigest.appendChild(digestMethod);
+  setAttribute(digestMethod,"Algorithm",getDigestAlgorithmForSigningCertificate());
+  Element digestValue=createDigSigElement("DigestValue",doc,input.getPrefixForXmlSignatureNamespace());
+  certDigest.appendChild(digestValue);
+  digestValue.setTextContent(digest);
+  Element issuerSerial=createElement("IssuerSerial",doc,input);
+  elCert.appendChild(issuerSerial);
+  Element x509IssuerName=createDigSigElement("X509IssuerName",doc,input.getPrefixForXmlSignatureNamespace());
+  issuerSerial.appendChild(x509IssuerName);
+  x509IssuerName.setTextContent(cert.getIssuerX500Principal().getName(X500Principal.RFC2253));
+  Element x509SerialNumber=createDigSigElement("X509SerialNumber",doc,input.getPrefixForXmlSignatureNamespace());
+  issuerSerial.appendChild(x509SerialNumber);
+  x509SerialNumber.setTextContent(cert.getSerialNumber().toString());
+  List<String> uris=getSigningCertificateURIs();
+  if (!uris.isEmpty() && uris.size() > index) {
+    String uri=uris.get(index);
+    if (uri != null && !uri.isEmpty()) {
+      setAttribute(elCert,"URI",uri);
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  if (!isAddCommitmentType()) {
+    return;
+  }
+  Element commitmentTypeIndication=createElement("CommitmentTypeIndication",doc,input);
+  signedDataObjectProperties.appendChild(commitmentTypeIndication);
+  Element commitmentTypeIdEl=createElement("CommitmentTypeId",doc,input);
+  commitmentTypeIndication.appendChild(commitmentTypeIdEl);
+  Element identifier=createElement("Identifier",doc,input);
+  commitmentTypeIdEl.appendChild(identifier);
+  identifier.setTextContent(getCommitmentTypeId());
+  if (getDataObjectFormatIdentifierQualifier() != null && !getDataObjectFormatIdentifierQualifier().isEmpty()) {
+    setAttribute(identifier,"Qualifier",getDataObjectFormatIdentifierQualifier());
+  }
+  if (getCommitmentTypeIdDescription() != null && !getCommitmentTypeIdDescription().isEmpty()) {
+    Element description=createElement("Description",doc,input);
+    commitmentTypeIdEl.appendChild(description);
+    description.setTextContent(getCommitmentTypeIdDescription());
+  }
+  if (!getCommitmentTypeIdDocumentationReferences().isEmpty()) {
+    Element documentationReferences=createElement("DocumentationReferences",doc,input);
+    commitmentTypeIdEl.appendChild(documentationReferences);
+    List<String> docReferences=getCommitmentTypeIdDocumentationReferences();
+    for (    String documentationReferenceValue : docReferences) {
+      Element documentationReference=createElement("DocumentationReference",doc,input);
+      documentationReferences.appendChild(documentationReference);
+      documentationReference.setTextContent(documentationReferenceValue);
+    }
+  }
+  Element allSignedDataObjects=createElement("AllSignedDataObjects",doc,input);
+  commitmentTypeIndication.appendChild(allSignedDataObjects);
+  List<String> qualifiers=getCommitmentTypeQualifiers();
+  if (!qualifiers.isEmpty()) {
+    Element qualifiersEl=createElement("CommitmentTypeQualifiers",doc,input);
+    commitmentTypeIndication.appendChild(qualifiersEl);
+    String errorMessage="The XAdES confguration is invalid. The list of the commitment type qualifiers contains the invalid entry '%s'. An entry must either be a text or an XML fragment " + "with the root element '%s' with the namespace '%s'.";
+    for (    String qualifier : getCommitmentTypeQualifiers()) {
+      Element qualifierEl=createChildFromXmlFragmentOrText(doc,input,"CommitmentTypeQualifier",errorMessage,qualifier);
+      qualifiersEl.appendChild(qualifierEl);
+    }
+  }
+}

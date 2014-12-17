@@ -1,0 +1,36 @@
+{
+  if (!isAddSignerRole()) {
+    return;
+  }
+  Element signerRole=createElement("SignerRole",doc,input);
+  signedSignatureProperties.appendChild(signerRole);
+  List<String> claimedRoles=getSignerClaimedRoles();
+  if (!claimedRoles.isEmpty()) {
+    LOG.debug("Adding claimed roles");
+    Element claimedRolesEl=createElement("ClaimedRoles",doc,input);
+    signerRole.appendChild(claimedRolesEl);
+    String errorMessage="The XAdES confguration is invalid. The list of the claimed roles contains the invalid entry '%s'." + " An entry must either be a text or an XML fragment with the root element '%s' with the namespace '%s'.";
+    for (    String claimedRole : claimedRoles) {
+      Element claimedRoleEl=createChildFromXmlFragmentOrText(doc,input,"ClaimedRole",errorMessage,claimedRole);
+      claimedRolesEl.appendChild(claimedRoleEl);
+    }
+  }
+  List<XAdESEncapsulatedPKIData> certifiedRoles=getSignerCertifiedRoles();
+  if (!certifiedRoles.isEmpty()) {
+    LOG.debug("Adding certified roles");
+    Element certifiedRolesEl=createElement("CertifiedRoles",doc,input);
+    signerRole.appendChild(certifiedRolesEl);
+    for (    XAdESEncapsulatedPKIData certifiedRole : certifiedRoles) {
+      Element certifiedRoleEl=createElement("CertifiedRole",doc,input);
+      certifiedRolesEl.appendChild(certifiedRoleEl);
+      certifiedRoleEl.setTextContent(certifiedRole.getBase64Conent());
+      if (certifiedRole.getEncoding() != null && !certifiedRole.getEncoding().isEmpty()) {
+        setAttribute(certifiedRoleEl,"Encoding",certifiedRole.getEncoding());
+      }
+      if (certifiedRole.getId() != null && !certifiedRole.getId().isEmpty()) {
+        setAttribute(certifiedRoleEl,"Id",certifiedRole.getId());
+        certifiedRoleEl.setIdAttribute("Id",true);
+      }
+    }
+  }
+}

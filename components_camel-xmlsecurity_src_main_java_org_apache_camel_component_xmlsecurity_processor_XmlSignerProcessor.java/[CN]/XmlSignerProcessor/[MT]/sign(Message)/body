@@ -9,7 +9,7 @@
     }
     final Node node=getMessageBodyNode(out);
     if (getConfiguration().getKeyAccessor() == null) {
-      throw new XmlSignatureNoKeyException("Key selector is missing for XML signature generation. Specify a key selector in the configuration.");
+      throw new XmlSignatureNoKeyException("Key accessor is missing for XML signature generation. Specify a key accessor in the configuration.");
     }
     final KeySelector keySelector=getConfiguration().getKeyAccessor().getKeySelector(out);
     if (keySelector == null) {
@@ -28,15 +28,18 @@
         signatureId=null;
       }
       Node parent=getParentOfSignature(out,node,contentReferenceUri,signatureType);
-      XmlSignatureProperties.Input input=new InputBuilder().contentDigestAlgorithm(getDigestAlgorithmUri()).keyInfo(keyInfo).message(out).messageBodyNode(node).parent(parent).signatureAlgorithm(getConfiguration().getSignatureAlgorithm()).signatureFactory(fac).signatureId(signatureId).contentReferenceUri(contentReferenceUri).signatureType(signatureType).build();
-      XmlSignatureProperties.Output properties=getSignatureProperties(input);
-      List<? extends XMLObject> objects=getObjects(input,properties);
-      List<? extends Reference> refs=getReferences(input,properties,getKeyInfoId(keyInfo));
-      SignedInfo si=createSignedInfo(fac,refs);
       if (parent == null) {
         parent=XmlSignatureHelper.newDocumentBuilder(Boolean.TRUE).newDocument();
       }
       lastParent=parent;
+      XmlSignatureProperties.Input input=new InputBuilder().contentDigestAlgorithm(getDigestAlgorithmUri()).keyInfo(keyInfo).message(out).messageBodyNode(node).parent(parent).signatureAlgorithm(getConfiguration().getSignatureAlgorithm()).signatureFactory(fac).signatureId(signatureId).contentReferenceUri(contentReferenceUri).signatureType(signatureType).prefixForXmlSignatureNamespace(getConfiguration().getPrefixForXmlSignatureNamespace()).build();
+      XmlSignatureProperties.Output properties=getSignatureProperties(input);
+      if (properties != null && properties.getSignatureId() != null && !properties.getSignatureId().isEmpty()) {
+        signatureId=properties.getSignatureId();
+      }
+      List<? extends XMLObject> objects=getObjects(input,properties);
+      List<? extends Reference> refs=getReferences(input,properties,getKeyInfoId(keyInfo));
+      SignedInfo si=createSignedInfo(fac,refs);
       DOMSignContext dsc=createAndConfigureSignContext(parent,keySelector);
       XMLSignature signature=fac.newXMLSignature(si,keyInfo,objects,signatureId,null);
       signature.sign(dsc);

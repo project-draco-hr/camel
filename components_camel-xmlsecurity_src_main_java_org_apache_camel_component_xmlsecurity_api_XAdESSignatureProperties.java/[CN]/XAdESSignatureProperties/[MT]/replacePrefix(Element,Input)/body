@@ -1,0 +1,20 @@
+{
+  replacePrefixForNode(el,input);
+  NamedNodeMap nnm=el.getAttributes();
+  List<Attr> xmlnsToBeRemoved=new ArrayList<Attr>(2);
+  int length=nnm.getLength();
+  for (int i=0; i < length; i++) {
+    Node attr=nnm.item(i);
+    replacePrefixForNode(attr,input);
+    if (attr.getNodeType() == Node.ATTRIBUTE_NODE) {
+      if ("xmlns".equals(attr.getLocalName()) || "xmlns".equals(attr.getPrefix())) {
+        if (XMLSignature.XMLNS.equals(attr.getTextContent()) || findNamespace(input.getMessage()).equals(attr.getTextContent())) {
+          xmlnsToBeRemoved.add((Attr)attr);
+        }
+      }
+    }
+  }
+  for (  Attr toBeRemoved : xmlnsToBeRemoved) {
+    el.removeAttributeNode(toBeRemoved);
+  }
+}

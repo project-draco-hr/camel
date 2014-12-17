@@ -1,0 +1,51 @@
+{
+  if (!isAddDataObjectFormat()) {
+    return null;
+  }
+  Element dataObjectFormat=createElement("DataObjectFormat",doc,input);
+  signedDataObjectProperties.appendChild(dataObjectFormat);
+  String contentReferenceId="_" + UUID.randomUUID().toString();
+  setAttribute(dataObjectFormat,"ObjectReference",contentReferenceId);
+  if (getDataObjectFormatDescription() != null && !getDataObjectFormatDescription().isEmpty()) {
+    Element description=createElement("Description",doc,input);
+    dataObjectFormat.appendChild(description);
+    description.setTextContent(getDataObjectFormatDescription());
+  }
+  if (getDataObjectFormatIdentifier() != null && !getDataObjectFormatIdentifier().isEmpty()) {
+    Element objectIdentifier=createElement("ObjectIdentifier",doc,input);
+    dataObjectFormat.appendChild(objectIdentifier);
+    Element identifier=createElement("Identifier",doc,input);
+    objectIdentifier.appendChild(identifier);
+    identifier.setTextContent(getDataObjectFormatIdentifier());
+    if (getDataObjectFormatIdentifierQualifier() != null && !getDataObjectFormatIdentifierQualifier().isEmpty()) {
+      setAttribute(identifier,"Qualifier",getDataObjectFormatIdentifierQualifier());
+    }
+    if (getDataObjectFormatIdentifierDescription() != null && !getDataObjectFormatIdentifierDescription().isEmpty()) {
+      Element description=createElement("Description",doc,input);
+      objectIdentifier.appendChild(description);
+      description.setTextContent(getDataObjectFormatIdentifierDescription());
+    }
+    if (!getDataObjectFormatIdentifierDocumentationReferences().isEmpty()) {
+      Element documentationReferences=createElement("DocumentationReferences",doc,input);
+      objectIdentifier.appendChild(documentationReferences);
+      List<String> docReferences=getDataObjectFormatIdentifierDocumentationReferences();
+      for (      String documentationReferenceValue : docReferences) {
+        Element documentationReference=createElement("DocumentationReference",doc,input);
+        documentationReferences.appendChild(documentationReference);
+        documentationReference.setTextContent(documentationReferenceValue);
+      }
+    }
+  }
+  if (getDataObjectFormatMimeType() != null && !getDataObjectFormatMimeType().isEmpty()) {
+    Element mimeType=createElement("MimeType",doc,input);
+    dataObjectFormat.appendChild(mimeType);
+    mimeType.setTextContent(getDataObjectFormatMimeType());
+  }
+  String encoding=input.getMessage().getHeader(XmlSignatureConstants.HEADER_XADES_DATA_OBJECT_FORMAT_ENCODING,String.class);
+  if (encoding != null && !encoding.isEmpty()) {
+    Element encodingEl=createElement("Encoding",doc,input);
+    dataObjectFormat.appendChild(encodingEl);
+    encodingEl.setTextContent(encoding);
+  }
+  return contentReferenceId;
+}

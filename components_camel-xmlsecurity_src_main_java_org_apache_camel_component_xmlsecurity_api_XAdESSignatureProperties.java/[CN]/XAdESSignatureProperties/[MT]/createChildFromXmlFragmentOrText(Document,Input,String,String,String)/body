@@ -1,0 +1,25 @@
+{
+  String ending=localElementName + ">";
+  Element child;
+  if (elementOrText.startsWith("<") && elementOrText.endsWith(ending)) {
+    try {
+      InputSource source=new InputSource(new StringReader(elementOrText));
+      source.setEncoding("UTF-8");
+      Document parsedDoc=XmlSignatureHelper.newDocumentBuilder(Boolean.TRUE).parse(source);
+      replacePrefixes(parsedDoc,input);
+      child=(Element)doc.adoptNode(parsedDoc.getDocumentElement());
+      String ns=findNamespace(input.getMessage());
+      if (!ns.equals(child.getNamespaceURI())) {
+        throw new XmlSignatureException(String.format("The XAdES confguration is invalid. The root element '%s' of the provided XML fragment '%s' has the invalid namespace '%s'. The correct namespace is '%s'.",child.getLocalName(),elementOrText,child.getNamespaceURI(),ns));
+      }
+    }
+ catch (    SAXException e) {
+      throw new XmlSignatureException(String.format(errorMessage,elementOrText,localElementName,namespace),e);
+    }
+  }
+ else {
+    child=createElement(localElementName,doc,input);
+    child.setTextContent(elementOrText);
+  }
+  return child;
+}
