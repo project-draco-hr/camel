@@ -9,7 +9,7 @@
     String prefix=getContext().getManagementStrategy().getManagementAgent().getIncludeHostName() ? "*/" : "";
     ObjectName query=ObjectName.getInstance("org.apache.camel:context=" + prefix + getContext().getManagementName()+ ",type=routes,*");
     Set<ObjectName> routes=server.queryNames(query,null);
-    Set<ManagedProcessorMBean> processors=new LinkedHashSet<ManagedProcessorMBean>();
+    List<ManagedProcessorMBean> processors=new ArrayList<ManagedProcessorMBean>();
     if (includeProcessors) {
       query=ObjectName.getInstance("org.apache.camel:context=" + prefix + getContext().getManagementName()+ ",type=processors,*");
       Set<ObjectName> names=server.queryNames(query,null);
@@ -18,6 +18,7 @@
         processors.add(processor);
       }
     }
+    Collections.sort(processors,new OrderProcessorMBeans());
     sb.append("  <routeStats>\n");
     for (    ObjectName on : routes) {
       ManagedRouteMBean route=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedRouteMBean.class,true);
