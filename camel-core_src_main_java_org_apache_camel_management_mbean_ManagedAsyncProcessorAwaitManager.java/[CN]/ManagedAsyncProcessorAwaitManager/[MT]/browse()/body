@@ -1,0 +1,18 @@
+{
+  try {
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.listAwaitThreadsTabularType());
+    Collection<AsyncProcessorAwaitManager.AwaitThread> threads=manager.browse();
+    for (    AsyncProcessorAwaitManager.AwaitThread entry : threads) {
+      CompositeType ct=CamelOpenMBeanTypes.listAwaitThreadsCompositeType();
+      String name=entry.getBlockedThread().getName();
+      String exchangeId=entry.getExchange().getExchangeId();
+      String duration="" + entry.getWaitDuration();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"name","exchangeId","duration"},new Object[]{name,exchangeId,duration});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}

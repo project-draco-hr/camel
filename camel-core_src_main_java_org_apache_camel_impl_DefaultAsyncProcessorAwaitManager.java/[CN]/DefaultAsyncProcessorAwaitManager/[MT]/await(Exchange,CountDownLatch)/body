@@ -1,0 +1,15 @@
+{
+  LOG.trace("Waiting for asynchronous callback before continuing for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+  try {
+    inflight.put(exchange,new AwaitThreadEntry(Thread.currentThread(),exchange,latch));
+    latch.await();
+    LOG.trace("Asynchronous callback received, will continue routing exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+  }
+ catch (  InterruptedException e) {
+    LOG.trace("Interrupted while waiting for callback, will continue routing exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
+    exchange.setException(e);
+  }
+ finally {
+    inflight.remove(exchange);
+  }
+}

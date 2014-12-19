@@ -1,4 +1,6 @@
 {
+  CamelContext camel=new DefaultCamelContext();
+  camel.start();
   Logger logger=EasyMock.createMock(Logger.class);
   logger.isInfoEnabled();
   EasyMock.expectLastCall().andReturn(true).atLeastOnce();
@@ -10,7 +12,8 @@
   ThroughputLogger underTest=new ThroughputLogger(new CamelLogger(logger));
   underTest.setGroupSize(10);
   for (int i=0; i < 25; i++) {
-    underTest.process(null);
+    underTest.process(new DefaultExchange(camel));
   }
   EasyMock.verify(logger);
+  camel.stop();
 }
