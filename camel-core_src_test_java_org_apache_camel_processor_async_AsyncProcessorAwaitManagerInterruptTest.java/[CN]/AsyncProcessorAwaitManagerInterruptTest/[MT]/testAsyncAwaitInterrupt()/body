@@ -1,0 +1,16 @@
+{
+  assertEquals(0,context.getAsyncProcessorAwaitManager().size());
+  getMockEndpoint("mock:before").expectedBodiesReceived("Hello Camel");
+  getMockEndpoint("mock:after").expectedBodiesReceived("Bye Camel");
+  getMockEndpoint("mock:result").expectedMessageCount(0);
+  try {
+    template.requestBody("direct:start","Hello Camel",String.class);
+    fail("Should have thrown exception");
+  }
+ catch (  CamelExecutionException e) {
+    RejectedExecutionException cause=assertIsInstanceOf(RejectedExecutionException.class,e.getCause());
+    assertTrue(cause.getMessage().startsWith("Interrupted while waiting for asynchronous callback"));
+  }
+  assertMockEndpointsSatisfied();
+  assertEquals(0,context.getAsyncProcessorAwaitManager().size());
+}

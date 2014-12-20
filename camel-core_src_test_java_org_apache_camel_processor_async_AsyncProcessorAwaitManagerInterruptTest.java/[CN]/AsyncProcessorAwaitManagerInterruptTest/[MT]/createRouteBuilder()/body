@@ -1,0 +1,20 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.addComponent("async",new MyAsyncComponent());
+      from("direct:start").routeId("myRoute").to("mock:before").to("async:bye:camel").id("myAsync").to("mock:after").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          int size=context.getAsyncProcessorAwaitManager().size();
+          log.info("async inflight: {}",size);
+          assertEquals(1,size);
+          Collection<AsyncProcessorAwaitManager.AwaitThread> threads=context.getAsyncProcessorAwaitManager().browse();
+          AsyncProcessorAwaitManager.AwaitThread thread=threads.iterator().next();
+          String id=thread.getExchange().getExchangeId();
+          context.getAsyncProcessorAwaitManager().interrupt(id);
+        }
+      }
+).transform(constant("Hi Camel")).to("mock:result");
+    }
+  }
+;
+}

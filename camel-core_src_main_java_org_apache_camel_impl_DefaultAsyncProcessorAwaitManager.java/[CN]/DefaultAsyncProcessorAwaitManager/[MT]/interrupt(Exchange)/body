@@ -1,8 +1,24 @@
 {
-  AwaitThreadEntry latch=(AwaitThreadEntry)inflight.get(exchange);
-  if (latch != null) {
-    LOG.warn("Interrupted while waiting for asynchronous callback, will continue routing exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
-    exchange.setException(new RejectedExecutionException("Interrupted while waiting for asynchronous callback"));
-    latch.getLatch().countDown();
+  AwaitThreadEntry entry=(AwaitThreadEntry)inflight.get(exchange);
+  if (entry != null) {
+    try {
+      StringBuilder sb=new StringBuilder();
+      sb.append("Interrupted while waiting for asynchronous callback, will release the following blocked thread which was waiting for exchange to finish processing with exchangeId: ");
+      sb.append(exchange.getExchangeId());
+      sb.append("\n");
+      sb.append(dumpBlockedThread(entry));
+      String routeStackTrace=MessageHelper.dumpMessageHistoryStacktrace(exchange,exchangeFormatter,false);
+      if (routeStackTrace != null) {
+        sb.append(routeStackTrace);
+      }
+      LOG.warn(sb.toString());
+    }
+ catch (    Exception e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+ finally {
+      exchange.setException(new RejectedExecutionException("Interrupted while waiting for asynchronous callback for exchangeId: " + exchange.getExchangeId()));
+      entry.getLatch().countDown();
+    }
   }
 }
