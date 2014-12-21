@@ -1,6 +1,9 @@
 {
   LOG.trace("Waiting for asynchronous callback before continuing for exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
   try {
+    if (statistics.isStatisticsEnabled()) {
+      blockedCounter.incrementAndGet();
+    }
     inflight.put(exchange,new AwaitThreadEntry(Thread.currentThread(),exchange,latch));
     latch.await();
     LOG.trace("Asynchronous callback received, will continue routing exchangeId: {} -> {}",exchange.getExchangeId(),exchange);
@@ -10,6 +13,20 @@
     exchange.setException(e);
   }
  finally {
-    inflight.remove(exchange);
+    AwaitThread thread=inflight.remove(exchange);
+    if (statistics.isStatisticsEnabled() && thread != null) {
+      long time=thread.getWaitDuration();
+      long total=totalDuration.get() + time;
+      totalDuration.set(total);
+      if (time < minDuration.get()) {
+        minDuration.set(time);
+      }
+ else       if (time > maxDuration.get()) {
+        maxDuration.set(time);
+      }
+      long count=blockedCounter.get();
+      long mean=count > 0 ? total / count : 0;
+      meanDuration.set(mean);
+    }
   }
 }
