@@ -6,16 +6,21 @@
     if (boolean.class.isAssignableFrom(type)) {
       return Boolean.FALSE;
     }
+    if (statistics.isStatisticsEnabled()) {
+      noopCounter.incrementAndGet();
+    }
     return null;
   }
   if (type.isInstance(value)) {
+    if (statistics.isStatisticsEnabled()) {
+      noopCounter.incrementAndGet();
+    }
     return type.cast(value);
   }
-  TypeMapping key=new TypeMapping(type,value.getClass());
-  if (misses.containsKey(key)) {
-    return Void.TYPE;
-  }
   if (ObjectHelper.isNaN(value)) {
+    if (statistics.isStatisticsEnabled()) {
+      noopCounter.incrementAndGet();
+    }
     if (Float.class.isAssignableFrom(type)) {
       return Float.NaN;
     }
@@ -25,6 +30,13 @@
  else {
       return Void.TYPE;
     }
+  }
+  if (statistics.isStatisticsEnabled()) {
+    attemptCounter.incrementAndGet();
+  }
+  TypeMapping key=new TypeMapping(type,value.getClass());
+  if (misses.containsKey(key)) {
+    return Void.TYPE;
   }
   TypeConverter converter=getOrFindTypeConverter(key);
   if (converter != null) {
