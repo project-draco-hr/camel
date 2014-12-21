@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.setStreamCaching(true);
+      context.getStreamCachingStrategy().setEnabled(true);
+      context.getStreamCachingStrategy().setSpoolDirectory("target/camel/cache");
+      context.getStreamCachingStrategy().setSpoolThreshold(1L);
+      from("direct:start").multicast(new InternalAggregationStrategy()).to("direct:a","direct:b").end().to("mock:result");
+      from("direct:startNestedMultiCast").multicast(new InternalAggregationStrategy()).to("direct:start").end().to("mock:resultNested");
+      from("direct:a").process(new InputProcessorWithStreamCache(1)).to("mock:resulta");
+      from("direct:b").process(new InputProcessorWithStreamCache(2)).to("mock:resultb");
+    }
+  }
+;
+}

@@ -3,7 +3,7 @@
   this.strategy=exchange.getContext().getStreamCachingStrategy();
   currentStream=new CachedByteArrayOutputStream(strategy.getBufferSize());
   if (closedOnCompletion) {
-    exchange.addOnCompletion(new SynchronizationAdapter(){
+    Synchronization onCompletion=new SynchronizationAdapter(){
       @Override public void onDone(      Exchange exchange){
         try {
           if (fileInputStreamCache != null) {
@@ -25,6 +25,13 @@
         return "OnCompletion[CachedOutputStream]";
       }
     }
-);
+;
+    UnitOfWork streamCacheUnitOfWork=exchange.getProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK,UnitOfWork.class);
+    if (streamCacheUnitOfWork != null) {
+      streamCacheUnitOfWork.addSynchronization(onCompletion);
+    }
+ else {
+      exchange.addOnCompletion(onCompletion);
+    }
   }
 }
