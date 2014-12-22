@@ -6,7 +6,14 @@
     entity=new InputStreamEntity(stream,stream instanceof ByteArrayInputStream ? stream.available() != 0 ? stream.available() : -1 : -1);
   }
  else {
-    entity=new InputStreamEntity(in,-1);
+    Message inMessage=exchange.getIn();
+    String length=inMessage.getHeader(Exchange.CONTENT_LENGTH,String.class);
+    if (ObjectHelper.isEmpty(length)) {
+      entity=new InputStreamEntity(in,-1);
+    }
+ else {
+      entity=new InputStreamEntity(in,Long.parseLong(length));
+    }
   }
   if (exchange != null) {
     String contentEncoding=exchange.getIn().getHeader(Exchange.CONTENT_ENCODING,String.class);

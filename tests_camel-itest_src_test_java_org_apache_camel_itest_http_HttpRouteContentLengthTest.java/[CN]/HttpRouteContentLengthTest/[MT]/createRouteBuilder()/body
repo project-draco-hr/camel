@@ -1,0 +1,18 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      port1=AvailablePortFinder.getNextAvailable(8000);
+      port2=AvailablePortFinder.getNextAvailable(9000);
+      from("jetty:http://localhost:" + port1 + "/test").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          String contentLength=exchange.getIn().getHeader(Exchange.CONTENT_LENGTH,String.class);
+          String request=exchange.getIn().getBody(String.class);
+          exchange.getOut().setBody(request + ": " + contentLength);
+        }
+      }
+).transform().simple("Bye ${body}");
+      from("jetty:http://localhost:" + port2 + "/test").to(getHttpEndpointScheme() + port1 + "/test?bridgeEndpoint=true&throwExceptionOnFailure=false");
+    }
+  }
+;
+}
