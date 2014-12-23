@@ -1,5 +1,6 @@
 {
   Object body=exchange.getIn().getBody();
+  boolean invalid=false;
   if (body instanceof WrappedFile) {
     body=((WrappedFile<?>)body).getFile();
   }
@@ -20,6 +21,17 @@
     UpdateRequest updateRequest=new UpdateRequest(getRequestHandler());
     updateRequest.add((SolrInputDocument)body);
     updateRequest.process(solrServer);
+  }
+ else   if (body instanceof List<?>) {
+    List<?> list=(List<?>)body;
+    if (list.size() > 0 && list.get(0) instanceof SolrInputDocument) {
+      UpdateRequest updateRequest=new UpdateRequest(getRequestHandler());
+      updateRequest.add((List<SolrInputDocument>)list);
+      updateRequest.process(solrServer);
+    }
+ else {
+      invalid=true;
+    }
   }
  else {
     boolean hasSolrHeaders=false;
@@ -50,7 +62,10 @@
       solrServer.request(xmlRequest);
     }
  else {
-      throw new SolrException(SolrException.ErrorCode.BAD_REQUEST,"unable to find data in Exchange to update Solr");
+      invalid=true;
     }
+  }
+  if (invalid) {
+    throw new SolrException(SolrException.ErrorCode.BAD_REQUEST,"unable to find data in Exchange to update Solr");
   }
 }
