@@ -5,16 +5,16 @@
     }
   }
  catch (  Exception e) {
-    throw new InvalidStateException("Database connection closed " + "and could not be re-opened.",e);
+    exchange.setException(new InvalidStateException("Database connection closed and could not be re-opened.",e));
+    callback.done(true);
+    return true;
   }
-  boolean retVal;
   try {
     dbConnection.createStatement().execute("NOTIFY " + endpoint.getChannel() + ", '"+ exchange.getOut().getBody(String.class)+ "'");
-    retVal=true;
   }
  catch (  SQLException e) {
-    retVal=false;
+    exchange.setException(e);
   }
-  callback.done(retVal);
-  return retVal;
+  callback.done(true);
+  return true;
 }
