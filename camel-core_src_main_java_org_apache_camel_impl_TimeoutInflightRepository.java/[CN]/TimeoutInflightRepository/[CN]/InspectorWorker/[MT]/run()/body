@@ -2,9 +2,11 @@
   while (!stop) {
     for (    Exchange exchange : inflightExchanges.values()) {
       long timeStamp=exchange.getProperty(INFLIGHT_TIME_STAMP,Long.class);
+      Boolean processed=exchange.getProperty(TIMEOUT_EXCHANGE_PROCESSED,Boolean.FALSE,Boolean.class);
       long processingTime=System.currentTimeMillis() - timeStamp;
-      if (processingTime > timeout) {
+      if (!processed && processingTime > timeout) {
         processTimeoutExchange(exchange,processingTime);
+        exchange.setProperty(TIMEOUT_EXCHANGE_PROCESSED,Boolean.TRUE);
       }
     }
     try {
