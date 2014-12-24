@@ -4,7 +4,7 @@
   ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,name,this,false);
   if (threadPool == null) {
     ExecutorServiceManager manager=routeContext.getCamelContext().getExecutorServiceManager();
-    ThreadPoolProfile profile=new ThreadPoolProfileBuilder(name).poolSize(getPoolSize()).maxPoolSize(getMaxPoolSize()).keepAliveTime(getKeepAliveTime(),getTimeUnit()).maxQueueSize(getMaxQueueSize()).rejectedPolicy(getRejectedPolicy()).build();
+    ThreadPoolProfile profile=new ThreadPoolProfileBuilder(name).poolSize(getPoolSize()).maxPoolSize(getMaxPoolSize()).keepAliveTime(getKeepAliveTime(),getTimeUnit()).maxQueueSize(getMaxQueueSize()).rejectedPolicy(getRejectedPolicy()).allowCoreThreadTimeOut(getAllowCoreThreadTimeOut()).build();
     threadPool=manager.newThreadPool(this,name,profile);
     shutdownThreadPool=true;
   }
@@ -26,6 +26,9 @@
     }
     if (getRejectedPolicy() != null) {
       throw new IllegalArgumentException("RejectedPolicy and executorServiceRef options cannot be used together.");
+    }
+    if (getAllowCoreThreadTimeOut() != null) {
+      throw new IllegalArgumentException("AllowCoreThreadTimeOut and executorServiceRef options cannot be used together.");
     }
   }
   ThreadsProcessor thread=new ThreadsProcessor(routeContext.getCamelContext(),threadPool,shutdownThreadPool);
