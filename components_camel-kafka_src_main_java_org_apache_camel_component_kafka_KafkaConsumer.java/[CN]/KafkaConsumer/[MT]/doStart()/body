@@ -8,7 +8,10 @@
     topicCountMap.put(endpoint.getTopic(),endpoint.getConsumerStreams());
     Map<String,List<KafkaStream<byte[],byte[]>>> consumerMap=consumer.createMessageStreams(topicCountMap);
     List<KafkaStream<byte[],byte[]>> streams=consumerMap.get(endpoint.getTopic());
-    if (endpoint.isAutoCommitEnable() != null && Boolean.FALSE == endpoint.isAutoCommitEnable().booleanValue()) {
+    if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
+      if ((endpoint.getConsumerTimeoutMs() == null || endpoint.getConsumerTimeoutMs().intValue() < 0) && endpoint.getConsumerStreams() > 1) {
+        LOG.warn("consumerTimeoutMs is set to -1 (infinite) while requested multiple consumer streams.");
+      }
       CyclicBarrier barrier=new CyclicBarrier(endpoint.getConsumerStreams(),new CommitOffsetTask(consumer));
       for (      final KafkaStream<byte[],byte[]> stream : streams) {
         executor.submit(new BatchingConsumerTask(stream,barrier));

@@ -1,18 +1,36 @@
 {
   int processed=0;
-  for (  MessageAndMetadata<byte[],byte[]> mm : stream) {
-    Exchange exchange=endpoint.createKafkaExchange(mm);
+  boolean consumerTimeout;
+  MessageAndMetadata<byte[],byte[]> mm=null;
+  ConsumerIterator<byte[],byte[]> it=stream.iterator();
+  while (true) {
     try {
-      processor.process(exchange);
+      consumerTimeout=false;
+      if (it.hasNext()) {
+        mm=it.next();
+      }
+ else {
+        break;
+      }
+      Exchange exchange=endpoint.createKafkaExchange(mm);
+      try {
+        processor.process(exchange);
+      }
+ catch (      Exception e) {
+        LOG.error(e.getMessage(),e);
+      }
+      processed++;
     }
- catch (    Exception e) {
-      LOG.error(e.getMessage(),e);
+ catch (    ConsumerTimeoutException e) {
+      LOG.debug(e.getMessage(),e);
+      consumerTimeout=true;
     }
-    processed++;
-    if (processed >= endpoint.getBatchSize()) {
+    if (processed >= endpoint.getBatchSize() || consumerTimeout) {
       try {
         berrier.await(endpoint.getBarrierAwaitTimeoutMs(),TimeUnit.MILLISECONDS);
-        processed=0;
+        if (!consumerTimeout) {
+          processed=0;
+        }
       }
  catch (      InterruptedException e) {
         LOG.error(e.getMessage(),e);
