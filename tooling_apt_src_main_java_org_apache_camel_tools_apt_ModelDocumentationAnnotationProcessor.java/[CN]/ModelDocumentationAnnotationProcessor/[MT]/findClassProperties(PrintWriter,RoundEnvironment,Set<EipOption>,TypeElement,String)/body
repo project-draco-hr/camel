@@ -28,7 +28,35 @@
             }
           }
         }
-        EipOption ep=new EipOption(name,fieldTypeName,required,"","",docComment,isEnum,enums);
+        EipOption ep=new EipOption(name,"attribute",fieldTypeName,required,"","",docComment,isEnum,enums);
+        eipOptions.add(ep);
+      }
+      XmlElement element=fieldElement.getAnnotation(XmlElement.class);
+      fieldName=fieldElement.getSimpleName().toString();
+      if (element != null) {
+        String name=element.name();
+        if (isNullOrEmpty(name) || "##default".equals(name)) {
+          name=fieldName;
+        }
+        name=prefix + name;
+        TypeMirror fieldType=fieldElement.asType();
+        String fieldTypeName=fieldType.toString();
+        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
+        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement);
+        boolean required=element.required();
+        Set<String> enums=new LinkedHashSet<String>();
+        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+        if (isEnum) {
+          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+          for (          VariableElement var : fields) {
+            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+              String val=var.toString();
+              enums.add(val);
+            }
+          }
+        }
+        EipOption ep=new EipOption(name,"element",fieldTypeName,required,"","",docComment,isEnum,enums);
         eipOptions.add(ep);
       }
     }
