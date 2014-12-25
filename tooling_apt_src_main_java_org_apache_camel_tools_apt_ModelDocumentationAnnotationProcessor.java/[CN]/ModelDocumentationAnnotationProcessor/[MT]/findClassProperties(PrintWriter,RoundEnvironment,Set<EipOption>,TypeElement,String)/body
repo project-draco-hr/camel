@@ -14,7 +14,7 @@
         TypeMirror fieldType=fieldElement.asType();
         String fieldTypeName=fieldType.toString();
         TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement);
+        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement,true);
         boolean required=attribute.required();
         Set<String> enums=new LinkedHashSet<String>();
         boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
@@ -28,12 +28,13 @@
             }
           }
         }
-        EipOption ep=new EipOption(name,"attribute",fieldTypeName,required,"","",docComment,isEnum,enums);
+        EipOption ep=new EipOption(name,"attribute",fieldTypeName,required,"","",docComment,isEnum,enums,false,null);
         eipOptions.add(ep);
       }
       XmlElement element=fieldElement.getAnnotation(XmlElement.class);
       fieldName=fieldElement.getSimpleName().toString();
       if (element != null) {
+        String kind="element";
         String name=element.name();
         if (isNullOrEmpty(name) || "##default".equals(name)) {
           name=fieldName;
@@ -42,7 +43,7 @@
         TypeMirror fieldType=fieldElement.asType();
         String fieldTypeName=fieldType.toString();
         TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement);
+        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement,true);
         boolean required=element.required();
         Set<String> enums=new LinkedHashSet<String>();
         boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
@@ -56,7 +57,24 @@
             }
           }
         }
-        EipOption ep=new EipOption(name,"element",fieldTypeName,required,"","",docComment,isEnum,enums);
+        Set<String> oneOfTypes=new LinkedHashSet<String>();
+        boolean isOneOf=ONE_OF_TYPE_NAME.equals(fieldTypeName);
+        if (isOneOf) {
+          TypeElement languages=findTypeElement(roundEnv,ONE_OF_LANGUAGES);
+          String superClassName=canonicalClassName(languages.toString());
+          Set<TypeElement> children=new LinkedHashSet<TypeElement>();
+          findTypeElementChildren(roundEnv,children,superClassName);
+          for (          TypeElement child : children) {
+            XmlRootElement rootElement=child.getAnnotation(XmlRootElement.class);
+            if (rootElement != null) {
+              String childName=rootElement.name();
+              if (childName != null) {
+                oneOfTypes.add(childName);
+              }
+            }
+          }
+        }
+        EipOption ep=new EipOption(name,kind,fieldTypeName,required,"","",docComment,isEnum,enums,isOneOf,oneOfTypes);
         eipOptions.add(ep);
       }
     }

@@ -8,7 +8,7 @@
     List<ExecutableElement> methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
     for (    ExecutableElement method : methods) {
       String methodName=method.getSimpleName().toString();
-      if (setter.equals(methodName) && method.getParameters().size() == 1) {
+      if (setter.equals(methodName) && method.getParameters().size() == 1 && method.getReturnType().getKind().equals(TypeKind.VOID)) {
         String doc=elementUtils.getDocComment(method);
         if (!isNullOrEmpty(doc)) {
           answer=doc;
@@ -29,6 +29,19 @@
       for (      ExecutableElement method : methods) {
         String methodName=method.getSimpleName().toString();
         if ((getter1.equals(methodName) || getter2.equals(methodName)) && method.getParameters().size() == 0) {
+          String doc=elementUtils.getDocComment(method);
+          if (!isNullOrEmpty(doc)) {
+            answer=doc;
+            break;
+          }
+        }
+      }
+    }
+    if (answer == null && builderPattern) {
+      methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
+      for (      ExecutableElement method : methods) {
+        String methodName=method.getSimpleName().toString();
+        if (fieldName.equals(methodName) && method.getParameters().size() == 1) {
           String doc=elementUtils.getDocComment(method);
           if (!isNullOrEmpty(doc)) {
             answer=doc;
