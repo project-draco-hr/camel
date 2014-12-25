@@ -1,0 +1,18 @@
+{
+  final String javaTypeName=canonicalClassName(classElement.getQualifiedName().toString());
+  String packageName=javaTypeName.substring(0,javaTypeName.lastIndexOf("."));
+  if (!javaTypeName.startsWith("org.apache.camel.model")) {
+    return;
+  }
+  final XmlRootElement rootElement=classElement.getAnnotation(XmlRootElement.class);
+  final String name=rootElement.name();
+  String fileName=classElement.getSimpleName().toString() + ".json";
+  Func1<PrintWriter,Void> handler=new Func1<PrintWriter,Void>(){
+    @Override public Void call(    PrintWriter writer){
+      writeJSonSchemeDocumentation(writer,roundEnv,classElement,rootElement,javaTypeName,name);
+      return null;
+    }
+  }
+;
+  processFile(packageName,fileName,handler);
+}

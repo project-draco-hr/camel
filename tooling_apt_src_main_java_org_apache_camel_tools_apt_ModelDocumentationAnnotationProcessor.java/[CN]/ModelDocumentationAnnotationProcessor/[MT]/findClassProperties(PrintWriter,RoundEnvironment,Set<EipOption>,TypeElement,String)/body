@@ -1,0 +1,48 @@
+{
+  Elements elementUtils=processingEnv.getElementUtils();
+  while (true) {
+    List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
+    for (    VariableElement fieldElement : fieldElements) {
+      XmlAttribute attribute=fieldElement.getAnnotation(XmlAttribute.class);
+      String fieldName=fieldElement.getSimpleName().toString();
+      if (attribute != null) {
+        String name=attribute.name();
+        if (isNullOrEmpty(name) || "##default".equals(name)) {
+          name=fieldName;
+        }
+        name=prefix + name;
+        TypeMirror fieldType=fieldElement.asType();
+        String fieldTypeName=fieldType.toString();
+        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
+        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement);
+        boolean required=attribute.required();
+        Set<String> enums=new LinkedHashSet<String>();
+        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+        if (isEnum) {
+          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+          for (          VariableElement var : fields) {
+            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+              String val=var.toString();
+              enums.add(val);
+            }
+          }
+        }
+        EipOption ep=new EipOption(name,fieldTypeName,required,"","",docComment,isEnum,enums);
+        eipOptions.add(ep);
+      }
+    }
+    TypeElement baseTypeElement=null;
+    TypeMirror superclass=classElement.getSuperclass();
+    if (superclass != null) {
+      String superClassName=canonicalClassName(superclass.toString());
+      baseTypeElement=findTypeElement(roundEnv,superClassName);
+    }
+    if (baseTypeElement != null) {
+      classElement=baseTypeElement;
+    }
+ else {
+      break;
+    }
+  }
+}
