@@ -1,0 +1,28 @@
+{
+  if ("expression".equals(fieldName)) {
+    String kind="element";
+    String name=elementRef.name();
+    if (isNullOrEmpty(name) || "##default".equals(name)) {
+      name=fieldName;
+    }
+    name=prefix + name;
+    TypeMirror fieldType=fieldElement.asType();
+    String fieldTypeName=fieldType.toString();
+    Set<String> oneOfTypes=new TreeSet<String>();
+    TypeElement languages=findTypeElement(roundEnv,ONE_OF_LANGUAGES);
+    String superClassName=canonicalClassName(languages.toString());
+    Set<TypeElement> children=new LinkedHashSet<TypeElement>();
+    findTypeElementChildren(roundEnv,children,superClassName);
+    for (    TypeElement child : children) {
+      XmlRootElement rootElement=child.getAnnotation(XmlRootElement.class);
+      if (rootElement != null) {
+        String childName=rootElement.name();
+        if (childName != null) {
+          oneOfTypes.add(childName);
+        }
+      }
+    }
+    EipOption ep=new EipOption(name,kind,fieldTypeName,true,"","",false,null,true,oneOfTypes);
+    eipOptions.add(ep);
+  }
+}
