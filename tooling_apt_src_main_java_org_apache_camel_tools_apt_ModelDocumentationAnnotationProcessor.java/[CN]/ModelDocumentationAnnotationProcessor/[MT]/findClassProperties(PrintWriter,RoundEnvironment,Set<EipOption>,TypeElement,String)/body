@@ -16,7 +16,7 @@
         TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
         String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement,true);
         boolean required=attribute.required();
-        Set<String> enums=new LinkedHashSet<String>();
+        Set<String> enums=new TreeSet<String>();
         boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
         if (isEnum) {
           TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
@@ -57,7 +57,7 @@
             }
           }
         }
-        Set<String> oneOfTypes=new LinkedHashSet<String>();
+        Set<String> oneOfTypes=new TreeSet<String>();
         boolean isOneOf=ONE_OF_TYPE_NAME.equals(fieldTypeName);
         if (isOneOf) {
           TypeElement languages=findTypeElement(roundEnv,ONE_OF_LANGUAGES);
@@ -76,6 +76,63 @@
         }
         EipOption ep=new EipOption(name,kind,fieldTypeName,required,"","",docComment,isEnum,enums,isOneOf,oneOfTypes);
         eipOptions.add(ep);
+      }
+      XmlElementRef elementRef=fieldElement.getAnnotation(XmlElementRef.class);
+      fieldName=fieldElement.getSimpleName().toString();
+      if (elementRef != null) {
+        if ("outputs".equals(fieldName)) {
+          String kind="element";
+          String name=elementRef.name();
+          if (isNullOrEmpty(name) || "##default".equals(name)) {
+            name=fieldName;
+          }
+          name=prefix + name;
+          TypeMirror fieldType=fieldElement.asType();
+          String fieldTypeName=fieldType.toString();
+          Set<String> oneOfTypes=new TreeSet<String>();
+          Set<TypeElement> children=new LinkedHashSet<TypeElement>();
+          for (          String superclass : ONE_OF_OUTPUTS) {
+            findTypeElementChildren(roundEnv,children,superclass);
+          }
+          for (          TypeElement child : children) {
+            XmlRootElement rootElement=child.getAnnotation(XmlRootElement.class);
+            if (rootElement != null) {
+              String childName=rootElement.name();
+              if (childName != null) {
+                oneOfTypes.add(childName);
+              }
+            }
+          }
+          oneOfTypes.remove("route");
+          EipOption ep=new EipOption(name,kind,fieldTypeName,true,"","","",false,null,true,oneOfTypes);
+          eipOptions.add(ep);
+        }
+        if ("expression".equals(fieldName)) {
+          String kind="element";
+          String name=elementRef.name();
+          if (isNullOrEmpty(name) || "##default".equals(name)) {
+            name=fieldName;
+          }
+          name=prefix + name;
+          TypeMirror fieldType=fieldElement.asType();
+          String fieldTypeName=fieldType.toString();
+          Set<String> oneOfTypes=new TreeSet<String>();
+          TypeElement languages=findTypeElement(roundEnv,ONE_OF_LANGUAGES);
+          String superClassName=canonicalClassName(languages.toString());
+          Set<TypeElement> children=new LinkedHashSet<TypeElement>();
+          findTypeElementChildren(roundEnv,children,superClassName);
+          for (          TypeElement child : children) {
+            XmlRootElement rootElement=child.getAnnotation(XmlRootElement.class);
+            if (rootElement != null) {
+              String childName=rootElement.name();
+              if (childName != null) {
+                oneOfTypes.add(childName);
+              }
+            }
+          }
+          EipOption ep=new EipOption(name,kind,fieldTypeName,true,"","","",false,null,true,oneOfTypes);
+          eipOptions.add(ep);
+        }
       }
     }
     TypeElement baseTypeElement=null;
