@@ -1,0 +1,38 @@
+{
+  List<Map<String,String>> answer=new ArrayList<Map<String,String>>();
+  if (filter != null) {
+    filter=RegexUtil.wildcardAsRegex(filter);
+  }
+  List<String> names=filter != null ? catalog.findModelNames(filter) : catalog.findModelNames();
+  for (  String name : names) {
+    String json=catalog.modelJSonSchema(name);
+    List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("model",json,false);
+    String description=null;
+    String label=null;
+    String type=null;
+    for (    Map<String,String> row : rows) {
+      if (row.containsKey("description")) {
+        description=row.get("description");
+      }
+ else       if (row.containsKey("label")) {
+        label=row.get("label");
+      }
+ else       if (row.containsKey("javaType")) {
+        type=row.get("javaType");
+      }
+    }
+    Map<String,String> row=new HashMap<String,String>();
+    row.put("name",name);
+    if (description != null) {
+      row.put("description",description);
+    }
+    if (label != null) {
+      row.put("label",label);
+    }
+    if (type != null) {
+      row.put("type",type);
+    }
+    answer.add(row);
+  }
+  return answer;
+}
