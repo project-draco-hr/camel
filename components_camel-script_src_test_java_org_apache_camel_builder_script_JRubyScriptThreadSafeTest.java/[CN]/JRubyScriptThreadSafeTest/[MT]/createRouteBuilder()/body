@@ -1,0 +1,34 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.getProperties().put(Exchange.REUSE_SCRIPT_ENGINE,"true");
+      context.getProperties().put(Exchange.COMPILE_SCRIPT,"true");
+      from("seda:parallel?concurrentConsumers=5").onException(Exception.class).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Throwable ex=exchange.getProperty("CamelExceptionCaught",Throwable.class);
+          System.out.println(ex);
+          ex.printStackTrace();
+          latch.countDown();
+        }
+      }
+).to(errorEndpoint).end().to("language:ruby:result = $request.body?cacheScript=true").to(resultEndpoint).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+        }
+      }
+);
+      from("seda:sequential?concurrentConsumers=1").onException(Exception.class).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+        }
+      }
+).to(errorEndpoint).end().to("language:ruby:result = $request.body?cacheScript=true").to(resultEndpoint).process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          latch.countDown();
+        }
+      }
+);
+    }
+  }
+;
+}

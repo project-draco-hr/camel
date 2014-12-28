@@ -1,11 +1,16 @@
 {
   try {
-    ScriptEngine engine=scriptEngineFactory.getScriptEngine();
-    ScriptContext context=populateBindings(engine,exchange,attributes);
-    addScriptEngineArguments(engine,exchange);
-    Object result=runScript(engine,exchange,context);
-    LOG.debug("The script evaluation result is: {}",result);
-    return result;
+    if (reuseScriptEngine(exchange)) {
+synchronized (this) {
+        LOG.debug("Calling doEvaluateScript without creating a new scriptEngine");
+        return doEvaluateScript(exchange,scriptEngine);
+      }
+    }
+ else {
+      LOG.debug("Calling doEvaluateScript with a new scriptEngine");
+      ScriptEngine engine=scriptEngineFactory.getScriptEngine();
+      return doEvaluateScript(exchange,engine);
+    }
   }
  catch (  ScriptException e) {
     if (LOG.isDebugEnabled()) {

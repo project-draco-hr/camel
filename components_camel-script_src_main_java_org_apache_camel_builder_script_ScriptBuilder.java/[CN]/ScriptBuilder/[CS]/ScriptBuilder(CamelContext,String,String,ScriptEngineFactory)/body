@@ -10,10 +10,12 @@
     this.scriptText=scriptText;
   }
   if (scriptEngineFactory == null) {
+    this.scriptEngine=createScriptEngine(scriptLanguage);
     this.scriptEngineFactory=lookupScriptEngineFactory(scriptLanguage);
   }
  else {
     this.scriptEngineFactory=scriptEngineFactory;
+    this.scriptEngine=scriptEngineFactory.getScriptEngine();
   }
   if (this.scriptEngineFactory == null) {
     throw new IllegalArgumentException("Cannot lookup ScriptEngineFactory for script language: " + scriptLanguage);
@@ -30,10 +32,9 @@
       reader=new StringReader(this.scriptText);
     }
     if (reader != null) {
-      ScriptEngine engine=this.scriptEngineFactory.getScriptEngine();
-      if (engine instanceof Compilable) {
-        Compilable compilable=(Compilable)engine;
-        this.compiledScript=compilable.compile(scriptText);
+      if (compileScripte(camelContext) && scriptEngine instanceof Compilable) {
+        Compilable compilable=(Compilable)scriptEngine;
+        this.compiledScript=compilable.compile(reader);
         LOG.debug("Using compiled script: {}",this.compiledScript);
       }
     }
