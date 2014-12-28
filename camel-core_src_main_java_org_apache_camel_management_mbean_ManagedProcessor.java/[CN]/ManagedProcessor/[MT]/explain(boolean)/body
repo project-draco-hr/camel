@@ -1,0 +1,23 @@
+{
+  try {
+    String json=context.explainEipJson(definition.getShortName(),id,allOptions);
+    List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("properties",json,true);
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.explainEipTabularType());
+    for (    Map<String,String> row : rows) {
+      String name=row.get("name");
+      String kind=row.get("kind");
+      String type=row.get("type");
+      String javaType=row.get("javaType");
+      String value=row.get("value") != null ? row.get("value") : "";
+      String defaultValue=row.get("defaultValue") != null ? row.get("defaultValue") : "";
+      String description=row.get("description") != null ? row.get("description") : "";
+      CompositeType ct=CamelOpenMBeanTypes.explainEipsCompositeType();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"option","kind","type","java type","value","default value","description"},new Object[]{name,kind,type,javaType,value,defaultValue,description});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}
