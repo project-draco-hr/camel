@@ -4,8 +4,21 @@
   if (!javaTypeName.startsWith("org.apache.camel.model")) {
     return;
   }
+  if (classElement.getModifiers().contains(Modifier.ABSTRACT)) {
+    return;
+  }
+  if (skipUnwanted) {
+    if (classElement.getQualifiedName().toString().equals(ONE_OF_TYPE_NAME)) {
+      return;
+    }
+  }
   final XmlRootElement rootElement=classElement.getAnnotation(XmlRootElement.class);
-  final String name=rootElement.name();
+  String aName=rootElement.name();
+  if (isNullOrEmpty(aName) || "##default".equals(aName)) {
+    XmlType typeElement=classElement.getAnnotation(XmlType.class);
+    aName=typeElement.name();
+  }
+  final String name=aName;
   String fileName;
   if (isNullOrEmpty(name) || "##default".equals(name)) {
     fileName=classElement.getSimpleName().toString() + ".json";
