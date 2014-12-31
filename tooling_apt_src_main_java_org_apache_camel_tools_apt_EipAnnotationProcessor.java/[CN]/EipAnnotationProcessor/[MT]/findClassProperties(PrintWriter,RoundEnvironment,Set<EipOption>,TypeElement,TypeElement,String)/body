@@ -1,90 +1,24 @@
 {
-  Elements elementUtils=processingEnv.getElementUtils();
   while (true) {
     List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
     for (    VariableElement fieldElement : fieldElements) {
-      XmlAttribute attribute=fieldElement.getAnnotation(XmlAttribute.class);
       String fieldName=fieldElement.getSimpleName().toString();
+      XmlAttribute attribute=fieldElement.getAnnotation(XmlAttribute.class);
       if (attribute != null) {
-        String name=attribute.name();
-        if (isNullOrEmpty(name) || "##default".equals(name)) {
-          name=fieldName;
+        boolean skip=processAttribute(roundEnv,originalClassType,classElement,fieldElement,fieldName,attribute,eipOptions,prefix);
+        if (skip) {
+          continue;
         }
-        if (skipUnwanted) {
-          boolean loadBalancer="LoadBalanceDefinition".equals(originalClassType.getSimpleName().toString());
-          if (!loadBalancer && "inheritErrorHandler".equals(name)) {
-            continue;
-          }
-        }
-        name=prefix + name;
-        TypeMirror fieldType=fieldElement.asType();
-        String fieldTypeName=fieldType.toString();
-        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement,true);
-        boolean required=attribute.required();
-        Set<String> enums=new TreeSet<String>();
-        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
-        if (isEnum) {
-          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
-          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
-          for (          VariableElement var : fields) {
-            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
-              String val=var.toString();
-              enums.add(val);
-            }
-          }
-        }
-        EipOption ep=new EipOption(name,"attribute",fieldTypeName,required,"",docComment,isEnum,enums,false,null);
-        eipOptions.add(ep);
+      }
+      XmlElements elements=fieldElement.getAnnotation(XmlElements.class);
+      if (elements != null) {
+        processElements(roundEnv,classElement,elements,fieldElement,eipOptions,prefix);
       }
       XmlElement element=fieldElement.getAnnotation(XmlElement.class);
-      fieldName=fieldElement.getSimpleName().toString();
       if (element != null) {
-        String kind="element";
-        String name=element.name();
-        if (isNullOrEmpty(name) || "##default".equals(name)) {
-          name=fieldName;
-        }
-        name=prefix + name;
-        TypeMirror fieldType=fieldElement.asType();
-        String fieldTypeName=fieldType.toString();
-        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement,true);
-        boolean required=element.required();
-        Set<String> enums=new LinkedHashSet<String>();
-        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
-        if (isEnum) {
-          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
-          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
-          for (          VariableElement var : fields) {
-            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
-              String val=var.toString();
-              enums.add(val);
-            }
-          }
-        }
-        Set<String> oneOfTypes=new TreeSet<String>();
-        boolean isOneOf=ONE_OF_TYPE_NAME.equals(fieldTypeName);
-        if (isOneOf) {
-          TypeElement languages=findTypeElement(roundEnv,ONE_OF_LANGUAGES);
-          String superClassName=canonicalClassName(languages.toString());
-          Set<TypeElement> children=new LinkedHashSet<TypeElement>();
-          findTypeElementChildren(roundEnv,children,superClassName);
-          for (          TypeElement child : children) {
-            XmlRootElement rootElement=child.getAnnotation(XmlRootElement.class);
-            if (rootElement != null) {
-              String childName=rootElement.name();
-              if (childName != null) {
-                oneOfTypes.add(childName);
-              }
-            }
-          }
-        }
-        EipOption ep=new EipOption(name,kind,fieldTypeName,required,"",docComment,isEnum,enums,isOneOf,oneOfTypes);
-        eipOptions.add(ep);
+        processElement(roundEnv,classElement,element,fieldElement,eipOptions,prefix);
       }
       XmlElementRef elementRef=fieldElement.getAnnotation(XmlElementRef.class);
-      fieldName=fieldElement.getSimpleName().toString();
       if (elementRef != null) {
         processOutputs(roundEnv,originalClassType,elementRef,fieldElement,fieldName,eipOptions,prefix);
         processExpression(roundEnv,elementRef,fieldElement,fieldName,eipOptions,prefix);

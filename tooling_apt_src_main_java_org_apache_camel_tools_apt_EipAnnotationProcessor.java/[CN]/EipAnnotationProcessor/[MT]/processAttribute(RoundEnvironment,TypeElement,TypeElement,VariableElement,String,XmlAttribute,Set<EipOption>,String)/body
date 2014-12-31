@@ -1,0 +1,34 @@
+{
+  Elements elementUtils=processingEnv.getElementUtils();
+  String name=attribute.name();
+  if (isNullOrEmpty(name) || "##default".equals(name)) {
+    name=fieldName;
+  }
+  if (skipUnwanted) {
+    boolean loadBalancer="LoadBalanceDefinition".equals(originalClassType.getSimpleName().toString());
+    if (!loadBalancer && "inheritErrorHandler".equals(name)) {
+      return true;
+    }
+  }
+  name=prefix + name;
+  TypeMirror fieldType=fieldElement.asType();
+  String fieldTypeName=fieldType.toString();
+  TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
+  String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,classElement,true);
+  boolean required=attribute.required();
+  Set<String> enums=new TreeSet<String>();
+  boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+  if (isEnum) {
+    TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+    List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+    for (    VariableElement var : fields) {
+      if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+        String val=var.toString();
+        enums.add(val);
+      }
+    }
+  }
+  EipOption ep=new EipOption(name,"attribute",fieldTypeName,required,"",docComment,isEnum,enums,false,null);
+  eipOptions.add(ep);
+  return false;
+}
