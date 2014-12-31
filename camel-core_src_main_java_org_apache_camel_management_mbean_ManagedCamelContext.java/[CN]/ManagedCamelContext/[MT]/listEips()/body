@@ -1,0 +1,20 @@
+{
+  try {
+    Map<String,Properties> eips=context.findEips();
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.listEipsTabularType());
+    for (    Map.Entry<String,Properties> entry : eips.entrySet()) {
+      String name=entry.getKey();
+      String description=(String)entry.getValue().get("description");
+      String label=(String)entry.getValue().get("label");
+      String type=(String)entry.getValue().get("class");
+      String status=CamelContextHelper.isEipInUse(context,name) ? "in use" : "on classpath";
+      CompositeType ct=CamelOpenMBeanTypes.listEipsCompositeType();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"name","description","label","status","type"},new Object[]{name,description,label,status,type});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}

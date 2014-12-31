@@ -1,0 +1,56 @@
+{
+  SortedMap<String,Properties> answer=new TreeMap<String,Properties>();
+  ClassResolver resolver=camelContext.getClassResolver();
+  LOG.debug("Finding all EIPs using class resolver: {} -> {}",new Object[]{resolver});
+  URL url=resolver.loadResourceAsURL(MODEL_DESCRIPTOR);
+  if (url != null) {
+    InputStream is=null;
+    try {
+      is=url.openStream();
+      String all=IOHelper.loadText(is);
+      String[] lines=all.split("\n");
+      for (      String line : lines) {
+        if (line.startsWith("#")) {
+          continue;
+        }
+        Properties prop=new Properties();
+        prop.put("name",line);
+        String description=null;
+        String label=null;
+        String javaType=null;
+        String json=camelContext.explainEipJson(line,false);
+        if (json != null) {
+          List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("model",json,false);
+          for (          Map<String,String> row : rows) {
+            if (row.get("description") != null) {
+              description=row.get("description");
+            }
+            if (row.get("label") != null) {
+              label=row.get("label");
+            }
+            if (row.get("javaType") != null) {
+              javaType=row.get("javaType");
+            }
+          }
+        }
+        if (description != null) {
+          prop.put("description",description);
+        }
+        if (label != null) {
+          prop.put("label",label);
+        }
+        if (javaType != null) {
+          prop.put("class",javaType);
+        }
+        answer.put(line,prop);
+      }
+    }
+ catch (    IOException e) {
+      throw new LoadPropertiesException(url,e);
+    }
+ finally {
+      IOHelper.close(is);
+    }
+  }
+  return answer;
+}
