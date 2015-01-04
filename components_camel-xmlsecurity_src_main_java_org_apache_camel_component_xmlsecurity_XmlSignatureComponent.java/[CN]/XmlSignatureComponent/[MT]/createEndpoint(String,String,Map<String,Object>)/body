@@ -1,8 +1,11 @@
 {
   ObjectHelper.notNull(getCamelContext(),"CamelContext");
   String scheme;
+  String name;
   try {
-    scheme=new URI(remaining).getScheme();
+    URI u=new URI(remaining);
+    scheme=u.getScheme();
+    name=u.getPath();
   }
  catch (  Exception e) {
     throw new MalformedURLException(String.format("An invalid xmlsecurity uri was provided '%s'." + " Check the uri matches the format xmlsecurity:sign://<name> or xmlsecurity:verify://<name>",uri));
@@ -21,5 +24,7 @@
   }
   setProperties(endpoint.getConfiguration(),parameters);
   endpoint.getConfiguration().setCamelContext(getCamelContext());
+  endpoint.setCommand(XmlCommand.valueOf(scheme));
+  endpoint.setName(name);
   return endpoint;
 }
