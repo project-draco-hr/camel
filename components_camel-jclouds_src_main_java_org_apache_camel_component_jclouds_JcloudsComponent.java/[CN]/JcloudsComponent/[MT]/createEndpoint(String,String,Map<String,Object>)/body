@@ -1,33 +1,23 @@
 {
-  Endpoint endpoint=null;
-  String[] uriParts=null;
-  String endpointType=null;
-  if (remaining != null) {
-    uriParts=remaining.split(JcloudsConstants.DELIMETER);
-    if (uriParts != null && uriParts.length > 0) {
-      endpointType=uriParts[0];
-    }
+  String[] uriParts=remaining.split(JcloudsConstants.DELIMETER);
+  if (uriParts.length != 2) {
+    throw new IllegalArgumentException("Invalid Endpoint URI: " + uri + ". It should contains a valid command and providerId");
   }
-  if (JcloudsConstants.BLOBSTORE.endsWith(endpointType)) {
-    if (uriParts != null && uriParts.length >= 2) {
-      String provider=uriParts[1];
-      BlobStore blobStore=getBlobStore(provider);
-      endpoint=new JcloudsBlobStoreEndpoint(uri,this,blobStore);
-    }
+  String endpointType=uriParts[0];
+  String providerId=uriParts[1];
+  JcloudsCommand command=JcloudsCommand.valueOf(endpointType);
+  JcloudsConfiguration configuration=new JcloudsConfiguration();
+  configuration.setCommand(command);
+  configuration.setProviderId(providerId);
+  setProperties(configuration,parameters);
+  JcloudsEndpoint endpoint;
+  if (JcloudsCommand.blobstore == command) {
+    endpoint=new JcloudsBlobStoreEndpoint(uri,this,getBlobStore(providerId));
+  }
  else {
-      throw new IllegalArgumentException("Invalid Endpoint URI: " + uri + ". It should contains a valid provider name");
-    }
+    endpoint=new JcloudsComputeEndpoint(uri,this,getComputeService(providerId));
   }
- else   if (JcloudsConstants.COMPUTE.endsWith(endpointType)) {
-    if (uriParts != null && uriParts.length >= 2) {
-      String provider=uriParts[1];
-      ComputeService computeService=getComputeService(provider);
-      endpoint=new JcloudsComputeEndpoint(uri,this,computeService);
-    }
- else {
-      throw new IllegalArgumentException("Invalid Endpoint URI: \" + uri + \". It should contains a valid provider name");
-    }
-  }
+  endpoint.setConfiguration(configuration);
   setProperties(endpoint,parameters);
   return endpoint;
 }
