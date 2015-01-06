@@ -1,31 +1,41 @@
 {
-  Cluster cluster;
-  Session session;
-  String keyspace;
-  Matcher beanRefMatcher=BEAN_REF_PATTERN.matcher(remaining);
-  if (beanRefMatcher.matches()) {
-    String beanRefName=beanRefMatcher.group(1);
-    keyspace=beanRefMatcher.group(2);
-    Object bean=EndpointHelper.resolveParameter(getCamelContext(),"#" + beanRefName,Object.class);
-    if (bean instanceof Session) {
-      session=(Session)bean;
-      cluster=session.getCluster();
-      keyspace=session.getLoggedKeyspace();
-    }
- else     if (bean instanceof Cluster) {
-      cluster=(Cluster)bean;
-      session=null;
-    }
- else {
-      throw new IllegalArgumentException("CQL Bean type should be of type Session or Cluster but was " + bean);
-    }
+  String beanRef=null;
+  String hosts=null;
+  String port=null;
+  String keyspace=null;
+  int pos=remaining.lastIndexOf("/");
+  if (pos > 0) {
+    keyspace=remaining.substring(pos + 1);
+    remaining=remaining.substring(0,pos);
+  }
+  if (remaining.startsWith("bean:")) {
+    beanRef=remaining.substring(5);
   }
  else {
-    cluster=clusterBuilder(remaining,parameters).build();
-    session=null;
-    keyspace=getAndRemoveParameter(parameters,"keyspace",String.class);
+    if (remaining.contains(":")) {
+      port=ObjectHelper.after(remaining,":");
+      hosts=ObjectHelper.before(remaining,":");
+    }
+ else {
+      hosts=remaining;
+    }
   }
-  Endpoint endpoint=new CassandraEndpoint(uri,this,cluster,session,keyspace);
+  ResultSetConversionStrategy rs=null;
+  String strategy=getAndRemoveParameter(parameters,"resultSetConversionStrategy",String.class);
+  if (strategy != null) {
+    rs=ResultSetConversionStrategies.fromName(strategy);
+  }
+  CassandraEndpoint endpoint=new CassandraEndpoint(uri,this);
+  endpoint.setBeanRef(beanRef);
+  endpoint.setHosts(hosts);
+  if (port != null) {
+    int num=CamelContextHelper.parseInteger(getCamelContext(),port);
+    endpoint.setPort(num);
+  }
+  endpoint.setKeyspace(keyspace);
+  if (rs != null) {
+    endpoint.setResultSetConversionStrategy(rs);
+  }
   setProperties(endpoint,parameters);
   return endpoint;
 }

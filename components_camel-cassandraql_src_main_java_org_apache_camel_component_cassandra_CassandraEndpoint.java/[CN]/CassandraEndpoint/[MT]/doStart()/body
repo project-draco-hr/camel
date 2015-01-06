@@ -1,4 +1,28 @@
 {
   super.doStart();
+  if (cluster == null && beanRef != null) {
+    Object bean=CamelContextHelper.mandatoryLookup(getCamelContext(),beanRef);
+    if (bean instanceof Session) {
+      session=(Session)bean;
+      cluster=session.getCluster();
+      keyspace=session.getLoggedKeyspace();
+    }
+ else     if (bean instanceof Cluster) {
+      cluster=(Cluster)bean;
+      session=null;
+    }
+ else {
+      throw new IllegalArgumentException("CQL Bean type should be of type Session or Cluster but was " + bean);
+    }
+  }
+  if (cluster == null && hosts != null) {
+    cluster=createClusterBuilder().build();
+  }
+  if (cluster != null) {
+    sessionHolder=new CassandraSessionHolder(cluster,keyspace);
+  }
+ else {
+    sessionHolder=new CassandraSessionHolder(session);
+  }
   sessionHolder.start();
 }
