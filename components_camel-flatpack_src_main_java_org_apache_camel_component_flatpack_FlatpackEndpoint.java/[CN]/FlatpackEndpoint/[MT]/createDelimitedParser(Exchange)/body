@@ -1,0 +1,20 @@
+{
+  Reader bodyReader=exchange.getIn().getMandatoryBody(Reader.class);
+  if (ObjectHelper.isEmpty(getResourceUri())) {
+    return getParserFactory().newDelimitedParser(bodyReader,delimiter,textQualifier);
+  }
+ else {
+    InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext().getClassResolver(),resourceUri);
+    InputStreamReader reader=new InputStreamReader(is,IOHelper.getCharsetName(exchange));
+    Parser parser=getParserFactory().newDelimitedParser(reader,bodyReader,delimiter,textQualifier,ignoreFirstRecord);
+    if (isAllowShortLines()) {
+      parser.setHandlingShortLines(true);
+      parser.setIgnoreParseWarnings(true);
+    }
+    if (isIgnoreExtraColumns()) {
+      parser.setIgnoreExtraColumns(true);
+      parser.setIgnoreParseWarnings(true);
+    }
+    return parser;
+  }
+}
