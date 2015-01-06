@@ -1,16 +1,27 @@
 {
-  String packageName=sanitizeComponentName(componentName);
-  String path=CamelContextHelper.COMPONENT_DOCUMENTATION_PREFIX + packageName + "/"+ componentName+ ".html";
-  ClassResolver resolver=getClassResolver();
-  InputStream inputStream=resolver.loadResourceAsStream(path);
-  log.debug("Loading component documentation for: {} using class resolver: {} -> {}",new Object[]{componentName,resolver,inputStream});
-  if (inputStream != null) {
-    try {
-      return IOHelper.loadText(inputStream);
+  FactoryFinder finder=getFactoryFinder(DefaultComponentResolver.RESOURCE_PATH);
+  try {
+    Class<?> clazz=finder.findClass(componentName);
+    if (clazz == null) {
+      return null;
     }
+    String packageName=clazz.getPackage().getName();
+    packageName=packageName.replace('.','/');
+    String path=packageName + "/" + componentName+ ".html";
+    ClassResolver resolver=getClassResolver();
+    InputStream inputStream=resolver.loadResourceAsStream(path);
+    log.debug("Loading component documentation for: {} using class resolver: {} -> {}",new Object[]{componentName,resolver,inputStream});
+    if (inputStream != null) {
+      try {
+        return IOHelper.loadText(inputStream);
+      }
   finally {
-      IOHelper.close(inputStream);
+        IOHelper.close(inputStream);
+      }
     }
+    return null;
   }
-  return null;
+ catch (  ClassNotFoundException e) {
+    return null;
+  }
 }
