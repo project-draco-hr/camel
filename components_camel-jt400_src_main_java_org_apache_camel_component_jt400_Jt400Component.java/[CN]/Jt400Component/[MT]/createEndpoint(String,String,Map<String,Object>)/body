@@ -1,5 +1,4 @@
 {
-  String type=remaining.substring(remaining.lastIndexOf(".") + 1).toUpperCase();
   AS400ConnectionPool connectionPool;
   if (properties.containsKey(CONNECTION_POOL)) {
     LOG.trace("AS400ConnectionPool instance specified in the URI - will look it up.");
@@ -10,11 +9,9 @@
     LOG.trace("No AS400ConnectionPool instance specified in the URI - one will be provided.");
     connectionPool=getConnectionPool();
   }
-  if (DATA_QUEUE.equals(type)) {
-    return new Jt400DataQueueEndpoint(uri,this,connectionPool);
-  }
-  if (PGM.equals(type)) {
-    return new Jt400PgmEndpoint(uri,this,connectionPool);
-  }
-  throw new CamelException(String.format("AS/400 Object type %s is not supported",type));
+  String type=remaining.substring(remaining.lastIndexOf(".") + 1).toUpperCase();
+  Jt400Endpoint endpoint=new Jt400Endpoint(uri,this,connectionPool);
+  setProperties(endpoint,properties);
+  endpoint.setType(Jt400Type.valueOf(type));
+  return endpoint;
 }
