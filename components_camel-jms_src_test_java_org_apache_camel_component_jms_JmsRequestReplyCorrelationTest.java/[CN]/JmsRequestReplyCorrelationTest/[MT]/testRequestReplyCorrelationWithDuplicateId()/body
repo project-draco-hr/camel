@@ -1,0 +1,24 @@
+{
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(1);
+  template.asyncSend("jms:queue:helloDelay",new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      exchange.setPattern(ExchangePattern.InOut);
+      Message in=exchange.getIn();
+      in.setBody("Hello World");
+      in.setHeader("JMSCorrelationID","b");
+    }
+  }
+);
+  Exchange out=template.send("jms:queue:helloDelay",ExchangePattern.InOut,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      Message in=exchange.getIn();
+      in.setBody("Hello World");
+      in.setHeader("JMSCorrelationID","b");
+    }
+  }
+);
+  result.assertIsSatisfied();
+  assertNotNull("We are expecting the exception here!",out.getException());
+  assertTrue("Get a wrong exception",out.getException() instanceof IllegalArgumentException);
+}
