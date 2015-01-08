@@ -1,0 +1,16 @@
+{
+  ByteBuf buf=(ByteBuf)super.decode(ctx,buffer);
+  if (buf != null) {
+    int pos=buf.bytesBefore((byte)config.getStartByte());
+    if (pos >= 0) {
+      ByteBuf msg=buf.readerIndex(pos + 1).slice();
+      LOG.debug("Message ends with length {}",msg.readableBytes());
+      return config.isProduceString() ? asString(msg) : asByteArray(msg);
+    }
+ else {
+      throw new DecoderException("Did not find start byte " + (int)config.getStartByte());
+    }
+  }
+  LOG.debug("No complete messages yet at position {}",buffer.readableBytes());
+  return null;
+}
