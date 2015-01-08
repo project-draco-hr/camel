@@ -11,7 +11,7 @@
   path=FileUtil.stripLeadingSeparator(path);
   String scheme="http";
   String host="";
-  int port=0;
+  int port=this.getPort();
   RestConfiguration config=getCamelContext().getRestConfiguration();
   if (config.getComponent() == null || config.getComponent().equals("restlet")) {
     if (config.getScheme() != null) {
@@ -40,9 +40,16 @@
     }
   }
   String query=URISupport.createQueryString(map);
-  String url="restlet:%s://%s:%s/%s?restletMethod=%s";
+  String url;
   String restrict=verb.toUpperCase(Locale.US);
-  url=String.format(url,scheme,host,port,path,restrict);
+  if (port > 0) {
+    url="restlet:%s://%s:%s/%s?restletMethod=%s";
+    url=String.format(url,scheme,host,port,path,restrict);
+  }
+ else {
+    url="restlet:/%s?restletMethod=%s";
+    url=String.format(url,path,restrict);
+  }
   if (!query.isEmpty()) {
     url=url + "&" + query;
   }
