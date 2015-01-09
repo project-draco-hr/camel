@@ -1,0 +1,16 @@
+{
+  TimeoutMapEntry<K,V> entry=new TimeoutMapEntry<K,V>(key,value,timeoutMillis);
+  if (useLock) {
+    lock.lock();
+  }
+  try {
+    updateExpireTime(entry);
+    TimeoutMapEntry<K,V> result=map.putIfAbsent(key,entry);
+    return result != null ? result.getValue() : null;
+  }
+  finally {
+    if (useLock) {
+      lock.unlock();
+    }
+  }
+}
