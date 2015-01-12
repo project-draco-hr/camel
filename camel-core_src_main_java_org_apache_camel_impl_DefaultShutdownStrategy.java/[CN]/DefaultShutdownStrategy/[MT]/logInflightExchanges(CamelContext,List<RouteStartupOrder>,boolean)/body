@@ -7,8 +7,23 @@
   if (size == 0) {
     return;
   }
-  StringBuilder sb=new StringBuilder("There are " + size + " inflight exchanges:");
+  Set<String> routeIds=new HashSet<String>();
+  for (  RouteStartupOrder route : routes) {
+    routeIds.add(route.getRoute().getId());
+  }
+  Collection<InflightRepository.InflightExchange> filtered=new ArrayList<InflightRepository.InflightExchange>();
   for (  InflightRepository.InflightExchange inflight : inflights) {
+    String routeId=inflight.getExchange().getFromRouteId();
+    if (routeIds.contains(routeId)) {
+      filtered.add(inflight);
+    }
+  }
+  size=filtered.size();
+  if (size == 0) {
+    return;
+  }
+  StringBuilder sb=new StringBuilder("There are " + size + " inflight exchanges:");
+  for (  InflightRepository.InflightExchange inflight : filtered) {
     sb.append("\n\tInflightExchange: [exchangeId=").append(inflight.getExchange().getExchangeId()).append(", fromRouteId=").append(inflight.getExchange().getFromRouteId()).append(", routeId=").append(inflight.getRouteId()).append(", nodeId=").append(inflight.getNodeId()).append(", elapsed=").append(inflight.getElapsed()).append(", duration=").append(inflight.getDuration()).append("]");
   }
   if (infoLevel) {
