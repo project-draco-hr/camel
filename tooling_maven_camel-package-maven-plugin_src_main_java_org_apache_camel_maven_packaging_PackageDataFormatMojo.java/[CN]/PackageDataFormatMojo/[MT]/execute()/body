@@ -1,5 +1,6 @@
 {
   File camelMetaDir=new File(outDir,"META-INF/services/org/apache/camel/");
+  Map<String,String> javaTypes=new HashMap<String,String>();
   StringBuilder buffer=new StringBuilder();
   int count=0;
   for (  Resource r : project.getBuild().getResources()) {
@@ -20,10 +21,22 @@
             }
             buffer.append(name);
           }
+          try {
+            String text=loadText(new FileInputStream(file));
+            Map<String,String> map=parseAsMap(text);
+            String javaType=map.get("class");
+            if (javaType != null) {
+              javaTypes.put(name,javaType);
+            }
+          }
+ catch (          IOException e) {
+            throw new MojoExecutionException("Failed to read file " + file + ". Reason: "+ e,e);
+          }
         }
       }
     }
   }
+  getLog().debug("Java types found " + javaTypes);
   if (count > 0) {
     Properties properties=new Properties();
     String names=buffer.toString();
