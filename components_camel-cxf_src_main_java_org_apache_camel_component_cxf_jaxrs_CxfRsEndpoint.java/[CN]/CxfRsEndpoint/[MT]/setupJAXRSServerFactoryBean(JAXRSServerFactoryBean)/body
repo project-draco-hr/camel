@@ -3,11 +3,14 @@
     sfb.setAddress(getAddress());
   }
   if (getResourceClasses() != null) {
-    List<Class<?>> res=getResourceClasses();
-    for (    Class<?> clazz : res) {
-      sfb.setResourceProvider(clazz,new CamelResourceProvider(clazz));
+    sfb.setResourceClasses(getResourceClasses());
+  }
+  List<ClassResourceInfo> cris=sfb.getServiceFactory().getClassResourceInfo();
+  for (  ClassResourceInfo cri : cris) {
+    final Class<?> serviceClass=cri.getServiceClass();
+    if (serviceClass.isInterface()) {
+      cri.setResourceProvider(new CamelResourceProvider(serviceClass));
     }
-    sfb.setResourceClasses(res);
   }
   setupCommonFactoryProperties(sfb);
   sfb.setStart(false);
