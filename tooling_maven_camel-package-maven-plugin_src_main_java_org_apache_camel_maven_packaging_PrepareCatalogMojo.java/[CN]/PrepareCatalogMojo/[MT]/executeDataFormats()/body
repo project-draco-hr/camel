@@ -1,0 +1,83 @@
+{
+  getLog().info("Copying all Camel dataformat json descriptors");
+  Set<File> jsonFiles=new TreeSet<File>();
+  Set<File> dataFormatFiles=new TreeSet<File>();
+  Set<File> missingLabels=new TreeSet<File>();
+  Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
+  if (dataFormatsDir != null && dataFormatsDir.isDirectory()) {
+    File[] dataFormats=dataFormatsDir.listFiles();
+    if (dataFormats != null) {
+      for (      File dir : dataFormats) {
+        if (dir.isDirectory() && !"target".equals(dir.getName())) {
+          File target=new File(dir,"target/classes");
+          findDataFormatFilesRecursive(target,dataFormatFiles,new CamelDataFormatsFileFilter());
+        }
+      }
+    }
+  }
+  if (coreDir != null && coreDir.isDirectory()) {
+    File target=new File(coreDir,"target/classes");
+    findDataFormatFilesRecursive(target,dataFormatFiles,new CamelDataFormatsFileFilter());
+  }
+  if (coreDir != null && coreDir.isDirectory()) {
+    File target=new File(coreDir,"target/classes/org/apache/camel/model/dataformat");
+    findDataFormatJsonFiles(target,jsonFiles);
+  }
+  getLog().info("Found " + jsonFiles.size() + " dataformat json files");
+  dataFormatsOutDir.mkdirs();
+  for (  File file : jsonFiles) {
+    File to=new File(dataFormatsOutDir,file.getName());
+    try {
+      copyFile(file,to);
+    }
+ catch (    IOException e) {
+      throw new MojoFailureException("Cannot copy file from " + file + " -> "+ to,e);
+    }
+    try {
+      String text=loadText(new FileInputStream(file));
+      if (text.contains("\"label\": \"\"")) {
+        missingLabels.add(file);
+      }
+ else {
+        String name=asComponentName(file);
+        Matcher matcher=LABEL_PATTERN.matcher(text);
+        if (matcher.find()) {
+          String label=matcher.group(1);
+          String[] labels=label.split(",");
+          for (          String s : labels) {
+            Set<String> dataFormats=usedLabels.get(s);
+            if (dataFormats == null) {
+              dataFormats=new TreeSet<String>();
+              usedLabels.put(s,dataFormats);
+            }
+            dataFormats.add(name);
+          }
+        }
+      }
+    }
+ catch (    IOException e) {
+    }
+  }
+  File all=new File(dataFormatsOutDir,"../dataformats.properties");
+  try {
+    FileOutputStream fos=new FileOutputStream(all,false);
+    String[] names=dataFormatsOutDir.list();
+    List<String> dataFormats=new ArrayList<String>();
+    for (    String name : names) {
+      if (name.endsWith(".json")) {
+        String dataFormatName=name.substring(0,name.length() - 5);
+        dataFormats.add(dataFormatName);
+      }
+    }
+    Collections.sort(dataFormats);
+    for (    String name : dataFormats) {
+      fos.write(name.getBytes());
+      fos.write("\n".getBytes());
+    }
+    fos.close();
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error writing to file " + all);
+  }
+  printDataFormatsReport(jsonFiles,missingLabels,usedLabels);
+}
