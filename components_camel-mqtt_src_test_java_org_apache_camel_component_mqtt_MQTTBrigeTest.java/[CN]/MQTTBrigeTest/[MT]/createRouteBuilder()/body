@@ -1,0 +1,13 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:start").to("mqtt:foo?publishTopicName=test/topic1");
+      from("mqtt:foo?subscribeTopicName=test/topic1").to("log:testlogger?showAll=true").to("mqtt:foo?publishTopicName=test/resulttopic").log(LoggingLevel.ERROR,"Message processed");
+      from("direct:startWorkaround").to("mqtt:foo?publishTopicName=test/topic2");
+      from("mqtt:foo?subscribeTopicName=test/topic2").to("log:testlogger?showAll=true").to("seda:a");
+      from("seda:a").to("mqtt:foo?publishTopicName=test/resulttopic").log(LoggingLevel.ERROR,"Message processed");
+      from("mqtt:foo?subscribeTopicName=test/resulttopic").to("mock:result");
+    }
+  }
+;
+}
