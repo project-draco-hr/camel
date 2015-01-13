@@ -1,83 +1,34 @@
 {
   getLog().info("Copying all Camel dataformat json descriptors");
   Set<File> jsonFiles=new TreeSet<File>();
+  Set<File> duplicateJsonFiles=new TreeSet<File>();
   Set<File> dataFormatFiles=new TreeSet<File>();
   Set<File> missingLabels=new TreeSet<File>();
   Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
-  Map<String,String> javaTypes=new HashMap<String,String>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] dataFormats=componentsDir.listFiles();
     if (dataFormats != null) {
       for (      File dir : dataFormats) {
         if (dir.isDirectory() && !"target".equals(dir.getName())) {
           File target=new File(dir,"target/classes");
-          findDataFormatFilesRecursive(target,dataFormatFiles,new CamelDataFormatsFileFilter());
+          findDataFormatFilesRecursive(target,jsonFiles,dataFormatFiles,new CamelDataFormatsFileFilter());
         }
-        File javaTypesDir=new File(dir,"target/classes/META-INF/services/org/apache/camel/dataformat");
-        findDataFormatJavaTypes(javaTypesDir,javaTypes);
       }
     }
   }
   if (coreDir != null && coreDir.isDirectory()) {
     File target=new File(coreDir,"target/classes");
-    findDataFormatFilesRecursive(target,dataFormatFiles,new CamelDataFormatsFileFilter());
-  }
-  if (coreDir != null && coreDir.isDirectory()) {
-    File target=new File(coreDir,"target/classes/org/apache/camel/model/dataformat");
-    findDataFormatJsonFiles(target,jsonFiles);
+    findDataFormatFilesRecursive(target,jsonFiles,dataFormatFiles,new CamelDataFormatsFileFilter());
   }
   getLog().info("Found " + dataFormatFiles.size() + " dataformat.properties json files");
   getLog().info("Found " + jsonFiles.size() + " dataformat json files");
   dataFormatsOutDir.mkdirs();
-  Map<String,DataFormatModel> models=new HashMap<String,DataFormatModel>();
-  for (  File file : dataFormatFiles) {
-    try {
-      String text=loadText(new FileInputStream(file));
-      Map<String,String> map=parseAsMap(text);
-      String[] names=map.get("dataFormats").split(" ");
-      for (      String name : names) {
-        DataFormatModel model=new DataFormatModel();
-        model.setName(name);
-        String doc=map.get("projectDescription");
-        if (doc != null) {
-          model.setDescription(doc);
-        }
- else {
-          model.setDescription("");
-        }
-        if (map.containsKey("groupId")) {
-          model.setGroupId(map.get("groupId"));
-        }
- else {
-          model.setGroupId("");
-        }
-        if (map.containsKey("artifactId")) {
-          model.setArtifactId(map.get("artifactId"));
-        }
- else {
-          model.setArtifactId("");
-        }
-        if (map.containsKey("version")) {
-          model.setVersionId(map.get("version"));
-        }
- else {
-          model.setVersionId("");
-        }
-        if (javaTypes.containsKey(name)) {
-          model.setJavaType(javaTypes.get(name));
-        }
- else {
-          model.setJavaType("");
-        }
-        models.put(name,model);
-        getLog().debug("Dataformat model: " + model);
-      }
-    }
- catch (    IOException e) {
-    }
-  }
   for (  File file : jsonFiles) {
     File to=new File(dataFormatsOutDir,file.getName());
+    if (to.exists()) {
+      duplicateJsonFiles.add(to);
+      getLog().warn("Duplicate dataformat name detected: " + to);
+    }
     try {
       copyFile(file,to);
     }
@@ -130,5 +81,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printDataFormatsReport(jsonFiles,missingLabels,usedLabels);
+  printDataFormatsReport(jsonFiles,duplicateJsonFiles,missingLabels,usedLabels);
 }
