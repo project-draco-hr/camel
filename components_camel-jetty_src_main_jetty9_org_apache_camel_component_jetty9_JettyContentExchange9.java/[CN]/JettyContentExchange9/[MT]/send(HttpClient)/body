@@ -1,0 +1,23 @@
+{
+  org.eclipse.jetty.client.api.Request.Listener listener=new Request.Listener.Adapter(){
+    @Override public void onSuccess(    Request request){
+      onRequestComplete();
+    }
+    @Override public void onFailure(    Request request,    Throwable failure){
+      onConnectionFailed(failure);
+    }
+  }
+;
+  BufferingResponseListener responseListener=new BufferingResponseListener(){
+    @Override public void onComplete(    Result result){
+      if (result.isFailed()) {
+        doTaskCompleted(result.getFailure());
+      }
+ else {
+        onResponseComplete(result,getContent(),getMediaType());
+      }
+    }
+  }
+;
+  request.followRedirects(supportRedirect).listener(listener).send(responseListener);
+}

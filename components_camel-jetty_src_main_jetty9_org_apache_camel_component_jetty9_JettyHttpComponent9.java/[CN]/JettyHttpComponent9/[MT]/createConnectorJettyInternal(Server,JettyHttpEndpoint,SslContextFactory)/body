@@ -1,0 +1,50 @@
+{
+  try {
+    String hosto=endpoint.getHttpUri().getHost();
+    int porto=endpoint.getPort();
+    org.eclipse.jetty.server.HttpConfiguration httpConfig=new org.eclipse.jetty.server.HttpConfiguration();
+    httpConfig.setSendServerVersion(endpoint.isSendServerVersion());
+    httpConfig.setSendDateHeader(endpoint.isSendDateHeader());
+    httpConfig.setSendDateHeader(endpoint.isSendDateHeader());
+    if (requestBufferSize != null) {
+    }
+    if (requestHeaderSize != null) {
+      httpConfig.setRequestHeaderSize(requestHeaderSize);
+    }
+    if (responseBufferSize != null) {
+      httpConfig.setOutputBufferSize(responseBufferSize);
+    }
+    if (responseHeaderSize != null) {
+      httpConfig.setResponseHeaderSize(responseHeaderSize);
+    }
+    HttpConnectionFactory httpFactory=new org.eclipse.jetty.server.HttpConnectionFactory(httpConfig);
+    ArrayList<ConnectionFactory> connectionFactories=new ArrayList<ConnectionFactory>();
+    ServerConnector result=new org.eclipse.jetty.server.ServerConnector(server);
+    if (sslcf != null) {
+      httpConfig.addCustomizer(new org.eclipse.jetty.server.SecureRequestCustomizer());
+      SslConnectionFactory scf=new org.eclipse.jetty.server.SslConnectionFactory(sslcf,"HTTP/1.1");
+      connectionFactories.add(scf);
+      result.setDefaultProtocol("SSL-HTTP/1.1");
+    }
+    connectionFactories.add(httpFactory);
+    result.setConnectionFactories(connectionFactories);
+    result.setPort(porto);
+    if (hosto != null) {
+      result.setHost(hosto);
+    }
+    if (getSslSocketConnectorProperties() != null && "https".equals(endpoint.getProtocol())) {
+      Map<String,Object> properties=new HashMap<String,Object>(getSslSocketConnectorProperties());
+      IntrospectionSupport.setProperties(sslcf,properties);
+      if (properties.size() > 0) {
+        throw new IllegalArgumentException("There are " + properties.size() + " parameters that couldn't be set on the SocketConnector."+ " Check the uri if the parameters are spelt correctly and that they are properties of the SelectChannelConnector."+ " Unknown parameters=["+ properties+ "]");
+      }
+    }
+    return result;
+  }
+ catch (  RuntimeException rex) {
+    throw rex;
+  }
+catch (  Exception ex) {
+    throw new RuntimeException(ex);
+  }
+}

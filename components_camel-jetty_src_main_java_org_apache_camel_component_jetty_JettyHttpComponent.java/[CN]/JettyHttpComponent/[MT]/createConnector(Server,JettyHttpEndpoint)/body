@@ -1,6 +1,4 @@
 {
-  String hosto=endpoint.getHttpUri().getHost();
-  int porto=endpoint.getPort();
   SslContextFactory sslcf=null;
   SSLContextParameters endpointSslContextParameters=endpoint.getSslContextParameters();
   if (endpointSslContextParameters != null) {
@@ -35,38 +33,5 @@
       sslcf.setKeyStorePassword(sslPassword);
     }
   }
-  AbstractConnector result=null;
-  if (!Server.getVersion().startsWith("8")) {
-    result=createConnectorJetty9(server,endpoint,sslcf,hosto,porto);
-  }
- else {
-    result=createConnectorJetty8(server,endpoint,sslcf,hosto,porto);
-  }
-  try {
-    result.getClass().getMethod("setPort",Integer.TYPE).invoke(result,porto);
-    if (hosto != null) {
-      result.getClass().getMethod("setHost",String.class).invoke(result,hosto);
-    }
-    if (getSocketConnectorProperties() != null && !"https".equals(endpoint.getProtocol())) {
-      Map<String,Object> properties=new HashMap<String,Object>(getSocketConnectorProperties());
-      IntrospectionSupport.setProperties(result,properties);
-      if (properties.size() > 0) {
-        throw new IllegalArgumentException("There are " + properties.size() + " parameters that couldn't be set on the SocketConnector."+ " Check the uri if the parameters are spelt correctly and that they are properties of the SelectChannelConnector."+ " Unknown parameters=["+ properties+ "]");
-      }
-    }
- else     if (getSslSocketConnectorProperties() != null && "https".equals(endpoint.getProtocol())) {
-      Map<String,Object> properties=new HashMap<String,Object>(getSslSocketConnectorProperties());
-      IntrospectionSupport.setProperties(result,properties);
-      if (properties.size() > 0) {
-        throw new IllegalArgumentException("There are " + properties.size() + " parameters that couldn't be set on the SocketConnector."+ " Check the uri if the parameters are spelt correctly and that they are properties of the SelectChannelConnector."+ " Unknown parameters=["+ properties+ "]");
-      }
-    }
-  }
- catch (  RuntimeException rex) {
-    throw rex;
-  }
-catch (  Exception ex) {
-    throw new RuntimeException(ex);
-  }
-  return result;
+  return createConnectorJettyInternal(server,endpoint,sslcf);
 }
