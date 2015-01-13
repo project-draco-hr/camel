@@ -1,0 +1,41 @@
+{
+  List<Map<String,String>> answer=new ArrayList<Map<String,String>>();
+  if (json == null) {
+    return answer;
+  }
+  boolean found=false;
+  String[] lines=json.split("\n");
+  for (  String line : lines) {
+    if (!found) {
+      String s=line.trim();
+      found=s.startsWith("\"" + group + "\":");
+      continue;
+    }
+    if (line.equals("  },") || line.equals("  }")) {
+      break;
+    }
+    Map<String,String> row=new LinkedHashMap<String,String>();
+    Matcher matcher=PATTERN.matcher(line);
+    String key;
+    if (parseProperties) {
+      key="name";
+    }
+ else {
+      key=null;
+    }
+    while (matcher.find()) {
+      if (key == null) {
+        key=matcher.group(1);
+      }
+ else {
+        String value=matcher.group(1);
+        row.put(key,value);
+        key=null;
+      }
+    }
+    if (!row.isEmpty()) {
+      answer.add(row);
+    }
+  }
+  return answer;
+}
