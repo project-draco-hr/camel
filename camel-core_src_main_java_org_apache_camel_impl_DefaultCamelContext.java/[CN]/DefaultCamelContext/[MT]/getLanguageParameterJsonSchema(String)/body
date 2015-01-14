@@ -1,0 +1,27 @@
+{
+  FactoryFinder finder=getFactoryFinder(DefaultLanguageResolver.LANGUAGE_RESOURCE_PATH);
+  try {
+    Class<?> clazz=finder.findClass(languageName);
+    if (clazz == null) {
+      return null;
+    }
+    String packageName=clazz.getPackage().getName();
+    packageName=packageName.replace('.','/');
+    String path=packageName + "/" + languageName+ ".json";
+    ClassResolver resolver=getClassResolver();
+    InputStream inputStream=resolver.loadResourceAsStream(path);
+    log.debug("Loading language JSON Schema for: {} using class resolver: {} -> {}",new Object[]{languageName,resolver,inputStream});
+    if (inputStream != null) {
+      try {
+        return IOHelper.loadText(inputStream);
+      }
+  finally {
+        IOHelper.close(inputStream);
+      }
+    }
+    return null;
+  }
+ catch (  ClassNotFoundException e) {
+    return null;
+  }
+}
