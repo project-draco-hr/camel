@@ -1,6 +1,12 @@
 {
   Session session=getEndpoint().getSessionHolder().getSession();
-  ResultSet resultSet=session.execute(preparedStatement.bind());
+  ResultSet resultSet;
+  if (isPrepareStatements()) {
+    resultSet=session.execute(preparedStatement.bind());
+  }
+ else {
+    resultSet=session.execute(getEndpoint().getCql());
+  }
   Exchange exchange=getEndpoint().createExchange();
   Message message=exchange.getIn();
   getEndpoint().fillMessage(resultSet,message);

@@ -2,22 +2,12 @@
   String messageCql=message.getHeader(CassandraConstants.CQL_QUERY,String.class);
   Object[] cqlParams=getCqlParams(message);
   ResultSet resultSet;
-  PreparedStatement lPreparedStatement;
-  if (messageCql == null || messageCql.isEmpty()) {
-    if (preparedStatement == null) {
-      this.preparedStatement=getEndpoint().prepareStatement();
-    }
-    lPreparedStatement=this.preparedStatement;
-  }
- else {
-    lPreparedStatement=getEndpoint().prepareStatement(messageCql);
-  }
   Session session=getEndpoint().getSessionHolder().getSession();
-  if (cqlParams == null || cqlParams.length == 0) {
-    resultSet=session.execute(lPreparedStatement.bind());
+  if (isPrepareStatements()) {
+    resultSet=executePreparedStatement(session,messageCql,cqlParams);
   }
  else {
-    resultSet=session.execute(lPreparedStatement.bind(cqlParams));
+    resultSet=executeStatement(session,messageCql,cqlParams);
   }
   return resultSet;
 }
