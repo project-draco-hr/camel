@@ -4,7 +4,7 @@
   if (!source.renameTo(tmpZip)) {
     throw new IOException("Could not make temp file (" + source.getName() + ")");
   }
-  byte[] buffer=new byte[1024];
+  byte[] buffer=new byte[8192];
   ZipInputStream zin=new ZipInputStream(new FileInputStream(tmpZip));
   ZipOutputStream out=new ZipOutputStream(new FileOutputStream(source));
   InputStream in=new FileInputStream(file);
@@ -13,7 +13,7 @@
     out.write(buffer,0,read);
   }
   out.closeEntry();
-  in.close();
+  IOHelper.close(in);
   for (ZipEntry ze=zin.getNextEntry(); ze != null; ze=zin.getNextEntry()) {
     out.putNextEntry(ze);
     for (int read=zin.read(buffer); read > -1; read=zin.read(buffer)) {
@@ -21,7 +21,6 @@
     }
     out.closeEntry();
   }
-  zin.close();
-  out.close();
+  IOHelper.close(zin,out);
   tmpZip.delete();
 }
