@@ -3,6 +3,7 @@
   Set<File> jsonFiles=new TreeSet<File>();
   Set<File> duplicateJsonFiles=new TreeSet<File>();
   Set<File> missingLabels=new TreeSet<File>();
+  Set<File> missingJavaDoc=new TreeSet<File>();
   Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
   if (coreDir != null && coreDir.isDirectory()) {
     File target=new File(coreDir,"target/classes/org/apache/camel/model");
@@ -43,6 +44,18 @@
           }
         }
       }
+      List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("properties",text,true);
+      for (      Map<String,String> row : rows) {
+        String name=row.get("name");
+        if ("expression".equals(name) || "outputs".equals(name)) {
+          continue;
+        }
+        String doc=row.get("description");
+        if (doc == null || doc.isEmpty()) {
+          missingJavaDoc.add(file);
+          break;
+        }
+      }
     }
  catch (    IOException e) {
     }
@@ -68,5 +81,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printModelsReport(jsonFiles,duplicateJsonFiles,missingLabels,usedLabels);
+  printModelsReport(jsonFiles,duplicateJsonFiles,missingLabels,usedLabels,missingJavaDoc);
 }
