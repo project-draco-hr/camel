@@ -19,16 +19,12 @@
       }
     }
     Collections.sort(processors,new OrderProcessorMBeans());
-    Collection<InflightRepository.InflightExchange> inflights=null;
-    if (fullStats) {
-      inflights=context.getInflightRepository().browse();
-    }
     sb.append("  <routeStats>\n");
     for (    ObjectName on : routes) {
       ManagedRouteMBean route=MBeanServerInvocationHandler.newProxyInstance(server,on,ManagedRouteMBean.class,true);
       sb.append("    <routeStat").append(String.format(" id=\"%s\" state=\"%s\"",route.getRouteId(),route.getState()));
       stat=route.dumpStatsAsXml(fullStats);
-      sb.append(" exchangesInflight=\"").append(context.getInflightRepository().size(route.getRouteId())).append("\"");
+      sb.append(" exchangesInflight=\"").append(route.getExchangesInflight()).append("\"");
       sb.append(" ").append(stat.substring(7,stat.length() - 2)).append(">\n");
       if (includeProcessors) {
         sb.append("      <processorStats>\n");
@@ -36,9 +32,7 @@
           if (route.getRouteId().equals(processor.getRouteId())) {
             sb.append("        <processorStat").append(String.format(" id=\"%s\" index=\"%s\" state=\"%s\"",processor.getProcessorId(),processor.getIndex(),processor.getState()));
             stat=processor.dumpStatsAsXml(fullStats);
-            if (fullStats) {
-              sb.append(" exchangesInflight=\"").append(inflightSizeAtProcessor(inflights,processor.getProcessorId())).append("\"");
-            }
+            sb.append(" exchangesInflight=\"").append(processor.getExchangesInflight()).append("\"");
             sb.append(" ").append(stat.substring(7)).append("\n");
           }
         }
