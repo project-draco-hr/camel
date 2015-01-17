@@ -1,0 +1,40 @@
+{
+  if (NodeInfo.class.isAssignableFrom(value.getClass())) {
+    NodeInfo ni=(NodeInfo)value;
+    TypeConverter tc=registry.lookup(type,Node.class);
+    if (tc != null) {
+      Node node=NodeOverNodeInfo.wrap(ni);
+      return tc.convertTo(type,exchange,node);
+    }
+    tc=registry.lookup(type,NodeList.class);
+    if (tc != null) {
+      List<NodeInfo> nil=new LinkedList<NodeInfo>();
+      nil.add((NodeInfo)value);
+      return tc.convertTo(type,exchange,toDOMNodeList(nil));
+    }
+  }
+ else   if (List.class.isAssignableFrom(value.getClass())) {
+    TypeConverter tc=registry.lookup(type,NodeList.class);
+    if (tc != null) {
+      List<NodeInfo> lion=new LinkedList<NodeInfo>();
+      for (      Object o : (List<?>)value) {
+        if (o instanceof NodeInfo) {
+          lion.add((NodeInfo)o);
+        }
+      }
+      if (lion.size() > 0) {
+        NodeList nl=toDOMNodeList(lion);
+        return tc.convertTo(type,exchange,nl);
+      }
+    }
+  }
+ else   if (NodeOverNodeInfo.class.isAssignableFrom(value.getClass())) {
+    TypeConverter tc=registry.lookup(type,NodeList.class);
+    if (tc != null) {
+      List<Node> domNodeList=new LinkedList<Node>();
+      domNodeList.add((NodeOverNodeInfo)value);
+      return tc.convertTo(type,exchange,new DOMNodeList(domNodeList));
+    }
+  }
+  return null;
+}
