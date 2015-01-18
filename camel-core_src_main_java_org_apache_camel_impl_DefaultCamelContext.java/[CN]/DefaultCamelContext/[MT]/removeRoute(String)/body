@@ -3,6 +3,10 @@
     ErrorHandlerBuilderSupport builder=(ErrorHandlerBuilderSupport)getErrorHandlerBuilder();
     builder.removeOnExceptionList(routeId);
   }
+  Map<String,Set<Endpoint>> endpointsInUse=new HashMap<String,Set<Endpoint>>();
+  for (  Map.Entry<String,RouteService> entry : routeServices.entrySet()) {
+    endpointsInUse.put(entry.getKey(),entry.getValue().gatherEndpoints());
+  }
   RouteService routeService=routeServices.get(routeId);
   if (routeService != null) {
     if (getRouteStatus(routeId).isStopped()) {
@@ -16,6 +20,22 @@
         if (order.getRoute().getId().equals(routeId)) {
           it.remove();
         }
+      }
+      Set<Endpoint> toRemove=new LinkedHashSet<Endpoint>();
+      for (      Endpoint endpoint : endpointsInUse.get(routeId)) {
+        int count=0;
+        for (        Set<Endpoint> endpoints : endpointsInUse.values()) {
+          if (endpoints.contains(endpoint)) {
+            count++;
+          }
+        }
+        if (count <= 1) {
+          toRemove.add(endpoint);
+        }
+      }
+      for (      Endpoint endpoint : toRemove) {
+        log.debug("Removing: {} which was only in use by route: {}",endpoint,routeId);
+        removeEndpoint(endpoint);
       }
       return true;
     }

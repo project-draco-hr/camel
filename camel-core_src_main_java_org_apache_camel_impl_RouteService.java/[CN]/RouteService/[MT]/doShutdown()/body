@@ -1,15 +1,8 @@
 {
   for (  Route route : routes) {
     LOG.debug("Shutting down services on route: {}",route.getId());
-    List<Service> services=new ArrayList<Service>();
-    services.addAll(route.getServices());
-    doGetRouteScopedServices(services,route);
-    Set<Service> list=new LinkedHashSet<Service>();
-    for (    Service service : services) {
-      list.addAll(ServiceHelper.getChildServices(service));
-    }
-    doGetRouteScopedErrorHandler(list,route);
-    stopChildService(route,list,true);
+    Set<Service> services=gatherChildServices(route,true);
+    stopChildService(route,services,true);
     ServiceHelper.stopAndShutdownServices(route);
     ServiceHelper.stopAndShutdownServices(route.getEndpoint());
     if (route.getRouteContext().getRoutePolicyList() != null) {
