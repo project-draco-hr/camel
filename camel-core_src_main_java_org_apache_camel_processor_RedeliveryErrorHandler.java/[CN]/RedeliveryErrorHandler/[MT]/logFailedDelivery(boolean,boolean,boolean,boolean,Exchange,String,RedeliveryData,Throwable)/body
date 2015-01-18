@@ -6,16 +6,16 @@
     if (newException && !data.currentRedeliveryPolicy.isLogNewException()) {
       return;
     }
-    if (handled && !data.currentRedeliveryPolicy.isLogHandled()) {
+    if (!newException && handled && !data.currentRedeliveryPolicy.isLogHandled()) {
       return;
     }
-    if (continued && !data.currentRedeliveryPolicy.isLogContinued()) {
+    if (!newException && continued && !data.currentRedeliveryPolicy.isLogContinued()) {
       return;
     }
-    if (shouldRedeliver && !data.currentRedeliveryPolicy.isLogRetryAttempted()) {
+    if (!newException && shouldRedeliver && !data.currentRedeliveryPolicy.isLogRetryAttempted()) {
       return;
     }
-    if (!shouldRedeliver && !data.currentRedeliveryPolicy.isLogExhausted()) {
+    if (!newException && !shouldRedeliver && !data.currentRedeliveryPolicy.isLogExhausted()) {
       return;
     }
   }
@@ -40,10 +40,13 @@
     if (newLogLevel == LoggingLevel.ERROR) {
       newLogLevel=LoggingLevel.WARN;
     }
-    String msg="New exception " + ExchangeHelper.logIds(exchange);
-    Throwable cause=exchange.getException() != null ? exchange.getException() : exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
-    if (cause != null) {
-      msg=msg + " due: " + cause.getMessage();
+    String msg=message;
+    if (msg == null) {
+      msg="New exception " + ExchangeHelper.logIds(exchange);
+      Throwable cause=e;
+      if (cause != null) {
+        msg=msg + " due: " + cause.getMessage();
+      }
     }
     if (e != null && logStackTrace) {
       logger.log(msg,e,newLogLevel);
