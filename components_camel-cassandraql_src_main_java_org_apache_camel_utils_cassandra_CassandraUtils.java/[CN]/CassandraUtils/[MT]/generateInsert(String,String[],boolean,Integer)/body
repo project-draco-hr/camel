@@ -1,14 +1,13 @@
 {
-  StringBuilder cqlBuilder=new StringBuilder("insert into ").append(table).append("(");
-  appendColumns(cqlBuilder,columns,",");
-  cqlBuilder.append(") values (");
-  appendPlaceholders(cqlBuilder,columns.length);
-  cqlBuilder.append(")");
+  Insert insert=insertInto(table);
+  for (  String column : columns) {
+    insert=insert.value(column,bindMarker());
+  }
   if (ifNotExists) {
-    cqlBuilder.append(" if not exists");
+    insert=insert.ifNotExists();
   }
   if (ttl != null) {
-    cqlBuilder.append(" using ttl=").append(ttl);
+    insert.using(ttl(ttl));
   }
-  return cqlBuilder;
+  return insert;
 }

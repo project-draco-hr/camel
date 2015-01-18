@@ -1,7 +1,7 @@
 {
-  StringBuilder cqlBuilder=generateDelete(table,pkColumns,false);
-  cqlBuilder.append(" if ").append(exchangeIdColumn).append("=?");
-  String cql=cqlBuilder.toString();
-  LOGGER.debug("Generated Delete If Id {}",cql);
-  deleteIfIdStatement=applyConsistencyLevel(getSession().prepare(cql),writeConsistencyLevel);
+  Delete delete=generateDelete(table,pkColumns,false);
+  Delete.Conditions deleteIf=delete.onlyIf(eq(exchangeIdColumn,bindMarker()));
+  deleteIf=applyConsistencyLevel(deleteIf,writeConsistencyLevel);
+  LOGGER.debug("Generated Delete If Id {}",deleteIf);
+  deleteIfIdStatement=getSession().prepare(deleteIf);
 }

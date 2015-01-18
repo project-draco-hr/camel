@@ -1,7 +1,10 @@
 {
-  StringBuilder cqlBuilder=new StringBuilder("select ");
-  appendColumns(cqlBuilder,selectColumns,",");
-  cqlBuilder.append(" from ").append(table);
-  appendWhere(cqlBuilder,whereColumns,whereColumnsMaxIndex);
-  return cqlBuilder;
+  Select select=select(selectColumns).from(table);
+  if (isWhereClause(whereColumns,whereColumnsMaxIndex)) {
+    Select.Where where=select.where();
+    for (int i=0; i < whereColumns.length && i < whereColumnsMaxIndex; i++) {
+      where.and(eq(whereColumns[i],bindMarker()));
+    }
+  }
+  return select;
 }

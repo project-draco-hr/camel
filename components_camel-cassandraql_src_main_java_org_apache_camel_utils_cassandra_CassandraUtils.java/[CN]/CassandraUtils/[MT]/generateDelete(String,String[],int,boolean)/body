@@ -1,8 +1,13 @@
 {
-  StringBuilder cqlBuilder=new StringBuilder("delete from ").append(table);
-  appendWhere(cqlBuilder,whereColumns,whereColumnsMaxIndex);
-  if (ifExists) {
-    cqlBuilder.append(" if exists");
+  Delete delete=delete().from(table);
+  if (isWhereClause(whereColumns,whereColumnsMaxIndex)) {
+    Delete.Where where=delete.where();
+    for (int i=0; i < whereColumns.length && i < whereColumnsMaxIndex; i++) {
+      where.and(eq(whereColumns[i],bindMarker()));
+    }
   }
-  return cqlBuilder;
+  if (ifExists) {
+    delete=delete.ifExists();
+  }
+  return delete;
 }
