@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      errorHandler(deadLetterChannel("mock:error"));
+      onException(RuntimeException.class).continued(true);
+      from("direct:start").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          throw new RuntimeException("FAIL!");
+        }
+      }
+).to("mock:end");
+    }
+  }
+;
+}

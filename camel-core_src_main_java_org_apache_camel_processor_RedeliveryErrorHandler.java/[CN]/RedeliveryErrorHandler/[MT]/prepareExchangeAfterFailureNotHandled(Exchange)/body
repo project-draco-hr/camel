@@ -1,0 +1,10 @@
+{
+  log.trace("This exchange is not handled or continued so its marked as failed: {}",exchange);
+  exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.FALSE);
+  exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+  exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
+  UnitOfWork uow=exchange.getUnitOfWork();
+  if (uow != null && uow.getRouteContext() != null) {
+    exchange.setProperty(Exchange.FAILURE_ROUTE_ID,uow.getRouteContext().getRoute().getId());
+  }
+}

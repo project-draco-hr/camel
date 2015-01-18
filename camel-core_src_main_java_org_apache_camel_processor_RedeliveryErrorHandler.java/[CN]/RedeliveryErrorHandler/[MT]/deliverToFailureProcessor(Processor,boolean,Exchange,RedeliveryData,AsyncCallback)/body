@@ -2,10 +2,11 @@
   boolean sync=true;
   Exception caught=exchange.getException();
   exchange.setException(null);
-  final boolean shouldHandle=isDeadLetterChannel || shouldHandled(exchange,data);
-  final boolean shouldContinue=shouldContinue(exchange,data);
+  final Boolean shouldHandle=shouldHandle(exchange,data);
+  final Boolean shouldContinue=shouldContinue(exchange,data);
   boolean handled=false;
-  if (shouldHandle || shouldContinue) {
+  boolean handleOrContinue=isDeadLetterChannel || (shouldHandle != null && shouldHandle) || (shouldContinue != null && shouldContinue);
+  if (handleOrContinue) {
     exchange.getIn().removeHeader(Exchange.REDELIVERED);
     exchange.getIn().removeHeader(Exchange.REDELIVERY_COUNTER);
     exchange.getIn().removeHeader(Exchange.REDELIVERY_MAX_COUNTER);
@@ -39,7 +40,7 @@
       public void done(      boolean sync){
         log.trace("Failure processor done: {} processing Exchange: {}",processor,exchange);
         try {
-          prepareExchangeAfterFailure(processor,exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
+          prepareExchangeAfterFailure(exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
           boolean deadLetterChannel=processor == data.deadLetterProcessor;
           EventHelper.notifyExchangeFailureHandled(exchange.getContext(),exchange,processor,deadLetterChannel);
         }
@@ -53,7 +54,7 @@
   }
  else {
     try {
-      prepareExchangeAfterFailure(processor,exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
+      prepareExchangeAfterFailure(exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
     }
   finally {
       callback.done(data.sync);
