@@ -1,0 +1,27 @@
+{
+  ResultSet resultSet;
+  String cql=null;
+  RegularStatement statement=null;
+  if (messageCql == null) {
+    cql=getEndpoint().getCql();
+  }
+ else   if (messageCql instanceof String) {
+    cql=(String)messageCql;
+  }
+ else   if (messageCql instanceof RegularStatement) {
+    statement=(RegularStatement)messageCql;
+  }
+ else {
+    throw new IllegalArgumentException("Invalid " + CassandraConstants.CQL_QUERY + " header");
+  }
+  if (statement != null) {
+    resultSet=session.execute(statement);
+  }
+ else   if (isEmpty(cqlParams)) {
+    resultSet=session.execute(cql);
+  }
+ else {
+    resultSet=session.execute(cql,cqlParams);
+  }
+  return resultSet;
+}
