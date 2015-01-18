@@ -37,7 +37,14 @@
     e=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class);
   }
   if (newException) {
-    String msg=message + " " + ExchangeHelper.logIds(exchange);
+    if (newLogLevel == LoggingLevel.ERROR) {
+      newLogLevel=LoggingLevel.WARN;
+    }
+    String msg="New exception " + ExchangeHelper.logIds(exchange);
+    Throwable cause=exchange.getException() != null ? exchange.getException() : exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+    if (cause != null) {
+      msg=msg + " due: " + cause.getMessage();
+    }
     if (e != null && logStackTrace) {
       logger.log(msg,e,newLogLevel);
     }

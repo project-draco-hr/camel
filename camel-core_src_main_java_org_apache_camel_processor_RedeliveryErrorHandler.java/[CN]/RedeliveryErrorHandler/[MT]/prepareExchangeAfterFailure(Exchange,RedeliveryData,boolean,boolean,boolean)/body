@@ -1,10 +1,12 @@
 {
   Exception newException=exchange.getException();
+  if (newException != null && data.currentRedeliveryPolicy.isLogNewException()) {
+    logFailedDelivery(false,true,false,false,exchange,null,data,newException);
+  }
   ExchangeHelper.setFailureHandled(exchange);
   if (isDeadLetterChannel && shouldHandle) {
     if (data.handleNewException) {
-      String msg="DeadLetterChannel failed processing exchange due new exception: " + newException.getMessage() + ". This new exception is handled and ignored. The option deadLetterChannelHandleNewException can be turned off to not handle new exceptions";
-      logFailedDelivery(false,true,false,false,exchange,msg,data,newException);
+      log.trace("This exchange is handled so its marked as not failed: {}",exchange);
     }
  else {
       exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
