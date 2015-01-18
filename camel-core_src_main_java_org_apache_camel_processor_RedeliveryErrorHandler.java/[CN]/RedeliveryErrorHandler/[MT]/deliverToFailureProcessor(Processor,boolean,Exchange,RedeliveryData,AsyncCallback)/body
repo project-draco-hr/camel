@@ -39,8 +39,8 @@
       public void done(      boolean sync){
         log.trace("Failure processor done: {} processing Exchange: {}",processor,exchange);
         try {
-          prepareExchangeAfterFailure(exchange,data,shouldHandle,shouldContinue);
-          boolean deadLetterChannel=processor == data.deadLetterProcessor && data.deadLetterProcessor != null;
+          prepareExchangeAfterFailure(exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
+          boolean deadLetterChannel=processor == data.deadLetterProcessor;
           EventHelper.notifyExchangeFailureHandled(exchange.getContext(),exchange,processor,deadLetterChannel);
         }
   finally {
@@ -53,7 +53,7 @@
   }
  else {
     try {
-      prepareExchangeAfterFailure(exchange,data,shouldHandle,shouldContinue);
+      prepareExchangeAfterFailure(exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
     }
   finally {
       callback.done(data.sync);
@@ -64,6 +64,6 @@
   if (processor != null) {
     msg=msg + ". Processed by failure processor: " + processor;
   }
-  logFailedDelivery(false,handled,false,exchange,msg,data,null);
+  logFailedDelivery(false,false,handled,false,exchange,msg,data,null);
   return sync;
 }

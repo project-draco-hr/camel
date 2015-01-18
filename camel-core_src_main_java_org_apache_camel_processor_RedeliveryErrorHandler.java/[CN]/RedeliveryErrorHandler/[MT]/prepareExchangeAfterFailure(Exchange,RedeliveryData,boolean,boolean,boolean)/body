@@ -1,0 +1,43 @@
+{
+  Exception newException=exchange.getException();
+  ExchangeHelper.setFailureHandled(exchange);
+  if (isDeadLetterChannel && shouldHandle) {
+    if (data.handleNewException) {
+      String msg="DeadLetterChannel failed processing exchange due new exception: " + newException.getMessage() + ". This new exception is handled and ignored. The option deadLetterChannelHandleNewException can be turned off to not handle new exceptions";
+      logFailedDelivery(false,true,false,false,exchange,msg,data,newException);
+    }
+ else {
+      exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+      exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
+    }
+    return;
+  }
+  boolean alreadySet=exchange.getProperty(Exchange.ERRORHANDLER_HANDLED) != null;
+  if (alreadySet) {
+    boolean handled=exchange.getProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.class);
+    log.trace("This exchange has already been marked for handling: {}",handled);
+    if (!handled) {
+      exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+      exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
+    }
+    return;
+  }
+  if (shouldHandle) {
+    log.trace("This exchange is handled so its marked as not failed: {}",exchange);
+    exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.TRUE);
+  }
+ else   if (shouldContinue) {
+    log.trace("This exchange is continued: {}",exchange);
+    prepareExchangeForContinue(exchange,data);
+  }
+ else {
+    log.trace("This exchange is not handled or continued so its marked as failed: {}",exchange);
+    exchange.setProperty(Exchange.ERRORHANDLER_HANDLED,Boolean.FALSE);
+    exchange.setException(exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class));
+    exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
+    UnitOfWork uow=exchange.getUnitOfWork();
+    if (uow != null && uow.getRouteContext() != null) {
+      exchange.setProperty(Exchange.FAILURE_ROUTE_ID,uow.getRouteContext().getRoute().getId());
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  if (logger == null) {
+    return;
+  }
+  if (!exchange.isRollbackOnly()) {
+    if (newException && !data.currentRedeliveryPolicy.isLogNewException()) {
+      return;
+    }
+    if (handled && !data.currentRedeliveryPolicy.isLogHandled()) {
+      return;
+    }
+    if (handled && !data.currentRedeliveryPolicy.isLogHandled()) {
+      return;
+    }
+    if (continued && !data.currentRedeliveryPolicy.isLogContinued()) {
+      return;
+    }
+    if (shouldRedeliver && !data.currentRedeliveryPolicy.isLogRetryAttempted()) {
+      return;
+    }
+    if (!shouldRedeliver && !data.currentRedeliveryPolicy.isLogExhausted()) {
+      return;
+    }
+  }
+  LoggingLevel newLogLevel;
+  boolean logStackTrace;
+  if (exchange.isRollbackOnly()) {
+    newLogLevel=data.currentRedeliveryPolicy.getRetriesExhaustedLogLevel();
+    logStackTrace=data.currentRedeliveryPolicy.isLogStackTrace();
+  }
+ else   if (shouldRedeliver) {
+    newLogLevel=data.currentRedeliveryPolicy.getRetryAttemptedLogLevel();
+    logStackTrace=data.currentRedeliveryPolicy.isLogRetryStackTrace();
+  }
+ else {
+    newLogLevel=data.currentRedeliveryPolicy.getRetriesExhaustedLogLevel();
+    logStackTrace=data.currentRedeliveryPolicy.isLogStackTrace();
+  }
+  if (e == null) {
+    e=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class);
+  }
+  if (newException) {
+    String msg=message + " " + ExchangeHelper.logIds(exchange);
+    if (e != null && logStackTrace) {
+      logger.log(msg,e,newLogLevel);
+    }
+ else {
+      logger.log(msg,newLogLevel);
+    }
+  }
+ else   if (exchange.isRollbackOnly()) {
+    String msg="Rollback " + ExchangeHelper.logIds(exchange);
+    Throwable cause=exchange.getException() != null ? exchange.getException() : exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Throwable.class);
+    if (cause != null) {
+      msg=msg + " due: " + cause.getMessage();
+    }
+    if (!shouldRedeliver && data.currentRedeliveryPolicy.isLogExhaustedMessageHistory()) {
+      String routeStackTrace=MessageHelper.dumpMessageHistoryStacktrace(exchange,exchangeFormatter,false);
+      if (routeStackTrace != null) {
+        msg=msg + "\n" + routeStackTrace;
+      }
+    }
+    if (newLogLevel == LoggingLevel.ERROR) {
+      logger.log(msg,LoggingLevel.WARN);
+    }
+ else {
+      logger.log(msg,newLogLevel);
+    }
+  }
+ else {
+    String msg=message;
+    if (!shouldRedeliver && data.currentRedeliveryPolicy.isLogExhaustedMessageHistory()) {
+      String routeStackTrace=MessageHelper.dumpMessageHistoryStacktrace(exchange,exchangeFormatter,e != null && logStackTrace);
+      if (routeStackTrace != null) {
+        msg=msg + "\n" + routeStackTrace;
+      }
+    }
+    if (e != null && logStackTrace) {
+      logger.log(msg,e,newLogLevel);
+    }
+ else {
+      logger.log(msg,newLogLevel);
+    }
+  }
+}
