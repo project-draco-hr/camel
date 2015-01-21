@@ -3,17 +3,22 @@
   if (strategy == null) {
     strategy=new UseLatestAggregationStrategy();
   }
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
-  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Multicast",this,isParallelProcessing());
+  boolean isParallelProcessing=getParallelProcessing() != null && getParallelProcessing();
+  boolean isShareUnitOfWork=getShareUnitOfWork() != null && getShareUnitOfWork();
+  boolean isStreaming=getStreaming() != null && getStreaming();
+  boolean isStopOnException=getStopOnException() != null && getStopOnException();
+  boolean isParallelAggregate=getParallelAggregate() != null && getParallelAggregate();
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing);
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Multicast",this,isParallelProcessing);
   long timeout=getTimeout() != null ? getTimeout() : 0;
-  if (timeout > 0 && !isParallelProcessing()) {
+  if (timeout > 0 && !isParallelProcessing) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
   }
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
-  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,strategy,isParallelProcessing(),threadPool,shutdownThreadPool,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork(),isParallelAggregate());
-  if (isShareUnitOfWork()) {
+  MulticastProcessor answer=new MulticastProcessor(routeContext.getCamelContext(),list,strategy,isParallelProcessing,threadPool,shutdownThreadPool,isStreaming,isStopOnException,timeout,onPrepare,isShareUnitOfWork,isParallelAggregate);
+  if (isShareUnitOfWork) {
     CamelInternalProcessor internalProcessor=new CamelInternalProcessor(answer);
     internalProcessor.addAdvice(new CamelInternalProcessor.SubUnitOfWorkProcessorAdvice());
     return internalProcessor;

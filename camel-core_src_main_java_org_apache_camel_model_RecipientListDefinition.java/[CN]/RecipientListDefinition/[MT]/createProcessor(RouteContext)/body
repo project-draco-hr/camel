@@ -1,5 +1,11 @@
 {
   final Expression expression=getExpression().createExpression(routeContext);
+  boolean isParallelProcessing=getParallelProcessing() != null && getParallelProcessing();
+  boolean isStreaming=getStreaming() != null && getStreaming();
+  boolean isParallelAggregate=getParallelAggregate() != null && getParallelAggregate();
+  boolean isShareUnitOfWork=getShareUnitOfWork() != null && getShareUnitOfWork();
+  boolean isStopOnException=getStopOnException() != null && getStopOnException();
+  boolean isIgnoreInvalidEndpoints=getIgnoreInvalidEndpoints() != null && getIgnoreInvalidEndpoints();
   RecipientList answer;
   if (delimiter != null) {
     answer=new RecipientList(routeContext.getCamelContext(),expression,delimiter);
@@ -8,10 +14,12 @@
     answer=new RecipientList(routeContext.getCamelContext(),expression);
   }
   answer.setAggregationStrategy(createAggregationStrategy(routeContext));
-  answer.setParallelProcessing(isParallelProcessing());
-  answer.setParallelAggregate(isParallelAggregate());
-  answer.setStreaming(isStreaming());
-  answer.setShareUnitOfWork(isShareUnitOfWork());
+  answer.setParallelProcessing(isParallelProcessing);
+  answer.setParallelAggregate(isParallelAggregate);
+  answer.setStreaming(isStreaming);
+  answer.setShareUnitOfWork(isShareUnitOfWork);
+  answer.setStopOnException(isStopOnException);
+  answer.setIgnoreInvalidEndpoints(isIgnoreInvalidEndpoints);
   if (getCacheSize() != null) {
     answer.setCacheSize(getCacheSize());
   }
@@ -21,21 +29,15 @@
   if (onPrepare != null) {
     answer.setOnPrepare(onPrepare);
   }
-  if (stopOnException != null) {
-    answer.setStopOnException(isStopOnException());
-  }
-  if (ignoreInvalidEndpoints != null) {
-    answer.setIgnoreInvalidEndpoints(ignoreInvalidEndpoints);
-  }
   if (getTimeout() != null) {
     answer.setTimeout(getTimeout());
   }
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
-  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"RecipientList",this,isParallelProcessing());
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing);
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"RecipientList",this,isParallelProcessing);
   answer.setExecutorService(threadPool);
   answer.setShutdownExecutorService(shutdownThreadPool);
   long timeout=getTimeout() != null ? getTimeout() : 0;
-  if (timeout > 0 && !isParallelProcessing()) {
+  if (timeout > 0 && !isParallelProcessing) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
   }
   List<Processor> pipe=new ArrayList<Processor>(2);

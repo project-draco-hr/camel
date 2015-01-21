@@ -2,7 +2,11 @@
   if (routeScoped == null) {
     routeScoped=super.getParent() != null;
   }
-  if (isOnCompleteOnly() && isOnFailureOnly()) {
+  boolean isOnCompleteOnly=getOnCompleteOnly() != null && getOnCompleteOnly();
+  boolean isOnFailureOnly=getOnFailureOnly() != null && getOnFailureOnly();
+  boolean isParallelProcessing=getParallelProcessing() != null && getParallelProcessing();
+  boolean original=getUseOriginalMessagePolicy() != null && getUseOriginalMessagePolicy();
+  if (isOnCompleteOnly && isOnFailureOnly) {
     throw new IllegalArgumentException("Both onCompleteOnly and onFailureOnly cannot be true. Only one of them can be true. On node: " + this);
   }
   String routeId=routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
@@ -15,10 +19,9 @@
   if (onWhen != null) {
     when=onWhen.getExpression().createPredicate(routeContext);
   }
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
-  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,isParallelProcessing());
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing);
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"OnCompletion",this,isParallelProcessing);
   boolean afterConsumer=mode == null || mode == OnCompletionMode.AfterConsumer;
-  boolean original=getUseOriginalMessagePolicy() != null ? getUseOriginalMessagePolicy() : false;
-  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),internal,threadPool,shutdownThreadPool,isOnCompleteOnly(),isOnFailureOnly(),when,original,afterConsumer);
+  OnCompletionProcessor answer=new OnCompletionProcessor(routeContext.getCamelContext(),internal,threadPool,shutdownThreadPool,isOnCompleteOnly,isOnFailureOnly,when,original,afterConsumer);
   return answer;
 }

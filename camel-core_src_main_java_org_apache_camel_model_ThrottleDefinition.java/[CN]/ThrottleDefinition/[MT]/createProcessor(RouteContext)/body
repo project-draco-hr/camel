@@ -1,16 +1,16 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,true);
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isAsyncDelayed());
-  ScheduledExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredScheduledExecutorService(routeContext,"Throttle",this,isAsyncDelayed());
+  boolean async=getAsyncDelayed() != null && getAsyncDelayed();
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,async);
+  ScheduledExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredScheduledExecutorService(routeContext,"Throttle",this,async);
   long period=getTimePeriodMillis() != null ? getTimePeriodMillis() : 1000L;
   Expression maxRequestsExpression=createMaxRequestsPerPeriodExpression(routeContext);
   if (maxRequestsExpression == null) {
     throw new IllegalArgumentException("MaxRequestsPerPeriod expression must be provided on " + this);
   }
-  Throttler answer=new Throttler(routeContext.getCamelContext(),childProcessor,maxRequestsExpression,period,threadPool,shutdownThreadPool,isRejectExecution());
-  if (getAsyncDelayed() != null) {
-    answer.setAsyncDelayed(getAsyncDelayed());
-  }
+  boolean reject=getRejectExecution() != null && getRejectExecution();
+  Throttler answer=new Throttler(routeContext.getCamelContext(),childProcessor,maxRequestsExpression,period,threadPool,shutdownThreadPool,reject);
+  answer.setAsyncDelayed(async);
   if (getCallerRunsWhenRejected() == null) {
     answer.setCallerRunsWhenRejected(true);
   }

@@ -6,9 +6,10 @@
   internal.addAdvice(new CamelInternalProcessor.RouteContextAdvice(routeContext));
   Expression correlation=getExpression().createExpression(routeContext);
   AggregationStrategy strategy=createAggregationStrategy(routeContext);
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
-  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Aggregator",this,isParallelProcessing());
-  if (threadPool == null && !isParallelProcessing()) {
+  boolean parallel=getParallelProcessing() != null && getParallelProcessing();
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,parallel);
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Aggregator",this,parallel);
+  if (threadPool == null && !parallel) {
     threadPool=new SynchronousExecutorService();
     shutdownThreadPool=true;
   }
@@ -31,8 +32,10 @@
   }
   answer.setTimeoutCheckerExecutorService(timeoutThreadPool);
   answer.setShutdownTimeoutCheckerExecutorService(shutdownTimeoutThreadPool);
-  answer.setParallelProcessing(isParallelProcessing());
-  answer.setOptimisticLocking(isOptimisticLocking());
+  answer.setParallelProcessing(parallel);
+  if (getOptimisticLocking() != null) {
+    answer.setOptimisticLocking(getOptimisticLocking());
+  }
   if (getCompletionPredicate() != null) {
     Predicate predicate=getCompletionPredicate().createPredicate(routeContext);
     answer.setCompletionPredicate(predicate);
@@ -55,19 +58,19 @@
     answer.setCompletionSize(getCompletionSize());
   }
   if (getCompletionFromBatchConsumer() != null) {
-    answer.setCompletionFromBatchConsumer(isCompletionFromBatchConsumer());
+    answer.setCompletionFromBatchConsumer(getCompletionFromBatchConsumer());
   }
   if (getEagerCheckCompletion() != null) {
-    answer.setEagerCheckCompletion(isEagerCheckCompletion());
+    answer.setEagerCheckCompletion(getEagerCheckCompletion());
   }
   if (getIgnoreInvalidCorrelationKeys() != null) {
-    answer.setIgnoreInvalidCorrelationKeys(isIgnoreInvalidCorrelationKeys());
+    answer.setIgnoreInvalidCorrelationKeys(getIgnoreInvalidCorrelationKeys());
   }
   if (getCloseCorrelationKeyOnCompletion() != null) {
     answer.setCloseCorrelationKeyOnCompletion(getCloseCorrelationKeyOnCompletion());
   }
   if (getDiscardOnCompletionTimeout() != null) {
-    answer.setDiscardOnCompletionTimeout(isDiscardOnCompletionTimeout());
+    answer.setDiscardOnCompletionTimeout(getDiscardOnCompletionTimeout());
   }
   if (getForceCompletionOnStop() != null) {
     answer.setForceCompletionOnStop(getForceCompletionOnStop());

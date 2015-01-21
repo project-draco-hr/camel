@@ -1,18 +1,22 @@
 {
   Processor childProcessor=this.createChildProcessor(routeContext,true);
   aggregationStrategy=createAggregationStrategy(routeContext);
-  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing());
-  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Split",this,isParallelProcessing());
+  boolean isParallelProcessing=getParallelProcessing() != null && getParallelProcessing();
+  boolean isStreaming=getStreaming() != null && getStreaming();
+  boolean isShareUnitOfWork=getShareUnitOfWork() != null && getShareUnitOfWork();
+  boolean isParallelAggregate=getParallelAggregate() != null && getParallelAggregate();
+  boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,isParallelProcessing);
+  ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"Split",this,isParallelProcessing);
   long timeout=getTimeout() != null ? getTimeout() : 0;
-  if (timeout > 0 && !isParallelProcessing()) {
+  if (timeout > 0 && !isParallelProcessing) {
     throw new IllegalArgumentException("Timeout is used but ParallelProcessing has not been enabled.");
   }
   if (onPrepareRef != null) {
     onPrepare=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),onPrepareRef,Processor.class);
   }
   Expression exp=getExpression().createExpression(routeContext);
-  Splitter answer=new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing(),threadPool,shutdownThreadPool,isStreaming(),isStopOnException(),timeout,onPrepare,isShareUnitOfWork(),isParallelAggregate());
-  if (isShareUnitOfWork()) {
+  Splitter answer=new Splitter(routeContext.getCamelContext(),exp,childProcessor,aggregationStrategy,isParallelProcessing,threadPool,shutdownThreadPool,isStreaming,isStopOnException(),timeout,onPrepare,isShareUnitOfWork,isParallelAggregate);
+  if (isShareUnitOfWork) {
     CamelInternalProcessor internalProcessor=new CamelInternalProcessor(answer);
     internalProcessor.addAdvice(new CamelInternalProcessor.SubUnitOfWorkProcessorAdvice());
     return internalProcessor;
