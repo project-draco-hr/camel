@@ -41,6 +41,7 @@
       for (      Map<String,String> row : rows) {
         String name=row.get("name");
         String kind=row.get("kind");
+        String required=row.get("required");
         String value=row.get("value");
         String defaultValue=row.get("defaultValue");
         String type=row.get("type");
@@ -54,11 +55,12 @@
         value=URISupport.sanitizePath(value);
         if (includeAllOptions || o != null) {
           if (!selected.containsKey(name)) {
-            selected.put(name,new String[]{name,kind,type,javaType,deprecated,value,defaultValue,description});
+            selected.put(name,new String[]{name,kind,required,type,javaType,deprecated,value,defaultValue,description});
           }
         }
       }
-      StringBuilder buffer=new StringBuilder("{\n  \"properties\": {");
+      json=ObjectHelper.before(json,"  \"properties\": {");
+      StringBuilder buffer=new StringBuilder("  \"properties\": {");
       boolean first=true;
       for (      String[] row : selected.values()) {
         if (first) {
@@ -70,16 +72,20 @@
         buffer.append("\n    ");
         String name=row[0];
         String kind=row[1];
-        String type=row[2];
-        String javaType=row[3];
-        String deprecated=row[4];
-        String value=row[5];
-        String defaultValue=row[6];
-        String description=row[7];
+        String required=row[2];
+        String type=row[3];
+        String javaType=row[4];
+        String deprecated=row[5];
+        String value=row[6];
+        String defaultValue=row[7];
+        String description=row[8];
         buffer.append(doubleQuote(name)).append(": { ");
         CollectionStringBuffer csb=new CollectionStringBuffer();
         if (kind != null) {
           csb.append("\"kind\": \"" + kind + "\"");
+        }
+        if (required != null) {
+          csb.append("\"required\": \"" + required + "\"");
         }
         if (type != null) {
           csb.append("\"type\": \"" + type + "\"");
@@ -105,6 +111,7 @@
         buffer.append(" }");
       }
       buffer.append("\n  }\n}\n");
+      buffer.insert(0,json);
       return buffer.toString();
     }
     return json;
