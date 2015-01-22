@@ -1,0 +1,27 @@
+{
+  try {
+    Map<String,Object> jsonMap=MAPPER.readValue(response.getEntity().getContent(),MAP_TYPE);
+    LOG.debug("Hipchat response " + response + ", json: "+ MAPPER.writeValueAsString(jsonMap));
+    if (jsonMap != null && jsonMap.size() > 0) {
+      List<Map<String,Object>> items=(List<Map<String,Object>>)jsonMap.get(HipchatApiConstants.API_ITEMS);
+      if (items != null && items.size() > 0) {
+        try {
+          Map<String,Object> item=items.get(0);
+          String date=(String)item.get(HipchatApiConstants.API_DATE);
+          String message=(String)item.get(HipchatApiConstants.API_MESSAGE);
+          LOG.debug("Setting exchange body: " + message + ", header "+ HipchatConstants.MESSAGE_DATE+ ": "+ date);
+          exchange.getIn().setHeader(HipchatConstants.FROM_USER_RESPONSE_STATUS,response.getStatusLine());
+          exchange.getIn().setHeader(HipchatConstants.MESSAGE_DATE,date);
+          exchange.getIn().setBody(message);
+          getProcessor().process(exchange);
+        }
+ catch (        Exception e) {
+          throw new HipchatException("Error parsing Json response from Hipchat API",e);
+        }
+      }
+    }
+  }
+  finally {
+    response.close();
+  }
+}
