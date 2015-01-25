@@ -1,8 +1,16 @@
 {
   if (getEndpoint().getConfiguration().isIgnoreFileNotFoundOrPermissionError()) {
-    int code=exchange.getIn().getHeader(FtpConstants.FTP_REPLY_CODE,0,int.class);
-    if (code == 550) {
-      return true;
+    if (exchange != null) {
+      int code=exchange.getIn().getHeader(FtpConstants.FTP_REPLY_CODE,0,int.class);
+      if (code == 550) {
+        return true;
+      }
+    }
+    if (cause != null && cause instanceof GenericFileOperationFailedException) {
+      GenericFileOperationFailedException generic=ObjectHelper.getException(GenericFileOperationFailedException.class,cause);
+      if (generic.getCode() == 550) {
+        return true;
+      }
     }
   }
   return super.ignoreCannotRetrieveFile(name,exchange,cause);

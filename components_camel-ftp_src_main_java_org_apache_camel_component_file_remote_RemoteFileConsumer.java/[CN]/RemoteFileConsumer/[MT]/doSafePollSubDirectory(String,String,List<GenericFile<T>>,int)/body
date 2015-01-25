@@ -1,0 +1,22 @@
+{
+  try {
+    log.trace("Polling sub directory: {} from: {}",absolutePath,endpoint);
+    return doPollDirectory(absolutePath,dirName,fileList,depth);
+  }
+ catch (  Exception e) {
+    log.debug("Caught exception " + e.getMessage());
+    if (ignoreCannotRetrieveFile(absolutePath,null,e)) {
+      log.trace("Ignoring file error " + e.getMessage() + " for "+ absolutePath);
+      return true;
+    }
+ else {
+      log.trace("Not ignoring file error " + e.getMessage() + " for "+ absolutePath);
+      if (e instanceof GenericFileOperationFailedException) {
+        throw (GenericFileOperationFailedException)e;
+      }
+ else {
+        throw new GenericFileOperationFailedException("Cannot poll sub-directory: " + absolutePath + " from: "+ endpoint,e);
+      }
+    }
+  }
+}
