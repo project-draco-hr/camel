@@ -25,7 +25,14 @@
   }
   try {
     if (is == null) {
-      is=exchange.getIn().getMandatoryBody(InputStream.class);
+      String charset=endpoint.getCharset();
+      if (charset != null) {
+        is=new ByteArrayInputStream(exchange.getIn().getMandatoryBody(String.class).getBytes(charset));
+        LOG.trace("Using InputStream {} with charset {}.",is,charset);
+      }
+ else {
+        is=exchange.getIn().getMandatoryBody(InputStream.class);
+      }
     }
     final StopWatch watch=new StopWatch();
     LOG.debug("About to store file: {} using stream: {}",targetName,is);
@@ -53,6 +60,9 @@
     throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
   }
 catch (  InvalidPayloadException e) {
+    throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
+  }
+catch (  UnsupportedEncodingException e) {
     throw new GenericFileOperationFailedException("Cannot store file: " + name,e);
   }
  finally {
