@@ -4,12 +4,18 @@
     handler.exceptionCaught(ctx,e);
   }
  else {
-    LOG.warn("HttpServerChannelHandler is not found as attachment to handle exception, send 404 back to the client.",e.getCause());
-    HttpResponse response=new DefaultHttpResponse(HTTP_1_1,NOT_FOUND);
-    response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
-    response.headers().set(Exchange.CONTENT_LENGTH,0);
-    response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
-    ctx.getChannel().write(response).syncUninterruptibly();
-    ctx.getChannel().close();
+    if (e.getCause() instanceof ClosedChannelException) {
+      LOG.debug("Channel already closed. Ignoring this exception.");
+      return;
+    }
+ else {
+      LOG.warn("HttpServerChannelHandler is not found as attachment to handle exception, send 404 back to the client.",e.getCause());
+      HttpResponse response=new DefaultHttpResponse(HTTP_1_1,NOT_FOUND);
+      response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
+      response.headers().set(Exchange.CONTENT_LENGTH,0);
+      response.setContent(ChannelBuffers.copiedBuffer(new byte[]{}));
+      ctx.getChannel().write(response).syncUninterruptibly();
+      ctx.getChannel().close();
+    }
   }
 }
