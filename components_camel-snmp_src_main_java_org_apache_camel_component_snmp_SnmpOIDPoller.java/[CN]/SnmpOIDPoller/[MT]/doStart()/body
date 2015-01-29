@@ -11,15 +11,42 @@
     throw new IllegalArgumentException("Unknown protocol: " + endpoint.getProtocol());
   }
   this.snmp=new Snmp(this.transport);
-  this.usm=new USM(SecurityProtocols.getInstance(),new OctetString(MPv3.createLocalEngineID()),0);
-  SecurityModels.getInstance().addSecurityModel(usm);
-  target=new CommunityTarget();
-  target.setCommunity(new OctetString(this.endpoint.getSnmpCommunity()));
-  target.setAddress(targetAddress);
-  target.setRetries(this.endpoint.getRetries());
-  target.setTimeout(this.endpoint.getTimeout());
-  target.setVersion(this.endpoint.getSnmpVersion());
-  this.pdu=new PDU();
+  if (SnmpConstants.version3 == endpoint.getSnmpVersion()) {
+    UserTarget userTarget=new UserTarget();
+    userTarget.setSecurityLevel(endpoint.getSecurityLevel());
+    userTarget.setSecurityName(convertToOctetString(endpoint.getSecurityName()));
+    userTarget.setAddress(targetAddress);
+    userTarget.setRetries(endpoint.getRetries());
+    userTarget.setTimeout(endpoint.getTimeout());
+    userTarget.setVersion(endpoint.getSnmpVersion());
+    this.target=userTarget;
+    USM usm=new USM(SecurityProtocols.getInstance(),new OctetString(MPv3.createLocalEngineID()),0);
+    SecurityModels.getInstance().addSecurityModel(usm);
+    OID authProtocol=convertAuthenticationProtocol(endpoint.getAuthenticationProtocol());
+    OctetString authPwd=convertToOctetString(endpoint.getAuthenticationPassphrase());
+    OID privProtocol=convertPrivacyProtocol(endpoint.getPrivacyProtocol());
+    OctetString privPwd=convertToOctetString(endpoint.getPrivacyPassphrase());
+    UsmUser user=new UsmUser(convertToOctetString(endpoint.getSecurityName()),authProtocol,authPwd,privProtocol,privPwd);
+    usm.addUser(convertToOctetString(endpoint.getSecurityName()),user);
+    ScopedPDU scopedPDU=new ScopedPDU();
+    if (endpoint.getSnmpContextEngineId() != null) {
+      scopedPDU.setContextEngineID(new OctetString(endpoint.getSnmpContextEngineId()));
+    }
+    if (endpoint.getSnmpContextName() != null) {
+      scopedPDU.setContextName(new OctetString(endpoint.getSnmpContextName()));
+    }
+    this.pdu=scopedPDU;
+  }
+ else {
+    CommunityTarget communityTarget=new CommunityTarget();
+    communityTarget.setCommunity(convertToOctetString(endpoint.getSnmpCommunity()));
+    communityTarget.setAddress(targetAddress);
+    communityTarget.setRetries(endpoint.getRetries());
+    communityTarget.setTimeout(endpoint.getTimeout());
+    communityTarget.setVersion(endpoint.getSnmpVersion());
+    this.target=communityTarget;
+    this.pdu=new PDU();
+  }
   if (LOG.isDebugEnabled()) {
     LOG.debug("Starting OID poller on {} using {} protocol",endpoint.getAddress(),endpoint.getProtocol());
   }
