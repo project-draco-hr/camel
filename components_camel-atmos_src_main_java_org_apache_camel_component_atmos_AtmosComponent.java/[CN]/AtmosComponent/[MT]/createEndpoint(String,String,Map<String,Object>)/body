@@ -1,17 +1,24 @@
 {
   AtmosConfiguration configuration=new AtmosConfiguration();
-  configuration.setUri((String)parameters.get("uri") == null ? AtmosPropertyManager.getInstance().getProperty("uri") : (String)parameters.get("uri"));
-  configuration.setSecretKey((String)parameters.get("secretKey") == null ? AtmosPropertyManager.getInstance().getProperty("secretKey") : (String)parameters.get("secretKey"));
+  String name=null;
+  String operation=remaining;
+  String[] parts=remaining.split("/");
+  if (parts.length > 1) {
+    name=parts[0];
+    operation=parts[1];
+  }
+  configuration.setName(name);
+  configuration.setOperation(AtmosOperation.valueOf(operation));
+  configuration.setUri(parameters.get("uri") == null ? AtmosPropertyManager.getInstance().getProperty("uri") : (String)parameters.get("uri"));
+  configuration.setSecretKey(parameters.get("secretKey") == null ? AtmosPropertyManager.getInstance().getProperty("secretKey") : (String)parameters.get("secretKey"));
   configuration.setLocalPath((String)parameters.get("localPath"));
   configuration.setRemotePath((String)parameters.get("remotePath"));
   configuration.setNewRemotePath((String)parameters.get("newRemotePath"));
   configuration.setQuery((String)parameters.get("query"));
-  configuration.setOperation(AtmosOperation.valueOf(remaining));
   configuration.setFullTokenId(parameters.get("fullTokenId") == null ? AtmosPropertyManager.getInstance().getProperty("fullTokenId") : (String)parameters.get("fullTokenId"));
-  configuration.setEnableSslValidation(Boolean.parseBoolean((String)AtmosPropertyManager.getInstance().getProperty("sslValidation")));
+  configuration.setEnableSslValidation(Boolean.parseBoolean(AtmosPropertyManager.getInstance().getProperty("sslValidation")));
   AtmosConfigurationValidator.validate(configuration);
   setProperties(configuration,parameters);
-  LOG.info("atmos configuration set!");
   Endpoint endpoint=new AtmosEndpoint(uri,this,configuration);
   return endpoint;
 }
