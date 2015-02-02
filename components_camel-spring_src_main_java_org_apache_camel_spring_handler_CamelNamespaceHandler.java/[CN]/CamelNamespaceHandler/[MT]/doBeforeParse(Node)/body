@@ -1,0 +1,24 @@
+{
+  if (node.getNodeType() == Node.ELEMENT_NODE) {
+    Document doc=node.getOwnerDocument();
+    if (node.getNamespaceURI().startsWith(SPRING_NS + "/v")) {
+      doc.renameNode(node,SPRING_NS,node.getNodeName());
+    }
+    NamedNodeMap map=node.getAttributes();
+    for (int i=0; i < map.getLength(); i++) {
+      Node att=map.item(i);
+      if ("uri".equals(att.getNodeName()) || "url".equals(att.getNodeName())) {
+        String value=att.getNodeValue();
+        String changed=value.replaceAll("\\s{2,}","");
+        if (!value.equals(changed)) {
+          LOG.debug("Removing whitespace noise from attribute {} -> {}",value,changed);
+          att.setNodeValue(changed);
+        }
+      }
+    }
+  }
+  NodeList list=node.getChildNodes();
+  for (int i=0; i < list.getLength(); ++i) {
+    doBeforeParse(list.item(i));
+  }
+}
