@@ -1,0 +1,19 @@
+{
+  String unmarshalId=endpoint.getConfiguration().getUnmarshalId();
+  if (unmarshalId != null) {
+    LOG.debug("Unmarshalling input data using data format '{}'.",unmarshalId);
+    resolveUnmarshaller(exchange,unmarshalId).process(exchange);
+  }
+  Class<?> targetModel=endpoint.getCamelContext().getClassResolver().resolveClass(endpoint.getConfiguration().getTargetModel());
+  Message msg=exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+  LOG.debug("Mapping to target model {}.",targetModel.getName());
+  Object targetObject=endpoint.getMapper().map(msg.getBody(),targetModel);
+  endpoint.getMapper().map(endpoint.getLiteralMapper(),targetObject);
+  msg.setBody(targetObject);
+  exchange.setIn(msg);
+  String marshalId=endpoint.getConfiguration().getMarshalId();
+  if (marshalId != null) {
+    LOG.debug("Marshalling output data using data format '{}'.",marshalId);
+    resolveMarshaller(exchange,marshalId).process(exchange);
+  }
+}

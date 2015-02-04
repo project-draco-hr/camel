@@ -1,0 +1,29 @@
+{
+  Object customMapObj;
+  Method mapMethod=null;
+  String[] params=getParameter().split(",");
+  String className=params[0];
+  String operation=params.length > 1 ? params[1] : null;
+  try {
+    Class<?> customClass=resolver.resolveClass(className);
+    customMapObj=customClass.newInstance();
+    if (operation != null) {
+      mapMethod=customClass.getMethod(operation,source.getClass());
+    }
+ else {
+      mapMethod=selectMethod(customClass,source);
+    }
+  }
+ catch (  Exception cnfEx) {
+    throw new RuntimeException("Failed to load custom mapping",cnfEx);
+  }
+  if (mapMethod == null) {
+    throw new RuntimeException("No eligible custom mapping methods in " + className);
+  }
+  try {
+    return mapMethod.invoke(customMapObj,source);
+  }
+ catch (  Exception ex) {
+    throw new RuntimeException("Error while invoking custom mapping",ex);
+  }
+}
