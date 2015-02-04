@@ -1,6 +1,7 @@
 {
   MockEndpoint result=getMockEndpoint("mock:result");
   result.expectedMessageCount(1);
+  NotifyBuilder notify=new NotifyBuilder(context).whenReceived(1).create();
   template.asyncSend("jms:queue:helloDelay",new Processor(){
     public void process(    Exchange exchange) throws Exception {
       exchange.setPattern(ExchangePattern.InOut);
@@ -10,6 +11,7 @@
     }
   }
 );
+  notify.matches(1,TimeUnit.SECONDS);
   Exchange out=template.send("jms:queue:helloDelay",ExchangePattern.InOut,new Processor(){
     public void process(    Exchange exchange) throws Exception {
       Message in=exchange.getIn();
