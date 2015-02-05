@@ -1,0 +1,34 @@
+{
+  LOG.trace("Parsing Endpoint {}",element);
+  Binder<Node> binder;
+  try {
+    binder=getJaxbContext().createBinder();
+  }
+ catch (  JAXBException e) {
+    throw new ComponentDefinitionException("Failed to create the JAXB binder : " + e,e);
+  }
+  Object value=parseUsingJaxb(element,context,binder);
+  if (!(value instanceof CamelEndpointFactoryBean)) {
+    throw new ComponentDefinitionException("Expected an instance of " + CamelEndpointFactoryBean.class);
+  }
+  CamelEndpointFactoryBean rcfb=(CamelEndpointFactoryBean)value;
+  String id=rcfb.getId();
+  MutablePassThroughMetadata factory=context.createMetadata(MutablePassThroughMetadata.class);
+  factory.setId(".camelBlueprint.passThrough." + id);
+  factory.setObject(new PassThroughCallable<Object>(rcfb));
+  MutableBeanMetadata factory2=context.createMetadata(MutableBeanMetadata.class);
+  factory2.setId(".camelBlueprint.factory." + id);
+  factory2.setFactoryComponent(factory);
+  factory2.setFactoryMethod("call");
+  factory2.setInitMethod("afterPropertiesSet");
+  factory2.setDestroyMethod("destroy");
+  factory2.addProperty("blueprintContainer",createRef(context,"blueprintContainer"));
+  MutableBeanMetadata ctx=context.createMetadata(MutableBeanMetadata.class);
+  ctx.setId(id);
+  ctx.setRuntimeClass(Endpoint.class);
+  ctx.setFactoryComponent(factory2);
+  ctx.setFactoryMethod("getObject");
+  ctx.setActivation(ACTIVATION_LAZY);
+  LOG.trace("Parsing endpoint done, returning {}",element,ctx);
+  return ctx;
+}
