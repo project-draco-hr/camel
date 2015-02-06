@@ -52,11 +52,25 @@
   }
   String[] capAdd=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_CAP_ADD,message);
   if (capAdd != null) {
-    startContainerCmd.withCapAdd(capAdd);
+    List<Capability> caps=new ArrayList<Capability>();
+    for (    String s : capAdd) {
+      Capability cap=Capability.valueOf(s);
+      caps.add(cap);
+    }
+    Capability[] array=caps.toArray(new Capability[caps.size()]);
+    startContainerCmd.withCapAdd(array);
   }
   String[] capDrop=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_CAP_DROP,message);
   if (capDrop != null) {
-    startContainerCmd.withCapDrop(capDrop);
+    if (capAdd != null) {
+      List<Capability> caps=new ArrayList<Capability>();
+      for (      String s : capDrop) {
+        Capability cap=Capability.valueOf(s);
+        caps.add(cap);
+      }
+      Capability[] array=caps.toArray(new Capability[caps.size()]);
+      startContainerCmd.withCapDrop(array);
+    }
   }
   return startContainerCmd;
 }
