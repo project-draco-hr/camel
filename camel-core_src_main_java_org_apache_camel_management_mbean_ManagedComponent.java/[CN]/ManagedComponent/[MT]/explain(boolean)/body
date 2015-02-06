@@ -1,0 +1,26 @@
+{
+  try {
+    String defaultName=component.getCamelContext().resolveComponentDefaultName(component.getClass().getName());
+    String target=defaultName != null ? defaultName : name;
+    String json=component.getCamelContext().explainComponentJson(target,allOptions);
+    List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("componentProperties",json,true);
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.explainComponentTabularType());
+    for (    Map<String,String> row : rows) {
+      String name=row.get("name");
+      String kind=row.get("kind");
+      String type=row.get("type");
+      String javaType=row.get("javaType");
+      String deprecated=row.get("deprecated") != null ? row.get("deprecated") : "";
+      String value=row.get("value") != null ? row.get("value") : "";
+      String defaultValue=row.get("defaultValue") != null ? row.get("defaultValue") : "";
+      String description=row.get("description") != null ? row.get("description") : "";
+      CompositeType ct=CamelOpenMBeanTypes.explainComponentCompositeType();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"option","kind","type","java type","deprecated","value","default value","description"},new Object[]{name,kind,type,javaType,deprecated,value,defaultValue,description});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}
