@@ -1,0 +1,54 @@
+{
+  Elements elementUtils=processingEnv.getElementUtils();
+  while (true) {
+    List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
+    for (    VariableElement fieldElement : fieldElements) {
+      String fieldName=fieldElement.getSimpleName().toString();
+      boolean deprecated=fieldElement.getAnnotation(Deprecated.class) != null;
+      if ("endpointClass".equals(fieldName) || "camelContext".equals(fieldName)) {
+        continue;
+      }
+      ExecutableElement getter=findGetter(fieldName,classElement);
+      ExecutableElement setter=findSetter(fieldName,classElement);
+      if (getter != null && setter != null) {
+        String name=fieldName;
+        name=prefix + name;
+        TypeMirror fieldType=fieldElement.asType();
+        String fieldTypeName=fieldType.toString();
+        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
+        String defaultValue=null;
+        String defaultValueNote=null;
+        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,name,classElement,false);
+        if (docComment == null) {
+          docComment="";
+        }
+        Set<String> enums=new LinkedHashSet<String>();
+        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+        if (isEnum) {
+          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+          for (          VariableElement var : fields) {
+            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+              String val=var.toString();
+              enums.add(val);
+            }
+          }
+        }
+        ComponentOption option=new ComponentOption(name,fieldTypeName,defaultValue,defaultValueNote,docComment.trim(),deprecated,isEnum,enums);
+        componentOptions.add(option);
+      }
+    }
+    TypeElement baseTypeElement=null;
+    TypeMirror superclass=classElement.getSuperclass();
+    if (superclass != null) {
+      String superClassName=canonicalClassName(superclass.toString());
+      baseTypeElement=findTypeElement(roundEnv,superClassName);
+    }
+    if (baseTypeElement != null) {
+      classElement=baseTypeElement;
+    }
+ else {
+      break;
+    }
+  }
+}

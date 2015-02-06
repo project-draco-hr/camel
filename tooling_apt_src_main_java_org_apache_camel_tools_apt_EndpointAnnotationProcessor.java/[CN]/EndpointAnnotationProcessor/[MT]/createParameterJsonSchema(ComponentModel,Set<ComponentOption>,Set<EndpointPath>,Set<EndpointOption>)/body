@@ -11,10 +11,23 @@
   buffer.append("\n    \"version\": \"").append(componentModel.getVersionId()).append("\"");
   buffer.append("\n  },");
   buffer.append("\n  \"componentProperties\": {");
+  boolean first=true;
+  for (  ComponentOption entry : componentOptions) {
+    if (first) {
+      first=false;
+    }
+ else {
+      buffer.append(",");
+    }
+    buffer.append("\n    ");
+    String doc=entry.getDocumentationWithNotes();
+    doc=sanitizeDescription(doc,false);
+    buffer.append(JsonSchemaHelper.toJson(entry.getName(),"property",null,entry.getType(),entry.getDefaultValue(),doc,entry.isDeprecated(),entry.isEnumType(),entry.getEnums(),false,null));
+  }
   buffer.append("\n  },");
   buffer.append("\n  \"properties\": {");
-  boolean first=true;
-  for (  EndpointPath path : paths) {
+  first=true;
+  for (  EndpointPath path : endpointPaths) {
     if (first) {
       first=false;
     }
@@ -24,7 +37,7 @@
     buffer.append("\n    ");
     buffer.append(JsonSchemaHelper.toJson(path.getName(),"path",null,path.getType(),"",path.getDocumentation(),path.isDeprecated(),path.isEnumType(),path.getEnums(),false,null));
   }
-  for (  EndpointOption entry : options) {
+  for (  EndpointOption entry : endpointOptions) {
     if (first) {
       first=false;
     }
