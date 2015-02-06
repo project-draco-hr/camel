@@ -20,24 +20,41 @@
       if (sslContextParameters == null) {
         sslContextParameters=new SSLContextParameters();
       }
-      try {
-        final SSLSocketFactory socketFactory=new SSLSocketFactory(sslContextParameters.createSSLContext(),SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-        schemeRegistry.register(new Scheme("https",socketFactory,443));
-      }
- catch (      GeneralSecurityException e) {
-        throw ObjectHelper.wrapRuntimeCamelException(e);
-      }
-catch (      IOException e) {
-        throw ObjectHelper.wrapRuntimeCamelException(e);
-      }
       final Map<String,Object> configParams=configuration.getHttpParams();
+      boolean useSocksProxy=false;
+      HttpHost proxyHost=null;
       if (configParams != null && !configParams.isEmpty()) {
+        final Boolean socksProxy=(Boolean)configParams.get("http.route.socks-proxy");
+        if (socksProxy != null && socksProxy) {
+          useSocksProxy=true;
+          proxyHost=(HttpHost)configParams.get(ConnRoutePNames.DEFAULT_PROXY);
+        }
         LOG.debug("Setting {} HTTP Params",configParams.size());
         final HttpParams httpParams=httpClient.getParams();
         for (        Map.Entry<String,Object> param : configParams.entrySet()) {
-          httpParams.setParameter(param.getKey(),param.getValue());
+          if (!(useSocksProxy && (param.getKey().equals("http.route.socks-proxy") || param.getKey().equals(ConnRoutePNames.DEFAULT_PROXY)))) {
+            httpParams.setParameter(param.getKey(),param.getValue());
+          }
         }
       }
+      SSLContext sslContext;
+      try {
+        sslContext=sslContextParameters.createSSLContext();
+      }
+ catch (      IOException e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+catch (      GeneralSecurityException e) {
+        throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+      SSLSocketFactory socketFactory;
+      if (useSocksProxy) {
+        socketFactory=new SocksSSLSocketFactory(sslContext,proxyHost);
+      }
+ else {
+        socketFactory=new SSLSocketFactory(sslContext,SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+      }
+      schemeRegistry.register(new Scheme("https",socketFactory,443));
       return httpClient;
     }
   }
