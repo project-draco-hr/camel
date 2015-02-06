@@ -6,6 +6,7 @@
   Set<File> missingComponents=new TreeSet<File>();
   Set<File> missingLabels=new TreeSet<File>();
   Set<File> missingUriPaths=new TreeSet<File>();
+  Set<File> missingJavaDoc=new TreeSet<File>();
   Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
@@ -75,6 +76,14 @@
       if (!text.contains("\"kind\": \"path\"")) {
         missingUriPaths.add(file);
       }
+      List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("properties",text,true);
+      for (      Map<String,String> row : rows) {
+        String doc=row.get("description");
+        if (doc == null || doc.isEmpty()) {
+          missingJavaDoc.add(file);
+          break;
+        }
+      }
     }
  catch (    IOException e) {
     }
@@ -100,5 +109,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,missingUriPaths,missingLabels,usedLabels);
+  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,missingJavaDoc,missingUriPaths,missingLabels,usedLabels);
 }
