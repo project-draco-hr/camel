@@ -3,6 +3,7 @@
   while (true) {
     List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
     for (    VariableElement fieldElement : fieldElements) {
+      Metadata metadata=fieldElement.getAnnotation(Metadata.class);
       boolean deprecated=fieldElement.getAnnotation(Deprecated.class) != null;
       UriPath path=fieldElement.getAnnotation(UriPath.class);
       String fieldName=fieldElement.getSimpleName().toString();
@@ -19,6 +20,7 @@
         if (isNullOrEmpty(docComment)) {
           docComment=path.description();
         }
+        String required=metadata != null ? metadata.required() : null;
         Set<String> enums=new LinkedHashSet<String>();
         boolean isEnum;
         if (!Strings.isNullOrEmpty(path.enums())) {
@@ -41,7 +43,7 @@
             }
           }
         }
-        EndpointPath ep=new EndpointPath(name,fieldTypeName,docComment,deprecated,isEnum,enums);
+        EndpointPath ep=new EndpointPath(name,fieldTypeName,required,docComment,deprecated,isEnum,enums);
         endpointPaths.add(ep);
       }
       UriParam param=fieldElement.getAnnotation(UriParam.class);
@@ -74,6 +76,7 @@
           if (isNullOrEmpty(docComment)) {
             docComment=param.description();
           }
+          String required=metadata != null ? metadata.required() : null;
           Set<String> enums=new LinkedHashSet<String>();
           boolean isEnum;
           if (!Strings.isNullOrEmpty(param.enums())) {
@@ -96,7 +99,7 @@
               }
             }
           }
-          EndpointOption option=new EndpointOption(name,fieldTypeName,defaultValue,defaultValueNote,docComment.trim(),deprecated,isEnum,enums);
+          EndpointOption option=new EndpointOption(name,fieldTypeName,required,defaultValue,defaultValueNote,docComment.trim(),deprecated,isEnum,enums);
           endpointOptions.add(option);
         }
       }
