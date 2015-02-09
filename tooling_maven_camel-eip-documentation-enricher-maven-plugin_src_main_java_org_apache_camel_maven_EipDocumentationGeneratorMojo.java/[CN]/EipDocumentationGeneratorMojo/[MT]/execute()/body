@@ -1,0 +1,23 @@
+{
+  File rootDir=new File(camelCoreDir,Constants.PATH_TO_MODEL_DIR);
+  DomParser domParser=new DomParser();
+  DocumentationEnricher documentationEnricher=new DocumentationEnricher();
+  Map<String,File> jsonFiles=PackageHelper.findJsonFiles(rootDir);
+  XPath xPath=buildXPath(new CamelSpringNamespace());
+  try {
+    Document document=buildNamespaceAwareDocument(inputCamelSchemaFile);
+    NodeList elementsAndTypes=domParser.findElementsAndTypes(document,xPath);
+    documentationEnricher.enrichTopLevelElementsDocumentation(document,elementsAndTypes,jsonFiles);
+    Map<String,String> typeToNameMap=buildTypeToNameMap(elementsAndTypes);
+    for (    Map.Entry<String,String> entry : typeToNameMap.entrySet()) {
+      NodeList attributeElements=domParser.findAttributesElements(document,xPath,entry.getKey());
+      if (jsonFiles.containsKey(entry.getValue())) {
+        documentationEnricher.enrichTypeAttributesDocumentation(document,attributeElements,jsonFiles.get(entry.getValue()));
+      }
+    }
+    saveToFile(document,outputCamelSchemaFile,buildTransformer());
+  }
+ catch (  Exception e) {
+    getLog().error(e);
+  }
+}
