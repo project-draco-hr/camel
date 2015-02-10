@@ -3,40 +3,8 @@
   if (ds != null) {
     dataSource=ds;
   }
-  if (dataSource == null) {
-    String dataSourceRef=getAndRemoveParameter(parameters,"dataSourceRef",String.class);
-    if (dataSourceRef != null) {
-      dataSource=CamelContextHelper.mandatoryLookup(getCamelContext(),dataSourceRef,DataSource.class);
-    }
+  String dataSourceRef=getAndRemoveParameter(parameters,"dataSourceRef",String.class);
+  if (dataSource == null && dataSourceRef != null) {
+    dataSource=CamelContextHelper.mandatoryLookup(getCamelContext(),dataSourceRef,DataSource.class);
   }
-  String parameterPlaceholderSubstitute=getAndRemoveParameter(parameters,"placeholder",String.class,"#");
-  JdbcTemplate jdbcTemplate=new JdbcTemplate(dataSource);
-  IntrospectionSupport.setProperties(jdbcTemplate,parameters,"template.");
-  String query=remaining.replaceAll(parameterPlaceholderSubstitute,"?");
-  String onConsume=getAndRemoveParameter(parameters,"consumer.onConsume",String.class);
-  if (onConsume == null) {
-    onConsume=getAndRemoveParameter(parameters,"onConsume",String.class);
-  }
-  if (onConsume != null && usePlaceholder) {
-    onConsume=onConsume.replaceAll(parameterPlaceholderSubstitute,"?");
-  }
-  String onConsumeFailed=getAndRemoveParameter(parameters,"consumer.onConsumeFailed",String.class);
-  if (onConsumeFailed == null) {
-    onConsumeFailed=getAndRemoveParameter(parameters,"onConsumeFailed",String.class);
-  }
-  if (onConsumeFailed != null && usePlaceholder) {
-    onConsumeFailed=onConsumeFailed.replaceAll(parameterPlaceholderSubstitute,"?");
-  }
-  String onConsumeBatchComplete=getAndRemoveParameter(parameters,"consumer.onConsumeBatchComplete",String.class);
-  if (onConsumeBatchComplete == null) {
-    onConsumeBatchComplete=getAndRemoveParameter(parameters,"onConsumeBatchComplete",String.class);
-  }
-  if (onConsumeBatchComplete != null && usePlaceholder) {
-    onConsumeBatchComplete=onConsumeBatchComplete.replaceAll(parameterPlaceholderSubstitute,"?");
-  }
-  SqlEndpoint endpoint=new SqlEndpoint(uri,this,jdbcTemplate,query);
-  endpoint.setOnConsume(onConsume);
-  endpoint.setOnConsumeFailed(onConsumeFailed);
-  endpoint.setOnConsumeBatchComplete(onConsumeBatchComplete);
-  return endpoint;
 }
