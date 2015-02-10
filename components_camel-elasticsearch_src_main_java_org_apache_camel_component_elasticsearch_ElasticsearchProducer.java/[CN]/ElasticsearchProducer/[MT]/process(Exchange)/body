@@ -22,9 +22,17 @@
     GetRequest getRequest=message.getBody(GetRequest.class);
     message.setBody(client.get(getRequest));
   }
- else   if (ElasticsearchConfiguration.OPERATION_BULK_INDEX.equals(operation)) {
+ else   if (ElasticsearchConfiguration.OPERATION_BULK.equals(operation)) {
     BulkRequest bulkRequest=message.getBody(BulkRequest.class);
     message.setBody(client.bulk(bulkRequest).actionGet());
+  }
+ else   if (ElasticsearchConfiguration.OPERATION_BULK_INDEX.equals(operation)) {
+    BulkRequest bulkRequest=message.getBody(BulkRequest.class);
+    List<String> indexedIds=new ArrayList<String>();
+    for (    BulkItemResponse response : client.bulk(bulkRequest).actionGet().getItems()) {
+      indexedIds.add(response.getId());
+    }
+    message.setBody(indexedIds);
   }
  else   if (ElasticsearchConfiguration.OPERATION_DELETE.equals(operation)) {
     DeleteRequest deleteRequest=message.getBody(DeleteRequest.class);
