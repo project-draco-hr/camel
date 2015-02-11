@@ -1,0 +1,36 @@
+{
+  BossPool bp=configuration.getBossPool();
+  WorkerPool wp=configuration.getWorkerPool();
+  if (bp == null) {
+    bossPool=new NettyClientBossPoolBuilder().withTimer(new HashedWheelTimer()).withBossCount(configuration.getBossCount()).withName("NettyClientTCPBoss").build();
+    bp=bossPool;
+  }
+  if (wp == null) {
+    workerPool=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    wp=workerPool;
+  }
+  channelFactory=new NioClientSocketChannelFactory(bp,wp);
+  serverBootstrap=new ClientBootstrap(channelFactory);
+  serverBootstrap.setOption("keepAlive",configuration.isKeepAlive());
+  serverBootstrap.setOption("tcpNoDelay",configuration.isTcpNoDelay());
+  serverBootstrap.setOption("reuseAddress",configuration.isReuseAddress());
+  serverBootstrap.setOption("connectTimeoutMillis",configuration.getConnectTimeout());
+  if (configuration.getBacklog() > 0) {
+    serverBootstrap.setOption("backlog",configuration.getBacklog());
+  }
+  if (configuration.getOptions() != null) {
+    for (    Map.Entry<String,Object> entry : configuration.getOptions().entrySet()) {
+      serverBootstrap.setOption(entry.getKey(),entry.getValue());
+    }
+  }
+  LOG.debug("Created ServerBootstrap {} with options: {}",serverBootstrap,serverBootstrap.getOptions());
+  serverBootstrap.setPipelineFactory(pipelineFactory);
+  LOG.info("ServerBootstrap connecting to {}:{}",configuration.getHost(),configuration.getPort());
+  ChannelFuture connectFuture=serverBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  try {
+    channel=openChannel(connectFuture);
+  }
+ catch (  Exception e) {
+    e.printStackTrace();
+  }
+}
