@@ -1,0 +1,23 @@
+{
+  EventLoopGroup wg=configuration.getWorkerGroup();
+  if (wg == null) {
+    workerGroup=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    wg=workerGroup;
+  }
+  clientBootstrap=new Bootstrap();
+  clientBootstrap.channel(NioSocketChannel.class);
+  clientBootstrap.group(wg);
+  clientBootstrap.option(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
+  clientBootstrap.option(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());
+  clientBootstrap.option(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());
+  clientBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
+  LOG.debug("Created ClientBootstrap {}",clientBootstrap);
+  clientBootstrap.handler(pipelineFactory);
+  ChannelFuture channelFuture=clientBootstrap.connect(new InetSocketAddress(configuration.getHost(),configuration.getPort()));
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Created new TCP client bootstrap connecting to {}:{} with options: {}",new Object[]{configuration.getHost(),configuration.getPort(),clientBootstrap});
+  }
+  LOG.info("ClientModeServerBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
+  channel=openChannel(channelFuture);
+  allChannels.add(channel);
+}
