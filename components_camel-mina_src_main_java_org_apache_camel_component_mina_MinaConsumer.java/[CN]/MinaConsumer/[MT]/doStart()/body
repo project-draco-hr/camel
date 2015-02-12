@@ -2,5 +2,12 @@
   super.doStart();
   LOG.info("Binding to server address: {} using acceptor: {}",address,acceptor);
   IoHandler handler=new ReceiveHandler();
-  acceptor.bind(address,handler,getEndpoint().getAcceptorConfig());
+  if (protocol.equals("tcp") && clientMode) {
+    ConnectFuture future=connector.connect(address,handler,getEndpoint().getConnectorConfig());
+    future.join();
+    session=future.getSession();
+  }
+ else {
+    acceptor.bind(address,handler,getEndpoint().getAcceptorConfig());
+  }
 }
