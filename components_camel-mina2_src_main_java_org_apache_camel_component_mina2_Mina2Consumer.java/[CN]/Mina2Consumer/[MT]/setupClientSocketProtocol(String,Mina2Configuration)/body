@@ -1,0 +1,26 @@
+{
+  boolean minaLogger=configuration.isMinaLogger();
+  long timeout=configuration.getTimeout();
+  List<IoFilter> filters=configuration.getFilters();
+  address=new InetSocketAddress(configuration.getHost(),configuration.getPort());
+  final int processorCount=Runtime.getRuntime().availableProcessors() + 1;
+  connector=new NioSocketConnector(processorCount);
+  if (configuration.isOrderedThreadPoolExecutor()) {
+    workerPool=new OrderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
+ else {
+    workerPool=new UnorderedThreadPoolExecutor(configuration.getMaximumPoolSize());
+  }
+  connector.getFilterChain().addLast("threadPool",new ExecutorFilter(workerPool));
+  if (minaLogger) {
+    connector.getFilterChain().addLast("logger",new LoggingFilter());
+  }
+  appendIoFiltersToChain(filters,connector.getFilterChain());
+  if (configuration.getSslContextParameters() != null) {
+    SslFilter filter=new SslFilter(configuration.getSslContextParameters().createSSLContext(),configuration.isAutoStartTls());
+    filter.setUseClientMode(true);
+    connector.getFilterChain().addFirst("sslFilter",filter);
+  }
+  configureCodecFactory("Mina2Consumer",connector,configuration);
+  connector.setConnectTimeoutMillis(timeout);
+}

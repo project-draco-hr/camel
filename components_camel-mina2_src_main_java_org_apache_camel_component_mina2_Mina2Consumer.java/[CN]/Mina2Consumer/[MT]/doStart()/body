@@ -1,6 +1,15 @@
 {
   super.doStart();
-  acceptor.setHandler(new ReceiveHandler());
-  acceptor.bind(address);
-  LOG.info("Bound to server address: {} using acceptor: {}",address,acceptor);
+  if (configuration.isClientMode() && configuration.getProtocol().equals("tcp")) {
+    connector.setHandler(new ReceiveHandler());
+    ConnectFuture future=connector.connect(address);
+    future.awaitUninterruptibly();
+    session=future.getSession();
+    LOG.info("Connected to server address: {} using connector: {} timeout: {} millis.",new Object[]{address,connector,configuration.getTimeout()});
+  }
+ else {
+    acceptor.setHandler(new ReceiveHandler());
+    acceptor.bind(address);
+    LOG.info("Bound to server address: {} using acceptor: {}",address,acceptor);
+  }
 }

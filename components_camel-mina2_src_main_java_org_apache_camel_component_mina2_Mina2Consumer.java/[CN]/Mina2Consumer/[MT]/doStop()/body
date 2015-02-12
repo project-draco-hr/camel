@@ -1,16 +1,26 @@
 {
-  LOG.info("Unbinding from server address: {} using acceptor: {}",address,acceptor);
-  if (address instanceof InetSocketAddress) {
-    if ("0.0.0.0".equals(((InetSocketAddress)address).getAddress().getHostAddress())) {
-      LOG.info("Unbind the server address {}",acceptor.getLocalAddresses());
-      acceptor.unbind(acceptor.getLocalAddresses());
+  if (configuration.isClientMode() && configuration.getProtocol().equals("tcp")) {
+    LOG.info("Disconnect from server address: {} using connector: {}",address,connector);
+    if (session != null) {
+      CloseFuture closeFuture=session.close(true);
+      closeFuture.awaitUninterruptibly();
+    }
+    connector.dispose(true);
+  }
+ else {
+    LOG.info("Unbinding from server address: {} using acceptor: {}",address,acceptor);
+    if (address instanceof InetSocketAddress) {
+      if ("0.0.0.0".equals(((InetSocketAddress)address).getAddress().getHostAddress())) {
+        LOG.info("Unbind the server address {}",acceptor.getLocalAddresses());
+        acceptor.unbind(acceptor.getLocalAddresses());
+      }
+ else {
+        acceptor.unbind(address);
+      }
     }
  else {
       acceptor.unbind(address);
     }
-  }
- else {
-    acceptor.unbind(address);
   }
   super.doStop();
 }
