@@ -15,6 +15,9 @@
     get.addColumn(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column));
   }
   Result result=table.get(get);
+  if (!result.isEmpty()) {
+    resultRow.setTimestamp(result.raw()[0].getTimestamp());
+  }
   for (  HBaseCell cellModel : cellModels) {
     HBaseCell resultCell=new HBaseCell();
     String family=cellModel.getFamily();
@@ -24,6 +27,7 @@
     List<KeyValue> kvs=result.getColumn(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column));
     if (kvs != null && !kvs.isEmpty()) {
       resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(cellModel.getValueType(),kvs.get(0).getValue()));
+      resultCell.setTimestamp(kvs.get(0).getTimestamp());
     }
     resultCells.add(resultCell);
     resultRow.getCells().add(resultCell);

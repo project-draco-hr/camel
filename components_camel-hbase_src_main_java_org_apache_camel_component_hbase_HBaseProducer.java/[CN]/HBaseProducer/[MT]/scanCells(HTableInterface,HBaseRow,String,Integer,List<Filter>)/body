@@ -1,13 +1,26 @@
 {
   List<HBaseRow> rowSet=new LinkedList<HBaseRow>();
-  Scan scan=new Scan();
+  HBaseRow startRow=new HBaseRow(model.getCells());
+  startRow.setId(start);
+  Scan scan;
+  if (start != null) {
+    scan=new Scan(Bytes.toBytes(start));
+  }
+ else {
+    scan=new Scan();
+  }
   if (filters != null && !filters.isEmpty()) {
+    List<Filter> clonedFilters=new LinkedList<Filter>();
     for (    Filter filter : filters) {
       if (ModelAwareFilter.class.isAssignableFrom(filter.getClass())) {
-        ((ModelAwareFilter<?>)filter).apply(endpoint.getCamelContext(),model);
+        Object clone=endpoint.getCamelContext().getInjector().newInstance(filter.getClass());
+        if (clone instanceof ModelAwareFilter) {
+          ((ModelAwareFilter<?>)clone).apply(endpoint.getCamelContext(),model);
+          clonedFilters.add((ModelAwareFilter<?>)clone);
+        }
       }
     }
-    scan.setFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,filters));
+    scan.setFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,clonedFilters));
   }
   Set<HBaseCell> cellModels=model.getCells();
   for (  HBaseCell cellModel : cellModels) {
@@ -18,10 +31,12 @@
     }
   }
   ResultScanner resultScanner=table.getScanner(scan);
+  int count=0;
   Result result=resultScanner.next();
-  while (result != null) {
+  while (result != null && count < maxRowScan) {
     HBaseRow resultRow=new HBaseRow();
     resultRow.setId(endpoint.getCamelContext().getTypeConverter().convertTo(model.getRowType(),result.getRow()));
+    resultRow.setTimestamp(result.raw()[0].getTimestamp());
     cellModels=model.getCells();
     for (    HBaseCell modelCell : cellModels) {
       HBaseCell resultCell=new HBaseCell();
@@ -31,9 +46,13 @@
       resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(modelCell.getValueType(),result.getValue(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column))));
       resultCell.setFamily(modelCell.getFamily());
       resultCell.setQualifier(modelCell.getQualifier());
+      if (result.getColumnLatest(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column)) != null) {
+        resultCell.setTimestamp(result.getColumnLatest(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column)).getTimestamp());
+      }
       resultRow.getCells().add(resultCell);
-      rowSet.add(resultRow);
     }
+    rowSet.add(resultRow);
+    count++;
     result=resultScanner.next();
   }
   return rowSet;
