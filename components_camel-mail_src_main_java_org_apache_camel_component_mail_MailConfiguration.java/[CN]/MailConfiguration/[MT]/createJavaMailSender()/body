@@ -28,9 +28,18 @@
     answer.setSession(session);
   }
  else {
-    Session session=Session.getInstance(answer.getJavaMailProperties(),new DefaultAuthenticator(getUsername(),getPassword()));
-    session.setDebug(debugMode);
-    answer.setSession(session);
+    ClassLoader tccl=Thread.currentThread().getContextClassLoader();
+    try {
+      if (applicationClassLoader != null) {
+        Thread.currentThread().setContextClassLoader(applicationClassLoader);
+      }
+      Session session=Session.getInstance(answer.getJavaMailProperties(),new DefaultAuthenticator(getUsername(),getPassword()));
+      session.setDebug(debugMode);
+      answer.setSession(session);
+    }
+  finally {
+      Thread.currentThread().setContextClassLoader(tccl);
+    }
   }
   return answer;
 }
