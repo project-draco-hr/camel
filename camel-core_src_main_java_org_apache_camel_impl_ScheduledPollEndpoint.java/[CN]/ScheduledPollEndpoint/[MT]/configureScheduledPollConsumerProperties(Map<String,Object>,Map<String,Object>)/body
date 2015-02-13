@@ -1,95 +1,29 @@
 {
   Map<String,Object> schedulerProperties=IntrospectionSupport.extractProperties(options,"scheduler.");
-  Object startScheduler=options.remove("startScheduler");
-  Object initialDelay=options.remove("initialDelay");
-  Object delay=options.remove("delay");
-  Object timeUnit=options.remove("timeUnit");
-  Object useFixedDelay=options.remove("useFixedDelay");
-  Object pollStrategy=options.remove("pollStrategy");
-  Object runLoggingLevel=options.remove("runLoggingLevel");
-  Object sendEmptyMessageWhenIdle=options.remove("sendEmptyMessageWhenIdle");
-  Object greedy=options.remove("greedy");
-  Object scheduledExecutorService=options.remove("scheduledExecutorService");
-  Object scheduler=options.remove("scheduler");
-  Object backoffMultiplier=options.remove("backoffMultiplier");
-  Object backoffIdleThreshold=options.remove("backoffIdleThreshold");
-  Object backoffErrorThreshold=options.remove("backoffErrorThreshold");
-  boolean setConsumerProperties=false;
-  if (initialDelay != null || delay != null || timeUnit != null || useFixedDelay != null || pollStrategy != null) {
-    setConsumerProperties=true;
+  if (schedulerProperties != null && !schedulerProperties.isEmpty()) {
+    setSchedulerProperties(schedulerProperties);
   }
-  if (runLoggingLevel != null || startScheduler != null || sendEmptyMessageWhenIdle != null || greedy != null || scheduledExecutorService != null) {
-    setConsumerProperties=true;
-  }
-  if (scheduler != null || !schedulerProperties.isEmpty() || backoffMultiplier != null || backoffIdleThreshold != null || backoffErrorThreshold != null) {
-    setConsumerProperties=true;
-  }
-  if (setConsumerProperties) {
-    if (consumerProperties == null) {
-      consumerProperties=new HashMap<String,Object>();
-    }
-    if (initialDelay != null) {
-      consumerProperties.put("initialDelay",initialDelay);
-    }
-    if (startScheduler != null) {
-      consumerProperties.put("startScheduler",startScheduler);
-    }
-    if (delay != null) {
-      consumerProperties.put("delay",delay);
-    }
-    if (timeUnit != null) {
-      consumerProperties.put("timeUnit",timeUnit);
-    }
-    if (useFixedDelay != null) {
-      consumerProperties.put("useFixedDelay",useFixedDelay);
-    }
-    if (pollStrategy != null) {
-      consumerProperties.put("pollStrategy",pollStrategy);
-    }
-    if (runLoggingLevel != null) {
-      consumerProperties.put("runLoggingLevel",runLoggingLevel);
-    }
-    if (sendEmptyMessageWhenIdle != null) {
-      consumerProperties.put("sendEmptyMessageWhenIdle",sendEmptyMessageWhenIdle);
-    }
-    if (greedy != null) {
-      consumerProperties.put("greedy",greedy);
-    }
-    if (scheduledExecutorService != null) {
-      consumerProperties.put("scheduledExecutorService",scheduledExecutorService);
-    }
-    if (scheduler != null) {
-      if ("spring".equals(scheduler)) {
-        try {
-          Class<?> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(SPRING_SCHEDULER);
-          scheduler=getCamelContext().getInjector().newInstance(clazz);
-        }
- catch (        ClassNotFoundException e) {
-          throw new IllegalArgumentException("Cannot load " + SPRING_SCHEDULER + " from classpath. Make sure camel-spring.jar is on the classpath.",e);
-        }
+  if (scheduler == null && schedulerName != null) {
+    if ("spring".equals(schedulerName)) {
+      try {
+        Class<? extends ScheduledPollConsumerScheduler> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(SPRING_SCHEDULER,ScheduledPollConsumerScheduler.class);
+        setScheduler(getCamelContext().getInjector().newInstance(clazz));
       }
- else       if ("quartz2".equals(scheduler)) {
-        try {
-          Class<?> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(QUARTZ_2_SCHEDULER);
-          scheduler=getCamelContext().getInjector().newInstance(clazz);
-        }
- catch (        ClassNotFoundException e) {
-          throw new IllegalArgumentException("Cannot load " + QUARTZ_2_SCHEDULER + " from classpath. Make sure camel-quarz2.jar is on the classpath.",e);
-        }
+ catch (      ClassNotFoundException e) {
+        throw new IllegalArgumentException("Cannot load " + SPRING_SCHEDULER + " from classpath. Make sure camel-spring.jar is on the classpath.",e);
       }
-      consumerProperties.put("scheduler",scheduler);
     }
-    if (!schedulerProperties.isEmpty()) {
-      consumerProperties.put("schedulerProperties",schedulerProperties);
+ else     if ("quartz2".equals(schedulerName)) {
+      try {
+        Class<? extends ScheduledPollConsumerScheduler> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(QUARTZ_2_SCHEDULER,ScheduledPollConsumerScheduler.class);
+        setScheduler(getCamelContext().getInjector().newInstance(clazz));
+      }
+ catch (      ClassNotFoundException e) {
+        throw new IllegalArgumentException("Cannot load " + QUARTZ_2_SCHEDULER + " from classpath. Make sure camel-quarz2.jar is on the classpath.",e);
+      }
     }
-    if (backoffMultiplier != null) {
-      consumerProperties.put("backoffMultiplier",backoffMultiplier);
-    }
-    if (backoffIdleThreshold != null) {
-      consumerProperties.put("backoffIdleThreshold",backoffIdleThreshold);
-    }
-    if (backoffErrorThreshold != null) {
-      consumerProperties.put("backoffErrorThreshold",backoffErrorThreshold);
+ else {
+      setScheduler(CamelContextHelper.mandatoryLookup(getCamelContext(),schedulerName,ScheduledPollConsumerScheduler.class));
     }
   }
 }
