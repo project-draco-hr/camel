@@ -13,6 +13,8 @@
           name=fieldName;
         }
         name=prefix + name;
+        String labels=path.label();
+        String required=metadata != null ? metadata.required() : null;
         TypeMirror fieldType=fieldElement.asType();
         String fieldTypeName=fieldType.toString();
         TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
@@ -20,7 +22,6 @@
         if (isNullOrEmpty(docComment)) {
           docComment=path.description();
         }
-        String required=metadata != null ? metadata.required() : null;
         Set<String> enums=new LinkedHashSet<String>();
         boolean isEnum;
         if (!Strings.isNullOrEmpty(path.enums())) {
@@ -43,7 +44,7 @@
             }
           }
         }
-        EndpointPath ep=new EndpointPath(name,fieldTypeName,required,docComment,deprecated,isEnum,enums);
+        EndpointPath ep=new EndpointPath(name,fieldTypeName,required,docComment,deprecated,labels,isEnum,enums);
         endpointPaths.add(ep);
       }
       UriParam param=fieldElement.getAnnotation(UriParam.class);
@@ -56,6 +57,8 @@
         name=prefix + name;
         String defaultValue=param.defaultValue();
         String defaultValueNote=param.defaultValueNote();
+        String required=metadata != null ? metadata.required() : null;
+        String labels=param.label();
         TypeMirror fieldType=fieldElement.asType();
         String fieldTypeName=fieldType.toString();
         TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
@@ -76,7 +79,6 @@
           if (isNullOrEmpty(docComment)) {
             docComment=param.description();
           }
-          String required=metadata != null ? metadata.required() : null;
           Set<String> enums=new LinkedHashSet<String>();
           boolean isEnum;
           if (!Strings.isNullOrEmpty(param.enums())) {
@@ -99,7 +101,7 @@
               }
             }
           }
-          EndpointOption option=new EndpointOption(name,fieldTypeName,required,defaultValue,defaultValueNote,docComment.trim(),deprecated,isEnum,enums);
+          EndpointOption option=new EndpointOption(name,fieldTypeName,required,defaultValue,defaultValueNote,docComment.trim(),deprecated,labels,isEnum,enums);
           endpointOptions.add(option);
         }
       }
