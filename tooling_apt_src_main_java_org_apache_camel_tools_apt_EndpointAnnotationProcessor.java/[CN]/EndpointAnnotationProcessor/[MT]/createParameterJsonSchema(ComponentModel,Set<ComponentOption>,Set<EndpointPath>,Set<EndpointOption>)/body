@@ -34,7 +34,16 @@
   buffer.append("\n  },");
   buffer.append("\n  \"properties\": {");
   first=true;
-  for (  EndpointPath path : endpointPaths) {
+  for (  EndpointPath entry : endpointPaths) {
+    String label=entry.getLabel();
+    if (label != null) {
+      if (label.contains("consumer") && componentModel.isProducerOnly()) {
+        continue;
+      }
+ else       if (label.contains("producer") && componentModel.isConsumerOnly()) {
+        continue;
+      }
+    }
     if (first) {
       first=false;
     }
@@ -42,12 +51,21 @@
       buffer.append(",");
     }
     buffer.append("\n    ");
-    String doc=path.getDocumentation();
+    String doc=entry.getDocumentation();
     doc=sanitizeDescription(doc,false);
-    Boolean required=path.getRequired() != null ? Boolean.valueOf(path.getRequired()) : null;
-    buffer.append(JsonSchemaHelper.toJson(path.getName(),"path",required,path.getType(),null,doc,path.isDeprecated(),path.getLabel(),path.isEnumType(),path.getEnums(),false,null));
+    Boolean required=entry.getRequired() != null ? Boolean.valueOf(entry.getRequired()) : null;
+    buffer.append(JsonSchemaHelper.toJson(entry.getName(),"path",required,entry.getType(),null,doc,entry.isDeprecated(),label,entry.isEnumType(),entry.getEnums(),false,null));
   }
   for (  EndpointOption entry : endpointOptions) {
+    String label=entry.getLabel();
+    if (label != null) {
+      if (label.contains("consumer") && componentModel.isProducerOnly()) {
+        continue;
+      }
+ else       if (label.contains("producer") && componentModel.isConsumerOnly()) {
+        continue;
+      }
+    }
     if (first) {
       first=false;
     }
@@ -58,7 +76,7 @@
     String doc=entry.getDocumentationWithNotes();
     doc=sanitizeDescription(doc,false);
     Boolean required=entry.getRequired() != null ? Boolean.valueOf(entry.getRequired()) : null;
-    buffer.append(JsonSchemaHelper.toJson(entry.getName(),"parameter",required,entry.getType(),entry.getDefaultValue(),doc,entry.isDeprecated(),entry.getLabel(),entry.isEnumType(),entry.getEnums(),false,null));
+    buffer.append(JsonSchemaHelper.toJson(entry.getName(),"parameter",required,entry.getType(),entry.getDefaultValue(),doc,entry.isDeprecated(),label,entry.isEnumType(),entry.getEnums(),false,null));
   }
   buffer.append("\n  }");
   buffer.append("\n}\n");
