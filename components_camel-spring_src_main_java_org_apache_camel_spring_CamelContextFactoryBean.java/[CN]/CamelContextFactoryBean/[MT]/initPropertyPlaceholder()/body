@@ -5,7 +5,11 @@
     BridgePropertyPlaceholderConfigurer configurer=beans.values().iterator().next();
     String id=beans.keySet().iterator().next();
     LOG.info("Bridging Camel and Spring property placeholder configurer with id: " + id);
-    PropertiesComponent pc=getContext().getComponent("properties",PropertiesComponent.class);
+    PropertiesComponent pc=(PropertiesComponent)getContext().getComponent("properties",false);
+    if (pc == null) {
+      pc=new PropertiesComponent();
+      getContext().addComponent("properties",pc);
+    }
     configurer.setResolver(pc.getPropertiesResolver());
     configurer.setParser(pc.getPropertiesParser());
     String ref="ref:" + id;
