@@ -2,6 +2,7 @@
   final Promise<Object> promise=new Promise<Object>();
   connection.connect(new Callback<Void>(){
     public void onSuccess(    Void value){
+      LOG.debug("Connected to {}",configuration.getHost());
       String subscribeTopicName=configuration.getSubscribeTopicName();
       subscribeTopicName=subscribeTopicName != null ? subscribeTopicName.trim() : null;
       if (subscribeTopicName != null && !subscribeTopicName.isEmpty()) {
@@ -25,11 +26,13 @@
       }
     }
     public void onFailure(    Throwable value){
+      LOG.warn("Failed to connect to " + configuration.getHost() + " due "+ value.getMessage());
       promise.onFailure(value);
       connection.disconnect(null);
       connected=false;
     }
   }
 );
+  LOG.info("Connecting to {} using {} seconds timeout",configuration.getHost(),configuration.getConnectWaitInSeconds());
   promise.await(configuration.getConnectWaitInSeconds(),TimeUnit.SECONDS);
 }

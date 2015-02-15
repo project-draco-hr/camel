@@ -1,6 +1,32 @@
 {
+  boolean done=isConnected();
+  int attempt=0;
+  TimeoutException timeout=null;
+  while (!done && attempt <= PUBLISH_MAX_RECONNECT_ATTEMPTS) {
+    attempt++;
+    try {
+      LOG.warn("#{} attempt to re-create connection to {} before publishing",attempt,configuration.getHost());
+      createConnection();
+      connect();
+    }
+ catch (    TimeoutException e) {
+      timeout=e;
+      LOG.debug("Timed out after {} seconds after {} attempt to re-create connection to {}",new Object[]{configuration.getConnectWaitInSeconds(),attempt,configuration.getHost()});
+    }
+catch (    Throwable e) {
+      callback.onFailure(e);
+      return;
+    }
+    done=isConnected();
+  }
+  if (attempt > 3 && !isConnected()) {
+    LOG.warn("Cannot re-connect to {} after {} attempts",configuration.getHost(),attempt);
+    callback.onFailure(timeout);
+    return;
+  }
   connection.getDispatchQueue().execute(new Task(){
     @Override public void run(){
+      LOG.debug("Publishing to {}",configuration.getHost());
       connection.publish(topic,payload,qoS,retain,callback);
     }
   }
