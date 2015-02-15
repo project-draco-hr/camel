@@ -1,0 +1,42 @@
+{
+  final Socket socket=Mockito.spy(new Socket());
+  final AtomicBoolean timeout=new AtomicBoolean();
+  try {
+    doAnswer(new Answer<InputStream>(){
+      @Override public InputStream answer(      InvocationOnMock invocation) throws Throwable {
+        final InputStream stream=(InputStream)invocation.callRealMethod();
+        InputStream inputStream=new InputStream(){
+          @Override public int read() throws IOException {
+            if (timeout.get()) {
+              throw new SocketTimeoutException();
+            }
+            return stream.read();
+          }
+        }
+;
+        return inputStream;
+      }
+    }
+).when(socket).getInputStream();
+  }
+ catch (  IOException ignored) {
+  }
+  try {
+    doAnswer(new Answer(){
+      @Override public Object answer(      InvocationOnMock invocation) throws Throwable {
+        if ((Integer)invocation.getArguments()[0] == CONNECT_TIMEOUT) {
+          timeout.set(true);
+        }
+ else {
+          timeout.set(false);
+        }
+        return invocation.callRealMethod();
+      }
+    }
+).when(socket).setSoTimeout(anyInt());
+  }
+ catch (  SocketException e) {
+    throw new RuntimeException(e);
+  }
+  return socket;
+}
