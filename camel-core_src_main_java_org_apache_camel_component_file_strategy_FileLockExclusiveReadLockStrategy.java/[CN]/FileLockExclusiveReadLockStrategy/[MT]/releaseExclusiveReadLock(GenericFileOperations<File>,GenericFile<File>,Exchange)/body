@@ -1,12 +1,16 @@
 {
   super.releaseExclusiveReadLock(operations,file,exchange);
+  String target=file.getFileName();
+  FileLock lock=exchange.getProperty(Exchange.FILE_LOCK_EXCLUSIVE_LOCK,FileLock.class);
+  RandomAccessFile rac=exchange.getProperty(Exchange.FILE_LOCK_RANDOM_ACCESS_FILE,RandomAccessFile.class);
   if (lock != null) {
-    Channel channel=lock.channel();
+    Channel channel=lock.acquiredBy();
     try {
       lock.release();
     }
   finally {
-      IOHelper.close(channel,"while releasing exclusive read lock for file: " + lockFileName,LOG);
+      IOHelper.close(channel,"while releasing exclusive read lock for file: " + target,LOG);
+      IOHelper.close(rac,"while releasing exclusive read lock for file: " + target,LOG);
     }
   }
 }

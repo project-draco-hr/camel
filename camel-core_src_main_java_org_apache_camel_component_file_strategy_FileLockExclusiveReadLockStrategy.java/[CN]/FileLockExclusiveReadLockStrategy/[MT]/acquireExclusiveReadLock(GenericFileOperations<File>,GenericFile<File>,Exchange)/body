@@ -6,10 +6,11 @@
   LOG.trace("Waiting for exclusive read lock to file: {}",target);
   FileChannel channel=null;
   RandomAccessFile randomAccessFile=null;
+  boolean exclusive=false;
+  FileLock lock=null;
   try {
     randomAccessFile=new RandomAccessFile(target,"rw");
     channel=randomAccessFile.getChannel();
-    boolean exclusive=false;
     StopWatch watch=new StopWatch();
     while (!exclusive) {
       if (timeout > 0) {
@@ -26,7 +27,6 @@
       }
       if (lock != null) {
         LOG.trace("Acquired exclusive read lock: {} to file: {}",lock,target);
-        lockFileName=target.getName();
         exclusive=true;
       }
  else {
@@ -48,8 +48,13 @@
     }
   }
  finally {
-    IOHelper.close(channel,"while acquiring exclusive read lock for file: " + lockFileName,LOG);
-    IOHelper.close(randomAccessFile,"while acquiring exclusive read lock for file: " + lockFileName,LOG);
+    if (!exclusive) {
+      IOHelper.close(channel,"while acquiring exclusive read lock for file: " + target,LOG);
+      IOHelper.close(randomAccessFile,"while acquiring exclusive read lock for file: " + target,LOG);
+      super.releaseExclusiveReadLock(operations,file,exchange);
+    }
   }
+  exchange.setProperty(Exchange.FILE_LOCK_EXCLUSIVE_LOCK,lock);
+  exchange.setProperty(Exchange.FILE_LOCK_RANDOM_ACCESS_FILE,randomAccessFile);
   return true;
 }
