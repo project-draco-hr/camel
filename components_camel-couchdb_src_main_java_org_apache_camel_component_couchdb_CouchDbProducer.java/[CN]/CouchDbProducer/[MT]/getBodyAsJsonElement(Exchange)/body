@@ -1,7 +1,12 @@
 {
   Object body=exchange.getIn().getMandatoryBody();
   if (body instanceof String) {
-    return new Gson().toJsonTree(body);
+    try {
+      return new JsonParser().parse((String)body);
+    }
+ catch (    JsonSyntaxException jse) {
+      throw new InvalidPayloadException(exchange,body.getClass());
+    }
   }
  else   if (body instanceof JsonElement) {
     return (JsonElement)body;
