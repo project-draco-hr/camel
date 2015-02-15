@@ -1,0 +1,20 @@
+{
+  final StompFrame frame=new StompFrame(SEND);
+  frame.addHeader(DESTINATION,StompFrame.encodeHeader(destination));
+  frame.content(utf8(exchange.getIn().getBody().toString()));
+  connection.getDispatchQueue().execute(new Task(){
+    @Override public void run(){
+      connection.send(frame,new Callback<Void>(){
+        @Override public void onFailure(        Throwable e){
+          exchange.setException(e);
+          callback.done(false);
+        }
+        @Override public void onSuccess(        Void v){
+          callback.done(false);
+        }
+      }
+);
+    }
+  }
+);
+}
