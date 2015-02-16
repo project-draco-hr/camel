@@ -1,0 +1,56 @@
+{
+  T response;
+switch (uriInfo.getUriType()) {
+case URI0:
+    response=(T)EntityProvider.readServiceDocument(content,SERVICE_DOCUMENT_CONTENT_TYPE.toString());
+  break;
+case URI8:
+response=(T)EntityProvider.readMetadata(content,false);
+break;
+case URI7A:
+response=(T)EntityProvider.readLink(getContentType(),uriInfo.getTargetEntitySet(),content);
+break;
+case URI7B:
+response=(T)EntityProvider.readLinks(getContentType(),uriInfo.getTargetEntitySet(),content);
+break;
+case URI3:
+final List<EdmProperty> complexPropertyPath=uriInfo.getPropertyPath();
+final EdmProperty complexProperty=complexPropertyPath.get(complexPropertyPath.size() - 1);
+response=(T)EntityProvider.readProperty(getContentType(),complexProperty,content,EntityProviderReadProperties.init().build());
+break;
+case URI4:
+case URI5:
+final List<EdmProperty> simplePropertyPath=uriInfo.getPropertyPath();
+final EdmProperty simpleProperty=simplePropertyPath.get(simplePropertyPath.size() - 1);
+if (uriInfo.isValue()) {
+response=(T)EntityProvider.readPropertyValue(simpleProperty,content);
+}
+ else {
+response=(T)EntityProvider.readProperty(getContentType(),simpleProperty,content,EntityProviderReadProperties.init().build());
+}
+break;
+case URI15:
+case URI16:
+case URI50A:
+case URI50B:
+final String stringCount=new String(EntityProvider.readBinary(content),Consts.UTF_8);
+response=(T)Long.valueOf(stringCount);
+break;
+case URI1:
+case URI6B:
+if (uriInfo.getCustomQueryOptions().containsKey("!deltatoken")) {
+response=(T)EntityProvider.readDeltaFeed(getContentType(),uriInfo.getTargetEntitySet(),content,EntityProviderReadProperties.init().build());
+}
+ else {
+response=(T)EntityProvider.readFeed(getContentType(),uriInfo.getTargetEntitySet(),content,EntityProviderReadProperties.init().build());
+}
+break;
+case URI2:
+case URI6A:
+response=(T)EntityProvider.readEntry(getContentType(),uriInfo.getTargetEntitySet(),content,EntityProviderReadProperties.init().build());
+break;
+default :
+throw new ODataApplicationException("Unsupported resource type " + uriInfo.getTargetType(),Locale.ENGLISH);
+}
+return response;
+}

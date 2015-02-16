@@ -4,24 +4,21 @@
   if (400 <= httpStatusCode.getStatusCode() && httpStatusCode.getStatusCode() <= 599) {
     if (response.getEntity() != null) {
       try {
-        final ContentType responseContentType=ContentType.create(response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue());
-switch (responseContentType.getODataFormat()) {
-case ATOM:
-case XML:
-case JSON:
+        final ContentType responseContentType=ContentType.parse(response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue());
+        final String mimeType=responseContentType.getMimeType();
+        if (ODATA_MIME_TYPE.matcher(mimeType).matches()) {
           final ODataErrorContext errorContext=EntityProvider.readErrorDocument(response.getEntity().getContent(),responseContentType.toString());
-        throw new ODataApplicationException(errorContext.getMessage(),errorContext.getLocale(),httpStatusCode,errorContext.getErrorCode(),errorContext.getException());
-default :
+          throw new ODataApplicationException(errorContext.getMessage(),errorContext.getLocale(),httpStatusCode,errorContext.getErrorCode(),errorContext.getException());
+        }
+      }
+ catch (      EntityProviderException e) {
+        throw new ODataApplicationException(e.getMessage(),response.getLocale(),httpStatusCode,e);
+      }
+catch (      IOException e) {
+        throw new ODataApplicationException(e.getMessage(),response.getLocale(),httpStatusCode,e);
+      }
     }
+    throw new ODataApplicationException(statusLine.getReasonPhrase(),response.getLocale(),httpStatusCode);
   }
- catch (  EntityProviderException e) {
-    throw new ODataApplicationException(e.getMessage(),response.getLocale(),httpStatusCode,e);
-  }
-catch (  IOException e) {
-    throw new ODataApplicationException(e.getMessage(),response.getLocale(),httpStatusCode,e);
-  }
-}
-throw new ODataApplicationException(statusLine.getReasonPhrase(),response.getLocale(),httpStatusCode);
-}
-return httpStatusCode;
+  return httpStatusCode;
 }

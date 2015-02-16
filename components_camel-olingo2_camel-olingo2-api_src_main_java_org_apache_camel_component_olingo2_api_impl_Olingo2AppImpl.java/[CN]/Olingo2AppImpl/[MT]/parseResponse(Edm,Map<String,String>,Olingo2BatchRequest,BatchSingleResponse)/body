@@ -9,8 +9,8 @@
   ByteArrayInputStream content=null;
   try {
     if (response.getBody() != null) {
-      final ContentType partContentType=ContentType.create(headers.get(HttpHeaders.CONTENT_TYPE)).receiveWithCharsetParameter(ContentType.CHARSET_UTF_8);
-      final String charset=partContentType.getParameters().get(ContentType.PARAMETER_CHARSET);
+      final ContentType partContentType=receiveWithCharsetParameter(ContentType.parse(headers.get(HttpHeaders.CONTENT_TYPE)),Consts.UTF_8);
+      final String charset=partContentType.getCharset().toString();
       final String body=response.getBody();
       content=body != null ? new ByteArrayInputStream(body.getBytes(charset)) : null;
       httpResponse.setEntity(new StringEntity(body,charset));
@@ -33,7 +33,7 @@ catch (  UnsupportedEncodingException e) {
     resolvedResourcePath=resourceLocation != null ? resourceLocation.substring(serviceUri.length()) : resourcePath;
   }
   final Map<String,String> resolvedQueryParams=request instanceof Olingo2BatchQueryRequest ? ((Olingo2BatchQueryRequest)request).getQueryParams() : null;
-  final UriInfoImpl uriInfo=parseUri(edm,resolvedResourcePath,resolvedQueryParams);
+  final UriInfoWithType uriInfo=parseUri(edm,resolvedResourcePath,resolvedQueryParams);
   final Object resolvedContent=content != null ? readContent(uriInfo,content) : null;
   return new Olingo2BatchResponse(statusCode,statusInfo,response.getContentId(),response.getHeaders(),resolvedContent);
 }

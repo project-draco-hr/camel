@@ -9,7 +9,7 @@
         changeSetParts.clear();
         contentIdMap.clear();
       }
-      final UriInfoImpl uriInfo=parseUri(edm,batchPart.getResourcePath(),null);
+      final UriInfoWithType uriInfo=parseUri(edm,batchPart.getResourcePath(),null);
       parts.add(createBatchQueryPart(uriInfo,(Olingo2BatchQueryRequest)batchPart));
     }
  else {
@@ -23,8 +23,8 @@
   final String boundary=BOUNDARY_PREFIX + UUID.randomUUID();
   InputStream batchRequest=EntityProvider.writeBatchRequest(parts,boundary);
   final byte[] bytes=EntityProvider.readBinary(batchRequest);
-  final String batchRequestBody=new String(bytes,ContentType.CHARSET_UTF_8);
-  batchRequest=new ByteArrayInputStream(batchRequestBody.replaceAll("--(batch_)","\r\n\r\n--$1").getBytes(ContentType.CHARSET_UTF_8));
-  final String contentHeader=ContentType.create(BATCH_CONTENT_TYPE,BOUNDARY_PARAMETER,boundary).toString();
+  final String batchRequestBody=new String(bytes,Consts.UTF_8);
+  batchRequest=new ByteArrayInputStream(batchRequestBody.replaceAll("--(batch_)","\r\n\r\n--$1").getBytes(Consts.UTF_8));
+  final String contentHeader=BATCH_CONTENT_TYPE + BOUNDARY_PARAMETER + boundary;
   return ODataResponse.entity(batchRequest).contentHeader(contentHeader).build();
 }
