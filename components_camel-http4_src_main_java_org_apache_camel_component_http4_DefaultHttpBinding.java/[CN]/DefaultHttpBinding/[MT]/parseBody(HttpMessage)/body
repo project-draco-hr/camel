@@ -1,12 +1,20 @@
 {
   HttpServletRequest request=httpMessage.getRequest();
-  if (request.getContentLength() == 0) {
+  int len=request.getContentLength();
+  LOG.trace("HttpServletRequest content-length: {}",len);
+  if (len == 0) {
     return null;
   }
   if (isUseReaderForPayload()) {
     return request.getReader();
   }
  else {
+    if (len < 0) {
+      InputStream is=request.getInputStream();
+      if (is.available() == 0) {
+        return null;
+      }
+    }
     return HttpHelper.readResponseBodyFromServletRequest(request,httpMessage.getExchange());
   }
 }

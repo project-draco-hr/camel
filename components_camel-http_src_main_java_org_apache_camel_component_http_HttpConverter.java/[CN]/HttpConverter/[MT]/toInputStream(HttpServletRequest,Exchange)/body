@@ -2,11 +2,15 @@
   if (request == null) {
     return null;
   }
+  InputStream is=request.getInputStream();
+  if (is != null && is.available() <= 0) {
+    return is;
+  }
   if (exchange == null || !exchange.getProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.FALSE,Boolean.class)) {
     String contentEncoding=request.getHeader(Exchange.CONTENT_ENCODING);
-    return GZIPHelper.uncompressGzip(contentEncoding,request.getInputStream());
+    return GZIPHelper.uncompressGzip(contentEncoding,is);
   }
  else {
-    return request.getInputStream();
+    return is;
   }
 }
