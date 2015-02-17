@@ -1,9 +1,14 @@
 {
-  final int prefixLength=propertyPrefix.length();
   int nProperties=0;
   for (  Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
-    if (entry.getKey().startsWith(propertyPrefix)) {
-      properties.put(entry.getKey().substring(prefixLength),entry.getValue());
+    final String key=entry.getKey();
+    if (key.startsWith(propertyPrefix)) {
+      properties.put(key.substring(prefixLength),entry.getValue());
+      nProperties++;
+    }
+ else     if (camelCasePrefix != null && key.startsWith(camelCasePrefix)) {
+      final String propertyName=String.valueOf(Character.toLowerCase(key.charAt(prefixLength - 1))) + key.substring(prefixLength);
+      properties.put(propertyName,entry.getValue());
       nProperties++;
     }
   }
