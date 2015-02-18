@@ -1,8 +1,20 @@
 {
   List<ProcessorExchangePair> result=new ArrayList<ProcessorExchangePair>(processors.size());
+  ParallelProcessableStream parallelProcessableStream=null;
+  if (isParallelProcessing() && exchange.getIn().getBody() instanceof ParallelProcessableStream) {
+    parallelProcessableStream=(ParallelProcessableStream)exchange.getIn().getBody();
+  }
   int index=0;
   for (  Processor processor : processors) {
     Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false);
+    if (parallelProcessableStream != null) {
+      if (index > 0) {
+        ParallelProcessableStream copiedStreamCache=parallelProcessableStream.copy();
+        if (copiedStreamCache != null) {
+          copy.getIn().setBody(copiedStreamCache);
+        }
+      }
+    }
     if (copy.getProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK) == null) {
       copy.setProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK,exchange.getUnitOfWork());
     }
