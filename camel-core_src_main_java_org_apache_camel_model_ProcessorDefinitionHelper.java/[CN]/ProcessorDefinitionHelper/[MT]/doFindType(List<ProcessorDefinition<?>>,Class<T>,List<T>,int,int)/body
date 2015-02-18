@@ -1,0 +1,63 @@
+{
+  if (outputs == null || outputs.isEmpty()) {
+    return;
+  }
+  if (maxDeep > 0 && current > maxDeep) {
+    return;
+  }
+  for (  ProcessorDefinition out : outputs) {
+    if (out instanceof SendDefinition) {
+      SendDefinition send=(SendDefinition)out;
+      List<ProcessorDefinition<?>> children=send.getOutputs();
+      doFindType(children,type,found,++current,maxDeep);
+    }
+    if (out instanceof ChoiceDefinition) {
+      ChoiceDefinition choice=(ChoiceDefinition)out;
+      if (type.isInstance(choice)) {
+        found.add((T)choice);
+      }
+      for (      WhenDefinition when : choice.getWhenClauses()) {
+        if (type.isInstance(when)) {
+          found.add((T)when);
+        }
+        List<ProcessorDefinition<?>> children=when.getOutputs();
+        doFindType(children,type,found,++current,maxDeep);
+      }
+      if (choice.getOtherwise() != null) {
+        List<ProcessorDefinition<?>> children=choice.getOtherwise().getOutputs();
+        doFindType(children,type,found,++current,maxDeep);
+      }
+      continue;
+    }
+    if (out instanceof TryDefinition) {
+      TryDefinition doTry=(TryDefinition)out;
+      if (type.isInstance(doTry)) {
+        found.add((T)doTry);
+      }
+      List<ProcessorDefinition<?>> doTryOut=doTry.getOutputsWithoutCatches();
+      doFindType(doTryOut,type,found,++current,maxDeep);
+      List<CatchDefinition> doTryCatch=doTry.getCatchClauses();
+      for (      CatchDefinition doCatch : doTryCatch) {
+        doFindType(doCatch.getOutputs(),type,found,++current,maxDeep);
+      }
+      if (doTry.getFinallyClause() != null) {
+        doFindType(doTry.getFinallyClause().getOutputs(),type,found,++current,maxDeep);
+      }
+      continue;
+    }
+    if (out instanceof OutputDefinition) {
+      OutputDefinition outDef=(OutputDefinition)out;
+      if (type.isInstance(outDef)) {
+        found.add((T)outDef);
+      }
+      List<ProcessorDefinition<?>> outDefOut=outDef.getOutputs();
+      doFindType(outDefOut,type,found,++current,maxDeep);
+      continue;
+    }
+    if (type.isInstance(out)) {
+      found.add((T)out);
+    }
+    List<ProcessorDefinition<?>> children=out.getOutputs();
+    doFindType(children,type,found,++current,maxDeep);
+  }
+}
