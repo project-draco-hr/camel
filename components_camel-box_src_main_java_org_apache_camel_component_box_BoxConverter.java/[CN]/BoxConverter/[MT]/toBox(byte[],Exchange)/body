@@ -1,10 +1,15 @@
 {
-  String folderId="0";
-  String fileName="dummy.bin";
+  String folderId=ROOT_FOLDER;
+  String fileName;
   if (exchange != null && exchange.getIn() != null) {
     folderId=exchange.getIn().getHeader(PROPERTY_FOLDER_ID_DELIMITED,folderId,String.class);
     folderId=exchange.getIn().getHeader(PROPERTY_FOLDER_ID,folderId,String.class);
-    fileName=exchange.getIn().getHeader("CamelFileName",String.class);
+    fileName=exchange.getIn().getHeader(Exchange.FILE_NAME,StringHelper.sanitize(exchange.getIn().getMessageId()),String.class);
+  }
+ else {
+synchronized (BoxConverter.class) {
+      fileName="CamelBox" + ISO8601.format(new Date()) + ".bin";
+    }
   }
   InputStream is=new ByteArrayInputStream(data);
   return BoxFileUploadRequestObject.uploadFileRequestObject(folderId,fileName,is);
