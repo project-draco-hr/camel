@@ -1,5 +1,7 @@
 {
-  File[] dirs=new File(".").listFiles(new FileFilter(){
+  File rootDir=projectBuildDir.getParentFile();
+  log.info("Scanning for Camel Maven Archetypes from root directory " + rootDir);
+  File[] dirs=rootDir.listFiles(new FileFilter(){
     @Override public boolean accept(    File pathname){
       if ("camel-archetype-webconsole".equals(pathname.getName())) {
         return false;
@@ -71,5 +73,17 @@
     fos.write(bottom.getBytes());
     fos.close();
     log.info("Saved archetype catalog to file " + out);
+    try {
+      if (projectHelper != null) {
+        log.info("Attaching archetype catalog to Maven project: " + project.getArtifactId());
+        List<String> includes=new ArrayList<String>();
+        includes.add("archetype-catalog.xml");
+        projectHelper.addResource(project,outDir.getPath(),includes,new ArrayList<String>());
+        projectHelper.attachArtifact(project,"xml","archetype-catalog",out);
+      }
+    }
+ catch (    Exception e) {
+      throw new MojoExecutionException("Failed to attach artifact to Maven project. Reason: " + e,e);
+    }
   }
 }
