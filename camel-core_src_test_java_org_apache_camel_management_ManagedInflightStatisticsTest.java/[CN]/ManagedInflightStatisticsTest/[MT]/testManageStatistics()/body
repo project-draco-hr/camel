@@ -1,0 +1,42 @@
+{
+  if (isPlatform("aix")) {
+    return;
+  }
+  MBeanServer mbeanServer=getMBeanServer();
+  Set<ObjectName> set=mbeanServer.queryNames(new ObjectName("*:type=routes,*"),null);
+  assertEquals(1,set.size());
+  ObjectName on=set.iterator().next();
+  Long inflight=(Long)mbeanServer.getAttribute(on,"ExchangesInflight");
+  assertEquals(0,inflight.longValue());
+  Long ts=(Long)mbeanServer.getAttribute(on,"OldestInflightDuration");
+  assertNull(ts);
+  String id=(String)mbeanServer.getAttribute(on,"OldestInflightExchangeId");
+  assertNull(id);
+  MockEndpoint result=getMockEndpoint("mock:result");
+  result.expectedMessageCount(2);
+  template.asyncSendBody("direct:start",1000L);
+  Thread.sleep(500);
+  template.asyncSendBody("direct:start",1000L);
+  Thread.sleep(100);
+  inflight=(Long)mbeanServer.getAttribute(on,"ExchangesInflight");
+  assertEquals(2,inflight.longValue());
+  ts=(Long)mbeanServer.getAttribute(on,"OldestInflightDuration");
+  assertNotNull(ts);
+  id=(String)mbeanServer.getAttribute(on,"OldestInflightExchangeId");
+  assertNotNull(id);
+  Thread.sleep(500);
+  Long ts2=(Long)mbeanServer.getAttribute(on,"OldestInflightDuration");
+  assertNotNull(ts2);
+  String id2=(String)mbeanServer.getAttribute(on,"OldestInflightExchangeId");
+  assertNotNull(id2);
+  assertTrue(!id2.equals(id));
+  assertTrue(ts2 > ts);
+  Thread.sleep(500);
+  assertMockEndpointsSatisfied();
+  inflight=(Long)mbeanServer.getAttribute(on,"ExchangesInflight");
+  assertEquals(0,inflight.longValue());
+  ts=(Long)mbeanServer.getAttribute(on,"OldestInflightDuration");
+  assertNull(ts);
+  id=(String)mbeanServer.getAttribute(on,"OldestInflightExchangeId");
+  assertNull(id);
+}
