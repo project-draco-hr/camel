@@ -1,0 +1,20 @@
+{
+  String name=consumer.getEndpoint().getName();
+  int concurrentTasks=consumer.getEndpoint().getConcurrentTasks();
+  ScheduledExecutorService answer;
+synchronized (executors) {
+    answer=executors.get(name);
+    if (answer == null) {
+      answer=getCamelContext().getExecutorServiceManager().newScheduledThreadPool(this,"scheduler://" + name,concurrentTasks);
+      executors.put(name,answer);
+      refCounts.put(name,new AtomicInteger(1));
+    }
+ else {
+      AtomicInteger counter=refCounts.get(name);
+      if (counter != null) {
+        counter.incrementAndGet();
+      }
+    }
+  }
+  return answer;
+}

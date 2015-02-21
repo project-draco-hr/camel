@@ -1,0 +1,13 @@
+{
+  String name=consumer.getEndpoint().getName();
+synchronized (executors) {
+    AtomicInteger counter=refCounts.get(name);
+    if (counter != null && counter.decrementAndGet() <= 0) {
+      refCounts.remove(name);
+      ScheduledExecutorService scheduler=executors.remove(name);
+      if (scheduler != null) {
+        getCamelContext().getExecutorServiceManager().shutdown(scheduler);
+      }
+    }
+  }
+}
