@@ -1,0 +1,27 @@
+{
+  LOGGER.debug("Executing Docker Exec Create Request");
+  String containerId=DockerHelper.getProperty(DockerConstants.DOCKER_CONTAINER_ID,configuration,message,String.class);
+  ObjectHelper.notNull(containerId,"Container ID must be specified");
+  ExecCreateCmd execCreateCmd=client.execCreateCmd(containerId);
+  Boolean attachStdIn=DockerHelper.getProperty(DockerConstants.DOCKER_ATTACH_STD_IN,configuration,message,Boolean.class);
+  Boolean attachStdErr=DockerHelper.getProperty(DockerConstants.DOCKER_ATTACH_STD_ERR,configuration,message,Boolean.class);
+  if (attachStdErr != null) {
+    execCreateCmd.withAttachStderr(attachStdErr);
+  }
+  if (attachStdIn != null) {
+    execCreateCmd.withAttachStdin(attachStdIn);
+  }
+  Boolean attachStdOut=DockerHelper.getProperty(DockerConstants.DOCKER_ATTACH_STD_OUT,configuration,message,Boolean.class);
+  if (attachStdOut != null) {
+    execCreateCmd.withAttachStdout(attachStdOut);
+  }
+  String[] cmd=DockerHelper.parseDelimitedStringHeader(DockerConstants.DOCKER_CMD,message);
+  if (cmd != null) {
+    execCreateCmd.withCmd(cmd);
+  }
+  Boolean tty=DockerHelper.getProperty(DockerConstants.DOCKER_TTY,configuration,message,Boolean.class);
+  if (tty != null) {
+    execCreateCmd.withTty(tty);
+  }
+  return execCreateCmd;
+}
