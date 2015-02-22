@@ -1,0 +1,21 @@
+{
+  final Processor processor=new Processor(){
+    public void process(    Exchange exchange){
+      Message in=exchange.getIn();
+      String body=in.getBody(String.class);
+      in.setBody(body + "+output");
+    }
+  }
+;
+  return new RouteBuilder(){
+    public void configure(){
+      context.setStreamCaching(true);
+      errorHandler(deadLetterChannel("mock:error").redeliveryDelay(0).maximumRedeliveries(3));
+      from("direct:a").wireTap("direct:x").wireTap("direct:y").wireTap("direct:z");
+      from("direct:x").process(processor).to("mock:x");
+      from("direct:y").process(processor).to("mock:y");
+      from("direct:z").process(processor).to("mock:z");
+    }
+  }
+;
+}

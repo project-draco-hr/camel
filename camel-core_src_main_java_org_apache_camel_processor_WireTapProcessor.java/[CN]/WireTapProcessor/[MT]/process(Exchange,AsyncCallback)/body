@@ -2,7 +2,16 @@
   if (!isStarted()) {
     throw new IllegalStateException("WireTapProcessor has not been started: " + this);
   }
-  final Exchange wireTapExchange=configureExchange(exchange,exchangePattern);
+  Exchange target;
+  try {
+    target=configureExchange(exchange,exchangePattern);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+  final Exchange wireTapExchange=target;
   executorService.submit(new Callable<Exchange>(){
     public Exchange call() throws Exception {
       try {
