@@ -18,6 +18,18 @@
     throw new ExecException("Failed to execute command " + command,ee);
   }
 catch (  IOException ioe) {
+    String msg=ioe.getMessage();
+    if ("Stream closed".equals(msg)) {
+      LOG.debug("Ignoring Stream closed IOException",ioe);
+      InputStream stdout=out.size() == 0 ? null : new ByteArrayInputStream(out.toByteArray());
+      InputStream stderr=err.size() == 0 ? null : new ByteArrayInputStream(err.toByteArray());
+      int exitValue=0;
+      if (executor instanceof ExecDefaultExecutor) {
+        exitValue=((ExecDefaultExecutor)executor).getExitValue();
+      }
+      ExecResult result=new ExecResult(command,stdout,stderr,exitValue);
+      return result;
+    }
     LOG.error("IOException while executing command: " + command.toString() + " - "+ ioe.getMessage());
     throw new ExecException("Unable to execute command " + command,ioe);
   }
