@@ -2,4 +2,11 @@
   this.config=config;
   this.topicName=topicName;
   this.restClient=restClient;
+  this.preApi29=Double.valueOf(config.getApiVersion()) < 29.0;
+  if (preApi29 && (config.getNotifyForOperationCreate() != null || config.getNotifyForOperationDelete() != null || config.getNotifyForOperationUndelete() != null || config.getNotifyForOperationUpdate() != null)) {
+    throw new IllegalArgumentException("NotifyForOperationCreate, NotifyForOperationDelete" + ", NotifyForOperationUndelete, and NotifyForOperationUpdate" + " are only supported since API version 29.0"+ ", instead use NotifyForOperations");
+  }
+ else   if (!preApi29 && config.getNotifyForOperations() != null) {
+    throw new IllegalArgumentException("NotifyForOperations is readonly since API version 29.0" + ", instead use NotifyForOperationCreate, NotifyForOperationDelete" + ", NotifyForOperationUndelete, and NotifyForOperationUpdate");
+  }
 }

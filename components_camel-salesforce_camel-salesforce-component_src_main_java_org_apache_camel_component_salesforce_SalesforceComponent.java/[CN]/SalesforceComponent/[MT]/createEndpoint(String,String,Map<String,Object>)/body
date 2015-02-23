@@ -1,8 +1,13 @@
 {
   OperationName operationName=null;
   String topicName=null;
+  String apexUrl=null;
   try {
     LOG.debug("Creating endpoint for: {}",remaining);
+    if (remaining.startsWith(APEX_CALL_PREFIX)) {
+      apexUrl=remaining.substring(APEX_CALL_PREFIX.length());
+      remaining=OperationName.APEX_CALL.value();
+    }
     operationName=OperationName.fromValue(remaining);
   }
  catch (  IllegalArgumentException ex) {
@@ -16,7 +21,16 @@
   }
   final SalesforceEndpointConfig copy=config.copy();
   setProperties(copy,parameters);
+  if (apexUrl != null) {
+    copy.setApexUrl(apexUrl);
+  }
   final SalesforceEndpoint endpoint=new SalesforceEndpoint(uri,this,copy,operationName,topicName);
   setProperties(endpoint,parameters);
+  if (operationName == OperationName.APEX_CALL && !parameters.isEmpty()) {
+    Map<String,Object> queryParams=new HashMap<String,Object>(parameters);
+    parameters.clear();
+    queryParams.putAll(copy.getApexQueryParams());
+    copy.setApexQueryParams(queryParams);
+  }
   return endpoint;
 }

@@ -1,0 +1,28 @@
+{
+  final String apexUrl=getParameter(APEX_URL,exchange,IGNORE_BODY,NOT_OPTIONAL);
+  final Matcher matcher=URL_TEMPLATE.matcher(apexUrl);
+  StringBuilder result=new StringBuilder();
+  int start=0;
+  while (matcher.find()) {
+    result.append(apexUrl.substring(start,matcher.start()));
+    start=matcher.end();
+    final String parameterName=matcher.group(1);
+    final Object value=exchange.getIn().getHeader(parameterName);
+    if (value == null) {
+      throw new IllegalArgumentException("Missing APEX URL template header " + parameterName);
+    }
+    try {
+      result.append(URLEncoder.encode(String.valueOf(value),"UTF-8").replaceAll("\\+","%20"));
+    }
+ catch (    UnsupportedEncodingException e) {
+      throw new SalesforceException("Unexpected error: " + e.getMessage(),e);
+    }
+  }
+  if (start != 0) {
+    result.append(apexUrl.substring(start));
+    final String resolvedUrl=result.toString();
+    log.debug("Resolved APEX URL {} to {}",apexUrl,resolvedUrl);
+    return resolvedUrl;
+  }
+  return apexUrl;
+}

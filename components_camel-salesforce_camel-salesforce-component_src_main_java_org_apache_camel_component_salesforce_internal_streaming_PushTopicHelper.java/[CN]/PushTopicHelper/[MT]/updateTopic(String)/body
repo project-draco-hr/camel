@@ -6,13 +6,22 @@
     final PushTopic topic=new PushTopic();
     topic.setQuery(query);
     topic.setNotifyForFields(config.getNotifyForFields());
-    topic.setNotifyForOperations(config.getNotifyForOperations());
+    if (preApi29) {
+      topic.setNotifyForOperations(config.getNotifyForOperations());
+    }
+ else {
+      topic.setNotifyForOperationCreate(config.getNotifyForOperationCreate());
+      topic.setNotifyForOperationDelete(config.getNotifyForOperationDelete());
+      topic.setNotifyForOperationUndelete(config.getNotifyForOperationUndelete());
+      topic.setNotifyForOperationUpdate(config.getNotifyForOperationUpdate());
+    }
     restClient.updateSObject("PushTopic",topicId,new ByteArrayInputStream(OBJECT_MAPPER.writeValueAsBytes(topic)),callback);
     if (!callback.await(API_TIMEOUT,TimeUnit.SECONDS)) {
       throw new SalesforceException("API call timeout!",null);
     }
-    if (callback.getException() != null) {
-      throw callback.getException();
+    final SalesforceException callbackException=callback.getException();
+    if (callbackException != null) {
+      throw callbackException;
     }
   }
  catch (  SalesforceException e) {

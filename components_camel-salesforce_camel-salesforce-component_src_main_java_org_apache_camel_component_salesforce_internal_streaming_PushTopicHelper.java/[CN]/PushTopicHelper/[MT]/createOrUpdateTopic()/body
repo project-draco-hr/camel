@@ -6,14 +6,22 @@
     if (!callback.await(API_TIMEOUT,TimeUnit.SECONDS)) {
       throw new SalesforceException("API call timeout!",null);
     }
-    if (callback.getException() != null) {
-      throw callback.getException();
+    final SalesforceException callbackException=callback.getException();
+    if (callbackException != null) {
+      throw callbackException;
     }
     QueryRecordsPushTopic records=OBJECT_MAPPER.readValue(callback.getResponse(),QueryRecordsPushTopic.class);
     if (records.getTotalSize() == 1) {
       PushTopic topic=records.getRecords().get(0);
       LOG.info("Found existing topic {}: {}",topicName,topic);
-      if (!query.equals(topic.getQuery()) || (config.getNotifyForFields() != null && !config.getNotifyForFields().equals(topic.getNotifyForFields())) || (config.getNotifyForOperations() != null && !config.getNotifyForOperations().equals(topic.getNotifyForOperations()))) {
+      final boolean notifyOperationsChanged;
+      if (preApi29) {
+        notifyOperationsChanged=notEquals(config.getNotifyForOperations(),topic.getNotifyForOperations());
+      }
+ else {
+        notifyOperationsChanged=notEquals(config.getNotifyForOperationCreate(),topic.getNotifyForOperationCreate()) || notEquals(config.getNotifyForOperationDelete(),topic.getNotifyForOperationDelete()) || notEquals(config.getNotifyForOperationUndelete(),topic.getNotifyForOperationUndelete())|| notEquals(config.getNotifyForOperationUpdate(),topic.getNotifyForOperationUpdate());
+      }
+      if (!query.equals(topic.getQuery()) || notEquals(config.getNotifyForFields(),topic.getNotifyForFields()) || notifyOperationsChanged) {
         if (!config.isUpdateTopic()) {
           String msg="Query doesn't match existing Topic and updateTopic is set to false";
           throw new CamelException(msg);

@@ -1,0 +1,20 @@
+{
+  final ContentExchange exchange;
+  try {
+    exchange=getContentExchange(httpMethod,apexCallUrl(apexUrl,queryParams));
+    if (requestDto != null) {
+      exchange.setRequestContentSource(requestDto);
+      exchange.setRequestContentType(PayloadFormat.JSON.equals(format) ? APPLICATION_JSON_UTF8 : APPLICATION_XML_UTF8);
+    }
+    setAccessToken(exchange);
+    doHttpRequest(exchange,new DelegatingClientCallback(callback));
+  }
+ catch (  UnsupportedEncodingException e) {
+    String msg="Unexpected error: " + e.getMessage();
+    callback.onResponse(null,new SalesforceException(msg,e));
+  }
+catch (  URISyntaxException e) {
+    String msg="Unexpected error: " + e.getMessage();
+    callback.onResponse(null,new SalesforceException(msg,e));
+  }
+}
