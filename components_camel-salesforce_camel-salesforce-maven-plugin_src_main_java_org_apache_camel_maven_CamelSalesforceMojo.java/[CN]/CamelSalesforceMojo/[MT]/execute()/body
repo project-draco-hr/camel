@@ -40,7 +40,7 @@
   }
   try {
     final ObjectMapper mapper=new ObjectMapper();
-    final Set<String> objectNames=new HashSet<String>();
+    final Set<String> objectNames=new TreeSet<String>();
     final SyncResponseCallback callback=new SyncResponseCallback();
     try {
       getLog().info("Getting Salesforce Objects...");
@@ -114,9 +114,9 @@
       getLog().warn(String.format("Generating Java classes for all %s Objects, this may take a while...",objectNames.size()));
     }
     final Set<SObjectDescription> descriptions=new HashSet<SObjectDescription>();
-    try {
-      getLog().info("Retrieving Object descriptions...");
-      for (      String name : objectNames) {
+    getLog().info("Retrieving Object descriptions...");
+    for (    String name : objectNames) {
+      try {
         callback.reset();
         restClient.getDescription(name,callback);
         if (!callback.await(TIMEOUT,TimeUnit.MILLISECONDS)) {
@@ -128,10 +128,10 @@
         }
         descriptions.add(mapper.readValue(callback.getResponse(),SObjectDescription.class));
       }
-    }
- catch (    Exception e) {
-      String msg="Error getting SObject description " + e.getMessage();
-      throw new MojoExecutionException(msg,e);
+ catch (      Exception e) {
+        String msg="Error getting SObject description for '" + name + "': "+ e.getMessage();
+        throw new MojoExecutionException(msg,e);
+      }
     }
     if (!packageName.matches(PACKAGE_NAME_PATTERN)) {
       throw new MojoExecutionException("Invalid package name " + packageName);
