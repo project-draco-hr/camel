@@ -4,6 +4,7 @@
   long lastModified=Long.MIN_VALUE;
   long length=Long.MIN_VALUE;
   StopWatch watch=new StopWatch();
+  long startTime=(new Date()).getTime();
   while (!exclusive) {
     if (timeout > 0) {
       long delta=watch.taken();
@@ -32,7 +33,9 @@
     }
     LOG.trace("Previous last modified: " + lastModified + ", new last modified: "+ newLastModified);
     LOG.trace("Previous length: " + length + ", new length: "+ newLength);
-    if (length >= minLength && (newLastModified == lastModified && newLength == length)) {
+    long newOlderThan=startTime + watch.taken() - minAge;
+    LOG.trace("New older than threshold: {}",newOlderThan);
+    if (newLength >= minLength && ((minAge == 0 && newLastModified == lastModified && newLength == length) || (minAge != 0 && newLastModified < newOlderThan))) {
       LOG.trace("Read lock acquired.");
       exclusive=true;
     }
