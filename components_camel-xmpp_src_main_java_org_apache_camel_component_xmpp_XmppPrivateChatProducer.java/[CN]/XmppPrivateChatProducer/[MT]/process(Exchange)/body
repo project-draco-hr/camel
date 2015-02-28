@@ -7,7 +7,7 @@
       this.reconnect();
     }
   }
- catch (  XMPPException e) {
+ catch (  Exception e) {
     throw new RuntimeException("Could not connect to XMPP server.",e);
   }
   String participant=exchange.getIn().getHeader(XmppConstants.TO,String.class);
@@ -18,7 +18,7 @@
  else {
     thread="Chat:" + participant + ":"+ endpoint.getUser();
   }
-  ChatManager chatManager=connection.getChatManager();
+  ChatManager chatManager=ChatManager.getInstanceFor(connection);
   Chat chat=getOrCreateChat(chatManager,participant,thread);
   Message message=null;
   try {
@@ -32,10 +32,7 @@
     }
     chat.sendMessage(message);
   }
- catch (  XMPPException xmppe) {
-    throw new RuntimeExchangeException("Could not send XMPP message: to " + participant + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,xmppe);
-  }
-catch (  Exception e) {
+ catch (  Exception e) {
     throw new RuntimeExchangeException("Could not send XMPP message to " + participant + " from "+ endpoint.getUser()+ " : "+ message+ " to: "+ XmppEndpoint.getConnectionMessage(connection),exchange,e);
   }
 }

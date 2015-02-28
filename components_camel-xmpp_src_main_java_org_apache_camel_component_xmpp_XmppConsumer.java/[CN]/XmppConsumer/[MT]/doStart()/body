@@ -2,20 +2,20 @@
   try {
     connection=endpoint.createConnection();
   }
- catch (  XMPPException e) {
+ catch (  SmackException e) {
     if (endpoint.isTestConnectionOnStartup()) {
       throw new RuntimeException("Could not connect to XMPP server.",e);
     }
  else {
-      LOG.warn(XmppEndpoint.getXmppExceptionLogMessage(e));
+      LOG.warn(e.getMessage());
       if (getExceptionHandler() != null) {
-        getExceptionHandler().handleException(XmppEndpoint.getXmppExceptionLogMessage(e),e);
+        getExceptionHandler().handleException(e.getMessage(),e);
       }
       scheduleDelayedStart();
       return;
     }
   }
-  chatManager=connection.getChatManager();
+  chatManager=ChatManager.getInstanceFor(connection);
   chatManager.addChatListener(this);
   OrFilter pubsubPacketFilter=new OrFilter();
   if (endpoint.isPubsub()) {
@@ -32,21 +32,20 @@
       privateChat.addMessageListener(this);
     }
  else {
-      privateChat=connection.getChatManager().createChat(endpoint.getParticipant(),endpoint.getChatId(),this);
+      privateChat=ChatManager.getInstanceFor(connection).createChat(endpoint.getParticipant(),endpoint.getChatId(),this);
       if (LOG.isDebugEnabled()) {
         LOG.debug("Opening private chat to " + privateChat.getParticipant());
       }
     }
   }
  else {
-    final ToContainsFilter toFilter=new ToContainsFilter(endpoint.getParticipant());
-    final AndFilter packetFilter=new AndFilter(new PacketTypeFilter(Presence.class),toFilter);
+    final AndFilter packetFilter=new AndFilter(new PacketTypeFilter(Presence.class));
     connection.addPacketListener(this,packetFilter);
     muc=new MultiUserChat(connection,endpoint.resolveRoom(connection));
     muc.addMessageListener(this);
     DiscussionHistory history=new DiscussionHistory();
     history.setMaxChars(0);
-    muc.join(endpoint.getNickname(),null,history,SmackConfiguration.getPacketReplyTimeout());
+    muc.join(endpoint.getNickname(),null,history,SmackConfiguration.getDefaultPacketReplyTimeout());
     if (LOG.isInfoEnabled()) {
       LOG.info("Joined room: {} as: {}",muc.getRoom(),endpoint.getNickname());
     }
