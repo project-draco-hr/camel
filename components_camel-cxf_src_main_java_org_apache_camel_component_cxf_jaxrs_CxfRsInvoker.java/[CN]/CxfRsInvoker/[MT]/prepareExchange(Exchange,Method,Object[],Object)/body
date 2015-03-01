@@ -1,0 +1,19 @@
+{
+  ExchangePattern ep=ExchangePattern.InOut;
+  if (method.getReturnType() == Void.class) {
+    ep=ExchangePattern.InOnly;
+  }
+  final org.apache.camel.Exchange camelExchange=endpoint.createExchange(ep);
+  if (response != null) {
+    camelExchange.getOut().setBody(response);
+  }
+  CxfRsBinding binding=endpoint.getBinding();
+  binding.populateExchangeFromCxfRsRequest(cxfExchange,camelExchange,method,paramArray);
+  if (endpoint.isPropagateContexts()) {
+    camelExchange.setProperty(UriInfo.class.getName(),new UriInfoImpl(cxfExchange.getInMessage()));
+    camelExchange.setProperty(Request.class.getName(),new RequestImpl(cxfExchange.getInMessage()));
+    camelExchange.setProperty(HttpHeaders.class.getName(),new HttpHeadersImpl(cxfExchange.getInMessage()));
+    camelExchange.setProperty(SecurityContext.class.getName(),new SecurityContextImpl(cxfExchange.getInMessage()));
+  }
+  return camelExchange;
+}
