@@ -1,13 +1,6 @@
 {
   Exchange exchange=consumer.endpoint.createRabbitExchange(envelope,properties,body);
   mergeAmqpProperties(exchange,properties);
-  Message msg;
-  if (exchange.hasOut()) {
-    msg=exchange.getOut();
-  }
- else {
-    msg=exchange.getIn();
-  }
   boolean sendReply=properties.getReplyTo() != null;
   if (sendReply && !exchange.getPattern().isOutCapable()) {
     exchange.setPattern(ExchangePattern.InOut);
@@ -19,6 +12,13 @@
   }
  catch (  Exception e) {
     exchange.setException(e);
+  }
+  Message msg;
+  if (exchange.hasOut()) {
+    msg=exchange.getOut();
+  }
+ else {
+    msg=exchange.getIn();
   }
   if (!exchange.isFailed()) {
     if (sendReply && exchange.getPattern().isOutCapable()) {
