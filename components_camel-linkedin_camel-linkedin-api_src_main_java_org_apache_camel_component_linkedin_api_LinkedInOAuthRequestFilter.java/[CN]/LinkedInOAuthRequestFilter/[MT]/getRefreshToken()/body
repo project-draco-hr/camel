@@ -21,6 +21,10 @@
       url=String.format(AUTHORIZATION_URL_WITH_SCOPE,oAuthParams.getClientId(),csrfId,builder.toString(),encodedRedirectUri);
     }
     final HtmlPage authPage=webClient.getPage(url);
+    final HtmlDivision div=authPage.getFirstByXPath("//div[@role='alert']");
+    if (div != null) {
+      throw new IllegalArgumentException("Error authorizing application: " + div.getTextContent());
+    }
     final HtmlForm loginForm=authPage.getFormByName("oauth2SAuthorizeForm");
     final HtmlTextInput login=loginForm.getInputByName("session_key");
     login.setText(oAuthParams.getUserName());
