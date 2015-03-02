@@ -6,9 +6,20 @@
   }
   Class<?> targetModel=endpoint.getCamelContext().getClassResolver().resolveClass(endpoint.getConfiguration().getTargetModel());
   Message msg=exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+  String sourceType=endpoint.getConfiguration().getSourceModel();
+  if (sourceType != null) {
+    LOG.debug("Converting to source model {}.",sourceType);
+    Class<?> sourceModel=endpoint.getCamelContext().getClassResolver().resolveClass(sourceType);
+    if (sourceModel == null) {
+      throw new Exception("Unable to load sourceModel class: " + sourceType);
+    }
+    msg.setBody(msg.getBody(sourceModel));
+  }
   LOG.debug("Mapping to target model {}.",targetModel.getName());
   Object targetObject=endpoint.getMapper().map(msg.getBody(),targetModel);
-  endpoint.getMapper().map(endpoint.getLiteralMapper(),targetObject);
+  endpoint.getMapper().map(endpoint.getVariableMapper(),targetObject);
+  endpoint.getExpressionMapper().setCurrentExchange(exchange);
+  endpoint.getMapper().map(endpoint.getExpressionMapper(),targetObject);
   msg.setBody(targetObject);
   exchange.setIn(msg);
   String marshalId=endpoint.getConfiguration().getMarshalId();
