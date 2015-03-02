@@ -16,6 +16,13 @@
 catch (  IOException e) {
     throw ObjectHelper.wrapRuntimeCamelException(e);
   }
+  new WebConnectionWrapper(webClient){
+    @Override public WebResponse getResponse(    WebRequest request) throws IOException {
+      request.setAdditionalHeader(HttpHeaders.ACCEPT_ENCODING,"identity");
+      return super.getResponse(request);
+    }
+  }
+;
   final Map<String,Object> httpParams=configuration.getHttpParams();
   if (httpParams != null && httpParams.get(ConnRoutePNames.DEFAULT_PROXY) != null) {
     final HttpHost proxyHost=(HttpHost)httpParams.get(ConnRoutePNames.DEFAULT_PROXY);
@@ -28,6 +35,11 @@ catch (  IOException e) {
     OAuthWebViewData viewData=new OAuthWebViewData(boxClient.getOAuthDataController());
     viewData.setOptionalState(String.valueOf(csrfId));
     final HtmlPage authPage=webClient.getPage(viewData.buildUrl().toString());
+    final HtmlDivision div=authPage.getFirstByXPath("//div[contains(concat(' ', @class, ' '), ' error_message ')]");
+    if (div != null) {
+      final String errorMessage=div.getTextContent().replaceAll("\\s+"," ").replaceAll(" Show Error Details",":").trim();
+      throw new IllegalArgumentException("Error authorizing application: " + errorMessage);
+    }
     final HtmlForm loginForm=authPage.getFormByName("login_form");
     final HtmlTextInput login=loginForm.getInputByName("login");
     login.setText(configuration.getUserName());
