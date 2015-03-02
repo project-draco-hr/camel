@@ -2,39 +2,15 @@
   Map<String,String> result=new HashMap<String,String>();
   final Document dom=readXML(new File(xmlLocation));
   final XPath xPath=XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI,"com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl",null).newXPath();
-  xPath.setNamespaceContext(new NamespaceContext(){
-    @Override public String getNamespaceURI(    String prefix){
-switch (prefix) {
-case "scr":
-        try {
-          XPathExpression scrNamespace=xPath.compile("/*/namespace::*[name()='scr']");
-          Node node=(Node)scrNamespace.evaluate(dom,XPathConstants.NODE);
-          return node.getNodeValue();
-        }
- catch (        XPathExpressionException e) {
-          LOG.debug("Error evaluating xpath to obtain namespace prefix. This exception is ignored and using namespace: http://www.osgi.org/xmlns/scr/v1.1.0",e);
-        }
-      return "http://www.osgi.org/xmlns/scr/v1.1.0";
-default :
+  xPath.setNamespaceContext(new ScrNamespaceContext(dom,xPath));
+  String propertyListExpression=String.format("/components/scr:component[@name='%s']/property",componentName);
+  XPathExpression propertyList=xPath.compile(propertyListExpression);
+  XPathExpression propertyName=xPath.compile("@name");
+  XPathExpression propertyValue=xPath.compile("@value");
+  NodeList nodes=(NodeList)propertyList.evaluate(dom,XPathConstants.NODESET);
+  for (int i=0; i < nodes.getLength(); i++) {
+    Node node=nodes.item(i);
+    result.put((String)propertyName.evaluate(node,XPathConstants.STRING),(String)propertyValue.evaluate(node,XPathConstants.STRING));
   }
-  return XMLConstants.NULL_NS_URI;
-}
-@Override public String getPrefix(String namespaceURI){
-  return null;
-}
-@Override public Iterator<String> getPrefixes(String namespaceURI){
-  return null;
-}
-}
-);
-String propertyListExpression=String.format("/components/scr:component[@name='%s']/property",componentName);
-XPathExpression propertyList=xPath.compile(propertyListExpression);
-XPathExpression propertyName=xPath.compile("@name");
-XPathExpression propertyValue=xPath.compile("@value");
-NodeList nodes=(NodeList)propertyList.evaluate(dom,XPathConstants.NODESET);
-for (int i=0; i < nodes.getLength(); i++) {
-Node node=nodes.item(i);
-result.put((String)propertyName.evaluate(node,XPathConstants.STRING),(String)propertyValue.evaluate(node,XPathConstants.STRING));
-}
-return result;
+  return result;
 }
