@@ -1,0 +1,14 @@
+{
+  camelContext.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(Exception.class).markRollbackOnly();
+      from("direct:start").transacted("PROPAGATION_REQUIRES_NEW").to("activemq:queue:start");
+      from("activemq:queue:result1").transacted("PROPAGATION_REQUIRES_NEW").to("mock:result1");
+      from("activemq:queue:result2").transacted("PROPAGATION_REQUIRES_NEW").to("mock:result2");
+      from("activemq:queue:ActiveMQ.DLQ").transacted("PROPAGATION_REQUIRES_NEW").to("mock:dlq");
+      from("activemq:queue:start").transacted("PROPAGATION_REQUIRES_NEW").setExchangePattern(ExchangePattern.InOnly).to("activemq:queue:result1").to("direct:route2").choice().when(body().contains("Neverland")).throwException(new RuntimeException("Expected!"));
+      from("direct:route2").transacted("PROPAGATION_REQUIRES_NEW").setExchangePattern(ExchangePattern.InOnly).to("activemq:queue:result2");
+    }
+  }
+);
+}
