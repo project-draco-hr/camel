@@ -1,0 +1,35 @@
+{
+  if (!canTest()) {
+    return;
+  }
+  final Path file=new Path(new File("target/test/test-camel-boolean").getAbsolutePath());
+  Configuration conf=new Configuration();
+  SequenceFile.Writer writer=createWriter(conf,file,NullWritable.class,BooleanWritable.class);
+  NullWritable keyWritable=NullWritable.get();
+  BooleanWritable valueWritable=new BooleanWritable();
+  valueWritable.set(true);
+  writer.append(keyWritable,valueWritable);
+  writer.sync();
+  writer.close();
+  context.addRoutes(new RouteBuilder(){
+    public void configure(){
+      from("hdfs2:///" + file.getParent().toUri() + "?consumerProperties=#cprops&pattern=*&fileSystemType=LOCAL&fileType=SEQUENCE_FILE&initialDelay=0&readSuffix=handled").to("mock:result");
+    }
+  }
+);
+  Map<String,Object> props=new HashMap<String,Object>();
+  ScheduledExecutorService pool=context.getExecutorServiceManager().newScheduledThreadPool(null,"unitTestPool",1);
+  DefaultScheduledPollConsumerScheduler scheduler=new DefaultScheduledPollConsumerScheduler(pool);
+  props.put("scheduler",scheduler);
+  ((JndiRegistry)((PropertyPlaceholderDelegateRegistry)context.getRegistry()).getRegistry()).bind("cprops",props);
+  context.start();
+  MockEndpoint resultEndpoint=context.getEndpoint("mock:result",MockEndpoint.class);
+  resultEndpoint.expectedMessageCount(1);
+  resultEndpoint.assertIsSatisfied();
+  scheduler.getScheduledExecutorService().shutdown();
+  scheduler.getScheduledExecutorService().awaitTermination(5000,TimeUnit.MILLISECONDS);
+  Set<String> files=new HashSet<String>(Arrays.asList(new File("target/test").list()));
+  assertThat(files.size(),equalTo(2));
+  assertTrue(files.remove("test-camel-boolean.handled"));
+  assertTrue(files.remove(".test-camel-boolean.handled.crc"));
+}
