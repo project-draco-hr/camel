@@ -3,10 +3,10 @@
   MockEndpoint mock=getMockEndpoint("mock:zipToFile");
   mock.expectedMessageCount(1);
   File file=new File(TEST_DIR,"poem.txt.zip");
-  assertFalse(file.exists());
+  assertFalse("The zip should not exit.",file.exists());
   template.sendBodyAndHeader("direct:zipToFile",TEXT,FILE_NAME,"poem.txt");
   mock.assertIsSatisfied();
-  assertTrue(notify.matches(5,TimeUnit.SECONDS));
-  assertTrue(file.exists());
-  assertTrue(ObjectHelper.equalByteArray(getZippedText("poem.txt"),getBytes(file)));
+  assertTrue("The exchange is not done in time.",notify.matches(5,TimeUnit.SECONDS));
+  assertTrue("The file should exist.",file.exists());
+  assertTrue("Get a wrong message content.",ObjectHelper.equalByteArray(getZippedText("poem.txt"),getBytes(file)));
 }
