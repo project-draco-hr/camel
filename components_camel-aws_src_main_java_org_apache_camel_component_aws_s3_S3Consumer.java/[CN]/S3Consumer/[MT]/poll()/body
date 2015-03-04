@@ -15,7 +15,13 @@
     listObjectsRequest.setBucketName(bucketName);
     listObjectsRequest.setPrefix(getConfiguration().getPrefix());
     listObjectsRequest.setMaxKeys(maxMessagesPerPoll);
+    if (marker != null && !getConfiguration().isDeleteAfterRead()) {
+      listObjectsRequest.setMarker(marker);
+    }
     ObjectListing listObjects=getAmazonS3Client().listObjects(listObjectsRequest);
+    if (!getConfiguration().isDeleteAfterRead()) {
+      marker=listObjects.getMarker();
+    }
     if (LOG.isTraceEnabled()) {
       LOG.trace("Found {} objects in bucket [{}]...",listObjects.getObjectSummaries().size(),bucketName);
     }
