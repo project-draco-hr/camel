@@ -1,7 +1,4 @@
 {
-  if (exchange.getProperty(AggregationStrategy.IS_COMPLETE) == Boolean.TRUE) {
-    return "strategy";
-  }
   if (isCompletionFromBatchConsumer()) {
     batchConsumerCorrelationKeys.add(key);
     batchConsumerCounter.incrementAndGet();
@@ -10,6 +7,9 @@
       batchConsumerCounter.set(0);
       return "consumer";
     }
+  }
+  if (exchange.getProperty(Exchange.AGGREGATION_COMPLETE_CURRENT_GROUP,false,boolean.class)) {
+    return "strategy";
   }
   if (getCompletionPredicate() != null) {
     boolean answer=getCompletionPredicate().matches(exchange);
