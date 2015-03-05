@@ -1,11 +1,21 @@
 {
+  boolean sync=true;
   try {
-    getProcessor().process(exchange);
+    sync=getAsyncProcessor().process(exchange,new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+        if (exchange.getException() != null) {
+          getExceptionHandler().handleException("Error processing exchange.",exchange,exchange.getException());
+        }
+      }
+    }
+);
   }
  catch (  Throwable e) {
     exchange.setException(e);
   }
-  if (exchange.getException() != null) {
-    getExceptionHandler().handleException("Error processing exchange.",exchange,exchange.getException());
+  if (sync) {
+    if (exchange.getException() != null) {
+      getExceptionHandler().handleException("Error processing exchange.",exchange,exchange.getException());
+    }
   }
 }
