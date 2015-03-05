@@ -1,6 +1,6 @@
 {
   result.expectedMessageCount(1);
-  Exchange exchange=templateKeep.send("direct:startKeep",ExchangePattern.InOnly,new Processor(){
+  Exchange exchange=templateDelete.send("direct:startDelete",ExchangePattern.InOnly,new Processor(){
     public void process(    Exchange exchange) throws Exception {
       exchange.getIn().setHeader(S3Constants.KEY,"CamelUnitTest");
       exchange.getIn().setBody(testFile);
@@ -8,9 +8,9 @@
   }
 );
   assertMockEndpointsSatisfied();
-  assertResultExchange(result.getExchanges().get(0));
+  assertResultExchange(result.getExchanges().get(0),true);
   PutObjectRequest putObjectRequest=client.putObjectRequests.get(0);
-  assertEquals("mycamelbucket",putObjectRequest.getBucketName());
+  assertEquals(getCamelBucket(),putObjectRequest.getBucketName());
   assertResponseMessage(exchange.getIn());
-  assertFileExists(testFile.getAbsolutePath());
+  assertFileNotExists(testFile.getAbsolutePath());
 }

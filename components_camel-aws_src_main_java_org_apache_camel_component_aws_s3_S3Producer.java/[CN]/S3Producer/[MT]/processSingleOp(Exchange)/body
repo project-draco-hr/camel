@@ -1,6 +1,7 @@
 {
   ObjectMetadata objectMetadata=determineMetadata(exchange);
   File filePayload=null;
+  InputStream is=null;
   Object obj=exchange.getIn().getMandatoryBody();
   PutObjectRequest putObjectRequest=null;
   if (obj instanceof WrappedFile) {
@@ -8,12 +9,12 @@
   }
   if (obj instanceof File) {
     filePayload=(File)obj;
-    putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),filePayload);
-    putObjectRequest.setMetadata(objectMetadata);
+    is=new FileInputStream(filePayload);
   }
  else {
-    putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),exchange.getIn().getMandatoryBody(InputStream.class),objectMetadata);
+    is=exchange.getIn().getMandatoryBody(InputStream.class);
   }
+  putObjectRequest=new PutObjectRequest(getConfiguration().getBucketName(),determineKey(exchange),is,objectMetadata);
   String storageClass=determineStorageClass(exchange);
   if (storageClass != null) {
     putObjectRequest.setStorageClass(storageClass);
@@ -37,6 +38,7 @@
   }
   if (getConfiguration().isDeleteAfterWrite() && filePayload != null) {
     IOHelper.close(putObjectRequest.getInputStream());
+    IOHelper.close(is);
     FileUtil.deleteFile(filePayload);
   }
 }
