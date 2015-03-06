@@ -1,45 +1,48 @@
 {
   Elements elementUtils=processingEnv.getElementUtils();
   while (true) {
-    List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
-    for (    VariableElement fieldElement : fieldElements) {
-      String fieldName=fieldElement.getSimpleName().toString();
-      boolean deprecated=fieldElement.getAnnotation(Deprecated.class) != null;
-      Metadata metadata=fieldElement.getAnnotation(Metadata.class);
-      if ("endpointClass".equals(fieldName) || "camelContext".equals(fieldName)) {
+    List<ExecutableElement> methods=ElementFilter.methodsIn(classElement.getEnclosedElements());
+    for (    ExecutableElement method : methods) {
+      String methodName=method.getSimpleName().toString();
+      boolean deprecated=method.getAnnotation(Deprecated.class) != null;
+      Metadata metadata=method.getAnnotation(Metadata.class);
+      boolean isSetter=methodName.startsWith("set") && method.getParameters().size() == 1 & method.getReturnType().getKind().equals(TypeKind.VOID);
+      if (!isSetter) {
         continue;
       }
-      ExecutableElement getter=findGetter(fieldName,classElement);
-      ExecutableElement setter=findSetter(fieldName,classElement);
-      if (getter != null && setter != null) {
-        String name=fieldName;
-        name=prefix + name;
-        TypeMirror fieldType=fieldElement.asType();
-        String fieldTypeName=fieldType.toString();
-        TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-        String required=metadata != null ? metadata.required() : null;
-        String label=metadata != null ? metadata.label() : null;
-        String defaultValue=metadata != null ? metadata.defaultValue() : null;
-        String defaultValueNote=null;
-        String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,name,classElement,false);
-        if (docComment == null) {
-          docComment="";
-        }
-        Set<String> enums=new LinkedHashSet<String>();
-        boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
-        if (isEnum) {
-          TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
-          List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
-          for (          VariableElement var : fields) {
-            if (var.getKind() == ElementKind.ENUM_CONSTANT) {
-              String val=var.toString();
-              enums.add(val);
-            }
+      if ("setEndpointClass".equals(methodName) || "setCamelContext".equals(methodName)) {
+        continue;
+      }
+      String fieldName=methodName.substring(3);
+      fieldName=fieldName.substring(0,1).toLowerCase() + fieldName.substring(1);
+      ExecutableElement setter=method;
+      String name=fieldName;
+      name=prefix + name;
+      TypeMirror fieldType=setter.getParameters().get(0).asType();
+      String fieldTypeName=fieldType.toString();
+      TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
+      String required=metadata != null ? metadata.required() : null;
+      String label=metadata != null ? metadata.label() : null;
+      String defaultValue=metadata != null ? metadata.defaultValue() : null;
+      String defaultValueNote=null;
+      String docComment=findJavaDoc(elementUtils,method,fieldName,name,classElement,false);
+      if (docComment == null) {
+        docComment="";
+      }
+      Set<String> enums=new LinkedHashSet<String>();
+      boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
+      if (isEnum) {
+        TypeElement enumClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+        List<VariableElement> fields=ElementFilter.fieldsIn(enumClass.getEnclosedElements());
+        for (        VariableElement var : fields) {
+          if (var.getKind() == ElementKind.ENUM_CONSTANT) {
+            String val=var.toString();
+            enums.add(val);
           }
         }
-        ComponentOption option=new ComponentOption(name,fieldTypeName,required,defaultValue,defaultValueNote,docComment.trim(),deprecated,label,isEnum,enums);
-        componentOptions.add(option);
       }
+      ComponentOption option=new ComponentOption(name,fieldTypeName,required,defaultValue,defaultValueNote,docComment.trim(),deprecated,label,isEnum,enums);
+      componentOptions.add(option);
     }
     TypeElement baseTypeElement=null;
     TypeMirror superclass=classElement.getSuperclass();
