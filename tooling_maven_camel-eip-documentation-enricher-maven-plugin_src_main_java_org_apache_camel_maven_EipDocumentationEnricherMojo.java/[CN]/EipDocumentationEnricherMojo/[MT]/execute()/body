@@ -1,20 +1,20 @@
 {
   Set<String> injectedTypes=new HashSet<String>();
   File rootDir=new File(camelCoreDir,Constants.PATH_TO_MODEL_DIR);
-  DomFinder domFinder=new DomFinder();
-  DocumentationEnricher documentationEnricher=new DocumentationEnricher();
-  Map<String,File> jsonFiles=PackageHelper.findJsonFiles(rootDir);
-  XPath xPath=buildXPath(new CamelSpringNamespace());
   Document document=buildNamespaceAwareDocument(inputCamelSchemaFile);
+  XPath xPath=buildXPath(new CamelSpringNamespace());
+  DomFinder domFinder=new DomFinder(document,xPath);
+  DocumentationEnricher documentationEnricher=new DocumentationEnricher(document);
+  Map<String,File> jsonFiles=PackageHelper.findJsonFiles(rootDir);
   try {
-    NodeList elementsAndTypes=domFinder.findElementsAndTypes(document,xPath);
-    documentationEnricher.enrichTopLevelElementsDocumentation(document,elementsAndTypes,jsonFiles);
+    NodeList elementsAndTypes=domFinder.findElementsAndTypes();
+    documentationEnricher.enrichTopLevelElementsDocumentation(elementsAndTypes,jsonFiles);
     Map<String,String> typeToNameMap=buildTypeToNameMap(elementsAndTypes);
     for (    Map.Entry<String,String> entry : typeToNameMap.entrySet()) {
       String elementType=entry.getKey();
       String elementName=entry.getValue();
       if (jsonFileExistsForElement(jsonFiles,elementName)) {
-        injectAttributesDocumentation(domFinder,documentationEnricher,jsonFiles.get(elementName),xPath,document,elementType,injectedTypes);
+        injectAttributesDocumentation(domFinder,documentationEnricher,jsonFiles.get(elementName),elementType,injectedTypes);
       }
     }
     saveToFile(document,outputCamelSchemaFile,buildTransformer());
