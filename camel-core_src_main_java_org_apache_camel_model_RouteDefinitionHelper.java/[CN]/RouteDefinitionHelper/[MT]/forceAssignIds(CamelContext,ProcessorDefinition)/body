@@ -1,11 +1,17 @@
 {
   processor.idOrCreate(context.getNodeIdFactory());
   if (processor.hasCustomIdAssigned()) {
-    String id=processor.getId();
     try {
-      id=context.resolvePropertyPlaceholders(id);
-      if (!processor.getId().equals(id)) {
+      final String originalId=processor.getId();
+      String id=context.resolvePropertyPlaceholders(originalId);
+      if (!originalId.equals(id)) {
         processor.setId(id);
+        ProcessorDefinitionHelper.addPropertyPlaceholdersChangeRevertAction(new Runnable(){
+          @Override public void run(){
+            processor.setId(originalId);
+          }
+        }
+);
       }
     }
  catch (    Exception e) {

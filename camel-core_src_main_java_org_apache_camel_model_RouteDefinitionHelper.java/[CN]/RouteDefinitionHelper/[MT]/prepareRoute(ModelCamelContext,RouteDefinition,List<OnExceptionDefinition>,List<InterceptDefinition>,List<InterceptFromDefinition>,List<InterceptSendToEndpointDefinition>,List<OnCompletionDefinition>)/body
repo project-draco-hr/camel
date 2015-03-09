@@ -1,16 +1,9 @@
 {
-  initRouteInputs(context,route.getInputs());
-  List<ProcessorDefinition<?>> abstracts=new ArrayList<ProcessorDefinition<?>>();
-  List<ProcessorDefinition<?>> upper=new ArrayList<ProcessorDefinition<?>>();
-  List<ProcessorDefinition<?>> lower=new ArrayList<ProcessorDefinition<?>>();
-  RouteDefinitionHelper.prepareRouteForInit(route,abstracts,lower);
-  initParentAndErrorHandlerBuilder(context,route,abstracts,onExceptions);
-  validateTopLevel(route.getOutputs());
-  initInterceptors(context,route,abstracts,upper,intercepts,interceptFromDefinitions,interceptSendToEndpointDefinitions);
-  initOnCompletions(abstracts,upper,onCompletions);
-  initTransacted(abstracts,lower);
-  initOnExceptions(abstracts,upper,onExceptions);
-  route.clearOutput();
-  route.getOutputs().addAll(lower);
-  route.getOutputs().addAll(0,upper);
+  Runnable propertyPlaceholdersChangeReverter=ProcessorDefinitionHelper.createPropertyPlaceholdersChangeReverter();
+  try {
+    prepareRouteImp(context,route,onExceptions,intercepts,interceptFromDefinitions,interceptSendToEndpointDefinitions,onCompletions);
+  }
+  finally {
+    propertyPlaceholdersChangeReverter.run();
+  }
 }

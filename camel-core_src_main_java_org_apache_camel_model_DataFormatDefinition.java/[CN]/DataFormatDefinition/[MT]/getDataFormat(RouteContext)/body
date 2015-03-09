@@ -1,17 +1,23 @@
 {
   if (dataFormat == null) {
+    Runnable propertyPlaceholdersChangeReverter=ProcessorDefinitionHelper.createPropertyPlaceholdersChangeReverter();
     try {
       ProcessorDefinitionHelper.resolvePropertyPlaceholders(routeContext.getCamelContext(),this);
     }
  catch (    Exception e) {
       throw new IllegalArgumentException("Error resolving property placeholders on data format: " + this,e);
     }
-    dataFormat=createDataFormat(routeContext);
-    if (dataFormat != null) {
-      configureDataFormat(dataFormat,routeContext.getCamelContext());
-    }
+    try {
+      dataFormat=createDataFormat(routeContext);
+      if (dataFormat != null) {
+        configureDataFormat(dataFormat,routeContext.getCamelContext());
+      }
  else {
-      throw new IllegalArgumentException("Data format '" + (dataFormatName != null ? dataFormatName : "<null>") + "' could not be created. "+ "Ensure that the data format is valid and the associated Camel component is present on the classpath");
+        throw new IllegalArgumentException("Data format '" + (dataFormatName != null ? dataFormatName : "<null>") + "' could not be created. "+ "Ensure that the data format is valid and the associated Camel component is present on the classpath");
+      }
+    }
+  finally {
+      propertyPlaceholdersChangeReverter.run();
     }
   }
   return dataFormat;

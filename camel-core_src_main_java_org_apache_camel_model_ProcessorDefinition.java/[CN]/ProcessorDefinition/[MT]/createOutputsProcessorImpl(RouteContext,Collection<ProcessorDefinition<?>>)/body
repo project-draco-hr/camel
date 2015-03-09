@@ -1,0 +1,33 @@
+{
+  List<Processor> list=new ArrayList<Processor>();
+  for (  ProcessorDefinition<?> output : outputs) {
+    output.preCreateProcessor();
+    ProcessorDefinitionHelper.resolvePropertyPlaceholders(routeContext.getCamelContext(),output);
+    ProcessorDefinitionHelper.resolveKnownConstantFields(output);
+    ProcessorDefinition<?> me=(ProcessorDefinition<?>)output;
+    if (me instanceof ExpressionNode) {
+      ExpressionNode exp=(ExpressionNode)me;
+      ExpressionDefinition expressionDefinition=exp.getExpression();
+      if (expressionDefinition != null) {
+        ProcessorDefinitionHelper.resolvePropertyPlaceholders(routeContext.getCamelContext(),expressionDefinition);
+        ProcessorDefinitionHelper.resolveKnownConstantFields(expressionDefinition);
+      }
+    }
+    Processor processor=createProcessor(routeContext,output);
+    if (output instanceof Channel && processor == null) {
+      continue;
+    }
+    Processor channel=wrapChannel(routeContext,processor,output);
+    list.add(channel);
+  }
+  Processor processor=null;
+  if (!list.isEmpty()) {
+    if (list.size() == 1) {
+      processor=list.get(0);
+    }
+ else {
+      processor=createCompositeProcessor(routeContext,list);
+    }
+  }
+  return processor;
+}

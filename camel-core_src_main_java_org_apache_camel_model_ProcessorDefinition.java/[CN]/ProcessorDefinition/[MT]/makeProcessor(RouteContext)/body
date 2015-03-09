@@ -1,25 +1,9 @@
 {
-  Processor processor=null;
-  preCreateProcessor();
-  ProcessorDefinitionHelper.resolvePropertyPlaceholders(routeContext.getCamelContext(),this);
-  ProcessorDefinitionHelper.resolveKnownConstantFields(this);
-  ProcessorDefinition<?> me=(ProcessorDefinition<?>)this;
-  if (me instanceof ExpressionNode) {
-    ExpressionNode exp=(ExpressionNode)me;
-    ExpressionDefinition expressionDefinition=exp.getExpression();
-    if (expressionDefinition != null) {
-      ProcessorDefinitionHelper.resolvePropertyPlaceholders(routeContext.getCamelContext(),expressionDefinition);
-      ProcessorDefinitionHelper.resolveKnownConstantFields(expressionDefinition);
-    }
+  Runnable propertyPlaceholdersChangeReverter=ProcessorDefinitionHelper.createPropertyPlaceholdersChangeReverter();
+  try {
+    return makeProcessorImpl(routeContext);
   }
-  if (routeContext.getCamelContext().getProcessorFactory() != null) {
-    processor=routeContext.getCamelContext().getProcessorFactory().createProcessor(routeContext,this);
+  finally {
+    propertyPlaceholdersChangeReverter.run();
   }
-  if (processor == null) {
-    processor=createProcessor(routeContext);
-  }
-  if (processor == null) {
-    return null;
-  }
-  return wrapProcessor(routeContext,processor);
 }

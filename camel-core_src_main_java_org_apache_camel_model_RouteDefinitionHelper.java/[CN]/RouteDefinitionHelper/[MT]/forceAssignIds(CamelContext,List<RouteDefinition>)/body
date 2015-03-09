@@ -1,16 +1,22 @@
 {
   Set<String> customIds=new HashSet<String>();
-  for (  RouteDefinition route : routes) {
+  for (  final RouteDefinition route : routes) {
     if (route.hasCustomIdAssigned()) {
-      String id=route.getId();
-      id=context.resolvePropertyPlaceholders(id);
-      if (!route.getId().equals(id)) {
+      final String originalId=route.getId();
+      final String id=context.resolvePropertyPlaceholders(originalId);
+      if (!originalId.equals(id)) {
         route.setId(id);
+        ProcessorDefinitionHelper.addPropertyPlaceholdersChangeRevertAction(new Runnable(){
+          @Override public void run(){
+            route.setId(originalId);
+          }
+        }
+);
       }
       customIds.add(id);
     }
   }
-  for (  RouteDefinition route : routes) {
+  for (  final RouteDefinition route : routes) {
     if (route.getId() == null) {
       boolean done=false;
       String id=null;
@@ -19,6 +25,13 @@
         done=!customIds.contains(id);
       }
       route.setId(id);
+      ProcessorDefinitionHelper.addPropertyPlaceholdersChangeRevertAction(new Runnable(){
+        @Override public void run(){
+          route.setId(null);
+          route.setCustomId(false);
+        }
+      }
+);
       route.setCustomId(false);
       customIds.add(route.getId());
     }
