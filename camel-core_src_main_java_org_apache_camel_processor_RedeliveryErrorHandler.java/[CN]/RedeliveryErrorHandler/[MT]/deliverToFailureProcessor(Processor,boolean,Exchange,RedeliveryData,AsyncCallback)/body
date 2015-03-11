@@ -29,6 +29,15 @@
       }
     }
     MessageHelper.resetStreamCache(exchange.getIn());
+    if (onPrepare != null) {
+      try {
+        log.trace("OnPrepare processor {} is processing Exchange: {}",onPrepare,exchange);
+        onPrepare.process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+    }
     log.trace("Failure processor {} is processing Exchange: {}",processor,exchange);
     exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
     UnitOfWork uow=exchange.getUnitOfWork();
@@ -54,6 +63,15 @@
   }
  else {
     try {
+      if (onPrepare != null) {
+        try {
+          log.trace("OnPrepare processor {} is processing Exchange: {}",onPrepare,exchange);
+          onPrepare.process(exchange);
+        }
+ catch (        Exception e) {
+          exchange.setException(e);
+        }
+      }
       prepareExchangeAfterFailure(exchange,data,isDeadLetterChannel,shouldHandle,shouldContinue);
     }
   finally {
