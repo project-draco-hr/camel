@@ -1,28 +1,12 @@
 {
-  Set<String> injectedTypes=new HashSet<String>();
-  File rootDir=new File(camelCoreDir,Constants.PATH_TO_MODEL_DIR);
-  Document document=buildNamespaceAwareDocument(inputCamelSchemaFile);
-  XPath xPath=buildXPath(new CamelSpringNamespace());
-  DomFinder domFinder=new DomFinder(document,xPath);
-  DocumentationEnricher documentationEnricher=new DocumentationEnricher(document);
-  Map<String,File> jsonFiles=PackageHelper.findJsonFiles(rootDir);
+  validateExists(inputCamelSchemaFile,"inputCamelSchemaFile");
+  validateIsFile(inputCamelSchemaFile,"inputCamelSchemaFile");
+  validateExists(camelCoreDir,"camelCoreDir");
+  validateIsDirectory(camelCoreDir,"camelCoreDir");
   try {
-    NodeList elementsAndTypes=domFinder.findElementsAndTypes();
-    documentationEnricher.enrichTopLevelElementsDocumentation(elementsAndTypes,jsonFiles);
-    Map<String,String> typeToNameMap=buildTypeToNameMap(elementsAndTypes);
-    for (    Map.Entry<String,String> entry : typeToNameMap.entrySet()) {
-      String elementType=entry.getKey();
-      String elementName=entry.getValue();
-      if (jsonFileExistsForElement(jsonFiles,elementName)) {
-        injectAttributesDocumentation(domFinder,documentationEnricher,jsonFiles.get(elementName),elementType,injectedTypes);
-      }
-    }
-    saveToFile(document,outputCamelSchemaFile,buildTransformer());
+    runPlugin();
   }
- catch (  XPathExpressionException e) {
-    throw new MojoExecutionException("Error during documentation enrichment",e);
-  }
-catch (  IOException e) {
-    throw new MojoExecutionException("Error during documentation enrichment",e);
+ catch (  Exception e) {
+    throw new MojoExecutionException("Error during plugin execution",e);
   }
 }
