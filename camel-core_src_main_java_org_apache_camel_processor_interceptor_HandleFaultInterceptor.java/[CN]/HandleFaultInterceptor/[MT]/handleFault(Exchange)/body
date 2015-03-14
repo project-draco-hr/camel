@@ -1,8 +1,14 @@
 {
-  if (exchange.hasOut() && exchange.getOut().isFault()) {
-    final Object faultBody=exchange.getOut().getBody();
+  Message msg=exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+  if (msg.isFault()) {
+    final Object faultBody=msg.getBody();
     if (faultBody != null && exchange.getException() == null) {
-      exchange.setOut(null);
+      if (exchange.hasOut()) {
+        exchange.setOut(null);
+      }
+ else {
+        exchange.setIn(null);
+      }
       if (faultBody instanceof Throwable) {
         exchange.setException((Throwable)faultBody);
       }

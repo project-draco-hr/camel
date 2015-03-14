@@ -1,12 +1,13 @@
 {
   boolean exceptionHandled=hasExceptionBeenHandledByErrorHandler(exchange);
   if (exchange.isFailed() || exchange.isRollbackOnly() || exceptionHandled) {
-    if (exchange.hasOut() && exchange.getOut().isFault() && exchange.getException() != null) {
+    Message msg=exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+    if (msg.isFault() && exchange.getException() != null) {
       StringBuilder sb=new StringBuilder();
       sb.append("Message exchange has failed: " + message + " for exchange: ").append(exchange);
       sb.append(" Warning: Both fault and exception exists on the exchange, its best practice to only set one of them.");
       sb.append(" Exception: ").append(exchange.getException());
-      sb.append(" Fault: ").append(exchange.getOut());
+      sb.append(" Fault: ").append(msg);
       if (exceptionHandled) {
         sb.append(" Handled by the error handler.");
       }
@@ -21,8 +22,8 @@
       if (exchange.getException() != null) {
         sb.append(" Exception: ").append(exchange.getException());
       }
-      if (exchange.hasOut() && exchange.getOut().isFault()) {
-        sb.append(" Fault: ").append(exchange.getOut());
+      if (msg.isFault()) {
+        sb.append(" Fault: ").append(msg);
       }
       if (exceptionHandled) {
         sb.append(" Handled by the error handler.");

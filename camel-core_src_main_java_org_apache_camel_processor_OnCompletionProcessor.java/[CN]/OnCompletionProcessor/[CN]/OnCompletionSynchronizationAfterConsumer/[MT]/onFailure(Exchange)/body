@@ -7,7 +7,14 @@
   }
   final Exchange copy=prepareExchange(exchange);
   final Exception original=copy.getException();
+  final boolean originalFault=copy.hasOut() ? copy.getOut().isFault() : copy.getIn().isFault();
   copy.setException(null);
+  if (copy.hasOut()) {
+    copy.getOut().setFault(false);
+  }
+ else {
+    copy.getIn().setFault(false);
+  }
   if (executorService != null) {
     executorService.submit(new Callable<Exchange>(){
       public Exchange call() throws Exception {
@@ -23,5 +30,11 @@
     LOG.debug("Processing onFailure: {}",copy);
     doProcess(processor,copy);
     copy.setException(original);
+    if (copy.hasOut()) {
+      copy.getOut().setFault(originalFault);
+    }
+ else {
+      copy.getIn().setFault(originalFault);
+    }
   }
 }
