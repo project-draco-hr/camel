@@ -1,0 +1,36 @@
+{
+  URI u=new URI(uri);
+  String scheme=u.getScheme();
+  String json=componentJSonSchema(scheme);
+  if (json == null) {
+    throw new IllegalArgumentException("Cannot find endpoint with scheme " + scheme);
+  }
+  String syntax=null;
+  List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("component",json,false);
+  for (  Map<String,String> row : rows) {
+    if (row.containsKey("syntax")) {
+      syntax=row.get("syntax");
+      break;
+    }
+  }
+  if (syntax == null) {
+    throw new IllegalArgumentException("Endpoint with scheme " + scheme + " has no syntax defined in the json schema");
+  }
+  Map<String,String> answer=new LinkedHashMap<String,String>();
+  Matcher matcher=SYNTAX_PATTERN.matcher(syntax);
+  Matcher matcher2=SYNTAX_PATTERN.matcher(uri);
+  while (matcher.find() && matcher2.find()) {
+    String word=matcher.group(1);
+    String word2=matcher2.group(1);
+    if (!scheme.equals(word)) {
+      answer.put(word,word2);
+    }
+  }
+  Map<String,Object> parameters=URISupport.parseParameters(u);
+  for (  Map.Entry<String,Object> entry : parameters.entrySet()) {
+    String key=entry.getKey();
+    String value=entry.getValue() != null ? entry.getValue().toString() : "";
+    answer.put(key,value);
+  }
+  return answer;
+}

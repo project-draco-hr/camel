@@ -1,0 +1,35 @@
+{
+  String json=componentJSonSchema(scheme);
+  if (json == null) {
+    throw new IllegalArgumentException("Cannot find endpoint with scheme " + scheme);
+  }
+  String syntax=null;
+  List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("component",json,false);
+  for (  Map<String,String> row : rows) {
+    if (row.containsKey("syntax")) {
+      syntax=row.get("syntax");
+      break;
+    }
+  }
+  if (syntax == null) {
+    throw new IllegalArgumentException("Endpoint with scheme " + scheme + " has no syntax defined in the json schema");
+  }
+  Map<String,String> copy=new HashMap<String,String>();
+  for (  Map.Entry<String,String> entry : properties.entrySet()) {
+    String key=entry.getKey();
+    String value=entry.getValue() != null ? entry.getValue() : "";
+    if (syntax.contains(key)) {
+      syntax=syntax.replace(key,value);
+    }
+ else {
+      copy.put(key,value);
+    }
+  }
+  StringBuilder sb=new StringBuilder(syntax);
+  if (!copy.isEmpty()) {
+    sb.append('?');
+    String query=createQueryString(copy);
+    sb.append(query);
+  }
+  return sb.toString();
+}

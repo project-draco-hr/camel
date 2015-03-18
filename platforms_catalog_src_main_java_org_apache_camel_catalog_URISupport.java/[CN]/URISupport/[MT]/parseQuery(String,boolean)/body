@@ -1,0 +1,76 @@
+{
+  if (uri != null && uri.endsWith("&")) {
+    throw new URISyntaxException(uri,"Invalid uri syntax: Trailing & marker found. " + "Check the uri and remove the trailing & marker.");
+  }
+  if (isEmpty(uri)) {
+    return new LinkedHashMap<String,Object>(0);
+  }
+  try {
+    Map<String,Object> rc=new LinkedHashMap<String,Object>();
+    boolean isKey=true;
+    boolean isValue=false;
+    boolean isRaw=false;
+    StringBuilder key=new StringBuilder();
+    StringBuilder value=new StringBuilder();
+    for (int i=0; i < uri.length(); i++) {
+      char ch=uri.charAt(i);
+      char next;
+      if (i <= uri.length() - 2) {
+        next=uri.charAt(i + 1);
+      }
+ else {
+        next='\u0000';
+      }
+      isRaw=value.toString().startsWith(RAW_TOKEN_START);
+      if (isRaw) {
+        if (isKey) {
+          key.append(ch);
+        }
+ else         if (isValue) {
+          value.append(ch);
+        }
+        boolean end=ch == RAW_TOKEN_END.charAt(0) && (next == '&' || next == '\u0000');
+        if (end) {
+          addParameter(key.toString(),value.toString(),rc,useRaw || isRaw);
+          key.setLength(0);
+          value.setLength(0);
+          isKey=true;
+          isValue=false;
+          isRaw=false;
+          i++;
+        }
+        continue;
+      }
+      if (isKey && ch == '=') {
+        isKey=false;
+        isValue=true;
+        isRaw=false;
+        continue;
+      }
+      if (ch == '&') {
+        addParameter(key.toString(),value.toString(),rc,useRaw || isRaw);
+        key.setLength(0);
+        value.setLength(0);
+        isKey=true;
+        isValue=false;
+        isRaw=false;
+        continue;
+      }
+      if (isKey) {
+        key.append(ch);
+      }
+ else       if (isValue) {
+        value.append(ch);
+      }
+    }
+    if (key.length() > 0) {
+      addParameter(key.toString(),value.toString(),rc,useRaw || isRaw);
+    }
+    return rc;
+  }
+ catch (  UnsupportedEncodingException e) {
+    URISyntaxException se=new URISyntaxException(e.toString(),"Invalid encoding");
+    se.initCause(e);
+    throw se;
+  }
+}
