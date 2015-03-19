@@ -4,6 +4,7 @@
     path=ObjectHelper.after(path,"classpath:");
   }
   InputStream is=context.getClassResolver().loadResourceAsStream(path);
+  Reader reader=null;
   if (is == null) {
     if (!ignoreMissingLocation) {
       throw new FileNotFoundException("Properties file " + path + " not found in classpath");
@@ -11,10 +12,16 @@
   }
  else {
     try {
-      answer.load(is);
+      if (propertiesComponent.getEncoding() != null) {
+        reader=new BufferedReader(new InputStreamReader(is,propertiesComponent.getEncoding()));
+        answer.load(reader);
+      }
+ else {
+        answer.load(is);
+      }
     }
   finally {
-      IOHelper.close(is);
+      IOHelper.close(reader,is);
     }
   }
   return answer;

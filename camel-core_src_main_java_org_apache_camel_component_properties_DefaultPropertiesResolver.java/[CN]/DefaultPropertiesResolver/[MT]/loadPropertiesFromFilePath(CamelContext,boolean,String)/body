@@ -4,9 +4,16 @@
     path=ObjectHelper.after(path,"file:");
   }
   InputStream is=null;
+  Reader reader=null;
   try {
     is=new FileInputStream(path);
-    answer.load(is);
+    if (propertiesComponent.getEncoding() != null) {
+      reader=new BufferedReader(new InputStreamReader(is,propertiesComponent.getEncoding()));
+      answer.load(reader);
+    }
+ else {
+      answer.load(is);
+    }
   }
  catch (  FileNotFoundException e) {
     if (!ignoreMissingLocation) {
@@ -14,7 +21,7 @@
     }
   }
  finally {
-    IOHelper.close(is);
+    IOHelper.close(reader,is);
   }
   return answer;
 }
