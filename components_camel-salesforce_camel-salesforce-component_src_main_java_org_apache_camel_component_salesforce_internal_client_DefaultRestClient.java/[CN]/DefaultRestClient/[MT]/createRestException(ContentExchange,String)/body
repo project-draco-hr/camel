@@ -1,0 +1,49 @@
+{
+  final int statusCode=httpExchange.getResponseStatus();
+  if (reason == null || reason.isEmpty()) {
+    reason=HttpStatus.getMessage(statusCode);
+  }
+  String responseContent=null;
+  try {
+    responseContent=httpExchange.getResponseContent();
+    if (responseContent != null && !responseContent.isEmpty()) {
+      final List<String> choices;
+      if (statusCode == HttpStatus.MULTIPLE_CHOICES_300) {
+        if (PayloadFormat.JSON.equals(format)) {
+          choices=objectMapper.readValue(responseContent,new TypeReference<List<String>>(){
+          }
+);
+        }
+ else {
+          RestChoices restChoices=new RestChoices();
+          xStream.fromXML(responseContent,restChoices);
+          choices=restChoices.getUrls();
+        }
+        return new SalesforceMultipleChoicesException(reason,statusCode,choices);
+      }
+ else {
+        final List<RestError> restErrors;
+        if (PayloadFormat.JSON.equals(format)) {
+          restErrors=objectMapper.readValue(responseContent,new TypeReference<List<RestError>>(){
+          }
+);
+        }
+ else {
+          RestErrors errors=new RestErrors();
+          xStream.fromXML(responseContent,errors);
+          restErrors=errors.getErrors();
+        }
+        return new SalesforceException(restErrors,statusCode);
+      }
+    }
+  }
+ catch (  IOException e) {
+    String msg="Unexpected Error parsing " + format + " error response body + ["+ responseContent+ "] : "+ e.getMessage();
+    log.warn(msg,e);
+  }
+catch (  RuntimeException e) {
+    String msg="Unexpected Error parsing " + format + " error response body + ["+ responseContent+ "] : "+ e.getMessage();
+    log.warn(msg,e);
+  }
+  return new SalesforceException("Unexpected error: " + reason + ", with content: "+ responseContent,statusCode);
+}

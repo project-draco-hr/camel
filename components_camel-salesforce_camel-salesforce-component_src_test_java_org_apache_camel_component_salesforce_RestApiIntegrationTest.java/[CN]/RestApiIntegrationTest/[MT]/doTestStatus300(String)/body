@@ -1,0 +1,37 @@
+{
+  if (testId == null) {
+    doTestGetBasicInfo("");
+  }
+  Merchandise__c merchandise=template().requestBodyAndHeader("direct:getSObject" + suffix,testId,"sObjectFields","Name,Description__c,Price__c,Total_Inventory__c",Merchandise__c.class);
+  assertNotNull(merchandise);
+  assertNotNull(merchandise.getName());
+  assertNotNull(merchandise.getPrice__c());
+  assertNotNull(merchandise.getTotal_Inventory__c());
+  CreateSObjectResult result=null;
+  try {
+    merchandise.clearBaseFields();
+    result=template().requestBody("direct:createSObject" + suffix,merchandise,CreateSObjectResult.class);
+    assertNotNull(result);
+    assertNotNull(result.getId());
+    LOG.debug("Clone SObject: {}",result);
+    try {
+      template().requestBody("direct:getSObjectWithId" + suffix,merchandise,Merchandise__c.class);
+      fail("Expected SalesforceException with statusCode 300");
+    }
+ catch (    CamelExecutionException e) {
+      assertTrue(e.getCause() instanceof SalesforceException);
+      assertTrue(e.getCause().getCause() instanceof SalesforceMultipleChoicesException);
+      final SalesforceMultipleChoicesException cause=(SalesforceMultipleChoicesException)e.getCause().getCause();
+      assertEquals(300,cause.getStatusCode());
+      final List<String> choices=cause.getChoices();
+      assertNotNull(choices);
+      assertFalse(choices.isEmpty());
+      LOG.debug("Multiple choices: {}",choices);
+    }
+  }
+  finally {
+    if (result != null) {
+      template().requestBody("direct:deleteSObject" + suffix,result.getId());
+    }
+  }
+}
