@@ -4,6 +4,31 @@
   if (aggregationStrategy instanceof CompletionAwareAggregationStrategy) {
     ((CompletionAwareAggregationStrategy)aggregationStrategy).onCompletion(exchange);
   }
+  if (getStatistics().isStatisticsEnabled()) {
+    totalCompleted.incrementAndGet();
+    String completedBy=exchange.getProperty(Exchange.AGGREGATED_COMPLETED_BY,String.class);
+    if ("interval".equals(completedBy)) {
+      completedByInterval.incrementAndGet();
+    }
+ else     if ("timeout".equals(completedBy)) {
+      completedByTimeout.incrementAndGet();
+    }
+ else     if ("force".equals(completedBy)) {
+      completedByForce.incrementAndGet();
+    }
+ else     if ("consumer".equals(completedBy)) {
+      completedByBatchConsumer.incrementAndGet();
+    }
+ else     if ("predicate".equals(completedBy)) {
+      completedByPredicate.incrementAndGet();
+    }
+ else     if ("size".equals(completedBy)) {
+      completedBySize.incrementAndGet();
+    }
+ else     if ("strategy".equals(completedBy)) {
+      completedByStrategy.incrementAndGet();
+    }
+  }
   executorService.submit(new Runnable(){
     public void run(){
       LOG.debug("Processing aggregated exchange: {}",exchange);
