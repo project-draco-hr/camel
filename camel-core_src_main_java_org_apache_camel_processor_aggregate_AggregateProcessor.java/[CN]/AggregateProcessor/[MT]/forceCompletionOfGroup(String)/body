@@ -1,0 +1,28 @@
+{
+  int total=0;
+  if (!optimisticLocking) {
+    lock.lock();
+  }
+  try {
+    Exchange exchange=aggregationRepository.get(camelContext,key);
+    if (exchange != null) {
+      total=1;
+      LOG.trace("Force completion triggered for correlation key: {}",key);
+      exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY,"forceCompletion");
+      Exchange answer=onCompletion(key,exchange,exchange,false);
+      if (answer != null) {
+        onSubmitCompletion(key,answer);
+      }
+    }
+  }
+  finally {
+    if (!optimisticLocking) {
+      lock.unlock();
+    }
+  }
+  LOG.trace("Completed force completion of group {}",key);
+  if (total > 0) {
+    LOG.debug("Forcing completion of group {} with {} exchanges",key,total);
+  }
+  return total;
+}
