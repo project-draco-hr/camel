@@ -1,6 +1,7 @@
 {
   LOG.trace("onAggregation +++ start +++ with correlation key: {}",key);
   List<Exchange> list=new ArrayList<Exchange>();
+  String complete=null;
   Exchange answer;
   Exchange originalExchange=aggregationRepository.get(newExchange.getContext(),key);
   Exchange oldExchange=originalExchange;
@@ -13,23 +14,29 @@
     size++;
   }
   ExchangeHelper.prepareAggregation(oldExchange,newExchange);
-  boolean preComplete;
-  try {
-    newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
-    preComplete=onPreCompletionAggregation(oldExchange,newExchange);
-    newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
+  if (preCompletion) {
+    try {
+      newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
+      complete=isPreCompleted(key,oldExchange,newExchange);
+      if (complete == null) {
+        trackTimeout(key,newExchange);
+      }
+      newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
+    }
+ catch (    Throwable e) {
+      throw new CamelExchangeException("Error occurred during preComplete",newExchange,e);
+    }
   }
- catch (  Throwable e) {
-    throw new CamelExchangeException("Error occurred during preComplete",newExchange,e);
-  }
-  String complete=null;
-  if (!preComplete && isEagerCheckCompletion()) {
+ else   if (isEagerCheckCompletion()) {
     newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
     complete=isCompleted(key,newExchange);
+    if (complete == null) {
+      trackTimeout(key,newExchange);
+    }
     newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
   }
-  if (preComplete) {
-    doAggregationComplete("strategy",list,key,originalExchange,oldExchange);
+  if (preCompletion && complete != null) {
+    doAggregationComplete(complete,list,key,originalExchange,oldExchange);
     complete=null;
     oldExchange=null;
     originalExchange=null;
@@ -45,8 +52,11 @@
     throw new CamelExchangeException("AggregationStrategy " + aggregationStrategy + " returned null which is not allowed",newExchange);
   }
   answer.setProperty(Exchange.AGGREGATED_SIZE,size);
-  if (!isEagerCheckCompletion()) {
+  if (!preCompletion && !isEagerCheckCompletion()) {
     complete=isCompleted(key,answer);
+    if (complete == null) {
+      trackTimeout(key,newExchange);
+    }
   }
   if (complete == null) {
     doAggregationRepositoryAdd(newExchange.getContext(),key,originalExchange,answer);

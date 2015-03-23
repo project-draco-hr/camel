@@ -1,0 +1,19 @@
+{
+  boolean timeoutSet=false;
+  if (getCompletionTimeoutExpression() != null) {
+    Long value=getCompletionTimeoutExpression().evaluate(exchange,Long.class);
+    if (value != null && value > 0) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Updating correlation key {} to timeout after {} ms. as exchange received: {}",new Object[]{key,value,exchange});
+      }
+      addExchangeToTimeoutMap(key,exchange,value);
+      timeoutSet=true;
+    }
+  }
+  if (!timeoutSet && getCompletionTimeout() > 0) {
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Updating correlation key {} to timeout after {} ms. as exchange received: {}",new Object[]{key,getCompletionTimeout(),exchange});
+    }
+    addExchangeToTimeoutMap(key,exchange,getCompletionTimeout());
+  }
+}
