@@ -1,0 +1,27 @@
+{
+  if ("consumer".equals(complete)) {
+    for (    String batchKey : batchConsumerCorrelationKeys) {
+      Exchange batchAnswer;
+      if (batchKey.equals(key)) {
+        batchAnswer=answer;
+      }
+ else {
+        batchAnswer=aggregationRepository.get(camelContext,batchKey);
+      }
+      if (batchAnswer != null) {
+        batchAnswer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,complete);
+        onCompletion(batchKey,originalExchange,batchAnswer,false);
+        list.add(batchAnswer);
+      }
+    }
+    batchConsumerCorrelationKeys.clear();
+    answer=null;
+  }
+ else {
+    answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY,complete);
+    answer=onCompletion(key,originalExchange,answer,false);
+  }
+  if (answer != null) {
+    list.add(answer);
+  }
+}
