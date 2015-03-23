@@ -1,4 +1,23 @@
 {
   exchange.setProperty(Exchange.UNIT_OF_WORK_PROCESS_SYNC,Boolean.TRUE);
+  boolean isLast=exchange.getProperty(Exchange.BATCH_COMPLETE,true,Boolean.class);
+  if (isLast && getEndpoint().isDisconnect()) {
+    exchange.addOnCompletion(new SynchronizationAdapter(){
+      @Override public void onDone(      Exchange exchange){
+        log.trace("postPollCheck disconnect from: {}",getEndpoint());
+        disconnect();
+      }
+      @Override public boolean allowHandover(){
+        return false;
+      }
+      @Override public int getOrder(){
+        return Ordered.LOWEST;
+      }
+      public String toString(){
+        return "Disconnect";
+      }
+    }
+);
+  }
   return super.processExchange(exchange);
 }

@@ -1,0 +1,28 @@
+{
+  if (testId == null) {
+    doTestGetBasicInfo("");
+  }
+  Merchandise__c merchandise=template().requestBodyAndHeader("direct:getSObject" + suffix,testId,"sObjectFields","Description__c,Price__c",Merchandise__c.class);
+  assertNotNull(merchandise);
+  assertNotNull(merchandise.getPrice__c());
+  assertNull(merchandise.getTotal_Inventory__c());
+  merchandise.clearBaseFields();
+  CreateSObjectResult result=null;
+  try {
+    result=template().requestBody("direct:createSObject" + suffix,merchandise,CreateSObjectResult.class);
+    fail("Expected SalesforceException with statusCode 400");
+  }
+ catch (  CamelExecutionException e) {
+    assertTrue(e.getCause() instanceof SalesforceException);
+    assertTrue(e.getCause().getCause() instanceof SalesforceException);
+    final SalesforceException cause=(SalesforceException)e.getCause().getCause();
+    assertEquals(400,cause.getStatusCode());
+    assertEquals(1,cause.getErrors().size());
+    assertEquals("[Total_Inventory__c]",cause.getErrors().get(0).getFields().toString());
+  }
+ finally {
+    if (result != null) {
+      template().requestBody("direct:deleteSObject" + suffix,result.getId());
+    }
+  }
+}

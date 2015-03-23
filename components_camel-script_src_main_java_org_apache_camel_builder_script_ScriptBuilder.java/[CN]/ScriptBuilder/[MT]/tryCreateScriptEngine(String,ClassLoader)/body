@@ -1,0 +1,25 @@
+{
+  ScriptEngineManager manager=new ScriptEngineManager(classLoader);
+  ScriptEngine engine=null;
+  String[] names=getScriptNames(language);
+  for (  String name : names) {
+    try {
+      engine=manager.getEngineByName(name);
+      if (engine != null) {
+        break;
+      }
+    }
+ catch (    NoClassDefFoundError ex) {
+      LOG.warn("Cannot load ScriptEngine for " + name + ". Please ensure correct JARs is provided on classpath (stacktrace in DEBUG logging).");
+      LOG.debug("Cannot load ScriptEngine for " + name + ". Please ensure correct JARs is provided on classpath.",ex);
+    }
+  }
+  if (engine == null) {
+    engine=checkForOSGiEngine(language);
+  }
+  if (engine != null && isPython(language)) {
+    ScriptContext context=engine.getContext();
+    context.setAttribute("com.sun.script.jython.comp.mode","eval",ScriptContext.ENGINE_SCOPE);
+  }
+  return engine;
+}
