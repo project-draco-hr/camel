@@ -1,5 +1,6 @@
 {
   LOG.trace("onAggregation +++ start +++ with correlation key: {}",key);
+  List<Exchange> list=new ArrayList<Exchange>();
   Exchange answer;
   Exchange originalExchange=aggregationRepository.get(newExchange.getContext(),key);
   Exchange oldExchange=originalExchange;
@@ -11,13 +12,29 @@
     size=oldExchange.getProperty(Exchange.AGGREGATED_SIZE,0,Integer.class);
     size++;
   }
+  ExchangeHelper.prepareAggregation(oldExchange,newExchange);
+  boolean preComplete;
+  try {
+    newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
+    preComplete=onPreCompletionAggregation(oldExchange,newExchange);
+    newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
+  }
+ catch (  Throwable e) {
+    throw new CamelExchangeException("Error occurred during preComplete",newExchange,e);
+  }
   String complete=null;
-  if (isEagerCheckCompletion()) {
+  if (!preComplete && isEagerCheckCompletion()) {
     newExchange.setProperty(Exchange.AGGREGATED_SIZE,size);
     complete=isCompleted(key,newExchange);
     newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
   }
-  ExchangeHelper.prepareAggregation(oldExchange,newExchange);
+  if (preComplete) {
+    doAggregationComplete("strategy",list,key,originalExchange,oldExchange);
+    complete=null;
+    oldExchange=null;
+    originalExchange=null;
+    size=1;
+  }
   try {
     answer=onAggregation(oldExchange,newExchange);
   }
@@ -31,7 +48,6 @@
   if (!isEagerCheckCompletion()) {
     complete=isCompleted(key,answer);
   }
-  List<Exchange> list=new ArrayList<Exchange>();
   if (complete == null) {
     doAggregationRepositoryAdd(newExchange.getContext(),key,originalExchange,answer);
   }
