@@ -1,0 +1,23 @@
+{
+  server=new Server();
+  Connector connector=new SelectChannelConnector();
+  connector.setHost(HTTP_PROXY_HOST);
+  server.setConnectors(new Connector[]{connector});
+  final String authenticationString="Basic " + B64Code.encode(HTTP_PROXY_USER_NAME + ":" + HTTP_PROXY_PASSWORD,StringUtil.__ISO_8859_1);
+  ConnectHandler handler=new ConnectHandler(){
+    @Override protected boolean handleAuthentication(    HttpServletRequest request,    HttpServletResponse response,    String address) throws ServletException, IOException {
+      final String header=request.getHeader(HttpHeaders.PROXY_AUTHORIZATION);
+      if (!authenticationString.equals(header)) {
+        throw new ServletException("Missing header " + HttpHeaders.PROXY_AUTHORIZATION);
+      }
+      LOG.info("CONNECT exchange contains required header " + HttpHeaders.PROXY_AUTHORIZATION);
+      return super.handleAuthentication(request,response,address);
+    }
+  }
+;
+  server.setHandler(handler);
+  LOG.info("Starting proxy server...");
+  server.start();
+  httpProxyPort=connector.getLocalPort();
+  LOG.info("Started proxy server on port {}",httpProxyPort);
+}

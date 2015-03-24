@@ -1,0 +1,49 @@
+{
+  getLog().info("Looking for matching Object names...");
+  final Set<String> includedNames=new HashSet<String>();
+  if (includes != null && includes.length > 0) {
+    for (    String name : includes) {
+      name=name.trim();
+      if (name.isEmpty()) {
+        throw new MojoExecutionException("Invalid empty name in includes");
+      }
+      includedNames.add(name);
+    }
+  }
+  final Set<String> excludedNames=new HashSet<String>();
+  if (excludes != null && excludes.length > 0) {
+    for (    String name : excludes) {
+      name=name.trim();
+      if (name.isEmpty()) {
+        throw new MojoExecutionException("Invalid empty name in excludes");
+      }
+      excludedNames.add(name);
+    }
+  }
+  Pattern incPattern;
+  if (includePattern != null && !includePattern.trim().isEmpty()) {
+    incPattern=Pattern.compile(includePattern.trim());
+  }
+ else   if (includedNames.isEmpty()) {
+    incPattern=Pattern.compile(".*");
+  }
+ else {
+    incPattern=Pattern.compile("^$");
+  }
+  Pattern excPattern;
+  if (excludePattern != null && !excludePattern.trim().isEmpty()) {
+    excPattern=Pattern.compile(excludePattern.trim());
+  }
+ else {
+    excPattern=Pattern.compile("^$");
+  }
+  final Set<String> acceptedNames=new HashSet<String>();
+  for (  String name : objectNames) {
+    if ((includedNames.contains(name) || incPattern.matcher(name).matches()) && !excludedNames.contains(name) && !excPattern.matcher(name).matches()) {
+      acceptedNames.add(name);
+    }
+  }
+  objectNames.clear();
+  objectNames.addAll(acceptedNames);
+  getLog().info(String.format("Found %s matching Objects",objectNames.size()));
+}

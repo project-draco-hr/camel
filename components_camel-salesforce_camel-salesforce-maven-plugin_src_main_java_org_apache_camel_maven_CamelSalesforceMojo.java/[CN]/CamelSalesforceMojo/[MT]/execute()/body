@@ -9,16 +9,7 @@
   if (!engine.resourceExists(SOBJECT_POJO_VM) || !engine.resourceExists(SOBJECT_QUERY_RECORDS_VM)) {
     throw new MojoExecutionException("Velocity templates not found");
   }
-  final HttpClient httpClient=new HttpClient();
-  httpClient.registerListener(RedirectListener.class.getName());
-  httpClient.setConnectTimeout(TIMEOUT);
-  httpClient.setTimeout(TIMEOUT);
-  try {
-    httpClient.start();
-  }
- catch (  Exception e) {
-    throw new MojoExecutionException("Error creating HTTP client: " + e.getMessage(),e);
-  }
+  final HttpClient httpClient=createHttpClient();
   final SalesforceSession session=new SalesforceSession(httpClient,new SalesforceLoginConfig(loginUrl,clientId,clientSecret,userName,password,false));
   getLog().info("Salesforce login...");
   try {
@@ -45,7 +36,7 @@
     try {
       getLog().info("Getting Salesforce Objects...");
       restClient.getGlobalObjects(callback);
-      if (!callback.await(TIMEOUT,TimeUnit.MILLISECONDS)) {
+      if (!callback.await(responseTimeout,TimeUnit.MILLISECONDS)) {
         throw new MojoExecutionException("Timeout waiting for getGlobalObjects!");
       }
       final SalesforceException ex=callback.getException();
@@ -61,54 +52,8 @@
       String msg="Error getting global Objects " + e.getMessage();
       throw new MojoExecutionException(msg,e);
     }
-    if ((includes != null && includes.length > 0) || (excludes != null && excludes.length > 0) || (includePattern != null && !includePattern.trim().isEmpty())|| (excludePattern != null && !excludePattern.trim().isEmpty())) {
-      getLog().info("Looking for matching Object names...");
-      final Set<String> includedNames=new HashSet<String>();
-      if (includes != null && includes.length > 0) {
-        for (        String name : includes) {
-          name=name.trim();
-          if (name.isEmpty()) {
-            throw new MojoExecutionException("Invalid empty name in includes");
-          }
-          includedNames.add(name);
-        }
-      }
-      final Set<String> excludedNames=new HashSet<String>();
-      if (excludes != null && excludes.length > 0) {
-        for (        String name : excludes) {
-          name=name.trim();
-          if (name.isEmpty()) {
-            throw new MojoExecutionException("Invalid empty name in excludes");
-          }
-          excludedNames.add(name);
-        }
-      }
-      Pattern incPattern;
-      if (includePattern != null && !includePattern.trim().isEmpty()) {
-        incPattern=Pattern.compile(includePattern.trim());
-      }
- else       if (includedNames.isEmpty()) {
-        incPattern=Pattern.compile(".*");
-      }
- else {
-        incPattern=Pattern.compile("^$");
-      }
-      Pattern excPattern;
-      if (excludePattern != null && !excludePattern.trim().isEmpty()) {
-        excPattern=Pattern.compile(excludePattern.trim());
-      }
- else {
-        excPattern=Pattern.compile("^$");
-      }
-      final Set<String> acceptedNames=new HashSet<String>();
-      for (      String name : objectNames) {
-        if ((includedNames.contains(name) || incPattern.matcher(name).matches()) && !excludedNames.contains(name) && !excPattern.matcher(name).matches()) {
-          acceptedNames.add(name);
-        }
-      }
-      objectNames.clear();
-      objectNames.addAll(acceptedNames);
-      getLog().info(String.format("Found %s matching Objects",objectNames.size()));
+    if ((includes != null && includes.length > 0) || (excludes != null && excludes.length > 0) || ObjectHelper.isNotEmpty(includePattern)|| ObjectHelper.isNotEmpty(excludePattern)) {
+      filterObjectNames(objectNames);
     }
  else {
       getLog().warn(String.format("Generating Java classes for all %s Objects, this may take a while...",objectNames.size()));
@@ -119,7 +64,7 @@
       try {
         callback.reset();
         restClient.getDescription(name,callback);
-        if (!callback.await(TIMEOUT,TimeUnit.MILLISECONDS)) {
+        if (!callback.await(responseTimeout,TimeUnit.MILLISECONDS)) {
           throw new MojoExecutionException("Timeout waiting for getDescription for sObject " + name);
         }
         final SalesforceException ex=callback.getException();
