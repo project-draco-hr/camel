@@ -1,0 +1,23 @@
+{
+  if (registration != null) {
+    registration.unregister();
+    registration=null;
+  }
+  ServiceReference<LanguageResolver> ref=null;
+  try {
+    Collection<ServiceReference<LanguageResolver>> references=context.getServiceReferences(LanguageResolver.class,"(resolver=default)");
+    if (references.size() == 1) {
+      ref=references.iterator().next();
+      LanguageResolver resolver=context.getService(ref);
+      Dictionary props=new Hashtable();
+      props.put("language",getAvailableScriptNames());
+      registration=context.registerService(LanguageResolver.class,resolver,props);
+    }
+  }
+ catch (  InvalidSyntaxException e) {
+    LOG.error("Invalid syntax for LanguageResolver service reference filter.");
+  }
+ finally {
+    context.ungetService(ref);
+  }
+}
