@@ -1,8 +1,7 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      onException(IllegalArgumentException.class).handled(true).to("mock:dead");
-      from("direct:start").throwException(new IllegalArgumentException("Damn"));
+      from("direct:start").doTry().throwException(new IllegalArgumentException("Damn")).doCatch(IllegalArgumentException.class).to("mock:dead").end();
     }
   }
 );
@@ -21,8 +20,8 @@
   assertIsInstanceOf(ExchangeSentEvent.class,events.get(7));
   ExchangeFailureHandledEvent e=assertIsInstanceOf(ExchangeFailureHandledEvent.class,events.get(8));
   assertEquals("should NOT be DLC",false,e.isDeadLetterChannel());
-  assertTrue("should be marked as failure handled",e.isHandled());
-  assertFalse("should not be continued",e.isContinued());
+  assertFalse("should not be marked as failure handled as it was continued instead",e.isHandled());
+  assertTrue("should be continued",e.isContinued());
   assertIsInstanceOf(ExchangeCompletedEvent.class,events.get(9));
   assertIsInstanceOf(ExchangeSentEvent.class,events.get(10));
   ExchangeSentEvent sent=(ExchangeSentEvent)events.get(10);
