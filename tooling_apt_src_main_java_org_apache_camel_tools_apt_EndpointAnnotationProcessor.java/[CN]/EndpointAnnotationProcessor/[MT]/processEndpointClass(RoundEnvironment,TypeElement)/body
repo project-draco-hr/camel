@@ -2,16 +2,20 @@
   final UriEndpoint uriEndpoint=classElement.getAnnotation(UriEndpoint.class);
   if (uriEndpoint != null) {
     String scheme=uriEndpoint.scheme();
+    String title=uriEndpoint.title();
     final String label=uriEndpoint.label();
     if (!isNullOrEmpty(scheme)) {
       String[] schemes=scheme.split(",");
-      for (      final String alias : schemes) {
+      String[] titles=title.split(",");
+      for (int i=0; i < schemes.length; i++) {
+        final String alias=schemes[i];
+        final String aliasTitle=i < titles.length ? titles[i] : titles[0];
         String name=canonicalClassName(classElement.getQualifiedName().toString());
         String packageName=name.substring(0,name.lastIndexOf("."));
         String fileName=alias + ".html";
         Func1<PrintWriter,Void> handler=new Func1<PrintWriter,Void>(){
           @Override public Void call(          PrintWriter writer){
-            writeHtmlDocumentation(writer,roundEnv,classElement,uriEndpoint,alias,label);
+            writeHtmlDocumentation(writer,roundEnv,classElement,uriEndpoint,aliasTitle,alias,label);
             return null;
           }
         }
@@ -20,7 +24,7 @@
         fileName=alias + ".json";
         handler=new Func1<PrintWriter,Void>(){
           @Override public Void call(          PrintWriter writer){
-            writeJSonSchemeDocumentation(writer,roundEnv,classElement,uriEndpoint,alias,label);
+            writeJSonSchemeDocumentation(writer,roundEnv,classElement,uriEndpoint,aliasTitle,alias,label);
             return null;
           }
         }
