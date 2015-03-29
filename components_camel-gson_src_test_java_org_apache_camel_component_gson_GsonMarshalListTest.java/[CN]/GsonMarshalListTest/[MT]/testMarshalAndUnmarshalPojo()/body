@@ -1,0 +1,18 @@
+{
+  List<TestPojo> inList=new ArrayList<TestPojo>();
+  TestPojo in1=new TestPojo();
+  in1.setName("Camel1");
+  TestPojo in2=new TestPojo();
+  in2.setName("Camel2");
+  inList.add(in1);
+  inList.add(in2);
+  MockEndpoint mock=getMockEndpoint("mock:reversePojo");
+  mock.expectedMessageCount(1);
+  mock.message(0).body().isInstanceOf(List.class);
+  mock.message(0).body().equals(inList);
+  Object marshalled=template.requestBody("direct:inPojo",inList);
+  String marshalledAsString=context.getTypeConverter().convertTo(String.class,marshalled);
+  assertEquals("[{\"name\":\"Camel1\"},{\"name\":\"Camel2\"}]",marshalledAsString);
+  template.sendBody("direct:backPojo",marshalled);
+  mock.assertIsSatisfied();
+}
