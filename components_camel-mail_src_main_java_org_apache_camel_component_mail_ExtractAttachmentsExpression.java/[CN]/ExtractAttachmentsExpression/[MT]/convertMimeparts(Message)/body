@@ -1,0 +1,14 @@
+{
+  List<Message> outMessages=new ArrayList<>();
+  for (  Map.Entry<String,DataHandler> entry : inMessage.getAttachments().entrySet()) {
+    final Message outMessage=new DefaultMessage();
+    final String key=entry.getKey();
+    outMessage.setHeader("CamelSplitAttachmentName",key);
+    Object attachment=inMessage.getAttachment(key).getContent();
+    if (attachment instanceof InputStream) {
+      outMessage.setBody(readMimePart((InputStream)attachment));
+      outMessages.add(outMessage);
+    }
+  }
+  return outMessages;
+}
