@@ -1,0 +1,17 @@
+{
+  String id=exchange.getExchangeId();
+  Exchange copy=exchange.copy();
+  if (!useSameMessageId) {
+    if (copy.hasOut()) {
+      copy.getOut().setMessageId(null);
+    }
+    copy.getIn().setMessageId(null);
+  }
+  copy.setUnitOfWork(null);
+  UnitOfWork uow=exchange.getUnitOfWork();
+  if (handover && uow != null) {
+    uow.handoverSynchronization(copy);
+  }
+  copy.setProperty(Exchange.CORRELATION_ID,id);
+  return copy;
+}
