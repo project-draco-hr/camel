@@ -1,0 +1,17 @@
+{
+  try {
+    RouteBuilder taillableRouteBuilder=new RouteBuilder(){
+      @Override public void configure() throws Exception {
+        from("mongodb:myDb?database={{mongodb.testDb}}&collection={{mongodb.cappedTestCollection}}&tailTrackIncreasingField=increasing&outputType=DBCursor").id("tailableCursorConsumer1").autoStartup(false).to("mock:test");
+      }
+    }
+;
+    template.getCamelContext().addRoutes(taillableRouteBuilder);
+    fail("Endpoint should not be initialized with a non compatible outputType");
+  }
+ catch (  Exception exception) {
+    log.debug("Exception raised during initialization",exception);
+    exception.printStackTrace();
+    assertTrue("Exception is not of type IllegalArgumentException",exception instanceof IllegalArgumentException);
+  }
+}
