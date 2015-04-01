@@ -1,0 +1,32 @@
+{
+  return new Subscriber<Message>(s){
+    @Override public void onCompleted(){
+      try {
+        ServiceHelper.stopService(producer);
+      }
+ catch (      Exception e) {
+        throw new RuntimeCamelRxException(e);
+      }
+ finally {
+        producer=null;
+      }
+      if (!s.isUnsubscribed()) {
+        s.onCompleted();
+      }
+    }
+    @Override public void onError(    Throwable e){
+      Exchange exchange=producer.createExchange();
+      exchange.setException(e);
+      process(exchange);
+      if (!s.isUnsubscribed()) {
+        s.onError(e);
+      }
+    }
+    @Override public void onNext(    Message item){
+      if (!s.isUnsubscribed()) {
+        s.onNext(process(item));
+      }
+    }
+  }
+;
+}
