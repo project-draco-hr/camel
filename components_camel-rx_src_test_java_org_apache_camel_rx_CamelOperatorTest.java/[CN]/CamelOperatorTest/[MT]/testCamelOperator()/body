@@ -5,11 +5,12 @@
   mockEndpoint1.expectedMessageCount(2);
   mockEndpoint2.expectedMessageCount(1);
   mockEndpoint3.expectedMessageCount(1);
-  Observable<Message> result=reactiveCamel.toObservable("direct:start").lift(new CamelOperator(camelContext,"mock:results1")).lift(new CamelOperator(camelContext,"log:foo")).debounce(1,TimeUnit.SECONDS).lift(new CamelOperator(mockEndpoint2));
-  reactiveCamel.sendTo(result,"mock:results3");
+  ConnectableObservable<Message> route=reactiveCamel.toObservable("direct:start").lift(new CamelOperator(mockEndpoint1)).lift(new CamelOperator(camelContext,"log:foo")).debounce(1,TimeUnit.SECONDS).lift(reactiveCamel.to(mockEndpoint2)).lift(reactiveCamel.to("mock:results3")).publish();
+  Subscription routeSubscription=route.connect();
   producerTemplate.sendBody("direct:start","<test/>");
   producerTemplate.sendBody("direct:start","<test/>");
   mockEndpoint1.assertIsSatisfied();
   mockEndpoint2.assertIsSatisfied();
   mockEndpoint3.assertIsSatisfied();
+  routeSubscription.unsubscribe();
 }
