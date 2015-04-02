@@ -1,13 +1,13 @@
 {
-  Map<String,Object> in=new HashMap<String,Object>();
-  in.put("name","Camel");
-  MockEndpoint mock=getMockEndpoint("mock:reverse");
+  TestPojo in=new TestPojo();
+  in.setName("Camel");
+  MockEndpoint mock=getMockEndpoint("mock:reversePojo");
   mock.expectedMessageCount(1);
-  mock.message(0).body().isInstanceOf(Map.class);
+  mock.message(0).body().isInstanceOf(TestPojo.class);
   mock.message(0).body().equals(in);
   Object marshalled=template.requestBody("direct:inPretty",in);
   String marshalledAsString=context.getTypeConverter().convertTo(String.class,marshalled);
-  String expected=String.format("{%s  \"name\" : \"Camel\"%s}",System.lineSeparator(),System.lineSeparator());
+  String expected="{\n" + "  \"name\": \"Camel\"" + "\n}";
   assertEquals(expected,marshalledAsString);
   template.sendBody("direct:backPretty",marshalled);
   mock.assertIsSatisfied();
