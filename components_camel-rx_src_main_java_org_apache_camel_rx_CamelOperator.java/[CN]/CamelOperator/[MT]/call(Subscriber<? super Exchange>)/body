@@ -1,5 +1,5 @@
 {
-  return new Subscriber<Message>(s){
+  return new Subscriber<Exchange>(s){
     @Override public void onCompleted(){
       try {
         ServiceHelper.stopService(producerTemplate);
@@ -19,19 +19,14 @@
         s.onError(e);
       }
     }
-    @Override public void onNext(    Message item){
+    @Override public void onNext(    Exchange item){
       if (!s.isUnsubscribed()) {
         Exchange exchange=process(item);
         if (exchange.getException() != null) {
           s.onError(exchange.getException());
         }
  else {
-          if (exchange.hasOut()) {
-            s.onNext(exchange.getOut());
-          }
- else {
-            s.onNext(exchange.getIn());
-          }
+          s.onNext(PipelineHelper.createNextExchange(exchange));
         }
       }
     }
