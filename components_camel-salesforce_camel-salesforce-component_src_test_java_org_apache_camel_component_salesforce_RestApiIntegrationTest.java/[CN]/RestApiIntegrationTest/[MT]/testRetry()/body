@@ -1,0 +1,18 @@
+{
+  SalesforceComponent sf=context().getComponent("salesforce",SalesforceComponent.class);
+  String accessToken=sf.getSession().getAccessToken();
+  SslContextFactory sslContextFactory=new SslContextFactory();
+  sslContextFactory.setSslContext(new SSLContextParameters().createSSLContext());
+  HttpClient httpClient=new HttpClient(sslContextFactory);
+  httpClient.setConnectTimeout(60000);
+  httpClient.setTimeout(60000);
+  httpClient.registerListener(RedirectListener.class.getName());
+  httpClient.start();
+  ContentExchange logoutGet=new ContentExchange(true);
+  logoutGet.setURL(sf.getLoginConfig().getLoginUrl() + "/services/oauth2/revoke?token=" + accessToken);
+  logoutGet.setMethod(HttpMethods.GET);
+  httpClient.send(logoutGet);
+  assertEquals(HttpExchange.STATUS_COMPLETED,logoutGet.waitForDone());
+  assertEquals(HttpStatus.OK_200,logoutGet.getResponseStatus());
+  doTestGetGlobalObjects("");
+}
