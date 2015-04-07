@@ -1,0 +1,36 @@
+{
+  Account account=new Account();
+  account.setName("Camel Test Account");
+  account.setBillingCity("San Francisco");
+  account.setBillingCountry("USA");
+  account.setBillingPostalCode("94105");
+  account.setBillingState("CA");
+  account.setBillingStreet("1 Market St #300");
+  account.setBillingLatitude(37.793779);
+  account.setBillingLongitude(-122.39448);
+  account.setShippingCity("San Francisco");
+  account.setShippingCountry("USA");
+  account.setShippingPostalCode("94105");
+  account.setShippingState("CA");
+  account.setShippingStreet("1 Market St #300");
+  account.setShippingLatitude(37.793779);
+  account.setShippingLongitude(-122.39448);
+  account.setShipping_Location__Latitude__s(37.793779);
+  account.setShipping_Location__Longitude__s(-122.39448);
+  CreateSObjectResult result=template().requestBody("direct:createSObject" + suffix,account,CreateSObjectResult.class);
+  assertNotNull(result);
+  assertTrue("Create success",result.getSuccess());
+  LOG.debug("Create: " + result);
+  try {
+    account=template().requestBody("direct:getSObject" + suffix,result.getId(),Account.class);
+    assertNotNull(account);
+    assertNotNull("Billing Address",account.getBillingAddress());
+    assertNotNull("Shipping Address",account.getShippingAddress());
+    assertNotNull("Shipping Location",account.getShippingAddress());
+    LOG.debug("Retrieved fields billing address: {}, shipping location: {}",account.getBillingAddress(),account.getShipping_Location__c());
+  }
+  finally {
+    assertNull(template().requestBody("direct:deleteSObject" + suffix,result.getId()));
+    LOG.debug("Delete successful");
+  }
+}
