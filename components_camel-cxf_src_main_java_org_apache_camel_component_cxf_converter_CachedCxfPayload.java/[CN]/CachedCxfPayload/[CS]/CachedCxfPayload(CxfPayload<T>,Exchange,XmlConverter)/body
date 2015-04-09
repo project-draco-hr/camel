@@ -1,0 +1,37 @@
+{
+  super(orig.getHeaders(),new ArrayList<Source>(orig.getBodySources()),orig.getNsMap());
+  ListIterator<Source> li=getBodySources().listIterator();
+  this.xml=xml;
+  while (li.hasNext()) {
+    Source source=li.next();
+    XMLStreamReader reader=null;
+    if (source instanceof StaxSource) {
+      reader=((StaxSource)source).getXMLStreamReader();
+    }
+ else     if (source instanceof StAXSource) {
+      reader=((StAXSource)source).getXMLStreamReader();
+    }
+    if (reader != null) {
+      Map<String,String> nsmap=getNsMap();
+      if (nsmap == null) {
+        nsmap=Collections.emptyMap();
+      }
+      source=new StAXSource(new DelegatingXMLStreamReader(reader,nsmap));
+      StreamSource streamSource=exchange.getContext().getTypeConverter().convertTo(StreamSource.class,exchange,source);
+      if (streamSource != null) {
+        try {
+          li.set(new StreamSourceCache(streamSource,exchange));
+        }
+ catch (        IOException e) {
+          LOG.error("Cannot Create StreamSourceCache ",e);
+        }
+      }
+    }
+ else     if (!(source instanceof DOMSource)) {
+      Document document=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,source);
+      if (document != null) {
+        li.set(new DOMSource(document));
+      }
+    }
+  }
+}

@@ -63,7 +63,6 @@
  catch (        XMLStreamException e) {
           throw new RuntimeException(e);
         }
-        payload.getBodySources().set(0,new DOMSource(d.getDocumentElement()));
         return type.cast(d);
       }
       Source s=payload.getBodySources().get(0);
@@ -72,24 +71,7 @@
       }
       TypeConverter tc=registry.lookup(type,Source.class);
       if (tc != null) {
-        if ((s instanceof StreamSource || s instanceof SAXSource) && !type.isAssignableFrom(Document.class) && !type.isAssignableFrom(Source.class)) {
-          Document d;
-          try {
-            d=StaxUtils.read(s);
-          }
- catch (          XMLStreamException e) {
-            throw new RuntimeException(e);
-          }
-          s=new DOMSource(d.getDocumentElement());
-          payload.getBodySources().set(0,s);
-        }
         T t=tc.convertTo(type,s);
-        if (t instanceof Document) {
-          payload.getBodySources().set(0,new DOMSource(((Document)t).getDocumentElement()));
-        }
- else         if (t instanceof Source) {
-          payload.getBodySources().set(0,(Source)t);
-        }
         return t;
       }
     }
