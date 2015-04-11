@@ -1,17 +1,38 @@
 {
   super.doStart();
   if (vertx == null) {
+    final CountDownLatch latch=new CountDownLatch(1);
     if (host != null && host.length() > 0) {
       LOG.info("Creating Clustered Vertx {}:{}",host,port);
-      vertx=VertxFactory.newVertx(port,host);
+      VertxFactory.newVertx(port,host,new AsyncResultHandler<Vertx>(){
+        @Override public void handle(        AsyncResult<Vertx> event){
+          if (event.cause() != null) {
+            LOG.warn("Error creating Clustered Vertx " + host + ":"+ port+ " due "+ event.cause().getMessage(),event.cause());
+          }
+ else           if (event.succeeded()) {
+            vertx=event.result();
+            LOG.info("EventBus is ready: {}",vertx);
+          }
+          latch.countDown();
+        }
+      }
+);
     }
  else     if (host != null) {
       LOG.info("Creating Clustered Vertx {}",host);
       vertx=VertxFactory.newVertx(host);
+      LOG.info("EventBus is ready: {}",vertx);
+      latch.countDown();
     }
  else {
       LOG.info("Creating Non-Clustered Vertx");
       vertx=VertxFactory.newVertx();
+      LOG.info("EventBus is ready: {}",vertx);
+      latch.countDown();
+    }
+    if (latch.getCount() > 0) {
+      LOG.info("Waiting for EventBus to be ready using {} sec as timeout",timeout);
+      latch.await(timeout,TimeUnit.SECONDS);
     }
   }
 }
