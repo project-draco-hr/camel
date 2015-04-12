@@ -1,11 +1,5 @@
 {
-  Mailbox.clearAll();
-  Endpoint endpoint=context.getEndpoint("smtp://james@mymailserver.com?password=secret");
-  Exchange exchange=endpoint.createExchange();
-  Message in=exchange.getIn();
-  in.setBody("Hello World");
-  in.addAttachment("logo.jpeg",new DataHandler(new FileDataSource("src/test/data/logo.jpeg")));
-  in.addAttachment("license.txt",new DataHandler(new FileDataSource("src/main/resources/META-INF/LICENSE.txt")));
+  splitAttachmentsExpression.setExtractAttachments(true);
   Producer producer=endpoint.createProducer();
   producer.start();
   producer.process(exchange);
@@ -17,8 +11,8 @@
   Message second=mock.getReceivedExchanges().get(1).getIn();
   assertEquals(0,first.getAttachments().size());
   assertEquals(0,second.getAttachments().size());
-  assertEquals("logo.jpeg",first.getHeader("CamelSplitAttachmentName"));
-  assertEquals("license.txt",second.getHeader("CamelSplitAttachmentName"));
+  assertEquals("logo.jpeg",first.getHeader("CamelSplitAttachmentId"));
+  assertEquals("license.txt",second.getHeader("CamelSplitAttachmentId"));
   byte[] expected1=IOUtils.toByteArray(new FileDataSource("src/test/data/logo.jpeg").getInputStream());
   byte[] expected2=IOUtils.toByteArray(new FileDataSource("src/main/resources/META-INF/LICENSE.txt").getInputStream());
   assertArrayEquals(expected1,(byte[])first.getBody());
