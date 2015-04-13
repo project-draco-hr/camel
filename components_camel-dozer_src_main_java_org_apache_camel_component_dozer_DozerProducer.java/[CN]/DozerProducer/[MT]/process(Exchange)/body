@@ -18,8 +18,13 @@
   LOG.debug("Mapping to target model {}.",targetModel.getName());
   Object targetObject=endpoint.getMapper().map(msg.getBody(),targetModel);
   endpoint.getMapper().map(endpoint.getVariableMapper(),targetObject);
-  endpoint.getExpressionMapper().setCurrentExchange(exchange);
-  endpoint.getMapper().map(endpoint.getExpressionMapper(),targetObject);
+  try {
+    endpoint.getExpressionMapper().setCurrentExchange(exchange);
+    endpoint.getMapper().map(endpoint.getExpressionMapper(),targetObject);
+  }
+  finally {
+    endpoint.getExpressionMapper().setCurrentExchange(null);
+  }
   msg.setBody(targetObject);
   exchange.setIn(msg);
   String marshalId=endpoint.getConfiguration().getMarshalId();
