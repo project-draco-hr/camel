@@ -1,0 +1,11 @@
+{
+  return new SpringRouteBuilder(){
+    public void configure(){
+      from("direct:startNotshared").to("jpa://" + SendEmail.class.getName() + "?");
+      from("direct:startShared").to("jpa://" + SendEmail.class.getName() + "?sharedEntityManager=true&joinTransaction=false");
+      from("jpa://" + SendEmail.class.getName() + "?sharedEntityManager=true&joinTransaction=false").routeId("jpaShared").autoStartup(false).process(new LatchProcessor()).to("mock:result");
+      from("jpa://" + SendEmail.class.getName() + "?sharedEntityManager=false").routeId("jpaOwn").autoStartup(false).process(new LatchProcessor()).to("mock:result");
+    }
+  }
+;
+}
