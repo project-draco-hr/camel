@@ -14,12 +14,18 @@
   final Exchange wireTapExchange=target;
   executorService.submit(new Callable<Exchange>(){
     public Exchange call() throws Exception {
+      final StopWatch watch=new StopWatch();
       try {
+        EventHelper.notifyExchangeSending(wireTapExchange.getContext(),wireTapExchange,destination);
         LOG.debug(">>>> (wiretap) {} {}",destination,wireTapExchange);
         processor.process(wireTapExchange);
       }
  catch (      Throwable e) {
         LOG.warn("Error occurred during processing " + wireTapExchange + " wiretap to "+ destination+ ". This exception will be ignored.",e);
+      }
+ finally {
+        long timeTaken=watch.stop();
+        EventHelper.notifyExchangeSent(wireTapExchange.getContext(),wireTapExchange,destination,timeTaken);
       }
       return wireTapExchange;
     }
