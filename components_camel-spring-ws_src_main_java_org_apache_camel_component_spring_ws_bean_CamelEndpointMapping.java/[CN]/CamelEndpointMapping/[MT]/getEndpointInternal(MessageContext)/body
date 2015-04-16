@@ -1,6 +1,6 @@
 {
   for (  EndpointMappingKey key : endpoints.keySet()) {
-    Object messageKey=null;
+    String messageKey;
 switch (key.getType()) {
 case ROOT_QNAME:
       messageKey=getRootQName(messageContext);
@@ -13,6 +13,15 @@ messageKey=getXPathResult(messageContext,key.getExpression());
 break;
 case URI:
 messageKey=getUri();
+break;
+case URI_PATH:
+messageKey=getUriPath();
+if (messageKey != null && key.getLookupKey().endsWith(URI_PATH_WILDCARD)) {
+String lookupKey=key.getLookupKey().substring(0,key.getLookupKey().length() - 1);
+if (messageKey.startsWith(lookupKey)) {
+return endpoints.get(key);
+}
+}
 break;
 default :
 throw new RuntimeCamelException("Invalid mapping type specified. Supported types are: root QName, SOAP action, XPath expression and URI");
