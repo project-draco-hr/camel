@@ -1,0 +1,21 @@
+{
+  LOG.debug("Got {} operation, going to append text to provided pdf.",pdfConfiguration.getOperation());
+  String body=exchange.getIn().getBody(String.class);
+  PDDocument document=exchange.getIn().getHeader(PDF_DOCUMENT_HEADER_NAME,PDDocument.class);
+  if (document == null) {
+    throw new IllegalArgumentException(String.format("%s header is expected for append operation",PDF_DOCUMENT_HEADER_NAME));
+  }
+  if (document.isEncrypted()) {
+    DecryptionMaterial decryptionMaterial=exchange.getIn().getHeader(DECRYPTION_MATERIAL_HEADER_NAME,DecryptionMaterial.class);
+    if (decryptionMaterial == null) {
+      throw new IllegalArgumentException(String.format("%s header is expected for %s operation " + "on encrypted document",DECRYPTION_MATERIAL_HEADER_NAME,pdfConfiguration.getOperation()));
+    }
+    document.openProtection(decryptionMaterial);
+    document.setAllSecurityToBeRemoved(true);
+  }
+  ProtectionPolicy protectionPolicy=exchange.getIn().getHeader(PROTECTION_POLICY_HEADER_NAME,ProtectionPolicy.class);
+  appendToPdfDocument(body,document,protectionPolicy);
+  OutputStream byteArrayOutputStream=new ByteArrayOutputStream();
+  document.save(byteArrayOutputStream);
+  return byteArrayOutputStream;
+}

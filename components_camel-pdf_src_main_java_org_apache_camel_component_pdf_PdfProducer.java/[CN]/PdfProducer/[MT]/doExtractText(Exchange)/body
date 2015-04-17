@@ -1,0 +1,13 @@
+{
+  LOG.debug("Got {} operation, going to extract text from provided pdf.",pdfConfiguration.getOperation());
+  PDDocument document=exchange.getIn().getBody(PDDocument.class);
+  if (document.isEncrypted()) {
+    DecryptionMaterial decryptionMaterial=exchange.getIn().getHeader(DECRYPTION_MATERIAL_HEADER_NAME,DecryptionMaterial.class);
+    if (decryptionMaterial == null) {
+      throw new IllegalArgumentException(String.format("%s header is expected for %s operation " + "on encrypted document",DECRYPTION_MATERIAL_HEADER_NAME,pdfConfiguration.getOperation()));
+    }
+    document.openProtection(decryptionMaterial);
+  }
+  PDFTextStripper pdfTextStripper=new PDFTextStripper();
+  return pdfTextStripper.getText(document);
+}

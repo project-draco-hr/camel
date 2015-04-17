@@ -1,0 +1,22 @@
+{
+  PDPage page=new PDPage(pdfConfiguration.getPageSize());
+  document.addPage(page);
+  float x=pdfConfiguration.getMarginLeft();
+  float y=page.getMediaBox().getHeight() - pdfConfiguration.getMarginTop();
+  float averageFontHeight=PdfUtils.getAverageFontHeight(pdfConfiguration.getFont(),pdfConfiguration.getFontSize());
+  float lineSpacing=averageFontHeight * 2;
+  PDPageContentStream contentStream=initializeContentStream(document,page);
+  for (  String line : lines) {
+    writeLine(x,y,line,contentStream);
+    y-=lineSpacing;
+    if (goToNextPage(y)) {
+      contentStream.close();
+      page=new PDPage(pdfConfiguration.getPageSize());
+      document.addPage(page);
+      contentStream=initializeContentStream(document,page);
+      y=page.getMediaBox().getHeight() - pdfConfiguration.getMarginTop();
+    }
+  }
+  contentStream.close();
+  return document;
+}
