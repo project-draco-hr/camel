@@ -3,6 +3,26 @@
   log.info("********************************************************************************");
   log.info("Testing done: " + getTestMethodName() + "("+ getClass().getName()+ ")");
   log.info("Took: " + TimeUtils.printDuration(time) + " ("+ time+ " millis)");
+  if (isDumpRouteStats()) {
+    String className=this.getClass().getSimpleName();
+    String dir="target/camel-route-stats";
+    String name=className + "-" + getTestMethodName()+ ".xml";
+    ManagedCamelContextMBean managedCamelContext=context.getManagedCamelContext();
+    if (managedCamelContext == null) {
+      log.warn("Cannot dump route stats to file as JMX is not enabled. Override useJmx() method to enable JMX in the unit test classes.");
+    }
+ else {
+      String xml=managedCamelContext.dumpRoutesStatsAsXml(false,true);
+      File file=new File(dir);
+      file.mkdirs();
+      file=new File(dir,name);
+      log.info("Dumping route stats to file: " + file);
+      InputStream is=new ByteArrayInputStream(xml.getBytes());
+      OutputStream os=new FileOutputStream(file,false);
+      IOHelper.copyAndCloseInput(is,os);
+      IOHelper.close(os);
+    }
+  }
   log.info("********************************************************************************");
   if (isCreateCamelContextPerClass()) {
     return;
