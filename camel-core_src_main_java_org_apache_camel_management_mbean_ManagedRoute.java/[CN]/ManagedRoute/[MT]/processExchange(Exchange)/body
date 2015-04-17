@@ -1,6 +1,8 @@
 {
   InFlightKey key=new InFlightKey(System.currentTimeMillis(),exchange.getExchangeId());
-  exchangesInFlightKeys.put(exchange.getExchangeId(),key);
-  exchangesInFlightStartTimestamps.put(key,key.timeStamp);
+  InFlightKey oldKey=exchangesInFlightKeys.putIfAbsent(exchange.getExchangeId(),key);
+  if (oldKey == null) {
+    exchangesInFlightStartTimestamps.put(key,key.timeStamp);
+  }
   super.processExchange(exchange);
 }
