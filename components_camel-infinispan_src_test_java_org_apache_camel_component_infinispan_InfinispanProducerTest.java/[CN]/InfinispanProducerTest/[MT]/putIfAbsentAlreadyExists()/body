@@ -1,0 +1,14 @@
+{
+  currentCache().put(KEY_ONE,VALUE_ONE);
+  template.send("direct:putifabsent",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_TWO);
+      exchange.getIn().setHeader(InfinispanConstants.OPERATION,InfinispanConstants.PUT_IF_ABSENT);
+    }
+  }
+);
+  Object value=currentCache().get(KEY_ONE);
+  assertThat(value.toString(),is(VALUE_ONE));
+  assertEquals(currentCache().size(),1);
+}

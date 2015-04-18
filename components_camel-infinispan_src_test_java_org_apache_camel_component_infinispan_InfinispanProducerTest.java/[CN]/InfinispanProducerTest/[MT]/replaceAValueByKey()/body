@@ -1,0 +1,13 @@
+{
+  currentCache().put(KEY_ONE,VALUE_ONE);
+  Exchange exchange=template.request("direct:replace",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_TWO);
+      exchange.getIn().setHeader(InfinispanConstants.OPERATION,InfinispanConstants.REPLACE);
+    }
+  }
+);
+  assertThat(exchange.getIn().getHeader(InfinispanConstants.RESULT,String.class),is(VALUE_ONE));
+  assertEquals(currentCache().get(KEY_ONE),VALUE_TWO);
+}
