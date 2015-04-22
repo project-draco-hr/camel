@@ -18,16 +18,26 @@
       candidates.add(entry);
     }
   }
-  Iterator<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>> it=candidates.iterator();
-  while (it.hasNext()) {
-    Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
+  List<HttpServerChannelHandler> directMatches=new LinkedList<HttpServerChannelHandler>();
+  for (  Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry : candidates) {
     if (entry.getKey().matchesRest(path,false)) {
-      answer=entry.getValue();
-      break;
+      directMatches.add(entry.getValue());
+    }
+  }
+  if (directMatches.size() == 1) {
+    answer=directMatches.get(0);
+  }
+ else   if (directMatches.size() > 1) {
+    List<HttpServerChannelHandler> directMatchesWithOptions=handlersWithExplicitOptionsMethod(directMatches);
+    if (!directMatchesWithOptions.isEmpty()) {
+      answer=handlerWithTheLongestMatchingPrefix(directMatchesWithOptions);
+    }
+ else {
+      answer=handlerWithTheLongestMatchingPrefix(directMatches);
     }
   }
   if (answer == null) {
-    it=candidates.iterator();
+    Iterator<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>> it=candidates.iterator();
     while (it.hasNext()) {
       Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
       if (!entry.getKey().matchesRest(path,true)) {
