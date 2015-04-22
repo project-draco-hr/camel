@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      onException(Exception.class).handled(true).loadBalance().roundRobin().to("seda:error","seda:error2").end().to("mock:exception");
+      from("direct:start").to("mock:start").choice().when(body().contains("Kaboom")).throwException(new IllegalArgumentException("Forced")).otherwise().transform(body().prepend("Bye ")).to("mock:result");
+      from("seda:error").routeId("errorRoute").to("controlbus:route?action=stop&routeId=errorRoute&async=true").to("mock:error");
+    }
+  }
+;
+}
