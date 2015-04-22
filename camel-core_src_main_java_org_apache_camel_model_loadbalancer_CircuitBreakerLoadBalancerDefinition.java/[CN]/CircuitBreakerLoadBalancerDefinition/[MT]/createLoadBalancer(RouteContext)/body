@@ -1,7 +1,10 @@
 {
   CircuitBreakerLoadBalancer answer;
-  if (!exceptions.isEmpty()) {
-    List<Class<?>> classes=new ArrayList<Class<?>>();
+  List<Class<?>> classes=new ArrayList<Class<?>>();
+  if (!exceptionTypes.isEmpty()) {
+    classes.addAll(exceptionTypes);
+  }
+ else   if (!exceptions.isEmpty()) {
     for (    String name : exceptions) {
       Class<?> type=routeContext.getCamelContext().getClassResolver().resolveClass(name);
       if (type == null) {
@@ -12,10 +15,12 @@
       }
       classes.add(type);
     }
-    answer=new CircuitBreakerLoadBalancer(classes);
+  }
+  if (classes.isEmpty()) {
+    answer=new CircuitBreakerLoadBalancer();
   }
  else {
-    answer=new CircuitBreakerLoadBalancer();
+    answer=new CircuitBreakerLoadBalancer(classes);
   }
   if (getHalfOpenAfter() != null) {
     answer.setHalfOpenAfter(getHalfOpenAfter());
