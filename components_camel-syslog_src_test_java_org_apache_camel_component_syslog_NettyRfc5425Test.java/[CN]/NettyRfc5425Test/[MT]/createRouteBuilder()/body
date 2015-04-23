@@ -10,6 +10,14 @@
         }
       }
 ).to("mock:syslogReceiver").marshal(syslogDataFormat).to("mock:syslogReceiver2");
+      from("direct:checkStructuredData").unmarshal(syslogDataFormat).process(new Processor(){
+        @Override public void process(        Exchange ex){
+          Object body=ex.getIn().getBody();
+          assertTrue(body instanceof Rfc5424SyslogMessage);
+          assertEquals("[exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"]",((Rfc5424SyslogMessage)body).getStructuredData());
+        }
+      }
+).to("mock:syslogReceiver");
     }
   }
 ;
