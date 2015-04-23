@@ -1,12 +1,16 @@
 {
-  LoadBalancer loadBalancer=LoadBalancerDefinition.getLoadBalancer(routeContext,loadBalancerType,ref);
-  for (  ProcessorDefinition<?> processorType : getOutputs()) {
-    if (LoadBalanceDefinition.class.isInstance(processorType)) {
-      throw new IllegalArgumentException("Loadbalancer already configured to: " + loadBalancerType + ". Cannot set it to: "+ processorType);
+  LoadBalancer loadBalancer=loadBalancerType.getLoadBalancer(routeContext);
+  if (loadBalancer == null) {
+    loadBalancer=loadBalancerType.createLoadBalancer(routeContext);
+    loadBalancerType.setLoadBalancer(loadBalancer);
+    for (    ProcessorDefinition<?> processorType : getOutputs()) {
+      if (LoadBalanceDefinition.class.isInstance(processorType)) {
+        throw new IllegalArgumentException("Loadbalancer already configured to: " + loadBalancerType + ". Cannot set it to: "+ processorType);
+      }
+      Processor processor=createProcessor(routeContext,processorType);
+      processor=wrapChannel(routeContext,processor,processorType);
+      loadBalancer.addProcessor(processor);
     }
-    Processor processor=createProcessor(routeContext,processorType);
-    processor=wrapChannel(routeContext,processor,processorType);
-    loadBalancer.addProcessor(processor);
   }
   return loadBalancer;
 }

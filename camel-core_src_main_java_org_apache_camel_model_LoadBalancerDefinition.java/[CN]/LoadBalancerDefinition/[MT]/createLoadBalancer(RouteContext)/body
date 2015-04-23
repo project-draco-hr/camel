@@ -1,10 +1,13 @@
 {
+  ObjectHelper.notEmpty(loadBalancerTypeName,"loadBalancerTypeName",this);
+  LoadBalancer answer=null;
   if (loadBalancerTypeName != null) {
-    Class<?> type=routeContext.getCamelContext().getClassResolver().resolveClass(loadBalancerTypeName);
+    Class<?> type=routeContext.getCamelContext().getClassResolver().resolveClass(loadBalancerTypeName,LoadBalancer.class);
     if (type == null) {
       throw new IllegalArgumentException("Cannot find class: " + loadBalancerTypeName + " in the classpath");
     }
-    return (LoadBalancer)ObjectHelper.newInstance(type);
+    answer=(LoadBalancer)routeContext.getCamelContext().getInjector().newInstance(type);
+    configureLoadBalancer(answer);
   }
-  return null;
+  return answer;
 }
