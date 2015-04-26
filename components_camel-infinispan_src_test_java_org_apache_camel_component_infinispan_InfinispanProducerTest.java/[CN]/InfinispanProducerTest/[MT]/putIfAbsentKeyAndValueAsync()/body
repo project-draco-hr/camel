@@ -1,0 +1,14 @@
+{
+  Exchange exchange=template.send("direct:putifabsentasync",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_ONE);
+    }
+  }
+);
+  Thread.sleep(10000);
+  NotifyingFuture resultPutAsync=exchange.getIn().getHeader(InfinispanConstants.RESULT,NotifyingFuture.class);
+  assertEquals(Boolean.TRUE,resultPutAsync.isDone());
+  Object value=currentCache().get(KEY_ONE);
+  assertEquals(value.toString(),VALUE_ONE);
+}

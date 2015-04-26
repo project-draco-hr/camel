@@ -1,0 +1,25 @@
+{
+  currentCache().put(KEY_ONE,VALUE_ONE);
+  Exchange exchange=template.request("direct:replaceasync",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_TWO);
+      exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME,new Long(LIFESPAN_FOR_MAX_IDLE));
+      exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME_UNIT,TimeUnit.SECONDS.toString());
+      exchange.getIn().setHeader(InfinispanConstants.MAX_IDLE_TIME,new Long(MAX_IDLE_TIME));
+      exchange.getIn().setHeader(InfinispanConstants.MAX_IDLE_TIME_UNIT,TimeUnit.SECONDS.toString());
+    }
+  }
+);
+  assertEquals(exchange.getIn().getHeader(InfinispanConstants.RESULT,String.class),VALUE_ONE);
+  assertEquals(currentCache().get(KEY_ONE),VALUE_TWO);
+  Thread.sleep(10000);
+  exchange=template.send("direct:get",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+    }
+  }
+);
+  String resultGet=exchange.getIn().getHeader(InfinispanConstants.RESULT,String.class);
+  assertEquals(null,resultGet);
+}
