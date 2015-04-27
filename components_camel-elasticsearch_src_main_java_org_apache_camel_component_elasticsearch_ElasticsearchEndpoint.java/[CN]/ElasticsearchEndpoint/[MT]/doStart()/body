@@ -7,10 +7,14 @@
     LOG.info("Joining ElasticSearch cluster " + configuration.getClusterName());
   }
   if (configuration.getIp() != null) {
-    LOG.info("REMOTE ELASTICSEARCH: {}",configuration.getIp());
-    Settings settings=ImmutableSettings.settingsBuilder().classLoader(Settings.class.getClassLoader()).put("cluster.name",configuration.getClusterName()).put("client.transport.ignore_cluster_name",false).put("node.client",true).put("client.transport.sniff",true).build();
-    Client client=new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(configuration.getIp(),configuration.getPort()));
-    this.client=client;
+    this.client=new TransportClient(getSettings()).addTransportAddress(new InetSocketTransportAddress(configuration.getIp(),configuration.getPort()));
+  }
+ else   if (configuration.getTransportAddresses() != null && !configuration.getTransportAddresses().isEmpty()) {
+    List<TransportAddress> addresses=new ArrayList<>(configuration.getTransportAddresses().size());
+    for (    TransportAddress address : configuration.getTransportAddresses()) {
+      addresses.add(address);
+    }
+    this.client=new TransportClient(getSettings()).addTransportAddresses(addresses.toArray(new TransportAddress[0]));
   }
  else {
     node=configuration.buildNode();
