@@ -1,29 +1,10 @@
 {
-  String message=exchange.getIn().getBody(String.class);
-  Collection<String> tokens;
-  if (isTokensConfiguredUsingUri()) {
-    if (hasTokensHeader(exchange)) {
-      throw new IllegalArgumentException("Tokens already configured on endpoint " + ApnsConstants.HEADER_TOKENS);
-    }
-    tokens=new ArrayList<String>(tokenList);
-  }
- else {
-    String tokensHeader=getHeaderTokens(exchange);
-    tokens=extractTokensFromString(tokensHeader);
-  }
   MessageType messageType=getHeaderMessageType(exchange,MessageType.STRING);
-  String payload;
-  if (messageType == MessageType.STRING) {
-    payload=APNS.newPayload().alertBody(message).build();
+  if (messageType == MessageType.APNS_NOTIFICATION) {
+    ApnsNotification apnsNotification=exchange.getIn().getBody(ApnsNotification.class);
+    getEndpoint().getApnsService().push(apnsNotification);
   }
  else {
-    payload=message;
-  }
-  Date expiry=exchange.getIn().getHeader(ApnsConstants.HEADER_EXPIRY,Date.class);
-  if (expiry != null) {
-    getEndpoint().getApnsService().push(tokens,payload,expiry);
-  }
- else {
-    getEndpoint().getApnsService().push(tokens,payload);
+    constructNotificationAndNotify(exchange,messageType);
   }
 }
