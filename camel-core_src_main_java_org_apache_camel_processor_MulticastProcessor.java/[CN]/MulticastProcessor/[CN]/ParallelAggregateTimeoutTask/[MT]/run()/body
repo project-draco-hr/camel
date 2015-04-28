@@ -1,0 +1,19 @@
+{
+  AggregationStrategy strategy=getAggregationStrategy(null);
+  if (strategy instanceof TimeoutAwareAggregationStrategy) {
+    Exchange oldExchange=result.get();
+    if (oldExchange == null) {
+      oldExchange=original;
+    }
+    ((TimeoutAwareAggregationStrategy)strategy).timeout(oldExchange,aggregated.intValue(),total.intValue(),timeout);
+  }
+ else {
+    LOG.warn("Parallel processing timed out after {} millis for number {}. This task will be cancelled and will not be aggregated.",timeout,aggregated.intValue());
+  }
+  LOG.debug("Timeout occurred after {} millis for number {} task.",timeout,aggregated.intValue());
+  timedOut.set(true);
+  if (completion instanceof SubmitOrderedCompletionService) {
+    ((SubmitOrderedCompletionService<?>)completion).timeoutTask();
+  }
+  aggregated.incrementAndGet();
+}

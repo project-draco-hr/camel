@@ -1,16 +1,16 @@
 {
-  boolean timedOut=false;
+  final AtomicBoolean timedOut=new AtomicBoolean();
   boolean stoppedOnException=false;
   final StopWatch watch=new StopWatch();
-  int aggregated=0;
+  final AtomicInteger aggregated=new AtomicInteger();
   boolean done=false;
   while (!done) {
-    if (allTasksSubmitted.get() && aggregated >= total.get()) {
+    if (allTasksSubmitted.get() && aggregated.intValue() >= total.get()) {
       LOG.debug("Done aggregating {} exchanges on the fly.",aggregated);
       break;
     }
     Future<Exchange> future;
-    if (timedOut) {
+    if (timedOut.get()) {
       future=completion.poll();
       LOG.trace("Polled completion task #{} after timeout to grab already completed tasks: {}",aggregated,future);
     }
@@ -30,21 +30,12 @@
       }
     }
     if (future == null) {
-      AggregationStrategy strategy=getAggregationStrategy(null);
-      if (strategy instanceof TimeoutAwareAggregationStrategy) {
-        Exchange oldExchange=result.get();
-        if (oldExchange == null) {
-          oldExchange=original;
-        }
-        ((TimeoutAwareAggregationStrategy)strategy).timeout(oldExchange,aggregated,total.intValue(),timeout);
+      ParallelAggregateTimeoutTask task=new ParallelAggregateTimeoutTask(original,result,completion,aggregated,total,timedOut);
+      if (parallelAggregate) {
+        aggregateExecutorService.submit(task);
       }
  else {
-        LOG.warn("Parallel processing timed out after {} millis for number {}. This task will be cancelled and will not be aggregated.",timeout,aggregated);
-      }
-      LOG.debug("Timeout occurred after {} millis for number {} task.",timeout,aggregated);
-      timedOut=true;
-      if (completion instanceof SubmitOrderedCompletionService) {
-        ((SubmitOrderedCompletionService<?>)completion).timeoutTask();
+        task.run();
       }
     }
  else {
@@ -56,17 +47,17 @@
         stoppedOnException=true;
         break;
       }
+      ParallelAggregateTask task=new ParallelAggregateTask(result,subExchange,aggregated);
       if (parallelAggregate) {
-        doAggregateInternal(getAggregationStrategy(subExchange),result,subExchange);
+        aggregateExecutorService.submit(task);
       }
  else {
-        doAggregate(getAggregationStrategy(subExchange),result,subExchange);
+        task.run();
       }
     }
-    aggregated++;
   }
-  if (timedOut || stoppedOnException) {
-    if (timedOut) {
+  if (timedOut.get() || stoppedOnException) {
+    if (timedOut.get()) {
       LOG.debug("Cancelling tasks due timeout after {} millis.",timeout);
     }
     if (stoppedOnException) {
