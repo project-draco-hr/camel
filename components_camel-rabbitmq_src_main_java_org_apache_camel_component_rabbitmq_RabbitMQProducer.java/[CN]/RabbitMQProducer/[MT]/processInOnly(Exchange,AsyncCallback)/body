@@ -1,0 +1,15 @@
+{
+  String exchangeName=getEndpoint().getExchangeName(exchange.getIn());
+  String key=exchange.getIn().getHeader(RabbitMQConstants.ROUTING_KEY,null,String.class);
+  if (key == null || getEndpoint().isBridgeEndpoint()) {
+    key=getEndpoint().getRoutingKey() == null ? "" : getEndpoint().getRoutingKey();
+  }
+  if (ObjectHelper.isEmpty(key) && ObjectHelper.isEmpty(exchangeName)) {
+    throw new IllegalArgumentException("ExchangeName and RoutingKey is not provided in the endpoint: " + getEndpoint());
+  }
+  basicPublish(exchange,exchangeName,key);
+  if (callback != null) {
+    callback.done(true);
+  }
+  return true;
+}

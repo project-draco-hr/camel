@@ -1,0 +1,24 @@
+{
+  final org.apache.camel.Message in=exchange.getIn();
+  initReplyManager();
+  final long timeout=exchange.getIn().getHeader(RabbitMQConstants.REQUEST_TIMEOUT,getEndpoint().getRequestTimeout(),long.class);
+  final String originalCorrelationId=in.getHeader(RabbitMQConstants.CORRELATIONID,String.class);
+  String correlationId=GENERATED_CORRELATION_ID_PREFIX + getEndpoint().getCamelContext().getUuidGenerator().generateUuid();
+  in.setHeader(RabbitMQConstants.CORRELATIONID,correlationId);
+  in.setHeader(RabbitMQConstants.REPLY_TO,replyManager.getReplyTo());
+  String exchangeName=in.getHeader(RabbitMQConstants.EXCHANGE_NAME,String.class);
+  if (exchangeName == null || getEndpoint().isBridgeEndpoint()) {
+    exchangeName=getEndpoint().getExchangeName();
+  }
+  String key=in.getHeader(RabbitMQConstants.ROUTING_KEY,null,String.class);
+  if (key == null || getEndpoint().isBridgeEndpoint()) {
+    key=getEndpoint().getRoutingKey() == null ? "" : getEndpoint().getRoutingKey();
+  }
+  if (ObjectHelper.isEmpty(key) && ObjectHelper.isEmpty(exchangeName)) {
+    throw new IllegalArgumentException("ExchangeName and RoutingKey is not provided in the endpoint: " + getEndpoint());
+  }
+  log.debug("Registering reply for {}",correlationId);
+  replyManager.registerReply(replyManager,exchange,callback,originalCorrelationId,correlationId,timeout);
+  basicPublish(exchange,exchangeName,key);
+  return false;
+}

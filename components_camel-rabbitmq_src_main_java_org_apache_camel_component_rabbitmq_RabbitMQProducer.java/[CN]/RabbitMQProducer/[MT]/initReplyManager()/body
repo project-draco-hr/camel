@@ -1,0 +1,38 @@
+{
+  if (!started.get()) {
+synchronized (this) {
+      if (started.get()) {
+        return;
+      }
+      log.debug("Starting reply manager");
+      ClassLoader current=Thread.currentThread().getContextClassLoader();
+      ClassLoader ac=getEndpoint().getCamelContext().getApplicationContextClassLoader();
+      try {
+        if (ac != null) {
+          Thread.currentThread().setContextClassLoader(ac);
+        }
+        if (getEndpoint().getReplyToType() != null) {
+          if (getEndpoint().getReplyTo() != null && getEndpoint().getReplyToType().equals(ReplyToType.Temporary.name())) {
+            throw new IllegalArgumentException("ReplyToType " + ReplyToType.Temporary + " is not supported when replyTo "+ getEndpoint().getReplyTo()+ " is also configured.");
+          }
+        }
+        if (getEndpoint().getReplyTo() != null) {
+          throw new IllegalArgumentException("Specifying replyTo " + getEndpoint().getReplyTo() + " is currently not supported.");
+        }
+ else {
+          replyManager=createReplyManager();
+          log.debug("Using RabbitMQReplyManager: {} to process replies from temporary queue",replyManager);
+        }
+      }
+ catch (      Exception e) {
+        throw new FailedToCreateProducerException(getEndpoint(),e);
+      }
+ finally {
+        if (ac != null) {
+          Thread.currentThread().setContextClassLoader(current);
+        }
+      }
+      started.set(true);
+    }
+  }
+}

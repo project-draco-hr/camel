@@ -1,0 +1,16 @@
+{
+  log.debug("Creating connection");
+  Connection conn=endpoint.connect(executorService);
+  log.debug("Creating channel");
+  Channel channel=conn.createChannel();
+  if (endpoint.isPrefetchEnabled()) {
+    channel.basicQos(endpoint.getPrefetchSize(),endpoint.getPrefetchCount(),endpoint.isPrefetchGlobal());
+  }
+  DeclareOk result=channel.queueDeclare();
+  log.debug("Temporary queue name {}",result.getQueue());
+  setReplyTo(result.getQueue());
+  channel.queueBind(getReplyTo(),endpoint.getExchangeName(),getReplyTo());
+  consumer=new RabbitConsumer(this,channel);
+  consumer.start();
+  return conn;
+}

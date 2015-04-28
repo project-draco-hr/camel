@@ -1,0 +1,30 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:rabbitMQ").id("producingRoute").setHeader("routeHeader",simple("routeHeader")).inOut(rabbitMQEndpoint);
+      from(rabbitMQEndpoint).id("consumingRoute").log("Receiving message").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          if (exchange.getIn().getBody(TestSerializableObject.class) != null) {
+            TestSerializableObject foo=exchange.getIn().getBody(TestSerializableObject.class);
+            foo.setDescription("foobar");
+          }
+ else           if (exchange.getIn().getBody(String.class) != null) {
+            if (exchange.getIn().getBody(String.class).contains("header")) {
+              assertEquals(exchange.getIn().getHeader("String"),"String");
+              assertEquals(exchange.getIn().getHeader("routeHeader"),"routeHeader");
+            }
+            if (exchange.getIn().getBody(String.class).contains("Exception")) {
+              throw new IllegalArgumentException("Boom");
+            }
+            if (exchange.getIn().getBody(String.class).contains("TimeOut")) {
+              Thread.sleep(TIMEOUT_MS * 2);
+            }
+            exchange.getIn().setBody(exchange.getIn().getBody(String.class) + " response");
+          }
+        }
+      }
+);
+    }
+  }
+;
+}

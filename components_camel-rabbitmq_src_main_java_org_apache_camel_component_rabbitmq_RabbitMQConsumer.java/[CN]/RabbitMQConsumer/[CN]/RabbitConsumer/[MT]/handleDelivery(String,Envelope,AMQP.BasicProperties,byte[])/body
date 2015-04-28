@@ -1,8 +1,9 @@
 {
   Exchange exchange=consumer.endpoint.createRabbitExchange(envelope,properties,body);
-  mergeAmqpProperties(exchange,properties);
+  endpoint.getMessageConverter().mergeAmqpProperties(exchange,properties);
   boolean sendReply=properties.getReplyTo() != null;
   if (sendReply && !exchange.getPattern().isOutCapable()) {
+    log.debug("In an inOut capable route");
     exchange.setPattern(ExchangePattern.InOut);
   }
   log.trace("Created exchange [exchange={}]",exchange);
@@ -22,13 +23,17 @@
   }
   if (!exchange.isFailed()) {
     if (sendReply && exchange.getPattern().isOutCapable()) {
-      AMQP.BasicProperties replyProps=new AMQP.BasicProperties.Builder().headers(msg.getHeaders()).correlationId(properties.getCorrelationId()).build();
-      channel.basicPublish("",properties.getReplyTo(),replyProps,msg.getBody(byte[].class));
+      endpoint.publishExchangeToChannel(exchange,channel,properties.getReplyTo());
     }
     if (!consumer.endpoint.isAutoAck()) {
       log.trace("Acknowledging receipt [delivery_tag={}]",deliveryTag);
       channel.basicAck(deliveryTag,false);
     }
+  }
+ else   if (endpoint.isTransferException() && exchange.getPattern().isOutCapable()) {
+    msg.setBody(exchange.getException());
+    exchange.setOut(msg);
+    endpoint.publishExchangeToChannel(exchange,channel,properties.getReplyTo());
   }
  else {
     boolean isRequeueHeaderSet=msg.getHeader(RabbitMQConstants.REQUEUE,false,boolean.class);
