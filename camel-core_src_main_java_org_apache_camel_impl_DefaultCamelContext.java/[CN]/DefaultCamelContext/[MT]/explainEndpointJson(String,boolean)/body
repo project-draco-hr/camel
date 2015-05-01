@@ -7,6 +7,7 @@
     }
     List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("properties",json,true);
     Map<String,String[]> selected=new LinkedHashMap<String,String[]>();
+    Map<String,String[]> uriOptions=new LinkedHashMap<String,String[]>();
     Map<String,Object> options=URISupport.parseParameters(u);
     Map<String,Object> consumerOptions=IntrospectionSupport.extractProperties(options,"consumer.");
     options.putAll(consumerOptions);
@@ -38,7 +39,7 @@
           break;
         }
       }
-      selected.put(name,new String[]{name,kind,label,required,type,javaType,deprecated,value,defaultValue,description});
+      uriOptions.put(name,new String[]{name,kind,label,required,type,javaType,deprecated,value,defaultValue,description});
     }
     for (    Map<String,String> row : rows) {
       String name=row.get("name");
@@ -56,9 +57,15 @@
         value=URISupport.extractRemainderPath(u,false);
         value=URISupport.sanitizePath(value);
       }
-      if (includeAllOptions || "path".equals(kind)) {
+      boolean isUriOption=uriOptions.containsKey(name);
+      if (includeAllOptions || isUriOption || "path".equals(kind)) {
         if (!selected.containsKey(name)) {
-          selected.put(name,new String[]{name,kind,label,required,type,javaType,deprecated,value,defaultValue,description});
+          if (isUriOption) {
+            selected.put(name,uriOptions.get(name));
+          }
+ else {
+            selected.put(name,new String[]{name,kind,label,required,type,javaType,deprecated,value,defaultValue,description});
+          }
         }
       }
     }
