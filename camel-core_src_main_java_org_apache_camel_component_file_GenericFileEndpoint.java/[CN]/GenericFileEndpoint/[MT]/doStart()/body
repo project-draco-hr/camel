@@ -7,6 +7,12 @@
       throw new IllegalArgumentException("The option readLockTimeout must be higher than readLockCheckInterval" + ", was readLockTimeout=" + readLockTimeout + ", readLockCheckInterval="+ readLockCheckInterval+ ". A good practice is to let the readLockTimeout be at least 3 times higher than the readLockCheckInterval"+ " to ensure that the read lock procedure has enough time to acquire the lock.");
     }
   }
-  ServiceHelper.startServices(inProgressRepository,idempotentRepository);
+  if ("idempotent".equals(readLock) && idempotentRepository == null) {
+    throw new IllegalArgumentException("IdempotentRepository must be configured when using readLock=idempotent");
+  }
+  if (idempotentRepository != null) {
+    getCamelContext().addService(idempotentRepository,true);
+  }
+  ServiceHelper.startServices(inProgressRepository);
   super.doStart();
 }
