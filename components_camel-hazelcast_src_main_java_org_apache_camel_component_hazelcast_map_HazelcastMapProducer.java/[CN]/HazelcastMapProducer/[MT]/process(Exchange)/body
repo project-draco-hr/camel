@@ -1,9 +1,13 @@
 {
   Map<String,Object> headers=exchange.getIn().getHeaders();
   Object oid=null;
+  Object ovalue=null;
   String query=null;
   if (headers.containsKey(HazelcastConstants.OBJECT_ID)) {
     oid=headers.get(HazelcastConstants.OBJECT_ID);
+  }
+  if (headers.containsKey(HazelcastConstants.OBJECT_VALUE)) {
+    ovalue=headers.get(HazelcastConstants.OBJECT_VALUE);
   }
   if (headers.containsKey(HazelcastConstants.QUERY)) {
     query=(String)headers.get(HazelcastConstants.QUERY);
@@ -27,6 +31,14 @@ this.update(oid,exchange);
 break;
 case HazelcastConstants.QUERY_OPERATION:
 this.query(query,exchange);
+break;
+case HazelcastConstants.REPLACE_OPERATION:
+if (ObjectHelper.isEmpty(ovalue)) {
+this.replace(oid,exchange);
+}
+ else {
+this.replace(oid,ovalue,exchange);
+}
 break;
 default :
 throw new IllegalArgumentException(String.format("The value '%s' is not allowed for parameter '%s' on the MAP cache.",operation,HazelcastConstants.OPERATION));
