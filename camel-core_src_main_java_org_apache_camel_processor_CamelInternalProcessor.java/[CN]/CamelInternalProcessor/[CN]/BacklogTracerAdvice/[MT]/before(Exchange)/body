@@ -1,12 +1,5 @@
 {
   if (backlogTracer.shouldTrace(processorDefinition,exchange)) {
-    int drain=queue.size() - backlogTracer.getBacklogSize();
-    drain+=first ? 2 : 1;
-    if (drain > 0) {
-      for (int i=0; i < drain; i++) {
-        queue.poll();
-      }
-    }
     Date timestamp=new Date();
     String toNode=processorDefinition.getId();
     String exchangeId=exchange.getExchangeId();
@@ -15,10 +8,10 @@
     if (first) {
       Date created=exchange.getProperty(Exchange.CREATED_TIMESTAMP,timestamp,Date.class);
       DefaultBacklogTracerEventMessage pseudo=new DefaultBacklogTracerEventMessage(backlogTracer.incrementTraceCounter(),created,routeId,null,exchangeId,messageAsXml);
-      queue.add(pseudo);
+      backlogTracer.traceEvent(pseudo);
     }
     DefaultBacklogTracerEventMessage event=new DefaultBacklogTracerEventMessage(backlogTracer.incrementTraceCounter(),timestamp,routeId,toNode,exchangeId,messageAsXml);
-    queue.add(event);
+    backlogTracer.traceEvent(event);
   }
   return null;
 }
