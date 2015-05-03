@@ -2,6 +2,8 @@
   Map<String,Object> headers=exchange.getIn().getHeaders();
   Object oid=null;
   Object ovalue=null;
+  Object ttl=null;
+  Object ttlUnit=null;
   String query=null;
   if (headers.containsKey(HazelcastConstants.OBJECT_ID)) {
     oid=headers.get(HazelcastConstants.OBJECT_ID);
@@ -9,13 +11,24 @@
   if (headers.containsKey(HazelcastConstants.OBJECT_VALUE)) {
     ovalue=headers.get(HazelcastConstants.OBJECT_VALUE);
   }
+  if (headers.containsKey(HazelcastConstants.TTL_VALUE)) {
+    ttl=headers.get(HazelcastConstants.TTL_VALUE);
+  }
+  if (headers.containsKey(HazelcastConstants.TTL_UNIT)) {
+    ttlUnit=headers.get(HazelcastConstants.TTL_UNIT);
+  }
   if (headers.containsKey(HazelcastConstants.QUERY)) {
     query=(String)headers.get(HazelcastConstants.QUERY);
   }
   final int operation=lookupOperationNumber(exchange);
 switch (operation) {
 case HazelcastConstants.PUT_OPERATION:
-    this.put(oid,exchange);
+    if (ObjectHelper.isEmpty(ttl) && ObjectHelper.isEmpty(ttlUnit)) {
+      this.put(oid,exchange);
+    }
+ else {
+      this.put(oid,ttl,ttlUnit,exchange);
+    }
   break;
 case HazelcastConstants.GET_OPERATION:
 this.get(oid,exchange);
