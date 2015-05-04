@@ -1,3 +1,18 @@
 {
-  return mapper.map(value,type);
+  if (exchange == null) {
+    return mapper.map(value,type);
+  }
+  T answer;
+  ClassLoader prev=Thread.currentThread().getContextClassLoader();
+  ClassLoader contextCl=exchange.getContext().getApplicationContextClassLoader();
+  LOG.debug("Switching TCCL to: {}.",contextCl);
+  try {
+    Thread.currentThread().setContextClassLoader(contextCl);
+    answer=mapper.map(value,type);
+  }
+  finally {
+    LOG.debug("Restored TCCL to: {}.",prev);
+    Thread.currentThread().setContextClassLoader(prev);
+  }
+  return answer;
 }
