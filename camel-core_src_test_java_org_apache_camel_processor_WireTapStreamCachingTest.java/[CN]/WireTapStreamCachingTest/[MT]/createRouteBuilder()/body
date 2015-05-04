@@ -10,10 +10,11 @@
   return new RouteBuilder(){
     public void configure(){
       context.setStreamCaching(true);
+      context.getStreamCachingStrategy().setSpoolThreshold(1);
       errorHandler(deadLetterChannel("mock:error").redeliveryDelay(0).maximumRedeliveries(3));
       from("direct:a").wireTap("direct:x").wireTap("direct:y").wireTap("direct:z");
       from("direct:x").process(processor).to("mock:x");
-      from("direct:y").process(processor).to("mock:y");
+      from("direct:y").delay(2000).process(processor).to("mock:y");
       from("direct:z").process(processor).to("mock:z");
     }
   }

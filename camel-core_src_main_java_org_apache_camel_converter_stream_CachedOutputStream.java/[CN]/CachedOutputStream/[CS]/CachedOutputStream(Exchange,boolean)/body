@@ -1,35 +1,7 @@
 {
   this.closedOnCompletion=closedOnCompletion;
+  tempFileManager=new TempFileManager(closedOnCompletion);
+  tempFileManager.addExchange(exchange);
   this.strategy=exchange.getContext().getStreamCachingStrategy();
   currentStream=new CachedByteArrayOutputStream(strategy.getBufferSize());
-  if (closedOnCompletion) {
-    Synchronization onCompletion=new SynchronizationAdapter(){
-      @Override public void onDone(      Exchange exchange){
-        try {
-          closeFileInputStreams();
-          close();
-          try {
-            cleanUpTempFile();
-          }
- catch (          Exception e) {
-            LOG.warn("Error deleting temporary cache file: " + tempFile + ". This exception will be ignored.",e);
-          }
-        }
- catch (        Exception e) {
-          LOG.warn("Error closing streams. This exception will be ignored.",e);
-        }
-      }
-      @Override public String toString(){
-        return "OnCompletion[CachedOutputStream]";
-      }
-    }
-;
-    UnitOfWork streamCacheUnitOfWork=exchange.getProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK,UnitOfWork.class);
-    if (streamCacheUnitOfWork != null) {
-      streamCacheUnitOfWork.addSynchronization(onCompletion);
-    }
- else {
-      exchange.addOnCompletion(onCompletion);
-    }
-  }
 }

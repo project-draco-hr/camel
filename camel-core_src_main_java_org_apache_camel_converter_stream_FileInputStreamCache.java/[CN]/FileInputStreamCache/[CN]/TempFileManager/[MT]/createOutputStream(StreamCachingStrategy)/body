@@ -1,0 +1,30 @@
+{
+  if (tempFile != null) {
+    throw new IllegalStateException("The method 'createOutputStream' can only be called once!");
+  }
+  tempFile=FileUtil.createTempFile("cos",".tmp",strategy.getSpoolDirectory());
+  LOG.trace("Creating temporary stream cache file: {}",tempFile);
+  OutputStream out=new BufferedOutputStream(new FileOutputStream(tempFile));
+  if (ObjectHelper.isNotEmpty(strategy.getSpoolChiper())) {
+    try {
+      if (ciphers == null) {
+        ciphers=new CipherPair(strategy.getSpoolChiper());
+      }
+    }
+ catch (    GeneralSecurityException e) {
+      throw new IOException(e.getMessage(),e);
+    }
+    out=new CipherOutputStream(out,ciphers.getEncryptor()){
+      boolean closed;
+      public void close() throws IOException {
+        if (!closed) {
+          super.close();
+          closed=true;
+        }
+      }
+    }
+;
+  }
+  outputStream=out;
+  return out;
+}
