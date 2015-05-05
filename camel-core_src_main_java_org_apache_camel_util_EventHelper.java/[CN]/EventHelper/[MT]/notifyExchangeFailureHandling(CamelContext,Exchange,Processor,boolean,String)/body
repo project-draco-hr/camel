@@ -1,0 +1,27 @@
+{
+  if (exchange.getProperty(Exchange.NOTIFY_EVENT,false,Boolean.class)) {
+    return;
+  }
+  ManagementStrategy management=context.getManagementStrategy();
+  if (management == null) {
+    return;
+  }
+  List<EventNotifier> notifiers=management.getEventNotifiers();
+  if (notifiers == null || notifiers.isEmpty()) {
+    return;
+  }
+  for (  EventNotifier notifier : notifiers) {
+    if (notifier.isIgnoreExchangeEvents() || notifier.isIgnoreExchangeFailedEvents()) {
+      continue;
+    }
+    EventFactory factory=management.getEventFactory();
+    if (factory == null) {
+      return;
+    }
+    EventObject event=factory.createExchangeFailureHandlingEvent(exchange,failureHandler,deadLetterChannel,deadLetterUri);
+    if (event == null) {
+      return;
+    }
+    doNotifyEvent(notifier,event);
+  }
+}
