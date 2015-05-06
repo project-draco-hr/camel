@@ -1,0 +1,53 @@
+{
+  LOG.trace("onMessage START");
+  LOG.debug("{} consumer received JMS message: {}",endpoint,message);
+  boolean sendReply;
+  RuntimeCamelException rce;
+  try {
+    Object replyDestination=getReplyToDestination(message);
+    sendReply=replyDestination != null && !disableReplyTo;
+    final Exchange exchange=createExchange(message,session,replyDestination);
+    if (eagerLoadingOfProperties) {
+      exchange.getIn().getHeaders();
+    }
+    String correlationId=message.getJMSCorrelationID();
+    if (correlationId != null) {
+      LOG.debug("Received Message has JMSCorrelationID [{}]",correlationId);
+    }
+    LOG.trace("onMessage.process START");
+    AsyncCallback callback=new EndpointMessageListenerAsyncCallback(message,exchange,endpoint,sendReply,replyDestination);
+    boolean forceSync=endpoint.isSynchronous() || endpoint.isTransacted();
+    if (forceSync || !isAsync()) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing exchange {} synchronously",exchange.getExchangeId());
+      }
+      try {
+        processor.process(exchange);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+      }
+ finally {
+        callback.done(true);
+      }
+    }
+ else {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Processing exchange {} asynchronously",exchange.getExchangeId());
+      }
+      boolean sync=processor.process(exchange,callback);
+      if (!sync) {
+        return;
+      }
+    }
+    rce=exchange.getException(RuntimeCamelException.class);
+  }
+ catch (  Exception e) {
+    rce=wrapRuntimeCamelException(e);
+  }
+  if (rce != null) {
+    LOG.trace("onMessage END throwing exception: {}",rce.getMessage());
+    throw rce;
+  }
+  LOG.trace("onMessage END");
+}
