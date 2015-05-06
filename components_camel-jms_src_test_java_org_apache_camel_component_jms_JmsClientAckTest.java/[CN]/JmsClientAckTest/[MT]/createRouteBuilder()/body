@@ -1,0 +1,18 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("activemq:queue:foo").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          JmsMessage jms=exchange.getIn(JmsMessage.class);
+          assertNotNull(jms);
+          Session session=jms.getJmsSession();
+          assertNotNull("Should have JMS session",session);
+          assertEquals("Should be client ACK mode",Session.CLIENT_ACKNOWLEDGE,session.getAcknowledgeMode());
+          jms.getJmsMessage().acknowledge();
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
