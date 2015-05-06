@@ -2,17 +2,22 @@
   if (exchange == null) {
     return mapper.map(value,type);
   }
-  T answer;
+  T answer=null;
   ClassLoader prev=Thread.currentThread().getContextClassLoader();
   ClassLoader contextCl=exchange.getContext().getApplicationContextClassLoader();
-  LOG.debug("Switching TCCL to: {}.",contextCl);
-  try {
-    Thread.currentThread().setContextClassLoader(contextCl);
-    answer=mapper.map(value,type);
-  }
+  if (contextCl != null) {
+    LOG.debug("Switching TCCL to: {}.",contextCl);
+    try {
+      Thread.currentThread().setContextClassLoader(contextCl);
+      answer=mapper.map(value,type);
+    }
   finally {
-    LOG.debug("Restored TCCL to: {}.",prev);
-    Thread.currentThread().setContextClassLoader(prev);
+      LOG.debug("Restored TCCL to: {}.",prev);
+      Thread.currentThread().setContextClassLoader(prev);
+    }
+  }
+ else {
+    answer=mapper.map(value,type);
   }
   return answer;
 }
