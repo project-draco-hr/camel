@@ -13,18 +13,20 @@
     }
     if (reader != null) {
       Map<String,String> nsmap=getNsMap();
-      if (nsmap == null) {
-        nsmap=Collections.emptyMap();
+      if (nsmap != null && !(reader instanceof DelegatingXMLStreamReader)) {
+        source=new StAXSource(new DelegatingXMLStreamReader(reader,nsmap));
       }
-      source=new StAXSource(new DelegatingXMLStreamReader(reader,nsmap));
-      StreamSource streamSource=exchange.getContext().getTypeConverter().convertTo(StreamSource.class,exchange,source);
-      if (streamSource != null) {
-        try {
-          li.set(new StreamSourceCache(streamSource,exchange));
-        }
- catch (        IOException e) {
-          LOG.error("Cannot Create StreamSourceCache ",e);
-        }
+      CachedOutputStream cos=new CachedOutputStream(exchange);
+      StreamResult sr=new StreamResult(cos);
+      try {
+        xml.toResult(source,sr);
+        li.set(new StreamSourceCache(cos.newStreamCache()));
+      }
+ catch (      TransformerException e) {
+        LOG.error("Transformation failed ",e);
+      }
+catch (      IOException e) {
+        LOG.error("Cannot Create StreamSourceCache ",e);
       }
     }
  else     if (!(source instanceof DOMSource)) {
