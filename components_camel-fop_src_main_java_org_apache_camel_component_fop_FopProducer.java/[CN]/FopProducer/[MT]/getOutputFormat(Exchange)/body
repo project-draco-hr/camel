@@ -1,11 +1,15 @@
 {
-  String headerOutputFormat=exchange.getIn().getHeader(FopConstants.CAMEL_FOP_OUTPUT_FORMAT,this.outputFormat,String.class);
-  if (headerOutputFormat == null) {
-    throw new RuntimeExchangeException("Missing output format",exchange);
+  String headerOutputFormat=exchange.getIn().getHeader(FopConstants.CAMEL_FOP_OUTPUT_FORMAT,String.class);
+  if (headerOutputFormat != null) {
+    FopOutputType type=exchange.getContext().getTypeConverter().tryConvertTo(FopOutputType.class,exchange,headerOutputFormat);
+    if (type != null) {
+      return type.getFormatExtended();
+    }
+ else {
+      return headerOutputFormat;
+    }
   }
-  if (!isOutputFormatDefined(headerOutputFormat)) {
-    throw new RuntimeExchangeException("The output format is not valid",exchange);
+ else {
+    return outputFormat;
   }
-  String outputFormat=OutputFormatEnum.valueOf(headerOutputFormat).getFormatExtended();
-  return outputFormat;
 }
