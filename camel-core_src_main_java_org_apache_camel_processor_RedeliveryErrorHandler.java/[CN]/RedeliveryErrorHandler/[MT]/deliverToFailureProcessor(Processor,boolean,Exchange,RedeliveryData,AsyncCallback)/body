@@ -82,7 +82,12 @@
   String msg="Failed delivery for " + ExchangeHelper.logIds(exchange);
   msg=msg + ". Exhausted after delivery attempt: " + data.redeliveryCounter+ " caught: "+ caught;
   if (processor != null) {
-    msg=msg + ". Processed by failure processor: " + processor;
+    if (isDeadLetterChannel && deadLetterUri != null) {
+      msg=msg + ". Handled by DeadLetterChannel: [" + URISupport.sanitizeUri(deadLetterUri)+ "]";
+    }
+ else {
+      msg=msg + ". Processed by failure processor: " + processor;
+    }
   }
   logFailedDelivery(false,false,handled,false,exchange,msg,data,null);
   return sync;
