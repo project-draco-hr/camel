@@ -6,7 +6,14 @@
     if (newException && !data.currentRedeliveryPolicy.isLogNewException()) {
       return;
     }
-    if (!newException && handled && (!data.currentRedeliveryPolicy.isLogHandled() && !data.currentRedeliveryPolicy.isLogExhaustedMessageHistory())) {
+    boolean logExhausted;
+    if (isDeadLetterChannel) {
+      logExhausted=data.currentRedeliveryPolicy.getLogExhaustedMessageHistory() != null && data.currentRedeliveryPolicy.isLogExhaustedMessageHistory();
+    }
+ else {
+      logExhausted=data.currentRedeliveryPolicy.getLogExhaustedMessageHistory() == null || data.currentRedeliveryPolicy.isLogExhaustedMessageHistory();
+    }
+    if (!newException && handled && (!data.currentRedeliveryPolicy.isLogHandled() && !logExhausted)) {
       return;
     }
     if (!newException && continued && !data.currentRedeliveryPolicy.isLogContinued()) {
