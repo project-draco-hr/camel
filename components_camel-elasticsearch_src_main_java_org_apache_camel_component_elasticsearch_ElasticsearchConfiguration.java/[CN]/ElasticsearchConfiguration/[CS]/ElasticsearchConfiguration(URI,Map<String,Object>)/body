@@ -4,17 +4,16 @@
     throw new IllegalArgumentException("unrecognized elasticsearch protocol: " + protocol + " for uri: "+ uri);
   }
   setUri(uri);
-  setAuthority(uri.getAuthority());
-  if (!isValidAuthority()) {
+  if (!isValidAuthority(uri.getAuthority())) {
     throw new URISyntaxException(uri.toASCIIString(),"incorrect URI syntax specified for the elasticsearch endpoint." + "please specify the syntax as \"elasticsearch:[Cluster Name | 'local']?[Query]\"");
   }
-  if (LOCAL_NAME.equals(getAuthority())) {
+  if (LOCAL_NAME.equals(uri.getAuthority())) {
     setLocal(true);
     setClusterName(null);
   }
  else {
     setLocal(false);
-    setClusterName(getAuthority());
+    setClusterName(uri.getAuthority());
   }
   data=toBoolean(parameters.remove(PARAM_DATA));
   if (data == null) {
@@ -29,7 +28,8 @@
   consistencyLevel=parseConsistencyLevel(parameters);
   replicationType=parseReplicationType(parameters);
   ip=(String)parameters.remove(IP);
-  transportAddresses=parseTransportAddresses((String)parameters.remove(TRANSPORT_ADDRESSES));
+  transportAddresses=(String)parameters.remove(TRANSPORT_ADDRESSES);
+  transportAddressesList=parseTransportAddresses(transportAddresses);
   String portParam=(String)parameters.remove(PORT);
   port=portParam == null ? DEFAULT_PORT : Integer.valueOf(portParam);
 }
