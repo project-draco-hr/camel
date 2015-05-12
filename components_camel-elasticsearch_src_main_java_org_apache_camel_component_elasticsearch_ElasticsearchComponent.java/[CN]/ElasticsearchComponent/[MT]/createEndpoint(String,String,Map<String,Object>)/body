@@ -1,5 +1,21 @@
 {
-  Endpoint endpoint=new ElasticsearchEndpoint(uri,this,parameters);
-  setProperties(endpoint,parameters);
+  ElasticsearchConfiguration config=new ElasticsearchConfiguration();
+  setProperties(config,parameters);
+  if (ElasticsearchConstants.LOCAL_NAME.equals(remaining)) {
+    config.setLocal(true);
+    config.setClusterName(null);
+  }
+ else {
+    config.setLocal(false);
+    config.setClusterName(remaining);
+  }
+  if (config.getData() == null) {
+    config.setData(config.isLocal());
+  }
+  if (config.isLocal() && !config.getData()) {
+    throw new IllegalArgumentException("invalid to use local node without data");
+  }
+  config.setTransportAddressesList(parseTransportAddresses(config.getTransportAddresses(),config));
+  Endpoint endpoint=new ElasticsearchEndpoint(uri,this,config);
   return endpoint;
 }
