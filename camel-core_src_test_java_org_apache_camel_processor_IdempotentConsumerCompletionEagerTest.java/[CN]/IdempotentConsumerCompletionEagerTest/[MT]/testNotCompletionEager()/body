@@ -3,13 +3,13 @@
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
       errorHandler(deadLetterChannel("mock:dead"));
-      from("direct:start").idempotentConsumer(header("messageId"),repo).scopeBlockOnly().to("log:a","mock:a").to("log:b","mock:b").end().filter(simple("${header.messageId} == '2'")).throwException(new IllegalArgumentException("Forced")).end().to("log:result","mock:result");
+      from("direct:start").idempotentConsumer(header("messageId"),repo).completionEager(false).to("log:a","mock:a").to("log:b","mock:b").end().filter(simple("${header.messageId} == '2'")).throwException(new IllegalArgumentException("Forced")).end().to("log:result","mock:result");
     }
   }
 );
   context.start();
-  a.expectedBodiesReceived("one","two","three");
-  b.expectedBodiesReceived("one","two","three");
+  a.expectedBodiesReceived("one","two","two","three");
+  b.expectedBodiesReceived("one","two","two","three");
   dead.expectedBodiesReceived("two","two");
   resultEndpoint.expectedBodiesReceived("one","one","one","three");
   sendMessage("1","one");
