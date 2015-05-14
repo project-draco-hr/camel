@@ -1,0 +1,59 @@
+{
+  String ami;
+  InstanceType instanceType;
+  int minCount;
+  int maxCount;
+  boolean monitoring;
+  String kernelId;
+  boolean ebsOptimized;
+  RunInstancesRequest request=new RunInstancesRequest();
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.IMAGE_ID))) {
+    ami=exchange.getIn().getHeader(EC2Constants.IMAGE_ID,String.class);
+    request.withImageId(ami);
+  }
+ else {
+    throw new IllegalArgumentException("AMI must be specified");
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCE_TYPE))) {
+    instanceType=exchange.getIn().getHeader(EC2Constants.INSTANCE_TYPE,InstanceType.class);
+    request.withInstanceType(instanceType.toString());
+  }
+ else {
+    throw new IllegalArgumentException("Instance Type must be specified");
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCE_MIN_COUNT))) {
+    minCount=exchange.getIn().getHeader(EC2Constants.INSTANCE_MIN_COUNT,Integer.class);
+    request.withMinCount(minCount);
+  }
+ else {
+    throw new IllegalArgumentException("Min instances count must be specified");
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCE_MAX_COUNT))) {
+    maxCount=exchange.getIn().getHeader(EC2Constants.INSTANCE_MAX_COUNT,Integer.class);
+    request.withMaxCount(maxCount);
+  }
+ else {
+    throw new IllegalArgumentException("Max instances count must be specified");
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCE_MONITORING))) {
+    monitoring=exchange.getIn().getHeader(EC2Constants.INSTANCE_MONITORING,Boolean.class);
+    request.withMonitoring(monitoring);
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCE_KERNEL_ID))) {
+    kernelId=exchange.getIn().getHeader(EC2Constants.INSTANCE_KERNEL_ID,String.class);
+    request.withKernelId(kernelId);
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCE_EBS_OPTIMIZED))) {
+    ebsOptimized=exchange.getIn().getHeader(EC2Constants.INSTANCE_EBS_OPTIMIZED,Boolean.class);
+    request.withEbsOptimized(ebsOptimized);
+  }
+  RunInstancesResult result;
+  try {
+    result=ec2Client.runInstances(request);
+  }
+ catch (  AmazonServiceException ase) {
+    LOG.trace("Run Instances command returned the error code {}",ase.getErrorCode());
+    throw ase;
+  }
+  exchange.getIn().setBody(result);
+}
