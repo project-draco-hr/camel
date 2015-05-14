@@ -31,6 +31,10 @@
       return true;
     }
   }
-  exchange.addOnCompletion(new IdempotentOnCompletion(idempotentRepository,messageId,eager,removeOnFailure));
-  return processor.process(exchange,callback);
+  final Synchronization onCompletion=new IdempotentOnCompletion(idempotentRepository,messageId,eager,removeOnFailure);
+  final AsyncCallback target=new IdempotentConsumerCallback(exchange,onCompletion,callback,scopeBlockOnly);
+  if (!scopeBlockOnly) {
+    exchange.addOnCompletion(onCompletion);
+  }
+  return processor.process(exchange,target);
 }
