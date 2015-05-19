@@ -90,6 +90,33 @@
       }
       from=from + "?" + query;
     }
+    String path=getPath();
+    String s1=FileUtil.stripTrailingSeparator(path);
+    String s2=FileUtil.stripLeadingSeparator(verb.getUri());
+    String allPath;
+    if (s1 != null && s2 != null) {
+      allPath=s1 + "/" + s2;
+    }
+ else     if (path != null) {
+      allPath=path;
+    }
+ else {
+      allPath=verb.getUri();
+    }
+    String[] arr=allPath.split("\\/");
+    for (    String a : arr) {
+      if (a.startsWith("{") && a.endsWith("}")) {
+        String key=a.substring(1,a.length() - 1);
+        restParam().name(key).type(RestParamType.path).endParam();
+      }
+    }
+    if (verb.getType() != null) {
+      String bodyType=verb.getType();
+      if (bodyType.endsWith("[]")) {
+        bodyType="List[" + bodyType.substring(0,bodyType.length() - 2) + "]";
+      }
+      restParam().name(RestParamType.body.name()).type(RestParamType.body).dataType(bodyType).endParam();
+    }
     route.fromRest(from);
     route.setRestDefinition(this);
     answer.add(route);
