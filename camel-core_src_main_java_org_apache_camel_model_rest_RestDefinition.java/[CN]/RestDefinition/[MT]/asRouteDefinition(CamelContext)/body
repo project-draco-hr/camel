@@ -107,7 +107,17 @@
     for (    String a : arr) {
       if (a.startsWith("{") && a.endsWith("}")) {
         String key=a.substring(1,a.length() - 1);
-        restParam().name(key).type(RestParamType.path).endParam();
+        boolean found=false;
+        for (        RestOperationParamDefinition param : verb.getParams()) {
+          if (param.getName().equalsIgnoreCase(key)) {
+            param.type(RestParamType.path);
+            found=true;
+            break;
+          }
+        }
+        if (!found) {
+          restParam(verb).name(key).type(RestParamType.path).endParam();
+        }
       }
     }
     if (verb.getType() != null) {
@@ -115,7 +125,7 @@
       if (bodyType.endsWith("[]")) {
         bodyType="List[" + bodyType.substring(0,bodyType.length() - 2) + "]";
       }
-      restParam().name(RestParamType.body.name()).type(RestParamType.body).dataType(bodyType).endParam();
+      restParam(verb).name(RestParamType.body.name()).type(RestParamType.body).dataType(bodyType).endParam();
     }
     route.fromRest(from);
     route.setRestDefinition(this);
