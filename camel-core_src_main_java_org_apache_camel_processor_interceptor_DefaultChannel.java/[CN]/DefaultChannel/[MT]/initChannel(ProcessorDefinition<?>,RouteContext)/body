@@ -60,7 +60,12 @@
       LOG.warn("Interceptor: " + strategy + " at: "+ outputDefinition+ " does not return an AsyncProcessor instance."+ " This causes the asynchronous routing engine to not work as optimal as possible."+ " See more details at the InterceptStrategy javadoc."+ " Camel will use a bridge to adapt the interceptor to the asynchronous routing engine,"+ " but its not the most optimal solution. Please consider changing your interceptor to comply.");
       InterceptorToAsyncProcessorBridge bridge=new InterceptorToAsyncProcessorBridge(target);
       wrapped=strategy.wrapProcessorInInterceptors(routeContext.getCamelContext(),targetOutputDef,bridge,next);
-      bridge.setTarget(wrapped);
+      if (!wrapped.equals(bridge)) {
+        bridge.setTarget(wrapped);
+      }
+ else {
+        bridge.setTarget(null);
+      }
       wrapped=bridge;
     }
     if (!(wrapped instanceof WrapProcessor)) {
