@@ -1,15 +1,21 @@
 {
   boolean noop=false;
   if (loggedIn) {
-    try {
-      noop=getOperations().sendNoop();
+    if (getEndpoint().getConfiguration().isSendNoop()) {
+      try {
+        noop=getOperations().sendNoop();
+      }
+ catch (      Exception e) {
+        noop=false;
+        loggedIn=false;
+      }
+      log.trace("preWriteCheck send noop success: {}",noop);
     }
- catch (    Exception e) {
-      noop=false;
-      loggedIn=false;
+ else {
+      noop=true;
+      log.trace("preWriteCheck send noop disabled");
     }
   }
-  log.trace("preWriteCheck send noop success: {}",noop);
   if (!noop) {
     try {
       if (getEndpoint().getMaximumReconnectAttempts() > 0) {
