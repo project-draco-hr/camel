@@ -1,0 +1,29 @@
+{
+  List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
+  Map<String,String> copy=new HashMap<String,String>();
+  for (  Map<String,String> row : rows) {
+    String name=row.get("name");
+    String required=row.get("required");
+    String value=row.get("value");
+    String defaultValue=row.get("defaultValue");
+    String valueToAdd=null;
+    if ("true".equals(required)) {
+      valueToAdd=value != null ? value : defaultValue;
+      if (valueToAdd == null) {
+        valueToAdd="";
+      }
+    }
+ else {
+      if (value != null && defaultValue == null) {
+        valueToAdd=value;
+      }
+      if (value != null && defaultValue != null && !value.equals(defaultValue)) {
+        valueToAdd=value;
+      }
+    }
+    if (valueToAdd != null) {
+      copy.put(name,valueToAdd);
+    }
+  }
+  return doAsEndpointUri(scheme,copy,ampersand);
+}

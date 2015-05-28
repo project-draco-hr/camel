@@ -1,0 +1,67 @@
+{
+  String json=componentJSonSchema(scheme);
+  if (json == null) {
+    throw new IllegalArgumentException("Cannot find endpoint with scheme " + scheme);
+  }
+  String syntax=null;
+  List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("component",json,false);
+  for (  Map<String,String> row : rows) {
+    if (row.containsKey("syntax")) {
+      syntax=row.get("syntax");
+      break;
+    }
+  }
+  if (syntax == null) {
+    throw new IllegalArgumentException("Endpoint with scheme " + scheme + " has no syntax defined in the json schema");
+  }
+  String originalSyntax=syntax;
+  Map<String,String> copy=new TreeMap<String,String>();
+  for (  Map.Entry<String,String> entry : properties.entrySet()) {
+    String key=entry.getKey();
+    String value=entry.getValue() != null ? entry.getValue() : "";
+    if (syntax.contains(key)) {
+      syntax=syntax.replace(key,value);
+    }
+ else {
+      copy.put(key,value);
+    }
+  }
+  String[] tokens=syntax.split("\\w+");
+  Matcher matcher=SYNTAX_PATTERN.matcher(originalSyntax);
+  List<String> options=new ArrayList<String>();
+  while (matcher.find()) {
+    String s=matcher.group(1);
+    options.add(s);
+  }
+  Matcher matcher2=SYNTAX_PATTERN.matcher(syntax);
+  List<String> options2=new ArrayList<String>();
+  while (matcher2.find()) {
+    String s=matcher2.group(1);
+    options2.add(s);
+  }
+  StringBuilder sb=new StringBuilder();
+  int range=0;
+  for (int i=0; i < options.size(); i++) {
+    String key=options.get(i);
+    String key2=options2.get(i);
+    String token=tokens[i];
+    if (i == 0 || properties.containsKey(key)) {
+      sb.append(token);
+      sb.append(key2);
+    }
+    range++;
+  }
+  while (range < options2.size()) {
+    String token=tokens[range];
+    String key2=options2.get(range);
+    sb.append(token);
+    sb.append(key2);
+    range++;
+  }
+  if (!copy.isEmpty()) {
+    sb.append('?');
+    String query=createQueryString(copy,ampersand);
+    sb.append(query);
+  }
+  return sb.toString();
+}
