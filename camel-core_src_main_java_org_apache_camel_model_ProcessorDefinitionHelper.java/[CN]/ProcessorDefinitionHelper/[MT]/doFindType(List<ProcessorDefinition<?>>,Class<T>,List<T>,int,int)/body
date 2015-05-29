@@ -16,16 +16,18 @@
       if (type.isInstance(choice)) {
         found.add((T)choice);
       }
-      for (      WhenDefinition when : choice.getWhenClauses()) {
-        if (type.isInstance(when)) {
-          found.add((T)when);
+      if (maxDeep < 0 || current < maxDeep) {
+        for (        WhenDefinition when : choice.getWhenClauses()) {
+          if (type.isInstance(when)) {
+            found.add((T)when);
+          }
+          List<ProcessorDefinition<?>> children=when.getOutputs();
+          doFindType(children,type,found,++current,maxDeep);
         }
-        List<ProcessorDefinition<?>> children=when.getOutputs();
-        doFindType(children,type,found,++current,maxDeep);
-      }
-      if (choice.getOtherwise() != null) {
-        List<ProcessorDefinition<?>> children=choice.getOtherwise().getOutputs();
-        doFindType(children,type,found,++current,maxDeep);
+        if (choice.getOtherwise() != null) {
+          List<ProcessorDefinition<?>> children=choice.getOtherwise().getOutputs();
+          doFindType(children,type,found,++current,maxDeep);
+        }
       }
       continue;
     }
@@ -34,14 +36,16 @@
       if (type.isInstance(doTry)) {
         found.add((T)doTry);
       }
-      List<ProcessorDefinition<?>> doTryOut=doTry.getOutputsWithoutCatches();
-      doFindType(doTryOut,type,found,++current,maxDeep);
-      List<CatchDefinition> doTryCatch=doTry.getCatchClauses();
-      for (      CatchDefinition doCatch : doTryCatch) {
-        doFindType(doCatch.getOutputs(),type,found,++current,maxDeep);
-      }
-      if (doTry.getFinallyClause() != null) {
-        doFindType(doTry.getFinallyClause().getOutputs(),type,found,++current,maxDeep);
+      if (maxDeep < 0 || current < maxDeep) {
+        List<ProcessorDefinition<?>> doTryOut=doTry.getOutputsWithoutCatches();
+        doFindType(doTryOut,type,found,++current,maxDeep);
+        List<CatchDefinition> doTryCatch=doTry.getCatchClauses();
+        for (        CatchDefinition doCatch : doTryCatch) {
+          doFindType(doCatch.getOutputs(),type,found,++current,maxDeep);
+        }
+        if (doTry.getFinallyClause() != null) {
+          doFindType(doTry.getFinallyClause().getOutputs(),type,found,++current,maxDeep);
+        }
       }
       continue;
     }
