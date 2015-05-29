@@ -1,0 +1,14 @@
+{
+  return new RouteBuilder(){
+    public void configure() throws Exception {
+      from("netty4:tcp://127.0.0.1:" + getPort() + "?decoder=#hl7decoder&encoder=#hl7encoder").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          Message input=exchange.getIn().getBody(Message.class);
+          exchange.getOut().setBody(input.generateACK());
+        }
+      }
+).to("mock:result");
+    }
+  }
+;
+}
