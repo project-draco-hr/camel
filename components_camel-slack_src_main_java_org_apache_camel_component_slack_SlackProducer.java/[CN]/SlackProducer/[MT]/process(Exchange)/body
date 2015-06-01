@@ -7,11 +7,11 @@
   slackMessage.setUsername(slackEndpoint.getUsername());
   slackMessage.setIconUrl(slackEndpoint.getIconUrl());
   slackMessage.setIconEmoji(slackEndpoint.getIconEmoji());
-  StringEntity body=new StringEntity(slackMessage.toString());
+  String json=asJson(slackMessage);
+  StringEntity body=new StringEntity(json);
   httpPost.setEntity(body);
   HttpResponse response=client.execute(httpPost);
-  if (response.getStatusLine().getStatusCode() != 200) {
-    LOG.error("Error POSTing to Slack API: " + response.toString());
-    throw new CamelException("Error POSTing to Slack API: " + response.toString());
+  if (response.getStatusLine().getStatusCode() < 200 || response.getStatusLine().getStatusCode() > 299) {
+    throw new CamelExchangeException("Error POSTing to Slack API: " + response.toString(),exchange);
   }
 }
