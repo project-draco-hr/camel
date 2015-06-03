@@ -1,16 +1,23 @@
 {
-  CronTrigger trigger=null;
+  Trigger trigger=null;
+  CronScheduleBuilder scheduleBuilder=null;
   if (action == Action.START) {
-    trigger=TriggerBuilder.newTrigger().withIdentity(TRIGGER_START + route.getId(),TRIGGER_GROUP + route.getId()).withSchedule(CronScheduleBuilder.cronSchedule(getRouteStartTime())).build();
+    scheduleBuilder=CronScheduleBuilder.cronSchedule(getRouteStartTime());
   }
  else   if (action == Action.STOP) {
-    trigger=TriggerBuilder.newTrigger().withIdentity(TRIGGER_STOP + route.getId(),TRIGGER_GROUP + route.getId()).withSchedule(CronScheduleBuilder.cronSchedule(getRouteStopTime())).build();
+    scheduleBuilder=CronScheduleBuilder.cronSchedule(getRouteStopTime());
   }
  else   if (action == Action.SUSPEND) {
-    trigger=TriggerBuilder.newTrigger().withIdentity(TRIGGER_SUSPEND + route.getId(),TRIGGER_GROUP + route.getId()).withSchedule(CronScheduleBuilder.cronSchedule(getRouteSuspendTime())).build();
+    scheduleBuilder=CronScheduleBuilder.cronSchedule(getRouteSuspendTime());
   }
  else   if (action == Action.RESUME) {
-    trigger=TriggerBuilder.newTrigger().withIdentity(TRIGGER_RESUME + route.getId(),TRIGGER_GROUP + route.getId()).withSchedule(CronScheduleBuilder.cronSchedule(getRouteResumeTime())).build();
+    scheduleBuilder=CronScheduleBuilder.cronSchedule(getRouteResumeTime());
+  }
+  if (scheduleBuilder != null) {
+    if (timeZone != null) {
+      scheduleBuilder.inTimeZone(timeZone);
+    }
+    trigger=TriggerBuilder.newTrigger().withIdentity(TRIGGER_START + route.getId(),TRIGGER_GROUP + route.getId()).withSchedule(scheduleBuilder).build();
   }
   return trigger;
 }
