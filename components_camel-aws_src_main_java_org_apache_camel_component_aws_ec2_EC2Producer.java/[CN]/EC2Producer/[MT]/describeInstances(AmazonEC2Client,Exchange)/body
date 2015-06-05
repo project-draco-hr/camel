@@ -1,0 +1,17 @@
+{
+  Collection instanceIds;
+  DescribeInstancesRequest request=new DescribeInstancesRequest();
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS))) {
+    instanceIds=exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS,Collection.class);
+    request.withInstanceIds(instanceIds);
+  }
+  DescribeInstancesResult result;
+  try {
+    result=ec2Client.describeInstances(request);
+  }
+ catch (  AmazonServiceException ase) {
+    LOG.trace("Describe Instances command returned the error code {}",ase.getErrorCode());
+    throw ase;
+  }
+  exchange.getIn().setBody(result);
+}
