@@ -1,0 +1,18 @@
+{
+  Collection instanceIds;
+  RebootInstancesRequest request=new RebootInstancesRequest();
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS))) {
+    instanceIds=exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS,Collection.class);
+    request.withInstanceIds(instanceIds);
+  }
+ else {
+    throw new IllegalArgumentException("Instances Ids must be specified");
+  }
+  try {
+    ec2Client.rebootInstances(request);
+  }
+ catch (  AmazonServiceException ase) {
+    LOG.trace("Describe Instances Status command returned the error code {}",ase.getErrorCode());
+    throw ase;
+  }
+}
