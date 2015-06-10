@@ -1,0 +1,20 @@
+{
+  Collection instanceIds;
+  MonitorInstancesRequest request=new MonitorInstancesRequest();
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS))) {
+    instanceIds=exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS,Collection.class);
+    request.withInstanceIds(instanceIds);
+  }
+ else {
+    throw new IllegalArgumentException("Instances Ids must be specified");
+  }
+  MonitorInstancesResult result;
+  try {
+    result=ec2Client.monitorInstances(request);
+  }
+ catch (  AmazonServiceException ase) {
+    LOG.trace("Monitor Instances command returned the error code {}",ase.getErrorCode());
+    throw ase;
+  }
+  exchange.getIn().setBody(result);
+}
