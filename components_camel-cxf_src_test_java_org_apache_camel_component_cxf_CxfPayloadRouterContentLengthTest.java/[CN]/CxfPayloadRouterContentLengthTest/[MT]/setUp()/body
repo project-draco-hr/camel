@@ -1,0 +1,22 @@
+{
+  log.info("Starting jetty server at port {}",JETTY_PORT);
+  server=new Server(JETTY_PORT);
+  server.setHandler(new AbstractHandler(){
+    @Override public void handle(    String target,    Request baseRequest,    HttpServletRequest request,    HttpServletResponse response) throws IOException, ServletException {
+      response.setContentType("text/xml");
+      response.setContentLength(RESPONSE_MESSAGE.length());
+      response.setStatus(HttpServletResponse.SC_OK);
+      baseRequest.setHandled(true);
+      PrintWriter pw=response.getWriter();
+      pw.write(RESPONSE_MESSAGE);
+      pw.close();
+    }
+  }
+);
+  server.setSendServerVersion(false);
+  server.start();
+  log.info("Start Routing Scenario at port {}",CXFTestSupport.getPort1());
+  applicationContext=new ClassPathXmlApplicationContext("org/apache/camel/component/cxf/CxfPayloadRouterContentLengthBeans.xml");
+  super.setUp();
+  assertNotNull("Should have created a valid spring context",applicationContext);
+}
