@@ -1,11 +1,7 @@
 {
-  super.setUp();
-  List<HttpRequestInterceptor> requestInterceptors=new ArrayList<HttpRequestInterceptor>();
-  requestInterceptors.add(new RequestProxyBasicAuth());
-  List<HttpResponseInterceptor> responseInterceptors=new ArrayList<HttpResponseInterceptor>();
-  responseInterceptors.add(new ResponseContent());
-  responseInterceptors.add(new ResponseProxyBasicUnauthorized());
-  ImmutableHttpProcessor httpproc=new ImmutableHttpProcessor(requestInterceptors,responseInterceptors);
-  proxy=new LocalTestServer(httpproc,null);
+  Map<String,String> expectedHeaders=new HashMap<String,String>();
+  expectedHeaders.put("Proxy-Connection","Keep-Alive");
+  proxy=ServerBootstrap.bootstrap().setHttpProcessor(getBasicHttpProcessor()).setConnectionReuseStrategy(getConnectionReuseStrategy()).setResponseFactory(getHttpResponseFactory()).setExpectationVerifier(getHttpExpectationVerifier()).setSslContext(getSSLContext()).registerHandler("*",new HeaderValidationHandler("GET",null,null,getExpectedContent(),expectedHeaders)).create();
   proxy.start();
+  super.setUp();
 }
