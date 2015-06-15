@@ -1,6 +1,10 @@
 {
   try {
     Object newBody=expression.evaluate(exchange,Object.class);
+    if (exchange.getException() != null) {
+      callback.done(true);
+      return true;
+    }
     boolean out=exchange.hasOut();
     Message old=out ? exchange.getOut() : exchange.getIn();
     boolean copyNeeded=!(old.getClass().equals(DefaultMessage.class));
@@ -14,7 +18,7 @@
       old.setBody(newBody);
     }
   }
- catch (  Exception e) {
+ catch (  Throwable e) {
     exchange.setException(e);
   }
   callback.done(true);
