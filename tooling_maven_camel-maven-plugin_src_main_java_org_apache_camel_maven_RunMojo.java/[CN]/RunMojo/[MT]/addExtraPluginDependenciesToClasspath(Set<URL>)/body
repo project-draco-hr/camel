@@ -8,14 +8,24 @@
       if (artifact.getArtifactId().equals(extraPluginDependencyArtifactId) || artifact.getArtifactId().equals(extendedPluginDependencyArtifactId)) {
         getLog().debug("Adding extra plugin dependency artifact: " + artifact.getArtifactId() + " to classpath");
         path.add(artifact.getFile().toURI().toURL());
-        Set<Artifact> deps=resolveExecutableDependencies(artifact);
-        for (        Artifact dep : deps) {
-          if (dep.getArtifactId().equals("org.apache.aries.blueprint.core")) {
-            getLog().debug("Skipping org.apache.aries.blueprint.core -> " + dep.getGroupId() + "/"+ dep.getArtifactId()+ "/"+ dep.getVersion());
-            continue;
+        Set<Artifact> deps=resolveExecutableDependencies(artifact,true);
+        if (deps != null) {
+          for (          Artifact dep : deps) {
+            if (dep.getArtifactId().equals("org.apache.aries.blueprint.core")) {
+              getLog().debug("Skipping org.apache.aries.blueprint.core -> " + dep.getGroupId() + "/"+ dep.getArtifactId()+ "/"+ dep.getVersion());
+              continue;
+            }
+            if ("test".equals(dep.getScope())) {
+              getLog().debug("Skipping test scoped -> " + dep.getGroupId() + "/"+ dep.getArtifactId()+ "/"+ dep.getVersion());
+              continue;
+            }
+            if ("provided".equals(dep.getScope())) {
+              getLog().debug("Skipping provided scoped -> " + dep.getGroupId() + "/"+ dep.getArtifactId()+ "/"+ dep.getVersion());
+              continue;
+            }
+            getLog().debug("Adding extra plugin dependency artifact: " + dep.getArtifactId() + " to classpath");
+            path.add(dep.getFile().toURI().toURL());
           }
-          getLog().debug("Adding extra plugin dependency artifact: " + dep.getArtifactId() + " to classpath");
-          path.add(dep.getFile().toURI().toURL());
         }
       }
     }

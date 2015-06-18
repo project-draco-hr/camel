@@ -1,5 +1,5 @@
 {
-  Set<Artifact> executableDependencies;
+  Set<Artifact> executableDependencies=null;
   try {
     MavenProject executableProject=this.projectBuilder.buildFromRepository(executablePomArtifact,this.remoteRepositories,this.localRepository);
     List<Artifact> dependencies=CastUtils.cast(executableProject.getDependencies());
@@ -9,7 +9,12 @@
     executableDependencies=CastUtils.cast(result.getArtifacts());
   }
  catch (  Exception ex) {
-    throw new MojoExecutionException("Encountered problems resolving dependencies of the executable " + "in preparation for its execution.",ex);
+    if (ignoreFailures) {
+      getLog().debug("Ignoring maven resolving dependencies failure " + ex.getMessage());
+    }
+ else {
+      throw new MojoExecutionException("Encountered problems resolving dependencies of the executable " + "in preparation for its execution.",ex);
+    }
   }
   return executableDependencies;
 }
