@@ -1,0 +1,76 @@
+{
+  String name=asName(file);
+  try {
+    String json=loadText(new FileInputStream(file));
+    boolean isComponent=json.contains("\"kind\": \"component\"");
+    boolean isDataFormat=json.contains("\"kind\": \"dataformat\"");
+    boolean isLanguage=json.contains("\"kind\": \"language\"");
+    if (!isComponent && !isDataFormat && !isLanguage) {
+      return;
+    }
+    if (isComponent) {
+      errorDetail.setKind("component");
+    }
+ else     if (isDataFormat) {
+      errorDetail.setKind("dataformat");
+    }
+ else     if (isLanguage) {
+      errorDetail.setKind("language");
+    }
+    List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema(errorDetail.getKind(),json,false);
+    boolean label=false;
+    boolean description=false;
+    boolean syntax=false;
+    for (    Map<String,String> row : rows) {
+      String value=row.get("label");
+      if (!StringHelper.isEmpty(value)) {
+        label=true;
+      }
+      value=row.get("description");
+      if (!StringHelper.isEmpty(value)) {
+        description=true;
+      }
+      value=row.get("syntax");
+      if (!StringHelper.isEmpty(value)) {
+        syntax=true;
+      }
+    }
+    if (!label) {
+      errorDetail.setMissingLabel(true);
+    }
+    if (!description) {
+      errorDetail.setMissingDescription(true);
+    }
+    if (!syntax) {
+      errorDetail.setMissingDescription(true);
+    }
+    if (isComponent) {
+      rows=JSonSchemaHelper.parseJsonSchema("componentProperties",json,true);
+      for (      Map<String,String> row : rows) {
+        String key=row.get("name");
+        String doc=row.get("description");
+        if (doc == null || doc.isEmpty()) {
+          errorDetail.addMissingComponentDoc(key);
+        }
+      }
+    }
+    rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
+    boolean path=false;
+    for (    Map<String,String> row : rows) {
+      String key=row.get("name");
+      String doc=row.get("description");
+      if (doc == null || doc.isEmpty()) {
+        errorDetail.addMissingEndpointDoc(key);
+      }
+      String kind=row.get("kind");
+      if ("path".equals(kind)) {
+        path=true;
+      }
+    }
+    if (isComponent && !path) {
+      errorDetail.setMissingUriPath(true);
+    }
+  }
+ catch (  IOException e) {
+  }
+}

@@ -1,0 +1,38 @@
+{
+  final Set<File> jsonFiles=new TreeSet<>();
+  PackageHelper.findJsonFiles(outDir,jsonFiles,new PackageHelper.CamelComponentsModelFilter());
+  boolean failed=false;
+  if (validate) {
+    getLog().info("Validating ...");
+    for (    File file : jsonFiles) {
+      final String name=asName(file);
+      final ErrorDetail detail=new ErrorDetail();
+      validate(file,detail);
+      if (detail.hasErrors()) {
+        failed=true;
+        getLog().warn("The " + detail.getKind() + ": "+ name+ " has errors!");
+        if (detail.isMissingDescription()) {
+          getLog().warn("Missing description on " + detail.getKind());
+        }
+        if (detail.isMissingLabel()) {
+          getLog().warn("Missing label on " + detail.getKind());
+        }
+        if (detail.isMissingSyntax()) {
+          getLog().warn("Missing syntax on endpoint");
+        }
+        if (detail.isMissingUriPath()) {
+          getLog().warn("Missing @UriPath on endpoint");
+        }
+        if (!detail.getMissingComponentDocumentation().isEmpty()) {
+          getLog().warn("Missing component documentation for the following options:" + indentCollection("\n\t",detail.getMissingComponentDocumentation()));
+        }
+        if (!detail.getMissingEndpointDocumentation().isEmpty()) {
+          getLog().warn("Missing endpoint documentation for the following options:" + indentCollection("\n\t",detail.getMissingEndpointDocumentation()));
+        }
+      }
+    }
+  }
+  if (failed) {
+    throw new MojoFailureException("There are validation errors, see above!");
+  }
+}
