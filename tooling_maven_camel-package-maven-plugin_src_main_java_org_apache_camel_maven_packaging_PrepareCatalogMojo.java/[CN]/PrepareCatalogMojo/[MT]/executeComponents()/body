@@ -4,10 +4,6 @@
   Set<File> duplicateJsonFiles=new TreeSet<File>();
   Set<File> componentFiles=new TreeSet<File>();
   Set<File> missingComponents=new TreeSet<File>();
-  Set<File> missingLabels=new TreeSet<File>();
-  Set<File> missingUriPaths=new TreeSet<File>();
-  Set<File> missingComponentJavaDoc=new TreeSet<File>();
-  Set<File> missingEndpointJavaDoc=new TreeSet<File>();
   Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
@@ -61,42 +57,18 @@
     }
     try {
       String text=loadText(new FileInputStream(file));
-      if (text.contains("\"label\": \"\"")) {
-        missingLabels.add(file);
-      }
- else {
-        String name=asComponentName(file);
-        Matcher matcher=LABEL_PATTERN.matcher(text);
-        if (matcher.find()) {
-          String label=matcher.group(1);
-          String[] labels=label.split(",");
-          for (          String s : labels) {
-            Set<String> components=usedLabels.get(s);
-            if (components == null) {
-              components=new TreeSet<String>();
-              usedLabels.put(s,components);
-            }
-            components.add(name);
+      String name=asComponentName(file);
+      Matcher matcher=LABEL_PATTERN.matcher(text);
+      if (matcher.find()) {
+        String label=matcher.group(1);
+        String[] labels=label.split(",");
+        for (        String s : labels) {
+          Set<String> components=usedLabels.get(s);
+          if (components == null) {
+            components=new TreeSet<String>();
+            usedLabels.put(s,components);
           }
-        }
-      }
-      if (!text.contains("\"kind\": \"path\"")) {
-        missingUriPaths.add(file);
-      }
-      List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("componentProperties",text,true);
-      for (      Map<String,String> row : rows) {
-        String doc=row.get("description");
-        if (doc == null || doc.isEmpty()) {
-          missingComponentJavaDoc.add(file);
-          break;
-        }
-      }
-      rows=JSonSchemaHelper.parseJsonSchema("properties",text,true);
-      for (      Map<String,String> row : rows) {
-        String doc=row.get("description");
-        if (doc == null || doc.isEmpty()) {
-          missingEndpointJavaDoc.add(file);
-          break;
+          components.add(name);
         }
       }
     }
@@ -124,5 +96,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,missingEndpointJavaDoc,missingComponentJavaDoc,missingUriPaths,missingLabels,usedLabels);
+  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,usedLabels);
 }

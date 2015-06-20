@@ -3,7 +3,6 @@
   Set<File> jsonFiles=new TreeSet<File>();
   Set<File> duplicateJsonFiles=new TreeSet<File>();
   Set<File> dataFormatFiles=new TreeSet<File>();
-  Set<File> missingLabels=new TreeSet<File>();
   Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] dataFormats=componentsDir.listFiles();
@@ -37,23 +36,18 @@
     }
     try {
       String text=loadText(new FileInputStream(file));
-      if (text.contains("\"label\": \"\"")) {
-        missingLabels.add(file);
-      }
- else {
-        String name=asComponentName(file);
-        Matcher matcher=LABEL_PATTERN.matcher(text);
-        if (matcher.find()) {
-          String label=matcher.group(1);
-          String[] labels=label.split(",");
-          for (          String s : labels) {
-            Set<String> dataFormats=usedLabels.get(s);
-            if (dataFormats == null) {
-              dataFormats=new TreeSet<String>();
-              usedLabels.put(s,dataFormats);
-            }
-            dataFormats.add(name);
+      String name=asComponentName(file);
+      Matcher matcher=LABEL_PATTERN.matcher(text);
+      if (matcher.find()) {
+        String label=matcher.group(1);
+        String[] labels=label.split(",");
+        for (        String s : labels) {
+          Set<String> dataFormats=usedLabels.get(s);
+          if (dataFormats == null) {
+            dataFormats=new TreeSet<String>();
+            usedLabels.put(s,dataFormats);
           }
+          dataFormats.add(name);
         }
       }
     }
@@ -81,5 +75,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printDataFormatsReport(jsonFiles,duplicateJsonFiles,missingLabels,usedLabels);
+  printDataFormatsReport(jsonFiles,duplicateJsonFiles,usedLabels);
 }
