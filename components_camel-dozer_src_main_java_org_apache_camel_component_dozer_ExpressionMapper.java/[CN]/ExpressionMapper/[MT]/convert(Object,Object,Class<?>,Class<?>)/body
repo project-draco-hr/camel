@@ -5,7 +5,20 @@
     }
     Exchange exchange=currentExchange.get();
     Language expLang=exchange.getContext().resolveLanguage(getLanguagePart());
-    Expression exp=expLang.createExpression(getExpressionPart());
+    String scheme=getSchemePart();
+    Expression exp=null;
+    if (scheme != null && (scheme.equalsIgnoreCase("classpath") || scheme.equalsIgnoreCase("file") || scheme.equalsIgnoreCase("http"))) {
+      String path=getPathPart();
+      try {
+        exp=expLang.createExpression(resolveScript(scheme + ":" + path));
+      }
+ catch (      IOException e) {
+        throw new IllegalStateException("Expression script specified but not found",e);
+      }
+    }
+ else {
+      exp=expLang.createExpression(getExpressionPart());
+    }
     return exp.evaluate(exchange,destinationClass);
   }
   finally {
