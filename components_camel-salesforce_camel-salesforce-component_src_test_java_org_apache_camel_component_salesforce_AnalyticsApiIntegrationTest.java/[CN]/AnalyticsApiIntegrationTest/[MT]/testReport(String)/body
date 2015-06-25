@@ -1,0 +1,89 @@
+{
+  log.info("Testing report {}...",reportName);
+  final QueryRecordsReport reports=template().requestBody("direct:queryReport","SELECT Id FROM Report WHERE DeveloperName='" + reportName + "'",QueryRecordsReport.class);
+  assertNotNull("query",reports);
+  final List<Report> reportsRecords=reports.getRecords();
+  assertFalse("Report not found",reportsRecords.isEmpty());
+  final String testReportId=reportsRecords.get(0).getId();
+  assertNotNull(testReportId);
+  final ReportDescription reportDescription=template().requestBody("direct:getReportDescription",testReportId,ReportDescription.class);
+  assertNotNull("getReportDescriptions",reportDescription);
+  LOG.debug("getReportDescriptions: {}",reportDescription);
+  final ReportMetadata testReportMetadata=reportDescription.getReportMetadata();
+  SyncReportResults reportResults=template().requestBodyAndHeader("direct:executeSyncReport",testReportId,SalesforceEndpointConfig.INCLUDE_DETAILS,Boolean.TRUE,SyncReportResults.class);
+  assertNotNull("executeSyncReport",reportResults);
+  LOG.debug("executeSyncReport: {}",reportResults);
+  final Map<String,Object> headers=new HashMap<String,Object>();
+  headers.put(SalesforceEndpointConfig.INCLUDE_DETAILS,Boolean.FALSE);
+  Object body;
+  if (!bodyMetadata) {
+    headers.put(SalesforceEndpointConfig.REPORT_METADATA,testReportMetadata);
+    body=testReportId;
+  }
+ else {
+    body=testReportMetadata;
+  }
+  reportResults=template().requestBodyAndHeaders("direct:executeSyncReport",body,headers,SyncReportResults.class);
+  assertNotNull("executeSyncReport with metadata",reportResults);
+  LOG.debug("executeSyncReport with metadata: {}",reportResults);
+  ReportInstance reportInstance=template().requestBodyAndHeader("direct:executeAsyncReport",testReportId,SalesforceEndpointConfig.INCLUDE_DETAILS,true,ReportInstance.class);
+  assertNotNull("executeAsyncReport",reportInstance);
+  LOG.debug("executeAsyncReport: {}",reportInstance);
+  headers.clear();
+  headers.put(SalesforceEndpointConfig.INCLUDE_DETAILS,"true");
+  if (!bodyMetadata) {
+    headers.put(SalesforceEndpointConfig.REPORT_METADATA,testReportMetadata);
+    body=testReportId;
+    bodyMetadata=true;
+  }
+ else {
+    body=testReportMetadata;
+    bodyMetadata=false;
+  }
+  reportInstance=template().requestBodyAndHeaders("direct:executeAsyncReport",body,headers,ReportInstance.class);
+  assertNotNull("executeAsyncReport with metadata",reportInstance);
+  LOG.debug("executeAsyncReport with metadata: {}",reportInstance);
+  final String testReportInstanceId=reportInstance.getId();
+  final List reportInstances=template().requestBody("direct:getReportInstances",testReportId,List.class);
+  assertNotNull("getReportInstances",reportInstances);
+  assertFalse("getReportInstances empty",reportInstances.isEmpty());
+  LOG.debug("getReportInstances: {}",reportInstances);
+  boolean done=false;
+  int tries=0;
+  AsyncReportResults asyncReportResults=null;
+  while (!done) {
+    asyncReportResults=template().requestBodyAndHeader("direct:getReportResults",testReportId,SalesforceEndpointConfig.INSTANCE_ID,testReportInstanceId,AsyncReportResults.class);
+    done=asyncReportResults != null && (asyncReportResults.getAttributes().getStatus() == ReportStatusEnum.Success || asyncReportResults.getAttributes().getStatus() == ReportStatusEnum.Error);
+    if (!done) {
+      Thread.sleep(RETRY_DELAY);
+      if (++tries > REPORT_RESULT_RETRIES) {
+        final long retrySeconds=TimeUnit.SECONDS.convert(tries * RETRY_DELAY,TimeUnit.MILLISECONDS);
+        fail("Async report result not available in " + retrySeconds + " seconds");
+      }
+    }
+  }
+  assertNotNull("getReportResults",asyncReportResults);
+  assertEquals("getReportResults status",ReportStatusEnum.Success,asyncReportResults.getAttributes().getStatus());
+  LOG.debug("getReportResults: {}",asyncReportResults);
+  String convertResults=template.requestBody("direct:convertResults",asyncReportResults,String.class);
+  assertNotNull("default convertResults",convertResults);
+  LOG.debug("Default options",convertResults);
+  LOG.debug("{}",convertResults);
+  final boolean[] values=new boolean[NUM_OPTIONS];
+  final int nIterations=(int)Math.pow(2,NUM_OPTIONS);
+  for (int i=0; i < nIterations; i++) {
+    for (int j=0; j < NUM_OPTIONS; j++) {
+      if (i % POWERS[j] == 0) {
+        values[j]=!values[j];
+      }
+    }
+    log.debug("Options {} = {}",REPORT_OPTIONS,values);
+    headers.clear();
+    for (int j=0; j < REPORT_OPTIONS.length; j++) {
+      headers.put(REPORT_OPTIONS[j],values[j]);
+    }
+    convertResults=template.requestBodyAndHeaders("direct:convertResults",asyncReportResults,headers,String.class);
+    assertNotNull("convertResults",convertResults);
+    LOG.debug("{}",convertResults);
+  }
+}

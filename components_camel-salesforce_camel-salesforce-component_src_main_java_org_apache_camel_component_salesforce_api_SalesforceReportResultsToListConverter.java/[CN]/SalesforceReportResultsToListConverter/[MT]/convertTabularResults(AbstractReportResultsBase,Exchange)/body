@@ -1,0 +1,38 @@
+{
+  final ArrayList<List<String>> result=new ArrayList<List<String>>();
+  final ReportMetadata reportMetadata=reportResults.getReportMetadata();
+  final String[] detailColumns=reportMetadata.getDetailColumns();
+  final ReportExtendedMetadata reportExtendedMetadata=reportResults.getReportExtendedMetadata();
+  final ReportFactWithDetails factWithDetails=reportResults.getFactMap().get("T!T");
+  final String[] aggregates=reportMetadata.getAggregates();
+  if (reportResults.getHasDetailRows() && getOption(exchange,INCLUDE_DETAILS,Boolean.TRUE)) {
+    final int rowLength=detailColumns.length;
+    if (getOption(exchange,INCLUDE_HEADERS,Boolean.TRUE)) {
+      final List<String> headers=new ArrayList<String>(rowLength);
+      result.add(headers);
+      addColumnHeaders(headers,reportExtendedMetadata.getDetailColumnInfo(),detailColumns);
+    }
+    final ReportRow[] reportRows=factWithDetails.getRows();
+    result.ensureCapacity(result.size() + reportRows.length);
+    for (    ReportRow reportRow : reportRows) {
+      final List<String> row=new ArrayList<String>(rowLength);
+      result.add(row);
+      addRowValues(row,reportRow.getDataCells());
+    }
+    if (aggregates.length > 0 && getOption(exchange,INCLUDE_SUMMARY,Boolean.TRUE)) {
+      addSummaryRows(result,detailColumns,null,aggregates,factWithDetails.getAggregates());
+    }
+  }
+ else   if (aggregates.length > 0) {
+    final int rowLength=aggregates.length;
+    if (getOption(exchange,INCLUDE_HEADERS,Boolean.TRUE)) {
+      final List<String> headers=new ArrayList<String>(rowLength);
+      result.add(headers);
+      addColumnHeaders(headers,reportExtendedMetadata.getAggregateColumnInfo(),aggregates);
+    }
+    final List<String> row=new ArrayList<String>(rowLength);
+    result.add(row);
+    addRowValues(row,factWithDetails.getAggregates());
+  }
+  return result;
+}

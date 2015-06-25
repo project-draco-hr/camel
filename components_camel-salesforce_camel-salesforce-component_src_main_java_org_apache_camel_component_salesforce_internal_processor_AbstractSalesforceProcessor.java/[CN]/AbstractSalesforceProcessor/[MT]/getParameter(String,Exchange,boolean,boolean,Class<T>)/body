@@ -1,0 +1,27 @@
+{
+  final Message in=exchange.getIn();
+  T propValue=in.getHeader(propName,parameterClass);
+  if (propValue == null) {
+    if (in.getHeader(propName) != null) {
+      throw new IllegalArgumentException("Header " + propName + " could not be converted to type "+ parameterClass.getName());
+    }
+    final Object value=endpointConfigMap.get(propName);
+    if (value == null || parameterClass.isInstance(value)) {
+      propValue=parameterClass.cast(value);
+    }
+ else {
+      try {
+        propValue=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterClass,value);
+      }
+ catch (      NoTypeConversionAvailableException e) {
+        throw new SalesforceException(e);
+      }
+    }
+  }
+  propValue=(propValue == null && convertInBody) ? in.getBody(parameterClass) : propValue;
+  if (propValue == null && !optional) {
+    String msg="Missing property " + propName + (convertInBody ? ", message body could not be converted to type " + parameterClass.getName() : "");
+    throw new SalesforceException(msg,null);
+  }
+  return propValue;
+}

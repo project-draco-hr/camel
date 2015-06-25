@@ -1,0 +1,21 @@
+{
+  final ArrayList<List<String>> result=new ArrayList<List<String>>();
+  final ReportMetadata reportMetadata=reportResults.getReportMetadata();
+  final ReportExtendedMetadata reportExtendedMetadata=reportResults.getReportExtendedMetadata();
+  final String[] aggregates=reportMetadata.getAggregates();
+  final boolean includeDetails=reportResults.getHasDetailRows() && getOption(exchange,INCLUDE_DETAILS,Boolean.TRUE);
+  final boolean includeSummary=aggregates.length > 0 && getOption(exchange,INCLUDE_SUMMARY,Boolean.TRUE);
+  final ArrayList<DetailColumnInfo> columnInfos=new ArrayList<DetailColumnInfo>();
+  final String[] columnNames=getResultColumns(columnInfos,reportMetadata,reportExtendedMetadata,includeDetails,includeSummary);
+  if (getOption(exchange,INCLUDE_HEADERS,Boolean.TRUE)) {
+    addColumnHeaders(result,columnInfos);
+  }
+  for (  GroupingValue groupingValue : reportResults.getGroupingsDown().getGroupings()) {
+    addSummaryGroupValues(result,reportResults,columnNames,groupingValue,EMPTY_STRING_LIST,includeDetails,includeSummary);
+  }
+  if (includeSummary) {
+    final ReportFactWithDetails grandTotal=reportResults.getFactMap().get("T!T");
+    addSummaryValues(result,includeDetails,columnNames,EMPTY_STRING_LIST,aggregates,grandTotal.getAggregates());
+  }
+  return result;
+}

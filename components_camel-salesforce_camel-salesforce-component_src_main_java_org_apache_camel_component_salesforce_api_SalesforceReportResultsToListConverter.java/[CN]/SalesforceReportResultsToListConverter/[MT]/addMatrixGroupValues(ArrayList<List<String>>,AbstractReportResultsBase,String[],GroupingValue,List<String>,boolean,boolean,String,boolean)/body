@@ -1,0 +1,27 @@
+{
+  final String groupKey=groupingValue.getKey();
+  final String newKeyPrefix=keyPrefix + groupKey;
+  final List<String> newPrefix=new ArrayList<String>(rowPrefix);
+  newPrefix.add(groupingValue.getLabel());
+  final GroupingValue[] groupings=groupingValue.getGroupings();
+  if (groupings.length > 0) {
+    for (    GroupingValue subGroup : groupings) {
+      addMatrixGroupValues(result,reportResults,columnNames,subGroup,newPrefix,includeDetails,includeSummary,newKeyPrefix + "_",downGroup);
+    }
+  }
+ else   if (downGroup) {
+    for (    GroupingValue acrossGroup : reportResults.getGroupingsAcross().getGroupings()) {
+      addMatrixGroupValues(result,reportResults,columnNames,acrossGroup,newPrefix,includeDetails,includeSummary,newKeyPrefix + "!",false);
+    }
+  }
+ else   if (includeDetails) {
+    addDetailRows(result,newPrefix,reportResults.getFactMap().get(newKeyPrefix));
+  }
+ else   if (!includeSummary) {
+    result.add(newPrefix);
+  }
+  if (includeSummary) {
+    final String summaryKey=getGroupTotalKey(keyPrefix,downGroup,groupKey);
+    addSummaryValues(result,includeDetails,columnNames,newPrefix,reportResults.getReportMetadata().getAggregates(),reportResults.getFactMap().get(summaryKey).getAggregates());
+  }
+}

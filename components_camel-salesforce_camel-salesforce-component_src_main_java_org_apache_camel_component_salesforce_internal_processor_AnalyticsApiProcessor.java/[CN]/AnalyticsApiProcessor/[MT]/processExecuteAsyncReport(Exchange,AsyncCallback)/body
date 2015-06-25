@@ -1,0 +1,21 @@
+{
+  String reportId;
+  final Boolean includeDetails=getParameter(INCLUDE_DETAILS,exchange,IGNORE_BODY,IS_OPTIONAL,Boolean.class);
+  ReportMetadata reportMetadata=exchange.getIn().getBody(ReportMetadata.class);
+  if (reportMetadata != null) {
+    reportId=reportMetadata.getId();
+    if (reportId == null) {
+      reportId=getParameter(REPORT_ID,exchange,IGNORE_BODY,NOT_OPTIONAL);
+    }
+  }
+ else {
+    reportId=getParameter(REPORT_ID,exchange,USE_BODY,NOT_OPTIONAL);
+    reportMetadata=getParameter(REPORT_METADATA,exchange,IGNORE_BODY,IS_OPTIONAL,ReportMetadata.class);
+  }
+  analyticsClient.executeAsyncReport(reportId,includeDetails,reportMetadata,new AnalyticsApiClient.ReportInstanceResponseCallback(){
+    @Override public void onResponse(    ReportInstance reportInstance,    SalesforceException ex){
+      processResponse(exchange,reportInstance,ex,callback);
+    }
+  }
+);
+}

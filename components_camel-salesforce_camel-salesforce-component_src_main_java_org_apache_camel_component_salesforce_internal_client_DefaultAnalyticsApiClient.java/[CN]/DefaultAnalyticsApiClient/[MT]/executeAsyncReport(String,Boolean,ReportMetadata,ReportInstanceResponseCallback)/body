@@ -1,0 +1,27 @@
+{
+  final ContentExchange contentExchange=getContentExchange(HttpMethods.POST,reportInstancesUrl(reportId,includeDetails));
+  if (reportMetadata != null) {
+    try {
+      final HashMap<String,Object> request=new HashMap<String,Object>();
+      request.put("reportMetadata",reportMetadata);
+      marshalRequest(request,contentExchange);
+    }
+ catch (    SalesforceException e) {
+      callback.onResponse(null,e);
+      return;
+    }
+  }
+  doHttpRequest(contentExchange,new ClientResponseCallback(){
+    @Override public void onResponse(    InputStream response,    SalesforceException ex){
+      ReportInstance reportInstance=null;
+      try {
+        reportInstance=unmarshalResponse(response,contentExchange,ReportInstance.class);
+      }
+ catch (      SalesforceException e) {
+        ex=e;
+      }
+      callback.onResponse(reportInstance,ex);
+    }
+  }
+);
+}

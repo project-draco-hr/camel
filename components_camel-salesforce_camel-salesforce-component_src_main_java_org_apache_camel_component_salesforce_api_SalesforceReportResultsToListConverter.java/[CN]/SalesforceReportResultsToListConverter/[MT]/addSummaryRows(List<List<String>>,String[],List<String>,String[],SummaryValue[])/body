@@ -1,0 +1,44 @@
+{
+  final ArrayList<List<String>> rows=new ArrayList<List<String>>(summaryValues.length + 1);
+  String rowCount=null;
+  for (int i=0; i < aggregateColumns.length; i++) {
+    final String aggregate=aggregateColumns[i];
+    final String valueLabel=summaryValues[i].getLabel();
+    if (ROW_COUNT.equals(aggregate)) {
+      rowCount=valueLabel;
+    }
+ else {
+      final List<String> summaryRow=rowPrefix == null ? new ArrayList<String>() : new ArrayList<String>(rowPrefix);
+      rows.add(summaryRow);
+      for (int j=rowPrefix == null ? 0 : rowPrefix.size(); j < detailColumns.length; j++) {
+        final String columnName=detailColumns[j];
+        if (aggregate.endsWith("!" + columnName)) {
+          final StringBuilder valueBuilder=new StringBuilder();
+          if (aggregate.startsWith("a!")) {
+            valueBuilder.append("avg ");
+          }
+ else           if (aggregate.startsWith("mx!")) {
+            valueBuilder.append("max ");
+          }
+ else           if (aggregate.startsWith("m!")) {
+            valueBuilder.append("min ");
+          }
+          valueBuilder.append(valueLabel);
+          summaryRow.add(valueBuilder.toString());
+        }
+ else {
+          summaryRow.add(EMPTY_VALUE);
+        }
+      }
+    }
+  }
+  final List<String> grandTotal=new ArrayList<String>();
+  result.add(grandTotal);
+  if (rowCount != null) {
+    grandTotal.add("Grand Totals (" + rowCount + " records)");
+  }
+ else {
+    grandTotal.add("Grand Totals");
+  }
+  result.addAll(rows);
+}
