@@ -1,0 +1,25 @@
+{
+  boolean startScheduler=isStartScheduler();
+  setStartScheduler(false);
+  try {
+    super.doStart();
+    if (endpoint.isAutoCreate()) {
+      log.debug("Auto creating \"" + endpoint.getConfiguration().getDirectory());
+      try {
+        connectIfNecessary();
+        operations.buildDirectory(endpoint.getConfiguration().getDirectory(),true);
+      }
+ catch (      GenericFileOperationFailedException e) {
+        if (getEndpoint().getConfiguration().isThrowExceptionOnConnectFailed()) {
+          throw e;
+        }
+      }
+    }
+  }
+  finally {
+    if (startScheduler) {
+      setStartScheduler(true);
+      startScheduler();
+    }
+  }
+}
