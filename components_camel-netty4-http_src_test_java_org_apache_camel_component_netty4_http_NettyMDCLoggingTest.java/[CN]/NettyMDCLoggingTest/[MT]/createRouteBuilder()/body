@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      context.setUseMDCLogging(true);
+      from("direct:start").routeId("client").to("log:client-input").to("netty4-http:http://localhost:{{port}}/foo").to("log:client-output").to("mock:result");
+      from("netty4-http:http://0.0.0.0:{{port}}/foo").routeId("server").streamCaching().to("log:server-input").to("mock:input").transform().simple("Bye ${body}").to("log:server-output");
+    }
+  }
+;
+}
