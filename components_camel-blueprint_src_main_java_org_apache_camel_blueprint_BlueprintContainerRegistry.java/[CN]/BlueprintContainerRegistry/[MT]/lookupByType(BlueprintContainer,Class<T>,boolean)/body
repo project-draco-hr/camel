@@ -1,0 +1,32 @@
+{
+  Bundle bundle=(Bundle)blueprintContainer.getComponentInstance("blueprintBundle");
+  Map<String,T> objects=new LinkedHashMap<String,T>();
+  Set<String> ids=blueprintContainer.getComponentIds();
+  for (  String id : ids) {
+    try {
+      ComponentMetadata metadata=blueprintContainer.getComponentMetadata(id);
+      Class<?> cl=null;
+      if (metadata instanceof BeanMetadata) {
+        BeanMetadata beanMetadata=(BeanMetadata)metadata;
+        if (!includeNonSingletons) {
+          String scope=beanMetadata.getScope();
+          if (BeanMetadata.SCOPE_PROTOTYPE.equals(scope)) {
+            continue;
+          }
+        }
+        cl=bundle.loadClass(beanMetadata.getClassName());
+      }
+ else       if (metadata instanceof ReferenceMetadata) {
+        ReferenceMetadata referenceMetadata=(ReferenceMetadata)metadata;
+        cl=bundle.loadClass(referenceMetadata.getInterface());
+      }
+      if (cl != null && type.isAssignableFrom(cl)) {
+        Object o=blueprintContainer.getComponentInstance(metadata.getId());
+        objects.put(metadata.getId(),type.cast(o));
+      }
+    }
+ catch (    Throwable t) {
+    }
+  }
+  return objects;
+}
