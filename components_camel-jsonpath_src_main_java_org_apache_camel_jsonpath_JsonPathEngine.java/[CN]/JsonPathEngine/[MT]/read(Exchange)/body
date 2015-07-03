@@ -1,32 +1,25 @@
 {
   Object json=exchange.getIn().getBody();
   if (json instanceof GenericFile) {
-    try {
-      json=GenericFileConverter.genericFileToInputStream((GenericFile<?>)json,exchange);
+    GenericFile<?> genericFile=(GenericFile<?>)json;
+    if (genericFile.getCharset() != null) {
+      InputStream inputStream=new FileInputStream((File)genericFile.getFile());
+      return path.read(inputStream,genericFile.getCharset(),configuration);
     }
- catch (    NoTypeConversionAvailableException e) {
-      json=((WrappedFile<?>)json).getFile();
-    }
-  }
- else   if (json instanceof WrappedFile) {
-    json=((WrappedFile<?>)json).getFile();
   }
   if (json instanceof String) {
     String str=(String)json;
     return path.read(str,configuration);
   }
- else   if (json instanceof InputStream) {
-    InputStream is=(InputStream)json;
-    return path.read(is,Charset.defaultCharset().displayName(),configuration);
+ else {
+    InputStream is=exchange.getIn().getMandatoryBody(InputStream.class);
+    String jsonEncoding=exchange.getIn().getHeader(JsonPathConstants.HEADER_JSON_ENCODING,String.class);
+    if (jsonEncoding != null) {
+      return path.read(is,jsonEncoding,configuration);
+    }
+ else {
+      JsonStream jsonStream=new JsonStream(is);
+      return path.read(jsonStream,jsonStream.getEncoding().name(),configuration);
+    }
   }
- else   if (json instanceof File) {
-    File file=(File)json;
-    return path.read(file,configuration);
-  }
- else   if (json instanceof URL) {
-    URL url=(URL)json;
-    return path.read(url,configuration);
-  }
-  InputStream is=exchange.getIn().getMandatoryBody(InputStream.class);
-  return path.read(is);
 }
