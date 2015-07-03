@@ -1,0 +1,22 @@
+{
+  final EntityManager entityManager=getTargetEntityManager(null,entityManagerFactory,true,sharedEntityManager);
+  Boolean rc=transactionTemplate.execute(new TransactionCallback<Boolean>(){
+    public Boolean doInTransaction(    TransactionStatus status){
+      if (isJoinTransaction()) {
+        entityManager.joinTransaction();
+      }
+      List<?> list=queryClear(entityManager);
+      if (!list.isEmpty()) {
+        Iterator it=list.iterator();
+        while (it.hasNext()) {
+          Object item=it.next();
+          entityManager.remove(item);
+          entityManager.flush();
+        }
+      }
+      return Boolean.TRUE;
+    }
+  }
+);
+  LOG.debug("clear the store {}",MessageProcessed.class.getName());
+}
