@@ -1,12 +1,19 @@
 {
-  if (routeId != null && exchange.getFromRouteId() == null) {
+  if (routeContext != null && exchange.getFromRouteId() == null) {
+    String routeId=routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
     exchange.setFromRouteId(routeId);
   }
+  UnitOfWork created=null;
   if (exchange.getUnitOfWork() == null) {
-    UnitOfWork uow=createUnitOfWork(exchange);
-    exchange.setUnitOfWork(uow);
-    uow.start();
-    return uow;
+    created=createUnitOfWork(exchange);
+    exchange.setUnitOfWork(created);
+    created.start();
   }
-  return null;
+  if (routeContext != null) {
+    UnitOfWork existing=exchange.getUnitOfWork();
+    if (existing != null) {
+      existing.pushRouteContext(routeContext);
+    }
+  }
+  return created;
 }
