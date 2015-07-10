@@ -1,0 +1,30 @@
+{
+  final ServerSocket listen=new ServerSocket(port);
+  listen.setSoTimeout(100);
+  listener.execute(new Runnable(){
+    private ExecutorService pool=Executors.newCachedThreadPool();
+    @Override public void run(){
+      try {
+        while (alive) {
+          try {
+            pool.execute(new ClosingClientRunnable(listen.accept()));
+          }
+ catch (          SocketTimeoutException ignored) {
+          }
+        }
+      }
+ catch (      IOException e) {
+        throw new RuntimeException(e);
+      }
+ finally {
+        try {
+          listen.close();
+        }
+ catch (        IOException ignored) {
+        }
+      }
+    }
+  }
+);
+  return listen.getLocalPort();
+}
