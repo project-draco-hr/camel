@@ -58,5 +58,17 @@
     config.update(props);
     latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
   }
+ else {
+    final CountDownLatch latch=new CountDownLatch(1);
+    answer.registerService(BlueprintListener.class,new BlueprintListener(){
+      @Override public void blueprintEvent(      BlueprintEvent event){
+        if (event.getType() == BlueprintEvent.CREATED && event.getBundle().getSymbolicName().equals(symbolicName)) {
+          latch.countDown();
+        }
+      }
+    }
+,null);
+    latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
+  }
   return answer;
 }
