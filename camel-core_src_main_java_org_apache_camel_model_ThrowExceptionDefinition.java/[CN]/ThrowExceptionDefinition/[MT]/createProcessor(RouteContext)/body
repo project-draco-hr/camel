@@ -2,6 +2,16 @@
   if (ref != null && exception == null) {
     this.exception=routeContext.getCamelContext().getRegistry().lookupByNameAndType(ref,Exception.class);
   }
-  ObjectHelper.notNull(exception,"exception or ref",this);
-  return new ThrowExceptionProcessor(exception);
+  if (exceptionType != null && exceptionClass == null) {
+    try {
+      this.exceptionClass=routeContext.getCamelContext().getClassResolver().resolveMandatoryClass(exceptionType,Exception.class);
+    }
+ catch (    ClassNotFoundException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+  }
+  if (exception == null && exceptionClass == null) {
+    throw new IllegalArgumentException("exception or exceptionClass/exceptionType must be configured on: " + this);
+  }
+  return new ThrowExceptionProcessor(exception,exceptionClass,message);
 }

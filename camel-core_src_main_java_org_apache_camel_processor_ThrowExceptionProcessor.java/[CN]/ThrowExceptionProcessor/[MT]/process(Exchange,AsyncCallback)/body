@@ -1,5 +1,19 @@
 {
-  exchange.setException(exception);
+  Exception cause=exception;
+  try {
+    if (message != null && type != null) {
+      String text=simple.evaluate(exchange,String.class);
+      Constructor<?> constructor=type.getDeclaredConstructor(String.class);
+      cause=(Exception)constructor.newInstance(text);
+      exchange.setException(cause);
+    }
+ else {
+      exchange.setException(cause);
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setException(new CamelExchangeException("Error creating new instance of " + exception.getClass(),exchange,e));
+  }
   callback.done(true);
   return true;
 }
