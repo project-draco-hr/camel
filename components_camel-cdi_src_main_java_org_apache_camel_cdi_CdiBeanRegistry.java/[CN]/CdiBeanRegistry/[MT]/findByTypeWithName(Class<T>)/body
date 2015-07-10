@@ -2,13 +2,14 @@
   ObjectHelper.notNull(type,"type");
   LOG.trace("Lookups based of type {}",type);
   Map<String,T> beans=new HashMap<String,T>();
-  Set<Bean<T>> definitions=BeanProvider.getBeanDefinitions(type,true,true);
+  Set<Bean<?>> definitions=beanManager.getBeans(type);
   if (definitions == null) {
     return beans;
   }
-  for (  Bean<T> bean : definitions) {
+  for (  Bean<?> bean : definitions) {
     if (bean.getName() != null) {
-      beans.put(bean.getName(),BeanProvider.getContextualReference(type,bean));
+      T obj=CdiBeanManagerHelper.lookupBeanByNameAndType(beanManager,bean.getName(),type);
+      beans.put(bean.getName(),obj);
     }
   }
   return beans;
