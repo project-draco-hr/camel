@@ -1,0 +1,12 @@
+{
+  final ScheduledExecutorService delegate=Executors.newScheduledThreadPool(10);
+  return newProxy(ScheduledExecutorService.class,new InvocationHandler(){
+    @Override public Object invoke(    Object proxy,    Method method,    Object[] args) throws Throwable {
+      if ("submit".equals(method.getName()) || "schedule".equals(method.getName())) {
+        tasks.add((Callable<?>)args[0]);
+      }
+      return method.invoke(delegate,args);
+    }
+  }
+);
+}
