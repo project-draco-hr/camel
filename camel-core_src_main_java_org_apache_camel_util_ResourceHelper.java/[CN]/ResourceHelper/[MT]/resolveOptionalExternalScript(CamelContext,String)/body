@@ -1,0 +1,27 @@
+{
+  if (expression == null) {
+    return null;
+  }
+  String external=expression;
+  int newLines=StringHelper.countChar(expression,'\n');
+  if (newLines > 1) {
+    return expression;
+  }
+  if (external.startsWith("resource:")) {
+    external=external.substring(9);
+    if (hasScheme(external)) {
+      InputStream is=null;
+      try {
+        is=resolveMandatoryResourceAsInputStream(camelContext.getClassResolver(),external);
+        expression=camelContext.getTypeConverter().convertTo(String.class,is);
+      }
+ catch (      IOException e) {
+        throw new RuntimeCamelException("Cannot load resource " + external,e);
+      }
+ finally {
+        IOHelper.close(is);
+      }
+    }
+  }
+  return expression;
+}
