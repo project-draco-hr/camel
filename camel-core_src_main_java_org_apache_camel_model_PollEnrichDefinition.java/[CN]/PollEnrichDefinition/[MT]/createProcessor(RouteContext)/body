@@ -1,20 +1,27 @@
 {
-  if (ObjectHelper.isEmpty(resourceUri) && ObjectHelper.isEmpty(resourceRef)) {
-    throw new IllegalArgumentException("Either uri or ref must be provided for resource endpoint");
+  if (ObjectHelper.isEmpty(resourceUri) && ObjectHelper.isEmpty(resourceRef) && expression == null) {
+    throw new IllegalArgumentException("Either resourceUri, resourceRef or expression must be configured");
   }
-  Endpoint endpoint;
+  PollingConsumer consumer=null;
   if (resourceUri != null) {
-    endpoint=routeContext.resolveEndpoint(resourceUri);
+    Endpoint endpoint=routeContext.resolveEndpoint(resourceUri);
+    consumer=endpoint.createPollingConsumer();
   }
- else {
-    endpoint=routeContext.resolveEndpoint(null,resourceRef);
+ else   if (resourceRef != null) {
+    Endpoint endpoint=routeContext.resolveEndpoint(null,resourceRef);
+    consumer=endpoint.createPollingConsumer();
   }
+  long time=timeout != null ? timeout : -1;
+  Expression exp=createResourceExpression(routeContext);
   PollEnricher enricher;
-  if (timeout != null) {
-    enricher=new PollEnricher(null,endpoint.createPollingConsumer(),timeout);
+  if (exp != null) {
+    enricher=new PollEnricher(null,exp,time);
+  }
+ else   if (consumer != null) {
+    enricher=new PollEnricher(null,consumer,time);
   }
  else {
-    enricher=new PollEnricher(null,endpoint.createPollingConsumer(),-1);
+    throw new IllegalArgumentException("Either resourceUri, resourceRef or expression must be configured");
   }
   AggregationStrategy strategy=createAggregationStrategy(routeContext);
   if (strategy == null) {

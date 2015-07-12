@@ -7,19 +7,33 @@
     callback.done(true);
     return true;
   }
+  PollingConsumer target=consumer;
+  Endpoint endpoint=null;
+  if (expression != null) {
+    try {
+      Object recipient=expression.evaluate(exchange,Object.class);
+      endpoint=resolveEndpoint(exchange,recipient);
+      target=consumerCache.acquirePollingConsumer(endpoint);
+    }
+ catch (    Throwable e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+  }
   Exchange resourceExchange;
   try {
     if (timeout < 0) {
-      LOG.debug("Consumer receive: {}",consumer);
+      LOG.debug("Consumer receive: {}",target);
       resourceExchange=consumer.receive();
     }
  else     if (timeout == 0) {
-      LOG.debug("Consumer receiveNoWait: {}",consumer);
-      resourceExchange=consumer.receiveNoWait();
+      LOG.debug("Consumer receiveNoWait: {}",target);
+      resourceExchange=target.receiveNoWait();
     }
  else {
-      LOG.debug("Consumer receive with timeout: {} ms. {}",timeout,consumer);
-      resourceExchange=consumer.receive(timeout);
+      LOG.debug("Consumer receive with timeout: {} ms. {}",timeout,target);
+      resourceExchange=target.receive(timeout);
     }
     if (resourceExchange == null) {
       LOG.debug("Consumer received no exchange");
@@ -32,6 +46,11 @@
     exchange.setException(new CamelExchangeException("Error during poll",exchange,e));
     callback.done(true);
     return true;
+  }
+ finally {
+    if (expression != null) {
+      consumerCache.releasePollingConsumer(endpoint,target);
+    }
   }
   try {
     if (!isAggregateOnException() && (resourceExchange != null && resourceExchange.isFailed())) {
@@ -49,10 +68,10 @@
       }
     }
     if (exchange.hasOut()) {
-      exchange.getOut().setHeader(Exchange.TO_ENDPOINT,consumer.getEndpoint().getEndpointUri());
+      exchange.getOut().setHeader(Exchange.TO_ENDPOINT,target.getEndpoint().getEndpointUri());
     }
  else {
-      exchange.getIn().setHeader(Exchange.TO_ENDPOINT,consumer.getEndpoint().getEndpointUri());
+      exchange.getIn().setHeader(Exchange.TO_ENDPOINT,target.getEndpoint().getEndpointUri());
     }
   }
  catch (  Throwable e) {
