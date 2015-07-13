@@ -1,3 +1,20 @@
 {
-  ServiceHelper.startServices(aggregationStrategy,producer);
+  if (aggregationStrategy == null) {
+    aggregationStrategy=defaultAggregationStrategy();
+  }
+  if (producerCache == null) {
+    if (cacheSize < 0) {
+      producerCache=new EmptyProducerCache(this,camelContext);
+      LOG.debug("Enricher {} is not using ProducerCache",this);
+    }
+ else     if (cacheSize == 0) {
+      producerCache=new ProducerCache(this,camelContext);
+      LOG.debug("Enricher {} using ProducerCache with default cache size",this);
+    }
+ else {
+      producerCache=new ProducerCache(this,camelContext,cacheSize);
+      LOG.debug("Enricher {} using ProducerCache with cacheSize={}",this,cacheSize);
+    }
+  }
+  ServiceHelper.startServices(producerCache,aggregationStrategy);
 }

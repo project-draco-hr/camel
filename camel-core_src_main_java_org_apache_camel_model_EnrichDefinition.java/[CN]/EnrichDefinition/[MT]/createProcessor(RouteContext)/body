@@ -1,25 +1,14 @@
 {
-  if (ObjectHelper.isEmpty(resourceUri) && ObjectHelper.isEmpty(resourceRef)) {
-    throw new IllegalArgumentException("Either uri or ref must be provided for resource endpoint");
-  }
-  Endpoint endpoint;
-  if (resourceUri != null) {
-    endpoint=routeContext.resolveEndpoint(resourceUri);
-  }
- else {
-    endpoint=routeContext.resolveEndpoint(null,resourceRef);
-  }
+  Expression exp=getExpression().createExpression(routeContext);
   boolean isShareUnitOfWork=getShareUnitOfWork() != null && getShareUnitOfWork();
-  Enricher enricher=new Enricher(null,endpoint.createProducer(),isShareUnitOfWork);
+  Enricher enricher=new Enricher(exp);
+  enricher.setShareUnitOfWork(isShareUnitOfWork);
   AggregationStrategy strategy=createAggregationStrategy(routeContext);
-  if (strategy == null) {
-    enricher.setDefaultAggregationStrategy();
-  }
- else {
+  if (strategy != null) {
     enricher.setAggregationStrategy(strategy);
   }
-  if (getAggregateOnException() != null) {
-    enricher.setAggregateOnException(getAggregateOnException());
+  if (aggregateOnException != null) {
+    enricher.setAggregateOnException(aggregateOnException);
   }
   return enricher;
 }

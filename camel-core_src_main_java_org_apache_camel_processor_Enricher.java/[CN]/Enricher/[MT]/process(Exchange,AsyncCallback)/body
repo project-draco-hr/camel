@@ -1,4 +1,16 @@
 {
+  final Producer producer;
+  final Endpoint endpoint;
+  try {
+    Object recipient=expression.evaluate(exchange,Object.class);
+    endpoint=resolveEndpoint(exchange,recipient);
+    producer=producerCache.acquireProducer(endpoint);
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
   final Exchange resourceExchange=createResourceExchange(exchange,ExchangePattern.InOut);
   final Endpoint destination=producer.getEndpoint();
   EventHelper.notifyExchangeSending(exchange.getContext(),resourceExchange,destination);
@@ -30,6 +42,11 @@
         }
       }
       exchange.setProperty(Exchange.TO_ENDPOINT,producer.getEndpoint().getEndpointUri());
+      try {
+        producerCache.releaseProducer(endpoint,producer);
+      }
+ catch (      Exception e) {
+      }
       callback.done(false);
     }
   }
@@ -60,6 +77,11 @@
     }
   }
   exchange.setProperty(Exchange.TO_ENDPOINT,producer.getEndpoint().getEndpointUri());
+  try {
+    producerCache.releaseProducer(endpoint,producer);
+  }
+ catch (  Exception e) {
+  }
   callback.done(true);
   return true;
 }
