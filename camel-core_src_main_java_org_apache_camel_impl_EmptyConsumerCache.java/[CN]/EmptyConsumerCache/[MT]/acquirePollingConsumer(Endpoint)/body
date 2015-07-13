@@ -1,0 +1,20 @@
+{
+  PollingConsumer answer;
+  try {
+    answer=endpoint.createPollingConsumer();
+    boolean singleton=true;
+    if (answer instanceof IsSingleton) {
+      singleton=((IsSingleton)answer).isSingleton();
+    }
+    if (getCamelContext().isStartingRoutes() && singleton) {
+      getCamelContext().addService(answer);
+    }
+ else {
+      ServiceHelper.startService(answer);
+    }
+  }
+ catch (  Exception e) {
+    throw new FailedToCreateConsumerException(endpoint,e);
+  }
+  return answer;
+}
