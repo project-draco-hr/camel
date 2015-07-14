@@ -1,0 +1,34 @@
+{
+  Object body=message.getBody();
+  String method=message.getHeader(Exchange.HTTP_METHOD,String.class);
+  if (method == null) {
+    if (body == null) {
+      clientRequest.setMethod(Methods.GET);
+    }
+ else {
+      clientRequest.setMethod(Methods.POST);
+    }
+  }
+ else {
+    clientRequest.setMethod(new HttpString(method));
+  }
+  String contentType=MessageHelper.getContentType(message);
+  if (contentType != null) {
+    clientRequest.getRequestHeaders().put(Headers.CONTENT_TYPE,contentType);
+    LOG.trace("Content-Type: {}",contentType);
+  }
+  TypeConverter tc=message.getExchange().getContext().getTypeConverter();
+  for (  Map.Entry<String,Object> entry : message.getHeaders().entrySet()) {
+    String key=entry.getKey();
+    Object value=entry.getValue();
+    final Iterator<?> it=ObjectHelper.createIterator(value,null);
+    while (it.hasNext()) {
+      String headerValue=tc.convertTo(String.class,it.next());
+      if (headerValue != null && headerFilterStrategy != null && !headerFilterStrategy.applyFilterToCamelHeaders(key,headerValue,message.getExchange())) {
+        LOG.trace("HTTP-Header: {}={}",key,headerValue);
+        clientRequest.getRequestHeaders().add(new HttpString(key),headerValue);
+      }
+    }
+  }
+  return body;
+}

@@ -1,0 +1,24 @@
+{
+  Undertow.Builder result=Undertow.builder();
+  int port=registy.getPort();
+  if (registy.getSslContext() != null) {
+    result=result.addHttpsListener(registy.getPort(),registy.getHost(),registy.getSslContext());
+  }
+ else {
+    result=result.addHttpListener(registy.getPort(),registy.getHost());
+  }
+  PathHandler path=Handlers.path(new NotFoundHandler());
+  for (  URI key : registy.getConsumersRegistry().keySet()) {
+    UndertowConsumer consumer=registy.getConsumersRegistry().get(key);
+    URI httpUri=consumer.getEndpoint().getHttpURI();
+    if (consumer.getEndpoint().getMatchOnUriPrefix()) {
+      path.addPrefixPath(httpUri.getPath(),new HttpCamelHandler(consumer));
+    }
+ else {
+      path.addExactPath(httpUri.getPath(),new HttpCamelHandler(consumer));
+    }
+    LOG.debug("::Rebuild for path: {}",httpUri.getPath());
+  }
+  result=result.setHandler(path);
+  return result.build();
+}

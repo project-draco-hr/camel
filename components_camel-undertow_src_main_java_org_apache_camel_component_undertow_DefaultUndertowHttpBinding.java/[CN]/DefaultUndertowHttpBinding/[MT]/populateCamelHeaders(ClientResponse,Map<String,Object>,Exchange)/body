@@ -1,0 +1,25 @@
+{
+  LOG.trace("populateCamelHeaders: {}");
+  headersMap.put(Exchange.HTTP_RESPONSE_CODE,response.getResponseCode());
+  for (  HttpString name : response.getResponseHeaders().getHeaderNames()) {
+    if (name.toString().toLowerCase(Locale.US).equals("content-type")) {
+      name=ExchangeHeaders.CONTENT_TYPE;
+    }
+    if (name.toString().toLowerCase(Locale.US).equals("authorization")) {
+      String value=response.getResponseHeaders().get(name).toString();
+      if (value != null && value.trim().startsWith("Basic")) {
+        if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(Exchange.AUTHENTICATION,"Basic",exchange)) {
+          UndertowUtils.appendHeader(headersMap,Exchange.AUTHENTICATION,"Basic");
+        }
+      }
+    }
+    Iterator<?> it=response.getResponseHeaders().get(name).iterator();
+    while (it.hasNext()) {
+      Object value=it.next();
+      LOG.trace("HTTP-header: {}",value);
+      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name.toString(),value,exchange)) {
+        UndertowUtils.appendHeader(headersMap,name.toString(),value);
+      }
+    }
+  }
+}
