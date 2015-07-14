@@ -1,0 +1,25 @@
+{
+  super(endpoint,processor);
+  this.endpoint=endpoint;
+  String path=endpoint.getUri().getPath();
+  if (path.startsWith("/")) {
+    path=path.substring(1);
+  }
+  this.resource=new CoapResource(path){
+    @Override public void handleRequest(    Exchange exchange){
+      CoapExchange cexchange=new CoapExchange(exchange,this);
+      org.apache.camel.Exchange camelExchange=endpoint.createExchange();
+      byte bytes[]=exchange.getCurrentRequest().getPayload();
+      camelExchange.getIn().setBody(bytes);
+      try {
+        processor.process(camelExchange);
+        Message target=camelExchange.hasOut() ? camelExchange.getOut() : camelExchange.getIn();
+        cexchange.respond(ResponseCode.CONTENT,target.getBody(byte[].class));
+      }
+ catch (      Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
+;
+}
