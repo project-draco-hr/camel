@@ -3,21 +3,21 @@
   mock.expectedBodiesReceived("A");
   template.sendBody("seda:foo","A");
   assertMockEndpointsSatisfied();
-  log.info("Suspending");
+  log.info("Stopping");
   resetMocks();
   mock.expectedMessageCount(0);
-  context.suspendRoute("foo");
-  assertEquals("Suspended",context.getRouteStatus("foo").name());
+  context.stopRoute("foo");
+  assertEquals("Stopped",context.getRouteStatus("foo").name());
   Route route=context.getRoute("foo");
   if (route instanceof StatefulService) {
-    assertEquals("Suspended",((StatefulService)route).getStatus().name());
+    assertEquals("Stopped",((StatefulService)route).getStatus().name());
   }
   template.sendBody("seda:foo","B");
   mock.assertIsSatisfied(1000);
-  log.info("Resuming");
+  log.info("Starting");
   resetMocks();
   mock.expectedBodiesReceived("B");
-  context.resumeRoute("foo");
+  context.startRoute("foo");
   assertMockEndpointsSatisfied();
   assertEquals("Started",context.getRouteStatus("foo").name());
   route=context.getRoute("foo");
