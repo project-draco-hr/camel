@@ -1,22 +1,25 @@
 {
   clientExchange.setResponseListener(new ClientCallback<ClientExchange>(){
     @Override public void completed(    ClientExchange clientExchange){
-      Message message=null;
       try {
-        message=endpoint.getUndertowHttpBinding().toCamelMessage(clientExchange,camelExchange);
+        Message message=endpoint.getUndertowHttpBinding().toCamelMessage(clientExchange,camelExchange);
+        if (ExchangeHelper.isOutCapable(camelExchange)) {
+          camelExchange.setOut(message);
+        }
+ else {
+          camelExchange.setIn(message);
+        }
       }
  catch (      Exception e) {
         camelExchange.setException(e);
       }
-      if (ExchangeHelper.isOutCapable(camelExchange)) {
-        camelExchange.setOut(message);
-      }
- else {
-        camelExchange.setIn(message);
+ finally {
+        callback.done(false);
       }
     }
     @Override public void failed(    IOException e){
       camelExchange.setException(e);
+      callback.done(false);
     }
   }
 );
@@ -27,5 +30,6 @@
   }
  catch (  IOException e) {
     camelExchange.setException(e);
+    callback.done(false);
   }
 }
