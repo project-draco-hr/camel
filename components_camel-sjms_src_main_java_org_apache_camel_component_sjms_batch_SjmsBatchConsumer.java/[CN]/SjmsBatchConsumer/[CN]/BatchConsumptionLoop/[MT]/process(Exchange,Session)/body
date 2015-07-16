@@ -1,0 +1,17 @@
+{
+  assert(exchange != null);
+  int id=batchCount.getAndIncrement();
+  int batchSize=exchange.getProperty(SjmsBatchEndpoint.PROPERTY_BATCH_SIZE,Integer.class);
+  if (LOG.isDebugEnabled()) {
+    LOG.debug("Processing batch:size={}:total={}",batchSize,messagesReceived.addAndGet(batchSize));
+  }
+  Synchronization committing=new SessionCompletion(session);
+  exchange.addOnCompletion(committing);
+  try {
+    processor.process(exchange);
+    LOG.debug("Completed processing[{}]:total={}",id,messagesProcessed.addAndGet(batchSize));
+  }
+ catch (  Exception e) {
+    LOG.error("Error processing exchange: {}",e.getMessage());
+  }
+}

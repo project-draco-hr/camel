@@ -1,0 +1,47 @@
+{
+  final boolean usingTimeout=completionTimeout > 0;
+  batchConsumption:   while (running.get()) {
+    int messageCount=0;
+    long timeElapsed=0;
+    long startTime=0;
+    Exchange aggregatedExchange=null;
+    batch:     while ((completionSize <= 0) || (messageCount < completionSize)) {
+      long waitTime=(usingTimeout && (timeElapsed > 0)) ? getReceiveWaitTime(timeElapsed) : pollDuration;
+      Message message=consumer.receive(waitTime);
+      if (running.get()) {
+        if (message == null) {
+          LOG.trace("No message received");
+        }
+ else {
+          if ((usingTimeout) && (messageCount == 0)) {
+            startTime=new Date().getTime();
+          }
+          messageCount++;
+          LOG.debug("Message received: {}",messageCount);
+          if ((message instanceof ObjectMessage) || (message instanceof TextMessage)) {
+            Exchange exchange=JmsMessageHelper.createExchange(message,getEndpoint());
+            aggregatedExchange=aggregationStrategy.aggregate(aggregatedExchange,exchange);
+            aggregatedExchange.setProperty(SjmsBatchEndpoint.PROPERTY_BATCH_SIZE,messageCount);
+          }
+ else {
+            throw new IllegalArgumentException("Unexpected message type: " + message.getClass().toString());
+          }
+        }
+        if ((usingTimeout) && (startTime > 0)) {
+          long currentTime=new Date().getTime();
+          timeElapsed=currentTime - startTime;
+          if (timeElapsed > completionTimeout) {
+            break batch;
+          }
+        }
+      }
+ else {
+        LOG.info("Shutdown signal received - rolling batch back");
+        session.rollback();
+        break batchConsumption;
+      }
+    }
+    assert(aggregatedExchange != null);
+    process(aggregatedExchange,session);
+  }
+}

@@ -1,0 +1,19 @@
+{
+  super.doStart();
+  try {
+    connection=connectionFactory.createConnection();
+    connection.start();
+  }
+ catch (  JMSException ex) {
+    LOG.error("Exception caught closing connection: {}",getStackTrace(ex));
+    return;
+  }
+  if (LOG.isInfoEnabled()) {
+    LOG.info("Starting " + consumerCount + " consumer(s) for "+ destinationName+ ":"+ completionSize);
+  }
+  consumersShutdownLatchRef.set(new CountDownLatch(consumerCount));
+  jmsConsumerExecutors=getEndpoint().getCamelContext().getExecutorServiceManager().newFixedThreadPool(this,"SjmsBatchConsumer",consumerCount);
+  for (int i=0; i < consumerCount; i++) {
+    jmsConsumerExecutors.execute(new BatchConsumptionLoop());
+  }
+}

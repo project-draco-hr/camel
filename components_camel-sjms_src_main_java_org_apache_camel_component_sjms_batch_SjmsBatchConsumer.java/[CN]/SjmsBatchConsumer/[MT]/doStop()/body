@@ -1,0 +1,25 @@
+{
+  super.doStop();
+  running.set(false);
+  CountDownLatch consumersShutdownLatch=consumersShutdownLatchRef.get();
+  if (consumersShutdownLatch != null) {
+    LOG.info("Stop signalled, waiting on consumers to shut down");
+    if (consumersShutdownLatch.await(60,TimeUnit.SECONDS)) {
+      LOG.warn("Timeout waiting on consumer threads to signal completion - shutting down");
+    }
+ else {
+      LOG.info("All consumers have shut down");
+    }
+  }
+ else {
+    LOG.info("Stop signalled while there are no consumers yet, so no need to wait for consumers");
+  }
+  try {
+    LOG.debug("Shutting down JMS connection");
+    connection.close();
+  }
+ catch (  JMSException jex) {
+    LOG.error("Exception caught closing connection: {}",getStackTrace(jex));
+  }
+  getEndpoint().getCamelContext().getExecutorServiceManager().shutdown(jmsConsumerExecutors);
+}

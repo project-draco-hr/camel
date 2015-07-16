@@ -1,0 +1,35 @@
+{
+  try {
+    final Session session=connection.createSession(TRANSACTED,Session.CLIENT_ACKNOWLEDGE);
+    try {
+      Queue queue=session.createQueue(destinationName);
+      MessageConsumer consumer=session.createConsumer(queue);
+      try {
+        consumeBatchesOnLoop(session,consumer);
+      }
+  finally {
+        try {
+          consumer.close();
+        }
+ catch (        JMSException ex2) {
+          log.error("Exception caught closing consumer: {}",ex2.getMessage());
+        }
+      }
+    }
+  finally {
+      try {
+        session.close();
+      }
+ catch (      JMSException ex1) {
+        log.error("Exception caught closing session: {}",ex1.getMessage());
+      }
+    }
+  }
+ catch (  JMSException ex) {
+    LOG.error("Exception caught consuming from {}: {}",destinationName,getStackTrace(ex));
+  }
+ finally {
+    CountDownLatch consumersShutdownLatch=consumersShutdownLatchRef.get();
+    consumersShutdownLatch.countDown();
+  }
+}
