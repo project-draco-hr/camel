@@ -1,0 +1,19 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:start").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          CallerIDHeaderType callerId=new CallerIDHeaderType();
+          callerId.setName("Willem");
+          callerId.setPhoneNumber("108");
+          SoapHeader soapHeader=new SoapHeader(new QName("http://camel.apache.org/pizza/types","CallerIDHeader"),callerId,new JAXBDataBinding(CallerIDHeaderType.class));
+          List<SoapHeader> soapHeaders=new ArrayList<SoapHeader>(1);
+          soapHeaders.add(soapHeader);
+          exchange.getIn().setHeader(Header.HEADER_LIST,soapHeaders);
+        }
+      }
+).to(getServiceEndpointURI()).to("mock:end");
+    }
+  }
+;
+}
