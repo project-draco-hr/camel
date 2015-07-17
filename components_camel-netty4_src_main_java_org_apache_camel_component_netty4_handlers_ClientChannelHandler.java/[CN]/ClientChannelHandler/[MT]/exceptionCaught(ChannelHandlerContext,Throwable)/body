@@ -12,7 +12,13 @@
   Exchange exchange=getExchange(ctx);
   AsyncCallback callback=getAsyncCallback(ctx);
   if (exchange != null && callback != null) {
-    exchange.setException(cause);
+    Throwable initialCause=exchange.getException();
+    if (initialCause != null && initialCause.getCause() == null) {
+      initialCause.initCause(cause);
+    }
+ else {
+      exchange.setException(cause);
+    }
     NettyHelper.close(ctx.channel());
     callback.done(false);
   }
