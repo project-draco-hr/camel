@@ -12,9 +12,19 @@
       }
       ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(bundleContext,ConfigurationAdmin.class);
       if (configAdmin != null) {
-        Configuration config=configAdmin.getConfiguration(pid,null);
+        final Configuration config=configAdmin.getConfiguration(pid,null);
         LOG.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
-        config.update(props);
+        CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,bundleContext,symbolicName,BlueprintEvent.CREATED,new Runnable(){
+          @Override public void run(){
+            try {
+              config.update(props);
+            }
+ catch (            IOException e) {
+              throw new RuntimeException(e.getMessage(),e);
+            }
+          }
+        }
+);
       }
     }
   }

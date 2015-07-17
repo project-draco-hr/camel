@@ -1,0 +1,18 @@
+{
+  final CountDownLatch latch=new CountDownLatch(1);
+  ServiceRegistration<BlueprintListener> registration=context.registerService(BlueprintListener.class,new BlueprintListener(){
+    @Override public void blueprintEvent(    BlueprintEvent event){
+      if (event.getType() == bpEvent && event.getBundle().getSymbolicName().equals(symbolicName)) {
+        if (eventHistory == null || eventHistory.add(event.getTimestamp())) {
+          latch.countDown();
+        }
+      }
+    }
+  }
+,null);
+  if (runAndWait != null) {
+    runAndWait.run();
+  }
+  latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
+  registration.unregister();
+}

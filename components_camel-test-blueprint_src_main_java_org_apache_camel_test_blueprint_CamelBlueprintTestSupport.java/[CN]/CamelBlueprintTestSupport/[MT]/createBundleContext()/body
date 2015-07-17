@@ -22,56 +22,38 @@
       services.add(reg);
     }
   }
-  Dictionary props=new Properties();
+  final Dictionary props=new Properties();
   String[] file=loadConfigAdminConfigurationFile();
   if (file != null && file.length != 2) {
     throw new IllegalArgumentException("The returned String[] from loadConfigAdminConfigurationFile must be of length 2, was " + file.length);
   }
+  Set<Long> bpEvents=new HashSet<>();
+  CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,null);
   if (file != null) {
     if (!new File(file[0]).exists()) {
       throw new IllegalArgumentException("The provided file \"" + file[0] + "\" from loadConfigAdminConfigurationFile doesn't exist");
     }
-    CamelBlueprintHelper.setPersistentFileForConfigAdmin(answer,file[1],file[0],props);
+    CamelBlueprintHelper.setPersistentFileForConfigAdmin(answer,file[1],file[0],props,symbolicName,bpEvents);
   }
   String pid=useOverridePropertiesWithConfigAdmin(props);
   if (pid != null) {
-    final CountDownLatch latch=new CountDownLatch(2);
-    answer.registerService(ConfigurationListener.class,new ConfigurationListener(){
-      @Override public void configurationEvent(      ConfigurationEvent event){
-        if (event.getType() == ConfigurationEvent.CM_LOCATION_CHANGED) {
-          latch.countDown();
-        }
-        answer.registerService(BlueprintListener.class,new BlueprintListener(){
-          @Override public void blueprintEvent(          BlueprintEvent event){
-            if (event.getType() == BlueprintEvent.CREATED && event.getBundle().getSymbolicName().equals(symbolicName)) {
-              latch.countDown();
-            }
-          }
-        }
-,null);
-      }
-    }
-,null);
     ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(answer,ConfigurationAdmin.class);
-    Configuration config=configAdmin.getConfiguration(pid,null);
+    final Configuration config=configAdmin.getConfiguration(pid,null);
     if (config == null) {
       throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
     }
     log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
-    config.update(props);
-    latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
-  }
- else {
-    final CountDownLatch latch=new CountDownLatch(1);
-    answer.registerService(BlueprintListener.class,new BlueprintListener(){
-      @Override public void blueprintEvent(      BlueprintEvent event){
-        if (event.getType() == BlueprintEvent.CREATED && event.getBundle().getSymbolicName().equals(symbolicName)) {
-          latch.countDown();
+    CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,new Runnable(){
+      @Override public void run(){
+        try {
+          config.update(props);
+        }
+ catch (        IOException e) {
+          throw new RuntimeException(e.getMessage(),e);
         }
       }
     }
-,null);
-    latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
+);
   }
   return answer;
 }
