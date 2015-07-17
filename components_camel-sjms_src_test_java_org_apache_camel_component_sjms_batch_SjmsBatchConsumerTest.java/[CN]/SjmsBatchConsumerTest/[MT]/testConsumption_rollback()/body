@@ -1,6 +1,6 @@
 {
   final int completionTimeout=2000;
-  final int completionSize=-1;
+  final int completionSize=5;
   final String queueName=getQueueName();
   context.addRoutes(new TransactedSendHarness(queueName));
   context.addRoutes(new RouteBuilder(){
@@ -10,11 +10,15 @@
   }
 );
   context.start();
-  int messageCount=50;
-  assertTrue(messageCount < SjmsBatchEndpoint.DEFAULT_COMPLETION_SIZE);
+  int messageCount=5;
   MockEndpoint mockBatches=getMockEndpoint("mock:batches");
-  mockBatches.expectedMessageCount(1);
+  mockBatches.whenExchangeReceived(1,new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      throw new RuntimeException("Boom!");
+    }
+  }
+);
+  mockBatches.expectedMessageCount(2);
   template.sendBody("direct:in",generateStrings(messageCount));
   mockBatches.assertIsSatisfied();
-  assertFirstMessageBodyOfLength(mockBatches,messageCount);
 }

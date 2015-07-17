@@ -3,10 +3,10 @@
   int id=batchCount.getAndIncrement();
   int batchSize=exchange.getProperty(SjmsBatchEndpoint.PROPERTY_BATCH_SIZE,Integer.class);
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Processing batch:size={}:total={}",batchSize,messagesReceived.addAndGet(batchSize));
+    LOG.debug("Processing batch[" + id + "]:size="+ batchSize+ ":total="+ messagesReceived.addAndGet(batchSize));
   }
-  Synchronization committing=new SessionCompletion(session);
-  exchange.addOnCompletion(committing);
+  SessionCompletion sessionCompletion=new SessionCompletion(session);
+  exchange.addOnCompletion(sessionCompletion);
   try {
     processor.process(exchange);
     LOG.debug("Completed processing[{}]:total={}",id,messagesProcessed.addAndGet(batchSize));
