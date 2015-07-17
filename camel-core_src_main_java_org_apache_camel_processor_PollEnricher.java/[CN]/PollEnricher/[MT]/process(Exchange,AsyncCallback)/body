@@ -9,13 +9,21 @@
   }
   PollingConsumer consumer;
   Endpoint endpoint;
+  Object recipient=null;
   try {
-    Object recipient=expression.evaluate(exchange,Object.class);
+    recipient=expression.evaluate(exchange,Object.class);
     endpoint=resolveEndpoint(exchange,recipient);
     consumer=consumerCache.acquirePollingConsumer(endpoint);
   }
  catch (  Throwable e) {
-    exchange.setException(e);
+    if (isIgnoreInvalidEndpoint()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Endpoint uri is invalid: " + recipient + ". This exception will be ignored.",e);
+      }
+    }
+ else {
+      exchange.setException(e);
+    }
     callback.done(true);
     return true;
   }
