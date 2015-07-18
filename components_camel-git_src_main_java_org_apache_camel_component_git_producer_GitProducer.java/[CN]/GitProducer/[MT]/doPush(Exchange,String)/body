@@ -1,0 +1,23 @@
+{
+  Iterable<PushResult> result=null;
+  try {
+    if (ObjectHelper.isEmpty(endpoint.getRemotePath())) {
+      throw new IllegalArgumentException("Remote path must be specified to execute " + operation);
+    }
+    if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+      git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+    }
+    if (ObjectHelper.isNotEmpty(endpoint.getUsername()) && ObjectHelper.isNotEmpty(endpoint.getPassword())) {
+      UsernamePasswordCredentialsProvider credentials=new UsernamePasswordCredentialsProvider(endpoint.getUsername(),endpoint.getPassword());
+      result=git.push().setCredentialsProvider(credentials).setRemote(endpoint.getRemotePath()).call();
+    }
+ else {
+      result=git.push().setRemote(endpoint.getRemotePath()).call();
+    }
+  }
+ catch (  Exception e) {
+    LOG.error("There was an error in Git " + operation + " operation");
+    throw e;
+  }
+  exchange.getOut().setBody(result);
+}

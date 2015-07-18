@@ -1,0 +1,14 @@
+{
+  int count=0;
+  Iterable<RevCommit> commits=getGit().log().all().call();
+  for (  RevCommit commit : commits) {
+    if (!used.contains(commit.getId())) {
+      Exchange e=getEndpoint().createExchange();
+      e.getOut().setBody(commit.getShortMessage());
+      getProcessor().process(e);
+      used.add(commit.getId());
+      count++;
+    }
+  }
+  return count;
+}
