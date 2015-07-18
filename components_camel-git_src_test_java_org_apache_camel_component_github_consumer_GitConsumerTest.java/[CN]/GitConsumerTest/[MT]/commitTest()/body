@@ -1,0 +1,57 @@
+{
+  Repository repository=getTestRepository();
+  MockEndpoint added=getMockEndpoint("mock:result");
+  File fileToAdd=new File(GIT_LOCAL_REPO,FILENAME_TO_ADD);
+  fileToAdd.createNewFile();
+  template.send("direct:add",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_TO_ADD);
+    }
+  }
+);
+  File gitDir=new File(GIT_LOCAL_REPO,".git");
+  assertEquals(gitDir.exists(),true);
+  Status status=new Git(repository).status().call();
+  assertTrue(status.getAdded().contains(FILENAME_TO_ADD));
+  template.send("direct:commit",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE);
+    }
+  }
+);
+  Iterable<RevCommit> logs=new Git(repository).log().call();
+  int count=0;
+  for (  RevCommit rev : logs) {
+    assertEquals(rev.getShortMessage(),COMMIT_MESSAGE);
+    count++;
+  }
+  assertEquals(count,1);
+  File fileToAdd1=new File(GIT_LOCAL_REPO,FILENAME_BRANCH_TO_ADD);
+  fileToAdd1.createNewFile();
+  template.send("direct:add",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_BRANCH_TO_ADD);
+    }
+  }
+);
+  status=new Git(repository).status().call();
+  assertTrue(status.getAdded().contains(FILENAME_BRANCH_TO_ADD));
+  template.send("direct:commit",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,"Test test Commit");
+    }
+  }
+);
+  logs=new Git(repository).log().call();
+  count=0;
+  for (  RevCommit rev : logs) {
+    count++;
+  }
+  assertEquals(count,2);
+  Thread.sleep(1 * 5000);
+  Exchange ex1=added.getExchanges().get(0);
+  Exchange ex2=added.getExchanges().get(1);
+  assertEquals(COMMIT_MESSAGE,ex2.getOut().getBody());
+  assertEquals("Test test Commit",ex1.getOut().getBody());
+  repository.close();
+}
