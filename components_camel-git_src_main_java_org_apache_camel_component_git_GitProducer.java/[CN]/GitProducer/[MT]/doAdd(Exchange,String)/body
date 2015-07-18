@@ -1,0 +1,19 @@
+{
+  String fileName=null;
+  if (ObjectHelper.isEmpty(endpoint.getLocalPath())) {
+    throw new IllegalArgumentException("Local path must specified to execute " + operation);
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_FILE_NAME))) {
+    fileName=exchange.getIn().getHeader(GitConstants.GIT_FILE_NAME,String.class);
+  }
+ else {
+    throw new IllegalArgumentException("File name must be specified to execute " + operation);
+  }
+  try {
+    Git.open(new File(endpoint.getLocalPath())).add().addFilepattern(fileName).call();
+  }
+ catch (  Exception e) {
+    LOG.error("There was an error in Git " + operation + " operation");
+    e.printStackTrace();
+  }
+}

@@ -1,0 +1,16 @@
+{
+  Repository repository=getTestRepository();
+  File fileToAdd=new File(GIT_LOCAL_REPO,FILENAME_TO_ADD);
+  fileToAdd.createNewFile();
+  template.send("direct:add",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_TO_ADD);
+    }
+  }
+);
+  File gitDir=new File(GIT_LOCAL_REPO,".git");
+  assertEquals(gitDir.exists(),true);
+  Status status=new Git(repository).status().call();
+  assertTrue(status.getAdded().contains(FILENAME_TO_ADD));
+  repository.close();
+}
