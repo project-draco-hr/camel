@@ -1,23 +1,23 @@
 {
   Repository repository=getTestRepository();
-  File fileToAdd=new File(GIT_LOCAL_REPO,FILENAME_TO_ADD);
+  File fileToAdd=new File(gitLocalRepo,filenameToAdd);
   fileToAdd.createNewFile();
   template.send("direct:add",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_TO_ADD);
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,filenameToAdd);
     }
   }
 );
   template.send("direct:commit-all",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE_ALL);
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,commitMessageAll);
     }
   }
 );
   Iterable<RevCommit> logs=new Git(repository).log().call();
   int count=0;
   for (  RevCommit rev : logs) {
-    assertEquals(rev.getShortMessage(),COMMIT_MESSAGE_ALL);
+    assertEquals(rev.getShortMessage(),commitMessageAll);
     count++;
   }
   assertEquals(count,1);

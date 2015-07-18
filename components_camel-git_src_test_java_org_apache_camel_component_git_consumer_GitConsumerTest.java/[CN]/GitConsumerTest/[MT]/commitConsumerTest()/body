@@ -1,41 +1,41 @@
 {
   Repository repository=getTestRepository();
   MockEndpoint added=getMockEndpoint("mock:result-commit");
-  File fileToAdd=new File(GIT_LOCAL_REPO,FILENAME_TO_ADD);
+  File fileToAdd=new File(gitLocalRepo,filenameToAdd);
   fileToAdd.createNewFile();
   template.send("direct:add",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_TO_ADD);
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,filenameToAdd);
     }
   }
 );
-  File gitDir=new File(GIT_LOCAL_REPO,".git");
+  File gitDir=new File(gitLocalRepo,".git");
   assertEquals(gitDir.exists(),true);
   Status status=new Git(repository).status().call();
-  assertTrue(status.getAdded().contains(FILENAME_TO_ADD));
+  assertTrue(status.getAdded().contains(filenameToAdd));
   template.send("direct:commit",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE);
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,commitMessage);
     }
   }
 );
   Iterable<RevCommit> logs=new Git(repository).log().call();
   int count=0;
   for (  RevCommit rev : logs) {
-    assertEquals(rev.getShortMessage(),COMMIT_MESSAGE);
+    assertEquals(rev.getShortMessage(),commitMessage);
     count++;
   }
   assertEquals(count,1);
-  File fileToAdd1=new File(GIT_LOCAL_REPO,FILENAME_BRANCH_TO_ADD);
+  File fileToAdd1=new File(gitLocalRepo,filenameBranchToAdd);
   fileToAdd1.createNewFile();
   template.send("direct:add",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_BRANCH_TO_ADD);
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,filenameBranchToAdd);
     }
   }
 );
   status=new Git(repository).status().call();
-  assertTrue(status.getAdded().contains(FILENAME_BRANCH_TO_ADD));
+  assertTrue(status.getAdded().contains(filenameBranchToAdd));
   template.send("direct:commit",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
       exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,"Test test Commit");
@@ -51,7 +51,7 @@
   Thread.sleep(1 * 5000);
   Exchange ex1=added.getExchanges().get(0);
   Exchange ex2=added.getExchanges().get(1);
-  assertEquals(COMMIT_MESSAGE,ex2.getOut().getBody(RevCommit.class).getShortMessage());
+  assertEquals(commitMessage,ex2.getOut().getBody(RevCommit.class).getShortMessage());
   assertEquals("Test test Commit",ex1.getOut().getBody(RevCommit.class).getShortMessage());
   repository.close();
 }

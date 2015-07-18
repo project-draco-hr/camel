@@ -1,56 +1,56 @@
 {
   Repository repository=getTestRepository();
-  File fileToAdd=new File(GIT_LOCAL_REPO,FILENAME_TO_ADD);
+  File fileToAdd=new File(gitLocalRepo,filenameToAdd);
   fileToAdd.createNewFile();
   template.send("direct:add",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_TO_ADD);
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,filenameToAdd);
     }
   }
 );
-  File gitDir=new File(GIT_LOCAL_REPO,".git");
+  File gitDir=new File(gitLocalRepo,".git");
   assertEquals(gitDir.exists(),true);
   Status status=template.requestBody("direct:status","",Status.class);
-  assertTrue(status.getAdded().contains(FILENAME_TO_ADD));
+  assertTrue(status.getAdded().contains(filenameToAdd));
   template.send("direct:commit",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE);
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,commitMessage);
     }
   }
 );
   Iterable<RevCommit> revCommits=template.requestBody("direct:log","",Iterable.class);
   for (  RevCommit rev : revCommits) {
-    assertEquals(rev.getShortMessage(),COMMIT_MESSAGE);
+    assertEquals(rev.getShortMessage(),commitMessage);
   }
   template.sendBody("direct:create-branch","");
   Git git=new Git(repository);
   List<Ref> ref=git.branchList().call();
   boolean branchCreated=false;
   for (  Ref refInternal : ref) {
-    if (refInternal.getName().equals("refs/heads/" + BRANCH_TEST)) {
+    if (refInternal.getName().equals("refs/heads/" + branchTest)) {
       branchCreated=true;
     }
   }
   assertEquals(branchCreated,true);
-  File fileToAddDifferent=new File(GIT_LOCAL_REPO,FILENAME_BRANCH_TO_ADD);
+  File fileToAddDifferent=new File(gitLocalRepo,filenameBranchToAdd);
   fileToAddDifferent.createNewFile();
   template.send("direct:add-on-branch",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_BRANCH_TO_ADD);
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,filenameBranchToAdd);
     }
   }
 );
   template.send("direct:commit-all-branch",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE_ALL);
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,commitMessageAll);
     }
   }
 );
   revCommits=template.requestBody("direct:log-branch","",Iterable.class);
   int count=0;
   for (  RevCommit rev : revCommits) {
-    if (count == 0)     assertEquals(rev.getShortMessage(),COMMIT_MESSAGE_ALL);
-    if (count == 1)     assertEquals(rev.getShortMessage(),COMMIT_MESSAGE);
+    if (count == 0)     assertEquals(rev.getShortMessage(),commitMessageAll);
+    if (count == 1)     assertEquals(rev.getShortMessage(),commitMessage);
     count++;
   }
   repository.close();
