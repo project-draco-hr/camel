@@ -1,0 +1,45 @@
+{
+  Repository repository=getTestRepository();
+  File fileToAdd=new File(GIT_LOCAL_REPO,FILENAME_TO_ADD);
+  fileToAdd.createNewFile();
+  template.send("direct:add",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_FILE_NAME,FILENAME_TO_ADD);
+    }
+  }
+);
+  File gitDir=new File(GIT_LOCAL_REPO,".git");
+  assertEquals(gitDir.exists(),true);
+  Status status=new Git(repository).status().call();
+  assertTrue(status.getAdded().contains(FILENAME_TO_ADD));
+  template.send("direct:commit",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE);
+    }
+  }
+);
+  Iterable<RevCommit> logs=new Git(repository).log().call();
+  int count=0;
+  for (  RevCommit rev : logs) {
+    assertEquals(rev.getShortMessage(),COMMIT_MESSAGE);
+    count++;
+  }
+  assertEquals(count,1);
+  Git git=new Git(repository);
+  git.checkout().setCreateBranch(true).setName(BRANCH_TEST).setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM).call();
+  template.send("direct:commit-branch",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(GitConstants.GIT_COMMIT_MESSAGE,COMMIT_MESSAGE_BRANCH);
+    }
+  }
+);
+  logs=git.log().call();
+  count=0;
+  for (  RevCommit rev : logs) {
+    if (count == 0)     assertEquals(rev.getShortMessage(),COMMIT_MESSAGE_BRANCH);
+    if (count == 1)     assertEquals(rev.getShortMessage(),COMMIT_MESSAGE);
+    count++;
+  }
+  assertEquals(count,2);
+  repository.close();
+}

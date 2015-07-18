@@ -1,0 +1,21 @@
+{
+  Git git=null;
+  String commitMessage=null;
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_COMMIT_MESSAGE))) {
+    commitMessage=exchange.getIn().getHeader(GitConstants.GIT_COMMIT_MESSAGE,String.class);
+  }
+ else {
+    throw new IllegalArgumentException("Commit message must be specified to execute " + operation);
+  }
+  try {
+    git=new Git(repo);
+    if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+      git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+    }
+    git.commit().setMessage(commitMessage).call();
+  }
+ catch (  Exception e) {
+    LOG.error("There was an error in Git " + operation + " operation");
+    e.printStackTrace();
+  }
+}
