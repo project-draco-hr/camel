@@ -1,0 +1,37 @@
+{
+  List<Expression> list=new ArrayList<Expression>();
+  String[] parts=uri.split("\\+");
+  for (  String part : parts) {
+    String before=ObjectHelper.before(part,":");
+    String after=ObjectHelper.after(part,":");
+    if (before != null && after != null) {
+      try {
+        Language partLanguage=routeContext.getCamelContext().resolveLanguage(before);
+        Expression exp=partLanguage.createExpression(after);
+        list.add(exp);
+        continue;
+      }
+ catch (      NoSuchLanguageException e) {
+      }
+    }
+    Language lan=routeContext.getCamelContext().resolveLanguage("simple");
+    Expression exp=lan.createExpression(part);
+    list.add(exp);
+  }
+  Expression exp;
+  if (list.size() == 1) {
+    exp=list.get(0);
+  }
+ else {
+    exp=ExpressionBuilder.concatExpression(list);
+  }
+  DynamicSendProcessor processor=new DynamicSendProcessor(exp);
+  processor.setPattern(pattern);
+  if (cacheSize != null) {
+    processor.setCacheSize(cacheSize);
+  }
+  if (ignoreInvalidEndpoint != null) {
+    processor.setIgnoreInvalidEndpoint(ignoreInvalidEndpoint);
+  }
+  return processor;
+}
