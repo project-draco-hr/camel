@@ -1,13 +1,12 @@
 {
   boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,true);
   ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,"WireTap",this,true);
-  Endpoint endpoint=resolveEndpoint(routeContext);
-  Producer producer=endpoint.createProducer();
-  Processor target=wrapInErrorHandler(routeContext,producer);
+  Processor dynamicTo=new SendDynamicProcessor(null,getExpression());
+  Processor target=wrapInErrorHandler(routeContext,dynamicTo);
   CamelInternalProcessor internal=new CamelInternalProcessor(target);
   internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeContext));
   boolean isCopy=getCopy() == null || getCopy();
-  WireTapProcessor answer=new WireTapProcessor(endpoint,internal,getPattern(),threadPool,shutdownThreadPool);
+  WireTapProcessor answer=new WireTapProcessor(getExpression(),internal,getPattern(),threadPool,shutdownThreadPool);
   answer.setCopy(isCopy);
   if (newExchangeProcessorRef != null) {
     newExchangeProcessor=routeContext.mandatoryLookup(newExchangeProcessorRef,Processor.class);
