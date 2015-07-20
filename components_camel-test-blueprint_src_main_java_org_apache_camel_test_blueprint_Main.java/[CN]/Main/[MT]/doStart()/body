@@ -7,7 +7,9 @@
     }
     LOG.debug("Starting Blueprint XML file: " + descriptors);
     bundleContext=createBundleContext(bundleName);
-    CamelBlueprintHelper.setPersistentFileForConfigAdmin(bundleContext,configAdminPid,configAdminFileName,new Properties(),bundleName,null);
+    Set<Long> eventHistory=new HashSet<>();
+    CamelBlueprintHelper.waitForBlueprintContainer(eventHistory,bundleContext,bundleName,BlueprintEvent.CREATED,null);
+    CamelBlueprintHelper.setPersistentFileForConfigAdmin(bundleContext,configAdminPid,configAdminFileName,new Properties(),bundleName,eventHistory,true);
     camelContext=CamelBlueprintHelper.getOsgiService(bundleContext,CamelContext.class);
     if (camelContext == null) {
       throw new IllegalArgumentException("Cannot find CamelContext in blueprint XML file: " + descriptors);

@@ -1,6 +1,7 @@
 {
   final String symbolicName=getClass().getSimpleName();
   final BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),includeTestBundle(),getBundleFilter(),getBundleVersion(),getBundleDirectives());
+  boolean expectReload=expectBlueprintContainerReloadOnConfigAdminUpdate();
   Properties extra=useOverridePropertiesWithPropertiesComponent();
   if (extra != null) {
     answer.registerService(PropertiesComponent.OVERRIDE_PROPERTIES,extra,null);
@@ -33,7 +34,7 @@
     if (!new File(file[0]).exists()) {
       throw new IllegalArgumentException("The provided file \"" + file[0] + "\" from loadConfigAdminConfigurationFile doesn't exist");
     }
-    CamelBlueprintHelper.setPersistentFileForConfigAdmin(answer,file[1],file[0],props,symbolicName,bpEvents);
+    CamelBlueprintHelper.setPersistentFileForConfigAdmin(answer,file[1],file[0],props,symbolicName,bpEvents,expectReload);
   }
   String pid=useOverridePropertiesWithConfigAdmin(props);
   if (pid != null) {
@@ -43,17 +44,22 @@
       throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
     }
     log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
-    CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,new Runnable(){
-      @Override public void run(){
-        try {
-          config.update(props);
-        }
- catch (        IOException e) {
-          throw new RuntimeException(e.getMessage(),e);
+    if (expectReload) {
+      CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,new Runnable(){
+        @Override public void run(){
+          try {
+            config.update(props);
+          }
+ catch (          IOException e) {
+            throw new RuntimeException(e.getMessage(),e);
+          }
         }
       }
-    }
 );
+    }
+ else {
+      config.update(props);
+    }
   }
   return answer;
 }

@@ -1,0 +1,29 @@
+{
+  boolean expectedReload=false;
+  String descriptor=getBlueprintDescriptor();
+  DocumentBuilderFactory dbf=DocumentBuilderFactory.newInstance();
+  dbf.setNamespaceAware(true);
+  try {
+    Set<String> cmNamesaces=new HashSet<>(Arrays.asList(CmNamespaceHandler.BLUEPRINT_CM_NAMESPACE_1_1,CmNamespaceHandler.BLUEPRINT_CM_NAMESPACE_1_2,CmNamespaceHandler.BLUEPRINT_CM_NAMESPACE_1_3));
+    DocumentBuilder db=dbf.newDocumentBuilder();
+    Document doc=db.parse(getClass().getClassLoader().getResourceAsStream(descriptor));
+    NodeList nl=doc.getDocumentElement().getChildNodes();
+    for (int i=0; i < nl.getLength(); i++) {
+      Node node=nl.item(i);
+      if (node instanceof Element) {
+        Element pp=(Element)node;
+        if (cmNamesaces.contains(pp.getNamespaceURI())) {
+          String us=pp.getAttribute("update-strategy");
+          if (us != null && us.equals("reload")) {
+            expectedReload=true;
+            break;
+          }
+        }
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw new RuntimeException(e.getMessage(),e);
+  }
+  return expectedReload;
+}
