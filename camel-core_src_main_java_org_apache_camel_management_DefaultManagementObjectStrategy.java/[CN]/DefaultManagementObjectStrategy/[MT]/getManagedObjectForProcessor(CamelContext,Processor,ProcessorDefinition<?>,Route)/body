@@ -1,11 +1,16 @@
 {
   ManagedProcessor answer=null;
-  if (definition instanceof RecipientListDefinition || definition instanceof ThreadsDefinition) {
+  if (definition instanceof RecipientListDefinition) {
     Pipeline pipeline=(Pipeline)processor;
     Iterator<Processor> it=pipeline.getProcessors().iterator();
     while (it.hasNext()) {
       processor=it.next();
     }
+  }
+ else   if (definition instanceof ThreadsDefinition) {
+    Pipeline pipeline=(Pipeline)processor;
+    Iterator<Processor> it=pipeline.getProcessors().iterator();
+    processor=it.next();
   }
   Processor target=processor;
   while (target != null) {
@@ -57,8 +62,14 @@
  else     if (target instanceof SetPropertyProcessor) {
       answer=new ManagedSetProperty(context,(SetPropertyProcessor)target,definition);
     }
+ else     if (target instanceof ThreadsProcessor) {
+      answer=new ManagedThreads(context,(ThreadsProcessor)target,definition);
+    }
  else     if (target instanceof TransformProcessor) {
       answer=new ManagedTransformer(context,(TransformProcessor)target,definition);
+    }
+ else     if (target instanceof PredicateValidatingProcessor) {
+      answer=new ManagedValidate(context,(PredicateValidatingProcessor)target,definition);
     }
  else     if (target instanceof WireTapProcessor) {
       answer=new ManagedWireTapProcessor(context,(WireTapProcessor)target,definition);
