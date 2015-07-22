@@ -1,3 +1,25 @@
 {
-  return null;
+  RestConfiguration config=getCamelContext().getRestConfiguration();
+  Map<String,Object> map=new HashMap<String,Object>();
+  if (config != null && (config.getComponent() == null || config.getComponent().equals("restlet"))) {
+    if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+      map.putAll(config.getEndpointProperties());
+    }
+  }
+  String query=URISupport.createQueryString(map);
+  String url=config.getScheme() + "://" + config.getHost();
+  if (config.getPort() != -1) {
+    url+=":" + config.getPort();
+  }
+  String restrict=verb.toUpperCase(Locale.US);
+  if (uriTemplate == null) {
+    uriTemplate="";
+  }
+  url+=basePath + uriTemplate + "?coapMethod="+ restrict;
+  if (!query.isEmpty()) {
+    url+="&" + query;
+  }
+  CoAPEndpoint endpoint=camelContext.getEndpoint(url,CoAPEndpoint.class);
+  setProperties(endpoint,parameters);
+  return endpoint.createConsumer(processor);
 }

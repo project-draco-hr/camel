@@ -1,0 +1,24 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      restConfiguration().component("coap").host("localhost").scheme("coap").port(port);
+      rest("/TestParms").get().to("direct:get1").post().to("direct:post1");
+      rest("/TestResource").get("/{id}").to("direct:get1").post("/{id}").to("direct:post1");
+      from("direct:get1").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("id",String.class);
+          exchange.getOut().setBody("Hello " + id);
+        }
+      }
+);
+      from("direct:post1").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("id",String.class);
+          exchange.getOut().setBody("Hello " + id + ": "+ exchange.getIn().getBody(String.class));
+        }
+      }
+);
+    }
+  }
+;
+}

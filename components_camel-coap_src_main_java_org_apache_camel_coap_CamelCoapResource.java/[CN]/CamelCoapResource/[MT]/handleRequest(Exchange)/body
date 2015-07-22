@@ -1,0 +1,57 @@
+{
+  org.apache.camel.Exchange camelExchange=null;
+  CoAPConsumer consumer=null;
+  if (possibles != null) {
+    consumers.putAll(possibles.get(0).consumers);
+  }
+  CoapExchange cexchange=new CoapExchange(exchange,this);
+  try {
+    consumer=consumers.get(exchange.getRequest().getCode().name());
+    if (consumer == null) {
+      consumer=consumers.get("*");
+    }
+    camelExchange=consumer.getEndpoint().createExchange();
+    consumer.createUoW(camelExchange);
+    for (    String s : exchange.getRequest().getOptions().getUriQuery()) {
+      int i=s.indexOf('=');
+      if (i == -1) {
+        camelExchange.getIn().setHeader(s,"");
+      }
+ else {
+        camelExchange.getIn().setHeader(s.substring(0,i),s.substring(i + 1));
+      }
+    }
+    List<String> path=exchange.getRequest().getOptions().getUriPath();
+    LinkedList<Resource> resources=new LinkedList<>();
+    Resource r=this;
+    while (r != null) {
+      resources.push(r);
+      r=r.getParent();
+    }
+    if (resources.getFirst().getName().isEmpty()) {
+      resources.removeFirst();
+    }
+    int res=0;
+    while (!resources.isEmpty() && res < path.size()) {
+      r=resources.removeFirst();
+      if (r.getName().charAt(0) == '{' && r.getName().charAt(r.getName().length() - 1) == '}') {
+        String n=r.getName().substring(1,r.getName().length() - 1);
+        camelExchange.getIn().setHeader(n,path.get(res));
+      }
+      res++;
+    }
+    byte bytes[]=exchange.getCurrentRequest().getPayload();
+    camelExchange.getIn().setBody(bytes);
+    consumer.getProcessor().process(camelExchange);
+    Message target=camelExchange.hasOut() ? camelExchange.getOut() : camelExchange.getIn();
+    cexchange.respond(ResponseCode.CONTENT,target.getBody(byte[].class));
+  }
+ catch (  Exception e) {
+    cexchange.respond(ResponseCode.INTERNAL_SERVER_ERROR,e.getMessage());
+  }
+ finally {
+    if (camelExchange != null) {
+      consumer.doneUoW(camelExchange);
+    }
+  }
+}
