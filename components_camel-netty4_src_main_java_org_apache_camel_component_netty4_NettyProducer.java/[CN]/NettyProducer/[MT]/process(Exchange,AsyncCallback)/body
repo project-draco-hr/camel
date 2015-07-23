@@ -43,6 +43,17 @@
     callback.done(true);
     return true;
   }
+  if (exchange.getIn().getHeader(NettyConstants.NETTY_REQUEST_TIMEOUT) != null) {
+    long timeoutInMs=exchange.getIn().getHeader(NettyConstants.NETTY_REQUEST_TIMEOUT,Long.class);
+    ChannelHandler oldHandler=existing.pipeline().get("timeout");
+    ReadTimeoutHandler newHandler=new ReadTimeoutHandler(timeoutInMs,TimeUnit.MILLISECONDS);
+    if (oldHandler == null) {
+      existing.pipeline().addBefore("handler","timeout",newHandler);
+    }
+ else {
+      existing.pipeline().replace(oldHandler,"timeout",newHandler);
+    }
+  }
   final Channel channel=existing;
   final AsyncCallback producerCallback=new NettyProducerCallback(channel,callback);
   putState(channel,new NettyCamelState(producerCallback,exchange));
