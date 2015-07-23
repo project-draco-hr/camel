@@ -1,0 +1,58 @@
+{
+  String answer=null;
+  String relativeUrl;
+  if (endpoint.getUrlRewrite() != null) {
+    String baseUrl;
+    relativeUrl=endpoint.getHttpUri().toASCIIString();
+    if (url.startsWith(relativeUrl)) {
+      baseUrl=url.substring(0,relativeUrl.length());
+      relativeUrl=url.substring(relativeUrl.length());
+    }
+ else {
+      baseUrl=null;
+      relativeUrl=url;
+    }
+    if (ObjectHelper.isEmpty(relativeUrl)) {
+      relativeUrl=null;
+    }
+    String newUrl;
+    if (endpoint.getUrlRewrite() instanceof HttpServletUrlRewrite) {
+      HttpServletRequest request=exchange.getIn().getBody(HttpServletRequest.class);
+      if (request == null) {
+        HttpMessage msg=exchange.getIn(HttpMessage.class);
+        if (msg != null) {
+          request=msg.getRequest();
+        }
+      }
+      if (request == null) {
+        throw new IllegalArgumentException("UrlRewrite " + endpoint.getUrlRewrite() + " requires the message body to be a"+ "HttpServletRequest instance, but was: "+ ObjectHelper.className(exchange.getIn().getBody()));
+      }
+      String contextPath=exchange.getIn().getHeader("CamelServletContextPath",String.class);
+      request=new UrlRewriteHttpServletRequestAdapter(request,contextPath);
+      newUrl=((HttpServletUrlRewrite)endpoint.getUrlRewrite()).rewrite(url,relativeUrl,producer,request);
+    }
+ else {
+      newUrl=endpoint.getUrlRewrite().rewrite(url,relativeUrl,producer);
+    }
+    if (ObjectHelper.isNotEmpty(newUrl) && !newUrl.equals(url)) {
+      if (newUrl.startsWith("http:") || newUrl.startsWith("https:")) {
+        answer=newUrl;
+      }
+ else       if (baseUrl != null) {
+        if (baseUrl.endsWith("/") && newUrl.startsWith("/")) {
+          answer=baseUrl + newUrl.substring(1);
+        }
+ else {
+          answer=baseUrl + newUrl;
+        }
+      }
+ else {
+        answer=newUrl;
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Using url rewrite to rewrite from url {} to {} -> {}",new Object[]{relativeUrl != null ? relativeUrl : url,newUrl,answer});
+      }
+    }
+  }
+  return answer;
+}
