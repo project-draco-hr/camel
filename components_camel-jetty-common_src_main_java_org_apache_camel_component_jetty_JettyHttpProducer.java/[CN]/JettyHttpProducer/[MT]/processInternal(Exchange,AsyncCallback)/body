@@ -6,11 +6,11 @@
   if (rewriteUrl != null) {
     url=rewriteUrl;
   }
-  HttpMethods method=HttpHelper.createMethod(exchange,getEndpoint(),exchange.getIn().getBody() != null);
+  String methodName=HttpHelper.createMethod(exchange,getEndpoint(),exchange.getIn().getBody() != null).name();
   JettyContentExchange httpExchange=getEndpoint().createContentExchange();
   httpExchange.init(exchange,getBinding(),client,callback);
   httpExchange.setURL(url);
-  httpExchange.setMethod(method.name());
+  httpExchange.setMethod(methodName);
   if (getEndpoint().getHttpClientParameters() != null) {
     String timeout=(String)getEndpoint().getHttpClientParameters().get("timeout");
     if (timeout != null) {
@@ -18,10 +18,10 @@
     }
     String supportRedirect=(String)getEndpoint().getHttpClientParameters().get("supportRedirect");
     if (supportRedirect != null) {
-      httpExchange.setSupportRedirect(new Boolean(supportRedirect));
+      httpExchange.setSupportRedirect(Boolean.valueOf(supportRedirect));
     }
   }
-  LOG.trace("Using URL: {} with method: {}",url,method);
+  LOG.trace("Using URL: {} with method: {}",url,methodName);
   if (exchange.getIn().getBody() != null) {
     String contentType=ExchangeHelper.getContentType(exchange);
     if (contentType != null) {
