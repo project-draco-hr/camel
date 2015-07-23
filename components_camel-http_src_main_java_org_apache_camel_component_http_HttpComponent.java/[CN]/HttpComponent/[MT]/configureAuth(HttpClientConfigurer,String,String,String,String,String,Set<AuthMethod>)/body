@@ -1,0 +1,21 @@
+{
+  if (username == null && authMethod == null) {
+    return configurer;
+  }
+  if (username != null && authMethod == null) {
+    throw new IllegalArgumentException("Option authMethod must be provided to use authentication");
+  }
+  ObjectHelper.notNull(authMethod,"authMethod");
+  ObjectHelper.notNull(username,"authUsername");
+  ObjectHelper.notNull(password,"authPassword");
+  AuthMethod auth=getCamelContext().getTypeConverter().convertTo(AuthMethod.class,authMethod);
+  authMethods.add(auth);
+  if (auth == AuthMethod.Basic || auth == AuthMethod.Digest) {
+    return CompositeHttpConfigurer.combineConfigurers(configurer,new BasicAuthenticationHttpClientConfigurer(false,username,password));
+  }
+ else   if (auth == AuthMethod.NTLM) {
+    ObjectHelper.notNull(domain,"authDomain");
+    return CompositeHttpConfigurer.combineConfigurers(configurer,new NTLMAuthenticationHttpClientConfigurer(false,username,password,domain,host));
+  }
+  throw new IllegalArgumentException("Unknown authMethod " + authMethod);
+}

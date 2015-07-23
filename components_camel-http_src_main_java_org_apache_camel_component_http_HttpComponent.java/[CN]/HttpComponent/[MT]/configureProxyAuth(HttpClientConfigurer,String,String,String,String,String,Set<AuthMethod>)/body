@@ -1,0 +1,21 @@
+{
+  if (username == null && authMethod == null) {
+    return configurer;
+  }
+  if (username != null && authMethod == null) {
+    throw new IllegalArgumentException("Option proxyAuthMethod must be provided to use proxy authentication");
+  }
+  ObjectHelper.notNull(authMethod,"proxyAuthMethod");
+  ObjectHelper.notNull(username,"proxyAuthUsername");
+  ObjectHelper.notNull(password,"proxyAuthPassword");
+  AuthMethod auth=getCamelContext().getTypeConverter().convertTo(AuthMethod.class,authMethod);
+  authMethods.add(auth);
+  if (auth == AuthMethod.Basic || auth == AuthMethod.Digest) {
+    return CompositeHttpConfigurer.combineConfigurers(configurer,new BasicAuthenticationHttpClientConfigurer(true,username,password));
+  }
+ else   if (auth == AuthMethod.NTLM) {
+    ObjectHelper.notNull(domain,"proxyAuthDomain");
+    return CompositeHttpConfigurer.combineConfigurers(configurer,new NTLMAuthenticationHttpClientConfigurer(true,username,password,domain,host));
+  }
+  throw new IllegalArgumentException("Unknown proxyAuthMethod " + authMethod);
+}
