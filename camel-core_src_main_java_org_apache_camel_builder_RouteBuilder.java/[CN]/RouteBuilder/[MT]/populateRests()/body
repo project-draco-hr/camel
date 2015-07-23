@@ -5,8 +5,15 @@
   }
   getRestCollection().setCamelContext(camelContext);
   if (getRestConfiguration() != null) {
-    RestConfiguration config=getRestConfiguration().asRestConfiguration(getContext());
-    camelContext.setRestConfiguration(config);
+    for (    Map.Entry<String,RestConfigurationDefinition> entry : getRestConfiguration().entrySet()) {
+      RestConfiguration config=entry.getValue().asRestConfiguration(getContext());
+      if ("default".equals(entry.getKey())) {
+        camelContext.setRestConfiguration(config);
+      }
+ else {
+        camelContext.addRestConfiguration(config);
+      }
+    }
   }
   camelContext.addRestDefinitions(getRestCollection().getRests());
   for (  RestDefinition rest : getRestCollection().getRests()) {

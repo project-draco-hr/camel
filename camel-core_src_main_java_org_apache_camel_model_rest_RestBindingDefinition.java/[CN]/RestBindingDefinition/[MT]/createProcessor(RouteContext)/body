@@ -1,22 +1,23 @@
 {
   CamelContext context=routeContext.getCamelContext();
-  String mode=context.getRestConfiguration().getBindingMode().name();
+  RestConfiguration config=context.getRestConfiguration(component,true);
+  String mode=config.getBindingMode().name();
   if (bindingMode != null) {
     mode=bindingMode.name();
   }
-  boolean cors=context.getRestConfiguration().isEnableCORS();
+  boolean cors=config.isEnableCORS();
   if (enableCORS != null) {
     cors=enableCORS;
   }
-  boolean skip=context.getRestConfiguration().isSkipBindingOnErrorCode();
+  boolean skip=config.isSkipBindingOnErrorCode();
   if (skipBindingOnErrorCode != null) {
     skip=skipBindingOnErrorCode;
   }
-  Map<String,String> corsHeaders=context.getRestConfiguration().getCorsHeaders();
+  Map<String,String> corsHeaders=config.getCorsHeaders();
   if (mode == null || "off".equals(mode)) {
     return new RestBindingProcessor(null,null,null,null,consumes,produces,mode,skip,cors,corsHeaders);
   }
-  String name=context.getRestConfiguration().getJsonDataFormat();
+  String name=config.getJsonDataFormat();
   if (name != null) {
     Object instance=context.getRegistry().lookupByName(name);
     if (instance != null) {
@@ -41,7 +42,7 @@
       IntrospectionSupport.setProperty(context.getTypeConverter(),json,"unmarshalType",clazz);
       IntrospectionSupport.setProperty(context.getTypeConverter(),json,"useList",type.endsWith("[]"));
     }
-    setAdditionalConfiguration(context,json,"json.in.");
+    setAdditionalConfiguration(config,context,json,"json.in.");
     context.addService(json);
     Class<?> outClazz=null;
     if (outType != null) {
@@ -52,10 +53,10 @@
       IntrospectionSupport.setProperty(context.getTypeConverter(),outJson,"unmarshalType",outClazz);
       IntrospectionSupport.setProperty(context.getTypeConverter(),outJson,"useList",outType.endsWith("[]"));
     }
-    setAdditionalConfiguration(context,outJson,"json.out.");
+    setAdditionalConfiguration(config,context,outJson,"json.out.");
     context.addService(outJson);
   }
-  name=context.getRestConfiguration().getXmlDataFormat();
+  name=config.getXmlDataFormat();
   if (name != null) {
     Object instance=context.getRegistry().lookupByName(name);
     if (instance != null) {
@@ -80,7 +81,7 @@
       JAXBContext jc=JAXBContext.newInstance(clazz);
       IntrospectionSupport.setProperty(context.getTypeConverter(),jaxb,"context",jc);
     }
-    setAdditionalConfiguration(context,jaxb,"xml.in.");
+    setAdditionalConfiguration(config,context,jaxb,"xml.in.");
     context.addService(jaxb);
     Class<?> outClazz=null;
     if (outType != null) {
@@ -95,7 +96,7 @@
       JAXBContext jc=JAXBContext.newInstance(clazz);
       IntrospectionSupport.setProperty(context.getTypeConverter(),outJaxb,"context",jc);
     }
-    setAdditionalConfiguration(context,outJaxb,"xml.out.");
+    setAdditionalConfiguration(config,context,outJaxb,"xml.out.");
     context.addService(outJaxb);
   }
   return new RestBindingProcessor(json,jaxb,outJson,outJaxb,consumes,produces,mode,skip,cors,corsHeaders);
