@@ -6,14 +6,19 @@
     String url=UndertowHelper.createURL(exchange,getEndpoint());
     URI uri=UndertowHelper.createURI(exchange,url,getEndpoint());
     url=uri.toASCIIString();
+    HttpString method=UndertowHelper.createMethod(exchange,endpoint,exchange.getIn().getBody() != null);
     ClientRequest request=new ClientRequest();
     request.setProtocol(Protocols.HTTP_1_1);
     request.setPath(url);
+    request.setMethod(method);
     Object body=getRequestBody(request,exchange);
     TypeConverter tc=endpoint.getCamelContext().getTypeConverter();
-    ByteBuffer bodyAsByte=tc.convertTo(ByteBuffer.class,body);
+    ByteBuffer bodyAsByte=tc.tryConvertTo(ByteBuffer.class,body);
     if (body != null) {
       request.getRequestHeaders().put(Headers.CONTENT_LENGTH,bodyAsByte.array().length);
+    }
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing http {} method: {}",method,url);
     }
     connect.get().sendRequest(request,new UndertowProducerCallback(bodyAsByte,exchange,callback));
   }
