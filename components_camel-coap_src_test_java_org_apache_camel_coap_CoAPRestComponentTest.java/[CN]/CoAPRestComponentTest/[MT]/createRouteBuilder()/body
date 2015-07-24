@@ -15,7 +15,12 @@
       from("direct:post1").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String id=exchange.getIn().getHeader("id",String.class);
+          String ct=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,String.class);
+          if (!"text/plain".equals(ct)) {
+            throw new Exception("No content type");
+          }
           exchange.getOut().setBody("Hello " + id + ": "+ exchange.getIn().getBody(String.class));
+          exchange.getOut().setHeader(Exchange.CONTENT_TYPE,ct);
         }
       }
 );

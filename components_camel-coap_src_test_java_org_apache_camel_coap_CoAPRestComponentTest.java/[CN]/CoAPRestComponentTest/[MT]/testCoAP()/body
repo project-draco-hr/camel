@@ -2,6 +2,10 @@
   NetworkConfig.createStandardWithoutFile();
   CoapClient client;
   CoapResponse rsp;
+  URL url=new URL("http://localhost:" + jettyport + "/TestResource/Ducky");
+  URLConnection connect=url.openConnection();
+  InputStream ins=connect.getInputStream();
+  assertEquals("Hello Ducky",IOConverter.toString(new InputStreamReader(ins)));
   client=new CoapClient("coap://localhost:" + coapport + "/TestResource/Ducky");
   client.setTimeout(1000000);
   rsp=client.get();
@@ -14,7 +18,5 @@
   assertEquals("Hello Ducky",rsp.getResponseText());
   rsp=client.post("data",MediaTypeRegistry.TEXT_PLAIN);
   assertEquals("Hello Ducky: data",rsp.getResponseText());
-  URL url=new URL("http://localhost:" + jettyport + "/TestResource/Ducky");
-  InputStream ins=url.openConnection().getInputStream();
-  assertEquals("Hello Ducky",IOConverter.toString(new InputStreamReader(ins)));
+  assertEquals(MediaTypeRegistry.TEXT_PLAIN,rsp.getOptions().getContentFormat());
 }
