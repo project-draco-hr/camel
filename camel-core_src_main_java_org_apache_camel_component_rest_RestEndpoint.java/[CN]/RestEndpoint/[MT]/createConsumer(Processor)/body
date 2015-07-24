@@ -1,5 +1,6 @@
 {
   RestConsumerFactory factory=null;
+  String cname=null;
   if (getComponentName() != null) {
     Object comp=getCamelContext().getRegistry().lookupByName(getComponentName());
     if (comp != null && comp instanceof RestConsumerFactory) {
@@ -19,12 +20,14 @@
         throw new NoSuchBeanException(getComponentName(),RestConsumerFactory.class.getName());
       }
     }
+    cname=getComponentName();
   }
   if (factory == null) {
     for (    String name : getCamelContext().getComponentNames()) {
       Component comp=getCamelContext().getComponent(name);
       if (comp != null && comp instanceof RestConsumerFactory) {
         factory=(RestConsumerFactory)comp;
+        cname=name;
         break;
       }
     }
@@ -41,7 +44,7 @@
     String scheme="http";
     String host="";
     int port=80;
-    RestConfiguration config=getCamelContext().getRestConfiguration();
+    RestConfiguration config=getCamelContext().getRestConfiguration(cname,true);
     if (config.getScheme() != null) {
       scheme=config.getScheme();
     }
