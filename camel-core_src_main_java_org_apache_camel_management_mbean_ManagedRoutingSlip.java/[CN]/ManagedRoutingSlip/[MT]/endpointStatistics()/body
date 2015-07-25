@@ -1,0 +1,25 @@
+{
+  try {
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.endpointsUtilizationTabularType());
+    EndpointUtilizationStatistics stats=processor.getEndpointUtilizationStatistics();
+    if (stats != null) {
+      for (      Map.Entry<String,Long> entry : stats.getStatistics().entrySet()) {
+        CompositeType ct=CamelOpenMBeanTypes.endpointsUtilizationCompositeType();
+        String url=entry.getKey();
+        if (sanitize) {
+          url=URISupport.sanitizeUri(url);
+        }
+        Long hits=entry.getValue();
+        if (hits == null) {
+          hits=0L;
+        }
+        CompositeData data=new CompositeDataSupport(ct,new String[]{"url","hits"},new Object[]{url,hits});
+        answer.put(data);
+      }
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}
