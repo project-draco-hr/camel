@@ -2,6 +2,10 @@
   if (isPlatform("aix")) {
     return;
   }
+  MockEndpoint foo=getMockEndpoint("mock:foo");
+  foo.expectedMessageCount(1);
+  template.sendBodyAndHeader("direct:start","Hello World","foo","123");
+  assertMockEndpointsSatisfied();
   MBeanServer mbeanServer=getMBeanServer();
   ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=processors,name=\"mysend\"");
   String routeId=(String)mbeanServer.getAttribute(on,"RouteId");
@@ -20,6 +24,8 @@
   assertEquals(3,attempts.intValue());
   String exceptions=(String)mbeanServer.getAttribute(on,"Exceptions");
   assertEquals("java.io.IOException,java.sql.SQLException",exceptions);
+  String id=(String)mbeanServer.getAttribute(on,"LastGoodProcessorId");
+  assertEquals("foo",id);
   TabularData data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{false},new String[]{"boolean"});
   assertNotNull(data);
   assertEquals(3,data.size());
