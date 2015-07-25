@@ -2,6 +2,7 @@
   if (isPlatform("aix")) {
     return;
   }
+  template.sendBodyAndHeader("direct:start","Hello World","num","123");
   MBeanServer mbeanServer=getMBeanServer();
   ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=processors,name=\"mysend\"");
   String routeId=(String)mbeanServer.getAttribute(on,"RouteId");
@@ -16,6 +17,11 @@
   assertEquals("header",lan);
   String uri=(String)mbeanServer.getAttribute(on,"Expression");
   assertEquals("num",uri);
+  String last=(String)mbeanServer.getAttribute(on,"LastChosenProcessorId");
+  assertTrue("foo".equals(last) || "bar".equals(last));
+  template.sendBodyAndHeader("direct:start","Bye World","num","123");
+  String last2=(String)mbeanServer.getAttribute(on,"LastChosenProcessorId");
+  assertEquals("Should be sticky",last,last2);
   TabularData data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{false},new String[]{"boolean"});
   assertNotNull(data);
   assertEquals(2,data.size());
