@@ -1,0 +1,28 @@
+{
+  try {
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.loadbalancerExceptionsTabularType());
+    ExceptionFailureStatistics statistics=processor.getExceptionFailureStatistics();
+    Iterator<Class<?>> it=statistics.getExceptions();
+    boolean empty=true;
+    while (it.hasNext()) {
+      empty=false;
+      Class<?> exception=it.next();
+      String name=ObjectHelper.name(exception);
+      long counter=statistics.getFailureCounter(exception);
+      CompositeType ct=CamelOpenMBeanTypes.loadbalancerExceptionsCompositeType();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"exception","failures"},new Object[]{name,counter});
+      answer.put(data);
+    }
+    if (empty) {
+      String name=ObjectHelper.name(Exception.class);
+      long counter=statistics.getFailureCounter(Exception.class);
+      CompositeType ct=CamelOpenMBeanTypes.loadbalancerExceptionsCompositeType();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"exception","failures"},new Object[]{name,counter});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}

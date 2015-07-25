@@ -2,8 +2,14 @@
   if (isPlatform("aix")) {
     return;
   }
-  MockEndpoint foo=getMockEndpoint("mock:foo");
-  foo.expectedMessageCount(1);
+  getMockEndpoint("mock:foo").whenAnyExchangeReceived(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      throw new IOException("Forced");
+    }
+  }
+);
+  MockEndpoint bar=getMockEndpoint("mock:bar");
+  bar.expectedMessageCount(1);
   template.sendBodyAndHeader("direct:start","Hello World","foo","123");
   assertMockEndpointsSatisfied();
   MBeanServer mbeanServer=getMBeanServer();
@@ -25,8 +31,11 @@
   String exceptions=(String)mbeanServer.getAttribute(on,"Exceptions");
   assertEquals("java.io.IOException,java.sql.SQLException",exceptions);
   String id=(String)mbeanServer.getAttribute(on,"LastGoodProcessorId");
-  assertEquals("foo",id);
-  TabularData data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{false},new String[]{"boolean"});
+  assertEquals("bar",id);
+  TabularData data=(TabularData)mbeanServer.invoke(on,"exceptionStatistics",null,null);
+  assertNotNull(data);
+  assertEquals(2,data.size());
+  data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{false},new String[]{"boolean"});
   assertNotNull(data);
   assertEquals(3,data.size());
   data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{true},new String[]{"boolean"});
