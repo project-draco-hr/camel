@@ -3,8 +3,12 @@
     return;
   }
   MockEndpoint foo=getMockEndpoint("mock:foo");
-  foo.expectedMessageCount(1);
+  foo.expectedMessageCount(2);
+  MockEndpoint bar=getMockEndpoint("mock:bar");
+  bar.expectedMessageCount(1);
   template.sendBodyAndHeader("direct:start","Hello World","whereto","foo");
+  template.sendBodyAndHeader("direct:start","Bye World","whereto","foo");
+  template.sendBodyAndHeader("direct:start","Hi World","whereto","bar");
   assertMockEndpointsSatisfied();
   MBeanServer mbeanServer=getMBeanServer();
   ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=processors,name=\"mysend\"");
@@ -18,7 +22,10 @@
   assertEquals("simple",lan);
   String uri=(String)mbeanServer.getAttribute(on,"Expression");
   assertEquals("direct:${header.whereto}",uri);
-  TabularData data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{false},new String[]{"boolean"});
+  TabularData data=(TabularData)mbeanServer.invoke(on,"endpointStatistics",null,null);
+  assertNotNull(data);
+  assertEquals(2,data.size());
+  data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{false},new String[]{"boolean"});
   assertNotNull(data);
   assertEquals(2,data.size());
   data=(TabularData)mbeanServer.invoke(on,"explain",new Object[]{true},new String[]{"boolean"});
