@@ -1,0 +1,25 @@
+{
+  try {
+    TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.listRuntimeEndpointsTabularType());
+    EndpointRegistry staticRegistry=getContext().getEndpointRegistry();
+    Map<String,RuntimeEndpointRegistry.Statistic> stats=registry.getStatistics();
+    for (    Map.Entry<String,RuntimeEndpointRegistry.Statistic> entry : stats.entrySet()) {
+      CompositeType ct=CamelOpenMBeanTypes.listRuntimeEndpointsCompositeType();
+      String url=entry.getKey();
+      Boolean isStatic=staticRegistry.isStatic(url);
+      Boolean isDynamic=staticRegistry.isDynamic(url);
+      if (sanitize) {
+        url=URISupport.sanitizeUri(url);
+      }
+      String routeId=entry.getValue().getRouteId();
+      Boolean input=entry.getValue().isInput();
+      Boolean output=entry.getValue().isOutput();
+      CompositeData data=new CompositeDataSupport(ct,new String[]{"url","routeId","input","output","static","dynamic"},new Object[]{url,routeId,input,output,isStatic,isDynamic});
+      answer.put(data);
+    }
+    return answer;
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+}
