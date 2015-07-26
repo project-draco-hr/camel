@@ -1,5 +1,15 @@
 {
-  ServiceHelper.stopAndShutdownServices(consumers.values());
+  ServiceHelper.stopAndShutdownServices(statistics,pool);
+  try {
+    ServiceHelper.stopAndShutdownServices(consumers.values());
+  }
+  finally {
+    for (    PollingConsumer consumer : consumers.values()) {
+      getCamelContext().removeService(consumer);
+    }
+  }
   consumers.clear();
-  ServiceHelper.stopService(pool);
+  if (statistics != null) {
+    statistics.clear();
+  }
 }
