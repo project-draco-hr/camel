@@ -15,14 +15,21 @@
     outputs.remove(routeId);
     if (extended) {
       String uri=rse.getRoute().getEndpoint().getEndpointUri();
-      inputUtilization.remove(uri);
+      String key=asUtilizationKey(routeId,uri);
+      if (key != null) {
+        inputUtilization.remove(key);
+      }
     }
   }
  else   if (extended && event instanceof ExchangeCreatedEvent) {
     ExchangeCreatedEvent ece=(ExchangeCreatedEvent)event;
     Endpoint endpoint=ece.getExchange().getFromEndpoint();
+    String routeId=ece.getExchange().getFromRouteId();
     String uri=endpoint.getEndpointUri();
-    inputUtilization.onHit(uri);
+    String key=asUtilizationKey(routeId,uri);
+    if (key != null) {
+      inputUtilization.onHit(key);
+    }
   }
  else {
     ExchangeSendingEvent ese=(ExchangeSendingEvent)event;
@@ -34,7 +41,10 @@
       uris.put(uri,uri);
     }
     if (extended) {
-      outputUtilization.onHit(uri);
+      String key=asUtilizationKey(routeId,uri);
+      if (key != null) {
+        outputUtilization.onHit(key);
+      }
     }
   }
 }
