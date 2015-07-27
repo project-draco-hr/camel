@@ -1,0 +1,37 @@
+{
+  List<Map<String,String>> contexts=camelController.getCamelContexts(context);
+  boolean header=false;
+  Map<String,List<Map<String,String>>> allEndpoints=new LinkedHashMap<>();
+  for (  Map<String,String> context : contexts) {
+    String contextName=context.get("name");
+    List<Map<String,String>> endpoints=camelController.getEndpointRuntimeStatistics(contextName);
+    allEndpoints.put(contextName,endpoints);
+  }
+  final Map<String,Integer> columnWidths=computeColumnWidths(allEndpoints);
+  final String headerFormat=buildFormatString(columnWidths,true);
+  final String rowFormat=buildFormatString(columnWidths,false);
+  for (  Map.Entry<String,List<Map<String,String>>> entry : allEndpoints.entrySet()) {
+    String contextName=entry.getKey();
+    for (    Map<String,String> row : entry.getValue()) {
+      if (!header) {
+        out.println(String.format(headerFormat,CONTEXT_COLUMN_LABEL,URI_COLUMN_LABEL,ROUTE_COLUMN_LABEL,DIRECTION_COLUMN_LABEL,STATIC_COLUMN_LABEL,DYNAMIC_COLUMN_LABEL,HITS_COLUMN_LABEL));
+        out.println(String.format(headerFormat,"-------","---","--------","---------","------","-------","----"));
+        header=true;
+      }
+      String uri=row.get("uri");
+      if (decode) {
+        uri=URLDecoder.decode(uri,"UTF-8");
+      }
+      uri=URISupport.sanitizeUri(uri);
+      String routeId=row.get("routeId");
+      String direction=row.get("direction");
+      String isStatic=row.get("static");
+      String isDynamic=row.get("dynamic");
+      String hits=row.get("hits");
+      if (isValidRow(direction,isStatic,isDynamic)) {
+        out.println(String.format(rowFormat,contextName,uri,routeId,direction,isStatic,isDynamic,hits));
+      }
+    }
+  }
+  return null;
+}
