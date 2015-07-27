@@ -13,6 +13,16 @@
     String routeId=rse.getRoute().getId();
     inputs.remove(routeId);
     outputs.remove(routeId);
+    if (extended) {
+      String uri=rse.getRoute().getEndpoint().getEndpointUri();
+      inputUtilization.remove(uri);
+    }
+  }
+ else   if (extended && event instanceof ExchangeCreatedEvent) {
+    ExchangeCreatedEvent ece=(ExchangeCreatedEvent)event;
+    Endpoint endpoint=ece.getExchange().getFromEndpoint();
+    String uri=endpoint.getEndpointUri();
+    inputUtilization.onHit(uri);
   }
  else {
     ExchangeSendingEvent ese=(ExchangeSendingEvent)event;
@@ -22,6 +32,9 @@
     Map<String,String> uris=outputs.get(routeId);
     if (uris != null && !uris.containsKey(uri)) {
       uris.put(uri,uri);
+    }
+    if (extended) {
+      outputUtilization.onHit(uri);
     }
   }
 }
