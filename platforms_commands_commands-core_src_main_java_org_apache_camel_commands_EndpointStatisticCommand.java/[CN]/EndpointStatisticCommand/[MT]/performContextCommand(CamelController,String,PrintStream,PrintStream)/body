@@ -1,0 +1,26 @@
+{
+  List<Map<String,String>> endpoints=camelController.getEndpointRuntimeStatistics(contextName);
+  final Map<String,Integer> columnWidths=computeColumnWidths(endpoints);
+  final String headerFormat=buildFormatString(columnWidths,true);
+  final String rowFormat=buildFormatString(columnWidths,false);
+  if (endpoints.size() > 0) {
+    out.println(String.format(headerFormat,URI_COLUMN_LABEL,ROUTE_COLUMN_LABEL,DIRECTION_COLUMN_LABEL,STATIC_COLUMN_LABEL,DYNAMIC_COLUMN_LABEL,HITS_COLUMN_LABEL));
+    out.println(String.format(headerFormat,"---","--------","---------","------","-------","----"));
+    for (    Map<String,String> row : endpoints) {
+      String uri=row.get("uri");
+      if (decode) {
+        uri=URLDecoder.decode(uri,"UTF-8");
+      }
+      uri=URISupport.sanitizeUri(uri);
+      String routeId=row.get("routeId");
+      String direction=row.get("direction");
+      String isStatic=row.get("static");
+      String isDynamic=row.get("dynamic");
+      String hits=row.get("hits");
+      if (isValidRow(direction,isStatic,isDynamic)) {
+        out.println(String.format(rowFormat,uri,routeId,direction,isStatic,isDynamic,hits));
+      }
+    }
+  }
+  return null;
+}
