@@ -1,6 +1,5 @@
 {
   Undertow.Builder result=Undertow.builder();
-  int port=registy.getPort();
   if (registy.getSslContext() != null) {
     result=result.addHttpsListener(registy.getPort(),registy.getHost(),registy.getSslContext());
   }
@@ -11,11 +10,12 @@
   for (  URI key : registy.getConsumersRegistry().keySet()) {
     UndertowConsumer consumer=registy.getConsumersRegistry().get(key);
     URI httpUri=consumer.getEndpoint().getHttpURI();
+    HttpCamelHandler handler=new HttpCamelHandler(consumer);
     if (consumer.getEndpoint().getMatchOnUriPrefix()) {
-      path.addPrefixPath(httpUri.getPath(),new HttpCamelHandler(consumer));
+      path.addPrefixPath(httpUri.getPath(),handler);
     }
  else {
-      path.addExactPath(httpUri.getPath(),new HttpCamelHandler(consumer));
+      path.addExactPath(httpUri.getPath(),handler);
     }
     LOG.debug("Rebuild for path: {}",httpUri.getPath());
   }

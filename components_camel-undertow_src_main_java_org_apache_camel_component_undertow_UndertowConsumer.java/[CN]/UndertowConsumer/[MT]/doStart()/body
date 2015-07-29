@@ -2,5 +2,12 @@
   super.doStart();
   LOG.debug("Undertow consumer is starting");
   getEndpoint().getComponent().registerConsumer(this);
-  getEndpoint().getComponent().startServer(this);
+  UndertowHostFactory factory=UndertowHostFactory.Locator.getUndertowHostFactory();
+  if (factory == null) {
+    factory=new DefaultUndertowHostFactory();
+  }
+  URI httpUri=getEndpoint().getHttpURI();
+  UndertowHost host=factory.createUndertowHost();
+  host.validateEndpointURI(httpUri);
+  host.registerHandler(httpUri.getPath(),new HttpCamelHandler(this));
 }
