@@ -1,0 +1,24 @@
+{
+  if (type instanceof Class) {
+    return Class.class.cast(type).getName();
+  }
+  if (type instanceof ParameterizedType) {
+    ParameterizedType pt=(ParameterizedType)type;
+    StringBuilder builder=new StringBuilder(authorityFromType(pt.getRawType()));
+    Iterator<Type> it=Arrays.asList(pt.getActualTypeArguments()).iterator();
+    builder.append("%3C");
+    while (it.hasNext()) {
+      builder.append(authorityFromType(it.next()));
+      if (it.hasNext()) {
+        builder.append("%2C");
+      }
+    }
+    builder.append("%3E");
+    return builder.toString();
+  }
+  if (type instanceof GenericArrayType) {
+    GenericArrayType arrayType=(GenericArrayType)type;
+    return authorityFromType(arrayType.getGenericComponentType()) + "%5B%5D";
+  }
+  throw new IllegalArgumentException("Cannot create URI authority for event type [" + type + "]");
+}

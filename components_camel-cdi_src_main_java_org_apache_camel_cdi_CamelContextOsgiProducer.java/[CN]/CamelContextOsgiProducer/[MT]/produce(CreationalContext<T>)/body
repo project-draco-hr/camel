@@ -1,0 +1,16 @@
+{
+  T context=super.produce(ctx);
+  BundleContext bundle=BundleContextUtils.getBundleContext(getClass());
+  context.getManagementStrategy().addEventNotifier(new OsgiCamelContextPublisher(bundle));
+  if (!(context instanceof DefaultCamelContext)) {
+    throw new InjectionException("Camel CDI requires Camel context [" + context.getName() + "] to be a subtype of DefaultCamelContext");
+  }
+  DefaultCamelContext adapted=context.adapt(DefaultCamelContext.class);
+  adapted.setRegistry(OsgiCamelContextHelper.wrapRegistry(context,context.getRegistry(),bundle));
+  CamelContextNameStrategy strategy=context.getNameStrategy();
+  OsgiCamelContextHelper.osgiUpdate(adapted,bundle);
+  if (!(strategy instanceof DefaultCamelContextNameStrategy)) {
+    context.setNameStrategy(strategy);
+  }
+  return context;
+}

@@ -1,10 +1,9 @@
 {
-  ProducerTemplate answer=BeanProvider.getContextualReference(ProducerTemplate.class,true);
-  if (answer != null) {
-    return answer;
+  BeanManager manager=cdiContainer.getBeanManager();
+  Bean<?> bean=manager.resolve(manager.getBeans(CamelContext.class));
+  if (bean == null) {
+    throw new UnsatisfiedResolutionException("No default Camel context is deployed, cannot create default ProducerTemplate!");
   }
-  if (getCamelContexts().isEmpty()) {
-    throw new IllegalArgumentException("No CamelContexts are available so cannot create a ProducerTemplate!");
-  }
-  return getCamelContexts().get(0).createProducerTemplate();
+  CamelContext context=(CamelContext)manager.getReference(bean,CamelContext.class,manager.createCreationalContext(bean));
+  return context.createProducerTemplate();
 }

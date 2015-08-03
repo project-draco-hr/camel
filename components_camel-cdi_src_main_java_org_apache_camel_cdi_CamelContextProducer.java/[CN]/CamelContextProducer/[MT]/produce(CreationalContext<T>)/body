@@ -1,0 +1,21 @@
+{
+  T context=super.produce(ctx);
+  if (annotated != null && context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
+    context.setNameStrategy(nameStrategy(annotated));
+  }
+  if (context instanceof DefaultCamelContext) {
+    DefaultCamelContext adapted=context.adapt(DefaultCamelContext.class);
+    adapted.setRegistry(new CdiCamelRegistry(manager));
+    adapted.setInjector(new CdiCamelInjector(context.getInjector(),manager));
+  }
+ else {
+    throw new InjectionException("Camel CDI requires Camel context [" + context.getName() + "] to be a subtype of DefaultCamelContext");
+  }
+  Set<Annotation> events=new HashSet<>(extension.getObserverEvents());
+  Collection<Annotation> qualifiers=annotated != null ? extension.getContextBean(new AnnotatedWrapper(annotated)).getQualifiers() : Arrays.asList(AnyLiteral.INSTANCE,DefaultLiteral.INSTANCE);
+  events.retainAll(qualifiers);
+  if (!events.isEmpty()) {
+    context.getManagementStrategy().addEventNotifier(new CdiEventNotifier(manager,qualifiers));
+  }
+  return context;
+}

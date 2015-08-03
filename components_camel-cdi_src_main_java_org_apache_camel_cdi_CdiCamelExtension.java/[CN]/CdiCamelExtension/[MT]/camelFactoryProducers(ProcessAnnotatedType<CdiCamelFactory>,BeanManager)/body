@@ -1,0 +1,19 @@
+{
+  AnnotatedType<CdiCamelFactory> at=pat.getAnnotatedType();
+  Set<AnnotatedMethod<? super CdiCamelFactory>> methods=new HashSet<>();
+  for (  AnnotatedMethod<? super CdiCamelFactory> am : pat.getAnnotatedType().getMethods()) {
+    if (!am.isAnnotationPresent(Produces.class)) {
+      continue;
+    }
+    Class<?> type=CdiSpiHelper.getRawType(am.getBaseType());
+    if (Endpoint.class.isAssignableFrom(type) || ProducerTemplate.class.equals(type)) {
+      Set<Annotation> qualifiers=CdiSpiHelper.getQualifiers(am,manager);
+      producerQualifiers.put(am.getJavaMember(),qualifiers.isEmpty() ? Collections.<Annotation>singleton(DefaultLiteral.INSTANCE) : qualifiers);
+      Set<Annotation> annotations=new HashSet<>(am.getAnnotations());
+      annotations.removeAll(qualifiers);
+      annotations.add(Excluded.INSTANCE);
+      methods.add(new AnnotatedMethodDelegate<>(am,annotations));
+    }
+  }
+  pat.setAnnotatedType(new AnnotatedTypeDelegate<>(at,methods));
+}

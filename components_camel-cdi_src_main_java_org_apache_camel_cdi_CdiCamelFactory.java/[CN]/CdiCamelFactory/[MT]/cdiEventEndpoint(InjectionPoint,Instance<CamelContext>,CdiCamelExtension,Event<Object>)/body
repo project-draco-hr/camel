@@ -1,0 +1,22 @@
+{
+  CamelContext context=selectContext(ip,instance,extension);
+  Type type=Object.class;
+  if (ip.getType() instanceof ParameterizedType) {
+    type=((ParameterizedType)ip.getType()).getActualTypeArguments()[0];
+  }
+  String uri=eventEndpointUri(type,ip.getQualifiers());
+  if (context.hasEndpoint(uri) == null) {
+    TypeLiteral<T> literal=new TypeLiteral<T>(){
+    }
+;
+    for (    Field field : TypeLiteral.class.getDeclaredFields()) {
+      if (field.getType().equals(Type.class)) {
+        field.setAccessible(true);
+        field.set(literal,type);
+        break;
+      }
+    }
+    context.addEndpoint(uri,new CdiEventEndpoint<>(event.select(literal,ip.getQualifiers().toArray(new Annotation[ip.getQualifiers().size()])),uri,context,(ForwardingObserverMethod<T>)extension.getObserverMethod(ip)));
+  }
+  return context.getEndpoint(uri,CdiEventEndpoint.class);
+}

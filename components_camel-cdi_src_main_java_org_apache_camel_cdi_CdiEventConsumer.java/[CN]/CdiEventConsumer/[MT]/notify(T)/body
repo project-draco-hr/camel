@@ -1,0 +1,19 @@
+{
+  logger.debug("Consuming CDI event [{}] with {}",event,this);
+  Exchange exchange=getEndpoint().createExchange();
+  exchange.getIn().setBody(event);
+  if (event instanceof AbstractExchangeEvent) {
+    exchange.setProperty(Exchange.NOTIFY_EVENT,Boolean.TRUE);
+  }
+  try {
+    getProcessor().process(exchange);
+  }
+ catch (  Exception cause) {
+    throw new RuntimeExchangeException("Error while processing CDI event",exchange,cause);
+  }
+ finally {
+    if (event instanceof AbstractExchangeEvent) {
+      exchange.setProperty(Exchange.NOTIFY_EVENT,Boolean.FALSE);
+    }
+  }
+}
