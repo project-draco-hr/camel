@@ -1,3 +1,46 @@
 {
-  System.out.println(exchange.getIn().getBody());
+  CoapClient client=getClient(exchange);
+  String ct=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,String.class);
+  if (ct == null) {
+    ct="application/octet-stream";
+  }
+  String method=exchange.getIn().getHeader(Exchange.HTTP_METHOD,String.class);
+  if (method == null) {
+    method=endpoint.getCoapMethod();
+  }
+  if (method == null) {
+    Object body=exchange.getIn().getBody();
+    if (body == null) {
+      method="GET";
+    }
+ else {
+      method="POST";
+    }
+  }
+  int mediaType=MediaTypeRegistry.parse(ct);
+  CoapResponse response=null;
+switch (method) {
+case "GET":
+    response=client.get();
+  break;
+case "DELETE":
+response=client.delete();
+break;
+case "POST":
+byte[] bodyPost=exchange.getIn().getBody(byte[].class);
+response=client.post(bodyPost,mediaType);
+break;
+case "PUT":
+byte[] bodyPut=exchange.getIn().getBody(byte[].class);
+response=client.put(bodyPut,mediaType);
+break;
+default :
+break;
+}
+if (response != null) {
+Message resp=exchange.getOut();
+String mt=MediaTypeRegistry.toString(response.getOptions().getContentFormat());
+resp.setHeader(org.apache.camel.Exchange.CONTENT_TYPE,mt);
+resp.setBody(response.getPayload());
+}
 }
