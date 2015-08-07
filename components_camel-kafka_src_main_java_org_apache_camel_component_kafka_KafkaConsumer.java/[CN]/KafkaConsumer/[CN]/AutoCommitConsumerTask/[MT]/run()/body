@@ -1,11 +1,13 @@
 {
-  for (  MessageAndMetadata<byte[],byte[]> mm : stream) {
+  ConsumerIterator<byte[],byte[]> it=stream.iterator();
+  while (isRunAllowed() && it.hasNext()) {
+    MessageAndMetadata<byte[],byte[]> mm=it.next();
     Exchange exchange=endpoint.createKafkaExchange(mm);
     try {
       processor.process(exchange);
     }
  catch (    Exception e) {
-      LOG.error(e.getMessage(),e);
+      getExceptionHandler().handleException("Error during processing",exchange,e);
     }
   }
 }
