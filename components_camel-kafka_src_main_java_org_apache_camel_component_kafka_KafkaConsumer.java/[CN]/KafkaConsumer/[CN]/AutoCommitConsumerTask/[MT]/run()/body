@@ -1,6 +1,6 @@
 {
   ConsumerIterator<byte[],byte[]> it=stream.iterator();
-  while (isRunAllowed() && it.hasNext()) {
+  while (isRunAllowed() && !isSuspendingOrSuspended() && it.hasNext()) {
     MessageAndMetadata<byte[],byte[]> mm=it.next();
     Exchange exchange=endpoint.createKafkaExchange(mm);
     try {
@@ -10,4 +10,6 @@
       getExceptionHandler().handleException("Error during processing",exchange,e);
     }
   }
+  LOG.debug("Commit offsets on consumer: {}",ObjectHelper.getIdentityHashCode(consumer));
+  consumer.commitOffsets();
 }
