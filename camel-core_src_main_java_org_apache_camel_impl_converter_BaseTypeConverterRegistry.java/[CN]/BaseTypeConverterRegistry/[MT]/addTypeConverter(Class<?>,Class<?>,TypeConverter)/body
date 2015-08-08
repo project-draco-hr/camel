@@ -3,22 +3,24 @@
   TypeMapping key=new TypeMapping(toType,fromType);
   TypeConverter converter=typeMappings.get(key);
   if (typeConverter != converter) {
-    if (typeConverterExists == TypeConverterExists.Overwrite) {
-      if (converter != null) {
+    boolean add=true;
+    if (converter != null) {
+      if (typeConverterExists == TypeConverterExists.Overwrite) {
         CamelLogger logger=new CamelLogger(log,typeConverterExistsLoggingLevel);
         logger.log("Overriding type converter from: " + converter + " to: "+ typeConverter);
       }
-      typeMappings.put(key,typeConverter);
-      misses.remove(key);
-    }
- else     if (typeConverterExists == TypeConverterExists.Ignore) {
-      if (converter != null) {
+ else       if (typeConverterExists == TypeConverterExists.Ignore) {
         CamelLogger logger=new CamelLogger(log,typeConverterExistsLoggingLevel);
-        logger.log("Ignore duplicate type converter from: " + converter + " to: "+ typeConverter);
+        logger.log("Ignoring duplicate type converter from: " + converter + " to: "+ typeConverter);
+        add=false;
+      }
+ else {
+        throw new TypeConverterExistsException(toType,fromType);
       }
     }
- else {
-      throw new TypeConverterExistsException(toType,fromType);
+    if (add) {
+      typeMappings.put(key,typeConverter);
+      misses.remove(key);
     }
   }
 }
