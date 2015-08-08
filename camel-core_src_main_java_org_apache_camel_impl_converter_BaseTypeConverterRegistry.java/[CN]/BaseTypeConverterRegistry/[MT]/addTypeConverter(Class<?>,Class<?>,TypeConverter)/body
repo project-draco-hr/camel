@@ -3,10 +3,22 @@
   TypeMapping key=new TypeMapping(toType,fromType);
   TypeConverter converter=typeMappings.get(key);
   if (typeConverter != converter) {
-    if (converter != null) {
-      log.warn("Overriding type converter from: " + converter + " to: "+ typeConverter);
+    if (addDuplicateTypeConverter == TypeConverterAddDuplicate.Overwrite) {
+      if (converter != null) {
+        CamelLogger logger=new CamelLogger(log,addDuplicateTypeConverterLoggingLevel);
+        logger.log("Overriding type converter from: " + converter + " to: "+ typeConverter);
+      }
+      typeMappings.put(key,typeConverter);
+      misses.remove(key);
     }
-    typeMappings.put(key,typeConverter);
-    misses.remove(key);
+ else     if (addDuplicateTypeConverter == TypeConverterAddDuplicate.Ignore) {
+      if (converter != null) {
+        CamelLogger logger=new CamelLogger(log,addDuplicateTypeConverterLoggingLevel);
+        logger.log("Ignore duplicate type converter from: " + converter + " to: "+ typeConverter);
+      }
+    }
+ else {
+      throw new TypeConverterExistsException(toType,fromType);
+    }
   }
 }
