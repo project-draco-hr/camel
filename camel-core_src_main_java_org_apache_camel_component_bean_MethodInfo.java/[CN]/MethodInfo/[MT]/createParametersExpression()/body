@@ -1,15 +1,8 @@
 {
-  final int size=parameters.size();
-  LOG.trace("Creating parameters expression for {} parameters",size);
-  final Expression[] expressions=new Expression[size];
-  for (int i=0; i < size; i++) {
-    Expression parameterExpression=parameters.get(i).getExpression();
-    expressions[i]=parameterExpression;
-    LOG.trace("Parameter #{} has expression: {}",i,parameterExpression);
-  }
+  final Expression[] expressions=createParameterExpressions();
   return new Expression(){
     @SuppressWarnings("unchecked") public <T>T evaluate(    Exchange exchange,    Class<T> type){
-      Object[] answer=new Object[size];
+      Object[] answer=new Object[expressions.length];
       Object body=exchange.getIn().getBody();
       boolean multiParameterArray=false;
       if (exchange.getIn().getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) != null) {
@@ -29,7 +22,7 @@
       }
       exchange.getIn().removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
       exchange.getIn().removeHeader(Exchange.BEAN_METHOD_NAME);
-      for (int i=0; i < size; i++) {
+      for (int i=0; i < expressions.length; i++) {
         Object parameterValue=it != null && it.hasNext() ? it.next() : null;
         Class<?> parameterType=parameters.get(i).getType();
         Object value=null;
