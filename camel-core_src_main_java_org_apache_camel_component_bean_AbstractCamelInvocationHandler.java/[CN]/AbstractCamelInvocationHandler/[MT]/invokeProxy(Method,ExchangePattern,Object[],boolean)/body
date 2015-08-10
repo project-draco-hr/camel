@@ -1,0 +1,39 @@
+{
+  final Exchange exchange=new DefaultExchange(endpoint,pattern);
+  if (binding) {
+    int index=0;
+    for (    Annotation[] row : method.getParameterAnnotations()) {
+      Object value=args[index];
+      for (      Annotation ann : row) {
+        if (ann.annotationType().isAssignableFrom(Header.class)) {
+          Header header=(Header)ann;
+          String name=header.value();
+          exchange.getIn().setHeader(name,value);
+        }
+ else         if (ann.annotationType().isAssignableFrom(ExchangeProperty.class)) {
+          ExchangeProperty ep=(ExchangeProperty)ann;
+          String name=ep.value();
+          exchange.setProperty(name,value);
+        }
+ else         if (ann.annotationType().isAssignableFrom(Body.class)) {
+          exchange.getIn().setBody(value);
+        }
+ else {
+          exchange.getIn().setBody(value);
+        }
+      }
+      index++;
+    }
+  }
+ else {
+    BeanInvocation invocation=new BeanInvocation(method,args);
+    exchange.getIn().setBody(invocation);
+  }
+  if (binding) {
+    LOG.trace("Binding to service interface as @Body,@Header,@ExchangeProperty detected when calling proxy method: {}",method);
+  }
+ else {
+    LOG.trace("No binding to service interface as @Body,@Header,@ExchangeProperty not detected. Using BeanInvocation as message body when calling proxy method: {}");
+  }
+  return doInvoke(method,exchange);
+}
