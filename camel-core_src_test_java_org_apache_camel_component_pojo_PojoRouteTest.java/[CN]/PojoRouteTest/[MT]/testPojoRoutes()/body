@@ -1,16 +1,13 @@
 {
-  JndiContext context=new JndiContext();
-  context.bind("bye",new SayService("Good Bye!"));
-  CamelContext camelContext=new DefaultCamelContext(context);
+  CamelContext camelContext=new DefaultCamelContext();
   camelContext.addRoutes(new RouteBuilder(){
     public void configure(){
-      from("direct:hello").to("bean:bye");
+      from("direct:hello").transform().constant("Good Bye!");
     }
   }
 );
   camelContext.start();
-  Endpoint endpoint=camelContext.getEndpoint("direct:hello");
-  ISay proxy=ProxyHelper.createProxy(endpoint,ISay.class);
+  ISay proxy=new ProxyBuilder(camelContext).endpoint("direct:hello").build(ISay.class);
   String rc=proxy.say();
   assertEquals("Good Bye!",rc);
   camelContext.stop();
