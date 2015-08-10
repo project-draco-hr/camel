@@ -4,22 +4,27 @@
     int index=0;
     for (    Annotation[] row : method.getParameterAnnotations()) {
       Object value=args[index];
-      for (      Annotation ann : row) {
-        if (ann.annotationType().isAssignableFrom(Header.class)) {
-          Header header=(Header)ann;
-          String name=header.value();
-          exchange.getIn().setHeader(name,value);
-        }
- else         if (ann.annotationType().isAssignableFrom(ExchangeProperty.class)) {
-          ExchangeProperty ep=(ExchangeProperty)ann;
-          String name=ep.value();
-          exchange.setProperty(name,value);
-        }
- else         if (ann.annotationType().isAssignableFrom(Body.class)) {
-          exchange.getIn().setBody(value);
-        }
+      if (row == null || row.length == 0) {
+        exchange.getIn().setBody(value);
+      }
  else {
-          exchange.getIn().setBody(value);
+        for (        Annotation ann : row) {
+          if (ann.annotationType().isAssignableFrom(Header.class)) {
+            Header header=(Header)ann;
+            String name=header.value();
+            exchange.getIn().setHeader(name,value);
+          }
+ else           if (ann.annotationType().isAssignableFrom(ExchangeProperty.class)) {
+            ExchangeProperty ep=(ExchangeProperty)ann;
+            String name=ep.value();
+            exchange.setProperty(name,value);
+          }
+ else           if (ann.annotationType().isAssignableFrom(Body.class)) {
+            exchange.getIn().setBody(value);
+          }
+ else {
+            exchange.getIn().setBody(value);
+          }
         }
       }
       index++;
