@@ -1,11 +1,13 @@
 {
   ModelMBeanInfo mbi=null;
+  ModelMBeanInfo standardMbi=null;
+  Object custom=null;
   if (obj instanceof ManagedInstance) {
-    Object custom=((ManagedInstance)obj).getInstance();
+    custom=((ManagedInstance)obj).getInstance();
     if (custom != null && ObjectHelper.hasAnnotation(custom.getClass().getAnnotations(),ManagedResource.class)) {
       LOG.trace("Assembling MBeanInfo for: {} from custom @ManagedResource object: {}",name,custom);
-      mbi=assembler.getMBeanInfo(null,custom,name.toString());
-      obj=custom;
+      mbi=assembler.getMBeanInfo(obj,custom,name.toString());
+      standardMbi=assembler.getMBeanInfo(obj,null,name.toString());
     }
   }
   if (mbi == null) {
@@ -16,14 +18,20 @@
     return null;
   }
   RequiredModelMBean mbean;
+  RequiredModelMBean mixinMBean=null;
   boolean sanitize=camelContext.getManagementStrategy().getManagementAgent().getMask() != null && camelContext.getManagementStrategy().getManagementAgent().getMask();
-  if (sanitize) {
-    mbean=new MaskRequiredModelMBean(mbi,sanitize);
+  if (standardMbi != null) {
+    mixinMBean=(RequiredModelMBean)mBeanServer.instantiate(RequiredModelMBean.class.getName());
+    mixinMBean.setModelMBeanInfo(standardMbi);
+    try {
+      mixinMBean.setManagedResource(obj,"ObjectReference");
+    }
+ catch (    InvalidTargetObjectTypeException e) {
+      throw new JMException(e.getMessage());
+    }
+    obj=custom;
   }
- else {
-    mbean=(RequiredModelMBean)mBeanServer.instantiate(RequiredModelMBean.class.getName());
-    mbean.setModelMBeanInfo(mbi);
-  }
+  mbean=new MixinRequiredModelMBean(mbi,sanitize,standardMbi,mixinMBean);
   try {
     mbean.setManagedResource(obj,"ObjectReference");
   }
