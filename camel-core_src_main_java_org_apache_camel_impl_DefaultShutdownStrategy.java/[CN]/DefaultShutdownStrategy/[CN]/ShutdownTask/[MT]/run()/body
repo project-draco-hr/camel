@@ -49,11 +49,7 @@
     final Map<String,Integer> routeInflight=new LinkedHashMap<String,Integer>();
     for (    RouteStartupOrder order : routes) {
       int inflight=context.getInflightRepository().size(order.getRoute().getId());
-      for (      Consumer consumer : order.getInputs()) {
-        if (consumer instanceof ShutdownAware) {
-          inflight+=((ShutdownAware)consumer).getPendingExchangesSize();
-        }
-      }
+      inflight+=getPendingInflightExchanges(order);
       if (inflight > 0) {
         String routeId=order.getRoute().getId();
         routeInflight.put(routeId,inflight);
