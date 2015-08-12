@@ -1,7 +1,15 @@
 {
   if (isBlockWhenFull()) {
     try {
-      queue.put(exchange);
+      if (getBlockTimeout() <= 0) {
+        queue.put(exchange);
+      }
+ else {
+        boolean added=queue.offer(exchange,getBlockTimeout(),TimeUnit.MILLISECONDS);
+        if (!added) {
+          throw new ExchangeTimedOutException(exchange,getBlockTimeout());
+        }
+      }
     }
  catch (    InterruptedException e) {
       log.debug("Put interrupted, are we stopping? {}",isStopping() || isStopped());
