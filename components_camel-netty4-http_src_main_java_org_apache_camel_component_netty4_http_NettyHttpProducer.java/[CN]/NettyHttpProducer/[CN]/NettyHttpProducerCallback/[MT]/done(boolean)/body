@@ -8,7 +8,8 @@
         String actualUrl=exchange.getIn().getHeader(Exchange.HTTP_URL,String.class);
         int code=response.getStatus() != null ? response.getStatus().code() : -1;
         log.debug("Http responseCode: {}",code);
-        if (code >= 300 && getConfiguration().isThrowExceptionOnFailure()) {
+        boolean ok=NettyHttpHelper.isStatusCodeOk(code,configuration.getOkStatusCodeRange());
+        if (!ok && getConfiguration().isThrowExceptionOnFailure()) {
           Exception cause=NettyHttpHelper.populateNettyHttpOperationFailedException(exchange,actualUrl,response,code,getConfiguration().isTransferException());
           exchange.setException(cause);
         }
