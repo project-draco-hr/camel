@@ -1,0 +1,44 @@
+{
+  final Object body=exchange.getIn().getMandatoryBody();
+  final String solverId=getSolverId(exchange);
+  if (body instanceof Solution) {
+    if (isAsync(exchange)) {
+      LOGGER.debug("Asynchronously solving problem: [{}] with id [{}]",body,solverId);
+      final Solver solver=endpoint.getOrCreateSolver(solverId);
+      executor.submit(new Runnable(){
+        @Override public void run(){
+          solver.solve((Solution)body);
+        }
+      }
+);
+    }
+ else {
+      LOGGER.debug("Synchronously solving problem: [{}] with id [{}]",body,solverId);
+      Solver solver=endpoint.getSolver(solverId);
+      if (solver == null) {
+        solver=endpoint.createSolver();
+      }
+      solver.solve((Solution)body);
+      populateResult(exchange,solver);
+    }
+  }
+ else   if (body instanceof ProblemFactChange) {
+    LOGGER.debug("Adding ProblemFactChange to solver: [{}] with id [{}]",body,solverId);
+    Solver solver=endpoint.getOrCreateSolver(solverId);
+    solver.addProblemFactChange((ProblemFactChange)body);
+    if (!isAsync(exchange)) {
+      while (!solver.isEveryProblemFactChangeProcessed()) {
+        Thread.currentThread().sleep(100);
+      }
+    }
+    populateResult(exchange,solver);
+  }
+ else {
+    LOGGER.debug("Retrieving best score for solver: [{}]",solverId);
+    Solver solver=endpoint.getSolver(solverId);
+    if (solver == null) {
+      throw new RuntimeException("Solver not found: " + solverId);
+    }
+    populateResult(exchange,solver);
+  }
+}
