@@ -44,7 +44,31 @@
         it.remove();
       }
     }
-    if (candidates.size() == 1) {
+    int bestWildcard=Integer.MAX_VALUE;
+    Map.Entry<ContextPathMatcher,HttpServerChannelHandler> best=null;
+    if (candidates.size() > 1) {
+      it=candidates.iterator();
+      while (it.hasNext()) {
+        Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
+        String consumerPath=entry.getValue().getConsumer().getConfiguration().getPath();
+        int wildcards=countWildcards(consumerPath);
+        if (wildcards > 0) {
+          if (best == null) {
+            best=entry;
+          }
+ else {
+            if (wildcards < bestWildcard) {
+              bestWildcard=wildcards;
+              best=entry;
+            }
+          }
+        }
+      }
+      if (best != null) {
+        answer=best.getValue();
+      }
+    }
+    if (answer == null && candidates.size() == 1) {
       answer=candidates.get(0).getValue();
     }
   }
