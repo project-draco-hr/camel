@@ -33,22 +33,26 @@
         it.remove();
       }
     }
-    int best=-1;
+    int bestWildcard=Integer.MAX_VALUE;
+    HttpConsumer best=null;
     if (candidates.size() > 1) {
       it=candidates.iterator();
       while (it.hasNext()) {
-        HttpConsumer consumer=it.next();
-        String consumerPath=consumer.getPath();
+        HttpConsumer entry=it.next();
+        String consumerPath=entry.getPath();
         int wildcards=countWildcards(consumerPath);
-        if (best != -1 && wildcards >= best) {
-          it.remove();
-        }
- else {
-          best=wildcards;
+        if (wildcards > 0) {
+          if (best == null || wildcards < bestWildcard) {
+            best=entry;
+            bestWildcard=wildcards;
+          }
         }
       }
+      if (best != null) {
+        answer=best;
+      }
     }
-    if (candidates.size() == 1) {
+    if (answer == null && candidates.size() == 1) {
       answer=candidates.get(0);
     }
   }
