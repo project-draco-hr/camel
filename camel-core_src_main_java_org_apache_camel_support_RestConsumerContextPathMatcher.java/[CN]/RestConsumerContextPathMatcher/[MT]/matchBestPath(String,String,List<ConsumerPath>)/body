@@ -1,0 +1,48 @@
+{
+  ConsumerPath answer=null;
+  List<ConsumerPath> candidates=new ArrayList<ConsumerPath>();
+  for (  ConsumerPath entry : consumerPaths) {
+    if (matchRestMethod(requestMethod,entry.getRestrictMethod())) {
+      candidates.add(entry);
+    }
+  }
+  Iterator<ConsumerPath> it=candidates.iterator();
+  while (it.hasNext()) {
+    ConsumerPath consumer=it.next();
+    if (matchRestPath(requestPath,consumer.getConsumerPath(),false)) {
+      answer=consumer;
+      break;
+    }
+  }
+  if (answer == null) {
+    it=candidates.iterator();
+    while (it.hasNext()) {
+      ConsumerPath consumer=it.next();
+      if (!matchRestPath(requestPath,consumer.getConsumerPath(),true)) {
+        it.remove();
+      }
+    }
+    int bestWildcard=Integer.MAX_VALUE;
+    ConsumerPath best=null;
+    if (candidates.size() > 1) {
+      it=candidates.iterator();
+      while (it.hasNext()) {
+        ConsumerPath entry=it.next();
+        int wildcards=countWildcards(entry.getConsumerPath());
+        if (wildcards > 0) {
+          if (best == null || wildcards < bestWildcard) {
+            best=entry;
+            bestWildcard=wildcards;
+          }
+        }
+      }
+      if (best != null) {
+        answer=best;
+      }
+    }
+    if (answer == null && candidates.size() == 1) {
+      answer=candidates.get(0);
+    }
+  }
+  return answer;
+}

@@ -8,53 +8,24 @@
   if (method == null) {
     return null;
   }
-  List<HttpConsumer> candidates=new ArrayList<HttpConsumer>();
-  for (  Map.Entry<String,HttpConsumer> entry : consumers.entrySet()) {
-    String restrict=entry.getValue().getEndpoint().getHttpMethodRestrict();
-    if (matchRestMethod(method,restrict)) {
-      candidates.add(entry.getValue());
+  List<RestConsumerContextPathMatcher.ConsumerPath> paths=new ArrayList<RestConsumerContextPathMatcher.ConsumerPath>();
+  for (  final Map.Entry<String,HttpConsumer> entry : consumers.entrySet()) {
+    paths.add(new RestConsumerContextPathMatcher.ConsumerPath<HttpConsumer>(){
+      @Override public String getRestrictMethod(){
+        return entry.getValue().getEndpoint().getHttpMethodRestrict();
+      }
+      @Override public String getConsumerPath(){
+        return entry.getValue().getPath();
+      }
+      @Override public HttpConsumer getConsumer(){
+        return entry.getValue();
+      }
     }
+);
   }
-  Iterator<HttpConsumer> it=candidates.iterator();
-  while (it.hasNext()) {
-    HttpConsumer consumer=it.next();
-    String consumerPath=consumer.getPath();
-    if (matchRestPath(path,consumerPath,false)) {
-      answer=consumer;
-      break;
-    }
-  }
-  if (answer == null) {
-    it=candidates.iterator();
-    while (it.hasNext()) {
-      HttpConsumer consumer=it.next();
-      String consumerPath=consumer.getPath();
-      if (!matchRestPath(path,consumerPath,true)) {
-        it.remove();
-      }
-    }
-    int bestWildcard=Integer.MAX_VALUE;
-    HttpConsumer best=null;
-    if (candidates.size() > 1) {
-      it=candidates.iterator();
-      while (it.hasNext()) {
-        HttpConsumer entry=it.next();
-        String consumerPath=entry.getPath();
-        int wildcards=countWildcards(consumerPath);
-        if (wildcards > 0) {
-          if (best == null || wildcards < bestWildcard) {
-            best=entry;
-            bestWildcard=wildcards;
-          }
-        }
-      }
-      if (best != null) {
-        answer=best;
-      }
-    }
-    if (answer == null && candidates.size() == 1) {
-      answer=candidates.get(0);
-    }
+  RestConsumerContextPathMatcher.ConsumerPath<HttpConsumer> best=RestConsumerContextPathMatcher.matchBestPath(method,path,paths);
+  if (best != null) {
+    answer=best.getConsumer();
   }
   if (answer == null) {
     answer=super.resolve(request,consumers);
