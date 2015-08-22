@@ -10,67 +10,32 @@
     path=path.substring(idx + len);
   }
   path=pathAsKey(path);
-  List<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>> candidates=new ArrayList<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>>();
-  for (  Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry : consumers.entrySet()) {
-    NettyHttpConsumer consumer=entry.getValue().getConsumer();
-    String restrict=consumer.getEndpoint().getHttpMethodRestrict();
-    if (entry.getKey().matchMethod(method,restrict)) {
-      candidates.add(entry);
+  List<RestConsumerContextPathMatcher.ConsumerPath> paths=new ArrayList<RestConsumerContextPathMatcher.ConsumerPath>();
+  for (  final HttpServerChannelHandler handler : consumers) {
+    paths.add(new RestConsumerContextPathMatcher.ConsumerPath<HttpServerChannelHandler>(){
+      @Override public String getRestrictMethod(){
+        return handler.getConsumer().getEndpoint().getHttpMethodRestrict();
+      }
+      @Override public String getConsumerPath(){
+        return handler.getConsumer().getConfiguration().getPath();
+      }
+      @Override public HttpServerChannelHandler getConsumer(){
+        return handler;
+      }
     }
+);
   }
-  List<HttpServerChannelHandler> directMatches=new LinkedList<HttpServerChannelHandler>();
-  for (  Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry : candidates) {
-    if (entry.getKey().matchesRest(path,false)) {
-      directMatches.add(entry.getValue());
-    }
-  }
-  if (directMatches.size() == 1) {
-    answer=directMatches.get(0);
-  }
- else   if (directMatches.size() > 1) {
-    List<HttpServerChannelHandler> directMatchesWithOptions=handlersWithExplicitOptionsMethod(directMatches);
-    if (!directMatchesWithOptions.isEmpty()) {
-      answer=handlerWithTheLongestMatchingPrefix(directMatchesWithOptions);
-    }
- else {
-      answer=handlerWithTheLongestMatchingPrefix(directMatches);
-    }
+  RestConsumerContextPathMatcher.ConsumerPath<HttpServerChannelHandler> best=RestConsumerContextPathMatcher.matchBestPath(method,path,paths);
+  if (best != null) {
+    answer=best.getConsumer();
   }
   if (answer == null) {
-    Iterator<Map.Entry<ContextPathMatcher,HttpServerChannelHandler>> it=candidates.iterator();
-    while (it.hasNext()) {
-      Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
-      if (!entry.getKey().matchesRest(path,true)) {
-        it.remove();
-      }
-    }
-    int bestWildcard=Integer.MAX_VALUE;
-    Map.Entry<ContextPathMatcher,HttpServerChannelHandler> best=null;
-    if (candidates.size() > 1) {
-      it=candidates.iterator();
-      while (it.hasNext()) {
-        Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry=it.next();
-        String consumerPath=entry.getValue().getConsumer().getConfiguration().getPath();
-        int wildcards=countWildcards(consumerPath);
-        if (wildcards > 0) {
-          if (best == null || wildcards < bestWildcard) {
-            best=entry;
-            bestWildcard=wildcards;
-          }
-        }
-      }
-      if (best != null) {
-        answer=best.getValue();
-      }
-    }
-    if (answer == null && candidates.size() == 1) {
-      answer=candidates.get(0).getValue();
-    }
-  }
-  if (answer == null) {
-    for (    Map.Entry<ContextPathMatcher,HttpServerChannelHandler> entry : consumers.entrySet()) {
-      if (entry.getKey().matches(path)) {
-        answer=entry.getValue();
+    for (    final HttpServerChannelHandler handler : consumers) {
+      NettyHttpConsumer consumer=handler.getConsumer();
+      String consumerPath=consumer.getConfiguration().getPath();
+      boolean matchOnUriPrefix=consumer.getEndpoint().getConfiguration().isMatchOnUriPrefix();
+      if (RestConsumerContextPathMatcher.matchPath(path,consumerPath,matchOnUriPrefix)) {
+        answer=handler;
         break;
       }
     }
