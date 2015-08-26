@@ -1,0 +1,21 @@
+{
+  int ndx=0;
+  while (ndx < prmTypes.length) {
+    Class<?> prmType=prmTypes[ndx];
+    if (ndx >= parameters.length)     return ndx == prmTypes.length - 1 && prmType.isArray();
+    if (ndx == prmTypes.length - 1 && prmType.isArray()) {
+      Class<?> varArgClass=prmType.getComponentType();
+      while (ndx < parameters.length) {
+        Class<?> prmClass=resolver.resolveClass(parameters[ndx][0]);
+        if (!varArgClass.isAssignableFrom(prmClass))         return false;
+        ndx++;
+      }
+    }
+ else {
+      Class<?> prmClass=resolver.resolveClass(parameters[ndx][0]);
+      if (!prmTypes[ndx].isAssignableFrom(prmClass))       return false;
+    }
+    ndx++;
+  }
+  return true;
+}

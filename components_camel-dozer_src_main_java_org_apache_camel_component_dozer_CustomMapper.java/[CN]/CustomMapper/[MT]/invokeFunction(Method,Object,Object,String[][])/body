@@ -1,0 +1,21 @@
+{
+  Class<?>[] prmTypes=method.getParameterTypes();
+  Object[] methodPrms=new Object[prmTypes.length];
+  methodPrms[0]=source;
+  for (int parameterNdx=0, methodPrmNdx=1; parameterNdx < parameters.length; parameterNdx++, methodPrmNdx++) {
+    if (method.isVarArgs() && methodPrmNdx == prmTypes.length - 1) {
+      Object array=Array.newInstance(prmTypes[methodPrmNdx].getComponentType(),parameters.length - parameterNdx);
+      for (int arrayNdx=0; parameterNdx < parameters.length; parameterNdx++, arrayNdx++) {
+        String[] parts=parameters[parameterNdx];
+        Array.set(array,arrayNdx,resolver.resolveClass(parts[0]).getConstructor(String.class).newInstance(parts[1]));
+      }
+      methodPrms[methodPrmNdx]=array;
+    }
+ else {
+      String[] parts=parameters[parameterNdx];
+      methodPrms[methodPrmNdx]=resolver.resolveClass(parts[0]).getConstructor(String.class).newInstance(parts[1]);
+      ;
+    }
+  }
+  return method.invoke(customObj,methodPrms);
+}

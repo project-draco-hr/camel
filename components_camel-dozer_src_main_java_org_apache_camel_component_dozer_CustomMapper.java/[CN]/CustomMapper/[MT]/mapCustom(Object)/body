@@ -1,29 +1,49 @@
 {
-  Object customMapObj;
-  Method mapMethod;
-  String[] params=getParameter().split(",");
-  String className=params[0];
-  String operation=params.length > 1 ? params[1] : null;
+  String[] prms=getParameter().split(",");
+  String className=prms[0];
+  String operation=prms.length > 1 ? prms[1] : null;
+  String[][] prmTypesAndValues;
+  if (prms.length > 2) {
+    prmTypesAndValues=new String[prms.length - 2][2];
+    for (int ndx=0; ndx < prmTypesAndValues.length; ndx++) {
+      String prm=prms[ndx + 2];
+      String[] parts=prm.split("=");
+      if (parts.length != 2)       throw new RuntimeException("Value missing for parameter " + prm);
+      prmTypesAndValues[ndx][0]=parts[0];
+      prmTypesAndValues[ndx][1]=parts[1];
+    }
+  }
+ else   prmTypesAndValues=null;
+  Object customObj;
+  Method method=null;
   try {
     Class<?> customClass=resolver.resolveClass(className);
-    customMapObj=customClass.newInstance();
-    if (operation != null) {
-      mapMethod=customClass.getMethod(operation,source.getClass());
+    customObj=customClass.newInstance();
+    if (operation != null && prmTypesAndValues != null) {
+      method=selectMethod(customClass,operation,source,prmTypesAndValues);
+    }
+ else     if (operation != null) {
+      method=customClass.getMethod(operation,source.getClass());
     }
  else {
-      mapMethod=selectMethod(customClass,source);
+      method=selectMethod(customClass,source);
     }
   }
- catch (  Exception cnfEx) {
-    throw new RuntimeException("Failed to load custom mapping",cnfEx);
+ catch (  Exception e) {
+    throw new RuntimeException("Failed to load custom function",e);
   }
-  if (mapMethod == null) {
-    throw new RuntimeException("No eligible custom mapping methods in " + className);
+  if (method == null) {
+    throw new RuntimeException("No eligible custom function methods in " + className);
   }
   try {
-    return mapMethod.invoke(customMapObj,source);
+    if (prmTypesAndValues != null) {
+      return invokeFunction(method,customObj,source,prmTypesAndValues);
+    }
+ else {
+      return method.invoke(customObj,source);
+    }
   }
- catch (  Exception ex) {
-    throw new RuntimeException("Error while invoking custom mapping",ex);
+ catch (  Exception e) {
+    throw new RuntimeException("Error while invoking custom function",e);
   }
 }

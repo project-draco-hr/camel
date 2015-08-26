@@ -1,0 +1,29 @@
+{
+  List<Method> methods=new ArrayList<>();
+  for (  Method method : customClass.getDeclaredMethods()) {
+    methods.add(method);
+  }
+  for (Iterator<Method> iter=methods.iterator(); iter.hasNext(); ) {
+    Method method=iter.next();
+    Class<?>[] prmTypes=method.getParameterTypes();
+    if (!method.getName().equals(operation) || method.getReturnType() == null || !prmTypes[0].isAssignableFrom(source.getClass())) {
+      iter.remove();
+      continue;
+    }
+    prmTypes=Arrays.copyOfRange(prmTypes,1,prmTypes.length);
+    if (!method.isVarArgs() && prmTypes.length != parameters.length) {
+      iter.remove();
+      continue;
+    }
+    if (!parametersMatchParameterList(prmTypes,parameters)) {
+      iter.remove();
+      continue;
+    }
+  }
+  if (methods.size() > 1) {
+    for (    Method method : methods) {
+      if (!method.isVarArgs())       return method;
+    }
+  }
+  return methods.size() > 0 ? methods.get(0) : null;
+}
