@@ -1,0 +1,11 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      from("direct:withoutClientID").routeId("SenderWithoutClientID").log("$$$$$ Sending message: ${body}").to("mqtt:sender?publishTopicName=test/topic1&qualityOfService=ExactlyOnce");
+      from("mqtt:reader?subscribeTopicName=test/topic1&qualityOfService=ExactlyOnce").routeId("ReceiverWithoutClientID").log("$$$$$ Received message: ${body}").to("mock:result");
+      from("direct:withClientID").routeId("SenderWithClientID").log("$$$$$ Sending message: ${body}").to("mqtt:sender?publishTopicName=test/topic2&clientId=sender&qualityOfService=ExactlyOnce");
+      from("mqtt:reader?subscribeTopicName=test/topic2&clientId=receiver&qualityOfService=ExactlyOnce").routeId("ReceiverWithClientID").log("$$$$$ Received message: ${body}").to("mock:result");
+    }
+  }
+;
+}

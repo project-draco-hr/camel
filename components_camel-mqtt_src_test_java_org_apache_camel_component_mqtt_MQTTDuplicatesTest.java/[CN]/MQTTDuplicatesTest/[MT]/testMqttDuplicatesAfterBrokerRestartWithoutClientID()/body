@@ -1,0 +1,18 @@
+{
+  brokerService.stop();
+  brokerService.waitUntilStopped();
+  LOG.info(">>>>>>>>>> Restarting broker...");
+  brokerService=new BrokerService();
+  brokerService.setPersistent(false);
+  brokerService.setAdvisorySupport(false);
+  brokerService.addConnector("mqtt://127.0.0.1:1883?trace=true");
+  brokerService.start();
+  brokerService.waitUntilStarted();
+  LOG.info(">>>>>>>>>> Broker restarted");
+  for (int i=0; i < MESSAGE_COUNT; i++) {
+    String body=System.currentTimeMillis() + ": Dummy-restart-without-clientID! " + i;
+    templateWithoutClientID.asyncSendBody("direct:withoutClientID",body);
+    Thread.sleep(WAIT_MILLIS);
+  }
+  assertNoDuplicates();
+}
