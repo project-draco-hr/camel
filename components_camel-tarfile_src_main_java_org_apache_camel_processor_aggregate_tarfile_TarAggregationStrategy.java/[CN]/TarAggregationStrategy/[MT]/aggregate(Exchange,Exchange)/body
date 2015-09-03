@@ -1,0 +1,46 @@
+{
+  File tarFile;
+  Exchange answer=oldExchange;
+  if (newExchange == null) {
+    return oldExchange;
+  }
+  if (oldExchange == null) {
+    try {
+      tarFile=FileUtil.createTempFile(this.filePrefix,this.fileSuffix,new File(System.getProperty("java.io.tmpdir")));
+    }
+ catch (    IOException e) {
+      throw new GenericFileOperationFailedException(e.getMessage(),e);
+    }
+    answer=newExchange;
+    answer.addOnCompletion(new DeleteTarFileOnCompletion(tarFile));
+  }
+ else {
+    tarFile=oldExchange.getIn().getBody(File.class);
+  }
+  if (GenericFileMessage.class.isAssignableFrom(newExchange.getIn().getClass())) {
+    try {
+      File appendFile=newExchange.getIn().getMandatoryBody(File.class);
+      if (appendFile != null) {
+        addFileToTar(tarFile,appendFile,this.preserveFolderStructure ? newExchange.getIn().toString() : null);
+        GenericFile<File> genericFile=FileConsumer.asGenericFile(tarFile.getParent(),tarFile,null);
+        genericFile.bindToExchange(answer);
+      }
+    }
+ catch (    Exception e) {
+      throw new GenericFileOperationFailedException(e.getMessage(),e);
+    }
+  }
+ else {
+    try {
+      byte[] buffer=newExchange.getIn().getMandatoryBody(byte[].class);
+      String entryName=useFilenameHeader ? newExchange.getIn().getHeader(Exchange.FILE_NAME,String.class) : newExchange.getIn().getMessageId();
+      addEntryToTar(tarFile,entryName,buffer,buffer.length);
+      GenericFile<File> genericFile=FileConsumer.asGenericFile(tarFile.getParent(),tarFile,null);
+      genericFile.bindToExchange(answer);
+    }
+ catch (    Exception e) {
+      throw new GenericFileOperationFailedException(e.getMessage(),e);
+    }
+  }
+  return answer;
+}

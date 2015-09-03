@@ -1,0 +1,10 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      TarFileDataFormat tarFile=new TarFileDataFormat();
+      tarFile.setUsingIterator(true);
+      from("file:src/test/resources/org/apache/camel/dataformat/tarfile/data/?consumer.delay=1000&noop=true").unmarshal(tarFile).split(bodyAs(Iterator.class)).streaming().aggregationStrategy(updateHeader()).convertBodyTo(String.class).to("mock:processTarEntry").end().log("Done processing big file: ${header.CamelFileName}").setBody().header(PROCESSED_FILES_HEADER_NAME).split().body().to("mock:splitResult");
+    }
+  }
+;
+}

@@ -1,0 +1,25 @@
+{
+  if (usingIterator) {
+    return new TarIterator(exchange.getIn(),stream);
+  }
+ else {
+    InputStream is=exchange.getIn().getMandatoryBody(InputStream.class);
+    TarArchiveInputStream tis=(TarArchiveInputStream)new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR,new BufferedInputStream(is));
+    ByteArrayOutputStream baos=new ByteArrayOutputStream();
+    try {
+      TarArchiveEntry entry=tis.getNextTarEntry();
+      if (entry != null) {
+        exchange.getOut().setHeader(FILE_NAME,entry.getName());
+        IOHelper.copy(tis,baos);
+      }
+      entry=tis.getNextTarEntry();
+      if (entry != null) {
+        throw new IllegalStateException("Tar file has more than 1 entry.");
+      }
+      return baos.toByteArray();
+    }
+  finally {
+      IOHelper.close(tis,baos);
+    }
+  }
+}

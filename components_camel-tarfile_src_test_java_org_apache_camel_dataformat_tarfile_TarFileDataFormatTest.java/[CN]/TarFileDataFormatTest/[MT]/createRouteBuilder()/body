@@ -1,0 +1,15 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      interceptSendToEndpoint("file:*").to("mock:intercepted");
+      TarFileDataFormat tar=new TarFileDataFormat();
+      from("direct:tar").marshal(tar).to("mock:tar");
+      from("direct:untar").unmarshal(tar).to("mock:untar");
+      from("direct:tarAndUntar").marshal(tar).unmarshal(tar).to("mock:tarAndUntar");
+      from("direct:tarToFile").marshal(tar).to("file:" + TEST_DIR.getPath()).to("mock:tarToFile");
+      from("direct:dslTar").marshal(tar).to("mock:dslTar");
+      from("direct:dslUntar").unmarshal(tar).to("mock:dslUntar");
+    }
+  }
+;
+}

@@ -1,0 +1,29 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:aggregateToTarEntry");
+  mock.expectedMessageCount(1);
+  assertMockEndpointsSatisfied();
+  Thread.sleep(500);
+  File[] files=new File("target/out").listFiles();
+  assertTrue("Should be a file in target/out directory",files.length > 0);
+  File resultFile=files[0];
+  Set<String> expectedTarFiles=new HashSet<String>(Arrays.asList("another/hello.txt","other/greetings.txt","chiau.txt","hi.txt","hola.txt"));
+  TarArchiveInputStream tin=new TarArchiveInputStream(new FileInputStream(resultFile));
+  try {
+    int fileCount=0;
+    for (TarArchiveEntry te=tin.getNextTarEntry(); te != null; te=tin.getNextTarEntry()) {
+      String name=te.getName();
+      if (expectedTarFiles.contains(name)) {
+        expectedTarFiles.remove(te.getName());
+      }
+ else {
+        fail("Unexpected name in tarfile: " + name);
+      }
+      fileCount++;
+    }
+    assertTrue("Tar file should contains " + AggregationStrategyWithPreservationTest.EXPECTED_NO_FILES + " files",fileCount == AggregationStrategyWithPreservationTest.EXPECTED_NO_FILES);
+    assertEquals("Should have found all of the tar files in the file.",0,expectedTarFiles.size());
+  }
+  finally {
+    IOHelper.close(tin);
+  }
+}

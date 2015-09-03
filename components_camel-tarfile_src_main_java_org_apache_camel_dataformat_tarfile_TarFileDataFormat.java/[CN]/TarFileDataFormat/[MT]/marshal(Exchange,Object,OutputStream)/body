@@ -1,0 +1,29 @@
+{
+  String filename=exchange.getIn().getHeader(FILE_NAME,String.class);
+  Long filelength=exchange.getIn().getHeader(FILE_LENGTH,Long.class);
+  if (filename != null) {
+    filename=new File(filename).getName();
+  }
+ else {
+    filename=StringHelper.sanitize(exchange.getIn().getMessageId());
+  }
+  TarArchiveOutputStream tos=new TarArchiveOutputStream(stream);
+  tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+  tos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_POSIX);
+  InputStream is=exchange.getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,graph);
+  if (filelength == null) {
+    filelength=(long)is.available();
+  }
+  TarArchiveEntry entry=new TarArchiveEntry(filename);
+  entry.setSize(filelength);
+  tos.putArchiveEntry(entry);
+  try {
+    IOHelper.copy(is,tos);
+  }
+  finally {
+    tos.closeArchiveEntry();
+    IOHelper.close(is,tos);
+  }
+  String newFilename=filename + ".tar";
+  exchange.getOut().setHeader(FILE_NAME,newFilename);
+}

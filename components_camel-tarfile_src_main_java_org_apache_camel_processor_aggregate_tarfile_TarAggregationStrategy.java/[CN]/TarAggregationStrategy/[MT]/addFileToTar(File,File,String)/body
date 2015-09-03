@@ -1,0 +1,26 @@
+{
+  File tmpTar=File.createTempFile(source.getName(),null);
+  tmpTar.delete();
+  if (!source.renameTo(tmpTar)) {
+    throw new IOException("Could not make temp file (" + source.getName() + ")");
+  }
+  TarArchiveInputStream tin=(TarArchiveInputStream)new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR,new FileInputStream(tmpTar));
+  TarArchiveOutputStream tos=new TarArchiveOutputStream(new FileOutputStream(source));
+  tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+  tos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_POSIX);
+  InputStream in=new FileInputStream(file);
+  ArchiveEntry nextEntry;
+  while ((nextEntry=tin.getNextEntry()) != null) {
+    tos.putArchiveEntry(nextEntry);
+    IOUtils.copy(tin,tos);
+    tos.closeArchiveEntry();
+  }
+  TarArchiveEntry entry=new TarArchiveEntry(fileName == null ? file.getName() : fileName);
+  entry.setSize(file.length());
+  tos.putArchiveEntry(entry);
+  IOUtils.copy(in,tos);
+  tos.closeArchiveEntry();
+  IOHelper.close(in);
+  IOHelper.close(tin);
+  IOHelper.close(tos);
+}

@@ -1,0 +1,30 @@
+{
+  Message answer=null;
+  if (tarInputStream == null) {
+    return answer;
+  }
+  try {
+    TarArchiveEntry current=getNextEntry();
+    if (current != null) {
+      LOGGER.debug("Reading tarEntry {}",current.getName());
+      answer=new DefaultMessage();
+      answer.getHeaders().putAll(inputMessage.getHeaders());
+      answer.setHeader(TARFILE_ENTRY_NAME_HEADER,current.getName());
+      answer.setHeader(Exchange.FILE_NAME,current.getName());
+      if (current.getSize() > 0) {
+        answer.setBody(new TarElementInputStreamWrapper(tarInputStream));
+      }
+ else {
+        answer.setBody(new ByteArrayInputStream(new byte[0]));
+      }
+      return answer;
+    }
+ else {
+      LOGGER.trace("Closed tarInputStream");
+    }
+  }
+ catch (  IOException exception) {
+    throw new RuntimeCamelException(exception);
+  }
+  return answer;
+}
