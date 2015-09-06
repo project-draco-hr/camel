@@ -1,11 +1,11 @@
 {
+  MockEndpoint mock=getMockEndpoint("mock:split");
+  mock.expectedMessageCount(2);
   splitAttachmentsExpression.setExtractAttachments(true);
   Producer producer=endpoint.createProducer();
   producer.start();
   producer.process(exchange);
   Thread.sleep(2000);
-  MockEndpoint mock=getMockEndpoint("mock:split");
-  mock.expectedMessageCount(2);
   mock.assertIsSatisfied();
   Message first=mock.getReceivedExchanges().get(0).getIn();
   Message second=mock.getReceivedExchanges().get(1).getIn();
@@ -15,6 +15,6 @@
   assertEquals("license.txt",second.getHeader("CamelSplitAttachmentId"));
   byte[] expected1=IOUtils.toByteArray(new FileDataSource("src/test/data/logo.jpeg").getInputStream());
   byte[] expected2=IOUtils.toByteArray(new FileDataSource("src/main/resources/META-INF/LICENSE.txt").getInputStream());
-  assertArrayEquals(expected1,(byte[])first.getBody());
-  assertArrayEquals(expected2,(byte[])second.getBody());
+  assertArrayEquals(expected1,first.getBody(byte[].class));
+  assertArrayEquals(expected2,second.getBody(byte[].class));
 }
