@@ -15,16 +15,20 @@
       }
       String fieldName=methodName.substring(3);
       fieldName=fieldName.substring(0,1).toLowerCase() + fieldName.substring(1);
+      VariableElement field=findFieldElement(classElement,fieldName);
+      if (field != null && metadata == null) {
+        metadata=field.getAnnotation(Metadata.class);
+      }
+      String required=metadata != null ? metadata.required() : null;
+      String label=metadata != null ? metadata.label() : null;
+      String defaultValue=metadata != null ? metadata.defaultValue() : null;
+      String defaultValueNote=null;
       ExecutableElement setter=method;
       String name=fieldName;
       name=prefix + name;
       TypeMirror fieldType=setter.getParameters().get(0).asType();
       String fieldTypeName=fieldType.toString();
       TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
-      String required=metadata != null ? metadata.required() : null;
-      String label=metadata != null ? metadata.label() : null;
-      String defaultValue=metadata != null ? metadata.defaultValue() : null;
-      String defaultValueNote=null;
       String docComment=findJavaDoc(elementUtils,method,fieldName,name,classElement,false);
       if (isNullOrEmpty(docComment)) {
         docComment=metadata != null ? metadata.description() : null;
