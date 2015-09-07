@@ -2,13 +2,10 @@
   if (isEndpointTransacted()) {
     exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),getCommitStrategy()));
   }
-  Message request=JmsMessageHelper.createMessage(exchange,producer.getSession(),getEndpoint());
-  String correlationId;
-  if (exchange.getIn().getHeader(JmsConstants.JMS_CORRELATION_ID,String.class) == null) {
-    correlationId=UUID.randomUUID().toString().replace("-","");
-  }
- else {
-    correlationId=exchange.getIn().getHeader(JmsConstants.JMS_CORRELATION_ID,String.class);
+  Message request=getEndpoint().getBinding().makeJmsMessage(exchange,producer.getSession());
+  String correlationId=exchange.getIn().getHeader(JmsConstants.JMS_CORRELATION_ID,String.class);
+  if (correlationId == null) {
+    correlationId=GENERATED_CORRELATION_ID_PREFIX + getUuidGenerator().generateUuid();
   }
   Object responseObject=null;
   Exchanger<Object> messageExchanger=new Exchanger<Object>();
@@ -40,8 +37,9 @@ catch (  TimeoutException e) {
       exchange.setException((Throwable)responseObject);
     }
  else     if (responseObject instanceof Message) {
-      Message response=(Message)responseObject;
-      JmsMessageHelper.populateExchange(response,exchange,true,getEndpoint().getJmsKeyFormatStrategy());
+      Message message=(Message)responseObject;
+      SjmsMessage response=new SjmsMessage(message,consumer.getSession(),getEndpoint().getBinding());
+      exchange.setOut(response);
     }
  else {
       exchange.setException(new CamelException("Unknown response type: " + responseObject));

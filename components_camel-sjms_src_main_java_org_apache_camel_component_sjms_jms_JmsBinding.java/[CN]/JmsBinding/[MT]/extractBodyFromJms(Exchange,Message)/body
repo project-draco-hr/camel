@@ -1,0 +1,44 @@
+{
+  try {
+    if (!mapJmsMessage) {
+      LOG.trace("Option map JMS message is false so using JMS message as body: {}",message);
+      return message;
+    }
+    if (message instanceof ObjectMessage) {
+      LOG.trace("Extracting body as a ObjectMessage from JMS message: {}",message);
+      ObjectMessage objectMessage=(ObjectMessage)message;
+      Object payload=objectMessage.getObject();
+      if (payload instanceof DefaultExchangeHolder) {
+        DefaultExchangeHolder holder=(DefaultExchangeHolder)payload;
+        DefaultExchangeHolder.unmarshal(exchange,holder);
+        return exchange.getIn().getBody();
+      }
+ else {
+        return objectMessage.getObject();
+      }
+    }
+ else     if (message instanceof TextMessage) {
+      LOG.trace("Extracting body as a TextMessage from JMS message: {}",message);
+      TextMessage textMessage=(TextMessage)message;
+      return textMessage.getText();
+    }
+ else     if (message instanceof MapMessage) {
+      LOG.trace("Extracting body as a MapMessage from JMS message: {}",message);
+      return createMapFromMapMessage((MapMessage)message);
+    }
+ else     if (message instanceof BytesMessage) {
+      LOG.trace("Extracting body as a BytesMessage from JMS message: {}",message);
+      return createByteArrayFromBytesMessage((BytesMessage)message);
+    }
+ else     if (message instanceof StreamMessage) {
+      LOG.trace("Extracting body as a StreamMessage from JMS message: {}",message);
+      return message;
+    }
+ else {
+      return null;
+    }
+  }
+ catch (  JMSException e) {
+    throw new RuntimeCamelException("Failed to extract body due to: " + e + ". Message: "+ message,e);
+  }
+}

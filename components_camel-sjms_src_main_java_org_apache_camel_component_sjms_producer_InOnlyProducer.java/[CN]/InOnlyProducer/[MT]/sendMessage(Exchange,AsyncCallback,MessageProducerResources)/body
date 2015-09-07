@@ -8,22 +8,21 @@
           Message message;
           if (BatchMessage.class.isInstance(object)) {
             BatchMessage<?> batchMessage=(BatchMessage<?>)object;
-            message=JmsMessageHelper.createMessage(exchange,producer.getSession(),batchMessage.getPayload(),batchMessage.getHeaders(),getEndpoint());
+            message=getEndpoint().getBinding().makeJmsMessage(exchange,batchMessage.getPayload(),batchMessage.getHeaders(),producer.getSession(),null);
           }
  else {
-            message=JmsMessageHelper.createMessage(exchange,producer.getSession(),object,exchange.getIn().getHeaders(),getEndpoint());
+            message=getEndpoint().getBinding().makeJmsMessage(exchange,object,exchange.getIn().getHeaders(),producer.getSession(),null);
           }
           messages.add(message);
         }
       }
  else {
-        Object payload=exchange.getIn().getBody();
-        Message message=JmsMessageHelper.createMessage(exchange,producer.getSession(),payload,exchange.getIn().getHeaders(),getEndpoint());
+        Message message=getEndpoint().getBinding().makeJmsMessage(exchange,producer.getSession());
         messages.add(message);
       }
     }
  else {
-      Message message=JmsMessageHelper.createMessage(exchange,producer.getSession(),null,exchange.getIn().getHeaders(),getEndpoint());
+      Message message=getEndpoint().getBinding().makeJmsMessage(exchange,producer.getSession());
       messages.add(message);
     }
     if (isEndpointTransacted()) {
