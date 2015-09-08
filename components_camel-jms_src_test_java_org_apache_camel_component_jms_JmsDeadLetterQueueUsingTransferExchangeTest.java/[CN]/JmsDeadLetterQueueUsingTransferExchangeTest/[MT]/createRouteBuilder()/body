@@ -1,7 +1,14 @@
 {
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      errorHandler(deadLetterChannel(getUri()).disableRedelivery());
+      errorHandler(deadLetterChannel(getUri()).onPrepareFailure(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Exception cause=exchange.getProperty(Exchange.EXCEPTION_CAUGHT,Exception.class);
+          exchange.getIn().setHeader("CausedExceptionMessage",cause.getMessage());
+          exchange.getIn().setHeader("CausedExceptionType",cause.getClass().getName());
+        }
+      }
+).disableRedelivery());
       from("direct:start").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String body=exchange.getIn().getBody(String.class);
