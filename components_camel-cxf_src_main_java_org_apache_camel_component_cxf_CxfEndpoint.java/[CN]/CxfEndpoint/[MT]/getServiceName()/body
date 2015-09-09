@@ -2,5 +2,16 @@
   if (serviceName == null && serviceNameString != null) {
     serviceName=QName.valueOf(resolvePropertyPlaceholders(serviceNameString));
   }
+  if (serviceName == null && getWsdlURL() != null) {
+    try {
+      Definition definition=getBus().getExtension(WSDLManager.class).getDefinition(getWsdlURL());
+      if (definition.getServices().size() == 1) {
+        serviceName=(QName)definition.getServices().keySet().iterator().next();
+      }
+    }
+ catch (    WSDLException e) {
+      throw new RuntimeException(e);
+    }
+  }
   return serviceName;
 }
