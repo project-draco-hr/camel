@@ -1,0 +1,55 @@
+{
+  FTPFileEntryParser parser=null;
+  if (JAVA_QUALIFIED_NAME_PATTERN.matcher(key).matches()) {
+    Class<?> parserClass=ocr.resolveClass(key);
+    try {
+      parser=(FTPFileEntryParser)parserClass.newInstance();
+    }
+ catch (    ClassCastException e) {
+      throw new ParserInitializationException(parserClass.getName() + " does not implement the interface " + "org.apache.commons.net.ftp.FTPFileEntryParser.",e);
+    }
+catch (    Exception e) {
+      throw new ParserInitializationException("Error initializing parser",e);
+    }
+catch (    ExceptionInInitializerError e) {
+      throw new ParserInitializationException("Error initializing parser",e);
+    }
+  }
+  if (parser == null) {
+    String ukey=key.toUpperCase(Locale.ENGLISH);
+    if (ukey.indexOf("UNIX") >= 0) {
+      parser=new UnixFTPEntryParser(config);
+    }
+ else     if (ukey.indexOf("VMS") >= 0) {
+      parser=new VMSVersioningFTPEntryParser(config);
+    }
+ else     if (ukey.indexOf("WINDOWS") >= 0) {
+      parser=createNTFTPEntryParser(config);
+    }
+ else     if (ukey.indexOf("OS/2") >= 0) {
+      parser=new OS2FTPEntryParser(config);
+    }
+ else     if ((ukey.indexOf("OS/400") >= 0) || (ukey.indexOf("AS/400") >= 0)) {
+      parser=createOS400FTPEntryParser(config);
+    }
+ else     if (ukey.indexOf("MVS") >= 0) {
+      parser=new MVSFTPEntryParser();
+    }
+ else     if (ukey.indexOf("NETWARE") >= 0) {
+      parser=new NetwareFTPEntryParser(config);
+    }
+ else     if (ukey.indexOf("MACOS PETER") >= 0) {
+      parser=new MacOsPeterFTPEntryParser(config);
+    }
+ else     if (ukey.indexOf("TYPE: L8") >= 0) {
+      parser=new UnixFTPEntryParser(config);
+    }
+ else {
+      throw new ParserInitializationException("Unknown parser type: " + key);
+    }
+  }
+  if (parser instanceof Configurable) {
+    ((Configurable)parser).configure(config);
+  }
+  return parser;
+}
