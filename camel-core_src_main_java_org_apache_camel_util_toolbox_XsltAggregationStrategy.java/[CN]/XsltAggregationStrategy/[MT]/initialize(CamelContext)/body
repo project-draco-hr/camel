@@ -1,0 +1,19 @@
+{
+  this.propertyName=ObjectHelper.isNotEmpty(propertyName) ? propertyName : DEFAULT_PROPERTY_NAME;
+  this.xslt=context.getInjector().newInstance(XsltBuilder.class);
+  if (transformerFactoryClass != null) {
+    Class<?> factoryClass=context.getClassResolver().resolveMandatoryClass(transformerFactoryClass,XsltAggregationStrategy.class.getClassLoader());
+    TransformerFactory factory=(TransformerFactory)context.getInjector().newInstance(factoryClass);
+    xslt.getConverter().setTransformerFactory(factory);
+  }
+  if (uriResolver == null) {
+    uriResolver=new XsltUriResolver(context.getClassResolver(),xslFile);
+  }
+  xslt.setUriResolver(uriResolver);
+  xslt.setFailOnNullBody(true);
+  xslt.transformerCacheSize(0);
+  xslt.setAllowStAX(true);
+  xslt.setCamelContext(context);
+  configureOutput(xslt,output.name());
+  loadResource(xslFile);
+}
