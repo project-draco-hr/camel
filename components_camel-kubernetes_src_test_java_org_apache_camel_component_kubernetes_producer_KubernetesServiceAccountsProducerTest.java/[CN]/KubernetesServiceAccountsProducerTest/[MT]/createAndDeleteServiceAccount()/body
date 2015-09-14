@@ -1,0 +1,35 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:create",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVICE_ACCOUNT_NAME,"test");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVICE_ACCOUNTS_LABELS,labels);
+      ServiceAccount s=new ServiceAccount();
+      s.setKind("ServiceAccount");
+      Map<String,String> mp=new HashMap<String,String>();
+      mp.put("username",Base64.encode("pippo".getBytes()));
+      mp.put("password",Base64.encode("password".getBytes()));
+      ObjectMeta meta=new ObjectMeta();
+      meta.setName("test");
+      s.setMetadata(meta);
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVICE_ACCOUNT,s);
+    }
+  }
+);
+  ServiceAccount sec=ex.getOut().getBody(ServiceAccount.class);
+  assertEquals(sec.getMetadata().getName(),"test");
+  ex=template.request("direct:delete",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVICE_ACCOUNT_NAME,"test");
+    }
+  }
+);
+  boolean secDeleted=ex.getOut().getBody(Boolean.class);
+  assertTrue(secDeleted);
+}

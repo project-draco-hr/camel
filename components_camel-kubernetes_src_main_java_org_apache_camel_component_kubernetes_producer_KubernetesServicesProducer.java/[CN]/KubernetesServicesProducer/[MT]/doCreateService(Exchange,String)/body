@@ -1,0 +1,22 @@
+{
+  Service service=null;
+  String serviceName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_SERVICE_NAME,String.class);
+  String namespaceName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,String.class);
+  ServiceSpec serviceSpec=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_SERVICE_SPEC,ServiceSpec.class);
+  if (ObjectHelper.isEmpty(serviceName)) {
+    LOG.error("Create a specific service require specify a service name");
+    throw new IllegalArgumentException("Create a specific service require specify a service name");
+  }
+  if (ObjectHelper.isEmpty(namespaceName)) {
+    LOG.error("Create a specific service require specify a namespace name");
+    throw new IllegalArgumentException("Create a specific service require specify a namespace name");
+  }
+  if (ObjectHelper.isEmpty(serviceSpec)) {
+    LOG.error("Create a specific service require specify a service spec bean");
+    throw new IllegalArgumentException("Create a specific service require specify a service spec bean");
+  }
+  Map<String,String> labels=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_SERVICE_LABELS,Map.class);
+  EditableService serviceCreating=new ServiceBuilder().withNewMetadata().withName(serviceName).withLabels(labels).endMetadata().withSpec(serviceSpec).build();
+  service=getEndpoint().getKubernetesClient().services().inNamespace(namespaceName).create(serviceCreating);
+  exchange.getOut().setBody(service);
+}

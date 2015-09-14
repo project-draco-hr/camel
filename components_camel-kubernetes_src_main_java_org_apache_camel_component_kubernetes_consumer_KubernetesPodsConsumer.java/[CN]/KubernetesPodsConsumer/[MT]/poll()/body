@@ -1,0 +1,13 @@
+{
+  int mapSize=map.size();
+  for (  ConcurrentMap.Entry<Long,PodEvent> entry : map.entrySet()) {
+    PodEvent podEvent=(PodEvent)entry.getValue();
+    Exchange e=getEndpoint().createExchange();
+    e.getIn().setBody(podEvent.getPod());
+    e.getIn().setHeader(KubernetesConstants.KUBERNETES_EVENT_ACTION,podEvent.getAction());
+    e.getIn().setHeader(KubernetesConstants.KUBERNETES_EVENT_TIMESTAMP,entry.getKey());
+    getProcessor().process(e);
+    map.remove(entry.getKey());
+  }
+  return mapSize;
+}

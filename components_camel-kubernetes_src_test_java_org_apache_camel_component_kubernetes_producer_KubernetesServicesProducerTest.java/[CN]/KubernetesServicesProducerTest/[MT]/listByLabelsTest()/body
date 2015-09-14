@@ -1,0 +1,24 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:listByLabels",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("component","elasticsearch");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVICE_LABELS,labels);
+    }
+  }
+);
+  List<Service> result=ex.getOut().getBody(List.class);
+  boolean serviceExists=false;
+  Iterator<Service> it=result.iterator();
+  while (it.hasNext()) {
+    Service service=(Service)it.next();
+    if ("elasticsearch".equalsIgnoreCase(service.getMetadata().getName())) {
+      serviceExists=true;
+    }
+  }
+  assertFalse(serviceExists);
+}

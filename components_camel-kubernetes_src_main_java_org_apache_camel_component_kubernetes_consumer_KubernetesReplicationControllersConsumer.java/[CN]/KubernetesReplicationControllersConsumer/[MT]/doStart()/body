@@ -1,0 +1,34 @@
+{
+  super.doStart();
+  map=new ConcurrentHashMap<Long,ReplicationControllerEvent>();
+  if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getOauthToken())) {
+    if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getNamespaceName())) {
+      getEndpoint().getKubernetesClient().replicationControllers().inNamespace(getEndpoint().getKubernetesConfiguration().getNamespaceName()).watch(new Watcher<ReplicationController>(){
+        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        ReplicationController resource){
+          ReplicationControllerEvent rce=new ReplicationControllerEvent(action,resource);
+          map.put(System.currentTimeMillis(),rce);
+        }
+        @Override public void onClose(        KubernetesClientException cause){
+          if (cause != null) {
+            LOG.error(cause.getMessage(),cause);
+          }
+        }
+      }
+);
+    }
+ else {
+      getEndpoint().getKubernetesClient().replicationControllers().watch(new Watcher<ReplicationController>(){
+        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        ReplicationController resource){
+          ReplicationControllerEvent se=new ReplicationControllerEvent(action,resource);
+          map.put(System.currentTimeMillis(),se);
+        }
+        @Override public void onClose(        KubernetesClientException cause){
+          if (cause != null) {
+            LOG.error(cause.getMessage(),cause);
+          }
+        }
+      }
+);
+    }
+  }
+}

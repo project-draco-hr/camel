@@ -1,0 +1,16 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:listByLabels",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("component","elasticsearch");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_BUILD_CONFIGS_LABELS,labels);
+    }
+  }
+);
+  List<BuildConfig> result=ex.getOut().getBody(List.class);
+  assertTrue(result.size() == 0);
+}

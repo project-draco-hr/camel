@@ -1,0 +1,59 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:create",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_PERSISTENT_VOLUME_CLAIM_NAME,"test");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_PERSISTENT_VOLUMES_CLAIMS_LABELS,labels);
+      PersistentVolumeClaimSpec pvcSpec=new PersistentVolumeClaimSpec();
+      ResourceRequirements rr=new ResourceRequirements();
+      Map<String,Quantity> mp=new HashMap<String,Quantity>();
+      mp.put("storage",new Quantity("100"));
+      rr.setLimits(mp);
+      Map<String,Quantity> req=new HashMap<String,Quantity>();
+      req.put("storage",new Quantity("100"));
+      rr.setRequests(req);
+      pvcSpec.setResources(rr);
+      pvcSpec.setVolumeName("vol001");
+      List<String> access=new ArrayList<String>();
+      access.add("ReadWriteOnce");
+      pvcSpec.setAccessModes(access);
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_PERSISTENT_VOLUME_CLAIM_SPEC,pvcSpec);
+    }
+  }
+);
+  PersistentVolumeClaim pvc=ex.getOut().getBody(PersistentVolumeClaim.class);
+  assertEquals(pvc.getMetadata().getName(),"test");
+  ex=template.request("direct:listByLabels",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_PERSISTENT_VOLUMES_CLAIMS_LABELS,labels);
+    }
+  }
+);
+  List<PersistentVolumeClaim> result=ex.getOut().getBody(List.class);
+  boolean pvcExists=false;
+  Iterator<PersistentVolumeClaim> it=result.iterator();
+  while (it.hasNext()) {
+    PersistentVolumeClaim pvcLocal=(PersistentVolumeClaim)it.next();
+    if ("test".equalsIgnoreCase(pvcLocal.getMetadata().getName())) {
+      pvcExists=true;
+    }
+  }
+  assertTrue(pvcExists);
+  ex=template.request("direct:delete",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_PERSISTENT_VOLUME_CLAIM_NAME,"test");
+    }
+  }
+);
+  boolean pvcDeleted=ex.getOut().getBody(Boolean.class);
+  assertTrue(pvcDeleted);
+}

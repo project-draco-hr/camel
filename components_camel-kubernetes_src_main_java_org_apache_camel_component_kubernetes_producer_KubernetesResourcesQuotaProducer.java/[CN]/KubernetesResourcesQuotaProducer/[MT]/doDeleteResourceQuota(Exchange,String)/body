@@ -1,0 +1,14 @@
+{
+  String rqName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_RESOURCES_QUOTA_NAME,String.class);
+  String namespaceName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,String.class);
+  if (ObjectHelper.isEmpty(rqName)) {
+    LOG.error("Delete a specific resource quota require specify a resource quota name");
+    throw new IllegalArgumentException("Delete a specific resource quota require specify a resource quota name");
+  }
+  if (ObjectHelper.isEmpty(namespaceName)) {
+    LOG.error("Delete a specific resource quota require specify a namespace name");
+    throw new IllegalArgumentException("Delete a specific resource quota require specify a namespace name");
+  }
+  boolean rqDeleted=getEndpoint().getKubernetesClient().resourceQuotas().inNamespace(namespaceName).withName(rqName).delete();
+  exchange.getOut().setBody(rqDeleted);
+}

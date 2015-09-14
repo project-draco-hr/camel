@@ -1,0 +1,41 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:create",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_RESOURCES_QUOTA_NAME,"test");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_RESOURCES_QUOTA_LABELS,labels);
+      ResourceQuotaSpec rsSpec=new ResourceQuotaSpec();
+      Map<String,Quantity> mp=new HashMap<String,Quantity>();
+      mp.put("pods",new Quantity("100"));
+      rsSpec.setHard(mp);
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_RESOURCE_QUOTA_SPEC,rsSpec);
+    }
+  }
+);
+  ResourceQuota rs=ex.getOut().getBody(ResourceQuota.class);
+  assertEquals(rs.getMetadata().getName(),"test");
+  ex=template.request("direct:get",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_RESOURCES_QUOTA_NAME,"test");
+    }
+  }
+);
+  ResourceQuota rsGet=ex.getOut().getBody(ResourceQuota.class);
+  assertEquals(rsGet.getMetadata().getName(),"test");
+  assertEquals(rsGet.getSpec().getHard().get("pods"),new Quantity("100"));
+  ex=template.request("direct:delete",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_RESOURCES_QUOTA_NAME,"test");
+    }
+  }
+);
+  boolean rqDeleted=ex.getOut().getBody(Boolean.class);
+  assertTrue(rqDeleted);
+}

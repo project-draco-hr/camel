@@ -1,0 +1,14 @@
+{
+  Map<String,String> labels=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_NAMESPACE_LABELS,Map.class);
+  if (ObjectHelper.isEmpty(labels)) {
+    LOG.error("Get a specific namespace by labels require specify a labels set");
+    throw new IllegalArgumentException("Get a specific namespace by labels require specify a labels set");
+  }
+  ClientNonNamespaceOperation<KubernetesClient,Namespace,NamespaceList,DoneableNamespace,ClientResource<Namespace,DoneableNamespace>> namespaces;
+  namespaces=getEndpoint().getKubernetesClient().namespaces();
+  for (  Map.Entry<String,String> entry : labels.entrySet()) {
+    namespaces.withLabel(entry.getKey(),entry.getValue());
+  }
+  NamespaceList namespace=namespaces.list();
+  exchange.getOut().setBody(namespace.getItems());
+}

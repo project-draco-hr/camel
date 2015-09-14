@@ -1,0 +1,24 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:listByLabels",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("component","elasticsearch");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_REPLICATION_CONTROLLERS_LABELS,labels);
+    }
+  }
+);
+  List<ReplicationController> result=ex.getOut().getBody(List.class);
+  boolean rcExists=false;
+  Iterator<ReplicationController> it=result.iterator();
+  while (it.hasNext()) {
+    ReplicationController rc=(ReplicationController)it.next();
+    if ("elasticsearch".equalsIgnoreCase(rc.getMetadata().getName())) {
+      rcExists=true;
+    }
+  }
+  assertFalse(rcExists);
+}

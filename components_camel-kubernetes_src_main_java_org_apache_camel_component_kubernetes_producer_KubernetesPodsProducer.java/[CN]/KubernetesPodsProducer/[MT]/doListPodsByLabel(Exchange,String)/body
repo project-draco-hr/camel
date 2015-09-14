@@ -1,0 +1,14 @@
+{
+  Map<String,String> labels=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_PODS_LABELS,Map.class);
+  if (ObjectHelper.isEmpty(labels)) {
+    LOG.error("Get pods by labels require specify a labels set");
+    throw new IllegalArgumentException("Get pods by labels require specify a labels set");
+  }
+  ClientOperation<KubernetesClient,Pod,PodList,DoneablePod,ClientLoggableResource<Pod,DoneablePod>> pods;
+  pods=getEndpoint().getKubernetesClient().pods();
+  for (  Map.Entry<String,String> entry : labels.entrySet()) {
+    pods.withLabel(entry.getKey(),entry.getValue());
+  }
+  PodList podList=pods.list();
+  exchange.getOut().setBody(podList.getItems());
+}

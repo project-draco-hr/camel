@@ -1,0 +1,34 @@
+{
+  super.doStart();
+  map=new ConcurrentHashMap<Long,PodEvent>();
+  if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getOauthToken())) {
+    if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getNamespaceName())) {
+      getEndpoint().getKubernetesClient().pods().inNamespace(getEndpoint().getKubernetesConfiguration().getNamespaceName()).watch(new Watcher<Pod>(){
+        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        Pod resource){
+          PodEvent pe=new PodEvent(action,resource);
+          map.put(System.currentTimeMillis(),pe);
+        }
+        @Override public void onClose(        KubernetesClientException cause){
+          if (cause != null) {
+            LOG.error(cause.getMessage(),cause);
+          }
+        }
+      }
+);
+    }
+ else {
+      getEndpoint().getKubernetesClient().pods().watch(new Watcher<Pod>(){
+        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        Pod resource){
+          PodEvent pe=new PodEvent(action,resource);
+          map.put(System.currentTimeMillis(),pe);
+        }
+        @Override public void onClose(        KubernetesClientException cause){
+          if (cause != null) {
+            LOG.error(cause.getMessage(),cause);
+          }
+        }
+      }
+);
+    }
+  }
+}

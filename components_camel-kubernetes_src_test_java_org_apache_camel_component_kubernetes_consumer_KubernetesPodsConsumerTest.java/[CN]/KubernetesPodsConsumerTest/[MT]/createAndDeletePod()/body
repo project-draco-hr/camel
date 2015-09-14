@@ -1,0 +1,46 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  mockResultEndpoint.expectedMessageCount(3);
+  mockResultEndpoint.expectedHeaderValuesReceivedInAnyOrder(KubernetesConstants.KUBERNETES_EVENT_ACTION,"ADDED","MODIFIED","DELETED");
+  Exchange ex=template.request("direct:createPod",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_POD_NAME,"test");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_PODS_LABELS,labels);
+      PodSpec podSpec=new PodSpec();
+      podSpec.setHost("172.28.128.4");
+      Container cont=new Container();
+      cont.setImage("docker.io/jboss/wildfly:latest");
+      cont.setName("pippo");
+      List<ContainerPort> containerPort=new ArrayList<ContainerPort>();
+      ContainerPort port=new ContainerPort();
+      port.setHostIP("0.0.0.0");
+      port.setHostPort(8080);
+      port.setContainerPort(8080);
+      containerPort.add(port);
+      cont.setPorts(containerPort);
+      List<Container> list=new ArrayList<Container>();
+      list.add(cont);
+      podSpec.setContainers(list);
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_POD_SPEC,podSpec);
+    }
+  }
+);
+  Pod pod=ex.getOut().getBody(Pod.class);
+  assertEquals(pod.getMetadata().getName(),"test");
+  ex=template.request("direct:deletePod",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_POD_NAME,"test");
+    }
+  }
+);
+  boolean podDeleted=ex.getOut().getBody(Boolean.class);
+  assertTrue(podDeleted);
+  Thread.sleep(1 * 1000);
+  mockResultEndpoint.assertIsSatisfied();
+}

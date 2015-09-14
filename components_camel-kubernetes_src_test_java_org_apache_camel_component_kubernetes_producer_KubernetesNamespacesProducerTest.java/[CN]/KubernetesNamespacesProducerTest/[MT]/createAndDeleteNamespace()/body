@@ -1,0 +1,24 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:createNamespace",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"test");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_LABELS,labels);
+    }
+  }
+);
+  Namespace ns=ex.getOut().getBody(Namespace.class);
+  assertEquals(ns.getMetadata().getName(),"test");
+  ex=template.request("direct:deleteNamespace",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"test");
+    }
+  }
+);
+  boolean nsDeleted=ex.getOut().getBody(Boolean.class);
+  assertTrue(nsDeleted);
+}
