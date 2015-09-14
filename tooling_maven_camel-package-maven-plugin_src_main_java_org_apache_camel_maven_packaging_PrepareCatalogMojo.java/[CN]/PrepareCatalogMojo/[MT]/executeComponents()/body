@@ -4,7 +4,8 @@
   Set<File> duplicateJsonFiles=new TreeSet<File>();
   Set<File> componentFiles=new TreeSet<File>();
   Set<File> missingComponents=new TreeSet<File>();
-  Map<String,Set<String>> usedLabels=new TreeMap<String,Set<String>>();
+  Map<String,Set<String>> usedComponentLabels=new TreeMap<String,Set<String>>();
+  Set<String> usedOptionLabels=new TreeSet<String>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
     if (components != null) {
@@ -63,12 +64,34 @@
         String label=matcher.group(1);
         String[] labels=label.split(",");
         for (        String s : labels) {
-          Set<String> components=usedLabels.get(s);
+          Set<String> components=usedComponentLabels.get(s);
           if (components == null) {
             components=new TreeSet<String>();
-            usedLabels.put(s,components);
+            usedComponentLabels.put(s,components);
           }
           components.add(name);
+        }
+      }
+      List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("componentProperties",text,true);
+      for (      Map<String,String> row : rows) {
+        String label=row.get("label");
+        if (label != null && !label.isEmpty()) {
+          String[] parts=label.split(",");
+          for (          String part : parts) {
+            usedOptionLabels.add(part);
+          }
+          break;
+        }
+      }
+      rows=JSonSchemaHelper.parseJsonSchema("properties",text,true);
+      for (      Map<String,String> row : rows) {
+        String label=row.get("label");
+        if (label != null && !label.isEmpty()) {
+          String[] parts=label.split(",");
+          for (          String part : parts) {
+            usedOptionLabels.add(part);
+          }
+          break;
         }
       }
     }
@@ -96,5 +119,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,usedLabels);
+  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,usedComponentLabels,usedOptionLabels);
 }
