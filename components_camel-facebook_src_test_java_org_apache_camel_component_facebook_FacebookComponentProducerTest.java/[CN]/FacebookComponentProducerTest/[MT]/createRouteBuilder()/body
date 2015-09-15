@@ -1,16 +1,20 @@
 {
   return new RouteBuilder(){
     public void configure(){
+      onException(FacebookException.class).setHandledPolicy(new IgnoreDeprecatedExceptions());
       for (      String name : noArgNames) {
-        from("direct://test" + name).to("facebook://" + name + "?"+ getOauthParams()).to("mock:result" + name);
+        from("direct://test" + name).setHeader("mock",constant("mock:result" + name)).to("facebook://" + name + "?"+ getOauthParams()).to("mock:result" + name);
         if (!idExcludes.contains(name)) {
-          from("direct://testId" + name).to("facebook://" + name + "?userId=me&"+ getOauthParams()).to("mock:resultId" + name);
+          from("direct://testId" + name).setHeader("mock",constant("mock:resultId" + name)).to("facebook://" + name + "?userId=me&"+ getOauthParams()).to("mock:resultId" + name);
         }
         if (!readingExcludes.contains(name)) {
-          from("direct://testReading" + name).to("facebook://" + name + "?reading.limit=10&reading.locale=en,US&"+ getOauthParams()).to("mock:resultReading" + name);
+          from("direct://testReading" + name).setHeader("mock",constant("mock:resultReading" + name)).to("facebook://" + name + "?reading.limit=10&reading.locale=en,US&"+ getOauthParams()).to("mock:resultReading" + name);
         }
         if (!(idExcludes.contains(name) || readingExcludes.contains(name))) {
-          from("direct://testIdReading" + name).to("facebook://" + name + "?userId=me&reading.limit=10&reading.locale=en,US&"+ getOauthParams()).to("mock:resultIdReading" + name);
+          from("direct://testIdReading" + name).setHeader("mock",constant("mock:resultIdReading" + name)).to("facebook://" + name + "?userId=me&reading.limit=10&reading.locale=en,US&"+ getOauthParams()).to("mock:resultIdReading" + name);
+        }
+        if (!(idExcludes.contains(name) || readingExcludes.contains(name))) {
+          from("direct://testIdReadingHeader" + name).setHeader("mock",constant("mock:resultIdReadingHeader" + name)).setHeader("CamelFacebook.reading.limit",constant("10")).to("facebook://" + name + "?userId=me&reading.locale=en,US&"+ getOauthParams()).to("mock:resultIdReadingHeader" + name);
         }
       }
       from("direct://testJsonStoreEnabled").to("facebook://users?inBody=ids&jsonStoreEnabled=true&" + getOauthParams()).setBody(simple("header." + FacebookConstants.RAW_JSON_HEADER));

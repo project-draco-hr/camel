@@ -1,0 +1,22 @@
+{
+  for (  final Route route : context().getRoutes()) {
+    ((ScheduledPollConsumer)route.getConsumer()).setPollStrategy(new DefaultPollingConsumerPollStrategy(){
+      @Override public boolean rollback(      Consumer consumer,      Endpoint endpoint,      int retryCounter,      Exception e) throws Exception {
+        if (e.getCause() instanceof FacebookException) {
+          FacebookException facebookException=(FacebookException)e.getCause();
+          if (facebookException.getErrorCode() == 11 || facebookException.getErrorCode() == 12 || facebookException.getErrorCode() == 1) {
+            context().stopRoute(route.getId());
+            String method=((FacebookEndpoint)route.getEndpoint()).getMethod();
+            MockEndpoint mock=getMockEndpoint("mock:consumeQueryResult" + method);
+            mock.expectedMinimumMessageCount(0);
+            MockEndpoint mock2=getMockEndpoint("mock:consumeResult" + method);
+            mock2.expectedMinimumMessageCount(0);
+            log.warn("Ignoring failed Facebook deprecated API call",facebookException);
+          }
+        }
+        return super.rollback(consumer,endpoint,retryCounter,e);
+      }
+    }
+);
+  }
+}

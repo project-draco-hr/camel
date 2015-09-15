@@ -3,12 +3,24 @@
     final String clazzName=clazz.getSimpleName();
     if (clazzName.endsWith("Methods") && !clazzName.equals("GameMethods")) {
       for (      Method method : clazz.getDeclaredMethods()) {
-        if (method.getParameterTypes().length == 0) {
-          noArgNames.add(getShortName(method.getName()));
+        if (method.getParameterTypes().length == 0 && FacebookMethodsType.findMethod(method.getName()) != null) {
+          String shortName=getShortName(method.getName());
+          List<String> generalExcludes=Arrays.asList("home","tabs","updates","blocked","pageSettings","pageAdmins","milestones","offers","pokes","promotablePosts","outbox","inbox","notifications");
+          if (!generalExcludes.contains(shortName)) {
+            noArgNames.add(shortName);
+          }
         }
       }
     }
   }
-  idExcludes=Arrays.asList("me","home","searchCheckins");
-  readingExcludes=Arrays.asList("pictureURL","permissions");
+  idExcludes=new ArrayList<String>();
+  idExcludes.addAll(Arrays.asList("me","home","searchCheckins","taggableFriends"));
+  readingExcludes=new ArrayList<String>();
+  readingExcludes.addAll(Arrays.asList("pictureURL","permissions","taggableFriends","sSLPictureURL"));
+  for (  FacebookMethodsType types : FacebookMethodsType.values()) {
+    if (types.getArgNames().contains("pageId")) {
+      idExcludes.add(getShortName(types.getName()));
+      readingExcludes.add(getShortName(types.getName()));
+    }
+  }
 }
