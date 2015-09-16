@@ -1,9 +1,16 @@
 {
-  if (parallelAggregate) {
-    doAggregateInternal(getAggregationStrategy(subExchange),result,subExchange);
-  }
+  try {
+    if (parallelAggregate) {
+      doAggregateInternal(getAggregationStrategy(subExchange),result,subExchange);
+    }
  else {
-    doAggregate(getAggregationStrategy(subExchange),result,subExchange);
+      doAggregate(getAggregationStrategy(subExchange),result,subExchange);
+    }
   }
-  aggregated.incrementAndGet();
+ catch (  Throwable e) {
+    subExchange.setException(new CamelExchangeException("Parallel processing failed for number " + aggregated.get(),subExchange,e));
+  }
+ finally {
+    aggregated.incrementAndGet();
+  }
 }
