@@ -2,6 +2,8 @@
   log.trace("Processing exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
   boolean sync=producerCache.doInAsyncProducer(endpoint,exchange,null,callback,new AsyncProducerCallback(){
     public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    final Exchange exchange,    ExchangePattern exchangePattern,    final AsyncCallback callback){
+      RouteContext routeContext=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getRouteContext() : null;
+      asyncProducer=createErrorHandler(routeContext,exchange,asyncProducer);
       exchange.setProperty(Exchange.TO_ENDPOINT,endpoint.getEndpointUri());
       exchange.setProperty(Exchange.SLIP_ENDPOINT,endpoint.getEndpointUri());
       return asyncProducer.process(exchange,new AsyncCallback(){
