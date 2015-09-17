@@ -1,0 +1,19 @@
+{
+  RestDefinition rest=context.getRestDefinitions().get(0);
+  assertNotNull(rest);
+  BeanConfig config=new BeanConfig();
+  config.setBasePath("http://localhost:8080/api");
+  RestSwaggerReader reader=new RestSwaggerReader();
+  Swagger swagger=reader.read(rest);
+  assertNotNull(swagger);
+  ObjectMapper mapper=new ObjectMapper();
+  mapper.enable(SerializationFeature.INDENT_OUTPUT);
+  mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+  String json=mapper.writeValueAsString(swagger);
+  log.info(json);
+  assertTrue(json.contains("\"basePath\":\"http://localhost:8080/api\""));
+  assertTrue(json.contains("\"resourcePath\":\"/hello\""));
+  assertTrue(json.contains("\"method\":\"GET\""));
+  assertTrue(json.contains("\"nickname\":\"getHelloHi\""));
+  context.stop();
+}
