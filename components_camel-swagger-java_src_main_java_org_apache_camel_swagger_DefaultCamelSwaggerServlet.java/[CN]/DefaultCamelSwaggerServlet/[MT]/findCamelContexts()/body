@@ -1,0 +1,16 @@
+{
+  List<String> answer=new ArrayList<>();
+  MBeanServer server=ManagementFactory.getPlatformMBeanServer();
+  Set<ObjectName> names=server.queryNames(new ObjectName("*:type=context,*"),null);
+  for (  ObjectName on : names) {
+    String id=on.getKeyProperty("name");
+    if (id.startsWith("\"") && id.endsWith("\"")) {
+      id=id.substring(1,id.length() - 1);
+    }
+    String version=(String)server.getAttribute(on,"CamelVersion");
+    if (CamelVersionHelper.isGE("2.15.0",version)) {
+      answer.add(id);
+    }
+  }
+  return answer;
+}

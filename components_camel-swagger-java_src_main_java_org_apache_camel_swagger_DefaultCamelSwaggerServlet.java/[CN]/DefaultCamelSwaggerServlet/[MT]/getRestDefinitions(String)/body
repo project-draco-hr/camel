@@ -1,0 +1,27 @@
+{
+  ObjectName found=null;
+  MBeanServer server=ManagementFactory.getPlatformMBeanServer();
+  Set<ObjectName> names=server.queryNames(new ObjectName("org.apache.camel:type=context,*"),null);
+  for (  ObjectName on : names) {
+    String id=on.getKeyProperty("name");
+    if (id.startsWith("\"") && id.endsWith("\"")) {
+      id=id.substring(1,id.length() - 1);
+    }
+    if (camelId == null || camelId.equals(id)) {
+      String version=(String)server.getAttribute(on,"CamelVersion");
+      if (CamelVersionHelper.isGE("2.15.0",version)) {
+        found=on;
+      }
+    }
+  }
+  if (found != null) {
+    String xml=(String)server.invoke(found,"dumpRestsAsXml",null,null);
+    if (xml != null) {
+      RestsDefinition rests=ModelHelper.createModelFromXml(null,xml,RestsDefinition.class);
+      if (rests != null) {
+        return rests.getRests();
+      }
+    }
+  }
+  return null;
+}
