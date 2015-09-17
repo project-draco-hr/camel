@@ -1,0 +1,21 @@
+{
+  LOG.trace("renderResourceListing");
+  if (cors) {
+    response.addHeader("Access-Control-Allow-Headers","Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+    response.addHeader("Access-Control-Allow-Methods","GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH");
+    response.addHeader("Access-Control-Allow-Origin","*");
+  }
+  List<RestDefinition> rests=getRestDefinitions(contextId);
+  if (rests != null) {
+    for (    RestDefinition rest : rests) {
+      Swagger swagger=reader.read(rest,swaggerConfig);
+      ObjectMapper mapper=new ObjectMapper();
+      mapper.enable(SerializationFeature.INDENT_OUTPUT);
+      mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+      mapper.writeValue(response.getOutputStream(),swagger);
+    }
+  }
+ else {
+    response.setStatus(204);
+  }
+}
