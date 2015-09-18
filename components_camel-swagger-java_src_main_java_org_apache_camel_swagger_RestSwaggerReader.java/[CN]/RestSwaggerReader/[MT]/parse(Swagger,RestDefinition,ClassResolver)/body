@@ -1,6 +1,12 @@
 {
   List<VerbDefinition> verbs=new ArrayList<>(rest.getVerbs());
   Collections.sort(verbs,new VerbOrdering());
+  String pathAsTag=FileUtil.stripLeadingSeparator(rest.getPath());
+  String summary=rest.getDescriptionText();
+  Tag tag=new Tag();
+  tag.description(summary);
+  tag.name(pathAsTag);
+  swagger.addTag(tag);
   Set<String> types=new LinkedHashSet<>();
   for (  VerbDefinition verb : verbs) {
     String type=verb.getType();
@@ -28,6 +34,7 @@
     String method=verb.asVerb().toLowerCase(Locale.US);
     String opPath=SwaggerHelper.buildUrl(basePath,verb.getUri());
     Operation op=new Operation();
+    op.addTag(pathAsTag);
     Path path=swagger.getPath(opPath);
     if (path == null) {
       path=new Path();
