@@ -80,13 +80,13 @@
           if (param.getDataType() != null) {
             sp.setType(param.getDataType());
           }
- else           if (verb.getType() != null) {
-            boolean array=verb.getType().endsWith("[]");
-            if (array) {
-              sp.setType("array");
-            }
- else {
-              sp.setType(verb.getType());
+        }
+        if (parameter instanceof BodyParameter) {
+          BodyParameter bp=(BodyParameter)parameter;
+          if (verb.getType() != null) {
+            String ref=modelTypeAsRef(verb.getType(),swagger);
+            if (ref != null) {
+              bp.setSchema(new RefModel(ref));
             }
           }
         }
@@ -95,21 +95,8 @@
     }
     if (verb.getOutType() != null) {
       Response response=new Response();
-      boolean array=verb.getOutType().endsWith("[]");
-      String type=array ? verb.getOutType().substring(0,verb.getOutType().length() - 2) : verb.getOutType();
-      for (      Model model : swagger.getDefinitions().values()) {
-        StringProperty modelType=(StringProperty)model.getVendorExtensions().get("x-className");
-        if (modelType != null && type.equals(modelType.getFormat())) {
-          type=((ModelImpl)model).getName();
-          break;
-        }
-      }
-      if (array) {
-        response.setSchema(new ArrayProperty(new RefProperty(type)));
-      }
- else {
-        response.setSchema(new RefProperty(type));
-      }
+      Property prop=modelTypeAsProperty(verb.getOutType(),swagger);
+      response.setSchema(prop);
       response.setDescription("Output type");
       op.addResponse("200",response);
     }
