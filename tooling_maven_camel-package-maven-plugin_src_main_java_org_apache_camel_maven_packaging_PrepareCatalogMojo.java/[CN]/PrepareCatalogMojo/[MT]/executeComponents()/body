@@ -6,6 +6,7 @@
   Set<File> missingComponents=new TreeSet<File>();
   Map<String,Set<String>> usedComponentLabels=new TreeMap<String,Set<String>>();
   Set<String> usedOptionLabels=new TreeSet<String>();
+  Set<String> unlabeledOptions=new TreeSet<String>();
   if (componentsDir != null && componentsDir.isDirectory()) {
     File[] components=componentsDir.listFiles();
     if (components != null) {
@@ -82,6 +83,7 @@
           }
         }
       }
+      int unused=0;
       rows=JSonSchemaHelper.parseJsonSchema("properties",text,true);
       for (      Map<String,String> row : rows) {
         String label=row.get("label");
@@ -91,6 +93,12 @@
             usedOptionLabels.add(part);
           }
         }
+ else {
+          unused++;
+        }
+      }
+      if (unused >= UNUSED_LABELS_WARN) {
+        unlabeledOptions.add(name);
       }
     }
  catch (    IOException e) {
@@ -117,5 +125,5 @@
  catch (  IOException e) {
     throw new MojoFailureException("Error writing to file " + all);
   }
-  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,usedComponentLabels,usedOptionLabels);
+  printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,usedComponentLabels,usedOptionLabels,unlabeledOptions);
 }
