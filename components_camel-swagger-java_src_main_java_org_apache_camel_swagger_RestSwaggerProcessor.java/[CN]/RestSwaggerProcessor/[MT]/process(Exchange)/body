@@ -1,13 +1,10 @@
 {
-  if (!initDone) {
-    initBaseAndApiPaths(request);
-  }
-  RestApiResponseAdapter adapter=new ServletRestApiResponseAdapter(response);
   String contextId;
-  String route=request.getPathInfo();
+  String route=exchange.getIn().getHeader(Exchange.HTTP_PATH,String.class);
+  RestApiResponseAdapter adapter=null;
   try {
     if (route == null || route.equals("") || route.equals("/")) {
-      swagger.renderCamelContexts(adapter);
+      support.renderCamelContexts(adapter);
     }
  else {
       if (route.startsWith("/")) {
@@ -17,10 +14,10 @@
       if (route.startsWith(contextId)) {
         route=route.substring(contextId.length());
       }
-      swagger.renderResourceListing(adapter,swaggerConfig,contextId,route);
+      support.renderResourceListing(adapter,swaggerConfig,contextId,route);
     }
   }
  catch (  Exception e) {
-    LOG.warn("Error rendering swagger due " + e.getMessage(),e);
+    LOG.warn("Error rendering Swagger API due " + e.getMessage(),e);
   }
 }

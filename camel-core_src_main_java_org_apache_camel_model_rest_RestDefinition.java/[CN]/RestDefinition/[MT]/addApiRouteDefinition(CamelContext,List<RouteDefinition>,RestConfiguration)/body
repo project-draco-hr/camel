@@ -1,0 +1,25 @@
+{
+  RouteDefinition route=new RouteDefinition();
+  String from="rest-api:" + configuration.getApiContextPath();
+  Map<String,Object> options=new HashMap<String,Object>();
+  String routeId="rest-api-" + route.idOrCreate(camelContext.getNodeIdFactory());
+  options.put("routeId",routeId);
+  if (configuration.getComponent() != null && !configuration.getComponent().isEmpty()) {
+    options.put("componentName",configuration.getComponent());
+  }
+  if (!options.isEmpty()) {
+    String query;
+    try {
+      query=URISupport.createQueryString(options);
+    }
+ catch (    URISyntaxException e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+    from=from + "?" + query;
+  }
+  String to=from;
+  route.fromRest(from);
+  route.to(to);
+  route.setRestDefinition(this);
+  answer.add(route);
+}
