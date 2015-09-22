@@ -13,7 +13,12 @@
   if (shutdownRoutesInReverseOrder) {
     Collections.reverse(routesOrdered);
   }
-  LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
+  if (suspendOnly) {
+    LOG.info("Starting to graceful suspend " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
+  }
+ else {
+    LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout "+ timeout+ " "+ timeUnit.toString().toLowerCase(Locale.ENGLISH)+ ")");
+  }
   timeoutOccurred.set(false);
   currentShutdownTaskFuture=getExecutorService().submit(new ShutdownTask(context,routesOrdered,timeout,timeUnit,suspendOnly,abortAfterTimeout,timeoutOccurred));
   try {
@@ -38,7 +43,7 @@ catch (  Exception e) {
         shutdownRoutesNow(routesOrdered);
         for (        RouteStartupOrder order : routes) {
           for (          Service service : order.getServices()) {
-            prepareShutdown(service,true,true,isSuppressLoggingOnTimeout());
+            prepareShutdown(service,false,true,true,isSuppressLoggingOnTimeout());
           }
         }
       }
