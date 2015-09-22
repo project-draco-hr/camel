@@ -1,0 +1,26 @@
+{
+  if (!initDone) {
+    initBaseAndApiPaths(request);
+  }
+  SwaggerApiProvider resp=new ServletSwaggerApiProvider(null,response);
+  String contextId;
+  String route=request.getPathInfo();
+  try {
+    if (route == null || route.equals("") || route.equals("/")) {
+      swagger.renderCamelContexts(resp);
+    }
+ else {
+      if (route.startsWith("/")) {
+        route=route.substring(1);
+      }
+      contextId=route.split("/")[0];
+      if (route.startsWith(contextId)) {
+        route=route.substring(contextId.length());
+      }
+      swagger.renderResourceListing(resp,swaggerConfig,contextId,route);
+    }
+  }
+ catch (  Exception e) {
+    LOG.warn("Error rendering swagger due " + e.getMessage(),e);
+  }
+}
