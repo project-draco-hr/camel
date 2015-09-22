@@ -5,14 +5,19 @@
     response.addHeader("Access-Control-Allow-Methods","GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH");
     response.addHeader("Access-Control-Allow-Origin","*");
   }
+  response.addHeader(Exchange.CONTENT_TYPE,"application/json");
+  StringBuffer sb=new StringBuffer();
   List<String> contexts=findCamelContexts();
-  response.writeBytes("[\n".getBytes());
+  sb.append("[\n");
   for (int i=0; i < contexts.size(); i++) {
     String name=contexts.get(i);
-    response.writeBytes(("{\"name\": \"" + name + "\"}").getBytes());
+    sb.append("{\"name\": \"").append(name).append("\"}");
     if (i < contexts.size() - 1) {
-      response.writeBytes(",\n".getBytes());
+      sb.append(",\n");
     }
   }
-  response.writeBytes("\n]".getBytes());
+  sb.append("\n]");
+  int len=sb.length();
+  response.addHeader(Exchange.CONTENT_LENGTH,"" + len);
+  response.writeBytes(sb.toString().getBytes());
 }
