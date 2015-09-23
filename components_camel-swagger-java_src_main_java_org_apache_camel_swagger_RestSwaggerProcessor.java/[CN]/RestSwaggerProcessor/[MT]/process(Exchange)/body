@@ -4,7 +4,7 @@
   RestApiResponseAdapter adapter=new ExchangeRestApiResponseAdapter(exchange);
   try {
     if (route == null || route.equals("") || route.equals("/")) {
-      support.renderCamelContexts(adapter);
+      support.renderCamelContexts(adapter,contextIdPattern);
     }
  else {
       if (route.startsWith("/")) {
@@ -14,7 +14,19 @@
       if (route.startsWith(contextId)) {
         route=route.substring(contextId.length());
       }
-      support.renderResourceListing(adapter,swaggerConfig,contextId,route);
+      boolean match=true;
+      if (contextIdPattern != null) {
+        match=EndpointHelper.matchPattern(contextId,contextIdPattern);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Match contextId: {} with pattern: {} -> {}",new Object[]{contextId,contextIdPattern,match});
+        }
+      }
+      if (!match) {
+        adapter.noContent();
+      }
+ else {
+        support.renderResourceListing(adapter,swaggerConfig,contextId,route);
+      }
     }
   }
  catch (  Exception e) {
