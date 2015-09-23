@@ -1,3 +1,21 @@
 {
-  return new RestSwaggerProcessor(contextIdPattern,configuration.getApiProperties());
+  Map<String,Object> options=new HashMap<String,Object>(parameters);
+  options.putAll(configuration.getApiProperties());
+  String host=(String)options.get("host");
+  if (host == null) {
+    host=configuration.getHost();
+    int port=configuration.getPort();
+    if (host != null && port > 0) {
+      options.put("host",host + ":" + port);
+    }
+ else     if (host != null) {
+      options.put("host",host);
+    }
+ else {
+      options.put("host","localhost");
+    }
+  }
+  String path=configuration.getContextPath();
+  options.put("base.path",path);
+  return new RestSwaggerProcessor(contextIdPattern,options);
 }

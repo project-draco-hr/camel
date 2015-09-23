@@ -14,6 +14,29 @@
     factory=(RestApiProcessorFactory)instance;
   }
   if (factory != null) {
+    String scheme="http";
+    String host="";
+    int port=80;
+    if (config.getScheme() != null) {
+      scheme=config.getScheme();
+    }
+    if (config.getHost() != null) {
+      host=config.getHost();
+    }
+    int num=config.getPort();
+    if (num > 0) {
+      port=num;
+    }
+    if (ObjectHelper.isEmpty(host)) {
+      if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localHostName) {
+        host=HostUtils.getLocalHostName();
+      }
+ else       if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localIp) {
+        host=HostUtils.getLocalIp();
+      }
+      String targetHost=scheme + "://" + host+ (port != 80 ? ":" + port : "");
+      getParameters().put("host",targetHost);
+    }
     String path=getPath();
     if (path != null && !path.startsWith("/")) {
       path="/" + path;
