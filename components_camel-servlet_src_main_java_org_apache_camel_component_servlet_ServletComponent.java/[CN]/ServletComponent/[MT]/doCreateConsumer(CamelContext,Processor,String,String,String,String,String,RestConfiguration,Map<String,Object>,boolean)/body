@@ -1,0 +1,45 @@
+{
+  String path=basePath;
+  if (uriTemplate != null) {
+    if (uriTemplate.startsWith("/")) {
+      path=path + uriTemplate;
+    }
+ else {
+      path=path + "/" + uriTemplate;
+    }
+  }
+  path=FileUtil.stripLeadingSeparator(path);
+  RestConfiguration config=configuration;
+  if (config == null) {
+    config=getCamelContext().getRestConfiguration("servlet",true);
+  }
+  Map<String,Object> map=new HashMap<String,Object>();
+  if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+    map.putAll(config.getEndpointProperties());
+  }
+  String query=URISupport.createQueryString(map);
+  String url;
+  if (api) {
+    url="servlet:///%s?matchOnUriPrefix=true&httpMethodRestrict=%s";
+  }
+ else {
+    url="servlet:///%s?httpMethodRestrict=%s";
+  }
+  String restrict=verb.toUpperCase(Locale.US);
+  url=String.format(url,path,restrict);
+  if (!query.isEmpty()) {
+    url=url + "&" + query;
+  }
+  ServletEndpoint endpoint=camelContext.getEndpoint(url,ServletEndpoint.class);
+  setProperties(endpoint,parameters);
+  HttpBinding binding=new ServletRestHttpBinding();
+  binding.setHeaderFilterStrategy(endpoint.getHeaderFilterStrategy());
+  binding.setTransferException(endpoint.isTransferException());
+  binding.setEagerCheckContentAvailable(endpoint.isEagerCheckContentAvailable());
+  endpoint.setBinding(binding);
+  Consumer consumer=endpoint.createConsumer(processor);
+  if (config.getConsumerProperties() != null && !config.getConsumerProperties().isEmpty()) {
+    setProperties(consumer,config.getConsumerProperties());
+  }
+  return consumer;
+}

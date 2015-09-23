@@ -1,0 +1,51 @@
+{
+  String path=basePath;
+  if (uriTemplate != null) {
+    if (uriTemplate.startsWith("/")) {
+      path=path + uriTemplate;
+    }
+ else {
+      path=path + "/" + uriTemplate;
+    }
+  }
+  path=FileUtil.stripLeadingSeparator(path);
+  String scheme="http";
+  String host="";
+  int port=0;
+  RestConfiguration config=configuration;
+  if (config == null) {
+    config=getCamelContext().getRestConfiguration("undertow",true);
+  }
+  if (config.getScheme() != null) {
+    scheme=config.getScheme();
+  }
+  if (config.getHost() != null) {
+    host=config.getHost();
+  }
+  int num=config.getPort();
+  if (num > 0) {
+    port=num;
+  }
+  Map<String,Object> map=new HashMap<String,Object>();
+  if (config.getComponent() == null || config.getComponent().equals("undertow")) {
+    if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+      map.putAll(config.getEndpointProperties());
+    }
+  }
+  String query=URISupport.createQueryString(map);
+  String url;
+  if (api) {
+    url="undertow:%s://%s:%s/%s?matchOnUriPrefix=true";
+  }
+ else {
+    url="undertow:%s://%s:%s/%s";
+  }
+  url=String.format(url,scheme,host,port,path);
+  if (!query.isEmpty()) {
+    url=url + "&" + query;
+  }
+  UndertowEndpoint endpoint=camelContext.getEndpoint(url,UndertowEndpoint.class);
+  setProperties(endpoint,parameters);
+  Consumer consumer=endpoint.createConsumer(processor);
+  return consumer;
+}
