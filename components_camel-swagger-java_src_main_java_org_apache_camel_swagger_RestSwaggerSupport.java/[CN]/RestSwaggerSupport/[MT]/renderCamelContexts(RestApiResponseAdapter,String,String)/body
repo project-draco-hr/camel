@@ -8,12 +8,20 @@
   response.addHeader(Exchange.CONTENT_TYPE,"application/json");
   StringBuffer sb=new StringBuffer();
   List<String> contexts=findCamelContexts();
-  Iterator<String> it=contexts.iterator();
-  while (it.hasNext()) {
-    String name=it.next();
-    boolean match=EndpointHelper.matchPattern(name,contextIdPattern);
-    if (!match) {
-      it.remove();
+  if (contextIdPattern != null) {
+    Iterator<String> it=contexts.iterator();
+    while (it.hasNext()) {
+      String name=it.next();
+      boolean match;
+      if ("#name#".equals(contextIdPattern)) {
+        match=name.equals(contextId);
+      }
+ else {
+        match=EndpointHelper.matchPattern(name,contextIdPattern);
+      }
+      if (!match) {
+        it.remove();
+      }
     }
   }
   sb.append("[\n");
