@@ -3,16 +3,22 @@
   String route=exchange.getIn().getHeader(Exchange.HTTP_PATH,String.class);
   RestApiResponseAdapter adapter=new ExchangeRestApiResponseAdapter(exchange);
   try {
-    if (route == null || route.equals("") || route.equals("/")) {
+    if (contextIdListing && (ObjectHelper.isEmpty(route) || route.equals("/"))) {
       support.renderCamelContexts(adapter,contextId,contextIdPattern);
     }
  else {
-      if (route.startsWith("/")) {
-        route=route.substring(1);
+      String name;
+      if (ObjectHelper.isNotEmpty(route)) {
+        if (route.startsWith("/")) {
+          route=route.substring(1);
+        }
+        name=route.split("/")[0];
+        if (route.startsWith(contextId)) {
+          route=route.substring(name.length());
+        }
       }
-      String name=route.split("/")[0];
-      if (route.startsWith(contextId)) {
-        route=route.substring(name.length());
+ else {
+        name=exchange.getContext().getName();
       }
       boolean match=true;
       if (contextIdPattern != null) {
