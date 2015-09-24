@@ -125,5 +125,25 @@
       from("direct:key_access").marshal(dfEncryptSignKeyAccess).to("mock:encrypted").unmarshal(dfDecryptVerifyKeyAccess).to("mock:unencrypted");
     }
   }
+,new RouteBuilder(){
+    public void configure() throws Exception {
+      PGPDataFormat pgpEncryptSign=new PGPDataFormat();
+      pgpEncryptSign.setKeyUserid(getKeyUserId());
+      pgpEncryptSign.setSignatureKeyRing(getSecKeyRing());
+      pgpEncryptSign.setSignatureKeyUserid(getKeyUserId());
+      pgpEncryptSign.setSignaturePassword(getKeyPassword());
+      pgpEncryptSign.setProvider(getProvider());
+      pgpEncryptSign.setAlgorithm(SymmetricKeyAlgorithmTags.BLOWFISH);
+      pgpEncryptSign.setHashAlgorithm(HashAlgorithmTags.RIPEMD160);
+      pgpEncryptSign.setWithCompressedDataPacket(false);
+      PGPDataFormat pgpVerifyAndDecryptByteArray=new PGPDataFormat();
+      pgpVerifyAndDecryptByteArray.setPassphraseAccessor(getPassphraseAccessor());
+      pgpVerifyAndDecryptByteArray.setEncryptionKeyRing(getSecKeyRing());
+      pgpVerifyAndDecryptByteArray.setProvider(getProvider());
+      pgpVerifyAndDecryptByteArray.setSignatureKeyUserids(getSignatureKeyUserIds());
+      pgpVerifyAndDecryptByteArray.setSignatureVerificationOption(PGPKeyAccessDataFormat.SIGNATURE_VERIFICATION_OPTION_REQUIRED);
+      from("direct:encrypt-sign-without-compressed-data-packet").streamCaching().setHeader(PGPDataFormat.ENCRYPTION_KEY_RING).constant(getPublicKeyRing()).marshal(pgpEncryptSign).removeHeader(PGPDataFormat.ENCRYPTION_KEY_RING).to("mock:encrypted").setHeader(PGPDataFormat.SIGNATURE_KEY_RING).constant(getPublicKeyRing()).unmarshal(pgpVerifyAndDecryptByteArray).removeHeader(PGPDataFormat.SIGNATURE_KEY_RING).to("mock:unencrypted");
+    }
+  }
 };
 }

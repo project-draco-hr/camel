@@ -12,9 +12,17 @@
   try {
     in=PGPUtil.getDecoderStream(encryptedStream);
     encData=getDecryptedData(exchange,in);
-    uncompressedData=getUncompressedData(encData);
-    PGPObjectFactory pgpFactory=new PGPObjectFactory(uncompressedData,new BcKeyFingerprintCalculator());
+    PGPObjectFactory pgpFactory=new PGPObjectFactory(encData,new BcKeyFingerprintCalculator());
     Object object=pgpFactory.nextObject();
+    if (object instanceof PGPCompressedData) {
+      PGPCompressedData comData=(PGPCompressedData)object;
+      uncompressedData=comData.getDataStream();
+      pgpFactory=new PGPObjectFactory(uncompressedData,new BcKeyFingerprintCalculator());
+      object=pgpFactory.nextObject();
+    }
+ else {
+      log.debug("PGP Message does not contain a Compressed Data Packet");
+    }
     PGPOnePassSignature signature;
     if (object instanceof PGPOnePassSignatureList) {
       signature=getSignature(exchange,(PGPOnePassSignatureList)object);

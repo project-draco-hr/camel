@@ -14,8 +14,15 @@
     encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(key));
   }
   OutputStream encOut=encGen.open(outputStream,new byte[BUFFER_SIZE]);
-  PGPCompressedDataGenerator comData=new PGPCompressedDataGenerator(findCompressionAlgorithm(exchange));
-  OutputStream comOut=new BufferedOutputStream(comData.open(encOut));
+  OutputStream comOut;
+  if (withCompressedDataPacket) {
+    PGPCompressedDataGenerator comData=new PGPCompressedDataGenerator(findCompressionAlgorithm(exchange));
+    comOut=new BufferedOutputStream(comData.open(encOut));
+  }
+ else {
+    comOut=encOut;
+    LOG.debug("No Compressed Data packet is added");
+  }
   List<PGPSignatureGenerator> sigGens=createSignatureGenerator(exchange,comOut);
   PGPLiteralDataGenerator litData=new PGPLiteralDataGenerator();
   String fileName=findFileName(exchange);
