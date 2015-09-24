@@ -2,17 +2,21 @@
   List<Expression> list=new ArrayList<Expression>();
   String[] parts=uri.split("\\+");
   for (  String part : parts) {
-    String before=ObjectHelper.before(part,":");
-    String after=ObjectHelper.after(part,":");
-    if (before != null && after != null) {
-      try {
-        Language partLanguage=routeContext.getCamelContext().resolveLanguage(before);
-        if (partLanguage != null) {
-          Expression exp=partLanguage.createExpression(after);
-          list.add(exp);
+    String value=ObjectHelper.after(part,"language:");
+    if (value != null) {
+      String before=ObjectHelper.before(value,":");
+      String after=ObjectHelper.after(value,":");
+      if (before != null && after != null) {
+        try {
+          Language partLanguage=routeContext.getCamelContext().resolveLanguage(before);
+          if (partLanguage != null) {
+            Expression exp=partLanguage.createExpression(after);
+            list.add(exp);
+            continue;
+          }
         }
-      }
- catch (      NoSuchLanguageException e) {
+ catch (        NoSuchLanguageException e) {
+        }
       }
     }
     Language lan=routeContext.getCamelContext().resolveLanguage("simple");
