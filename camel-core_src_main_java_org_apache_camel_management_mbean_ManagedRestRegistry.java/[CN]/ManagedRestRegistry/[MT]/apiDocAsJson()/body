@@ -1,0 +1,29 @@
+{
+  Endpoint found=null;
+  for (  Map.Entry<String,Endpoint> entry : getContext().getEndpointMap().entrySet()) {
+    String uri=entry.getKey();
+    if (uri.startsWith("rest-api")) {
+      found=entry.getValue();
+      break;
+    }
+  }
+  try {
+    if (found != null) {
+      Producer producer=found.createProducer();
+      ServiceHelper.startService(producer);
+      try {
+        Exchange dummy=found.createExchange();
+        producer.process(dummy);
+        String json=dummy.hasOut() ? dummy.getOut().getBody(String.class) : dummy.getIn().getBody(String.class);
+        return json;
+      }
+  finally {
+        ServiceHelper.stopService(producer);
+      }
+    }
+  }
+ catch (  Exception e) {
+    throw ObjectHelper.wrapRuntimeCamelException(e);
+  }
+  return null;
+}
