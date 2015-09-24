@@ -2,25 +2,54 @@
   if (!initDone) {
     initBaseAndApiPaths(request);
   }
-  String contextId;
+  String contextId=null;
   String route=request.getPathInfo();
   RestApiResponseAdapter adapter=new ServletRestApiResponseAdapter(response);
   try {
-    if (route == null || route.equals("") || route.equals("/")) {
-      swagger.renderCamelContexts(adapter,null,null);
+    if (contextIdListing && (ObjectHelper.isEmpty(route) || route.equals("/"))) {
+      support.renderCamelContexts(adapter,contextId,contextIdPattern);
     }
  else {
-      if (route.startsWith("/")) {
-        route=route.substring(1);
+      String name=null;
+      if (ObjectHelper.isNotEmpty(route)) {
+        if (route.startsWith("/")) {
+          route=route.substring(1);
+        }
+        name=route.split("/")[0];
+        if (ObjectHelper.isNotEmpty(name)) {
+          route=route.substring(name.length());
+        }
       }
-      contextId=route.split("/")[0];
-      if (route.startsWith(contextId)) {
-        route=route.substring(contextId.length());
+ else {
+        List<String> contexts=support.findCamelContexts();
+        if (contexts.size() == 1) {
+          name=contexts.get(0);
+        }
       }
-      swagger.renderResourceListing(adapter,swaggerConfig,contextId,route,classResolver);
+      boolean match=false;
+      if (name != null) {
+        match=true;
+        if (contextIdPattern != null) {
+          if ("#name#".equals(contextIdPattern)) {
+            match=true;
+          }
+ else {
+            match=EndpointHelper.matchPattern(name,contextIdPattern);
+          }
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Match contextId: {} with pattern: {} -> {}",new Object[]{name,contextIdPattern,match});
+          }
+        }
+      }
+      if (!match) {
+        adapter.noContent();
+      }
+ else {
+        support.renderResourceListing(adapter,swaggerConfig,name,route,classResolver);
+      }
     }
   }
  catch (  Exception e) {
-    LOG.warn("Error rendering swagger due " + e.getMessage(),e);
+    LOG.warn("Error rendering Swagger API due " + e.getMessage(),e);
   }
 }
