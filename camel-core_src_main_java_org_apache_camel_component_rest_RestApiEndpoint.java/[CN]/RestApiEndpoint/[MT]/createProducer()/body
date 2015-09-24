@@ -10,9 +10,14 @@
     if (name == null) {
       name=DEFAULT_API_COMPONENT_NAME;
     }
-    Object instance=getCamelContext().getFactoryFinder(RESOURCE_PATH).newInstance(name);
-    if (instance instanceof RestApiProcessorFactory) {
-      factory=(RestApiProcessorFactory)instance;
+    try {
+      FactoryFinder finder=getCamelContext().getFactoryFinder(RESOURCE_PATH);
+      Object instance=finder.newInstance(name);
+      if (instance instanceof RestApiProcessorFactory) {
+        factory=(RestApiProcessorFactory)instance;
+      }
+    }
+ catch (    NoFactoryAvailableException e) {
     }
   }
   if (factory != null) {
@@ -44,6 +49,6 @@
     return new RestApiProducer(this,processor);
   }
  else {
-    throw new IllegalStateException("Cannot find RestApiProcessorFactory in Registry or classpath");
+    throw new IllegalStateException("Cannot find RestApiProcessorFactory in Registry or classpath (such as the camel-swagger-java component)");
   }
 }
