@@ -1,0 +1,17 @@
+{
+  valueOperations.getOperations().execute(new RedisCallback<List<byte[]>>(){
+    @Override public List<byte[]> doInRedis(    RedisConnection connection) throws DataAccessException {
+      List<byte[]> binaryKeys=new ArrayList<>();
+      Cursor<byte[]> cursor=connection.scan(ScanOptions.scanOptions().match("*" + createRedisKey("*")).build());
+      while (cursor.hasNext()) {
+        byte[] key=cursor.next();
+        binaryKeys.add(key);
+      }
+      if (binaryKeys.size() > 0) {
+        connection.del(binaryKeys.toArray(new byte[][]{}));
+      }
+      return binaryKeys;
+    }
+  }
+);
+}
