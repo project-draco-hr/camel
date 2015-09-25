@@ -1,0 +1,32 @@
+{
+  ErrorHandlerFactory answer;
+  if (!isErrorHandlerBuilderConfigured(ref)) {
+    answer=routeContext.getRoute().getErrorHandlerBuilder();
+    if (answer == null && routeContext.getRoute().getErrorHandlerRef() != null) {
+      answer=routeContext.lookup(routeContext.getRoute().getErrorHandlerRef(),ErrorHandlerBuilder.class);
+    }
+    if (answer == null) {
+      answer=new DefaultErrorHandlerBuilder();
+    }
+    if (answer instanceof ErrorHandlerBuilderRef) {
+      ErrorHandlerBuilderRef other=(ErrorHandlerBuilderRef)answer;
+      String otherRef=other.getRef();
+      if (!isErrorHandlerBuilderConfigured(otherRef)) {
+        answer=lookupErrorHandlerBuilder((ModelCamelContext)routeContext.getCamelContext());
+      }
+      if (answer == null) {
+        answer=new DefaultErrorHandlerBuilder();
+      }
+      ((ErrorHandlerBuilder)answer).setErrorHandlers(routeContext,other.getErrorHandlers(routeContext));
+    }
+  }
+ else {
+    if (mandatory) {
+      answer=routeContext.mandatoryLookup(ref,ErrorHandlerBuilder.class);
+    }
+ else {
+      answer=routeContext.lookup(ref,ErrorHandlerBuilder.class);
+    }
+  }
+  return answer;
+}
