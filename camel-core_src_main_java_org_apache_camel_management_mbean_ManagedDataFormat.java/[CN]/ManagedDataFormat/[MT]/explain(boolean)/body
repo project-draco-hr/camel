@@ -1,3 +1,31 @@
 {
-  return null;
+  String dataFormatName=getName();
+  if (dataFormatName != null) {
+    try {
+      TabularData answer=new TabularDataSupport(CamelOpenMBeanTypes.explainDataFormatTabularType());
+      String json=camelContext.explainDataFormatJson(dataFormatName,dataFormat,allOptions);
+      List<Map<String,String>> rows=JsonSchemaHelper.parseJsonSchema("properties",json,true);
+      for (      Map<String,String> row : rows) {
+        String name=row.get("name");
+        String kind=row.get("kind");
+        String label=row.get("label") != null ? row.get("label") : "";
+        String type=row.get("type");
+        String javaType=row.get("javaType");
+        String deprecated=row.get("deprecated") != null ? row.get("deprecated") : "";
+        String value=row.get("value") != null ? row.get("value") : "";
+        String defaultValue=row.get("defaultValue") != null ? row.get("defaultValue") : "";
+        String description=row.get("description") != null ? row.get("description") : "";
+        CompositeType ct=CamelOpenMBeanTypes.explainDataFormatsCompositeType();
+        CompositeData data=new CompositeDataSupport(ct,new String[]{"option","kind","label","type","java type","deprecated","value","default value","description"},new Object[]{name,kind,label,type,javaType,deprecated,value,defaultValue,description});
+        answer.put(data);
+      }
+      return answer;
+    }
+ catch (    Exception e) {
+      throw ObjectHelper.wrapRuntimeCamelException(e);
+    }
+  }
+ else {
+    return null;
+  }
 }
