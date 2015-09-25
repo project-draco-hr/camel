@@ -1,0 +1,29 @@
+{
+  String path=getResourceUri();
+  ObjectHelper.notNull(path,"resourceUri");
+  String newResourceUri=exchange.getIn().getHeader(JoltConstants.JOLT_RESOURCE_URI,String.class);
+  if (newResourceUri != null) {
+    exchange.getIn().removeHeader(JoltConstants.JOLT_RESOURCE_URI);
+    log.debug("{} set to {} creating new endpoint to handle exchange",JoltConstants.JOLT_RESOURCE_URI,newResourceUri);
+    JoltEndpoint newEndpoint=findOrCreateEndpoint(getEndpointUri(),newResourceUri);
+    newEndpoint.onExchange(exchange);
+    return;
+  }
+  Object input;
+  if (getInputType() == JoltInputOutputType.JsonString) {
+    input=JsonUtils.jsonToObject(exchange.getIn().getBody(InputStream.class));
+  }
+ else {
+    input=exchange.getIn().getBody();
+  }
+  Object output=getTransform().transform(input);
+  Message out=exchange.getOut();
+  if (getOutputType() == JoltInputOutputType.JsonString) {
+    out.setBody(JsonUtils.toJsonString(output));
+  }
+ else {
+    out.setBody(output);
+  }
+  out.setHeaders(exchange.getIn().getHeaders());
+  out.setAttachments(exchange.getIn().getAttachments());
+}
