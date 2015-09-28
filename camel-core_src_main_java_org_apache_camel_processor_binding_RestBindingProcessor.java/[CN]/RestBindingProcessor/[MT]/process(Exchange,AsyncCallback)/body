@@ -2,17 +2,8 @@
   if (enableCORS) {
     exchange.addOnCompletion(new RestBindingCORSOnCompletion(corsHeaders));
   }
-  if (bindingMode == null || "off".equals(bindingMode)) {
-    callback.done(true);
-    return true;
-  }
-  if (jsonUnmarshal == null && xmlUnmarshal == null) {
-    callback.done(true);
-    return true;
-  }
   boolean isXml=false;
   boolean isJson=false;
-  String accept=exchange.getIn().getHeader("Accept",String.class);
   String contentType=ExchangeHelper.getContentType(exchange);
   if (contentType != null) {
     isXml=contentType.toLowerCase(Locale.ENGLISH).contains("xml");
@@ -28,6 +19,7 @@
     isXml=bindingMode.equals("auto") || bindingMode.contains("xml");
     isJson=bindingMode.equals("auto") || bindingMode.contains("json");
   }
+  String accept=exchange.getIn().getHeader("Accept",String.class);
   String body=null;
   if (exchange.getIn().getBody() != null) {
     if (isXml || isJson) {
@@ -61,7 +53,7 @@
       return true;
     }
   }
-  if (bindingMode.equals("auto")) {
+  if (bindingMode == null || "off".equals(bindingMode) || bindingMode.equals("auto")) {
     exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false,accept));
     callback.done(true);
     return true;
