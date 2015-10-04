@@ -1,0 +1,59 @@
+{
+  Object data=exchange.getIn().getBody();
+  final String sql=elSql.getSql(elSqlName,new ElsqlSqlParams(exchange,data));
+  jdbcTemplate.execute(sql,new PreparedStatementCallback<Object>(){
+    @Override public Object doInPreparedStatement(    PreparedStatement ps) throws SQLException, DataAccessException {
+      ResultSet rs=null;
+      try {
+        boolean isResultSet=ps.execute();
+        if (isResultSet) {
+          exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+          rs=ps.getResultSet();
+          SqlOutputType outputType=getEndpoint().getOutputType();
+          log.trace("Got result list from query: {}, outputType={}",rs,outputType);
+          if (outputType == SqlOutputType.SelectList) {
+            List<?> data=getEndpoint().queryForList(rs,true);
+            if (getEndpoint().isNoop()) {
+              exchange.getOut().setBody(exchange.getIn().getBody());
+            }
+ else             if (getEndpoint().getOutputHeader() != null) {
+              exchange.getOut().setBody(exchange.getIn().getBody());
+              exchange.getOut().setHeader(getEndpoint().getOutputHeader(),data);
+            }
+ else {
+              exchange.getOut().setBody(data);
+            }
+            exchange.getOut().setHeader(SqlConstants.SQL_ROW_COUNT,data.size());
+          }
+ else           if (outputType == SqlOutputType.SelectOne) {
+            Object data=getEndpoint().queryForObject(rs);
+            if (data != null) {
+              if (getEndpoint().isNoop()) {
+                exchange.getOut().setBody(exchange.getIn().getBody());
+              }
+ else               if (getEndpoint().getOutputHeader() != null) {
+                exchange.getOut().setBody(exchange.getIn().getBody());
+                exchange.getOut().setHeader(getEndpoint().getOutputHeader(),data);
+              }
+ else {
+                exchange.getOut().setBody(data);
+              }
+              exchange.getOut().setHeader(SqlConstants.SQL_ROW_COUNT,1);
+            }
+          }
+ else {
+            throw new IllegalArgumentException("Invalid outputType=" + outputType);
+          }
+        }
+ else {
+          exchange.getIn().setHeader(SqlConstants.SQL_UPDATE_COUNT,ps.getUpdateCount());
+        }
+      }
+  finally {
+        closeResultSet(rs);
+      }
+      return null;
+    }
+  }
+);
+}
