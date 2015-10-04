@@ -1,0 +1,22 @@
+{
+  if (!canTest()) {
+    return;
+  }
+  Throttler throttler=new Throttler(context,null,constant(1),10000,null,false,true);
+  AsyncCallback callback=new AsyncCallback(){
+    @Override public void done(    boolean doneSync){
+    }
+  }
+;
+  throttler.calculateDelay(new DefaultExchange(context));
+  TimeSlot currentSlot=throttler.getSlot();
+  DefaultExchange exchange;
+  try {
+    long delay=throttler.calculateDelay(new DefaultExchange(context));
+    exchange=new DefaultExchange(context);
+    throttler.processDelay(exchange,callback,delay);
+  }
+ catch (  ThrottlerRejectedExecutionException ignore) {
+  }
+  assertTrue(currentSlot == throttler.getSlot() || !throttler.getSlot().isFull());
+}
