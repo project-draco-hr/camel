@@ -1,14 +1,16 @@
 {
   Object data=exchange.getIn().getBody();
-  final String sql=elSql.getSql(elSqlName,new ElsqlSqlParams(exchange,data));
-  jdbcTemplate.execute(sql,new PreparedStatementCallback<Object>(){
+  final SqlParameterSource param=new ElsqlSqlMapSource(exchange,data);
+  final String sql=elSql.getSql(elSqlName,new SpringSqlParams(param));
+  log.debug("ElSql @{} using sql: {}",elSqlName,sql);
+  jdbcTemplate.execute(sql,param,new PreparedStatementCallback<Object>(){
     @Override public Object doInPreparedStatement(    PreparedStatement ps) throws SQLException, DataAccessException {
       ResultSet rs=null;
       try {
         boolean isResultSet=ps.execute();
         if (isResultSet) {
-          exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
           rs=ps.getResultSet();
+          exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
           SqlOutputType outputType=getEndpoint().getOutputType();
           log.trace("Got result list from query: {}, outputType={}",rs,outputType);
           if (outputType == SqlOutputType.SelectList) {
@@ -44,9 +46,6 @@
  else {
             throw new IllegalArgumentException("Invalid outputType=" + outputType);
           }
-        }
- else {
-          exchange.getIn().setHeader(SqlConstants.SQL_UPDATE_COUNT,ps.getUpdateCount());
         }
       }
   finally {
