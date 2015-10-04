@@ -1,0 +1,20 @@
+{
+  if (!init && exchange != null) {
+    String text=exchange.getContext().getProperties().get(JacksonXMLConstants.ENABLE_XML_TYPE_CONVERTER);
+    enabled="true".equalsIgnoreCase(text);
+    init=true;
+  }
+  if (enabled == null || !enabled) {
+    return null;
+  }
+  if (isNotPojoType(type)) {
+    return null;
+  }
+  if (exchange != null && value instanceof Map) {
+    ObjectMapper mapper=resolveObjectMapper(exchange.getContext().getRegistry());
+    if (mapper.canSerialize(type)) {
+      return mapper.convertValue(value,type);
+    }
+  }
+  return null;
+}

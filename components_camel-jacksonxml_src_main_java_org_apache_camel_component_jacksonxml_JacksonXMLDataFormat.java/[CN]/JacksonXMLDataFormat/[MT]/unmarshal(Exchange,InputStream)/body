@@ -1,0 +1,17 @@
+{
+  Class<?> clazz=unmarshalType;
+  String type=exchange.getIn().getHeader(JacksonXMLConstants.UNMARSHAL_TYPE,String.class);
+  if (type == null && isAllowJmsType()) {
+    type=exchange.getIn().getHeader("JMSType",String.class);
+  }
+  if (type != null) {
+    clazz=exchange.getContext().getClassResolver().resolveMandatoryClass(type);
+  }
+  if (collectionType != null) {
+    CollectionType collType=xmlMapper.getTypeFactory().constructCollectionType(collectionType,clazz);
+    return this.xmlMapper.readValue(stream,collType);
+  }
+ else {
+    return this.xmlMapper.readValue(stream,clazz);
+  }
+}
