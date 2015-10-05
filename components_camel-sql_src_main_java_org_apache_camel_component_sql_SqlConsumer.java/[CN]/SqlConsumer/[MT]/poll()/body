@@ -2,7 +2,7 @@
   shutdownRunningTask=null;
   pendingExchanges=0;
   final String preparedQuery=sqlPrepareStatementStrategy.prepareQuery(query,getEndpoint().isAllowNamedParameters());
-  Integer messagePolled=jdbcTemplate.execute(preparedQuery,new PreparedStatementCallback<Integer>(){
+  final PreparedStatementCallback<Integer> callback=new PreparedStatementCallback<Integer>(){
     @Override public Integer doInPreparedStatement(    PreparedStatement preparedStatement) throws SQLException, DataAccessException {
       Queue<DataHolder> answer=new LinkedList<DataHolder>();
       log.debug("Executing query: {}",preparedQuery);
@@ -36,6 +36,13 @@
       }
     }
   }
-);
+;
+  Integer messagePolled;
+  if (namedJdbcTemplate != null) {
+    messagePolled=namedJdbcTemplate.execute(preparedQuery,parameterSource,callback);
+  }
+ else {
+    messagePolled=jdbcTemplate.execute(preparedQuery,callback);
+  }
   return messagePolled;
 }

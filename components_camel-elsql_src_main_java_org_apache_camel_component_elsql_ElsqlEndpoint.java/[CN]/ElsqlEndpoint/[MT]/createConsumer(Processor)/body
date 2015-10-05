@@ -1,8 +1,10 @@
 {
-  SqlProcessingStrategy proStrategy=new ElsqlSqlProcessingStrategy(elsqlName,elSql);
+  SqlProcessingStrategy proStrategy=new ElsqlSqlProcessingStrategy(elSql);
   SqlPrepareStatementStrategy preStategy=new ElsqlSqlPrepareStatementStrategy();
-  JdbcTemplate template=new JdbcTemplate(getDataSource());
-  ElsqlConsumer consumer=new ElsqlConsumer(this,processor,template,elsqlName,preStategy,proStrategy);
+  final SqlParameterSource param=new EmptySqlParameterSource();
+  final String sql=elSql.getSql(elsqlName,new SpringSqlParams(param));
+  LOG.debug("ElsqlConsumer @{} using sql: {}",elsqlName,sql);
+  ElsqlConsumer consumer=new ElsqlConsumer(this,processor,namedJdbcTemplate,sql,param,preStategy,proStrategy);
   consumer.setMaxMessagesPerPoll(getMaxMessagesPerPoll());
   consumer.setOnConsume(getOnConsume());
   consumer.setOnConsumeFailed(getOnConsumeFailed());

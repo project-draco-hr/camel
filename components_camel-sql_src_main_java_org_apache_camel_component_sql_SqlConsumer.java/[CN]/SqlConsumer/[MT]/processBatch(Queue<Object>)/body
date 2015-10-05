@@ -20,7 +20,14 @@
     String sql=exchange.isFailed() ? onConsumeFailed : onConsume;
     try {
       if (data != null && sql != null) {
-        int updateCount=sqlProcessingStrategy.commit(getEndpoint(),exchange,data,jdbcTemplate,sql);
+        int updateCount;
+        if (namedJdbcTemplate != null && sqlProcessingStrategy instanceof SqlNamedProcessingStrategy) {
+          SqlNamedProcessingStrategy namedProcessingStrategy=(SqlNamedProcessingStrategy)sqlProcessingStrategy;
+          updateCount=namedProcessingStrategy.commit(getEndpoint(),exchange,data,namedJdbcTemplate,parameterSource,sql);
+        }
+ else {
+          updateCount=sqlProcessingStrategy.commit(getEndpoint(),exchange,data,jdbcTemplate,sql);
+        }
         if (expectedUpdateCount > -1 && updateCount != expectedUpdateCount) {
           String msg="Expected update count " + expectedUpdateCount + " but was "+ updateCount+ " executing query: "+ sql;
           throw new SQLException(msg);
@@ -38,7 +45,14 @@
   }
   try {
     if (onConsumeBatchComplete != null) {
-      int updateCount=sqlProcessingStrategy.commitBatchComplete(getEndpoint(),jdbcTemplate,onConsumeBatchComplete);
+      int updateCount;
+      if (namedJdbcTemplate != null && sqlProcessingStrategy instanceof SqlNamedProcessingStrategy) {
+        SqlNamedProcessingStrategy namedProcessingStrategy=(SqlNamedProcessingStrategy)sqlProcessingStrategy;
+        updateCount=namedProcessingStrategy.commitBatchComplete(getEndpoint(),namedJdbcTemplate,parameterSource,onConsumeBatchComplete);
+      }
+ else {
+        updateCount=sqlProcessingStrategy.commitBatchComplete(getEndpoint(),jdbcTemplate,onConsumeBatchComplete);
+      }
       log.debug("onConsumeBatchComplete update count {}",updateCount);
     }
   }
