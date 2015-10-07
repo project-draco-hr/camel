@@ -3,4 +3,42 @@
   if (sslContextParameters != null) {
     sslContext=sslContextParameters.createSSLContext();
   }
+  if (options != null && !options.isEmpty()) {
+    ClassLoader cl=getComponent().getCamelContext().getApplicationContextClassLoader();
+    if (cl == null) {
+      cl=Options.class.getClassLoader();
+    }
+    OptionMap.Builder builder=OptionMap.builder();
+    for (    Map.Entry<String,Object> entry : options.entrySet()) {
+      String key=entry.getKey();
+      Object value=entry.getValue();
+      if (key != null && value != null) {
+        key=key.toUpperCase(Locale.ENGLISH).replace('-','_');
+        key=Options.class.getName() + "." + key;
+        Option option=Option.fromString(key,cl);
+        value=option.parseValue(value.toString(),cl);
+        LOG.trace("Parsed option {}={}",option.getName(),value);
+        builder.set(option,value);
+      }
+    }
+    optionMap=builder.getMap();
+  }
+ else {
+    optionMap=OptionMap.EMPTY;
+  }
+  if (keepAlive != null && !optionMap.contains(Options.KEEP_ALIVE)) {
+    OptionMap.Builder builder=OptionMap.builder();
+    builder.addAll(optionMap).set(Options.KEEP_ALIVE,keepAlive);
+    optionMap=builder.getMap();
+  }
+  if (tcpNoDelay != null && !optionMap.contains(Options.TCP_NODELAY)) {
+    OptionMap.Builder builder=OptionMap.builder();
+    builder.addAll(optionMap).set(Options.TCP_NODELAY,tcpNoDelay);
+    optionMap=builder.getMap();
+  }
+  if (reuseAddresses != null && !optionMap.contains(Options.REUSE_ADDRESSES)) {
+    OptionMap.Builder builder=OptionMap.builder();
+    builder.addAll(optionMap).set(Options.REUSE_ADDRESSES,tcpNoDelay);
+    optionMap=builder.getMap();
+  }
 }

@@ -15,13 +15,19 @@
         camelExchange.setException(e);
       }
  finally {
+        IOHelper.close(connection);
         callback.done(false);
       }
     }
     @Override public void failed(    IOException e){
       LOG.trace("failed: {}",e);
       camelExchange.setException(e);
-      callback.done(false);
+      try {
+        IOHelper.close(connection);
+      }
+  finally {
+        callback.done(false);
+      }
     }
   }
 );
@@ -32,6 +38,7 @@
   }
  catch (  IOException e) {
     camelExchange.setException(e);
+    IOHelper.close(connection);
     callback.done(false);
   }
 }

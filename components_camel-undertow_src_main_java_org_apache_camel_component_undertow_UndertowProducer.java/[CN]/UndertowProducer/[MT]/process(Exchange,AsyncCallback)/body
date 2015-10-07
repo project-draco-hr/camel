@@ -1,8 +1,8 @@
 {
+  ClientConnection connection=null;
   try {
     final UndertowClient client=UndertowClient.getInstance();
-    XnioWorker worker=Xnio.getInstance().createWorker(OptionMap.EMPTY);
-    IoFuture<ClientConnection> connect=client.connect(endpoint.getHttpURI(),worker,new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR,8192,8192 * 8192),OptionMap.EMPTY);
+    IoFuture<ClientConnection> connect=client.connect(endpoint.getHttpURI(),worker,pool,options);
     String url=UndertowHelper.createURL(exchange,getEndpoint());
     URI uri=UndertowHelper.createURI(exchange,url,getEndpoint());
     url=uri.toASCIIString();
@@ -20,9 +20,11 @@
     if (LOG.isDebugEnabled()) {
       LOG.debug("Executing http {} method: {}",method,url);
     }
-    connect.get().sendRequest(request,new UndertowProducerCallback(bodyAsByte,exchange,callback));
+    connection=connect.get();
+    connection.sendRequest(request,new UndertowProducerCallback(connection,bodyAsByte,exchange,callback));
   }
  catch (  Exception e) {
+    IOHelper.close(connection);
     exchange.setException(e);
     callback.done(true);
     return true;
