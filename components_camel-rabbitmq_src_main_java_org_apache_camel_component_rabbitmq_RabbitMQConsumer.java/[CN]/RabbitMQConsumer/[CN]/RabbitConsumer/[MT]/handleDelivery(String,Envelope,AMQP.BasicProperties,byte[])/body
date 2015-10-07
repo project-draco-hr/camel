@@ -23,7 +23,12 @@
   }
   if (!exchange.isFailed()) {
     if (sendReply && exchange.getPattern().isOutCapable()) {
-      endpoint.publishExchangeToChannel(exchange,channel,properties.getReplyTo());
+      try {
+        endpoint.publishExchangeToChannel(exchange,channel,properties.getReplyTo());
+      }
+ catch (      RuntimeCamelException e) {
+        getExceptionHandler().handleException("Error processing exchange",exchange,e);
+      }
     }
     if (!consumer.endpoint.isAutoAck()) {
       log.trace("Acknowledging receipt [delivery_tag={}]",deliveryTag);
@@ -33,7 +38,12 @@
  else   if (endpoint.isTransferException() && exchange.getPattern().isOutCapable()) {
     msg.setBody(exchange.getException());
     exchange.setOut(msg);
-    endpoint.publishExchangeToChannel(exchange,channel,properties.getReplyTo());
+    try {
+      endpoint.publishExchangeToChannel(exchange,channel,properties.getReplyTo());
+    }
+ catch (    RuntimeCamelException e) {
+      getExceptionHandler().handleException("Error processing exchange",exchange,e);
+    }
   }
  else {
     boolean isRequeueHeaderSet=msg.getHeader(RabbitMQConstants.REQUEUE,false,boolean.class);

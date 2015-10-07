@@ -24,14 +24,18 @@
         o.writeObject(msg.getBody());
         body=b.toByteArray();
       }
-     }
+ catch (      NotSerializableException nse) {
+        LOG.warn("Can not send object " + msg.getBody().getClass() + " via RabbitMQ because it contains non-serializable objects.");
+        throw new RuntimeCamelException(e);
+      }
+    }
  else     if (msg.getBody() == null) {
       properties=getMessageConverter().buildProperties(camelExchange).build();
       body=null;
     }
  else {
       LOG.warn("Could not convert {} to byte[]",msg.getBody());
-      throw new IOException(e);
+      throw new RuntimeCamelException(e);
     }
   }
   String rabbitExchange=getExchangeName(msg);
