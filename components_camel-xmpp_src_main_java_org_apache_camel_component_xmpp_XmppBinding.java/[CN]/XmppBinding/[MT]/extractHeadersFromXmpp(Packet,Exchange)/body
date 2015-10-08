@@ -1,10 +1,11 @@
 {
   Map<String,Object> answer=new HashMap<String,Object>();
-  for (  String name : JivePropertiesManager.getPropertiesNames(xmppPacket)) {
-    Object value=JivePropertiesManager.getProperty(xmppPacket,name);
-    if (!headerFilterStrategy.applyFilterToExternalHeaders(name,value,exchange)) {
-      answer.put(name,value);
-    }
+  PacketExtension jpe=xmppPacket.getExtension(JivePropertiesExtension.NAMESPACE);
+  if (jpe != null && jpe instanceof JivePropertiesExtension) {
+    extractHeadersFrom((JivePropertiesExtension)jpe,exchange,answer);
+  }
+  if (jpe != null && jpe instanceof DefaultPacketExtension) {
+    extractHeadersFrom((DefaultPacketExtension)jpe,exchange,answer);
   }
   if (xmppPacket instanceof Message) {
     Message xmppMessage=(Message)xmppPacket;
