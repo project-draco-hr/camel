@@ -24,11 +24,18 @@
     LOG.debug("Using NettySharedHttpServer: {} with port: {}",shared,shared.getPort());
     config.setPort(shared.getPort());
   }
+  NettyHttpBinding bindingFromUri=resolveAndRemoveReferenceParameter(parameters,"nettyHttpBinding",NettyHttpBinding.class);
   URI u=new URI(UnsafeUriCharactersEncoder.encodeHttpURI(remaining));
   String addressUri=URISupport.createRemainingURI(u,parameters).toString();
   NettyHttpEndpoint answer=new NettyHttpEndpoint(addressUri,this,config);
   if (answer.getNettyHttpBinding() == null) {
-    Object binding=getNettyHttpBinding();
+    Object binding=null;
+    if (bindingFromUri != null) {
+      binding=bindingFromUri;
+    }
+ else {
+      binding=getNettyHttpBinding();
+    }
     if (binding instanceof RestNettyHttpBinding) {
       NettyHttpBinding copy=((RestNettyHttpBinding)binding).copy();
       answer.setNettyHttpBinding(copy);
