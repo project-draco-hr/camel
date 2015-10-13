@@ -1,6 +1,15 @@
 {
+  String mapId=null;
+  if (value != null) {
+    Class<?> sourceType=value.getClass();
+    Class<?> destType=type;
+    ClassMappingMetadata metadata=mapper.getMappingMetadata().getClassMapping(sourceType,destType);
+    if (metadata != null) {
+      mapId=metadata.getMapId();
+    }
+  }
   if (exchange == null) {
-    return mapper.map(value,type);
+    return mapper.map(value,type,mapId);
   }
   T answer=null;
   ClassLoader prev=Thread.currentThread().getContextClassLoader();
@@ -9,7 +18,7 @@
     LOG.debug("Switching TCCL to: {}.",contextCl);
     try {
       Thread.currentThread().setContextClassLoader(contextCl);
-      answer=mapper.map(value,type);
+      answer=mapper.map(value,type,mapId);
     }
   finally {
       LOG.debug("Restored TCCL to: {}.",prev);
@@ -17,7 +26,7 @@
     }
   }
  else {
-    answer=mapper.map(value,type);
+    answer=mapper.map(value,type,mapId);
   }
   return answer;
 }
