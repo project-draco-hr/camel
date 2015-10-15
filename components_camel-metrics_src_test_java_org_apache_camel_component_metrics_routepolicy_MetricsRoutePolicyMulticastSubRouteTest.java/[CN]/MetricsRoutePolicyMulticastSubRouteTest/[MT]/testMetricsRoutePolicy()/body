@@ -1,0 +1,14 @@
+{
+  getMockEndpoint("mock:foo").expectedMessageCount(1);
+  getMockEndpoint("mock:bar").expectedMessageCount(1);
+  getMockEndpoint("mock:end").expectedMessageCount(1);
+  template.sendBody("seda:multicast","Hello World");
+  assertMockEndpointsSatisfied();
+  assertEquals(3,registry.getNames().size());
+  assertEquals(3,registry.getTimers().size());
+  for (  Map.Entry<String,Timer> timerEntry : registry.getTimers().entrySet()) {
+    String metricName=timerEntry.getKey();
+    Timer timer=timerEntry.getValue();
+    assertEquals("Count is wrong for " + metricName,1,timer.getCount());
+  }
+}
