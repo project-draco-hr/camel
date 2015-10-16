@@ -1,32 +1,29 @@
 {
-  String mapId=null;
-  if (value != null) {
-    Class<?> sourceType=value.getClass();
-    Class<?> destType=type;
-    ClassMappingMetadata metadata=mapper.getMappingMetadata().getClassMapping(sourceType,destType);
-    if (metadata != null) {
-      mapId=metadata.getMapId();
+  CamelContext context=exchange != null ? exchange.getContext() : null;
+  ClassLoader appcl=context != null ? context.getApplicationContextClassLoader() : null;
+  T result;
+  ClassLoader tccl=Thread.currentThread().getContextClassLoader();
+  try {
+    if (appcl != null && appcl != tccl) {
+      LOG.debug("Switching TCCL to: {}",appcl);
+      Thread.currentThread().setContextClassLoader(appcl);
     }
-  }
-  if (exchange == null) {
-    return mapper.map(value,type,mapId);
-  }
-  T answer=null;
-  ClassLoader prev=Thread.currentThread().getContextClassLoader();
-  ClassLoader contextCl=exchange.getContext().getApplicationContextClassLoader();
-  if (contextCl != null) {
-    LOG.debug("Switching TCCL to: {}.",contextCl);
-    try {
-      Thread.currentThread().setContextClassLoader(contextCl);
-      answer=mapper.map(value,type,mapId);
+    String mapId=null;
+    if (value != null) {
+      Class<?> sourceType=value.getClass();
+      Class<?> destType=type;
+      ClassMappingMetadata metadata=mapper.getMappingMetadata().getClassMapping(sourceType,destType);
+      if (metadata != null) {
+        mapId=metadata.getMapId();
+      }
     }
+    result=mapper.map(value,type,mapId);
+  }
   finally {
-      LOG.debug("Restored TCCL to: {}.",prev);
-      Thread.currentThread().setContextClassLoader(prev);
+    if (appcl != null && appcl != tccl) {
+      Thread.currentThread().setContextClassLoader(tccl);
+      LOG.debug("Restored TCCL to: {}",tccl);
     }
   }
- else {
-    answer=mapper.map(value,type,mapId);
-  }
-  return answer;
+  return result;
 }

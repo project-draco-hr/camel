@@ -1,0 +1,25 @@
+{
+  CamelContext camelctx=new DefaultCamelContext();
+  camelctx.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").convertBodyTo(CustomerB.class);
+    }
+  }
+);
+  DozerBeanMapperConfiguration mconfig=new DozerBeanMapperConfiguration();
+  mconfig.setMappingFiles(Arrays.asList(new String[]{"bean-to-bean-dozer-mappings.xml"}));
+  new DozerTypeConverterLoader(camelctx,mconfig);
+  CustomerA customerA=new CustomerA("Peter","Post","SomeStreet","12345");
+  camelctx.start();
+  try {
+    ProducerTemplate producer=camelctx.createProducerTemplate();
+    CustomerB result=producer.requestBody("direct:start",customerA,CustomerB.class);
+    Assert.assertEquals(customerA.getFirstName(),result.getFirstName());
+    Assert.assertEquals(customerA.getLastName(),result.getLastName());
+    Assert.assertEquals(customerA.getStreet(),result.getAddress().getStreet());
+    Assert.assertEquals(customerA.getZip(),result.getAddress().getZip());
+  }
+  finally {
+    camelctx.stop();
+  }
+}
