@@ -4,7 +4,7 @@
   getEndpoint().getClient().subscribe(topic);
   getEndpoint().getClient().setCallback(new MqttCallback(){
     @Override public void connectionLost(    Throwable cause){
-      LOG.debug("MQTT broker connection lost:",cause);
+      LOG.debug("MQTT broker connection lost due " + cause.getMessage(),cause);
     }
     @Override public void messageArrived(    String topic,    MqttMessage message) throws Exception {
       String headerKey;
@@ -23,7 +23,9 @@
         headerKey=PahoConstants.HEASER_MQTT_PROPERTIES;
         headerValue=props;
       }
-      Exchange exchange=ExchangeBuilder.anExchange(getEndpoint().getCamelContext()).withBody(message.getPayload()).withHeader(headerKey,headerValue).build();
+      Exchange exchange=getEndpoint().createExchange();
+      exchange.getIn().setBody(message.getPayload());
+      exchange.getIn().setHeader(headerKey,headerValue);
       getAsyncProcessor().process(exchange,new AsyncCallback(){
         @Override public void done(        boolean doneSync){
         }
