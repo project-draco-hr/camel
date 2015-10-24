@@ -1,30 +1,46 @@
 {
-  task=new TimerTask(){
-    private final AtomicLong counter=new AtomicLong();
-    @Override public void run(){
-      if (!isTaskRunAllowed()) {
-        LOG.debug("Run now allowed for timer: {}",endpoint);
-        return;
-      }
-      try {
-        long count=counter.incrementAndGet();
-        boolean fire=endpoint.getRepeatCount() <= 0 || count <= endpoint.getRepeatCount();
-        if (fire) {
-          sendTimerExchange(count);
+  if (endpoint.getDelay() >= 0) {
+    task=new TimerTask(){
+      private final AtomicLong counter=new AtomicLong();
+      @Override public void run(){
+        if (!isTaskRunAllowed()) {
+          LOG.debug("Run now allowed for timer: {}",endpoint);
+          return;
         }
+        try {
+          long count=counter.incrementAndGet();
+          boolean fire=endpoint.getRepeatCount() <= 0 || count <= endpoint.getRepeatCount();
+          if (fire) {
+            sendTimerExchange(count);
+          }
  else {
-          LOG.debug("Cancelling {} timer as repeat count limit reached after {} counts.",endpoint.getTimerName(),endpoint.getRepeatCount());
-          cancel();
+            LOG.debug("Cancelling {} timer as repeat count limit reached after {} counts.",endpoint.getTimerName(),endpoint.getRepeatCount());
+            cancel();
+          }
         }
-      }
- catch (      Throwable e) {
-        LOG.warn("Error processing exchange. This exception will be ignored, to let the timer be able to trigger again.",e);
+ catch (        Throwable e) {
+          LOG.warn("Error processing exchange. This exception will be ignored, to let the timer be able to trigger again.",e);
+        }
       }
     }
-  }
 ;
-  if (!configured && endpoint.getCamelContext().getStatus().isStarted()) {
-    Timer timer=endpoint.getTimer(this);
-    configureTask(task,timer);
+    if (!configured && endpoint.getCamelContext().getStatus().isStarted()) {
+      Timer timer=endpoint.getTimer(this);
+      configureTask(task,timer);
+    }
+  }
+ else {
+    executorService=endpoint.getCamelContext().getExecutorServiceManager().newSingleThreadExecutor(this,endpoint.getEndpointUri());
+    executorService.execute(new Runnable(){
+      public void run(){
+        final AtomicLong counter=new AtomicLong();
+        long count=counter.incrementAndGet();
+        while ((endpoint.getRepeatCount() <= 0 || count <= endpoint.getRepeatCount()) && isRunAllowed()) {
+          sendTimerExchange(count);
+          count=counter.incrementAndGet();
+        }
+      }
+    }
+);
   }
 }
