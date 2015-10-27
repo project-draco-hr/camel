@@ -15,23 +15,25 @@
   }
  catch (  ExecuteException ee) {
     LOG.error("ExecException while executing command: " + command.toString() + " - "+ ee.getMessage());
-    throw new ExecException("Failed to execute command " + command,ee);
+    InputStream stdout=out.size() == 0 ? null : new ByteArrayInputStream(out.toByteArray());
+    InputStream stderr=err.size() == 0 ? null : new ByteArrayInputStream(err.toByteArray());
+    throw new ExecException("Failed to execute command " + command,stdout,stderr,ee.getExitValue(),ee);
   }
 catch (  IOException ioe) {
+    InputStream stdout=out.size() == 0 ? null : new ByteArrayInputStream(out.toByteArray());
+    InputStream stderr=err.size() == 0 ? null : new ByteArrayInputStream(err.toByteArray());
+    int exitValue=0;
+    if (executor instanceof ExecDefaultExecutor) {
+      exitValue=((ExecDefaultExecutor)executor).getExitValue();
+    }
     String msg=ioe.getMessage();
     if (msg != null && "stream closed".equals(msg.toLowerCase(Locale.ENGLISH))) {
       LOG.debug("Ignoring Stream closed IOException",ioe);
-      InputStream stdout=out.size() == 0 ? null : new ByteArrayInputStream(out.toByteArray());
-      InputStream stderr=err.size() == 0 ? null : new ByteArrayInputStream(err.toByteArray());
-      int exitValue=0;
-      if (executor instanceof ExecDefaultExecutor) {
-        exitValue=((ExecDefaultExecutor)executor).getExitValue();
-      }
       ExecResult result=new ExecResult(command,stdout,stderr,exitValue);
       return result;
     }
     LOG.error("IOException while executing command: " + command.toString() + " - "+ ioe.getMessage());
-    throw new ExecException("Unable to execute command " + command,ioe);
+    throw new ExecException("Unable to execute command " + command,stdout,stderr,exitValue,ioe);
   }
  finally {
     IOUtils.closeQuietly(command.getInput());
