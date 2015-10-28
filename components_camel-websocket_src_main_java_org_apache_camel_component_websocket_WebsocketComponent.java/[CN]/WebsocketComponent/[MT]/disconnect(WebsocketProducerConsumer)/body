@@ -5,6 +5,8 @@ synchronized (CONNECTORS) {
     ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
     if (connectorRef != null) {
       if (connectorRef.decrement() == 0) {
+        LOG.info("Stopping Jetty Server as the last connector is disconnecting: {}:{}",connectorRef.connector.getHost(),connectorRef.connector.getPort());
+        servlets.remove(createPathSpec(endpoint.getResourceUri()));
         connectorRef.server.removeConnector(connectorRef.connector);
         if (connectorRef.connector != null) {
           connectorRef.connector.stop();

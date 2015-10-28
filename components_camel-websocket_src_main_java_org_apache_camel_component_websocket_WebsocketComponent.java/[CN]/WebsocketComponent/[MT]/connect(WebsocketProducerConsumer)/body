@@ -12,7 +12,6 @@ synchronized (CONNECTORS) {
  else {
         connector=new SelectChannelConnector();
       }
-      LOG.trace("Jetty Connector added: {}",connector.getName());
       if (endpoint.getPort() != null) {
         connector.setPort(endpoint.getPort());
       }
@@ -30,6 +29,7 @@ synchronized (CONNECTORS) {
         enableJmx(server);
       }
       server.addConnector(connector);
+      LOG.trace("Jetty Connector added: {}",connector.getName());
       ServletContextHandler context=createContext(server,connector,endpoint.getHandlers());
       setWebSocketComponentServletInitialParameter(context,endpoint);
       server.setHandler(context);
@@ -50,6 +50,14 @@ synchronized (CONNECTORS) {
     }
     if (endpoint.isSessionSupport()) {
       enableSessionSupport(connectorRef.server,connectorKey);
+    }
+    WebsocketComponentServlet servlet=addServlet(endpoint.getNodeSynchronization(),prodcon,endpoint.getResourceUri());
+    if (prodcon instanceof WebsocketConsumer) {
+      WebsocketConsumer consumer=WebsocketConsumer.class.cast(prodcon);
+      if (servlet.getConsumer() == null) {
+        servlet.setConsumer(consumer);
+      }
+      servlet.connect(consumer);
     }
   }
 }
