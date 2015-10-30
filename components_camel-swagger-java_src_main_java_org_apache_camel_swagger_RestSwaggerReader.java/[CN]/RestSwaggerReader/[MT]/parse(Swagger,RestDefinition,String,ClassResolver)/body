@@ -3,10 +3,12 @@
   Collections.sort(verbs,new VerbOrdering());
   String pathAsTag=rest.getTag() != null ? rest.getTag() : FileUtil.stripLeadingSeparator(rest.getPath());
   String summary=rest.getDescriptionText();
-  Tag tag=new Tag();
-  tag.description(summary);
-  tag.name(pathAsTag);
-  swagger.addTag(tag);
+  if (ObjectHelper.isNotEmpty(pathAsTag)) {
+    Tag tag=new Tag();
+    tag.description(summary);
+    tag.name(pathAsTag);
+    swagger.addTag(tag);
+  }
   Set<String> types=new LinkedHashSet<>();
   for (  VerbDefinition verb : verbs) {
     String type=verb.getType();
@@ -34,7 +36,9 @@
     String method=verb.asVerb().toLowerCase(Locale.US);
     String opPath=SwaggerHelper.buildUrl(basePath,verb.getUri());
     Operation op=new Operation();
-    op.addTag(pathAsTag);
+    if (ObjectHelper.isNotEmpty(pathAsTag)) {
+      op.addTag(pathAsTag);
+    }
     op.getVendorExtensions().put("x-camelContextId",camelContextId);
     op.getVendorExtensions().put("x-routeId",verb.getRouteId());
     Path path=swagger.getPath(opPath);
