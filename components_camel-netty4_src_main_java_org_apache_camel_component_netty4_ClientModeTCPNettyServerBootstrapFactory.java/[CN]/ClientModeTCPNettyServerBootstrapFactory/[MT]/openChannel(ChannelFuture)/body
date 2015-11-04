@@ -17,19 +17,8 @@
   }
   if (!channelFuture.isDone() || !channelFuture.isSuccess()) {
     if (configuration.isReconnect()) {
-      final EventLoop loop=channelFuture.channel().eventLoop();
-      loop.schedule(new Runnable(){
-        @Override public void run(){
-          try {
-            LOG.trace("Re-connecting to {} if needed",configuration.getAddress());
-            doReconnectIfNeeded();
-          }
- catch (          Exception e) {
-            LOG.warn("Error during re-connect to " + configuration.getAddress() + ". Will attempt again in "+ configuration.getReconnectInterval()+ " millis. This exception is ignored.",e);
-          }
-        }
-      }
-,configuration.getReconnectInterval(),TimeUnit.MILLISECONDS);
+      scheduleReconnect(channelFuture);
+      return null;
     }
  else {
       ConnectException cause=new ConnectException("Cannot connect to " + configuration.getAddress());
@@ -42,6 +31,14 @@
   Channel answer=channelFuture.channel();
   if (LOG.isDebugEnabled()) {
     LOG.debug("Creating connector to address: {}",configuration.getAddress());
+  }
+  if (configuration.isReconnect()) {
+    answer.closeFuture().addListener(new ChannelFutureListener(){
+      @Override public void operationComplete(      ChannelFuture future) throws Exception {
+        scheduleReconnect(channelFuture);
+      }
+    }
+);
   }
   return answer;
 }
