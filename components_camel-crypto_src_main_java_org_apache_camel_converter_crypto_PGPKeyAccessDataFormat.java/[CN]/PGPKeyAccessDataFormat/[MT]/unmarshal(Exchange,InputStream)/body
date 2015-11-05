@@ -6,9 +6,7 @@
   InputStream encData=null;
   InputStream uncompressedData=null;
   InputStream litData=null;
-  CachedOutputStream cos;
-  ByteArrayOutputStream bos;
-  OutputStream os=null;
+  OutputStreamBuilder osb=null;
   try {
     in=PGPUtil.getDecoderStream(encryptedStream);
     encData=getDecryptedData(exchange,in);
@@ -42,34 +40,20 @@
       throw getFormatException();
     }
     litData=ld.getInputStream();
-    if (exchange.getContext().getStreamCachingStrategy().isEnabled()) {
-      cos=new CachedOutputStream(exchange);
-      bos=null;
-      os=cos;
-    }
- else {
-      cos=null;
-      bos=new ByteArrayOutputStream();
-      os=bos;
-    }
+    osb=OutputStreamBuilder.withExchange(exchange);
     byte[] buffer=new byte[BUFFER_SIZE];
     int bytesRead;
     while ((bytesRead=litData.read(buffer)) != -1) {
-      os.write(buffer,0,bytesRead);
+      osb.write(buffer,0,bytesRead);
       if (signature != null) {
         signature.update(buffer,0,bytesRead);
       }
-      os.flush();
+      osb.flush();
     }
     verifySignature(pgpFactory,signature);
   }
   finally {
-    IOHelper.close(os,litData,uncompressedData,encData,in,encryptedStream);
+    IOHelper.close(osb,litData,uncompressedData,encData,in,encryptedStream);
   }
-  if (cos != null) {
-    return cos.newStreamCache();
-  }
- else {
-    return bos.toByteArray();
-  }
+  return osb.build();
 }
