@@ -19,8 +19,7 @@
   InetSocketAddress hostAddress=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   SubnetUtils multicastSubnet=new SubnetUtils(MULTICAST_SUBNET);
   if (multicastSubnet.getInfo().isInRange(configuration.getHost())) {
-    ChannelFuture channelFuture=bootstrap.bind(configuration.getPort());
-    channelFuture.awaitUninterruptibly();
+    ChannelFuture channelFuture=bootstrap.bind(configuration.getPort()).sync();
     channel=channelFuture.channel();
     DatagramChannel datagramChannel=(DatagramChannel)channel;
     String networkInterface=configuration.getNetworkInterface() == null ? LOOPBACK_INTERFACE : configuration.getNetworkInterface();
@@ -32,8 +31,7 @@
   }
  else {
     LOG.info("ConnectionlessBootstrap binding to {}:{}",configuration.getHost(),configuration.getPort());
-    ChannelFuture channelFuture=bootstrap.bind(hostAddress);
-    channelFuture.awaitUninterruptibly();
+    ChannelFuture channelFuture=bootstrap.bind(hostAddress).sync();
     channel=channelFuture.channel();
     allChannels.add(channel);
   }
