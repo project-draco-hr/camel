@@ -1,13 +1,18 @@
 {
   String contentType=message.getHeader(Exchange.CONTENT_TYPE,String.class);
   if (contentType != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(contentType)) {
-    try {
-      Object object=message.getMandatoryBody(Serializable.class);
-      HttpHelper.writeObjectToServletResponse(response,object);
-      return;
+    if (allowJavaSerializedObject || isTransferException()) {
+      try {
+        Object object=message.getMandatoryBody(Serializable.class);
+        HttpHelper.writeObjectToServletResponse(response,object);
+        return;
+      }
+ catch (      InvalidPayloadException e) {
+        throw new IOException(e);
+      }
     }
- catch (    InvalidPayloadException e) {
-      throw new IOException(e);
+ else {
+      throw new RuntimeCamelException("Content-type " + HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT + " is not allowed");
     }
   }
   InputStream is=null;
