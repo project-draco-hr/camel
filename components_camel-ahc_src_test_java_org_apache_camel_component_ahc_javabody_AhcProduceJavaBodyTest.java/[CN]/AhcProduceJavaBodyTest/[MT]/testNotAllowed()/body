@@ -1,6 +1,4 @@
 {
-  AhcComponent ahc=context.getComponent("ahc",AhcComponent.class);
-  ahc.setAllowJavaSerializedObject(true);
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
       from(getTestServerEndpointUri()).process(new Processor(){
@@ -18,7 +16,12 @@
   }
 );
   context.start();
-  MyCoolBean reply=template.requestBody(getAhcEndpointUri(),"Hello World",MyCoolBean.class);
-  assertEquals(456,reply.getId());
-  assertEquals("Camel rocks",reply.getName());
+  MyCoolBean cool=new MyCoolBean(123,"Camel");
+  try {
+    template.requestBodyAndHeader(getAhcEndpointUri(),cool,Exchange.CONTENT_TYPE,AhcConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT,MyCoolBean.class);
+    fail("Should fail");
+  }
+ catch (  Exception e) {
+    assertTrue(e.getCause().getMessage().startsWith("Content-type application/x-java-serialized-object is not allowed"));
+  }
 }
