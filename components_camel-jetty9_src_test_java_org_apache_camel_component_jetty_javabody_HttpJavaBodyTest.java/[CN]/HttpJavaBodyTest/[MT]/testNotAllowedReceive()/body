@@ -1,8 +1,11 @@
 {
   HttpCommonComponent jetty=context.getComponent("jetty",HttpCommonComponent.class);
-  jetty.setAllowJavaSerializedObject(true);
+  jetty.setAllowJavaSerializedObject(false);
+  HttpComponent http=context.getComponent("http",HttpComponent.class);
+  http.setAllowJavaSerializedObject(true);
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
+      onException(Exception.class).to("mock:error");
       from("jetty:http://localhost:{{port}}/myapp/myservice").process(new Processor(){
         public void process(        Exchange exchange) throws Exception {
           String body=exchange.getIn().getBody(String.class);
@@ -18,7 +21,10 @@
   }
 );
   context.start();
-  MyCoolBean reply=template.requestBody("jetty:http://localhost:{{port}}/myapp/myservice","Hello World",MyCoolBean.class);
-  assertEquals(456,reply.getId());
-  assertEquals("Camel rocks",reply.getName());
+  try {
+    template.requestBody("http://localhost:{{port}}/myapp/myservice","Hello World",MyCoolBean.class);
+    fail("Should fail");
+  }
+ catch (  Exception e) {
+  }
 }
