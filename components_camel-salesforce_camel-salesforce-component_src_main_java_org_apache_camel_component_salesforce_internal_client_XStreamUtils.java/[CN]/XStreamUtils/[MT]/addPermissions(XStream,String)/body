@@ -1,0 +1,34 @@
+{
+  for (  String pterm : permissions.split(",")) {
+    boolean aod;
+    pterm=pterm.trim();
+    if (pterm.startsWith("-")) {
+      aod=false;
+      pterm=pterm.substring(1);
+    }
+ else {
+      aod=true;
+      if (pterm.startsWith("+")) {
+        pterm=pterm.substring(1);
+      }
+    }
+    TypePermission typePermission=null;
+    if ("*".equals(pterm)) {
+      typePermission=AnyTypePermission.ANY;
+    }
+ else     if (pterm.indexOf('*') < 0) {
+      typePermission=new ExplicitTypePermission(new String[]{pterm});
+    }
+ else     if (pterm.length() > 0) {
+      typePermission=new WildcardTypePermission(new String[]{pterm});
+    }
+    if (typePermission != null) {
+      if (aod) {
+        xstream.addPermission(typePermission);
+      }
+ else {
+        xstream.denyPermission(typePermission);
+      }
+    }
+  }
+}
