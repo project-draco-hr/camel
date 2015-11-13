@@ -26,6 +26,14 @@
   if (num > 0) {
     port=num;
   }
+  String contextPath=config.getContextPath();
+  if (ObjectHelper.isNotEmpty(contextPath)) {
+    contextPath=FileUtil.stripTrailingSeparator(contextPath);
+    contextPath=FileUtil.stripLeadingSeparator(contextPath);
+    if (ObjectHelper.isNotEmpty(contextPath)) {
+      path=contextPath + "/" + path;
+    }
+  }
   Map<String,Object> map=new HashMap<String,Object>();
   if (config.getComponent() == null || config.getComponent().equals("undertow")) {
     if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
@@ -35,12 +43,13 @@
   String query=URISupport.createQueryString(map);
   String url;
   if (api) {
-    url="undertow:%s://%s:%s/%s?matchOnUriPrefix=true";
+    url="undertow:%s://%s:%s/%s?matchOnUriPrefix=true&httpMethodRestrict=%s";
   }
  else {
-    url="undertow:%s://%s:%s/%s";
+    url="undertow:%s://%s:%s/%s?httpMethodRestrict=%s";
   }
-  url=String.format(url,scheme,host,port,path);
+  String restrict=verb.toUpperCase(Locale.US);
+  url=String.format(url,scheme,host,port,path,restrict);
   if (!query.isEmpty()) {
     url=url + "&" + query;
   }

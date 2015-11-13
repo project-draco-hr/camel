@@ -1,4 +1,10 @@
 {
+  UndertowConsumer consumer=resolver.resolve(httpExchange,consumers);
+  if (consumer == null) {
+    LOG.debug("Unable to resolve consumer matching path {}",httpExchange.getRequestPath());
+    new NotFoundHandler().handleRequest(httpExchange);
+    return;
+  }
   HttpString requestMethod=httpExchange.getRequestMethod();
   if (Methods.OPTIONS.equals(requestMethod)) {
     String allowedMethods;
@@ -37,7 +43,7 @@
  finally {
     consumer.doneUoW(camelExchange);
   }
-  Object body=getResponseBody(httpExchange,camelExchange);
+  Object body=getResponseBody(httpExchange,camelExchange,consumer);
   TypeConverter tc=consumer.getEndpoint().getCamelContext().getTypeConverter();
   if (body == null) {
     LOG.trace("No payload to send as reply for exchange: " + camelExchange);

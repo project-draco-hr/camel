@@ -6,6 +6,15 @@
   headersMap.put(Exchange.HTTP_QUERY,httpExchange.getQueryString());
   headersMap.put(Exchange.HTTP_RAW_QUERY,httpExchange.getQueryString());
   String path=httpExchange.getRequestPath();
+  UndertowEndpoint endpoint=(UndertowEndpoint)exchange.getFromEndpoint();
+  if (endpoint.getHttpURI() != null) {
+    String endpointPath=endpoint.getHttpURI().getPath();
+    String matchPath=path.toLowerCase(Locale.US);
+    String match=endpointPath.toLowerCase(Locale.US);
+    if (match != null && matchPath.startsWith(match)) {
+      path=path.substring(endpointPath.length());
+    }
+  }
   headersMap.put(Exchange.HTTP_PATH,path);
   if (LOG.isTraceEnabled()) {
     LOG.trace("HTTP-Method {}",httpExchange.getRequestMethod());
@@ -45,6 +54,14 @@
           UndertowHelper.appendHeader(headersMap,name,value);
         }
       }
+    }
+  }
+  Map<String,Object> predicateContextParams=httpExchange.getAttachment(Predicate.PREDICATE_CONTEXT);
+  if (predicateContextParams != null) {
+    predicateContextParams.remove("remaining");
+    for (    String paramName : predicateContextParams.keySet()) {
+      LOG.trace("REST Template Variable {}: {})",paramName,predicateContextParams.get(paramName));
+      headersMap.put(paramName,predicateContextParams.get(paramName));
     }
   }
 }

@@ -1,24 +1,34 @@
 {
   Undertow.Builder result=Undertow.builder();
-  if (registy.getSslContext() != null) {
-    result=result.addHttpsListener(registy.getPort(),registy.getHost(),registy.getSslContext());
+  if (registry.getSslContext() != null) {
+    result=result.addHttpsListener(registry.getPort(),registry.getHost(),registry.getSslContext());
   }
  else {
-    result=result.addHttpListener(registy.getPort(),registy.getHost());
+    result=result.addHttpListener(registry.getPort(),registry.getHost());
   }
-  PathHandler path=Handlers.path(new NotFoundHandler());
-  for (  URI key : registy.getConsumersRegistry().keySet()) {
-    UndertowConsumer consumer=registy.getConsumersRegistry().get(key);
-    URI httpUri=consumer.getEndpoint().getHttpURI();
-    HttpCamelHandler handler=new HttpCamelHandler(consumer);
-    if (consumer.getEndpoint().getMatchOnUriPrefix()) {
-      path.addPrefixPath(httpUri.getPath(),handler);
+  PathHandler pathHandler=Handlers.path(new NotFoundHandler());
+  HttpCamelHandler handler=new HttpCamelHandler();
+  List<Predicate> predicates=new ArrayList<Predicate>();
+  for (  String key : registry.getConsumersRegistry().keySet()) {
+    UndertowConsumer consumer=registry.getConsumersRegistry().get(key);
+    UndertowEndpoint endpoint=consumer.getEndpoint();
+    String path=endpoint.getHttpURI().getPath();
+    if (path.contains("{")) {
+      predicates.add(new PathTemplatePredicate(path,ExchangeAttributes.relativePath()));
     }
  else {
-      path.addExactPath(httpUri.getPath(),handler);
+      if (endpoint.getMatchOnUriPrefix()) {
+        predicates.add(Predicates.prefix(path));
+      }
+ else {
+        predicates.add(Predicates.path(path));
+      }
     }
-    LOG.debug("Rebuild for path: {}",httpUri.getPath());
+    handler.connectConsumer(consumer);
+    LOG.debug("Rebuild for pathHandler: {}",path);
   }
-  result=result.setHandler(path);
+  Predicate combinedPathPredicate=Predicates.or(predicates.toArray(new Predicate[0]));
+  pathHandler.addPrefixPath("/",new PredicateHandler(combinedPathPredicate,handler,new NotFoundHandler()));
+  result=result.setHandler(pathHandler);
   return result.build();
 }
