@@ -1,0 +1,48 @@
+{
+  if (multipartWithoutAttachment || headersInline || exchange.getIn().hasAttachments()) {
+    ContentType contentType=getContentType(exchange);
+    exchange.getOut().removeHeader(Exchange.CONTENT_TYPE);
+    byte[] bodyContent=ExchangeHelper.convertToMandatoryType(exchange,byte[].class,graph);
+    Session session=Session.getInstance(System.getProperties());
+    MimeMessage mm=new MimeMessage(session);
+    MimeMultipart mp=new MimeMultipart(multipartSubType);
+    BodyPart part=new MimeBodyPart();
+    writeBodyPart(bodyContent,part,contentType);
+    mp.addBodyPart(part);
+    for (    Map.Entry<String,DataHandler> entry : exchange.getIn().getAttachments().entrySet()) {
+      String attachmentFilename=entry.getKey();
+      DataHandler handler=entry.getValue();
+      part=new MimeBodyPart();
+      part.setDataHandler(handler);
+      part.setFileName(MimeUtility.encodeText(attachmentFilename,"UTF-8",null));
+      String ct=handler.getContentType();
+      contentType=new ContentType(ct);
+      part.setHeader(CONTENT_TYPE,ct);
+      if (!contentType.match("text/*") && binaryContent) {
+        part.setHeader(CONTENT_TRANSFER_ENCODING,"binary");
+      }
+      mp.addBodyPart(part);
+      exchange.getOut().removeAttachment(attachmentFilename);
+    }
+    mm.setContent(mp);
+    mm.saveChanges();
+    Enumeration<?> hl=mm.getAllHeaders();
+    List<String> headers=new ArrayList<String>();
+    if (!headersInline) {
+      while (hl.hasMoreElements()) {
+        Object ho=hl.nextElement();
+        if (ho instanceof Header) {
+          Header h=(Header)ho;
+          exchange.getOut().setHeader(h.getName(),h.getValue());
+          headers.add(h.getName());
+        }
+      }
+      mm.saveChanges();
+    }
+    mm.writeTo(stream,headers.toArray(new String[0]));
+  }
+ else {
+    InputStream is=ExchangeHelper.convertToMandatoryType(exchange,InputStream.class,graph);
+    IOHelper.copyAndCloseInput(is,stream);
+  }
+}

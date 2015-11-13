@@ -1,0 +1,73 @@
+{
+  MimeBodyPart mimeMessage;
+  String contentType;
+  Message camelMessage;
+  Object content=null;
+  if (headersInline) {
+    mimeMessage=new MimeBodyPart(stream);
+    camelMessage=exchange.getOut();
+    MessageHelper.copyHeaders(exchange.getIn(),camelMessage,true);
+    contentType=mimeMessage.getHeader(CONTENT_TYPE,null);
+  }
+ else {
+    contentType=exchange.getIn().getHeader(CONTENT_TYPE,String.class);
+    if (contentType == null) {
+      return stream;
+    }
+    try {
+      ContentType ct=new ContentType(contentType);
+      if (!ct.match("multipart/*")) {
+        return stream;
+      }
+    }
+ catch (    ParseException e) {
+      LOG.warn("Invalid Content-Type " + contentType + " ignored");
+      return stream;
+    }
+    camelMessage=exchange.getOut();
+    MessageHelper.copyHeaders(exchange.getIn(),camelMessage,true);
+    ByteArrayOutputStream bos=new ByteArrayOutputStream();
+    IOHelper.copyAndCloseInput(stream,bos);
+    InternetHeaders headers=new InternetHeaders();
+    extractHeader(CONTENT_TYPE,camelMessage,headers);
+    extractHeader(MIME_VERSION,camelMessage,headers);
+    mimeMessage=new MimeBodyPart(headers,bos.toByteArray());
+    bos.close();
+  }
+  DataHandler dh;
+  try {
+    dh=mimeMessage.getDataHandler();
+    if (dh != null) {
+      content=dh.getContent();
+      contentType=dh.getContentType();
+    }
+  }
+ catch (  MessagingException e) {
+    LOG.warn("cannot parse message, no unmarshalling done");
+  }
+  if (content instanceof MimeMultipart) {
+    MimeMultipart mp=(MimeMultipart)content;
+    content=mp.getBodyPart(0);
+    for (int i=1; i < mp.getCount(); i++) {
+      BodyPart bp=mp.getBodyPart(i);
+      camelMessage.addAttachment(MimeUtility.decodeText(bp.getFileName()),bp.getDataHandler());
+    }
+  }
+  if (content instanceof BodyPart) {
+    BodyPart bp=(BodyPart)content;
+    camelMessage.setBody(bp.getInputStream());
+    contentType=bp.getContentType();
+  }
+ else {
+    camelMessage.setBody(content);
+  }
+  if (contentType != null && !DEFAULT_CONTENT_TYPE.equals(contentType)) {
+    camelMessage.setHeader(CONTENT_TYPE,contentType);
+    ContentType ct=new ContentType(contentType);
+    String charset=ct.getParameter("charset");
+    if (charset != null) {
+      camelMessage.setHeader(Exchange.CONTENT_ENCODING,MimeUtility.javaCharset(charset));
+    }
+  }
+  return camelMessage;
+}
