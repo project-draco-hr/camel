@@ -8,7 +8,13 @@
   Set<EndpointPath> endpointPaths=new LinkedHashSet<EndpointPath>();
   Set<EndpointOption> endpointOptions=new LinkedHashSet<EndpointOption>();
   findClassProperties(writer,roundEnv,componentModel,endpointPaths,endpointOptions,classElement,prefix);
-  if (!endpointOptions.isEmpty() || !endpointPaths.isEmpty()) {
+  List<EndpointPath> paths=new ArrayList<EndpointPath>();
+  paths.addAll(endpointPaths);
+  Collections.sort(paths,EndpointHelper.createPathComparator(componentModel.getSyntax()));
+  List<EndpointOption> options=new ArrayList<EndpointOption>();
+  options.addAll(endpointOptions);
+  Collections.sort(options,EndpointHelper.createGroupAndLabelComparator());
+  if (!options.isEmpty() || !paths.isEmpty()) {
     writer.println("<table class='table'>");
     writer.println("  <tr>");
     writer.println("    <th align=\"left\">Name</th>");
@@ -20,7 +26,7 @@
     writer.println("    <th align=\"left\">Enum</th>");
     writer.println("    <th align=\"left\">Description</th>");
     writer.println("  </tr>");
-    for (    EndpointPath path : endpointPaths) {
+    for (    EndpointPath path : paths) {
       writer.println("  <tr>");
       writer.println("    <td>" + path.getName() + "</td>");
       writer.println("    <td>" + "path" + "</td>");
@@ -32,7 +38,7 @@
       writer.println("    <td>" + path.getDocumentation() + "</td>");
       writer.println("  </tr>");
     }
-    for (    EndpointOption option : endpointOptions) {
+    for (    EndpointOption option : options) {
       writer.println("  <tr>");
       writer.println("    <td>" + option.getName() + "</td>");
       writer.println("    <td>" + "parameter" + "</td>");
