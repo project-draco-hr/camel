@@ -14,6 +14,7 @@
   if (syntax == null) {
     throw new IllegalArgumentException("Endpoint with scheme " + scheme + " has no syntax defined in the json schema");
   }
+  rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
   syntax=after(syntax,":");
   String originalSyntax=syntax;
   Map<String,String> copy=new TreeMap<String,String>();
@@ -52,6 +53,16 @@
     String token=null;
     if (tokens.length > i) {
       token=tokens[i];
+    }
+    boolean contains=properties.containsKey(key);
+    if (!contains) {
+      if (isPropertyRequired(rows,key)) {
+        String value=getPropertyDefaultValue(rows,key);
+        if (value != null) {
+          properties.put(key,value);
+          key2=value;
+        }
+      }
     }
     if (properties.containsKey(key)) {
       if (!first && token != null) {
