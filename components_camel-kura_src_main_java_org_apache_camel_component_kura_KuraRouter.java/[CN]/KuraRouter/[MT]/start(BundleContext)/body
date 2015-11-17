@@ -4,6 +4,16 @@
     log.debug("Initializing bundle {}.",bundleContext.getBundle().getBundleId());
     camelContext=createCamelContext();
     camelContext.addRoutes(this);
+    ConfigurationAdmin configurationAdmin=requiredService(ConfigurationAdmin.class);
+    Configuration camelKuraConfig=configurationAdmin.getConfiguration("kura.camel");
+    if (camelKuraConfig != null && camelKuraConfig.getProperties() != null) {
+      Object routePropertyValue=camelKuraConfig.getProperties().get(camelXmlRoutesProperty());
+      if (routePropertyValue != null) {
+        InputStream routesXml=new ByteArrayInputStream(routePropertyValue.toString().getBytes());
+        RoutesDefinition loadedRoutes=camelContext.loadRoutesDefinition(routesXml);
+        camelContext.addRouteDefinitions(loadedRoutes.getRoutes());
+      }
+    }
     beforeStart(camelContext);
     log.debug("About to start Camel Kura router: {}",getClass().getName());
     camelContext.start();
