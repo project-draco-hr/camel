@@ -1,0 +1,41 @@
+{
+  final ByteArrayOutputStream out=new ByteArrayOutputStream();
+  final ByteBuffer buffer=ByteBuffer.wrap(new byte[1024]);
+  for (; ; ) {
+    int res=source.read(buffer);
+    if (res == -1) {
+      return out.toByteArray();
+    }
+ else     if (res == 0) {
+      source.getReadSetter().set(new ChannelListener<StreamSourceChannel>(){
+        @Override public void handleEvent(        StreamSourceChannel channel){
+          for (; ; ) {
+            try {
+              int res=channel.read(buffer);
+              if (res == -1 || res == 0) {
+                out.toByteArray();
+                return;
+              }
+ else {
+                buffer.flip();
+                out.write(buffer.array(),buffer.arrayOffset() + buffer.position(),buffer.arrayOffset() + buffer.limit());
+                buffer.clear();
+              }
+            }
+ catch (            IOException e) {
+              LOG.error("Exception reading from channel {}",e);
+            }
+          }
+        }
+      }
+);
+      source.resumeReads();
+      return out.toByteArray();
+    }
+ else {
+      buffer.flip();
+      out.write(buffer.array(),buffer.arrayOffset() + buffer.position(),buffer.arrayOffset() + buffer.limit());
+      buffer.clear();
+    }
+  }
+}
