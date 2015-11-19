@@ -10,13 +10,15 @@
   String servletName=getAndRemoveParameter(parameters,"servletName",String.class,getServletName());
   String httpMethodRestrict=getAndRemoveParameter(parameters,"httpMethodRestrict",String.class);
   HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
-  String scheme=ObjectHelper.before(uri,":");
-  String after=ObjectHelper.after(uri,":");
-  while (after.startsWith("/")) {
-    after=after.substring(1);
+  if (lenientContextPath()) {
+    String scheme=ObjectHelper.before(uri,":");
+    String after=ObjectHelper.after(uri,":");
+    while (after.startsWith("/")) {
+      after=after.substring(1);
+    }
+    after="/" + after;
+    uri=scheme + ":" + after;
   }
-  after="/" + after;
-  uri=scheme + ":" + after;
   URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encodeHttpURI(uri)),parameters);
   ServletEndpoint endpoint=createServletEndpoint(uri,this,httpUri);
   endpoint.setServletName(servletName);
