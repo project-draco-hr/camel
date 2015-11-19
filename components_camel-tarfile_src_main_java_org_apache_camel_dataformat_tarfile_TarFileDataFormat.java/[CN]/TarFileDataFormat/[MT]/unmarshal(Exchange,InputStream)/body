@@ -3,23 +3,23 @@
     return new TarIterator(exchange.getIn(),stream);
   }
  else {
-    InputStream is=exchange.getIn().getMandatoryBody(InputStream.class);
-    TarArchiveInputStream tis=(TarArchiveInputStream)new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR,new BufferedInputStream(is));
-    ByteArrayOutputStream baos=new ByteArrayOutputStream();
+    BufferedInputStream bis=new BufferedInputStream(stream);
+    TarArchiveInputStream tis=(TarArchiveInputStream)new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR,bis);
+    OutputStreamBuilder osb=OutputStreamBuilder.withExchange(exchange);
     try {
       TarArchiveEntry entry=tis.getNextTarEntry();
       if (entry != null) {
         exchange.getOut().setHeader(FILE_NAME,entry.getName());
-        IOHelper.copy(tis,baos);
+        IOHelper.copy(tis,osb);
       }
       entry=tis.getNextTarEntry();
       if (entry != null) {
         throw new IllegalStateException("Tar file has more than 1 entry.");
       }
-      return baos.toByteArray();
+      return osb.build();
     }
   finally {
-      IOHelper.close(tis,baos);
+      IOHelper.close(osb,tis,bis);
     }
   }
 }
