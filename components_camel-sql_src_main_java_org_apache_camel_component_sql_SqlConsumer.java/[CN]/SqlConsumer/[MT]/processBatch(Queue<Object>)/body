@@ -17,6 +17,15 @@
  catch (    Exception e) {
       exchange.setException(e);
     }
+    if (getEndpoint().isTransacted() && exchange.isFailed()) {
+      Exception cause=exchange.getException();
+      if (cause != null) {
+        throw cause;
+      }
+ else {
+        throw new RollbackExchangeException("Rollback transaction due error processing exchange",exchange);
+      }
+    }
     String sql=exchange.isFailed() ? onConsumeFailed : onConsume;
     try {
       if (data != null && sql != null) {
