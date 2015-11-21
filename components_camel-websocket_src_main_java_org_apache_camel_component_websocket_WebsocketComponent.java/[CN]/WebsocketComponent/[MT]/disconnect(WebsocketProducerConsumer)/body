@@ -12,6 +12,7 @@ synchronized (CONNECTORS) {
           connectorRef.connector.stop();
         }
         connectorRef.server.stop();
+        connectorRef.memoryStore.stop();
         CONNECTORS.remove(connectorKey);
         if (mbContainer != null) {
           mbContainer.removeBean(connectorRef.server);
@@ -20,6 +21,9 @@ synchronized (CONNECTORS) {
       }
       if (prodcon instanceof WebsocketConsumer) {
         connectorRef.servlet.disconnect((WebsocketConsumer)prodcon);
+      }
+      if (prodcon instanceof WebsocketProducer) {
+        ((WebsocketProducer)prodcon).setStore(null);
       }
     }
   }

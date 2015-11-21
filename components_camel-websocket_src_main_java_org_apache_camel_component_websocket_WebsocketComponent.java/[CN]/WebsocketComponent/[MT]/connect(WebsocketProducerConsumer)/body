@@ -37,11 +37,13 @@ synchronized (CONNECTORS) {
       if (endpoint.getStaticResources() != null) {
         server=createStaticResourcesServer(server,context,endpoint.getStaticResources());
       }
-      connectorRef=new ConnectorRef(server,connector,null);
+      MemoryWebsocketStore memoryStore=new MemoryWebsocketStore();
+      connectorRef=new ConnectorRef(server,connector,null,memoryStore);
       if (endpoint.isSessionSupport()) {
         enableSessionSupport(connectorRef.server,connectorKey);
       }
       LOG.info("Jetty Server starting on host: {}:{}",connector.getHost(),connector.getPort());
+      connectorRef.memoryStore.start();
       connectorRef.server.start();
       CONNECTORS.put(connectorKey,connectorRef);
     }
@@ -51,13 +53,18 @@ synchronized (CONNECTORS) {
     if (endpoint.isSessionSupport()) {
       enableSessionSupport(connectorRef.server,connectorKey);
     }
-    WebsocketComponentServlet servlet=addServlet(endpoint.getNodeSynchronization(),prodcon,endpoint.getResourceUri());
+    NodeSynchronization sync=new DefaultNodeSynchronization(connectorRef.memoryStore);
+    WebsocketComponentServlet servlet=addServlet(sync,prodcon,endpoint.getResourceUri());
     if (prodcon instanceof WebsocketConsumer) {
       WebsocketConsumer consumer=WebsocketConsumer.class.cast(prodcon);
       if (servlet.getConsumer() == null) {
         servlet.setConsumer(consumer);
       }
       servlet.connect(consumer);
+    }
+    if (prodcon instanceof WebsocketProducer) {
+      WebsocketProducer producer=WebsocketProducer.class.cast(prodcon);
+      producer.setStore(connectorRef.memoryStore);
     }
   }
 }
