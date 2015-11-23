@@ -23,6 +23,16 @@
  else {
           log.debug("Reply received. OUT message body set to reply payload: {}",body);
         }
+        if (endpoint.isTransferFault()) {
+          Object faultHeader=response.removeHeader(JmsConstants.JMS_TRANSFER_FAULT);
+          if (faultHeader != null) {
+            boolean isFault=exchange.getContext().getTypeConverter().tryConvertTo(boolean.class,faultHeader);
+            log.debug("Transfer fault on OUT message: {}",isFault);
+            if (isFault) {
+              exchange.getOut().setFault(true);
+            }
+          }
+        }
         if (holder.getOriginalCorrelationId() != null) {
           JmsMessageHelper.setCorrelationId(message,holder.getOriginalCorrelationId());
           exchange.getOut().setHeader("JMSCorrelationID",holder.getOriginalCorrelationId());
