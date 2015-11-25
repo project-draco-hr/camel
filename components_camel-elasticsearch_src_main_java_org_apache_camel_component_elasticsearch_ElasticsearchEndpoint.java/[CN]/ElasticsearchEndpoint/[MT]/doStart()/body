@@ -1,28 +1,33 @@
 {
   super.doStart();
-  if (configuration.isLocal()) {
-    LOG.info("Starting local ElasticSearch server");
-  }
- else {
-    LOG.info("Joining ElasticSearch cluster " + configuration.getClusterName());
-  }
-  if (configuration.getIp() != null) {
-    this.client=new TransportClient(getSettings()).addTransportAddress(new InetSocketTransportAddress(configuration.getIp(),configuration.getPort()));
-  }
- else   if (configuration.getTransportAddressesList() != null && !configuration.getTransportAddressesList().isEmpty()) {
-    List<TransportAddress> addresses=new ArrayList(configuration.getTransportAddressesList().size());
-    for (    TransportAddress address : configuration.getTransportAddressesList()) {
-      addresses.add(address);
+  if (client == null) {
+    if (configuration.isLocal()) {
+      LOG.info("Starting local ElasticSearch server");
     }
-    this.client=new TransportClient(getSettings()).addTransportAddresses(addresses.toArray(new TransportAddress[addresses.size()]));
-  }
  else {
-    NodeBuilder builder=nodeBuilder().local(configuration.isLocal()).data(configuration.getData());
-    if (!configuration.isLocal() && configuration.getClusterName() != null) {
-      builder.clusterName(configuration.getClusterName());
+      LOG.info("Joining ElasticSearch cluster " + configuration.getClusterName());
     }
-    builder.getSettings().classLoader(Settings.class.getClassLoader());
-    node=builder.node();
-    client=node.client();
+    if (configuration.getIp() != null) {
+      this.client=new TransportClient(getSettings()).addTransportAddress(new InetSocketTransportAddress(configuration.getIp(),configuration.getPort()));
+    }
+ else     if (configuration.getTransportAddressesList() != null && !configuration.getTransportAddressesList().isEmpty()) {
+      List<TransportAddress> addresses=new ArrayList(configuration.getTransportAddressesList().size());
+      for (      TransportAddress address : configuration.getTransportAddressesList()) {
+        addresses.add(address);
+      }
+      this.client=new TransportClient(getSettings()).addTransportAddresses(addresses.toArray(new TransportAddress[addresses.size()]));
+    }
+ else {
+      NodeBuilder builder=nodeBuilder().local(configuration.isLocal()).data(configuration.getData());
+      builder.getSettings().classLoader(Settings.class.getClassLoader());
+      if (configuration.isLocal()) {
+        builder.getSettings().put("http.enabled",false);
+      }
+      if (!configuration.isLocal() && configuration.getClusterName() != null) {
+        builder.clusterName(configuration.getClusterName());
+      }
+      node=builder.node();
+      client=node.client();
+    }
   }
 }
