@@ -1,0 +1,10 @@
+{
+  when(kinesisClient.getRecords(any(GetRecordsRequest.class))).thenReturn(new GetRecordsResult().withNextShardIterator("nextShardIterator").withRecords(new Record().withSequenceNumber("1").withApproximateArrivalTimestamp(new Date(42)).withPartitionKey("shardId")));
+  undertest.poll();
+  final ArgumentCaptor<Exchange> exchangeCaptor=ArgumentCaptor.forClass(Exchange.class);
+  verify(processor).process(exchangeCaptor.capture(),any(AsyncCallback.class));
+  assertThat(exchangeCaptor.getValue().getProperty(KinesisConstants.APPROX_ARRIVAL_TIME,long.class),is(42L));
+  assertThat(exchangeCaptor.getValue().getProperty(KinesisConstants.PARTITION_KEY,String.class),is("shardId"));
+  assertThat(exchangeCaptor.getValue().getProperty(KinesisConstants.SEQUENCE_NUMBER,String.class),is("1"));
+  assertThat(exchangeCaptor.getValue().getProperty(KinesisConstants.SHARD_ID,String.class),is("shardId"));
+}
