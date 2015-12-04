@@ -1,0 +1,25 @@
+{
+  final List<Method> rddCallbacks=findMethodsWithAnnotation(callback.getClass(),RddCallback.class);
+  if (rddCallbacks.size() > 0) {
+    return new org.apache.camel.component.spark.RddCallback(){
+      @Override public Object onRdd(      AbstractJavaRDDLike rdd,      Object... payloads){
+        try {
+          List<Object> arguments=new ArrayList<>(payloads.length + 1);
+          arguments.add(rdd);
+          arguments.addAll(asList(payloads));
+          if (arguments.get(1) == null) {
+            arguments.remove(1);
+          }
+          Method callbackMethod=rddCallbacks.get(0);
+          callbackMethod.setAccessible(true);
+          return callbackMethod.invoke(callback,arguments.toArray(new Object[arguments.size()]));
+        }
+ catch (        IllegalAccessException|InvocationTargetException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+;
+  }
+  throw new UnsupportedOperationException("Can't find methods annotated with @Rdd.");
+}

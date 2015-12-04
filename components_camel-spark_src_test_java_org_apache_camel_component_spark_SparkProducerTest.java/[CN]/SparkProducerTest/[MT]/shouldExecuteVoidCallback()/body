@@ -1,0 +1,11 @@
+{
+  final File output=File.createTempFile("camel","spark");
+  output.delete();
+  template.sendBodyAndHeader(sparkUri,null,SPARK_RDD_CALLBACK_HEADER,new VoidRddCallback(){
+    @Override public void doOnRdd(    AbstractJavaRDDLike rdd,    Object... payloads){
+      rdd.saveAsTextFile(output.getAbsolutePath());
+    }
+  }
+);
+  Truth.assertThat(output.length()).isGreaterThan(0L);
+}

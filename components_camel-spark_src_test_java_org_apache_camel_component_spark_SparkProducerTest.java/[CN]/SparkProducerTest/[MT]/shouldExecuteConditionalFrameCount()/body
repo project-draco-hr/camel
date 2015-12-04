@@ -1,0 +1,11 @@
+{
+  DataFrameCallback callback=new DataFrameCallback<Long>(){
+    @Override public Long onDataFrame(    DataFrame dataFrame,    Object... payloads){
+      String model=(String)payloads[0];
+      return dataFrame.where(dataFrame.col("model").eqNullSafe(model)).count();
+    }
+  }
+;
+  long tablesCount=template.requestBodyAndHeader(sparkDataFrameUri,"Micra",SPARK_DATAFRAME_CALLBACK_HEADER,callback,Long.class);
+  Truth.assertThat(tablesCount).isEqualTo(1);
+}
