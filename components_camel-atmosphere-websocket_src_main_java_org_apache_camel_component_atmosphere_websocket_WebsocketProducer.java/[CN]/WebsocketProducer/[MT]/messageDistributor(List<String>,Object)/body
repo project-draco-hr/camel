@@ -1,0 +1,14 @@
+{
+  if (connectionKeyList == null) {
+    throw new IllegalArgumentException("Failed to send message to multiple connections; connetion key list is not set.");
+  }
+  notValidConnectionKeys=new ArrayList<>();
+  for (  final String connectionKey : connectionKeyList) {
+    log.debug("Sending to connection key {} -> {}",connectionKey,message);
+    sendMessage(getWebSocket(connectionKey),message);
+  }
+  if (!notValidConnectionKeys.isEmpty()) {
+    log.debug("Some connections have not received the message {}",message);
+    getEndpoint().getWebsocketConsumer().sendNotDeliveredMessage(notValidConnectionKeys,message);
+  }
+}

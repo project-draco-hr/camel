@@ -1,0 +1,14 @@
+{
+  final Exchange exchange=getEndpoint().createExchange();
+  exchange.getIn().setHeader(WebsocketConstants.CONNECTION_KEY_LIST,failedConnectionKeys);
+  exchange.getIn().setHeader(WebsocketConstants.ERROR_TYPE,WebsocketConstants.MESSAGE_NOT_SENT_ERROR_TYPE);
+  exchange.getIn().setBody(message);
+  getAsyncProcessor().process(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (exchange.getException() != null) {
+        getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+      }
+    }
+  }
+);
+}
