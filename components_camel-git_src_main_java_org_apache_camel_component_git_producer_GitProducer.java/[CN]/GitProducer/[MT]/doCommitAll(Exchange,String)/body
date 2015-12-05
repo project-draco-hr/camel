@@ -1,16 +1,27 @@
 {
   String commitMessage=null;
+  String username=null;
+  String email=null;
   if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_COMMIT_MESSAGE))) {
     commitMessage=exchange.getIn().getHeader(GitConstants.GIT_COMMIT_MESSAGE,String.class);
   }
  else {
     throw new IllegalArgumentException("Commit message must be specified to execute " + operation);
   }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_COMMIT_USERNAME)) && ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_COMMIT_EMAIL))) {
+    username=exchange.getIn().getHeader(GitConstants.GIT_COMMIT_USERNAME,String.class);
+    email=exchange.getIn().getHeader(GitConstants.GIT_COMMIT_EMAIL,String.class);
+  }
   try {
     if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
       git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
     }
-    git.commit().setAll(true).setMessage(commitMessage).call();
+    if (ObjectHelper.isNotEmpty(username) && ObjectHelper.isNotEmpty(email)) {
+      git.commit().setAll(true).setCommitter(username,email).setMessage(commitMessage).call();
+    }
+ else {
+      git.commit().setAll(true).setMessage(commitMessage).call();
+    }
   }
  catch (  Exception e) {
     LOG.error("There was an error in Git " + operation + " operation");
