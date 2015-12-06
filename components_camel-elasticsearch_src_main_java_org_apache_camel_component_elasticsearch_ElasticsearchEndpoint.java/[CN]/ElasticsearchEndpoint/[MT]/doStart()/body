@@ -8,18 +8,17 @@
       LOG.info("Joining ElasticSearch cluster " + configuration.getClusterName());
     }
     if (configuration.getIp() != null) {
-      this.client=new TransportClient(getSettings()).addTransportAddress(new InetSocketTransportAddress(configuration.getIp(),configuration.getPort()));
+      this.client=TransportClient.builder().settings(getSettings()).build().addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(configuration.getIp()),configuration.getPort()));
     }
  else     if (configuration.getTransportAddressesList() != null && !configuration.getTransportAddressesList().isEmpty()) {
       List<TransportAddress> addresses=new ArrayList(configuration.getTransportAddressesList().size());
       for (      TransportAddress address : configuration.getTransportAddressesList()) {
         addresses.add(address);
       }
-      this.client=new TransportClient(getSettings()).addTransportAddresses(addresses.toArray(new TransportAddress[addresses.size()]));
+      this.client=TransportClient.builder().settings(getSettings()).build().addTransportAddresses(addresses.toArray(new TransportAddress[addresses.size()]));
     }
  else {
       NodeBuilder builder=nodeBuilder().local(configuration.isLocal()).data(configuration.getData());
-      builder.getSettings().classLoader(Settings.class.getClassLoader());
       if (configuration.isLocal()) {
         builder.getSettings().put("http.enabled",false);
       }
