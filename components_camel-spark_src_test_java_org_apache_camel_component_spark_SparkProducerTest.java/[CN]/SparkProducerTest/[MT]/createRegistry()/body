@@ -1,10 +1,12 @@
 {
   JndiRegistry registry=super.createRegistry();
   registry.bind("pomRdd",sparkContext.textFile("testrdd.txt"));
-  registry.bind("hiveContext",hiveContext);
-  DataFrame jsonCars=hiveContext.read().json("src/test/resources/cars.json");
-  jsonCars.registerTempTable("cars");
-  registry.bind("jsonCars",jsonCars);
+  if (shouldRunHive) {
+    registry.bind("hiveContext",hiveContext);
+    DataFrame jsonCars=hiveContext.read().json("src/test/resources/cars.json");
+    jsonCars.registerTempTable("cars");
+    registry.bind("jsonCars",jsonCars);
+  }
   registry.bind("countLinesTransformation",new org.apache.camel.component.spark.RddCallback(){
     @Override public Object onRdd(    AbstractJavaRDDLike rdd,    Object... payloads){
       return rdd.count();
