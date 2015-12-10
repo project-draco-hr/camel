@@ -16,14 +16,29 @@
   }
   NettyHttpSecurityConfiguration securityConfiguration=resolveAndRemoveReferenceParameter(parameters,"securityConfiguration",NettyHttpSecurityConfiguration.class);
   Map<String,Object> securityOptions=IntrospectionSupport.extractProperties(parameters,"securityConfiguration.");
-  config=parseConfiguration(config,remaining,parameters);
-  setProperties(config,parameters);
-  config.validateConfiguration();
+  int sharedPort=-1;
   NettySharedHttpServer shared=resolveAndRemoveReferenceParameter(parameters,"nettySharedHttpServer",NettySharedHttpServer.class);
   if (shared != null) {
     LOG.debug("Using NettySharedHttpServer: {} with port: {}",shared,shared.getPort());
-    config.setPort(shared.getPort());
+    sharedPort=shared.getPort();
   }
+  config=parseConfiguration(config,remaining,parameters);
+  if (sharedPort != -1) {
+    config.setPort(sharedPort);
+  }
+ else   if (config.getPort() == -1) {
+    if ("http".equals(config.getProtocol())) {
+      config.setPort(80);
+    }
+ else     if ("https".equals(config.getProtocol())) {
+      config.setPort(443);
+    }
+  }
+  if (config.getPort() == -1) {
+    throw new IllegalArgumentException("Port number must be configured");
+  }
+  setProperties(config,parameters);
+  config.validateConfiguration();
   URI u=new URI(UnsafeUriCharactersEncoder.encodeHttpURI(remaining));
   String addressUri=URISupport.createRemainingURI(u,parameters).toString();
   NettyHttpEndpoint answer=new NettyHttpEndpoint(addressUri,this,config);
