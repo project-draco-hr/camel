@@ -5,7 +5,17 @@
     final String streamArn=res0.getStreams().get(0).getStreamArn();
     DescribeStreamRequest req1=new DescribeStreamRequest().withStreamArn(streamArn);
     DescribeStreamResult res1=getClient().describeStream(req1);
-    GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamArn(streamArn).withShardId(res1.getStreamDescription().getShards().get(0).getShardId()).withShardIteratorType(getEndpoint().getIteratorType());
+    shardList.addAll(res1.getStreamDescription().getShards());
+    LOG.trace("Current shard is: {} (in {})",currentShard,shardList);
+    if (currentShard == null) {
+      currentShard=shardList.first();
+    }
+ else {
+      currentShard=shardList.nextAfter(currentShard);
+    }
+    shardList.removeOlderThan(currentShard);
+    LOG.trace("Next shard is: {} (in {})",currentShard,shardList);
+    GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamArn(streamArn).withShardId(currentShard.getShardId()).withShardIteratorType(getEndpoint().getIteratorType());
     GetShardIteratorResult result=getClient().getShardIterator(req);
     currentShardIterator=result.getShardIterator();
   }
