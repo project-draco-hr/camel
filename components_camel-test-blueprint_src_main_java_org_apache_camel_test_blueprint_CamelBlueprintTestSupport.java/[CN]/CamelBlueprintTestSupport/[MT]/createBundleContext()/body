@@ -1,7 +1,16 @@
 {
   System.setProperty("org.apache.aries.blueprint.synchronous",Boolean.toString(!useAsynchronousBlueprintStartup()));
+  String[] file=loadConfigAdminConfigurationFile();
+  if (file != null) {
+    if (file.length != 2) {
+      throw new IllegalArgumentException("The returned String[] from loadConfigAdminConfigurationFile must be of length 2, was " + file.length);
+    }
+    if (!new File(file[0]).exists()) {
+      throw new IllegalArgumentException("The provided file \"" + file[0] + "\" from loadConfigAdminConfigurationFile doesn't exist");
+    }
+  }
   final String symbolicName=getClass().getSimpleName();
-  final BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),includeTestBundle(),getBundleFilter(),getBundleVersion(),getBundleDirectives());
+  final BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),includeTestBundle(),getBundleFilter(),getBundleVersion(),getBundleDirectives(),file);
   boolean expectReload=expectBlueprintContainerReloadOnConfigAdminUpdate();
   Properties extra=useOverridePropertiesWithPropertiesComponent();
   if (extra != null) {
@@ -24,19 +33,9 @@
       services.add(reg);
     }
   }
-  final Dictionary props=new Properties();
-  String[] file=loadConfigAdminConfigurationFile();
-  if (file != null && file.length != 2) {
-    throw new IllegalArgumentException("The returned String[] from loadConfigAdminConfigurationFile must be of length 2, was " + file.length);
-  }
   Set<Long> bpEvents=new HashSet<>();
   CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,null);
-  if (file != null) {
-    if (!new File(file[0]).exists()) {
-      throw new IllegalArgumentException("The provided file \"" + file[0] + "\" from loadConfigAdminConfigurationFile doesn't exist");
-    }
-    CamelBlueprintHelper.setPersistentFileForConfigAdmin(answer,file[1],file[0],props,symbolicName,bpEvents,expectReload);
-  }
+  final Dictionary props=new Properties();
   String pid=useOverridePropertiesWithConfigAdmin(props);
   if (pid != null) {
     ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(answer,ConfigurationAdmin.class);
@@ -44,12 +43,24 @@
     if (config == null) {
       throw new IllegalArgumentException("Cannot find configuration with pid " + pid + " in OSGi ConfigurationAdmin service.");
     }
-    log.info("Updating ConfigAdmin {} by overriding properties {}",config,props);
+    Dictionary<String,Object> currentProperties=config.getProperties();
+    final Dictionary newProps=new Properties();
+    if (currentProperties == null) {
+      currentProperties=newProps;
+    }
+    for (Enumeration<String> ek=currentProperties.keys(); ek.hasMoreElements(); ) {
+      String k=ek.nextElement();
+      newProps.put(k,currentProperties.get(k));
+    }
+    for (    String p : ((Properties)props).stringPropertyNames()) {
+      newProps.put(p,((Properties)props).getProperty(p));
+    }
+    log.info("Updating ConfigAdmin {} by overriding properties {}",config,newProps);
     if (expectReload) {
       CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,new Runnable(){
         @Override public void run(){
           try {
-            config.update(props);
+            config.update(newProps);
           }
  catch (          IOException e) {
             throw new RuntimeException(e.getMessage(),e);
@@ -59,7 +70,7 @@
 );
     }
  else {
-      config.update(props);
+      config.update(newProps);
     }
   }
   return answer;

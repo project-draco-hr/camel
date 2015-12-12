@@ -1,0 +1,28 @@
+{
+  TinyBundle bundle=TinyBundles.newBundle();
+  for (  URL url : getBlueprintDescriptors(descriptors)) {
+    LOG.info("Using Blueprint XML file: " + url.getFile());
+    bundle.add("OSGI-INF/blueprint/blueprint-" + url.getFile().replace("/","-"),url);
+  }
+  StringWriter configAdminInit=null;
+  for (  String[] configAdminPidFile : configAdminPidFiles) {
+    if (configAdminPidFile == null) {
+      continue;
+    }
+    if (configAdminInit == null) {
+      configAdminInit=new StringWriter();
+    }
+ else {
+      configAdminInit.append(',');
+    }
+    configAdminInit.append(configAdminPidFile[1]).append("=");
+    configAdminInit.append(new File(configAdminPidFile[0]).toURI().toString());
+  }
+  bundle.add(TestBundleActivator.class);
+  bundle.add(Util.class);
+  bundle.set("Manifest-Version","2").set("Bundle-ManifestVersion","2").set("Bundle-SymbolicName",name).set("Bundle-Version",version).set("Bundle-Activator",TestBundleActivator.class.getName());
+  if (configAdminInit != null) {
+    bundle.set("X-Camel-Blueprint-ConfigAdmin-Init",configAdminInit.toString());
+  }
+  return bundle;
+}

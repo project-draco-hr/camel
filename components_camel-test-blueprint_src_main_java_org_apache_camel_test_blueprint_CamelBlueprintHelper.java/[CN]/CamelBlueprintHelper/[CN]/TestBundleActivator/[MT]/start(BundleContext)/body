@@ -1,0 +1,17 @@
+{
+  final String configAdminInit=bundleContext.getBundle().getHeaders().get("X-Camel-Blueprint-ConfigAdmin-Init");
+  if (configAdminInit != null) {
+    final BundleContext sysContext=bundleContext.getBundle(0).getBundleContext();
+    sysContext.addBundleListener(new SynchronousBundleListener(){
+      @Override public void bundleChanged(      BundleEvent event){
+        if (event.getType() == BundleEvent.STARTED && "org.apache.felix.configadmin".equals(event.getBundle().getSymbolicName())) {
+          ServiceReference<?> sr=sysContext.getServiceReference("org.osgi.service.cm.ConfigurationAdmin");
+          if (sr != null && sysContext.getService(sr) != null) {
+            initializeConfigAdmin(sysContext,configAdminInit);
+          }
+        }
+      }
+    }
+);
+  }
+}

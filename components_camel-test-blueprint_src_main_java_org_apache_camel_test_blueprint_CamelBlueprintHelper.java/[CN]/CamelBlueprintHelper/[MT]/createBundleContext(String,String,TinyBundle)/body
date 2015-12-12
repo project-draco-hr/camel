@@ -4,11 +4,26 @@
   System.setProperty("org.osgi.framework.storage",tempDir);
   createDirectory(tempDir);
   createDirectory("target/test-bundles");
-  List<BundleDescriptor> bundles=getBundleDescriptors(bundleFilter);
+  List<BundleDescriptor> bundles=new LinkedList<>();
   if (bundle != null) {
     String jarName=name.toLowerCase(Locale.ENGLISH) + "-" + uid+ ".jar";
     bundles.add(getBundleDescriptor("target/test-bundles/" + jarName,bundle));
   }
+  List<BundleDescriptor> bundleDescriptors=getBundleDescriptors(bundleFilter);
+  int idx1=-1, idx2=-1;
+  for (int i=0; i < bundleDescriptors.size(); i++) {
+    BundleDescriptor bd=bundleDescriptors.get(i);
+    if ("org.apache.felix.configadmin".equals(bd.getHeaders().get("Bundle-SymbolicName"))) {
+      idx1=i;
+    }
+    if ("org.apache.aries.blueprint.core".equals(bd.getHeaders().get("Bundle-SymbolicName"))) {
+      idx2=i;
+    }
+  }
+  if (idx1 >= 0 && idx2 >= 0 && idx1 > idx2) {
+    bundleDescriptors.add(idx2,bundleDescriptors.remove(idx1));
+  }
+  bundles.addAll(bundleDescriptors);
   if (LOG.isDebugEnabled()) {
     for (int i=0; i < bundles.size(); i++) {
       BundleDescriptor desc=bundles.get(i);

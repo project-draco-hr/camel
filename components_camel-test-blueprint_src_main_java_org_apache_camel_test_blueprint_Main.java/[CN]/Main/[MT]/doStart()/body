@@ -6,10 +6,14 @@
       throw new IllegalArgumentException("Descriptors must be provided, with the name of the blueprint XML file");
     }
     LOG.debug("Starting Blueprint XML file: " + descriptors);
-    bundleContext=createBundleContext(bundleName);
+    if (configAdminPid != null && configAdminFileName != null) {
+      bundleContext=createBundleContext(bundleName,new String[]{configAdminFileName,configAdminPid});
+    }
+ else {
+      bundleContext=createBundleContext(bundleName);
+    }
     Set<Long> eventHistory=new HashSet<>();
     CamelBlueprintHelper.waitForBlueprintContainer(eventHistory,bundleContext,bundleName,BlueprintEvent.CREATED,null);
-    CamelBlueprintHelper.setPersistentFileForConfigAdmin(bundleContext,configAdminPid,configAdminFileName,new Properties(),bundleName,eventHistory,true);
     camelContext=CamelBlueprintHelper.getOsgiService(bundleContext,CamelContext.class);
     if (camelContext == null) {
       throw new IllegalArgumentException("Cannot find CamelContext in blueprint XML file: " + descriptors);
