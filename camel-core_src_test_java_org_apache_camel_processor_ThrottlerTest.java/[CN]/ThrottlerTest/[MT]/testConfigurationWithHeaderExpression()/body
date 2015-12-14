@@ -3,20 +3,12 @@
     return;
   }
   MockEndpoint resultEndpoint=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
-  resultEndpoint.expectedMessageCount(messageCount);
-  ExecutorService executor=Executors.newFixedThreadPool(messageCount);
-  long start=System.currentTimeMillis();
-  for (int i=0; i < messageCount; i++) {
-    executor.execute(new Runnable(){
-      public void run(){
-        template.sendBodyAndHeader("direct:expressionHeader","<message>payload</message>","throttleValue",1);
-      }
-    }
-);
+  resultEndpoint.expectedMessageCount(MESSAGE_COUNT);
+  ExecutorService executor=Executors.newFixedThreadPool(MESSAGE_COUNT);
+  try {
+    sendMessagesWithHeaderExpression(executor,resultEndpoint,1,INTERVAL,MESSAGE_COUNT);
   }
-  resultEndpoint.assertIsSatisfied();
-  long minimumTime=(messageCount - 1) * INTERVAL;
-  long delta=System.currentTimeMillis() - start + 200;
-  assertTrue("Should take at least " + minimumTime + "ms, was: "+ delta,delta >= minimumTime);
-  executor.shutdownNow();
+  finally {
+    executor.shutdownNow();
+  }
 }

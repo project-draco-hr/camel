@@ -1,0 +1,74 @@
+{
+  long queuedStart=0;
+  if (log.isTraceEnabled()) {
+    queuedStart=exchange.getProperty(PROPERTY_EXCHANGE_QUEUED_TIMESTAMP,0L,Long.class);
+    exchange.removeProperty(PROPERTY_EXCHANGE_QUEUED_TIMESTAMP);
+  }
+  State state=exchange.getProperty(PROPERTY_EXCHANGE_STATE,State.SYNC,State.class);
+  exchange.removeProperty(PROPERTY_EXCHANGE_STATE);
+  boolean doneSync=state == State.SYNC || state == State.ASYNC_REJECTED;
+  try {
+    if (!isRunAllowed()) {
+      throw new RejectedExecutionException("Run is not allowed");
+    }
+    calculateAndSetMaxRequestsPerPeriod(exchange);
+    ThrottlePermit permit=delayQueue.poll();
+    if (permit == null) {
+      if (isRejectExecution()) {
+        throw new ThrottlerRejectedExecutionException("Exceeded the max throttle rate of " + throttleRate + " within "+ timePeriodMillis+ "ms");
+      }
+ else {
+        if (isAsyncDelayed() && !exchange.isTransacted() && state == State.SYNC) {
+          log.debug("Throttle rate exceeded but AsyncDelayed enabled, so queueing for async processing, exchangeId: {}",exchange.getExchangeId());
+          return processAsynchronously(exchange,callback);
+        }
+        long start=0;
+        long elapsed=0;
+        if (log.isTraceEnabled()) {
+          start=System.currentTimeMillis();
+        }
+        permit=delayQueue.take();
+        if (log.isTraceEnabled()) {
+          elapsed=System.currentTimeMillis() - start;
+        }
+        enqueuePermit(permit,exchange);
+        if (state == State.ASYNC) {
+          if (log.isTraceEnabled()) {
+            long queuedTime=start - queuedStart;
+            log.trace("Queued for {}ms, Throttled for {}ms, exchangeId: {}",queuedTime,elapsed,exchange.getExchangeId());
+          }
+        }
+ else {
+          log.trace("Throttled for {}ms, exchangeId: {}",elapsed,exchange.getExchangeId());
+        }
+      }
+    }
+ else {
+      enqueuePermit(permit,exchange);
+      if (state == State.ASYNC) {
+        if (log.isTraceEnabled()) {
+          long queuedTime=System.currentTimeMillis() - queuedStart;
+          log.trace("Queued for {}ms, No throttling applied (throttle cleared while queued), for exchangeId: {}",queuedTime,exchange.getExchangeId());
+        }
+      }
+ else {
+        log.trace("No throttling applied to exchangeId: {}",exchange.getExchangeId());
+      }
+    }
+    if (processor != null) {
+      if (doneSync) {
+        return processor.process(exchange,callback);
+      }
+ else {
+        AsyncProcessorHelper.process(processor,exchange);
+      }
+    }
+    callback.done(doneSync);
+    return doneSync;
+  }
+ catch (  final Throwable t) {
+    exchange.setException(t);
+    callback.done(doneSync);
+    return doneSync;
+  }
+}

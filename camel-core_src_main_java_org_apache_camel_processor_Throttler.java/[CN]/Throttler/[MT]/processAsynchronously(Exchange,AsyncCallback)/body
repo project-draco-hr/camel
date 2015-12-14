@@ -1,0 +1,23 @@
+{
+  try {
+    if (log.isTraceEnabled()) {
+      exchange.setProperty(PROPERTY_EXCHANGE_QUEUED_TIMESTAMP,System.currentTimeMillis());
+    }
+    exchange.setProperty(PROPERTY_EXCHANGE_STATE,State.ASYNC);
+    asyncExecutor.submit(new Runnable(){
+      @Override public void run(){
+        process(exchange,callback);
+      }
+    }
+);
+    return false;
+  }
+ catch (  final RejectedExecutionException e) {
+    if (isCallerRunsWhenRejected()) {
+      log.debug("AsyncExecutor is full, rejected exchange will run in the current thread, exchangeId: {}",exchange.getExchangeId());
+      exchange.setProperty(PROPERTY_EXCHANGE_STATE,State.ASYNC_REJECTED);
+      return process(exchange,callback);
+    }
+    throw e;
+  }
+}

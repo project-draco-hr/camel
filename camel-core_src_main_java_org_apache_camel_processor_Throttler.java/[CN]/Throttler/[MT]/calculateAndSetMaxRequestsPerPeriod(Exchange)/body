@@ -1,0 +1,37 @@
+{
+  Integer newThrottle=maxRequestsPerPeriodExpression.evaluate(exchange,Integer.class);
+  if (newThrottle != null && newThrottle < 0) {
+    throw new IllegalStateException("The maximumRequestsPerPeriod must be a positive number, was: " + newThrottle);
+  }
+synchronized (this) {
+    if (newThrottle == null && throttleRate == 0) {
+      throw new RuntimeExchangeException("The maxRequestsPerPeriodExpression was evaluated as null: " + maxRequestsPerPeriodExpression,exchange);
+    }
+    if (newThrottle != null) {
+      if (newThrottle != throttleRate) {
+        if (throttleRate > newThrottle) {
+          int delta=throttleRate - newThrottle;
+          while (delta > 0) {
+            delayQueue.take();
+            delta--;
+            log.trace("Permit discarded due to throttling rate decrease, triggered by ExchangeId: {}",exchange.getExchangeId());
+          }
+          log.debug("Throttle rate decreased from {} to {}, triggered by ExchangeId: {}",throttleRate,newThrottle,exchange.getExchangeId());
+        }
+ else         if (newThrottle > throttleRate) {
+          int delta=newThrottle - throttleRate;
+          for (int i=0; i < delta; i++) {
+            delayQueue.put(new ThrottlePermit(-1));
+          }
+          if (throttleRate == 0) {
+            log.debug("Initial throttle rate set to {}, triggered by ExchangeId: {}",newThrottle,exchange.getExchangeId());
+          }
+ else {
+            log.debug("Throttle rate increase from {} to {}, triggered by ExchangeId: {}",throttleRate,newThrottle,exchange.getExchangeId());
+          }
+        }
+        throttleRate=newThrottle;
+      }
+    }
+  }
+}

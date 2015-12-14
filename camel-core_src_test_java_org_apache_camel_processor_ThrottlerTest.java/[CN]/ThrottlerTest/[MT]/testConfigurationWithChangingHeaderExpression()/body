@@ -2,12 +2,21 @@
   if (!canTest()) {
     return;
   }
-  ExecutorService executor=Executors.newFixedThreadPool(messageCount);
-  MockEndpoint resultEndpoint=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
-  sendMessagesWithHeaderExpression(executor,resultEndpoint,1);
-  resultEndpoint.reset();
-  sendMessagesWithHeaderExpression(executor,resultEndpoint,10);
-  resultEndpoint.reset();
-  sendMessagesWithHeaderExpression(executor,resultEndpoint,1);
-  executor.shutdownNow();
+  ExecutorService executor=Executors.newFixedThreadPool(5);
+  try {
+    MockEndpoint resultEndpoint=resolveMandatoryEndpoint("mock:result",MockEndpoint.class);
+    sendMessagesWithHeaderExpression(executor,resultEndpoint,1,INTERVAL,MESSAGE_COUNT);
+    Thread.sleep(INTERVAL + TOLERANCE);
+    resultEndpoint.reset();
+    sendMessagesWithHeaderExpression(executor,resultEndpoint,10,INTERVAL,MESSAGE_COUNT);
+    Thread.sleep(INTERVAL + TOLERANCE);
+    resultEndpoint.reset();
+    sendMessagesWithHeaderExpression(executor,resultEndpoint,1,INTERVAL,MESSAGE_COUNT);
+    Thread.sleep(INTERVAL + TOLERANCE);
+    resultEndpoint.reset();
+    sendMessagesWithHeaderExpression(executor,resultEndpoint,10,INTERVAL,MESSAGE_COUNT);
+  }
+  finally {
+    executor.shutdownNow();
+  }
 }

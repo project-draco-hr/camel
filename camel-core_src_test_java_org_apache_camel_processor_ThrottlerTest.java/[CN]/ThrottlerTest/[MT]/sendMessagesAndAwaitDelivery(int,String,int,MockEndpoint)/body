@@ -1,0 +1,24 @@
+{
+  ExecutorService executor=Executors.newFixedThreadPool(threadPoolSize);
+  try {
+    if (receivingEndpoint != null) {
+      receivingEndpoint.expectedMessageCount(messageCount);
+    }
+    long start=System.nanoTime();
+    for (int i=0; i < messageCount; i++) {
+      executor.execute(new Runnable(){
+        public void run(){
+          template.sendBody(endpointUri,"<message>payload</message>");
+        }
+      }
+);
+    }
+    if (receivingEndpoint != null) {
+      receivingEndpoint.assertIsSatisfied();
+    }
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+  }
+  finally {
+    executor.shutdownNow();
+  }
+}

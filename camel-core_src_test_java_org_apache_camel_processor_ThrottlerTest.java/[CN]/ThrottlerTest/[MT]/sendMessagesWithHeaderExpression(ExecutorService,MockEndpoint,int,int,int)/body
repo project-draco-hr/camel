@@ -1,0 +1,15 @@
+{
+  resultEndpoint.expectedMessageCount(messageCount);
+  long start=System.nanoTime();
+  for (int i=0; i < messageCount; i++) {
+    executor.execute(new Runnable(){
+      public void run(){
+        template.sendBodyAndHeader("direct:expressionHeader","<message>payload</message>","throttleValue",throttle);
+      }
+    }
+);
+  }
+  resultEndpoint.assertIsSatisfied();
+  long elapsed=TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+  assertThrottlerTiming(elapsed,throttle,intervalMs,messageCount);
+}
