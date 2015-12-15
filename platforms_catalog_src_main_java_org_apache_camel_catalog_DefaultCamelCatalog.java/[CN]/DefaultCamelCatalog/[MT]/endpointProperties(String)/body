@@ -17,6 +17,8 @@
     throw new IllegalArgumentException("Endpoint with scheme " + scheme + " has no syntax defined in the json schema");
   }
   syntax=after(syntax,":");
+  uri=after(uri,":");
+  String uriPath=stripQuery(uri);
   Matcher matcher=SYNTAX_PATTERN.matcher(syntax);
   List<String> word=new ArrayList<String>();
   while (matcher.find()) {
@@ -25,25 +27,32 @@
       word.add(s);
     }
   }
-  uri=after(uri,":");
-  String uriPath=stripQuery(uri);
+  String[] tokens=SYNTAX_PATTERN.split(syntax);
   List<String> word2=new ArrayList<String>();
-  if (word.size() == 1) {
-    String s=uriPath;
-    s=URISupport.stripPrefix(s,scheme);
-    while (s.startsWith(":") || s.startsWith("/")) {
-      s=s.substring(1);
+  int prev=0;
+  for (  String token : tokens) {
+    if (token.isEmpty()) {
+      continue;
     }
-    word2.add(s);
+    int idx=-1;
+    int len=0;
+    if (":".equals(token)) {
+      idx=uriPath.indexOf("://",prev);
+      len=3;
+    }
+    if (idx == -1) {
+      idx=uriPath.indexOf(token,prev);
+      len=token.length();
+    }
+    if (idx > 0) {
+      String option=uriPath.substring(prev,idx);
+      word2.add(option);
+      prev=idx + len;
+    }
   }
- else {
-    Matcher matcher2=SYNTAX_PATTERN.matcher(uriPath);
-    while (matcher2.find()) {
-      String s=matcher2.group(1);
-      if (!scheme.equals(s)) {
-        word2.add(s);
-      }
-    }
+  if (prev > 0 || word2.isEmpty()) {
+    String option=uriPath.substring(prev);
+    word2.add(option);
   }
   rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
   boolean defaultValueAdded=false;
@@ -61,12 +70,16 @@
  else {
       if (!required) {
         String value=defaultValue;
-        options.put(key,value);
-        defaultValueAdded=true;
+        if (value != null) {
+          options.put(key,value);
+          defaultValueAdded=true;
+        }
       }
  else {
-        String value=it.next();
-        options.put(key,value);
+        String value=it.hasNext() ? it.next() : null;
+        if (value != null) {
+          options.put(key,value);
+        }
       }
     }
   }
