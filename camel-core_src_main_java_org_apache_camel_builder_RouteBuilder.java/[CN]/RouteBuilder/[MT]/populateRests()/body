@@ -23,8 +23,18 @@
   }
   for (  RestConfiguration config : camelContext.getRestConfigurations()) {
     if (config.getApiContextPath() != null) {
-      RouteDefinition route=RestDefinition.asRouteApiDefinition(camelContext,config);
-      routes.add(route);
+      boolean hasRestApi=false;
+      for (      RouteDefinition route : camelContext.getRouteDefinitions()) {
+        FromDefinition from=route.getInputs().get(0);
+        if (from.getUri() != null && from.getUri().startsWith("rest-api:")) {
+          hasRestApi=true;
+        }
+      }
+      if (!hasRestApi) {
+        RouteDefinition route=RestDefinition.asRouteApiDefinition(camelContext,config);
+        log.debug("Adding routeId: {} as rest-api route",route.getId());
+        routes.add(route);
+      }
     }
   }
   for (  RouteDefinition route : routes) {
