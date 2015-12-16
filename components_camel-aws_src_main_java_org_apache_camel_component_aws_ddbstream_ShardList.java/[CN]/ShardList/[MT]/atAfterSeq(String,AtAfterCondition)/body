@@ -1,0 +1,18 @@
+{
+  BigInteger atAfter=new BigInteger(sequenceNumber);
+  List<Shard> sorted=new ArrayList<>();
+  sorted.addAll(shards.values());
+  Collections.sort(sorted,StartingSequenceNumberComparator.INSTANCE);
+  for (  Shard shard : sorted) {
+    if (shard.getSequenceNumberRange().getEndingSequenceNumber() != null) {
+      BigInteger end=new BigInteger(shard.getSequenceNumberRange().getEndingSequenceNumber());
+      if (condition.matches(atAfter,end)) {
+        return shard;
+      }
+    }
+  }
+  if (shards.size() > 0) {
+    return sorted.get(sorted.size() - 1);
+  }
+  throw new IllegalStateException("Unable to find a shard with appropriate sequence numbers for " + sequenceNumber + " in "+ shards);
+}
