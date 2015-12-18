@@ -1,19 +1,28 @@
 {
-  SortedSet<String> answer=new TreeSet<String>();
-  List<String> names=findDataFormatNames();
-  for (  String name : names) {
-    String json=dataFormatJSonSchema(name);
-    if (json != null) {
-      List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("dataformat",json,false);
-      for (      Map<String,String> row : rows) {
-        if (row.containsKey("label")) {
-          String label=row.get("label");
-          String[] parts=label.split(",");
-          for (          String part : parts) {
-            answer.add(part);
+  SortedSet<String> answer=null;
+  if (caching) {
+    answer=(TreeSet<String>)cache.get("findDataFormatLabels");
+  }
+  if (answer == null) {
+    answer=new TreeSet<String>();
+    List<String> names=findDataFormatNames();
+    for (    String name : names) {
+      String json=dataFormatJSonSchema(name);
+      if (json != null) {
+        List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("dataformat",json,false);
+        for (        Map<String,String> row : rows) {
+          if (row.containsKey("label")) {
+            String label=row.get("label");
+            String[] parts=label.split(",");
+            for (            String part : parts) {
+              answer.add(part);
+            }
           }
         }
       }
+    }
+    if (caching) {
+      cache.put("findDataFormatLabels",answer);
     }
   }
   return answer;

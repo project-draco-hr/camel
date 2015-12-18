@@ -1,12 +1,21 @@
 {
   String file=ARCHETYPES_CATALOG;
-  InputStream is=DefaultCamelCatalog.class.getClassLoader().getResourceAsStream(file);
-  if (is != null) {
-    try {
-      return CatalogHelper.loadText(is);
+  String answer=null;
+  if (caching) {
+    answer=(String)cache.get(file);
+  }
+  if (answer == null) {
+    InputStream is=DefaultCamelCatalog.class.getClassLoader().getResourceAsStream(file);
+    if (is != null) {
+      try {
+        answer=CatalogHelper.loadText(is);
+      }
+ catch (      IOException e) {
+      }
     }
- catch (    IOException e) {
+    if (caching) {
+      cache.put(file,answer);
     }
   }
-  return null;
+  return answer;
 }

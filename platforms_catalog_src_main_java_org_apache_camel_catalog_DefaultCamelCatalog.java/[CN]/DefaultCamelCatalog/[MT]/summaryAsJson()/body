@@ -1,22 +1,32 @@
 {
-  int archetypes=0;
-  try {
-    String xml=archetypeCatalogAsXml();
-    Document dom=DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes()));
-    Object val=XPathFactory.newInstance().newXPath().evaluate("count(/archetype-catalog/archetypes/archetype)",dom,XPathConstants.NUMBER);
-    double num=(double)val;
-    archetypes=(int)num;
+  String answer=null;
+  if (caching) {
+    answer=(String)cache.get("summaryAsJson");
   }
- catch (  Exception e) {
+  if (answer == null) {
+    int archetypes=0;
+    try {
+      String xml=archetypeCatalogAsXml();
+      Document dom=DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes()));
+      Object val=XPathFactory.newInstance().newXPath().evaluate("count(/archetype-catalog/archetypes/archetype)",dom,XPathConstants.NUMBER);
+      double num=(double)val;
+      archetypes=(int)num;
+    }
+ catch (    Exception e) {
+    }
+    StringBuilder sb=new StringBuilder();
+    sb.append("{\n");
+    sb.append("  \"version\": \"").append(getCatalogVersion()).append("\",\n");
+    sb.append("  \"eips\": ").append(findModelNames().size()).append(",\n");
+    sb.append("  \"components\": ").append(findComponentNames().size()).append(",\n");
+    sb.append("  \"dataformats\": ").append(findDataFormatNames().size()).append(",\n");
+    sb.append("  \"languages\": ").append(findLanguageNames().size()).append(",\n");
+    sb.append("  \"archetypes\": ").append(archetypes).append("\n");
+    sb.append("}");
+    answer=sb.toString();
+    if (caching) {
+      cache.put("summaryAsJson",answer);
+    }
   }
-  StringBuilder sb=new StringBuilder();
-  sb.append("{\n");
-  sb.append("  \"version\": \"" + getCatalogVersion() + "\",\n");
-  sb.append("  \"eips\": " + findModelNames().size() + ",\n");
-  sb.append("  \"components\": " + findComponentNames().size() + ",\n");
-  sb.append("  \"dataformats\": " + findDataFormatNames().size() + ",\n");
-  sb.append("  \"languages\": " + findLanguageNames().size() + ",\n");
-  sb.append("  \"archetypes\": " + archetypes + "\n");
-  sb.append("}");
-  return sb.toString();
+  return answer;
 }

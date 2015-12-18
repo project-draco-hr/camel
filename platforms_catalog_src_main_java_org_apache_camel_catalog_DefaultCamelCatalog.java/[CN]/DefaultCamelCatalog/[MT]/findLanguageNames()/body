@@ -1,11 +1,20 @@
 {
-  List<String> names=new ArrayList<String>();
-  InputStream is=DefaultCamelCatalog.class.getClassLoader().getResourceAsStream(LANGUAGE_CATALOG);
-  if (is != null) {
-    try {
-      CatalogHelper.loadLines(is,names);
+  List<String> names=null;
+  if (caching) {
+    names=(List<String>)cache.get("findLanguageNames");
+  }
+  if (names == null) {
+    names=new ArrayList<String>();
+    InputStream is=DefaultCamelCatalog.class.getClassLoader().getResourceAsStream(LANGUAGE_CATALOG);
+    if (is != null) {
+      try {
+        CatalogHelper.loadLines(is,names);
+      }
+ catch (      IOException e) {
+      }
     }
- catch (    IOException e) {
+    if (caching) {
+      cache.put("findLanguageNames",names);
     }
   }
   return names;
