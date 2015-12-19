@@ -1,5 +1,5 @@
 {
-  Map<String,String> answer=new LinkedHashMap<String,String>();
+  ValidationResult result=new ValidationResult();
   URI u=normalizeUri(uri);
   String scheme=u.getScheme();
   String json=componentJSonSchema(scheme);
@@ -11,12 +11,12 @@
     boolean placeholder=value.startsWith("{{") || value.startsWith("${") || value.startsWith("$simple{");
     Map<String,String> row=getRow(rows,name);
     if (row == null) {
-      answer.put(name,property.getValue());
+      result.addUnknown(name);
     }
  else {
       boolean required=isPropertyRequired(rows,name);
       if (required && isEmpty(value)) {
-        answer.put(name,value);
+        result.addRequired(name);
       }
       String enums=getPropertyEnum(rows,name);
       if (!placeholder && enums != null) {
@@ -28,13 +28,13 @@
           }
         }
         if (!found) {
-          answer.put(name,value);
+          result.addInvalidEnum(name);
         }
       }
       if (!placeholder && isPropertyBoolean(rows,name)) {
         boolean bool="true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
         if (!bool) {
-          answer.put(name,value);
+          result.addInvalidBoolean(name);
         }
       }
       if (!placeholder && isPropertyInteger(rows,name)) {
@@ -45,18 +45,18 @@
  catch (        Exception e) {
         }
         if (!valid) {
-          answer.put(name,value);
+          result.addInvalidInteger(name);
         }
       }
       if (!placeholder && isPropertyNumber(rows,name)) {
         boolean valid=false;
         try {
-          valid=Double.valueOf(value).isNaN() == false || Float.valueOf(value).isNaN() == false;
+          valid=!Double.valueOf(value).isNaN() || !Float.valueOf(value).isNaN();
         }
  catch (        Exception e) {
         }
         if (!valid) {
-          answer.put(name,value);
+          result.addInvalidNumber(name);
         }
       }
     }
@@ -70,9 +70,9 @@
         value=getPropertyDefaultValue(rows,name);
       }
       if (isEmpty(value)) {
-        answer.put(name,value);
+        result.addRequired(name);
       }
     }
   }
-  return answer;
+  return result;
 }
