@@ -1,0 +1,78 @@
+{
+  Map<String,String> answer=new LinkedHashMap<String,String>();
+  URI u=normalizeUri(uri);
+  String scheme=u.getScheme();
+  String json=componentJSonSchema(scheme);
+  List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
+  Map<String,String> properties=endpointProperties(uri);
+  for (  Map.Entry<String,String> property : properties.entrySet()) {
+    String name=property.getKey();
+    String value=property.getValue();
+    boolean placeholder=value.startsWith("{{") || value.startsWith("${") || value.startsWith("$simple{");
+    Map<String,String> row=getRow(rows,name);
+    if (row == null) {
+      answer.put(name,property.getValue());
+    }
+ else {
+      boolean required=isPropertyRequired(rows,name);
+      if (required && isEmpty(value)) {
+        answer.put(name,value);
+      }
+      String enums=getPropertyEnum(rows,name);
+      if (!placeholder && enums != null) {
+        boolean found=false;
+        for (        String s : enums.split(",")) {
+          if (value.equalsIgnoreCase(s)) {
+            found=true;
+            break;
+          }
+        }
+        if (!found) {
+          answer.put(name,value);
+        }
+      }
+      if (!placeholder && isPropertyBoolean(rows,name)) {
+        boolean bool="true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
+        if (!bool) {
+          answer.put(name,value);
+        }
+      }
+      if (!placeholder && isPropertyInteger(rows,name)) {
+        boolean valid=false;
+        try {
+          valid=Integer.valueOf(value) != null;
+        }
+ catch (        Exception e) {
+        }
+        if (!valid) {
+          answer.put(name,value);
+        }
+      }
+      if (!placeholder && isPropertyNumber(rows,name)) {
+        boolean valid=false;
+        try {
+          valid=Double.valueOf(value).isNaN() == false || Float.valueOf(value).isNaN() == false;
+        }
+ catch (        Exception e) {
+        }
+        if (!valid) {
+          answer.put(name,value);
+        }
+      }
+    }
+  }
+  for (  Map<String,String> row : rows) {
+    String name=row.get("name");
+    boolean required=isPropertyRequired(rows,name);
+    if (required) {
+      String value=properties.get(name);
+      if (isEmpty(value)) {
+        value=getPropertyDefaultValue(rows,name);
+      }
+      if (isEmpty(value)) {
+        answer.put(name,value);
+      }
+    }
+  }
+  return answer;
+}
