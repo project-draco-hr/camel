@@ -7,6 +7,10 @@
     String queryHeader=exchange.getIn().getHeader(SqlConstants.SQL_QUERY,String.class);
     sql=queryHeader != null ? queryHeader : query;
   }
+  if (producerSSPTHelper.isSSPTQuery(sql)) {
+    producerSSPTHelper.handleSstpQuery(sql,exchange);
+    return;
+  }
   final String preparedQuery=sqlPrepareStatementStrategy.prepareQuery(sql,getEndpoint().isAllowNamedParameters());
   final Boolean shouldRetrieveGeneratedKeys=exchange.getIn().getHeader(SqlConstants.SQL_RETRIEVE_GENERATED_KEYS,false,Boolean.class);
   PreparedStatementCreator statementCreator=new PreparedStatementCreator(){
