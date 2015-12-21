@@ -42,5 +42,11 @@
   Boolean mandatory=camelExchange.getIn().getHeader(RabbitMQConstants.MANDATORY,isMandatory(),Boolean.class);
   Boolean immediate=camelExchange.getIn().getHeader(RabbitMQConstants.IMMEDIATE,isImmediate(),Boolean.class);
   LOG.debug("Sending message to exchange: {} with CorrelationId = {}",rabbitExchange,properties.getCorrelationId());
+  if (isPublisherAcknowledgements()) {
+    channel.confirmSelect();
+  }
   channel.basicPublish(rabbitExchange,routingKey,mandatory,immediate,properties,body);
+  if (isPublisherAcknowledgements()) {
+    waitForConfirmationFor(channel,camelExchange);
+  }
 }
