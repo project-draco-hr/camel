@@ -1,0 +1,18 @@
+{
+  endpoint.setIteratorType(ShardIteratorType.TRIM_HORIZON);
+  undertest=new DdbStreamConsumer(endpoint,processor);
+  for (int i=0; i < 9; ++i) {
+    undertest.poll();
+  }
+  ArgumentCaptor<GetShardIteratorRequest> getIteratorCaptor=ArgumentCaptor.forClass(GetShardIteratorRequest.class);
+  verify(amazonDynamoDBStreams,times(4)).getShardIterator(getIteratorCaptor.capture());
+  assertThat(getIteratorCaptor.getAllValues().get(0).getShardId(),is("a"));
+  assertThat(getIteratorCaptor.getAllValues().get(1).getShardId(),is("b"));
+  assertThat(getIteratorCaptor.getAllValues().get(2).getShardId(),is("c"));
+  assertThat(getIteratorCaptor.getAllValues().get(3).getShardId(),is("d"));
+  ArgumentCaptor<Exchange> exchangeCaptor=ArgumentCaptor.forClass(Exchange.class);
+  verify(processor,times(seqNums.length)).process(exchangeCaptor.capture(),any(AsyncCallback.class));
+  for (int i=0; i < seqNums.length; ++i) {
+    assertThat(exchangeCaptor.getAllValues().get(i).getIn().getBody(Record.class).getDynamodb().getSequenceNumber(),is(seqNums[i]));
+  }
+}
