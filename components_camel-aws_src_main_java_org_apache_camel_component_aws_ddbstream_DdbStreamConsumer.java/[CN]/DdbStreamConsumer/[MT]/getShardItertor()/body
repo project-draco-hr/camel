@@ -30,6 +30,18 @@ currentShard=shardList.nextAfter(currentShard);
 shardList.removeOlderThan(currentShard);
 LOG.trace("Next shard is: {} (in {})",currentShard,shardList);
 GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamArn(streamArn).withShardId(currentShard.getShardId()).withShardIteratorType(getEndpoint().getIteratorType());
+switch (getEndpoint().getIteratorType()) {
+case AFTER_SEQUENCE_NUMBER:
+case AT_SEQUENCE_NUMBER:
+if (AtAfterCondition.Conditions.AT.matches(new BigInteger(currentShard.getSequenceNumberRange().getStartingSequenceNumber()),new BigInteger(getEndpoint().getSequenceNumber()))) {
+req=req.withSequenceNumber(getEndpoint().getSequenceNumber()).withShardIteratorType(getEndpoint().getIteratorType());
+}
+ else {
+req=req.withShardIteratorType(ShardIteratorType.TRIM_HORIZON);
+}
+break;
+default :
+}
 GetShardIteratorResult result=getClient().getShardIterator(req);
 currentShardIterator=result.getShardIterator();
 }

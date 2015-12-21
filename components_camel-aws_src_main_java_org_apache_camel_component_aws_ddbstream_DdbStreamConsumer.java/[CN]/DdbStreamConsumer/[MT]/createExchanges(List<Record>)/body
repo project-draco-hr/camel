@@ -1,7 +1,24 @@
 {
   Queue<Exchange> exchanges=new ArrayDeque<>();
-  for (  Record record : records) {
-    exchanges.add(getEndpoint().createExchange(record));
-  }
-  return exchanges;
+  AtAfterCondition condition;
+  BigInteger providedSeqNum=null;
+switch (getEndpoint().getIteratorType()) {
+case AFTER_SEQUENCE_NUMBER:
+    condition=AtAfterCondition.Conditions.AFTER;
+  providedSeqNum=new BigInteger(getEndpoint().getSequenceNumberProvider().getSequenceNumber());
+break;
+case AT_SEQUENCE_NUMBER:
+condition=AtAfterCondition.Conditions.AT;
+providedSeqNum=new BigInteger(getEndpoint().getSequenceNumberProvider().getSequenceNumber());
+break;
+default :
+condition=null;
+}
+for (Record record : records) {
+BigInteger recordSeqNum=new BigInteger(record.getDynamodb().getSequenceNumber());
+if (condition == null || condition.matches(providedSeqNum,recordSeqNum)) {
+exchanges.add(getEndpoint().createExchange(record));
+}
+}
+return exchanges;
 }

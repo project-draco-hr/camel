@@ -1,0 +1,11 @@
+{
+  endpoint.setIteratorType(ShardIteratorType.AFTER_SEQUENCE_NUMBER);
+  endpoint.setSequenceNumberProvider(new StaticSequenceNumberProvider("35"));
+  undertest=new DdbStreamConsumer(endpoint,processor);
+  for (int i=0; i < 10; ++i) {
+    undertest.poll();
+  }
+  ArgumentCaptor<Exchange> exchangeCaptor=ArgumentCaptor.forClass(Exchange.class);
+  verify(processor,times(1)).process(exchangeCaptor.capture(),any(AsyncCallback.class));
+  assertThat(exchangeCaptor.getAllValues().get(0).getIn().getBody(Record.class).getDynamodb().getSequenceNumber(),is("40"));
+}
