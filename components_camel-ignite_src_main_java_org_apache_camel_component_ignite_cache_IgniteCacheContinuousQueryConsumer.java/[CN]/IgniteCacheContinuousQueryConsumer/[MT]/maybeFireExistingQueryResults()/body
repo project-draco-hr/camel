@@ -1,0 +1,16 @@
+{
+  if (!endpoint.isFireExistingQueryResults()) {
+    LOG.info(String.format("Skipping existing cache results for cache name = %s.",endpoint.getCacheName()));
+    return;
+  }
+  LOG.info(String.format("Processing existing cache results for cache name = %s.",endpoint.getCacheName()));
+  for (  Entry<Object,Object> entry : cursor) {
+    Exchange exchange=createExchange(entry.getValue());
+    exchange.getIn().setHeader(IgniteConstants.IGNITE_CACHE_KEY,entry.getKey());
+    getAsyncProcessor().process(createExchange(entry),new AsyncCallback(){
+      @Override public void done(      boolean doneSync){
+      }
+    }
+);
+  }
+}

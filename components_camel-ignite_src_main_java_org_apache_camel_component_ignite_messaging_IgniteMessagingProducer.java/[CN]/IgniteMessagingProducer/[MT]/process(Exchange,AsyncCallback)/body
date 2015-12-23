@@ -1,0 +1,19 @@
+{
+  Message in=exchange.getIn();
+  Message out=exchange.getOut();
+  MessageHelper.copyHeaders(exchange.getIn(),out,true);
+  Object body=in.getBody();
+  if (endpoint.getSendMode() == IgniteMessagingSendMode.UNORDERED) {
+    if (body instanceof Collection<?> && !endpoint.isTreatCollectionsAsCacheObjects()) {
+      messaging.send(topicFor(exchange),(Collection<?>)body);
+    }
+ else {
+      messaging.send(topicFor(exchange),body);
+    }
+  }
+ else {
+    messaging.sendOrdered(topicFor(exchange),body,endpoint.getTimeout());
+  }
+  IgniteHelper.maybePropagateIncomingBody(endpoint,in,out);
+  return true;
+}

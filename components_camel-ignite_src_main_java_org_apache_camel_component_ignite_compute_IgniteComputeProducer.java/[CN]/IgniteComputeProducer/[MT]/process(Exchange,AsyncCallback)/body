@@ -1,0 +1,37 @@
+{
+  IgniteCompute compute=endpoint.createIgniteCompute().withAsync();
+  try {
+switch (executionTypeFor(exchange)) {
+case CALL:
+      doCall(exchange,callback,compute);
+    break;
+case BROADCAST:
+  doBroadcast(exchange,callback,compute);
+break;
+case EXECUTE:
+doExecute(exchange,callback,compute);
+break;
+case RUN:
+doRun(exchange,callback,compute);
+break;
+case APPLY:
+doApply(exchange,callback,compute);
+break;
+case AFFINITY_CALL:
+doAffinityCall(exchange,callback,compute);
+break;
+case AFFINITY_RUN:
+doAffinityRun(exchange,callback,compute);
+break;
+default :
+exchange.setException(new UnsupportedOperationException("Operation not supported by Ignite Compute producer."));
+return true;
+}
+compute.future().listen(IgniteInCamelClosure.create(exchange,callback));
+}
+ catch (Exception e) {
+exchange.setException(e);
+return true;
+}
+return false;
+}

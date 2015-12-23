@@ -1,0 +1,27 @@
+{
+  Message in=exchange.getIn();
+  Message out=exchange.getOut();
+  MessageHelper.copyHeaders(in,out,true);
+  Long id=in.getBody(Long.class);
+switch (idGenOperationFor(exchange)) {
+case ADD_AND_GET:
+    out.setBody(atomicSeq.addAndGet(id));
+  break;
+case GET:
+out.setBody(atomicSeq.get());
+break;
+case GET_AND_ADD:
+out.setBody(atomicSeq.getAndAdd(id));
+break;
+case GET_AND_INCREMENT:
+out.setBody(atomicSeq.getAndIncrement());
+break;
+case INCREMENT_AND_GET:
+out.setBody(atomicSeq.incrementAndGet());
+break;
+default :
+exchange.setException(new UnsupportedOperationException("Operation not supported by Ignite ID Generator producer."));
+return true;
+}
+return true;
+}

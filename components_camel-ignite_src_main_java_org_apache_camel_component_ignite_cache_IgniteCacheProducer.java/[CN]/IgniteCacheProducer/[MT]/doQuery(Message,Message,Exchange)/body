@@ -1,0 +1,23 @@
+{
+  Query<Object> query=in.getHeader(IgniteConstants.IGNITE_CACHE_QUERY,Query.class);
+  if (query == null) {
+    try {
+      query=in.getMandatoryBody(Query.class);
+    }
+ catch (    InvalidPayloadException e) {
+      exchange.setException(e);
+      return;
+    }
+  }
+  final QueryCursor<Object> cursor=cache.query(query);
+  out.setBody(cursor.iterator());
+  exchange.addOnCompletion(new Synchronization(){
+    @Override public void onFailure(    Exchange exchange){
+      cursor.close();
+    }
+    @Override public void onComplete(    Exchange exchange){
+      cursor.close();
+    }
+  }
+);
+}

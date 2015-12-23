@@ -1,0 +1,20 @@
+{
+  IgniteClosure<T,R1> job=exchange.getIn().getBody(IgniteClosure.class);
+  T params=(T)exchange.getIn().getHeader(IgniteConstants.IGNITE_COMPUTE_PARAMS);
+  if (job == null || params == null) {
+    throw new RuntimeCamelException(String.format("Ignite Compute endpoint with APPLY executionType is only " + "supported for IgniteClosure payloads with parameters. The payload type was: %s.",exchange.getIn().getBody().getClass().getName()));
+  }
+  IgniteReducer<R1,R2> reducer=exchange.getIn().getHeader(IgniteConstants.IGNITE_COMPUTE_REDUCER,IgniteReducer.class);
+  if (Collection.class.isAssignableFrom(params.getClass())) {
+    Collection<T> colParams=(Collection<T>)params;
+    if (reducer == null) {
+      compute.apply(job,colParams);
+    }
+ else {
+      compute.apply(job,colParams,reducer);
+    }
+  }
+ else {
+    compute.apply(job,params);
+  }
+}

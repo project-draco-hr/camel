@@ -1,0 +1,25 @@
+{
+  ContinuousQuery<Object,Object> continuousQuery=new ContinuousQuery<>();
+  if (endpoint.getQuery() != null) {
+    continuousQuery.setInitialQuery(endpoint.getQuery());
+  }
+  if (endpoint.getRemoteFilter() != null) {
+    continuousQuery.setRemoteFilter(endpoint.getRemoteFilter());
+  }
+  continuousQuery.setLocalListener(new CacheEntryUpdatedListener<Object,Object>(){
+    @Override public void onUpdated(    Iterable<CacheEntryEvent<? extends Object,? extends Object>> events) throws CacheEntryListenerException {
+      if (!endpoint.isOneExchangePerUpdate()) {
+        fireGroupedExchange(events);
+        return;
+      }
+      for (      CacheEntryEvent<? extends Object,? extends Object> entry : events) {
+        fireSingleExchange(entry);
+      }
+    }
+  }
+);
+  continuousQuery.setAutoUnsubscribe(endpoint.isAutoUnsubscribe());
+  continuousQuery.setPageSize(endpoint.getPageSize());
+  continuousQuery.setTimeInterval(endpoint.getTimeInterval());
+  cursor=cache.query(continuousQuery);
+}
