@@ -1,0 +1,24 @@
+{
+  Object job=exchange.getIn().getBody();
+  IgniteReducer<Object,Object> reducer=exchange.getIn().getHeader(IgniteConstants.IGNITE_COMPUTE_REDUCER,IgniteReducer.class);
+  if (Collection.class.isAssignableFrom(job.getClass())) {
+    Collection<?> col=(Collection<?>)job;
+    TypeConverter tc=exchange.getContext().getTypeConverter();
+    Collection<IgniteCallable<?>> callables=new ArrayList<>(col.size());
+    for (    Object o : col) {
+      callables.add(tc.mandatoryConvertTo(IgniteCallable.class,o));
+    }
+    if (reducer != null) {
+      compute.call((Collection)callables,reducer);
+    }
+ else {
+      compute.call((Collection)callables);
+    }
+  }
+ else   if (IgniteCallable.class.isAssignableFrom(job.getClass())) {
+    compute.call((IgniteCallable<Object>)job);
+  }
+ else {
+    throw new RuntimeCamelException(String.format("Ignite Compute endpoint with CALL executionType is only " + "supported for IgniteCallable payloads, or collections of them. The payload type was: %s.",job.getClass().getName()));
+  }
+}

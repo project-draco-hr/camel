@@ -1,0 +1,20 @@
+{
+  JndiRegistry answer=super.createRegistry();
+  ScanQuery<Integer,Person> scanQuery1=new ScanQuery<>(new IgniteBiPredicate<Integer,Person>(){
+    private static final long serialVersionUID=1L;
+    @Override public boolean apply(    Integer key,    Person person){
+      return person.getId() > 50;
+    }
+  }
+);
+  CacheEntryEventSerializableFilter<Integer,Person> remoteFilter=new CacheEntryEventSerializableFilter<Integer,IgniteCacheContinuousQueryTest.Person>(){
+    private static final long serialVersionUID=5624973479995548199L;
+    @Override public boolean evaluate(    CacheEntryEvent<? extends Integer,? extends Person> event) throws CacheEntryListenerException {
+      return event.getValue().getId() > 150;
+    }
+  }
+;
+  answer.bind("query1",scanQuery1);
+  answer.bind("remoteFilter1",remoteFilter);
+  return answer;
+}

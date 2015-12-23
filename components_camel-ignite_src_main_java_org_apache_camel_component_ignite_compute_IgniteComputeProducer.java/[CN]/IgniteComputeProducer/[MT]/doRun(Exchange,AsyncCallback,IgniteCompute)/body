@@ -1,0 +1,18 @@
+{
+  Object job=exchange.getIn().getBody();
+  if (Collection.class.isAssignableFrom(job.getClass())) {
+    Collection<?> col=(Collection<?>)job;
+    TypeConverter tc=exchange.getContext().getTypeConverter();
+    Collection<IgniteRunnable> runnables=new ArrayList<>(col.size());
+    for (    Object o : col) {
+      runnables.add(tc.mandatoryConvertTo(IgniteRunnable.class,o));
+    }
+    compute.run(runnables);
+  }
+ else   if (IgniteRunnable.class.isAssignableFrom(job.getClass())) {
+    compute.run((IgniteRunnable)job);
+  }
+ else {
+    throw new RuntimeCamelException(String.format("Ignite Compute endpoint with RUN executionType is only " + "supported for IgniteRunnable payloads, or collections of them. The payload type was: %s.",job.getClass().getName()));
+  }
+}

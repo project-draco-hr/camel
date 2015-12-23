@@ -1,0 +1,18 @@
+{
+  IgniteCache<String,String> cache=ignite().getOrCreateCache("testcache1");
+  Set<String> keys=new HashSet<>();
+  for (int i=0; i < 100; i++) {
+    cache.put("k" + i,"v" + i);
+    keys.add("k" + i);
+  }
+  Query<Entry<String,String>> query=new ScanQuery<String,String>(new IgniteBiPredicate<String,String>(){
+    private static final long serialVersionUID=1L;
+    @Override public boolean apply(    String key,    String value){
+      return Integer.parseInt(key.replace("k","")) >= 50;
+    }
+  }
+);
+  Iterator<String> iter=template.requestBodyAndHeader("ignite:cache:testcache1?operation=QUERY",keys,IgniteConstants.IGNITE_CACHE_QUERY,query,Iterator.class);
+  ArrayList<Object> results=Lists.newArrayList(Iterators.toArray(iter,Object.class));
+  assert_().that(results.size()).isEqualTo(50);
+}

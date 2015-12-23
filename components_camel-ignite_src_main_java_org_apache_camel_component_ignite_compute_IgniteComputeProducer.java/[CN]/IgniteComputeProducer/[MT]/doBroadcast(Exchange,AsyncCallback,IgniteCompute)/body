@@ -1,0 +1,15 @@
+{
+  Object job=exchange.getIn().getBody();
+  if (IgniteCallable.class.isAssignableFrom(job.getClass())) {
+    compute.broadcast((IgniteCallable<?>)job);
+  }
+ else   if (IgniteRunnable.class.isAssignableFrom(job.getClass())) {
+    compute.broadcast((IgniteRunnable)job);
+  }
+ else   if (IgniteClosure.class.isAssignableFrom(job.getClass())) {
+    compute.broadcast((IgniteClosure<Object,Object>)job,exchange.getIn().getHeader(IgniteConstants.IGNITE_COMPUTE_PARAMS));
+  }
+ else {
+    throw new RuntimeCamelException(String.format("Ignite Compute endpoint with BROADCAST executionType is only " + "supported for IgniteCallable, IgniteRunnable or IgniteClosure payloads. The payload type was: %s.",job.getClass().getName()));
+  }
+}

@@ -1,0 +1,13 @@
+{
+  Map<Object,Object> map=in.getBody(Map.class);
+  if (map != null) {
+    cache.putAll(map);
+    return;
+  }
+  Object cacheKey=in.getHeader(IgniteConstants.IGNITE_CACHE_KEY);
+  if (cacheKey == null) {
+    throw new RuntimeCamelException("Cache PUT operation requires the cache key in the CamelIgniteCacheKey header, " + "or a payload of type Map.");
+  }
+  cache.put(cacheKey,in.getBody());
+  IgniteHelper.maybePropagateIncomingBody(endpoint,in,out);
+}
