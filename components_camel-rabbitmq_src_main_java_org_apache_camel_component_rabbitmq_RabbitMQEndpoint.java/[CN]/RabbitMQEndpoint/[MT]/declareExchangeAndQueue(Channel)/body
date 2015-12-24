@@ -1,22 +1,3 @@
 {
-  Map<String,Object> queueArgs=new HashMap<String,Object>();
-  Map<String,Object> exchangeArgs=new HashMap<String,Object>();
-  if (deadLetterExchange != null) {
-    queueArgs.put(RabbitMQConstants.RABBITMQ_DEAD_LETTER_EXCHANGE,getDeadLetterExchange());
-    queueArgs.put(RabbitMQConstants.RABBITMQ_DEAD_LETTER_ROUTING_KEY,getDeadLetterRoutingKey());
-    channel.exchangeDeclare(getDeadLetterExchange(),getDeadLetterExchangeType(),isDurable(),isAutoDelete(),new HashMap<String,Object>());
-    channel.queueDeclare(getDeadLetterQueue(),isDurable(),false,isAutoDelete(),null);
-    channel.queueBind(getDeadLetterQueue(),getDeadLetterExchange(),getDeadLetterRoutingKey() == null ? "" : getDeadLetterRoutingKey());
-  }
-  if (getQueueArgsConfigurer() != null) {
-    getQueueArgsConfigurer().configurArgs(queueArgs);
-  }
-  if (getExchangeArgsConfigurer() != null) {
-    getExchangeArgsConfigurer().configurArgs(exchangeArgs);
-  }
-  channel.exchangeDeclare(getExchangeName(),getExchangeType(),isDurable(),isAutoDelete(),exchangeArgs);
-  if (!isSkipQueueDeclare() && getQueue() != null) {
-    channel.queueDeclare(getQueue(),isDurable(),false,isAutoDelete(),queueArgs);
-    channel.queueBind(getQueue(),getExchangeName(),getRoutingKey() == null ? "" : getRoutingKey());
-  }
+  declareSupport.declareAndBindExchangesAndQueuesUsing(channel);
 }

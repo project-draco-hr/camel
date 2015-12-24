@@ -5,13 +5,13 @@
       boolean timeout=holder.isTimeout();
       if (timeout) {
         if (log.isWarnEnabled()) {
-          log.warn("Timeout occurred after {} millis waiting for reply message with correlationID [{}] on destination {}." + " Setting ExchangeTimedOutException on {} and continue routing.",new Object[]{holder.getRequestTimeout(),holder.getCorrelationId(),replyTo,ExchangeHelper.logIds(exchange)});
+          log.warn("Timeout occurred after {} millis waiting for reply message with correlationID [{}] on destination {}." + " Setting ExchangeTimedOutException on {} and continue routing.",holder.getRequestTimeout(),holder.getCorrelationId(),replyTo,ExchangeHelper.logIds(exchange));
         }
         String msg="reply message with correlationID: " + holder.getCorrelationId() + " not received on destination: "+ replyTo;
         exchange.setException(new ExchangeTimedOutException(exchange,holder.getRequestTimeout(),msg));
       }
  else {
-        endpoint.setRabbitExchange(exchange,null,holder.getProperties(),holder.getMessage(),true);
+        messageConverter.populateRabbitExchange(exchange,null,holder.getProperties(),holder.getMessage(),true);
         if (holder.getOriginalCorrelationId() != null) {
           if (exchange.getOut() != null) {
             exchange.getOut().setHeader(RabbitMQConstants.CORRELATIONID,holder.getOriginalCorrelationId());

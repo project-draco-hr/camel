@@ -1,0 +1,24 @@
+{
+  AMQP.BasicProperties properties;
+  byte[] body;
+  try {
+    body=camelExchange.getContext().getTypeConverter().mandatoryConvertTo(byte[].class,camelExchange,message.getBody());
+    properties=endpoint.getMessageConverter().buildProperties(camelExchange).build();
+  }
+ catch (  NoTypeConversionAvailableException|TypeConversionException e) {
+    if (message.getBody() instanceof Serializable) {
+      message.getHeaders().put(RabbitMQEndpoint.SERIALIZE_HEADER,true);
+      properties=endpoint.getMessageConverter().buildProperties(camelExchange).build();
+      body=serializeBodyFrom(message);
+    }
+ else     if (message.getBody() == null) {
+      properties=endpoint.getMessageConverter().buildProperties(camelExchange).build();
+      body=null;
+    }
+ else {
+      LOG.warn("Could not convert {} to byte[]",message.getBody());
+      throw new RuntimeCamelException(e);
+    }
+  }
+  publishToRabbitMQ(properties,body);
+}

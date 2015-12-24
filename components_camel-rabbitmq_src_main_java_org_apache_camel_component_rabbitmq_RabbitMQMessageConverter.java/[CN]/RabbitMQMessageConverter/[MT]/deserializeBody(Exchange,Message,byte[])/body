@@ -1,0 +1,17 @@
+{
+  Object messageBody=null;
+  try (InputStream b=new ByteArrayInputStream(body);ObjectInputStream o=new ObjectInputStream(b)){
+    messageBody=o.readObject();
+  }
+ catch (  IOException|ClassNotFoundException e) {
+    LOG.warn("Could not deserialize the object");
+    camelExchange.setException(e);
+  }
+  if (messageBody instanceof Throwable) {
+    LOG.debug("Reply was an Exception. Setting the Exception on the Exchange");
+    camelExchange.setException((Throwable)messageBody);
+  }
+ else {
+    message.setBody(messageBody);
+  }
+}

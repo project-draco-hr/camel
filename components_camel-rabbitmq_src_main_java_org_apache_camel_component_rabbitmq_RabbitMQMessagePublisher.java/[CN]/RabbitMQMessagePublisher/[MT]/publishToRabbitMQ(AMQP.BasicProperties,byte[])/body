@@ -1,0 +1,13 @@
+{
+  String rabbitExchange=endpoint.getExchangeName(message);
+  Boolean mandatory=camelExchange.getIn().getHeader(RabbitMQConstants.MANDATORY,endpoint.isMandatory(),Boolean.class);
+  Boolean immediate=camelExchange.getIn().getHeader(RabbitMQConstants.IMMEDIATE,endpoint.isImmediate(),Boolean.class);
+  LOG.debug("Sending message to exchange: {} with CorrelationId = {}",rabbitExchange,properties.getCorrelationId());
+  if (endpoint.isPublisherAcknowledgements()) {
+    channel.confirmSelect();
+  }
+  channel.basicPublish(rabbitExchange,routingKey,mandatory,immediate,properties,body);
+  if (endpoint.isPublisherAcknowledgements()) {
+    waitForConfirmation();
+  }
+}
