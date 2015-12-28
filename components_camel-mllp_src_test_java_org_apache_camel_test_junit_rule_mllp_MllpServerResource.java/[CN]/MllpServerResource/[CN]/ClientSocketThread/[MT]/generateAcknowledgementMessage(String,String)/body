@@ -1,0 +1,44 @@
+{
+  final String defaulNackMessage="MSH|^~\\&|||||||NACK||P|2.2" + SEGMENT_DELIMITER + "MSA|AR|"+ SEGMENT_DELIMITER+ MESSAGE_TERMINATOR;
+  if (hl7Message == null) {
+    log.error("Invalid HL7 message for parsing operation. Please check your inputs");
+    return defaulNackMessage;
+  }
+  if (!("AA".equals(acknowledgementCode) || "AE".equals(acknowledgementCode) || "AR".equals(acknowledgementCode))) {
+    throw new IllegalArgumentException("Acknowledgemnt Code must be AA, AE or AR: " + acknowledgementCode);
+  }
+  String messageControlId;
+  int endOfMshSegment=hl7Message.indexOf(SEGMENT_DELIMITER);
+  if (-1 != endOfMshSegment) {
+    String mshSegment=hl7Message.substring(0,endOfMshSegment);
+    char fieldSeparator=mshSegment.charAt(3);
+    String fieldSeparatorPattern=Pattern.quote("" + fieldSeparator);
+    String[] mshFields=mshSegment.split(fieldSeparatorPattern);
+    if (null == mshFields || 0 == mshFields.length) {
+      log.error("Failed to split MSH Segment into fields");
+    }
+ else {
+      StringBuilder ackBuilder=new StringBuilder(mshSegment.length() + 25);
+      ackBuilder.append(mshFields[0]).append(fieldSeparator).append(mshFields[1]).append(fieldSeparator).append(mshFields[4]).append(fieldSeparator).append(mshFields[5]).append(fieldSeparator).append(mshFields[2]).append(fieldSeparator).append(mshFields[3]).append(fieldSeparator).append(mshFields[6]).append(fieldSeparator).append(mshFields[7]).append(fieldSeparator).append("ACK").append(mshFields[8].substring(3));
+      for (int i=9; i < mshFields.length; ++i) {
+        ackBuilder.append(fieldSeparator).append(mshFields[i]);
+      }
+      int emptyFieldIndex=mshSegment.length() - 1;
+      if (fieldSeparator == mshSegment.charAt(mshSegment.length() - 1)) {
+        ackBuilder.append(fieldSeparator);
+        while (emptyFieldIndex >= 1 && mshSegment.charAt(emptyFieldIndex) == mshSegment.charAt(emptyFieldIndex - 1)) {
+          ackBuilder.append(fieldSeparator);
+          --emptyFieldIndex;
+        }
+      }
+      ackBuilder.append(SEGMENT_DELIMITER);
+      ackBuilder.append("MSA").append(fieldSeparator).append(acknowledgementCode).append(fieldSeparator).append(mshFields[9]).append(fieldSeparator).append(SEGMENT_DELIMITER);
+      ackBuilder.append(MESSAGE_TERMINATOR);
+      return ackBuilder.toString();
+    }
+  }
+ else {
+    log.error("Failed to find the end of the  MSH Segment");
+  }
+  return null;
+}

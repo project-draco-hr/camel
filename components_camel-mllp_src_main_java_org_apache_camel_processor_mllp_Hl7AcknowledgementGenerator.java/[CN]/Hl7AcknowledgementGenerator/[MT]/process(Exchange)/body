@@ -1,0 +1,20 @@
+{
+  Message message=null;
+  if (exchange.hasOut()) {
+    message=exchange.getOut();
+  }
+ else {
+    message=exchange.getIn();
+  }
+  byte[] hl7Bytes=message.getMandatoryBody(byte[].class);
+  byte[] acknowledgementBytes=null;
+  if (null == exchange.getException()) {
+    acknowledgementBytes=generateApplicationAcceptAcknowledgementMessage(hl7Bytes);
+    message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
+  }
+ else {
+    acknowledgementBytes=generateApplicationErrorAcknowledgementMessage(hl7Bytes);
+    message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
+  }
+  message.setHeader(MLLP_ACKNOWLEDGEMENT,acknowledgementBytes);
+}

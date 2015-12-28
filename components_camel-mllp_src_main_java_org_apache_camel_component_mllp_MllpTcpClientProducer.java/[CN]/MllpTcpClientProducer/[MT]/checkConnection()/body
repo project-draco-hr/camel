@@ -1,0 +1,33 @@
+{
+  if (null == socket || socket.isClosed() || !socket.isConnected()) {
+    socket=new Socket();
+    try {
+      socket.setKeepAlive(endpoint.keepAlive);
+      socket.setTcpNoDelay(endpoint.tcpNoDelay);
+      if (null != endpoint.receiveBufferSize) {
+        socket.setReceiveBufferSize(endpoint.receiveBufferSize);
+      }
+      if (null != endpoint.sendBufferSize) {
+        socket.setSendBufferSize(endpoint.sendBufferSize);
+      }
+      socket.setReuseAddress(endpoint.reuseAddress);
+      socket.setSoLinger(false,-1);
+      socket.setSoTimeout(endpoint.responseTimeout);
+    }
+ catch (    SocketException e) {
+      return e;
+    }
+    SocketAddress address=new InetSocketAddress(endpoint.getHostname(),endpoint.getPort());
+    log.debug("Connecting to socket on {}",address);
+    try {
+      socket.connect(address,endpoint.connectTimeout);
+    }
+ catch (    SocketTimeoutException e) {
+      return e;
+    }
+catch (    IOException e) {
+      return e;
+    }
+  }
+  return null;
+}

@@ -1,0 +1,11 @@
+{
+  int messageCount=1000;
+  acknowledged.expectedMessageCount(messageCount);
+  for (int i=1; i <= messageCount; ++i) {
+    String testMessage=generateMessage(i);
+    acknowledged.message(i - 1).body().isEqualTo(testMessage);
+    String acknowledgement=source.requestBody((Object)testMessage,String.class);
+    Assert.assertThat("Should be acknowledgment for message " + i,acknowledgement,CoreMatchers.containsString(String.format("MSA|AA|%05d",i)));
+  }
+  assertMockEndpointsSatisfied(60,TimeUnit.SECONDS);
+}

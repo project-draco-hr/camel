@@ -1,0 +1,14 @@
+{
+  final int groupInterval=1000;
+  final boolean groupActiveOnly=false;
+  mllpClient.setMllpHost("localhost");
+  mllpClient.setMllpPort(AvailablePortFinder.getNextAvailable());
+  return new RouteBuilder(){
+    String routeId="mllp-receiver";
+    @Override public void configure() throws Exception {
+      onCompletion().log(LoggingLevel.DEBUG,routeId,"Test route complete");
+      fromF("mllp://%s:%d",mllpClient.getMllpHost(),mllpClient.getMllpPort()).routeId(routeId).process(new PassthroughProcessor("Before send to result")).to(result).toF("log://%s?level=INFO&groupInterval=%d&groupActiveOnly=%b",routeId,groupInterval,groupActiveOnly).log(LoggingLevel.DEBUG,routeId,"Test route received message");
+    }
+  }
+;
+}

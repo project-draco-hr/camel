@@ -1,0 +1,27 @@
+{
+  if (socket.isConnected() && !socket.isClosed()) {
+    OutputStream outputStream=null;
+    try {
+      outputStream=new BufferedOutputStream(socket.getOutputStream(),payload.length + 4);
+    }
+ catch (    IOException ioEx) {
+      log.error("Error Retrieving OutputStream from Socket - resetting connection");
+      resetConnection(socket);
+      throw new MllpException("Error Retrieving OutputStream from Socket",ioEx);
+    }
+    if (null != outputStream) {
+      try {
+        outputStream.write(START_OF_BLOCK);
+        outputStream.write(payload,0,payload.length);
+        outputStream.write(END_OF_BLOCK);
+        outputStream.write(END_OF_DATA);
+        outputStream.flush();
+      }
+ catch (      IOException ioEx) {
+        log.error("Error writing MLLP payload - resetting connection");
+        resetConnection(socket);
+        throw new MllpWriteException("Error writing MLLP payload",payload,ioEx);
+      }
+    }
+  }
+}

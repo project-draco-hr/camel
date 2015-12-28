@@ -1,0 +1,15 @@
+{
+  int messageCount=5;
+  acknowledged.setExpectedMessageCount(messageCount);
+  timeout.setExpectedMessageCount(0);
+  frame.setExpectedMessageCount(0);
+  NotifyBuilder[] complete=new NotifyBuilder[messageCount];
+  for (int i=0; i < messageCount; ++i) {
+    complete[i]=new NotifyBuilder(context).whenDone(i + 1).create();
+  }
+  for (int i=0; i < messageCount; ++i) {
+    source.sendBody(generateMessage(i + 1));
+    assertTrue("Messege " + i + " not completed",complete[i].matches(1,TimeUnit.SECONDS));
+  }
+  assertMockEndpointsSatisfied(15,TimeUnit.SECONDS);
+}

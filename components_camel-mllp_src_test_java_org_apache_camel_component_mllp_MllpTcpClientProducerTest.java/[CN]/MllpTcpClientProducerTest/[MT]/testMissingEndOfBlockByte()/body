@@ -1,0 +1,14 @@
+{
+  int sendMessageCount=3;
+  acknowledged.setExpectedMessageCount(sendMessageCount - 1);
+  NotifyBuilder[] complete=new NotifyBuilder[sendMessageCount];
+  for (int i=0; i < sendMessageCount; ++i) {
+    complete[i]=new NotifyBuilder(context).whenDone(i + 1).create();
+  }
+  mllpServer.setExcludeEndOfBlockModulus(sendMessageCount);
+  for (int i=0; i < sendMessageCount; ++i) {
+    source.sendBody(generateMessage(i + 1));
+    assertTrue("Messege " + i + " not completed",complete[i].matches(1,TimeUnit.SECONDS));
+  }
+  assertMockEndpointsSatisfied(15,TimeUnit.SECONDS);
+}

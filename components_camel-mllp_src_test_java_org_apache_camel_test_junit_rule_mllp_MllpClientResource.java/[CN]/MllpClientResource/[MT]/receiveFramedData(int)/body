@@ -1,0 +1,66 @@
+{
+  if (!isConnected()) {
+    throw new MllpJUnitResourceException("Cannot receive acknowledgement - client is not connected");
+  }
+  if (null == outputStream) {
+    throw new MllpJUnitResourceException("Cannot receive acknowledgement - output stream is null");
+  }
+  clientSocket.setSoTimeout(timout);
+  StringBuilder acknowledgement=new StringBuilder();
+  try {
+    int firstByte=inputStream.read();
+    if (START_OF_BLOCK != firstByte) {
+      if (isConnected()) {
+        if (END_OF_STREAM == firstByte) {
+          log.warn("END_OF_STREAM reached while waiting for START_OF_BLOCK - closing socket");
+          try {
+            clientSocket.close();
+          }
+ catch (          Exception ex) {
+            log.warn("Exception encountered closing socket after receiving END_OF_STREAM while waiting for START_OF_BLOCK");
+          }
+          return "";
+        }
+ else {
+          log.error("Acknowledgement did not start with START_OF_BLOCK: {}",firstByte);
+          throw new MllpJUnitResourceCorruptFrameException("Message did not start with START_OF_BLOCK");
+        }
+      }
+ else {
+        throw new MllpJUnitResourceException("Connection terminated");
+      }
+    }
+    boolean readingMessage=true;
+    while (readingMessage) {
+      int nextByte=inputStream.read();
+switch (nextByte) {
+case -1:
+        throw new MllpJUnitResourceCorruptFrameException("Reached end of stream before END_OF_BLOCK");
+case START_OF_BLOCK:
+      throw new MllpJUnitResourceCorruptFrameException("Received START_OF_BLOCK before END_OF_BLOCK");
+case END_OF_BLOCK:
+    if (END_OF_DATA != inputStream.read()) {
+      throw new MllpJUnitResourceCorruptFrameException("END_OF_BLOCK was not followed by END_OF_DATA");
+    }
+  readingMessage=false;
+break;
+default :
+acknowledgement.append((char)nextByte);
+}
+}
+}
+ catch (SocketTimeoutException timeoutEx) {
+if (0 < acknowledgement.length()) {
+log.error("Timeout waiting for acknowledgement",timeoutEx);
+}
+ else {
+log.error("Timeout while reading acknowledgement\n" + acknowledgement.toString().replace('\r','\n'),timeoutEx);
+}
+throw new MllpJUnitResourceTimeoutException("Timeout while reading acknowledgement",timeoutEx);
+}
+catch (IOException e) {
+log.error("Unable to read HL7 acknowledgement",e);
+throw new MllpJUnitResourceException("Unable to read HL7 acknowledgement",e);
+}
+return acknowledgement.toString();
+}

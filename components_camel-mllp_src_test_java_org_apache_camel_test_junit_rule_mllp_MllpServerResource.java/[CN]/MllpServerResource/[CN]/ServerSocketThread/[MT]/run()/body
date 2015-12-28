@@ -1,0 +1,41 @@
+{
+  log.info("Accepting connections on port {}",serverSocket.getLocalPort());
+  this.setName("MllpServerResource$ServerSocketThread - " + serverSocket.getLocalSocketAddress().toString());
+  while (isActive() && serverSocket.isBound()) {
+    Socket clientSocket=null;
+    try {
+      clientSocket=serverSocket.accept();
+      clientSocket.setKeepAlive(true);
+      clientSocket.setTcpNoDelay(false);
+      clientSocket.setSoLinger(false,-1);
+      clientSocket.setSoTimeout(5000);
+      ClientSocketThread clientSocketThread=new ClientSocketThread(clientSocket);
+      clientSocketThread.setDaemon(true);
+      clientSocketThread.start();
+    }
+ catch (    SocketTimeoutException timeoutEx) {
+      if (raiseExceptionOnAcceptTimeout) {
+        throw new MllpJUnitResourceTimeoutException("Timeout Accepting client connection",timeoutEx);
+      }
+      continue;
+    }
+catch (    IOException e) {
+      log.warn("IOException creating Client Socket");
+      try {
+        clientSocket.close();
+      }
+ catch (      IOException e1) {
+        log.warn("Exceptiong encountered closing client socket after attempting to accept connection");
+      }
+      throw new MllpJUnitResourceException("IOException creating Socket",e);
+    }
+  }
+  log.info("No longer accepting connections - closing TCP Listener on port {}",serverSocket.getLocalPort());
+  try {
+    serverSocket.close();
+  }
+ catch (  IOException e) {
+    e.printStackTrace();
+  }
+  log.info("Closed TCP Listener on port {}",serverSocket.getLocalPort());
+}

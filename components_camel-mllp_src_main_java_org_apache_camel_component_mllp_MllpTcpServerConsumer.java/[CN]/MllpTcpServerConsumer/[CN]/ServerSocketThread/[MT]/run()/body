@@ -1,0 +1,68 @@
+{
+  log.debug("Starting acceptor thread");
+  while (null != serverSocket && serverSocket.isBound() && !serverSocket.isClosed()) {
+    try {
+      Socket socket=serverSocket.accept();
+      Thread.sleep(100);
+      if (socket.isConnected() && !socket.isClosed()) {
+        log.debug("Socket appears to be there - check for available data");
+        InputStream inputStream;
+        try {
+          inputStream=socket.getInputStream();
+        }
+ catch (        IOException ioEx) {
+          log.warn("Failed to retrieve the InputStream for socket after the initial connection was accepted");
+          MllpUtil.resetConnection(socket);
+          continue;
+        }
+        if (0 < inputStream.available()) {
+          ClientSocketThread clientThread=new ClientSocketThread(socket,null);
+          clientThreads.add(clientThread);
+          clientThread.start();
+          continue;
+        }
+        socket.setSoTimeout(100);
+        try {
+          int tmpByte=inputStream.read();
+          socket.setSoTimeout(endpoint.responseTimeout);
+          if (-1 == tmpByte) {
+            log.debug("Socket.read() returned END_OF_STREAM - resetting connection");
+            MllpUtil.resetConnection(socket);
+          }
+ else {
+            ClientSocketThread clientThread=new ClientSocketThread(socket,tmpByte);
+            clientThreads.add(clientThread);
+            clientThread.start();
+          }
+        }
+ catch (        SocketTimeoutException timeoutEx) {
+          log.debug("No Data - but the socket is there.  Starting ClientSocketThread");
+          ClientSocketThread clientThread=new ClientSocketThread(socket,null);
+          clientThreads.add(clientThread);
+          clientThread.start();
+        }
+      }
+    }
+ catch (    SocketTimeoutException timeoutEx) {
+      log.trace("SocketTimeoutException waiting for new connections - no new connections");
+      for (int i=clientThreads.size() - 1; i >= 0; --i) {
+        ClientSocketThread thread=clientThreads.get(i);
+        if (!thread.isAlive()) {
+          clientThreads.remove(i);
+        }
+      }
+    }
+catch (    InterruptedException interruptEx) {
+      log.info("accept loop interrupted - closing ServerSocket");
+      try {
+        serverSocket.close();
+      }
+ catch (      Exception ex) {
+        log.warn("Exception encountered closing ServerSocket after InterruptedException",ex);
+      }
+    }
+catch (    Exception ex) {
+      log.error("Exception accepting new connection",ex);
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  String localAddress=clientSocket.getLocalAddress().toString();
+  String remoteAddress=clientSocket.getRemoteSocketAddress().toString();
+  log.info("Handling Connection: {} -> {}",localAddress,remoteAddress);
+  try {
+    while (null != clientSocket && clientSocket.isConnected() && !clientSocket.isClosed()) {
+      InputStream instream=clientSocket.getInputStream();
+      String parsedHL7Message=getMessage(instream);
+      if (null != parsedHL7Message && parsedHL7Message.length() > 0) {
+        ++messageCounter;
+        if (disconnectBeforeAcknowledgement(messageCounter)) {
+          log.warn("Disconnecting before sending acknowledgement");
+          clientSocket.shutdownInput();
+          clientSocket.shutdownOutput();
+          clientSocket.close();
+          break;
+        }
+        String acknowledgmentMessage;
+        if (sendApplicationErrorAcknowledgement(messageCounter) || sendApplicationErrorAcknowledgement(parsedHL7Message)) {
+          acknowledgmentMessage=generateAcknowledgementMessage(parsedHL7Message,"AE");
+        }
+ else         if (sendApplicationRejectAcknowledgement(messageCounter) || sendApplicationRejectAcknowledgement(parsedHL7Message)) {
+          acknowledgmentMessage=generateAcknowledgementMessage(parsedHL7Message,"AR");
+        }
+ else {
+          acknowledgmentMessage=generateAcknowledgementMessage(parsedHL7Message);
+        }
+        BufferedOutputStream outstream=new BufferedOutputStream(clientSocket.getOutputStream());
+        if (sendOutOfBandData(messageCounter)) {
+          byte[] outOfBandDataBytes="Out Of Band Hl7MessageGenerator".getBytes();
+          outstream.write(outOfBandDataBytes,0,outOfBandDataBytes.length);
+        }
+        if (excludeStartOfBlock(messageCounter)) {
+          log.warn("NOT sending bMLLP_ENVELOPE_START_OF_BLOCK");
+        }
+ else {
+          outstream.write(START_OF_BLOCK);
+        }
+        if (excludeAcknowledgement(messageCounter)) {
+          log.info("NOT sending Acknowledgement body");
+        }
+ else {
+          log.debug("Buffering Acknowledgement\n\t{}",acknowledgmentMessage.replace('\r','\n'));
+          byte[] ackBytes=acknowledgmentMessage.getBytes();
+          outstream.write(ackBytes,0,ackBytes.length);
+        }
+        if (excludeEndOfBlock(messageCounter)) {
+          log.warn("NOT sending bMLLP_ENVELOPE_END_OF_BLOCK");
+        }
+ else {
+          outstream.write(END_OF_BLOCK);
+        }
+        if (excludeEndOfData(messageCounter)) {
+          log.warn("NOT sending bMLLP_ENVELOPE_END_OF_DATA");
+        }
+ else {
+          outstream.write(END_OF_DATA);
+        }
+        log.debug("Writing Acknowledgement\n\t{}",acknowledgmentMessage.replace('\r','\n'));
+        outstream.flush();
+        if (disconnectAfterAcknowledgement(messageCounter)) {
+          log.info("Closing Client");
+          clientSocket.shutdownInput();
+          clientSocket.shutdownOutput();
+          clientSocket.close();
+          break;
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+    String errorMessage="Error whiling reading and writing to clientSocket";
+    log.error(errorMessage,e);
+    throw new MllpJUnitResourceException(errorMessage,e);
+  }
+ finally {
+    try {
+      clientSocket.close();
+    }
+ catch (    IOException e) {
+      String errorMessage="Error whiling attempting to close to client Socket";
+      log.error(errorMessage,e);
+      throw new MllpJUnitResourceException(errorMessage,e);
+    }
+  }
+  log.info("Connection Finished: {} -> {}",localAddress,remoteAddress);
+}
