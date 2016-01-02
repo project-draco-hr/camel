@@ -1,0 +1,18 @@
+{
+  return new RouteBuilder(){
+    public void configure(){
+      Tracer tracer=new Tracer();
+      tracer.setLogLevel(LoggingLevel.ERROR);
+      tracer.setLogName("org.apache.camel.bindy");
+      getContext().addInterceptStrategy(tracer);
+      errorHandler(deadLetterChannel(URI_MOCK_ERROR).redeliveryDelay(0));
+      onException(Exception.class).maximumRedeliveries(0).handled(true);
+      BindyDataFormat bindy=new BindyDataFormat();
+      bindy.setLocale("en");
+      bindy.setClassType(Order.class);
+      bindy.setType(BindyType.Fixed);
+      from(URI_DIRECT_START).marshal(bindy).to(URI_MOCK_RESULT);
+    }
+  }
+;
+}
