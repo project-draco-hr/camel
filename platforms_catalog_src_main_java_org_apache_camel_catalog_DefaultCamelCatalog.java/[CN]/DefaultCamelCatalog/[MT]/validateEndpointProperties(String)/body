@@ -21,6 +21,7 @@
     String name=property.getKey();
     String value=property.getValue();
     boolean placeholder=value.startsWith("{{") || value.startsWith("${") || value.startsWith("$simple{");
+    boolean lookup=value.startsWith("#") && value.length() > 1;
     Map<String,String> row=getRow(rows,name);
     if (row == null) {
       result.addUnknown(name);
@@ -41,7 +42,7 @@
         result.addRequired(name);
       }
       String enums=getPropertyEnum(rows,name);
-      if (!placeholder && enums != null) {
+      if (!placeholder && !lookup && enums != null) {
         String[] choices=enums.split(",");
         boolean found=false;
         for (        String s : choices) {
@@ -61,19 +62,19 @@
           result.addInvalidReference(name,value);
         }
       }
-      if (!placeholder && isPropertyBoolean(rows,name)) {
+      if (!placeholder && !lookup && isPropertyBoolean(rows,name)) {
         boolean bool="true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
         if (!bool) {
           result.addInvalidBoolean(name,value);
         }
       }
-      if (!placeholder && isPropertyInteger(rows,name)) {
+      if (!placeholder && !lookup && isPropertyInteger(rows,name)) {
         boolean valid=validateInteger(value);
         if (!valid) {
           result.addInvalidInteger(name,value);
         }
       }
-      if (!placeholder && isPropertyNumber(rows,name)) {
+      if (!placeholder && !lookup && isPropertyNumber(rows,name)) {
         boolean valid=false;
         try {
           valid=!Double.valueOf(value).isNaN() || !Float.valueOf(value).isNaN();
