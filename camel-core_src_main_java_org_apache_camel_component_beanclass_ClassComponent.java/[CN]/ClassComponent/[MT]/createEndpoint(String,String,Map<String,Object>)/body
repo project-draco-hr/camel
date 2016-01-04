@@ -4,7 +4,10 @@
   String name=endpoint.getBeanName();
   Class<?> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(name);
   Object bean=getCamelContext().getInjector().newInstance(clazz);
-  setProperties(bean,parameters);
+  Map<String,Object> options=IntrospectionSupport.extractProperties(parameters,"bean.");
+  endpoint.setParameters(options);
+  setProperties(bean,options);
+  validateParameters(uri,options,null);
   BeanHolder holder=new ConstantBeanHolder(bean,getCamelContext());
   endpoint.setBeanHolder(holder);
   return endpoint;
