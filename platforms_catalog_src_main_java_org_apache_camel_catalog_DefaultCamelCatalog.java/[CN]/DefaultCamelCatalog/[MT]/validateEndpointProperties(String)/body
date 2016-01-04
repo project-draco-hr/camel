@@ -2,6 +2,7 @@
   EndpointValidationResult result=new EndpointValidationResult(uri);
   Map<String,String> properties;
   List<Map<String,String>> rows;
+  boolean lenientProperties;
   try {
     URI u=normalizeUri(uri);
     String scheme=u.getScheme();
@@ -10,6 +11,8 @@
       result.addUnknownComponent(scheme);
       return result;
     }
+    rows=JSonSchemaHelper.parseJsonSchema("component",json,false);
+    lenientProperties=isComponentLenientProperties(rows);
     rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
     properties=endpointProperties(uri);
   }
@@ -33,11 +36,13 @@
     boolean mulitValue=prefix != null && originalName.startsWith(prefix) && isPropertyMultiValue(rows,name);
     Map<String,String> row=getRow(rows,name);
     if (row == null) {
-      result.addUnknown(name);
-      if (suggestionStrategy != null) {
-        String[] suggestions=suggestionStrategy.suggestEndpointOptions(getNames(rows),name);
-        if (suggestions != null) {
-          result.addUnknownSuggestions(name,suggestions);
+      if (!lenientProperties) {
+        result.addUnknown(name);
+        if (suggestionStrategy != null) {
+          String[] suggestions=suggestionStrategy.suggestEndpointOptions(getNames(rows),name);
+          if (suggestions != null) {
+            result.addUnknownSuggestions(name,suggestions);
+          }
         }
       }
     }
