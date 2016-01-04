@@ -18,11 +18,19 @@
     return result;
   }
   for (  Map.Entry<String,String> property : properties.entrySet()) {
+    String value=property.getValue();
+    String originalName=property.getKey();
     String name=property.getKey();
     name=stripOptionalPrefixFromName(rows,name);
-    String value=property.getValue();
+    String propertyName=getPropertyNameFromNameWithPrefix(rows,name);
+    if (propertyName != null) {
+      name=propertyName;
+    }
+    String prefix=getPropertyPrefix(rows,name);
+    String kind=getPropertyKind(rows,name);
     boolean placeholder=value.startsWith("{{") || value.startsWith("${") || value.startsWith("$simple{");
     boolean lookup=value.startsWith("#") && value.length() > 1;
+    boolean mulitValue=prefix != null && originalName.startsWith(prefix) && isPropertyMultiValue(rows,name);
     Map<String,String> row=getRow(rows,name);
     if (row == null) {
       result.addUnknown(name);
@@ -43,7 +51,7 @@
         result.addRequired(name);
       }
       String enums=getPropertyEnum(rows,name);
-      if (!placeholder && !lookup && enums != null) {
+      if (!mulitValue && !placeholder && !lookup&& enums != null) {
         String[] choices=enums.split(",");
         boolean found=false;
         for (        String s : choices) {
@@ -57,25 +65,24 @@
           result.addInvalidEnumChoices(name,choices);
         }
       }
-      String kind=getPropertyKind(rows,name);
-      if (!"path".equals(kind) && isPropertyObject(rows,name)) {
+      if (!mulitValue && !"path".equals(kind) && isPropertyObject(rows,name)) {
         if (!value.startsWith("#") || value.length() <= 1) {
           result.addInvalidReference(name,value);
         }
       }
-      if (!placeholder && !lookup && isPropertyBoolean(rows,name)) {
+      if (!mulitValue && !placeholder && !lookup&& isPropertyBoolean(rows,name)) {
         boolean bool="true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
         if (!bool) {
           result.addInvalidBoolean(name,value);
         }
       }
-      if (!placeholder && !lookup && isPropertyInteger(rows,name)) {
+      if (!mulitValue && !placeholder && !lookup&& isPropertyInteger(rows,name)) {
         boolean valid=validateInteger(value);
         if (!valid) {
           result.addInvalidInteger(name,value);
         }
       }
-      if (!placeholder && !lookup && isPropertyNumber(rows,name)) {
+      if (!mulitValue && !placeholder && !lookup&& isPropertyNumber(rows,name)) {
         boolean valid=false;
         try {
           valid=!Double.valueOf(value).isNaN() || !Float.valueOf(value).isNaN();
