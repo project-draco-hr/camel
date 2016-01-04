@@ -1,3 +1,18 @@
 {
-  return new SqlStoredEndpoint(templateStoredProcedureFactory,dataSource,remaining);
+  DataSource target=null;
+  DataSource ds=resolveAndRemoveReferenceParameter(parameters,"dataSource",DataSource.class);
+  if (ds != null) {
+    target=ds;
+  }
+  String dataSourceRef=getAndRemoveParameter(parameters,"dataSourceRef",String.class);
+  if (target == null && dataSourceRef != null) {
+    target=CamelContextHelper.mandatoryLookup(getCamelContext(),dataSourceRef,DataSource.class);
+  }
+  if (target == null) {
+    target=dataSource;
+  }
+  if (target == null) {
+    throw new IllegalArgumentException("DataSource must be configured");
+  }
+  return new SqlStoredEndpoint(templateStoredProcedureFactory,target,remaining);
 }
