@@ -52,30 +52,47 @@ catch (  MllpException mllpEx) {
     if (SEGMENT_DELIMITER == acknowledgementBytes[i]) {
       final byte bM=77;
       final byte bS=83;
+      final byte bC=67;
       final byte bA=65;
       final byte bE=69;
       final byte bR=82;
       if (acknowledgementBytes.length > i + 7) {
         if (bM == acknowledgementBytes[i + 1] && bS == acknowledgementBytes[i + 2] && bA == acknowledgementBytes[i + 3] && fieldDelim == acknowledgementBytes[i + 4]) {
           msaStartIndex=i + 1;
-          if (bA != acknowledgementBytes[i + 5]) {
+          if (bA != acknowledgementBytes[i + 5] && bC != acknowledgementBytes[i + 5]) {
             exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
           }
  else {
+            String acknowledgemenTypeString;
 switch (acknowledgementBytes[i + 6]) {
 case bA:
               if (fieldDelim != acknowledgementBytes[i + 7]) {
                 exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
               }
-            message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
+            if (bA == acknowledgementBytes[i + 5]) {
+              message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
+            }
+ else {
+              message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CA");
+            }
           break;
 case bE:
         exchange.setException(new MllpApplicationErrorAcknowledgementException(new String(acknowledgementBytes)));
-      message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
+      if (bA == acknowledgementBytes[i + 5]) {
+        message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
+      }
+ else {
+        message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CE");
+      }
     break;
 case bR:
   exchange.setException(new MllpApplicationRejectAcknowledgementException(new String(acknowledgementBytes)));
-message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
+if (bA == acknowledgementBytes[i + 5]) {
+  message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
+}
+ else {
+  message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CR");
+}
 break;
 default :
 exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
