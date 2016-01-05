@@ -11,11 +11,13 @@
   HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
   UrlRewrite urlRewrite=resolveAndRemoveReferenceParameter(parameters,"urlRewrite",UrlRewrite.class);
   HttpClientParams clientParams=new HttpClientParams();
-  IntrospectionSupport.setProperties(clientParams,parameters,"httpClient.");
-  validateParameters(uri,parameters,"httpClient.");
+  Map<String,Object> httpClientOptions=IntrospectionSupport.extractProperties(parameters,"httpClient.");
+  IntrospectionSupport.setProperties(clientParams,httpClientOptions);
+  validateParameters(uri,httpClientOptions,null);
   HttpConnectionManagerParams connectionManagerParams=new HttpConnectionManagerParams();
-  IntrospectionSupport.setProperties(connectionManagerParams,parameters,"httpConnectionManager.");
-  validateParameters(uri,parameters,"httpConnectionManager.");
+  Map<String,Object> httpConnectionManagerOptions=IntrospectionSupport.extractProperties(parameters,"httpConnectionManager.");
+  IntrospectionSupport.setProperties(connectionManagerParams,httpConnectionManagerOptions);
+  validateParameters(uri,httpConnectionManagerOptions,null);
   HttpConnectionManager thisHttpConnectionManager=httpConnectionManager;
   if (thisHttpConnectionManager == null) {
     thisHttpConnectionManager=new MultiThreadedHttpConnectionManager();
@@ -72,5 +74,6 @@
     }
   }
   endpoint.setHttpUri(httpUri);
+  endpoint.setHttpClientOptions(httpClientOptions);
   return endpoint;
 }
