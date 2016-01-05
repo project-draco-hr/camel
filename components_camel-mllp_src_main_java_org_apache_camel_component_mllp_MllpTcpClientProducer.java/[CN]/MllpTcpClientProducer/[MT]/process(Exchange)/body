@@ -77,23 +77,25 @@ case bA:
             }
           break;
 case bE:
-        exchange.setException(new MllpApplicationErrorAcknowledgementException(new String(acknowledgementBytes)));
-      if (bA == acknowledgementBytes[i + 5]) {
-        message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
-      }
+        if (bA == acknowledgementBytes[i + 5]) {
+          message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
+          exchange.setException(new MllpApplicationErrorAcknowledgementException(new String(acknowledgementBytes)));
+        }
  else {
-        message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CE");
-      }
-    break;
+          message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CE");
+          exchange.setException(new MllpCommitErrorAcknowledgementException(new String(acknowledgementBytes)));
+        }
+      break;
 case bR:
-  exchange.setException(new MllpApplicationRejectAcknowledgementException(new String(acknowledgementBytes)));
-if (bA == acknowledgementBytes[i + 5]) {
-  message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
-}
+    if (bA == acknowledgementBytes[i + 5]) {
+      message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
+      exchange.setException(new MllpApplicationRejectAcknowledgementException(new String(acknowledgementBytes)));
+    }
  else {
-  message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CR");
-}
-break;
+      message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CR");
+      exchange.setException(new MllpCommitRejectAcknowledgementException(new String(acknowledgementBytes)));
+    }
+  break;
 default :
 exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
 }
