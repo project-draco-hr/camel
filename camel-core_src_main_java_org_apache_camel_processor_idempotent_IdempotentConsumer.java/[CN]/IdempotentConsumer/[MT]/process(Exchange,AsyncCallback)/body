@@ -1,40 +1,56 @@
 {
-  final String messageId=messageIdExpression.evaluate(exchange,String.class);
-  if (messageId == null) {
-    exchange.setException(new NoMessageIdException(exchange,messageIdExpression));
-    callback.done(true);
-    return true;
-  }
-  boolean newKey;
-  if (eager) {
-    if (idempotentRepository instanceof ExchangeIdempotentRepository) {
-      newKey=((ExchangeIdempotentRepository<String>)idempotentRepository).add(exchange,messageId);
-    }
- else {
-      newKey=idempotentRepository.add(messageId);
-    }
-  }
- else {
-    if (idempotentRepository instanceof ExchangeIdempotentRepository) {
-      newKey=((ExchangeIdempotentRepository<String>)idempotentRepository).contains(exchange,messageId);
-    }
- else {
-      newKey=!idempotentRepository.contains(messageId);
-    }
-  }
-  if (!newKey) {
-    exchange.setProperty(Exchange.DUPLICATE_MESSAGE,Boolean.TRUE);
-    onDuplicate(exchange,messageId);
-    if (skipDuplicate) {
-      LOG.debug("Ignoring duplicate message with id: {} for exchange: {}",messageId,exchange);
+  final AsyncCallback target;
+  final String messageId;
+  try {
+    messageId=messageIdExpression.evaluate(exchange,String.class);
+    if (messageId == null) {
+      exchange.setException(new NoMessageIdException(exchange,messageIdExpression));
       callback.done(true);
       return true;
     }
   }
-  final Synchronization onCompletion=new IdempotentOnCompletion(idempotentRepository,messageId,eager,removeOnFailure);
-  final AsyncCallback target=new IdempotentConsumerCallback(exchange,onCompletion,callback,completionEager);
-  if (!completionEager) {
-    exchange.addOnCompletion(onCompletion);
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+  try {
+    boolean newKey;
+    if (eager) {
+      if (idempotentRepository instanceof ExchangeIdempotentRepository) {
+        newKey=((ExchangeIdempotentRepository<String>)idempotentRepository).add(exchange,messageId);
+      }
+ else {
+        newKey=idempotentRepository.add(messageId);
+      }
+    }
+ else {
+      if (idempotentRepository instanceof ExchangeIdempotentRepository) {
+        newKey=((ExchangeIdempotentRepository<String>)idempotentRepository).contains(exchange,messageId);
+      }
+ else {
+        newKey=!idempotentRepository.contains(messageId);
+      }
+    }
+    if (!newKey) {
+      exchange.setProperty(Exchange.DUPLICATE_MESSAGE,Boolean.TRUE);
+      onDuplicate(exchange,messageId);
+      if (skipDuplicate) {
+        LOG.debug("Ignoring duplicate message with id: {} for exchange: {}",messageId,exchange);
+        callback.done(true);
+        return true;
+      }
+    }
+    final Synchronization onCompletion=new IdempotentOnCompletion(idempotentRepository,messageId,eager,removeOnFailure);
+    target=new IdempotentConsumerCallback(exchange,onCompletion,callback,completionEager);
+    if (!completionEager) {
+      exchange.addOnCompletion(onCompletion);
+    }
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
   }
   return processor.process(exchange,target);
 }
