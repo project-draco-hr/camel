@@ -1,11 +1,12 @@
 {
   Map<String,Object> httpClientParameters=new HashMap<String,Object>(parameters);
   HttpClientBuilder clientBuilder=HttpClientBuilder.create();
-  IntrospectionSupport.setProperties(clientBuilder,parameters,"httpClient.",true);
+  Map<String,Object> httpClientOptions=IntrospectionSupport.extractProperties(parameters,"httpClient.");
+  IntrospectionSupport.setProperties(clientBuilder,httpClientOptions);
   RequestConfig.Builder requestConfigBuilder=RequestConfig.custom();
-  IntrospectionSupport.setProperties(requestConfigBuilder,parameters,"httpClient.",true);
+  IntrospectionSupport.setProperties(requestConfigBuilder,httpClientOptions);
   clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
-  validateParameters(uri,parameters,"httpClient.");
+  validateParameters(uri,httpClientOptions,null);
   HttpBinding httpBinding=resolveAndRemoveReferenceParameter(parameters,"httpBinding",HttpBinding.class);
   HttpContext httpContext=resolveAndRemoveReferenceParameter(parameters,"httpContext",HttpContext.class);
   X509HostnameVerifier x509HostnameVerifier=resolveAndRemoveReferenceParameter(parameters,"x509HostnameVerifier",X509HostnameVerifier.class);
@@ -70,5 +71,6 @@
   if (endpoint.getCookieStore() == null) {
     endpoint.setCookieStore(getCookieStore());
   }
+  endpoint.setHttpClientOptions(httpClientOptions);
   return endpoint;
 }
