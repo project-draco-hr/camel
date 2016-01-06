@@ -5,20 +5,58 @@
   if (json == null) {
     throw new IllegalArgumentException("Cannot find endpoint with scheme " + scheme);
   }
+  Map<String,String> userInfoOptions=new LinkedHashMap<String,String>();
+  boolean userInfo=false;
+  String username=null;
+  String password=null;
+  if (u.getUserInfo() != null) {
+    userInfo=true;
+    String[] parts=u.getUserInfo().split(":");
+    if (parts.length == 2) {
+      username=parts[0];
+      password=parts[1];
+    }
+ else {
+      username=u.getUserInfo();
+    }
+  }
   String syntax=null;
+  String alternativeSyntax=null;
   List<Map<String,String>> rows=JSonSchemaHelper.parseJsonSchema("component",json,false);
   for (  Map<String,String> row : rows) {
     if (row.containsKey("syntax")) {
       syntax=row.get("syntax");
-      break;
+    }
+    if (row.containsKey("alternativeSyntax")) {
+      alternativeSyntax=row.get("alternativeSyntax");
     }
   }
   if (syntax == null) {
     throw new IllegalArgumentException("Endpoint with scheme " + scheme + " has no syntax defined in the json schema");
   }
   syntax=after(syntax,":");
+  if (alternativeSyntax != null) {
+    alternativeSyntax=after(alternativeSyntax,":");
+  }
   uri=after(uri,":");
   String uriPath=stripQuery(uri);
+  if (alternativeSyntax != null && alternativeSyntax.contains("@")) {
+    int idx=alternativeSyntax.indexOf("@");
+    String fields=alternativeSyntax.substring(0,idx);
+    String[] names=fields.split(":");
+    if (userInfo && names.length == 2) {
+      userInfoOptions.put(names[0],username);
+      if (password != null) {
+        userInfoOptions.put(names[1],password);
+      }
+    }
+  }
+  if (userInfo) {
+    int idx=uriPath.indexOf('@');
+    if (idx > -1) {
+      uriPath=uriPath.substring(idx + 1);
+    }
+  }
   if (uriPath != null && uriPath.startsWith("//")) {
     uriPath=uriPath.substring(2);
   }
@@ -60,6 +98,9 @@
   rows=JSonSchemaHelper.parseJsonSchema("properties",json,true);
   boolean defaultValueAdded=false;
   Map<String,String> options=new LinkedHashMap<String,String>();
+  if (!userInfoOptions.isEmpty()) {
+    options.putAll(userInfoOptions);
+  }
   Iterator<String> it=word2.iterator();
   for (int i=0; i < word.size(); i++) {
     String key=word.get(i);
