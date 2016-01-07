@@ -42,12 +42,13 @@
     }
     String prefix=getPropertyPrefix(rows,name);
     String kind=getPropertyKind(rows,name);
-    boolean placeholder=value.startsWith("{{") || value.startsWith("${") || value.startsWith("$simple{");
+    boolean namePlaceholder=name.startsWith("{{") && name.endsWith("}}");
+    boolean valuePlaceholder=value.startsWith("{{") || value.startsWith("${") || value.startsWith("$simple{");
     boolean lookup=value.startsWith("#") && value.length() > 1;
     boolean mulitValue=prefix != null && originalName.startsWith(prefix) && isPropertyMultiValue(rows,name);
     Map<String,String> row=getRow(rows,name);
     if (row == null) {
-      if (!lenientProperties && !"stub".equals(scheme)) {
+      if (!namePlaceholder && !lenientProperties && !"stub".equals(scheme)) {
         result.addUnknown(name);
         if (suggestionStrategy != null) {
           String[] suggestions=suggestionStrategy.suggestEndpointOptions(getNames(rows),name);
@@ -67,7 +68,7 @@
         result.addRequired(name);
       }
       String enums=getPropertyEnum(rows,name);
-      if (!mulitValue && !placeholder && !lookup&& enums != null) {
+      if (!mulitValue && !valuePlaceholder && !lookup&& enums != null) {
         String[] choices=enums.split(",");
         boolean found=false;
         for (        String s : choices) {
@@ -86,19 +87,19 @@
           result.addInvalidReference(name,value);
         }
       }
-      if (!mulitValue && !placeholder && !lookup&& isPropertyBoolean(rows,name)) {
+      if (!mulitValue && !valuePlaceholder && !lookup&& isPropertyBoolean(rows,name)) {
         boolean bool="true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
         if (!bool) {
           result.addInvalidBoolean(name,value);
         }
       }
-      if (!mulitValue && !placeholder && !lookup&& isPropertyInteger(rows,name)) {
+      if (!mulitValue && !valuePlaceholder && !lookup&& isPropertyInteger(rows,name)) {
         boolean valid=validateInteger(value);
         if (!valid) {
           result.addInvalidInteger(name,value);
         }
       }
-      if (!mulitValue && !placeholder && !lookup&& isPropertyNumber(rows,name)) {
+      if (!mulitValue && !valuePlaceholder && !lookup&& isPropertyNumber(rows,name)) {
         boolean valid=false;
         try {
           valid=!Double.valueOf(value).isNaN() || !Float.valueOf(value).isNaN();
