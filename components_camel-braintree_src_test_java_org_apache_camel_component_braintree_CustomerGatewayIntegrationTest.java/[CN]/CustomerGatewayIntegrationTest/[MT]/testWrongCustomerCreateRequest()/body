@@ -1,0 +1,14 @@
+{
+  Result<Customer> createResult=requestBody("direct://CREATE_IN_BODY",new CustomerRequest().firstName("user").lastName(UUID.randomUUID().toString()).company("Apache").email("wrongEmail").website("http://user.braintree.camel"),Result.class);
+  assertNotNull(createResult);
+  assertFalse(createResult.isSuccess());
+  final ValidationErrors errors=createResult.getErrors();
+  assertNotNull(errors);
+  assertNotNull(errors.getAllDeepValidationErrors());
+  assertNotNull(Iterables.find(errors.getAllDeepValidationErrors(),new Predicate<ValidationError>(){
+    @Override public boolean apply(    ValidationError o){
+      return o.getCode() == ValidationErrorCode.CUSTOMER_EMAIL_FORMAT_IS_INVALID;
+    }
+  }
+));
+}

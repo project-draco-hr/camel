@@ -1,0 +1,10 @@
+{
+  final BraintreeGateway gateway=getGateway();
+  Map<String,String> notification=gateway.webhookTesting().sampleNotification(WebhookNotification.Kind.SUBSCRIPTION_WENT_PAST_DUE,"my_id");
+  final Map<String,Object> headers=new HashMap<>();
+  headers.put(BraintreeConstants.PROPERTY_PREFIX + "signature",notification.get("bt_signature"));
+  headers.put(BraintreeConstants.PROPERTY_PREFIX + "payload",notification.get("bt_payload"));
+  final WebhookNotification result=requestBodyAndHeaders("direct://PARSE",null,headers);
+  assertNotNull("parse result",result);
+  assertEquals("my_id",result.getSubscription().getId());
+}
