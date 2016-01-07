@@ -4,16 +4,17 @@
   List<Map<String,String>> rows;
   boolean lenientProperties;
   String scheme;
-  if (uri.startsWith("{{")) {
-    result.addIncapable(uri);
-    return result;
-  }
   try {
     URI u=normalizeUri(uri);
     scheme=u.getScheme();
     String json=componentJSonSchema(scheme);
     if (json == null) {
-      result.addUnknownComponent(scheme);
+      if (uri.startsWith("{{")) {
+        result.addIncapable(uri);
+      }
+ else       if (scheme != null) {
+        result.addUnknownComponent(scheme);
+      }
       return result;
     }
     rows=JSonSchemaHelper.parseJsonSchema("component",json,false);
@@ -22,7 +23,12 @@
     properties=endpointProperties(uri);
   }
  catch (  URISyntaxException e) {
-    result.addSyntaxError(e.getMessage());
+    if (uri.startsWith("{{")) {
+      result.addIncapable(uri);
+    }
+ else {
+      result.addSyntaxError(e.getMessage());
+    }
     return result;
   }
   if ("dataformat".equals(scheme)) {
