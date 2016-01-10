@@ -8,12 +8,15 @@
   when(jobMock.getJobId()).thenReturn(jobId);
   when(jobMock.getData()).thenReturn(payload);
   when(client.reserve(anyInt())).thenReturn(jobMock).thenReturn(null);
+  when(client.statsJob(anyInt())).thenReturn(null);
   MockEndpoint result=getMockEndpoint("mock:result");
   result.expectedMinimumMessageCount(1);
   result.expectedBodiesReceived(testMessage);
   result.expectedHeaderReceived(Headers.JOB_ID,jobId);
   result.message(0).header(Headers.JOB_ID).isEqualTo(jobId);
-  result.assertIsSatisfied(2000);
+  context.startRoute("foo");
+  result.assertIsSatisfied();
   verify(client,atLeastOnce()).reserve(anyInt());
+  verify(client,atLeastOnce()).statsJob(anyInt());
   verify(client).delete(jobId);
 }
