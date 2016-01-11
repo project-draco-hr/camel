@@ -1,8 +1,32 @@
 {
   log.debug("Starting acceptor thread");
   while (null != serverSocket && serverSocket.isBound() && !serverSocket.isClosed()) {
+    Socket socket=null;
     try {
-      Socket socket=serverSocket.accept();
+      socket=serverSocket.accept();
+    }
+ catch (    SocketException socketEx) {
+      if (serverSocket.isBound()) {
+        try {
+          serverSocket.close();
+        }
+ catch (        Exception ex) {
+          log.info("Exception encountered closing ServerSocket after SocketException on accept()",ex);
+        }
+      }
+    }
+catch (    IOException ioEx) {
+      log.error("Exception encountered accepting connection - closing ServerSocket",ioEx);
+      if (serverSocket.isBound()) {
+        try {
+          serverSocket.close();
+        }
+ catch (        Exception ex) {
+          log.info("Exception encountered closing ServerSocket after exception on accept()",ex);
+        }
+      }
+    }
+    try {
       Thread.sleep(100);
       if (socket.isConnected() && !socket.isClosed()) {
         log.debug("Socket appears to be there - check for available data");
@@ -63,6 +87,15 @@ catch (    InterruptedException interruptEx) {
     }
 catch (    Exception ex) {
       log.error("Exception accepting new connection",ex);
+    }
+  }
+  log.info("ServerSocket.accept loop finished - closing listener");
+  if (null != serverSocket && serverSocket.isBound() && !serverSocket.isClosed()) {
+    try {
+      serverSocket.close();
+    }
+ catch (    Exception ex) {
+      log.warn("Exception encountered closing ServerSocket after accept loop had exited",ex);
     }
   }
 }
