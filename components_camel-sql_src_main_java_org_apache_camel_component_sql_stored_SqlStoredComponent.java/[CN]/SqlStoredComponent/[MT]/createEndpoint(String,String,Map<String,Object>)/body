@@ -4,21 +4,15 @@
   if (ds != null) {
     target=ds;
   }
-  String dataSourceRef=getAndRemoveParameter(parameters,"dataSourceRef",String.class);
-  if (target == null && dataSourceRef != null) {
-    target=CamelContextHelper.mandatoryLookup(getCamelContext(),dataSourceRef,DataSource.class);
-  }
   if (target == null) {
     target=dataSource;
   }
   if (target == null) {
     throw new IllegalArgumentException("DataSource must be configured");
   }
-  JdbcTemplate template=new JdbcTemplate(target);
-  TemplateStoredProcedureFactory factory=new TemplateStoredProcedureFactory(template);
-  SqlStoredEndpoint answer=new SqlStoredEndpoint(uri,this);
-  answer.setJdbcTemplate(template);
-  answer.setTemplate(remaining);
-  answer.setTemplateStoredProcedureFactory(factory);
-  return answer;
+  JdbcTemplate jdbcTemplate=new JdbcTemplate(target);
+  String template=remaining;
+  SqlStoredEndpoint endpoint=new SqlStoredEndpoint(uri,this,jdbcTemplate);
+  endpoint.setTemplate(template);
+  return endpoint;
 }

@@ -1,3 +1,61 @@
 {
-  defaultTemplateStoredProcedure.execute(exchange);
+  StamentWrapper stamentWrapper=createStatement(exchange);
+  stamentWrapper.call(new WrapperExecuteCallback(){
+    @Override public void execute(    StamentWrapper ps) throws SQLException, DataAccessException {
+      if (getEndpoint().isBatch()) {
+        Iterator<?> iterator;
+        if (getEndpoint().isUseMessageBodyForTemplate()) {
+          iterator=exchange.getIn().getHeader(SqlStoredConstants.SQL_STORED_PARAMETERS,Iterator.class);
+        }
+ else {
+          iterator=exchange.getIn().getBody(Iterator.class);
+        }
+        if (iterator == null) {
+          throw new IllegalStateException("batch=true but Iterator cannot be found from body or header");
+        }
+        while (iterator.hasNext()) {
+          Object value=iterator.next();
+          ps.addBatch(value,exchange);
+        }
+      }
+ else {
+        Object value;
+        if (getEndpoint().isUseMessageBodyForTemplate()) {
+          value=exchange.getIn().getHeader(SqlStoredConstants.SQL_STORED_PARAMETERS);
+        }
+ else {
+          value=exchange.getIn().getBody();
+        }
+        ps.populateStatement(value,exchange);
+      }
+      if (getEndpoint().isBatch()) {
+        int[] updateCounts=ps.executeBatch();
+        int total=0;
+        for (        int count : updateCounts) {
+          total+=count;
+        }
+        exchange.getIn().setHeader(SqlStoredConstants.SQL_STORED_UPDATE_COUNT,total);
+      }
+ else {
+        Object result=ps.executeStatement();
+        exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+        if (result != null) {
+          if (getEndpoint().isNoop()) {
+            exchange.getOut().setBody(exchange.getIn().getBody());
+          }
+ else           if (getEndpoint().getOutputHeader() != null) {
+            exchange.getOut().setBody(exchange.getIn().getBody());
+            exchange.getOut().setHeader(getEndpoint().getOutputHeader(),result);
+          }
+ else {
+            exchange.getOut().setBody(result);
+          }
+        }
+        if (ps.getUpdateCount() != null) {
+          exchange.getOut().setHeader(SqlStoredConstants.SQL_STORED_UPDATE_COUNT,ps.getUpdateCount());
+        }
+      }
+    }
+  }
+);
 }

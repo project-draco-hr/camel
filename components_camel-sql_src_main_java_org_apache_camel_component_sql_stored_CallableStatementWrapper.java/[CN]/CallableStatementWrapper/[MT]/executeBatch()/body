@@ -1,0 +1,22 @@
+{
+  if (this.batchItems == null) {
+    throw new IllegalArgumentException("Batch must have at least one item");
+  }
+  final Iterator<Map> params=batchItems.iterator();
+  return factory.getJdbcTemplate().execute(new CallableStatementCreator(){
+    @Override public CallableStatement createCallableStatement(    Connection connection) throws SQLException {
+      return batchFactory.newCallableStatementCreator(params.next()).createCallableStatement(connection);
+    }
+  }
+,new CallableStatementCallback<int[]>(){
+    @Override public int[] doInCallableStatement(    CallableStatement callableStatement) throws SQLException, DataAccessException {
+      callableStatement.addBatch();
+      while (params.hasNext()) {
+        batchFactory.addParameter(callableStatement,params.next());
+        callableStatement.addBatch();
+      }
+      return callableStatement.executeBatch();
+    }
+  }
+);
+}

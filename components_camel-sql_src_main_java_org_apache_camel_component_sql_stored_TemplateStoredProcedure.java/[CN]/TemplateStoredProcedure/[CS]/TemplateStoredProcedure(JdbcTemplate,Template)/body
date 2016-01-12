@@ -1,0 +1,19 @@
+{
+  this.template=template;
+  setDataSource(jdbcTemplate.getDataSource());
+  setSql(template.getProcedureName());
+  for (  Object parameter : template.getParameterList()) {
+    if (parameter instanceof InputParameter) {
+      InputParameter inputParameter=(InputParameter)parameter;
+      declareParameter(new SqlParameter(inputParameter.getName(),inputParameter.getSqlType()));
+      inputParameterList.add(inputParameter);
+    }
+ else     if (parameter instanceof OutParameter) {
+      OutParameter outParameter=(OutParameter)parameter;
+      declareParameter(new SqlOutParameter(outParameter.getOutHeader(),outParameter.getSqlType()));
+      setFunction(false);
+    }
+  }
+  LOG.debug("Compiling stored procedure: {}",template.getProcedureName());
+  compile();
+}
