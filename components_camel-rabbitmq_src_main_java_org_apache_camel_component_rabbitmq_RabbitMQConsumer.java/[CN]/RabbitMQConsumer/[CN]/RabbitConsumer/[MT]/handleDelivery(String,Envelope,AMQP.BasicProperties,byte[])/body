@@ -21,6 +21,9 @@
  else {
     msg=exchange.getIn();
   }
+  if (exchange.getException() != null) {
+    getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
+  }
   if (!exchange.isFailed()) {
     if (sendReply && exchange.getPattern().isOutCapable()) {
       try {
@@ -50,9 +53,6 @@
     }
   }
  else {
-    if (exchange.getException() != null) {
-      getExceptionHandler().handleException("Error processing exchange",exchange,exchange.getException());
-    }
     boolean isRequeueHeaderSet=msg.getHeader(RabbitMQConstants.REQUEUE,false,boolean.class);
     if (deliveryTag != 0 && !consumer.endpoint.isAutoAck()) {
       log.trace("Rejecting receipt [delivery_tag={}] with requeue={}",deliveryTag,isRequeueHeaderSet);
