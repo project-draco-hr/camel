@@ -1,16 +1,20 @@
 {
-  ValidatingProcessor validator=new ValidatingProcessor();
-  InputStream is=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext(),resourceUri);
-  byte[] bytes=null;
-  try {
-    bytes=IOConverter.toBytes(is);
+  if (!schemaReaderConfigured) {
+    if (resourceResolver != null) {
+      schemaReader.setResourceResolver(resourceResolver);
+    }
+ else {
+      schemaReader.setResourceResolver(new DefaultLSResourceResolver(getCamelContext(),resourceUri));
+    }
+    schemaReader.setSchemaLanguage(getSchemaLanguage());
+    schemaReader.setSchemaFactory(getSchemaFactory());
+    byte[] bytes=readSchemaResource();
+    schemaReader.setSchemaAsByteArray(bytes);
+    LOG.debug("{} using schema resource: {}",this,resourceUri);
+    schemaReader.loadSchema();
+    schemaReaderConfigured=true;
   }
-  finally {
-    IOHelper.close(is);
-  }
-  validator.setSchemaAsByteArray(bytes);
-  LOG.debug("{} using schema resource: {}",this,resourceUri);
+  ValidatingProcessor validator=new ValidatingProcessor(schemaReader);
   configureValidator(validator);
-  validator.loadSchema();
   return new ValidatorProducer(this,validator);
 }
