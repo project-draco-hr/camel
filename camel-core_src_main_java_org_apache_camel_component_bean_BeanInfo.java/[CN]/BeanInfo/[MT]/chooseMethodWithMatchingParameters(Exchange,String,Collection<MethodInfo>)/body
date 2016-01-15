@@ -18,6 +18,7 @@
     return operations.get(0);
   }
   List<MethodInfo> candidates=new ArrayList<MethodInfo>();
+  MethodInfo fallbackCandidate=null;
   for (  MethodInfo info : operations) {
     it=ObjectHelper.createIterator(parameters);
     int index=0;
@@ -27,7 +28,13 @@
       Class<?> parameterType=BeanHelper.getValidParameterType(parameter);
       Class<?> expectedType=info.getParameters().get(index).getType();
       if (parameterType != null && expectedType != null) {
-        if (!parameterType.isAssignableFrom(expectedType)) {
+        if (Object.class.equals(expectedType)) {
+          fallbackCandidate=info;
+          matches=false;
+          break;
+        }
+        boolean matchingTypes=isParameterMatchingType(parameterType,expectedType);
+        if (!matchingTypes) {
           matches=false;
           break;
         }
@@ -40,10 +47,9 @@
   }
   if (candidates.size() > 1) {
     MethodInfo answer=getSingleCovariantMethod(candidates);
-    if (answer == null) {
-      throw new AmbiguousMethodCallException(exchange,candidates);
+    if (answer != null) {
+      return answer;
     }
-    return answer;
   }
-  return candidates.size() == 1 ? candidates.get(0) : null;
+  return candidates.size() == 1 ? candidates.get(0) : fallbackCandidate;
 }
