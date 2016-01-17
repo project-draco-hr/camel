@@ -69,6 +69,12 @@
   String[] tokens=SYNTAX_PATTERN.split(syntax);
   List<String> word2=new ArrayList<String>();
   int prev=0;
+  int prevPath=0;
+  if ("activemq".equals(scheme) || "jms".equals("scheme")) {
+    if (uriPath.startsWith("temp:")) {
+      prevPath=5;
+    }
+  }
   for (  String token : tokens) {
     if (token.isEmpty()) {
       continue;
@@ -76,17 +82,18 @@
     int idx=-1;
     int len=0;
     if (":".equals(token)) {
-      idx=uriPath.indexOf("://",prev);
+      idx=uriPath.indexOf("://",prevPath);
       len=3;
     }
     if (idx == -1) {
-      idx=uriPath.indexOf(token,prev);
+      idx=uriPath.indexOf(token,prevPath);
       len=token.length();
     }
     if (idx > 0) {
       String option=uriPath.substring(prev,idx);
       word2.add(option);
       prev=idx + len;
+      prevPath=prev;
     }
   }
   if (prev > 0 || word2.isEmpty()) {
