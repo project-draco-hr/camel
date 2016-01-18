@@ -1,0 +1,23 @@
+{
+  try {
+    sid=connection.subscribe(getEndpoint().getNatsConfiguration().getTopic(),configuration.createSubProperties(),new MsgHandler(){
+      public void execute(      String msg){
+        LOG.debug("Received Message: " + msg);
+        Exchange exchange=getEndpoint().createExchange();
+        exchange.getIn().setBody(msg);
+        exchange.getIn().setHeader(NatsConstants.NATS_MESSAGE_TIMESTAMP,System.currentTimeMillis());
+        exchange.getIn().setHeader(NatsConstants.NATS_SUBSCRIBE_SID,sid);
+        try {
+          processor.process(exchange);
+        }
+ catch (        Exception e) {
+          getExceptionHandler().handleException("Error during processing",exchange,e);
+        }
+      }
+    }
+);
+  }
+ catch (  IOException e1) {
+    getExceptionHandler().handleException("Error during processing",e1);
+  }
+}
