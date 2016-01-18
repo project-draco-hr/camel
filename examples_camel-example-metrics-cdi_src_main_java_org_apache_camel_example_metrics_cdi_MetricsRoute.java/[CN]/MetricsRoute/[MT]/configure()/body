@@ -1,0 +1,4 @@
+{
+  onException().handled(true).maximumRedeliveries(2).logStackTrace(false).logExhausted(false).log(LoggingLevel.ERROR,"Failed processing ${body}").to("metrics:meter:redelivery?mark=2").to("metrics:meter:error");
+  from("timer:stream?period=1000").routeId("unreliable-service").setBody(header(Exchange.TIMER_COUNTER).prepend("event #")).log("Processing ${body}...").to("metrics:meter:generated").bean(UnreliableService.class).filter(header(Exchange.REDELIVERED)).log(LoggingLevel.WARN,"Processed ${body} after ${header.CamelRedeliveryCounter} retries").setHeader(MetricsConstants.HEADER_METER_MARK,header(Exchange.REDELIVERY_COUNTER)).to("metrics:meter:redelivery").end().log("Successfully processed ${body}").to("metrics:meter:success");
+}
