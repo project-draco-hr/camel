@@ -1,13 +1,6 @@
 {
   endpoint.setAmazonDynamoDbStreamsClient(amazonDynamoDBStreams);
-  when(amazonDynamoDBStreams.listStreams(any(ListStreamsRequest.class))).thenReturn(new ListStreamsResult().withStreams(new Stream().withStreamArn("arn:aws:dynamodb:region:12345:table/table_name/stream/timestamp")));
-  when(amazonDynamoDBStreams.describeStream(any(DescribeStreamRequest.class))).thenReturn(new DescribeStreamResult().withStreamDescription(new StreamDescription().withTableName("table_name").withShards(ShardListTest.createShardsWithSequenceNumbers(null,"a","1","5","b","8","15","c","16","16","d","20",null))));
-  when(amazonDynamoDBStreams.getShardIterator(any(GetShardIteratorRequest.class))).thenAnswer(new Answer<GetShardIteratorResult>(){
-    @Override public GetShardIteratorResult answer(    InvocationOnMock invocation) throws Throwable {
-      return new GetShardIteratorResult().withShardIterator("shard_iterator_" + ((GetShardIteratorRequest)invocation.getArguments()[0]).getShardId() + "_000");
-    }
-  }
-);
+  undertest=new DdbStreamConsumer(endpoint,processor,shardIteratorHandler);
   final Map<String,String> shardIterators=new HashMap<>();
   shardIterators.put("shard_iterator_a_000","shard_iterator_a_001");
   shardIterators.put("shard_iterator_b_000","shard_iterator_b_001");
