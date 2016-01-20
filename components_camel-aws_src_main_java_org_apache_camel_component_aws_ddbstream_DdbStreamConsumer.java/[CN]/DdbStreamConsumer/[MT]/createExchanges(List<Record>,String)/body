@@ -1,7 +1,11 @@
 {
   Queue<Exchange> exchanges=new ArrayDeque<>();
-  BigIntComparisons condition;
+  BigIntComparisons condition=null;
   BigInteger providedSeqNum=null;
+  if (lastSeenSequenceNumber != null) {
+    providedSeqNum=new BigInteger(lastSeenSequenceNumber);
+    condition=BigIntComparisons.Conditions.LT;
+  }
 switch (getEndpoint().getIteratorType()) {
 case AFTER_SEQUENCE_NUMBER:
     condition=BigIntComparisons.Conditions.LT;
@@ -11,8 +15,6 @@ case AT_SEQUENCE_NUMBER:
 condition=BigIntComparisons.Conditions.LTEQ;
 providedSeqNum=new BigInteger(getEndpoint().getSequenceNumberProvider().getSequenceNumber());
 break;
-default :
-condition=null;
 }
 for (Record record : records) {
 BigInteger recordSeqNum=new BigInteger(record.getDynamodb().getSequenceNumber());

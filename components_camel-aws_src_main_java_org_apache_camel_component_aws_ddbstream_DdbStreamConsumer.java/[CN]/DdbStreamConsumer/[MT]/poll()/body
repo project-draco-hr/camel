@@ -1,8 +1,19 @@
 {
-  GetRecordsRequest req=new GetRecordsRequest().withShardIterator(shardIteratorHandler.getShardIterator()).withLimit(getEndpoint().getMaxResultsPerRequest());
-  GetRecordsResult result=getClient().getRecords(req);
-  Queue<Exchange> exchanges=createExchanges(result.getRecords());
+  GetRecordsResult result;
+  try {
+    GetRecordsRequest req=new GetRecordsRequest().withShardIterator(shardIteratorHandler.getShardIterator(null)).withLimit(getEndpoint().getMaxResultsPerRequest());
+    result=getClient().getRecords(req);
+  }
+ catch (  ExpiredIteratorException e) {
+    LOG.warn("Expired Shard Iterator, attempting to resume from " + lastSeenSequenceNumber,e);
+    GetRecordsRequest req=new GetRecordsRequest().withShardIterator(shardIteratorHandler.getShardIterator(lastSeenSequenceNumber)).withLimit(getEndpoint().getMaxResultsPerRequest());
+    result=getClient().getRecords(req);
+  }
+  Queue<Exchange> exchanges=createExchanges(result.getRecords(),lastSeenSequenceNumber);
   int processedExchangeCount=processBatch(CastUtils.cast(exchanges));
   shardIteratorHandler.updateShardIterator(result.getNextShardIterator());
+  if (!result.getRecords().isEmpty()) {
+    lastSeenSequenceNumber=result.getRecords().get((result.getRecords().size() - 1)).getDynamodb().getSequenceNumber();
+  }
   return processedExchangeCount;
 }
