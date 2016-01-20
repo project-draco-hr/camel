@@ -9,11 +9,12 @@
     GetRecordsRequest req=new GetRecordsRequest().withShardIterator(shardIteratorHandler.getShardIterator(lastSeenSequenceNumber)).withLimit(getEndpoint().getMaxResultsPerRequest());
     result=getClient().getRecords(req);
   }
-  Queue<Exchange> exchanges=createExchanges(result.getRecords(),lastSeenSequenceNumber);
+  List<Record> records=result.getRecords();
+  Queue<Exchange> exchanges=createExchanges(records,lastSeenSequenceNumber);
   int processedExchangeCount=processBatch(CastUtils.cast(exchanges));
   shardIteratorHandler.updateShardIterator(result.getNextShardIterator());
-  if (!result.getRecords().isEmpty()) {
-    lastSeenSequenceNumber=result.getRecords().get((result.getRecords().size() - 1)).getDynamodb().getSequenceNumber();
+  if (!records.isEmpty()) {
+    lastSeenSequenceNumber=records.get(records.size() - 1).getDynamodb().getSequenceNumber();
   }
   return processedExchangeCount;
 }

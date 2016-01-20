@@ -2,18 +2,16 @@
   ShardIteratorType iteratorType=getEndpoint().getIteratorType();
   String sequenceNumber=getEndpoint().getSequenceNumber();
   if (resumeFromSequenceNumber != null) {
-    iteratorType=ShardIteratorType.AFTER_SEQUENCE_NUMBER;
     currentShard=null;
     currentShardIterator=null;
+    iteratorType=ShardIteratorType.AFTER_SEQUENCE_NUMBER;
     sequenceNumber=resumeFromSequenceNumber;
   }
   if (currentShardIterator == null) {
-    ListStreamsRequest req0=new ListStreamsRequest().withTableName(getEndpoint().getTableName());
-    ListStreamsResult res0=getClient().listStreams(req0);
-    final String streamArn=res0.getStreams().get(0).getStreamArn();
-    DescribeStreamRequest req1=new DescribeStreamRequest().withStreamArn(streamArn);
-    DescribeStreamResult res1=getClient().describeStream(req1);
-    shardList.addAll(res1.getStreamDescription().getShards());
+    ListStreamsResult streamsListResult=getClient().listStreams(new ListStreamsRequest().withTableName(getEndpoint().getTableName()));
+    final String streamArn=streamsListResult.getStreams().get(0).getStreamArn();
+    DescribeStreamResult streamDescriptionResult=getClient().describeStream(new DescribeStreamRequest().withStreamArn(streamArn));
+    shardList.addAll(streamDescriptionResult.getStreamDescription().getShards());
     LOG.trace("Current shard is: {} (in {})",currentShard,shardList);
     if (currentShard == null) {
       currentShard=resolveNewShard(iteratorType,resumeFromSequenceNumber);
@@ -23,16 +21,7 @@
     }
     shardList.removeOlderThan(currentShard);
     LOG.trace("Next shard is: {} (in {})",currentShard,shardList);
-    GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamArn(streamArn).withShardId(currentShard.getShardId()).withShardIteratorType(iteratorType);
-    if (getEndpoint().getIteratorType() == ShardIteratorType.AFTER_SEQUENCE_NUMBER || getEndpoint().getIteratorType() == ShardIteratorType.AFTER_SEQUENCE_NUMBER || resumeFromSequenceNumber != null) {
-      if (BigIntComparisons.Conditions.LTEQ.matches(new BigInteger(currentShard.getSequenceNumberRange().getStartingSequenceNumber()),new BigInteger(sequenceNumber))) {
-        req=req.withSequenceNumber(sequenceNumber);
-      }
- else {
-        req=req.withShardIteratorType(ShardIteratorType.TRIM_HORIZON);
-      }
-    }
-    GetShardIteratorResult result=getClient().getShardIterator(req);
+    GetShardIteratorResult result=getClient().getShardIterator(buildGetShardIteratorRequest(streamArn,iteratorType,sequenceNumber));
     currentShardIterator=result.getShardIterator();
   }
   LOG.trace("Shard Iterator is: {}",currentShardIterator);
