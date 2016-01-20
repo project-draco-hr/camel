@@ -1,4 +1,12 @@
 {
+  ShardIteratorType iteratorType=getEndpoint().getIteratorType();
+  String sequenceNumber=getEndpoint().getSequenceNumber();
+  if (resumeFromSequenceNumber != null) {
+    iteratorType=ShardIteratorType.AFTER_SEQUENCE_NUMBER;
+    currentShard=null;
+    currentShardIterator=null;
+    sequenceNumber=resumeFromSequenceNumber;
+  }
   if (currentShardIterator == null) {
     ListStreamsRequest req0=new ListStreamsRequest().withTableName(getEndpoint().getTableName());
     ListStreamsResult res0=getClient().listStreams(req0);
@@ -8,43 +16,25 @@
     shardList.addAll(res1.getStreamDescription().getShards());
     LOG.trace("Current shard is: {} (in {})",currentShard,shardList);
     if (currentShard == null) {
-switch (getEndpoint().getIteratorType()) {
-case AFTER_SEQUENCE_NUMBER:
-        currentShard=shardList.afterSeq(getEndpoint().getSequenceNumber());
-      break;
-case AT_SEQUENCE_NUMBER:
-    currentShard=shardList.atSeq(getEndpoint().getSequenceNumber());
-  break;
-case TRIM_HORIZON:
-currentShard=shardList.first();
-break;
-case LATEST:
-default :
-currentShard=shardList.last();
-break;
-}
-}
+      currentShard=resolveNewShard(iteratorType,resumeFromSequenceNumber);
+    }
  else {
-currentShard=shardList.nextAfter(currentShard);
-}
-shardList.removeOlderThan(currentShard);
-LOG.trace("Next shard is: {} (in {})",currentShard,shardList);
-GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamArn(streamArn).withShardId(currentShard.getShardId()).withShardIteratorType(getEndpoint().getIteratorType());
-switch (getEndpoint().getIteratorType()) {
-case AFTER_SEQUENCE_NUMBER:
-case AT_SEQUENCE_NUMBER:
-if (BigIntComparisons.Conditions.LTEQ.matches(new BigInteger(currentShard.getSequenceNumberRange().getStartingSequenceNumber()),new BigInteger(getEndpoint().getSequenceNumber()))) {
-req=req.withSequenceNumber(getEndpoint().getSequenceNumber());
-}
+      currentShard=shardList.nextAfter(currentShard);
+    }
+    shardList.removeOlderThan(currentShard);
+    LOG.trace("Next shard is: {} (in {})",currentShard,shardList);
+    GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamArn(streamArn).withShardId(currentShard.getShardId()).withShardIteratorType(iteratorType);
+    if (getEndpoint().getIteratorType() == ShardIteratorType.AFTER_SEQUENCE_NUMBER || getEndpoint().getIteratorType() == ShardIteratorType.AFTER_SEQUENCE_NUMBER || resumeFromSequenceNumber != null) {
+      if (BigIntComparisons.Conditions.LTEQ.matches(new BigInteger(currentShard.getSequenceNumberRange().getStartingSequenceNumber()),new BigInteger(sequenceNumber))) {
+        req=req.withSequenceNumber(sequenceNumber);
+      }
  else {
-req=req.withShardIteratorType(ShardIteratorType.TRIM_HORIZON);
-}
-break;
-default :
-}
-GetShardIteratorResult result=getClient().getShardIterator(req);
-currentShardIterator=result.getShardIterator();
-}
-LOG.trace("Shard Iterator is: {}",currentShardIterator);
-return currentShardIterator;
+        req=req.withShardIteratorType(ShardIteratorType.TRIM_HORIZON);
+      }
+    }
+    GetShardIteratorResult result=getClient().getShardIterator(req);
+    currentShardIterator=result.getShardIterator();
+  }
+  LOG.trace("Shard Iterator is: {}",currentShardIterator);
+  return currentShardIterator;
 }
