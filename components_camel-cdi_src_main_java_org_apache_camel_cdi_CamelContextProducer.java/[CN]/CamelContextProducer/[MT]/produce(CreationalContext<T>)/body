@@ -1,6 +1,6 @@
 {
   T context=super.produce(ctx);
-  if (annotated != null && context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
+  if (context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
     context.setNameStrategy(nameStrategy(annotated));
   }
   if (context instanceof DefaultCamelContext) {
@@ -11,10 +11,13 @@
  else {
     throw new InjectionException("Camel CDI requires Camel context [" + context.getName() + "] to be a subtype of DefaultCamelContext");
   }
-  Set<Annotation> events=new HashSet<>(extension.getObserverEvents());
-  Collection<Annotation> qualifiers=annotated != null ? extension.getContextBean(new AnnotatedWrapper(annotated)).getQualifiers() : Arrays.asList(AnyLiteral.INSTANCE,DefaultLiteral.INSTANCE);
-  events.retainAll(qualifiers);
-  if (!events.isEmpty()) {
+  Set<Annotation> qualifiers=CdiSpiHelper.excludeElementOfTypes(CdiSpiHelper.getQualifiers(annotated,manager),Named.class);
+  qualifiers.add(AnyLiteral.INSTANCE);
+  if (qualifiers.size() == 1) {
+    qualifiers.add(DefaultLiteral.INSTANCE);
+  }
+  qualifiers.retainAll(extension.getObserverEvents());
+  if (!qualifiers.isEmpty()) {
     context.getManagementStrategy().addEventNotifier(new CdiEventNotifier(manager,qualifiers));
   }
   return context;
