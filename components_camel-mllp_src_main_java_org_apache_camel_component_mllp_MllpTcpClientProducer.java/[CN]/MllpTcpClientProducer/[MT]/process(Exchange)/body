@@ -29,10 +29,11 @@
     return;
   }
   log.debug("Reading acknowledgement from external system");
-  byte[] acknowledgementBytes;
+  byte[] acknowledgementBytes=null;
   try {
-    MllpUtil.openFrame(socket);
-    acknowledgementBytes=MllpUtil.closeFrame(socket);
+    if (MllpUtil.openFrame(socket)) {
+      acknowledgementBytes=MllpUtil.closeFrame(socket);
+    }
   }
  catch (  SocketTimeoutException timeoutEx) {
     exchange.setException(new MllpAcknowledgementTimoutException("Acknowledgement timout",timeoutEx));
@@ -42,62 +43,63 @@ catch (  MllpException mllpEx) {
     exchange.setException(mllpEx);
     return;
   }
-  log.debug("Populating the exchange with the acknowledgement from the external system");
-  message.setHeader(MLLP_ACKNOWLEDGEMENT,acknowledgementBytes);
-  message.setHeader(MLLP_LOCAL_ADDRESS,socket.getLocalAddress().toString());
-  message.setHeader(MLLP_REMOTE_ADDRESS,socket.getRemoteSocketAddress());
-  byte fieldDelim=acknowledgementBytes[3];
-  int msaStartIndex=-1;
-  for (int i=0; i < acknowledgementBytes.length; ++i) {
-    if (SEGMENT_DELIMITER == acknowledgementBytes[i]) {
-      final byte bM=77;
-      final byte bS=83;
-      final byte bC=67;
-      final byte bA=65;
-      final byte bE=69;
-      final byte bR=82;
-      if (acknowledgementBytes.length > i + 7) {
-        if (bM == acknowledgementBytes[i + 1] && bS == acknowledgementBytes[i + 2] && bA == acknowledgementBytes[i + 3] && fieldDelim == acknowledgementBytes[i + 4]) {
-          msaStartIndex=i + 1;
-          if (bA != acknowledgementBytes[i + 5] && bC != acknowledgementBytes[i + 5]) {
-            exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
-          }
+  if (null != acknowledgementBytes) {
+    log.debug("Populating the exchange with the acknowledgement from the external system");
+    message.setHeader(MLLP_ACKNOWLEDGEMENT,acknowledgementBytes);
+    message.setHeader(MLLP_LOCAL_ADDRESS,socket.getLocalAddress().toString());
+    message.setHeader(MLLP_REMOTE_ADDRESS,socket.getRemoteSocketAddress());
+    byte fieldDelim=acknowledgementBytes[3];
+    int msaStartIndex=-1;
+    for (int i=0; i < acknowledgementBytes.length; ++i) {
+      if (SEGMENT_DELIMITER == acknowledgementBytes[i]) {
+        final byte bM=77;
+        final byte bS=83;
+        final byte bC=67;
+        final byte bA=65;
+        final byte bE=69;
+        final byte bR=82;
+        if (acknowledgementBytes.length > i + 7) {
+          if (bM == acknowledgementBytes[i + 1] && bS == acknowledgementBytes[i + 2] && bA == acknowledgementBytes[i + 3] && fieldDelim == acknowledgementBytes[i + 4]) {
+            msaStartIndex=i + 1;
+            if (bA != acknowledgementBytes[i + 5] && bC != acknowledgementBytes[i + 5]) {
+              exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+            }
  else {
-            String acknowledgemenTypeString;
+              String acknowledgemenTypeString;
 switch (acknowledgementBytes[i + 6]) {
 case bA:
-              if (fieldDelim != acknowledgementBytes[i + 7]) {
-                exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+                if (fieldDelim != acknowledgementBytes[i + 7]) {
+                  exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+                }
+              if (bA == acknowledgementBytes[i + 5]) {
+                message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
               }
-            if (bA == acknowledgementBytes[i + 5]) {
-              message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
-            }
  else {
-              message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CA");
-            }
-          break;
+                message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CA");
+              }
+            break;
 case bE:
-        if (bA == acknowledgementBytes[i + 5]) {
-          message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
-          exchange.setException(new MllpApplicationErrorAcknowledgementException(new String(acknowledgementBytes)));
-        }
+          if (bA == acknowledgementBytes[i + 5]) {
+            message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
+            exchange.setException(new MllpApplicationErrorAcknowledgementException(new String(acknowledgementBytes)));
+          }
  else {
-          message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CE");
-          exchange.setException(new MllpCommitErrorAcknowledgementException(new String(acknowledgementBytes)));
-        }
-      break;
+            message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CE");
+            exchange.setException(new MllpCommitErrorAcknowledgementException(new String(acknowledgementBytes)));
+          }
+        break;
 case bR:
-    if (bA == acknowledgementBytes[i + 5]) {
-      message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
-      exchange.setException(new MllpApplicationRejectAcknowledgementException(new String(acknowledgementBytes)));
-    }
+      if (bA == acknowledgementBytes[i + 5]) {
+        message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
+        exchange.setException(new MllpApplicationRejectAcknowledgementException(new String(acknowledgementBytes)));
+      }
  else {
-      message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CR");
-      exchange.setException(new MllpCommitRejectAcknowledgementException(new String(acknowledgementBytes)));
-    }
-  break;
+        message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CR");
+        exchange.setException(new MllpCommitRejectAcknowledgementException(new String(acknowledgementBytes)));
+      }
+    break;
 default :
-exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+  exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
 }
 }
 break;
@@ -107,6 +109,7 @@ break;
 }
 if (-1 == msaStartIndex) {
 exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+}
 }
 if (exchange.getProperty(MLLP_RESET_CONNECTION_AFTER_SEND,boolean.class)) {
 MllpUtil.resetConnection(socket);

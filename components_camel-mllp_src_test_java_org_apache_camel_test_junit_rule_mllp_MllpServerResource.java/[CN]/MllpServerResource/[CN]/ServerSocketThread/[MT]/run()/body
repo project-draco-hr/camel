@@ -1,33 +1,54 @@
 {
   log.info("Accepting connections on port {}",serverSocket.getLocalPort());
   this.setName("MllpServerResource$ServerSocketThread - " + serverSocket.getLocalSocketAddress().toString());
-  while (isActive() && serverSocket.isBound()) {
+  while (!isInterrupted() && serverSocket.isBound() && !serverSocket.isClosed()) {
     Socket clientSocket=null;
     try {
       clientSocket=serverSocket.accept();
-      clientSocket.setKeepAlive(true);
-      clientSocket.setTcpNoDelay(false);
-      clientSocket.setSoLinger(false,-1);
-      clientSocket.setSoTimeout(5000);
-      ClientSocketThread clientSocketThread=new ClientSocketThread(clientSocket);
-      clientSocketThread.setDaemon(true);
-      clientSocketThread.start();
     }
  catch (    SocketTimeoutException timeoutEx) {
       if (raiseExceptionOnAcceptTimeout) {
         throw new MllpJUnitResourceTimeoutException("Timeout Accepting client connection",timeoutEx);
       }
-      continue;
+      log.warn("Timeout waiting for client connection");
     }
-catch (    IOException e) {
-      log.warn("IOException creating Client Socket");
+catch (    SocketException socketEx) {
+      log.debug("SocketException encountered accepting client connection - ignoring",socketEx);
+      if (null == clientSocket) {
+        continue;
+      }
+ else       if (!clientSocket.isClosed()) {
+        resetConnection(clientSocket);
+        continue;
+      }
+ else {
+        throw new MllpJUnitResourceException("Unexpected SocketException encountered accepting client connection",socketEx);
+      }
+    }
+catch (    Exception ex) {
+      throw new MllpJUnitResourceException("Unexpected exception encountered accepting client connection",ex);
+    }
+    if (null != clientSocket) {
       try {
-        clientSocket.close();
+        clientSocket.setKeepAlive(true);
+        clientSocket.setTcpNoDelay(false);
+        clientSocket.setSoLinger(false,-1);
+        clientSocket.setSoTimeout(5000);
+        ClientSocketThread clientSocketThread=new ClientSocketThread(clientSocket);
+        clientSocketThread.setDaemon(true);
+        clientSocketThread.start();
+        clientSocketThreads.add(clientSocketThread);
       }
- catch (      IOException e1) {
-        log.warn("Exceptiong encountered closing client socket after attempting to accept connection");
+ catch (      Exception unexpectedEx) {
+        log.warn("Unexpected exception encountered configuring client socket");
+        try {
+          clientSocket.close();
+        }
+ catch (        IOException ingoreEx) {
+          log.warn("Exceptiong encountered closing client socket after attempting to accept connection",ingoreEx);
+        }
+        throw new MllpJUnitResourceException("Unexpected exception encountered configuring client socket",unexpectedEx);
       }
-      throw new MllpJUnitResourceException("IOException creating Socket",e);
     }
   }
   log.info("No longer accepting connections - closing TCP Listener on port {}",serverSocket.getLocalPort());

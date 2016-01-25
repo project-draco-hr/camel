@@ -1,5 +1,5 @@
 {
-  while (null != clientSocket && clientSocket.isConnected() && !clientSocket.isClosed()) {
+  while (!isInterrupted() && null != clientSocket && clientSocket.isConnected() && !clientSocket.isClosed()) {
     byte[] hl7MessageBytes=null;
     log.debug("Reading data ....");
     try {
@@ -8,7 +8,9 @@
       }
  else {
         try {
-          MllpUtil.openFrame(clientSocket);
+          if (!MllpUtil.openFrame(clientSocket)) {
+            continue;
+          }
         }
  catch (        SocketTimeoutException timeoutEx) {
           continue;

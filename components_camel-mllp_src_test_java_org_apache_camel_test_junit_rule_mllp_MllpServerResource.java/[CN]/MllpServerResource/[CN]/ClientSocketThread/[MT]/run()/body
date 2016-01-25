@@ -3,8 +3,23 @@
   String remoteAddress=clientSocket.getRemoteSocketAddress().toString();
   log.info("Handling Connection: {} -> {}",localAddress,remoteAddress);
   try {
-    while (null != clientSocket && clientSocket.isConnected() && !clientSocket.isClosed()) {
-      InputStream instream=clientSocket.getInputStream();
+    while (!isInterrupted() && null != clientSocket && clientSocket.isConnected() && !clientSocket.isClosed()) {
+      InputStream instream;
+      try {
+        instream=clientSocket.getInputStream();
+      }
+ catch (      IOException ioEx) {
+        if (clientSocket.isClosed()) {
+          log.debug("Client socket was closed - ignoring exception",clientSocket);
+          break;
+        }
+ else {
+          throw new MllpJUnitResourceException("Unexpected IOException encounted getting input stream",ioEx);
+        }
+      }
+catch (      Exception unexpectedEx) {
+        throw new MllpJUnitResourceException("Unexpected exception encounted getting input stream",unexpectedEx);
+      }
       String parsedHL7Message=getMessage(instream);
       if (null != parsedHL7Message && parsedHL7Message.length() > 0) {
         ++messageCounter;
@@ -83,5 +98,5 @@
       throw new MllpJUnitResourceException(errorMessage,e);
     }
   }
-  log.info("Connection Finished: {} -> {}",localAddress,remoteAddress);
+  log.debug("Client Connection Finished: {} -> {}",localAddress,remoteAddress);
 }

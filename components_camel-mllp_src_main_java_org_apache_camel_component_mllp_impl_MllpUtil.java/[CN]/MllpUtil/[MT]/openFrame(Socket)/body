@@ -1,20 +1,31 @@
 {
   if (socket.isConnected() && !socket.isClosed()) {
     InputStream socketInputStream=MllpUtil.getInputStream(socket);
-    int readByte;
+    int readByte=-1;
     try {
       readByte=socketInputStream.read();
 switch (readByte) {
 case START_OF_BLOCK:
-        return;
+        return true;
 case END_OF_STREAM:
       resetConnection(socket);
-    return;
+    return false;
 default :
 }
 }
  catch (SocketTimeoutException normaTimeoutEx) {
 throw normaTimeoutEx;
+}
+catch (SocketException socketEx) {
+if (socket.isClosed()) {
+  LOG.debug("Socket closed while opening MLLP frame - ignoring exception",socketEx);
+  return false;
+}
+ else {
+  LOG.error("Unexpected Exception occurred opening MLLP frame - resetting the connection");
+  MllpUtil.resetConnection(socket);
+  throw new MllpException("Unexpected Exception occurred opening MLLP frame",socketEx);
+}
 }
 catch (IOException unexpectedException) {
 LOG.error("Unexpected Exception occurred opening MLLP frame - resetting the connection");
@@ -71,4 +82,5 @@ resetConnection(socket);
 throw new MllpCorruptFrameException("Exception encountered looking for the beginning of the MLLP frame, and out-of-frame data had been read",outOfFrameData.toByteArray());
 }
 }
+return false;
 }

@@ -15,8 +15,17 @@ default :
 }
 }
  catch (SocketException socketEx) {
+if (clientSocket.isClosed()) {
+log.info("Client socket closed while waiting for MLLP_ENVELOPE_START_OF_BLOCK");
+}
+ else if (clientSocket.isConnected()) {
+log.info("SocketException encountered while waiting for MLLP_ENVELOPE_START_OF_BLOCK");
+resetConnection(clientSocket);
+}
+ else {
 log.error("Unable to read from socket stream when expected bMLLP_ENVELOPE_START_OF_BLOCK - resetting connection ",socketEx);
 resetConnection(clientSocket);
+}
 return null;
 }
 boolean endOfMessage=false;
