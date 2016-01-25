@@ -1,0 +1,21 @@
+{
+  Class<?> factoryClass=factory.getClass();
+  if (factoryClass.getName().startsWith("net.sf.saxon") || factoryClass.getName().startsWith("com.saxonica")) {
+    ClassLoader loader=factoryClass.getClassLoader();
+    Class<?> messageWarner=null;
+    try {
+      messageWarner=loader.loadClass("net.sf.saxon.serialize.MessageWarner");
+    }
+ catch (    ClassNotFoundException cnfe) {
+      try {
+        messageWarner=loader.loadClass("net.sf.saxon.event.MessageWarner");
+      }
+ catch (      ClassNotFoundException cnfe2) {
+        LOG.warn("Error loading Saxon's net.sf.saxon.serialize.MessageWarner class from the classpath!" + " <xsl:message> output will not be redirected to the ErrorListener!");
+      }
+    }
+    if (messageWarner != null) {
+      factory.setAttribute("http://saxon.sf.net/feature/messageEmitterClass",messageWarner.getName());
+    }
+  }
+}
