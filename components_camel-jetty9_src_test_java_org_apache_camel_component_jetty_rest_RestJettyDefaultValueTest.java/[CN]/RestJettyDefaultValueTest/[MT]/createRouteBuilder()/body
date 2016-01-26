@@ -1,0 +1,22 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      restConfiguration().component("jetty").host("localhost").port(getPort()).endpointProperty("httpBindingRef","#mybinding");
+      rest("/users/").get("{id}/basic").param().name("verbose").type(RestParamType.query).defaultValue("false").endParam().route().process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("id",String.class);
+          Object verbose=exchange.getIn().getHeader("verbose");
+          ObjectHelper.notNull(verbose,"verbose");
+          if ("true".equals(verbose)) {
+            exchange.getOut().setBody(id + ";Donald Duck;1113 Quack Street Duckburg");
+          }
+          if ("false".equals(verbose)) {
+            exchange.getOut().setBody(id + ";Donald Duck");
+          }
+        }
+      }
+);
+    }
+  }
+;
+}
