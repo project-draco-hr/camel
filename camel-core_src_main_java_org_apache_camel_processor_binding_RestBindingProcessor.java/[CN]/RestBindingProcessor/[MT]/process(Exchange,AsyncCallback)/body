@@ -33,6 +33,13 @@
       }
     }
   }
+  if (queryDefaultValues != null) {
+    for (    Map.Entry<String,String> entry : queryDefaultValues.entrySet()) {
+      if (exchange.getIn().getHeader(entry.getKey()) == null) {
+        exchange.getIn().setHeader(entry.getKey(),entry.getValue());
+      }
+    }
+  }
   if (isJson && jsonUnmarshal != null) {
     exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false,accept));
     if (ObjectHelper.isNotEmpty(body)) {
@@ -53,7 +60,7 @@
       return true;
     }
   }
-  if (bindingMode == null || "off".equals(bindingMode) || bindingMode.equals("auto")) {
+  if ("off".equals(bindingMode) || bindingMode.equals("auto")) {
     exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(),jsonMarshal,xmlMarshal,false,accept));
     callback.done(true);
     return true;
