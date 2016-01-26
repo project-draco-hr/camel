@@ -1,0 +1,23 @@
+{
+  log.info("Recieved shutdown signal on the rabbitMQ channel");
+  if (!sig.isInitiatedByApplication()) {
+    boolean connected=false;
+    while (!connected && !stopping) {
+      try {
+        reconnect();
+        connected=true;
+      }
+ catch (      IOException|TimeoutException e) {
+        log.warn("Unable to obtain a RabbitMQ channel. Will try again");
+        Integer networkRecoveryInterval=consumer.getEndpoint().getNetworkRecoveryInterval();
+        final long connectionRetryInterval=networkRecoveryInterval != null && networkRecoveryInterval > 0 ? networkRecoveryInterval : 100L;
+        try {
+          Thread.sleep(connectionRetryInterval);
+        }
+ catch (        InterruptedException e1) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,12 @@
   }
   log.debug("Registering reply for {}",correlationId);
   replyManager.registerReply(replyManager,exchange,callback,originalCorrelationId,correlationId,timeout);
-  basicPublish(exchange,exchangeName,key);
+  try {
+    basicPublish(exchange,exchangeName,key);
+  }
+ catch (  Exception e) {
+    replyManager.cancelCorrelationId(correlationId);
+    throw e;
+  }
   return false;
 }

@@ -1,5 +1,17 @@
 {
-  Channel channel=channelPool.borrowObject();
+  Channel channel;
+  try {
+    channel=channelPool.borrowObject();
+  }
+ catch (  IllegalStateException e) {
+    checkConnectionAndChannelPool();
+    channel=channelPool.borrowObject();
+  }
+  if (!channel.isOpen()) {
+    log.warn("Got a closed channel from the pool");
+    checkConnectionAndChannelPool();
+    channel=channelPool.borrowObject();
+  }
   try {
     return callback.doWithChannel(channel);
   }

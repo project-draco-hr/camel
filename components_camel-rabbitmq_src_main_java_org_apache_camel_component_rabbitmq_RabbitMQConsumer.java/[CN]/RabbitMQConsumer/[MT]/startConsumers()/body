@@ -1,11 +1,14 @@
 {
-  Channel channel=openChannel();
-  if (getEndpoint().isDeclare()) {
-    getEndpoint().declareExchangeAndQueue(channel);
+  for (int i=0; i < endpoint.getConcurrentConsumers(); i++) {
+    createConsumer();
   }
-  startConsumer(channel);
-  for (int i=1; i < endpoint.getConcurrentConsumers(); i++) {
-    channel=openChannel();
-    startConsumer(channel);
+  try {
+    for (    RabbitConsumer consumer : this.consumers) {
+      consumer.start();
+    }
+  }
+ catch (  Exception e) {
+    log.info("Connection failed, will start background thread to retry!",e);
+    reconnect();
   }
 }
