@@ -4,7 +4,15 @@
     brokerService=new BrokerService();
     brokerService.setPersistent(false);
     brokerService.setAdvisorySupport(false);
-    brokerService.addConnector("stomp://localhost:" + getPort() + "?trace=true");
+    if (isUseSsl()) {
+      SslContext sslContext=new SslContext();
+      sslContext.setSSLContext(getServerSSLContext());
+      brokerService.setSslContext(sslContext);
+      brokerService.addConnector("stomp+ssl://localhost:" + getPort() + "?trace=true");
+    }
+ else {
+      brokerService.addConnector("stomp://localhost:" + getPort() + "?trace=true");
+    }
     brokerService.start();
     brokerService.waitUntilStarted();
     super.setUp();
