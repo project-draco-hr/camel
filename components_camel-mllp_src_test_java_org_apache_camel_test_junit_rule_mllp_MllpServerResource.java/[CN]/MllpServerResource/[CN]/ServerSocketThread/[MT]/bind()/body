@@ -2,12 +2,31 @@
   this.setDaemon(true);
   serverSocket=new ServerSocket();
   serverSocket.setSoTimeout(acceptTimeout);
-  serverSocket.setReuseAddress(false);
-  if (0 >= listenPort) {
-    serverSocket.bind(null,backlog);
+  serverSocket.setReuseAddress(true);
+  InetSocketAddress listenAddress;
+  if (null != this.listenHost) {
+    listenAddress=new InetSocketAddress(this.listenHost,this.listenPort);
   }
  else {
-    serverSocket.bind(new InetSocketAddress(this.listenHost,this.listenPort),backlog);
+    listenAddress=new InetSocketAddress(this.listenPort);
+  }
+  long startTicks=System.currentTimeMillis();
+  while (!serverSocket.isBound()) {
+    try {
+      serverSocket.bind(listenAddress,backlog);
+    }
+ catch (    BindException bindEx) {
+      if (System.currentTimeMillis() < startTicks + bindTimeout) {
+        log.warn("Unable to bind to {} - retrying in {} milliseconds",listenAddress.toString(),bindRetryDelay);
+        try {
+          Thread.sleep(bindRetryDelay);
+        }
+ catch (        InterruptedException interruptedEx) {
+          log.error("Wait for bind retry was interrupted - rethrowing BindException");
+          throw bindEx;
+        }
+      }
+    }
   }
   if (0 >= this.listenPort) {
     this.listenPort=serverSocket.getLocalPort();
