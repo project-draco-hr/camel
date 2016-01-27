@@ -9,29 +9,22 @@
   inputSource.setSystemId(source.getSystemId());
   inputSource.setPublicId(source.getPublicId());
   XMLReader xmlReader=null;
-  SAXParserFactory sfactory=null;
   try {
     if (exchange != null) {
-      sfactory=exchange.getProperty(Exchange.SAXPARSER_FACTORY,SAXParserFactory.class);
-    }
-    if (sfactory == null) {
-      sfactory=SAXParserFactory.newInstance();
-      try {
-        sfactory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING,true);
-      }
- catch (      Exception e) {
-        LOG.warn("SAXParser doesn't support the feature {} with value {}, due to {}.",new Object[]{javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING,"true",e});
-      }
-      try {
-        sfactory.setFeature("http://xml.org/sax/features/external-general-entities",false);
-      }
- catch (      SAXException e) {
-        LOG.warn("SAXParser doesn't support the feature {} with value {}, due to {}.",new Object[]{"http://xml.org/sax/features/external-general-entities",false,e});
+      SAXParserFactory sfactory=exchange.getProperty(Exchange.SAXPARSER_FACTORY,SAXParserFactory.class);
+      if (sfactory != null) {
+        if (!sfactory.isNamespaceAware()) {
+          sfactory.setNamespaceAware(true);
+        }
+        xmlReader=sfactory.newSAXParser().getXMLReader();
       }
     }
-    sfactory.setNamespaceAware(true);
-    SAXParser parser=sfactory.newSAXParser();
-    xmlReader=parser.getXMLReader();
+    if (xmlReader == null) {
+      if (xmlReaderPool == null) {
+        xmlReaderPool=new XMLReaderPool(createSAXParserFactory());
+      }
+      xmlReader=xmlReaderPool.createXMLReader();
+    }
   }
  catch (  Exception ex) {
     LOG.warn("Cannot create the SAXParser XMLReader, due to {}",ex);
