@@ -1,0 +1,29 @@
+{
+  HttpConnectionManager connectionManager=this.httpConnectionManager;
+  if (connectionManager == null) {
+    connectionManager=new MultiThreadedHttpConnectionManager();
+  }
+  HttpClient httpClient=new HttpClient(connectionManager);
+  if (proxyHost != null && proxyPort != null) {
+    httpClient.getHostConfiguration().setProxy(proxyHost,proxyPort);
+  }
+  if (proxyAuthUsername != null && proxyAuthMethod == null) {
+    throw new IllegalArgumentException("Option proxyAuthMethod must be provided to use proxy authentication");
+  }
+  CompositeHttpConfigurer configurer=new CompositeHttpConfigurer();
+  if (proxyAuthMethod != null) {
+    configureProxyAuth(configurer,proxyAuthMethod,proxyAuthUsername,proxyAuthPassword,proxyAuthDomain,proxyAuthHost);
+  }
+  if (httpClientConfigurer != null) {
+    configurer.addConfigurer(httpClientConfigurer);
+  }
+  configurer.configureHttpClient(httpClient);
+  Geocoder geocoder;
+  if (clientId != null) {
+    geocoder=new AdvancedGeoCoder(httpClient,clientId,clientKey);
+  }
+ else {
+    geocoder=new AdvancedGeoCoder(httpClient);
+  }
+  return geocoder;
+}
