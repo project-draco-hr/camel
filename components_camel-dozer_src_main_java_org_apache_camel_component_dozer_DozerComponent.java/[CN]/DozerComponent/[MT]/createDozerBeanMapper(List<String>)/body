@@ -1,0 +1,20 @@
+{
+  GlobalSettings settings=GlobalSettings.getInstance();
+  try {
+    LOG.info("Configuring GlobalSettings to use Camel classloader: {}",DozerThreadContextClassLoader.class.getName());
+    Field field=settings.getClass().getDeclaredField("classLoaderBeanName");
+    ReflectionHelper.setField(field,settings,DozerThreadContextClassLoader.class.getName());
+  }
+ catch (  Exception e) {
+    throw new IllegalStateException("Cannot configure Dozer GlobalSettings to use DozerThreadContextClassLoader as classloader due " + e.getMessage(),e);
+  }
+  try {
+    LOG.info("Configuring GlobalSettings to enable EL");
+    Field field=settings.getClass().getDeclaredField("elEnabled");
+    ReflectionHelper.setField(field,settings,true);
+  }
+ catch (  NoSuchFieldException nsfEx) {
+    throw new IllegalStateException("Failed to enable EL in global Dozer settings",nsfEx);
+  }
+  return new DozerBeanMapper(mappingFiles);
+}
