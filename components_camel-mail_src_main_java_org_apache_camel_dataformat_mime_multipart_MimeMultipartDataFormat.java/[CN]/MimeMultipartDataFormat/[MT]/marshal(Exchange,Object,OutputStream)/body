@@ -25,6 +25,16 @@
       exchange.getOut().removeAttachment(attachmentFilename);
     }
     mm.setContent(mp);
+    if (headersInline && includeHeaders != null) {
+      for (      Map.Entry<String,Object> entry : exchange.getIn().getHeaders().entrySet()) {
+        if (includeHeaders.matcher(entry.getKey()).matches()) {
+          String headerStr=ExchangeHelper.convertToType(exchange,String.class,entry.getValue());
+          if (headerStr != null) {
+            mm.setHeader(entry.getKey(),headerStr);
+          }
+        }
+      }
+    }
     mm.saveChanges();
     Enumeration<?> hl=mm.getAllHeaders();
     List<String> headers=new ArrayList<String>();
