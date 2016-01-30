@@ -1,4 +1,5 @@
 {
+  final StAX2SAXAttributes attributes=new StAX2SAXAttributes();
   try {
     while (true) {
 switch (streamReader.getEventType()) {
@@ -49,17 +50,12 @@ contentHandler.endDocument();
 return;
 case XMLStreamConstants.END_ELEMENT:
 {
-String uri=streamReader.getNamespaceURI();
+String uri=nullToEmpty(streamReader.getNamespaceURI());
 String localName=streamReader.getLocalName();
-String prefix=streamReader.getPrefix();
-String qname=prefix != null && prefix.length() > 0 ? prefix + ":" + localName : localName;
+String qname=getPrefixedName(streamReader.getPrefix(),localName);
 contentHandler.endElement(uri,localName,qname);
 for (int i=0; i < streamReader.getNamespaceCount(); i++) {
 String nsPrefix=streamReader.getNamespacePrefix(i);
-String nsUri=streamReader.getNamespaceURI(i);
-if (nsUri == null) {
-nsUri="";
-}
 contentHandler.endPrefixMapping(nsPrefix);
 }
 break;
@@ -76,19 +72,17 @@ contentHandler.startDocument();
 break;
 case XMLStreamConstants.START_ELEMENT:
 {
-String uri=streamReader.getNamespaceURI();
-String localName=streamReader.getLocalName();
-String prefix=streamReader.getPrefix();
-String qname=prefix != null && prefix.length() > 0 ? prefix + ":" + localName : localName;
 for (int i=0; i < streamReader.getNamespaceCount(); i++) {
 String nsPrefix=streamReader.getNamespacePrefix(i);
-String nsUri=streamReader.getNamespaceURI(i);
-if (nsUri == null) {
-nsUri="";
-}
+String nsUri=nullToEmpty(streamReader.getNamespaceURI(i));
 contentHandler.startPrefixMapping(nsPrefix,nsUri);
 }
-contentHandler.startElement(uri == null ? "" : uri,localName,qname,getAttributes());
+String uri=nullToEmpty(streamReader.getNamespaceURI());
+String localName=streamReader.getLocalName();
+String qname=getPrefixedName(streamReader.getPrefix(),localName);
+attributes.init();
+contentHandler.startElement(uri,localName,qname,attributes);
+attributes.reset();
 break;
 }
 default :
