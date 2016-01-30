@@ -3,8 +3,11 @@
     String dir=endpoint.getConfiguration().getDirectory();
     File file=new File(dir);
     LOG.debug("Prepare on startup by deleting orphaned lock files from: {}",dir);
+    Pattern excludePattern=endpoint.getExclude() != null ? Pattern.compile(endpoint.getExclude()) : null;
+    Pattern includePattern=endpoint.getInclude() != null ? Pattern.compile(endpoint.getInclude()) : null;
+    String endpointPath=endpoint.getConfiguration().getDirectory();
     StopWatch watch=new StopWatch();
-    deleteLockFiles(file,endpoint.isRecursive());
+    deleteLockFiles(file,endpoint.isRecursive(),endpointPath,endpoint.getFilter(),endpoint.getAntFilter(),excludePattern,includePattern);
     if (watch.taken() > 1000) {
       LOG.info("Prepared on startup by deleting orphaned lock files from: {} took {} millis to complete.",dir,watch.taken());
     }

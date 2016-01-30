@@ -1,0 +1,47 @@
+{
+  GenericFile gf=new GenericFile();
+  gf.setEndpointPath(endpointPath);
+  gf.setFile(file);
+  gf.setFileNameOnly(file.getName());
+  gf.setFileLength(file.length());
+  gf.setDirectory(file.isDirectory());
+  gf.setAbsolute(FileUtil.isAbsolute(file));
+  gf.setAbsoluteFilePath(file.getAbsolutePath());
+  gf.setLastModified(file.lastModified());
+  File path;
+  String endpointNormalized=FileUtil.normalizePath(endpointPath);
+  if (file.getPath().startsWith(endpointNormalized + File.separator)) {
+    path=new File(ObjectHelper.after(file.getPath(),endpointNormalized + File.separator));
+  }
+ else {
+    path=new File(file.getPath());
+  }
+  if (path.getParent() != null) {
+    gf.setRelativeFilePath(path.getParent() + File.separator + file.getName());
+  }
+ else {
+    gf.setRelativeFilePath(path.getName());
+  }
+  gf.setFileName(gf.getRelativeFilePath());
+  if (filter != null) {
+    if (!filter.accept(gf)) {
+      return false;
+    }
+  }
+  if (antFilter != null) {
+    if (!antFilter.accept(gf)) {
+      return false;
+    }
+  }
+  if (excludePattern != null) {
+    if (excludePattern.matcher(file.getName()).matches()) {
+      return false;
+    }
+  }
+  if (includePattern != null) {
+    if (!includePattern.matcher(file.getName()).matches()) {
+      return false;
+    }
+  }
+  return true;
+}
