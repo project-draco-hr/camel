@@ -10,17 +10,10 @@
     scan=new Scan();
   }
   if (filters != null && !filters.isEmpty()) {
-    List<Filter> clonedFilters=new LinkedList<Filter>();
-    for (    Filter filter : filters) {
-      if (ModelAwareFilter.class.isAssignableFrom(filter.getClass())) {
-        Object clone=endpoint.getCamelContext().getInjector().newInstance(filter.getClass());
-        if (clone instanceof ModelAwareFilter) {
-          ((ModelAwareFilter<?>)clone).apply(endpoint.getCamelContext(),model);
-          clonedFilters.add((Filter)clone);
-        }
-      }
+    for (int i=0; i < filters.size(); i++) {
+      ((ModelAwareFilter<?>)filters.get(i)).apply(endpoint.getCamelContext(),model);
+      scan.setFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,((ModelAwareFilter<?>)filters.get(i)).getFilteredList()));
     }
-    scan.setFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,clonedFilters));
   }
   Set<HBaseCell> cellModels=model.getCells();
   for (  HBaseCell cellModel : cellModels) {
