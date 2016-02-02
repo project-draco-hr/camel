@@ -1,6 +1,20 @@
 {
   KafkaEndpoint endpoint=new KafkaEndpoint(uri,this);
   String brokers=remaining.split("\\?")[0];
+  Object confparam=params.get("configuration");
+  if (confparam != null) {
+    KafkaConfiguration confobj=null;
+    if (confparam instanceof KafkaConfiguration) {
+      confobj=(KafkaConfiguration)confparam;
+    }
+ else     if (confparam instanceof String && EndpointHelper.isReferenceParameter((String)confparam)) {
+      confobj=(KafkaConfiguration)CamelContextHelper.lookup(getCamelContext(),((String)confparam).substring(1));
+    }
+    if (confobj != null) {
+      endpoint.setConfiguration(confobj.copy());
+    }
+    params.remove("configuration");
+  }
   if (brokers != null) {
     endpoint.getConfiguration().setBrokers(brokers);
   }
