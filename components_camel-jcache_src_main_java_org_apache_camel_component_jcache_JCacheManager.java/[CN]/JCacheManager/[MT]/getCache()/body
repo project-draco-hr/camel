@@ -1,0 +1,15 @@
+{
+  if (cache == null) {
+    String uri=configuration.getConfigurationUri();
+    if (uri != null && camelContext != null) {
+      uri=camelContext.resolvePropertyPlaceholders(uri);
+    }
+    provider=configuration.getCachingProvider() != null ? Caching.getCachingProvider(configuration.getCachingProvider()) : Caching.getCachingProvider();
+    manager=provider.getCacheManager(ObjectHelper.isNotEmpty(uri) ? URI.create(uri) : null,classLoader,configuration.getCacheConfigurationProperties());
+    cache=manager.getCache(cacheName);
+    if (cache == null) {
+      cache=manager.createCache(cacheName,getOrCreateCacheConfiguration());
+    }
+  }
+  return cache;
+}

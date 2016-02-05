@@ -1,0 +1,10 @@
+{
+  Message message=exchange.getIn();
+  Set<Object> keys=message.getHeader(JCacheConstants.KEYS,Set.class);
+  EntryProcessor<Object,Object,Object> entryProcessor=message.getHeader(JCacheConstants.ENTRY_PROCESSOR,EntryProcessor.class);
+  Collection<Object> arguments=message.getHeader(JCacheConstants.ARGUMENTS,Collection.class);
+  if (arguments == null) {
+    arguments=Collections.emptyList();
+  }
+  message.setBody(keys != null ? cache.invokeAll(keys,entryProcessor,arguments) : cache.invoke(exchange.getIn().getHeader(JCacheConstants.KEY),entryProcessor,arguments));
+}

@@ -1,0 +1,16 @@
+{
+  String actionName=exchange.getIn().getHeader(JCacheConstants.ACTION,String.class);
+  if (actionName == null) {
+    actionName=configuration.getAction();
+  }
+  ObjectHelper.notEmpty(actionName,JCacheConstants.ACTION);
+  Action action=Action.fromName(actionName);
+  if (action != null) {
+    Cache<Object,Object> cache=getJCacheEndpoint().getManager().getCache();
+    action.validate(cache,exchange);
+    action.execute(cache,exchange);
+  }
+ else {
+    throw new IllegalArgumentException(String.format("The value '%s' is not allowed for parameter '%s'",actionName,JCacheConstants.ACTION));
+  }
+}
