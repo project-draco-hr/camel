@@ -1,0 +1,22 @@
+{
+  MockEndpoint endEndpoint=resolveMandatoryEndpoint("mock:end",MockEndpoint.class);
+  endEndpoint.expectedMessageCount(1);
+  final String body="<p:person user=\"james\" xmlns:p=\"org.person\" xmlns:h=\"org.health.check.person\" xmlns:c=\"org.health.check.common\">\n" + "  <p:firstName>James</p:firstName>\n" + "  <p:lastName>Strachan</p:lastName>\n"+ "  <p:city>London</p:city>\n"+ "  <h:health>\n"+ "      <h:lastCheck>2011-12-23</h:lastCheck>\n"+ "      <h:status>OK</h:status>\n"+ "      <c:commonElement>"+ "          <c:element1/>"+ "          <c:element2/>"+ "      </c:commonElement>"+ "  </h:health>\n"+ "</p:person>";
+  template.sendBody(directStart,body);
+  ValidatorEndpoint validatorEndpoint=null;
+  for (int i=0; i < 5; i++) {
+    validatorEndpoint=resolveMandatoryEndpoint(endpointUri,ValidatorEndpoint.class);
+    if (validatorEndpoint != null) {
+      break;
+    }
+    Thread.sleep(50);
+  }
+  MockEndpoint.assertIsSatisfied(endEndpoint);
+  Assert.assertNotNull(validatorEndpoint);
+  CustomResourceResolver resolver=(CustomResourceResolver)validatorEndpoint.getResourceResolver();
+  Set<String> uris=resolver.getResolvedResourceUris();
+  checkResourceUri(uris,"../type2.xsd");
+  checkResourceUri(uris,"health/health.xsd");
+  checkResourceUri(uris,"type1.xsd");
+  checkResourceUri(uris,"common/common.xsd");
+}
