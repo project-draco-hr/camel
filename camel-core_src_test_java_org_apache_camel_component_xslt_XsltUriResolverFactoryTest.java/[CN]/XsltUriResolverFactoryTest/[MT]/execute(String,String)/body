@@ -1,0 +1,19 @@
+{
+  InputStream payloud=XsltUriResolverFactoryTest.class.getClassLoader().getResourceAsStream("xslt/staff/staff.xml");
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedMessageCount(1);
+  sendBody(directStart,payloud);
+  XsltEndpoint xsltEndpoint=null;
+  for (int i=0; i < 5; i++) {
+    xsltEndpoint=resolveMandatoryEndpoint(endpointUri,XsltEndpoint.class);
+    if (xsltEndpoint != null) {
+      break;
+    }
+    Thread.sleep(50);
+  }
+  assertMockEndpointsSatisfied();
+  assertNotNull(xsltEndpoint);
+  CustomXsltUriResolver resolver=(CustomXsltUriResolver)xsltEndpoint.getUriResolver();
+  checkResourceUri(resolver.resolvedRsourceUris,"xslt/staff/staff.xsl");
+  checkResourceUri(resolver.resolvedRsourceUris,"../common/staff_template.xsl");
+}

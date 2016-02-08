@@ -14,7 +14,14 @@
     resolver=getUriResolver();
   }
   if (resolver == null) {
-    resolver=new XsltUriResolver(getCamelContext().getClassResolver(),remaining);
+    XsltUriResolverFactory resolverFactory=resolveAndRemoveReferenceParameter(parameters,"uriResolverFactory",XsltUriResolverFactory.class);
+    if (resolverFactory == null) {
+      resolverFactory=getUriResolverFactory();
+    }
+    if (resolverFactory == null) {
+      resolverFactory=new DefaultXsltUriResolverFactory();
+    }
+    resolver=resolverFactory.createUriResolver(getCamelContext(),remaining);
   }
   endpoint.setUriResolver(resolver);
   setProperties(endpoint,parameters);
