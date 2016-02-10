@@ -1,0 +1,18 @@
+{
+  if (!isRunAllowed()) {
+    return;
+  }
+  EtcdKeyGetRequest request=getClient().get(defaultPath).waitForChange();
+  if (configuration.isRecursive()) {
+    request.recursive();
+  }
+  if (configuration.hasTimeout()) {
+    request.timeout(configuration.getTimeout(),TimeUnit.MILLISECONDS);
+  }
+  try {
+    request.send().addListener(this);
+  }
+ catch (  IOException e) {
+    throw new IllegalArgumentException(e);
+  }
+}

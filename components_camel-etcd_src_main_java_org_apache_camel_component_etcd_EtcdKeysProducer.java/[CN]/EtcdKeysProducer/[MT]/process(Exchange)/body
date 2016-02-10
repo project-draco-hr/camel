@@ -1,0 +1,25 @@
+{
+  String action=exchange.getIn().getHeader(EtcdConstants.ETCD_ACTION,String.class);
+  String path=exchange.getIn().getHeader(EtcdConstants.ETCD_PATH,String.class);
+  if (path == null) {
+    path=defaultPath;
+  }
+  ObjectHelper.notEmpty(path,EtcdConstants.ETCD_PATH);
+  ObjectHelper.notEmpty(action,EtcdConstants.ETCD_ACTION);
+switch (action) {
+case EtcdConstants.ETCD_KEYS_ACTION_SET:
+    processSet(getClient(),path,exchange);
+  break;
+case EtcdConstants.ETCD_KEYS_ACTION_GET:
+processGet(getClient(),path,exchange);
+break;
+case EtcdConstants.ETCD_KEYS_ACTION_DELETE:
+processDel(getClient(),path,false,exchange);
+break;
+case EtcdConstants.ETCD_KEYS_ACTION_DELETE_DIR:
+processDel(getClient(),path,true,exchange);
+break;
+default :
+throw new IllegalArgumentException("Unknown action " + action);
+}
+}

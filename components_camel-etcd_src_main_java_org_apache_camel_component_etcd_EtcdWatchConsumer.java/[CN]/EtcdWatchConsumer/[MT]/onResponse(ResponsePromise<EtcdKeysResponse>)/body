@@ -1,0 +1,31 @@
+{
+  if (!isRunAllowed()) {
+    return;
+  }
+  try {
+    EtcdKeysResponse response=promise.get();
+    Exchange exchange=endpoint.createExchange();
+    exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,response.node.key);
+    exchange.getIn().setBody(response);
+    getProcessor().process(exchange);
+    watch();
+  }
+ catch (  TimeoutException e) {
+    LOGGER.debug("Timeout watching for " + defaultPath);
+    if (configuration.isSendEmptyExchangeOnTimeout()) {
+      try {
+        Exchange exchange=endpoint.createExchange();
+        exchange.getIn().setHeader(EtcdConstants.ETCD_TIMEOUT,true);
+        exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,defaultPath);
+        exchange.getIn().setBody(null);
+        getProcessor().process(exchange);
+      }
+ catch (      Exception e1) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+  }
+catch (  Exception e) {
+    throw new IllegalArgumentException(e);
+  }
+}
