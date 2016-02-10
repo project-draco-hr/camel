@@ -2,17 +2,32 @@
   if (!init && exchange != null) {
     String text=exchange.getContext().getProperties().get(JacksonConstants.ENABLE_TYPE_CONVERTER);
     enabled="true".equalsIgnoreCase(text);
+    text=exchange.getContext().getProperties().get(JacksonConstants.TYPE_CONVERTER_POJO_ONLY);
+    if (text != null) {
+      pojoOnly="true".equalsIgnoreCase(text);
+    }
     init=true;
   }
   if (enabled == null || !enabled) {
     return null;
   }
-  if (isNotPojoType(type)) {
+  if (pojoOnly && isNotPojoType(type)) {
     return null;
   }
-  if (exchange != null && value instanceof Map) {
+  if (exchange != null) {
     ObjectMapper mapper=resolveObjectMapper(exchange.getContext().getRegistry());
-    if (mapper.canSerialize(type)) {
+    if (String.class.isAssignableFrom(type)) {
+      String out=mapper.writeValueAsString(value);
+      return type.cast(out);
+    }
+ else     if (byte[].class.isAssignableFrom(type)) {
+      byte[] out=mapper.writeValueAsBytes(value);
+      return type.cast(out);
+    }
+ else     if (mapper.canSerialize(type)) {
+      if (String.class.isAssignableFrom(value.getClass())) {
+        return mapper.readValue((String)value,type);
+      }
       return mapper.convertValue(value,type);
     }
   }
