@@ -1,17 +1,21 @@
 {
   if (!init && exchange != null) {
     String text=exchange.getContext().getProperties().get(JacksonConstants.ENABLE_TYPE_CONVERTER);
-    enabled="true".equalsIgnoreCase(text);
-    text=exchange.getContext().getProperties().get(JacksonConstants.TYPE_CONVERTER_POJO_ONLY);
     if (text != null) {
-      pojoOnly="true".equalsIgnoreCase(text);
+      text=exchange.getContext().resolvePropertyPlaceholders(text);
+      enabled="true".equalsIgnoreCase(text);
+    }
+    text=exchange.getContext().getProperties().get(JacksonConstants.TYPE_CONVERTER_TO_POJO);
+    if (text != null) {
+      text=exchange.getContext().resolvePropertyPlaceholders(text);
+      toPojo="true".equalsIgnoreCase(text);
     }
     init=true;
   }
-  if (enabled == null || !enabled) {
+  if (!enabled) {
     return null;
   }
-  if (pojoOnly && isNotPojoType(type)) {
+  if (!toPojo && isNotPojoType(type)) {
     return null;
   }
   if (exchange != null) {
@@ -28,7 +32,21 @@
       if (String.class.isAssignableFrom(value.getClass())) {
         return mapper.readValue((String)value,type);
       }
-      return mapper.convertValue(value,type);
+ else       if (byte[].class.isAssignableFrom(value.getClass())) {
+        return mapper.readValue((byte[])value,type);
+      }
+ else       if (File.class.isAssignableFrom(value.getClass())) {
+        return mapper.readValue((File)value,type);
+      }
+ else       if (InputStream.class.isAssignableFrom(value.getClass())) {
+        return mapper.readValue((InputStream)value,type);
+      }
+ else       if (Reader.class.isAssignableFrom(value.getClass())) {
+        return mapper.readValue((Reader)value,type);
+      }
+ else {
+        return mapper.convertValue(value,type);
+      }
     }
   }
   return null;
