@@ -5,7 +5,9 @@
   if (converter != null) {
     xslt.setConverter(converter);
   }
-  if (transformerFactoryClass == null && saxon) {
+  boolean useSaxon=false;
+  if (transformerFactoryClass == null && (saxon || saxonExtensionFunctions != null)) {
+    useSaxon=true;
     transformerFactoryClass=SAXON_TRANSFORMER_FACTORY_CLASS_NAME;
   }
   TransformerFactory factory=transformerFactory;
@@ -13,6 +15,9 @@
     Class<?> factoryClass=getCamelContext().getClassResolver().resolveMandatoryClass(transformerFactoryClass,XsltComponent.class.getClassLoader());
     LOG.debug("Using TransformerFactoryClass {}",factoryClass);
     factory=(TransformerFactory)getCamelContext().getInjector().newInstance(factoryClass);
+    if (useSaxon) {
+      XsltHelper.registerSaxonExtensionFunctions(getCamelContext(),factoryClass,factory,saxonExtensionFunctions);
+    }
   }
   if (factory != null) {
     LOG.debug("Using TransformerFactory {}",factory);

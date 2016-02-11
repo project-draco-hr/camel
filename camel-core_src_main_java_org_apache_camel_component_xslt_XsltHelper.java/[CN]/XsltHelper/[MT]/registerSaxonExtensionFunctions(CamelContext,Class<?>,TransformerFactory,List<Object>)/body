@@ -1,0 +1,30 @@
+{
+  if (saxonExtensionFunctions != null && !saxonExtensionFunctions.isEmpty()) {
+    Method method=factoryClass.getMethod("getConfiguration");
+    if (method != null) {
+      Object configuration=method.invoke(factory,null);
+      if (configuration != null) {
+        Class<?> extensionClass=camelContext.getClassResolver().resolveMandatoryClass(SAXON_EXTENDED_FUNCTION_DEFINITION_CLASS_NAME,XsltComponent.class.getClassLoader());
+        method=configuration.getClass().getMethod("registerExtensionFunction",extensionClass);
+        if (method != null) {
+          factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,true);
+          for (          Object extensionFunction : saxonExtensionFunctions) {
+            if (extensionClass.isInstance(extensionFunction)) {
+              LOG.debug("Saxon.registerExtensionFunction {}",extensionFunction);
+              method.invoke(configuration,extensionFunction);
+            }
+          }
+        }
+ else {
+          LOG.warn("Unable to get reference to method registerExtensionFunction on {}",configuration.getClass().getName());
+        }
+      }
+ else {
+        LOG.warn("Unable to get Saxon configuration ({}) on {}",SAXON_CONFIGURATION_CLASS_NAME,factory.getClass().getName());
+      }
+    }
+ else {
+      LOG.warn("Unable to get reference to method getConfiguration on {}",factoryClass.getName());
+    }
+  }
+}
