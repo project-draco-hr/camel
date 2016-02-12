@@ -1,34 +1,5 @@
 {
   super.doStart();
-  map=new ConcurrentHashMap<Long,SecretEvent>();
-  if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getOauthToken())) {
-    if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getNamespaceName())) {
-      getEndpoint().getKubernetesClient().secrets().inNamespace(getEndpoint().getKubernetesConfiguration().getNamespaceName()).watch(new Watcher<Secret>(){
-        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        Secret resource){
-          SecretEvent se=new SecretEvent(action,resource);
-          map.put(System.currentTimeMillis(),se);
-        }
-        @Override public void onClose(        KubernetesClientException cause){
-          if (cause != null) {
-            LOG.error(cause.getMessage(),cause);
-          }
-        }
-      }
-);
-    }
- else {
-      getEndpoint().getKubernetesClient().secrets().watch(new Watcher<Secret>(){
-        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        Secret resource){
-          SecretEvent se=new SecretEvent(action,resource);
-          map.put(System.currentTimeMillis(),se);
-        }
-        @Override public void onClose(        KubernetesClientException cause){
-          if (cause != null) {
-            LOG.error(cause.getMessage(),cause);
-          }
-        }
-      }
-);
-    }
-  }
+  executor=getEndpoint().createExecutor();
+  executor.submit(new SecretsConsumerTask());
 }

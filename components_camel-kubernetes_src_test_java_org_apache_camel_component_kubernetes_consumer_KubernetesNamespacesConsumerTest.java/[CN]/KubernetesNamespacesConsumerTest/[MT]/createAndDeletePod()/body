@@ -2,8 +2,8 @@
   if (ObjectHelper.isEmpty(authToken)) {
     return;
   }
-  mockResultEndpoint.expectedMessageCount(3);
-  mockResultEndpoint.expectedHeaderValuesReceivedInAnyOrder(KubernetesConstants.KUBERNETES_EVENT_ACTION,"ADDED","MODIFIED","DELETED");
+  mockResultEndpoint.expectedMessageCount(5);
+  mockResultEndpoint.expectedHeaderValuesReceivedInAnyOrder(KubernetesConstants.KUBERNETES_EVENT_ACTION,"ADDED","MODIFIED","MODIFIED","MODIFIED","DELETED");
   Exchange ex=template.request("direct:createNamespace",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
       exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"test");
@@ -41,5 +41,6 @@
 );
   boolean nsDeleted=ex.getOut().getBody(Boolean.class);
   assertTrue(nsDeleted);
+  Thread.sleep(3000);
   mockResultEndpoint.assertIsSatisfied();
 }

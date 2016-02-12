@@ -1,34 +1,5 @@
 {
   super.doStart();
-  map=new ConcurrentHashMap<Long,ServiceEvent>();
-  if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getOauthToken())) {
-    if (ObjectHelper.isNotEmpty(getEndpoint().getKubernetesConfiguration().getNamespaceName())) {
-      getEndpoint().getKubernetesClient().services().inNamespace(getEndpoint().getKubernetesConfiguration().getNamespaceName()).watch(new Watcher<Service>(){
-        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        Service resource){
-          ServiceEvent se=new ServiceEvent(action,resource);
-          map.put(System.currentTimeMillis(),se);
-        }
-        @Override public void onClose(        KubernetesClientException cause){
-          if (cause != null) {
-            LOG.error(cause.getMessage(),cause);
-          }
-        }
-      }
-);
-    }
- else {
-      getEndpoint().getKubernetesClient().services().watch(new Watcher<Service>(){
-        @Override public void eventReceived(        io.fabric8.kubernetes.client.Watcher.Action action,        Service resource){
-          ServiceEvent se=new ServiceEvent(action,resource);
-          map.put(System.currentTimeMillis(),se);
-        }
-        @Override public void onClose(        KubernetesClientException cause){
-          if (cause != null) {
-            LOG.error(cause.getMessage(),cause);
-          }
-        }
-      }
-);
-    }
-  }
+  executor=getEndpoint().createExecutor();
+  executor.submit(new ServicesConsumerTask());
 }
