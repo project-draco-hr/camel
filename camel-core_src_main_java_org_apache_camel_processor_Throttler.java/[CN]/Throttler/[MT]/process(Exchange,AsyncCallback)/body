@@ -66,7 +66,20 @@
     callback.done(doneSync);
     return doneSync;
   }
- catch (  final Throwable t) {
+ catch (  final InterruptedException e) {
+    boolean forceShutdown=exchange.getContext().getShutdownStrategy().forceShutdown(this);
+    if (forceShutdown) {
+      String msg="Run not allowed as ShutdownStrategy is forcing shutting down, will reject executing exchange: " + exchange;
+      log.debug(msg);
+      exchange.setException(new RejectedExecutionException(msg,e));
+    }
+ else {
+      exchange.setException(e);
+    }
+    callback.done(doneSync);
+    return doneSync;
+  }
+catch (  final Throwable t) {
     exchange.setException(t);
     callback.done(doneSync);
     return doneSync;
