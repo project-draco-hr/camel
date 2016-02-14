@@ -1,0 +1,14 @@
+{
+  String partitionKey="partition";
+  String seqNoForOrdering="1851";
+  when(inMessage.getHeader(KinesisConstants.SEQUENCE_NUMBER)).thenReturn(seqNoForOrdering);
+  when(inMessage.getHeader(KinesisConstants.PARTITION_KEY)).thenReturn(partitionKey);
+  kinesisProducer.process(exchange);
+  ArgumentCaptor<PutRecordRequest> capture=ArgumentCaptor.forClass(PutRecordRequest.class);
+  verify(kinesisClient).putRecord(capture.capture());
+  PutRecordRequest request=capture.getValue();
+  assertEquals(partitionKey,request.getPartitionKey());
+  assertEquals(seqNoForOrdering,request.getSequenceNumberForOrdering());
+  verify(outMessage).setHeader(KinesisConstants.SEQUENCE_NUMBER,SEQUENCE_NUMBER);
+  verify(outMessage).setHeader(KinesisConstants.SHARD_ID,SHARD_ID);
+}
