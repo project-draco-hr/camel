@@ -1,6 +1,10 @@
 {
   shutdownRunningTask=null;
   pendingExchanges=0;
+  if (entityManager == null) {
+    entityManager=entityManagerFactory.createEntityManager();
+    LOG.trace("Recreated EntityManager {} on {}",entityManager,this);
+  }
   Object messagePolled=transactionTemplate.execute(new TransactionCallback<Object>(){
     public Object doInTransaction(    TransactionStatus status){
       if (getEndpoint().isJoinTransaction()) {
@@ -37,6 +41,9 @@
           LOG.warn("Error processing last message due: {}. Will commit all previous successful processed message, and ignore this last failure.",cause.getMessage(),cause);
         }
  else {
+          LOG.info("Disposing EntityManager {} on {} due to coming transaction rollback",entityManager,this);
+          entityManager.close();
+          entityManager=null;
           throw cause;
         }
       }
