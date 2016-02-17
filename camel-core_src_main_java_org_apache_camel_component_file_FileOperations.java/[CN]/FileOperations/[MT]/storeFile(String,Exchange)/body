@@ -48,6 +48,13 @@
         boolean renamed=writeFileByLocalWorkPath(local,file);
         if (renamed) {
           keepLastModified(exchange,file);
+          if (ObjectHelper.isNotEmpty(endpoint.getChmod())) {
+            Set<PosixFilePermission> permissions=endpoint.getPermissions();
+            if (!permissions.isEmpty()) {
+              Files.setPosixFilePermissions(file.toPath(),permissions);
+              LOG.trace("Setting chmod: {} on file: {} ",PosixFilePermissions.toString(permissions),file);
+            }
+          }
           exchange.getIn().setHeader(Exchange.FILE_LOCAL_WORK_PATH,null);
           return true;
         }
@@ -55,6 +62,13 @@
  else       if (source != null && source.exists()) {
         writeFileByFile(source,file);
         keepLastModified(exchange,file);
+        if (ObjectHelper.isNotEmpty(endpoint.getChmod())) {
+          Set<PosixFilePermission> permissions=endpoint.getPermissions();
+          if (!permissions.isEmpty()) {
+            Files.setPosixFilePermissions(file.toPath(),permissions);
+            LOG.trace("Setting chmod: {} on file: {} ",PosixFilePermissions.toString(permissions),file);
+          }
+        }
         return true;
       }
     }
