@@ -1,5 +1,5 @@
 {
-  Object result;
+  NotifyingFuture result;
   if (!ObjectHelper.isEmpty(exchange.getIn().getHeader(InfinispanConstants.IGNORE_RETURN_VALUES))) {
     cache=InfinispanUtil.ignoreReturnValuesCache(cache);
   }
@@ -9,29 +9,14 @@
     if (!ObjectHelper.isEmpty(exchange.getIn().getHeader(InfinispanConstants.MAX_IDLE_TIME)) && !ObjectHelper.isEmpty(exchange.getIn().getHeader(InfinispanConstants.MAX_IDLE_TIME_UNIT))) {
       long maxIdle=exchange.getIn().getHeader(InfinispanConstants.MAX_IDLE_TIME,long.class);
       String maxIdleTimeUnit=exchange.getIn().getHeader(InfinispanConstants.MAX_IDLE_TIME_UNIT,String.class);
-      if (ObjectHelper.isEmpty(getOldValue(exchange))) {
-        result=cache.replace(getKey(exchange),getValue(exchange),lifespan,TimeUnit.valueOf(timeUnit),maxIdle,TimeUnit.valueOf(maxIdleTimeUnit));
-      }
- else {
-        result=cache.replace(getKey(exchange),getOldValue(exchange),getValue(exchange),lifespan,TimeUnit.valueOf(timeUnit),maxIdle,TimeUnit.valueOf(maxIdleTimeUnit));
-      }
+      result=cache.putAsync(getKey(exchange),getValue(exchange),lifespan,TimeUnit.valueOf(timeUnit),maxIdle,TimeUnit.valueOf(maxIdleTimeUnit));
     }
  else {
-      if (ObjectHelper.isEmpty(getOldValue(exchange))) {
-        result=cache.replace(getKey(exchange),getValue(exchange),lifespan,TimeUnit.valueOf(timeUnit));
-      }
- else {
-        result=cache.replace(getKey(exchange),getOldValue(exchange),getValue(exchange),lifespan,TimeUnit.valueOf(timeUnit));
-      }
+      result=cache.putAsync(getKey(exchange),getValue(exchange),lifespan,TimeUnit.valueOf(timeUnit));
     }
   }
  else {
-    if (ObjectHelper.isEmpty(getOldValue(exchange))) {
-      result=cache.replace(getKey(exchange),getValue(exchange));
-    }
- else {
-      result=cache.replace(getKey(exchange),getOldValue(exchange),getValue(exchange));
-    }
+    result=cache.putAsync(getKey(exchange),getValue(exchange));
   }
   setResult(result,exchange);
 }
