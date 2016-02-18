@@ -1,0 +1,31 @@
+{
+  if (dir.exists()) {
+    return true;
+  }
+  if (permissions == null || permissions.isEmpty()) {
+    return dir.mkdirs();
+  }
+  try {
+    String[] parts=dir.getPath().split("\\" + File.separatorChar);
+    File base=new File(".");
+    for (    String part : parts) {
+      File subDir=new File(base,part);
+      if (!subDir.exists()) {
+        if (subDir.mkdir()) {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Setting chmod: {} on directory: {} ",PosixFilePermissions.toString(permissions),subDir);
+          }
+          Files.setPosixFilePermissions(subDir.toPath(),permissions);
+        }
+ else {
+          return false;
+        }
+      }
+      base=new File(base,subDir.getName());
+    }
+  }
+ catch (  IOException e) {
+    throw new GenericFileOperationFailedException("Error setting chmod on directory: " + dir,e);
+  }
+  return true;
+}
