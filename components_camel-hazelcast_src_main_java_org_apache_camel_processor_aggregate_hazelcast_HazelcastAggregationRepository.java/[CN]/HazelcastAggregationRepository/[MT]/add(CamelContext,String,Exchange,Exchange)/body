@@ -4,7 +4,7 @@
   }
   LOG.trace("Adding an Exchange with ID {} for key {} in an optimistic manner.",newExchange.getExchangeId(),key);
   if (oldExchange == null) {
-    DefaultExchangeHolder holder=DefaultExchangeHolder.marshal(newExchange);
+    DefaultExchangeHolder holder=DefaultExchangeHolder.marshal(newExchange,true,allowSerializedHeaders);
     final DefaultExchangeHolder misbehaviorHolder=cache.putIfAbsent(key,holder);
     if (misbehaviorHolder != null) {
       Exchange misbehaviorEx=unmarshallExchange(camelContext,misbehaviorHolder);
@@ -13,8 +13,8 @@
     }
   }
  else {
-    DefaultExchangeHolder oldHolder=DefaultExchangeHolder.marshal(oldExchange);
-    DefaultExchangeHolder newHolder=DefaultExchangeHolder.marshal(newExchange);
+    DefaultExchangeHolder oldHolder=DefaultExchangeHolder.marshal(oldExchange,true,allowSerializedHeaders);
+    DefaultExchangeHolder newHolder=DefaultExchangeHolder.marshal(newExchange,true,allowSerializedHeaders);
     if (!cache.replace(key,oldHolder,newHolder)) {
       LOG.error("Optimistic locking failed for exchange with key {}: IMap#replace returned no Exchanges, while it's expected to replace one",key);
       throw new OptimisticLockingException();

@@ -1,0 +1,24 @@
+{
+  ObjectHelper.notNull(exchange,"exchange");
+  Object body=exchange.getIn().getBody();
+  if (body instanceof WrappedFile || body instanceof File) {
+    throw new RuntimeExchangeException("Message body of type " + body.getClass().getCanonicalName() + " is not supported by this marshaller.",exchange);
+  }
+  DefaultExchangeHolder payload=new DefaultExchangeHolder();
+  payload.exchangeId=exchange.getExchangeId();
+  payload.inBody=checkSerializableBody("in body",exchange,exchange.getIn().getBody());
+  payload.safeSetInHeaders(exchange,allowSerializedHeaders);
+  if (exchange.hasOut()) {
+    payload.outBody=checkSerializableBody("out body",exchange,exchange.getOut().getBody());
+    payload.outFaultFlag=exchange.getOut().isFault();
+    payload.safeSetOutHeaders(exchange,allowSerializedHeaders);
+  }
+ else {
+    payload.inFaultFlag=exchange.getIn().isFault();
+  }
+  if (includeProperties) {
+    payload.safeSetProperties(exchange,allowSerializedHeaders);
+  }
+  payload.exception=exchange.getException();
+  return payload;
+}
