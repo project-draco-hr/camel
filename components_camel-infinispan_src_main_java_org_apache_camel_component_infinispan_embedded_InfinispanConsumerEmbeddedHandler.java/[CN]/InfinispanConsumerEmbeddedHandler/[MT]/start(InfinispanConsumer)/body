@@ -1,0 +1,27 @@
+{
+  Cache<?,?> embeddedCache=(Cache<?,?>)consumer.getCache();
+  InfinispanConfiguration configuration=consumer.getConfiguration();
+  InfinispanEventListener listener;
+  if (configuration.isCustom()) {
+    listener=configuration.getCustomListener();
+    ((InfinispanCustomListener)listener).setInfinispanConsumer(consumer);
+  }
+ else   if (configuration.isClustered()) {
+    if (configuration.isSync()) {
+      listener=new InfinispanSyncClusteredEventListener(consumer,configuration.getEventTypes());
+    }
+ else {
+      listener=new InfinispanAsyncClusteredEventListener(consumer,configuration.getEventTypes());
+    }
+  }
+ else {
+    if (configuration.isSync()) {
+      listener=new InfinispanSyncLocalEventListener(consumer,configuration.getEventTypes());
+    }
+ else {
+      listener=new InfinispanAsyncLocalEventListener(consumer,configuration.getEventTypes());
+    }
+  }
+  embeddedCache.addListener(listener);
+  return listener;
+}

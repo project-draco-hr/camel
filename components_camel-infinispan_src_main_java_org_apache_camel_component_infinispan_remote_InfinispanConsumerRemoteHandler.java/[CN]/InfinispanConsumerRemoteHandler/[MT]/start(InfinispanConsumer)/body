@@ -1,0 +1,18 @@
+{
+  if (consumer.getConfiguration().isSync()) {
+    throw new UnsupportedOperationException("Sync listeners not supported for remote caches.");
+  }
+  RemoteCache<?,?> remoteCache=(RemoteCache<?,?>)consumer.getCache();
+  InfinispanConfiguration configuration=consumer.getConfiguration();
+  InfinispanEventListener listener;
+  if (configuration.isCustom()) {
+    listener=configuration.getCustomListener();
+    ((InfinispanCustomListener)listener).setInfinispanConsumer(consumer);
+  }
+ else {
+    listener=new InfinispanRemoteEventListener(consumer,configuration.getEventTypes());
+  }
+  remoteCache.addClientListener(listener);
+  listener.setCacheName(remoteCache.getName());
+  return listener;
+}

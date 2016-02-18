@@ -1,17 +1,15 @@
 {
-  if (configuration.getCacheContainer() instanceof EmbeddedCacheManager) {
-    cacheManager=(EmbeddedCacheManager)configuration.getCacheContainer();
-    Cache<Object,Object> cache;
-    if (configuration.getCacheName() != null) {
-      cache=cacheManager.getCache(configuration.getCacheName());
-    }
- else {
-      cache=cacheManager.getCache();
-    }
-    cache.addListener(listener);
+  BasicCacheContainer cacheContainer=configuration.getCacheContainer();
+  String cacheName=configuration.getCacheName();
+  cache=cacheName == null ? cacheContainer.getCache() : cacheContainer.getCache(cacheName);
+  if (InfinispanUtil.isEmbedded(cacheContainer)) {
+    listener=InfinispanConsumerEmbeddedHandler.INSTANCE.start(this);
+  }
+ else   if (InfinispanUtil.isRemote(cacheContainer)) {
+    listener=InfinispanConsumerRemoteHandler.INSTANCE.start(this);
   }
  else {
-    throw new UnsupportedOperationException("Consumer not support for CacheContainer: " + configuration.getCacheContainer());
+    throw new UnsupportedOperationException("Consumer not support for CacheContainer: " + cacheContainer);
   }
   super.doStart();
 }
