@@ -9,7 +9,9 @@
   if ((Method.PUT == method || Method.POST == method) && mediaType == MediaType.APPLICATION_WWW_FORM) {
     form=new Form();
     String body=exchange.getIn().getBody(String.class);
-    form.add(body,null);
+    if (body != null) {
+      form.add(body,null);
+    }
   }
   String login=exchange.getIn().getHeader(RestletConstants.RESTLET_LOGIN,String.class);
   String password=exchange.getIn().getHeader(RestletConstants.RESTLET_PASSWORD,String.class);
@@ -49,13 +51,13 @@
   }
  else {
     if (request.getMethod() == Method.PUT || request.getMethod() == Method.POST) {
-      String body=exchange.getIn().getBody(String.class);
-      request.setEntity(body,mediaType);
+      Representation body=createRepresentationFromBody(exchange,mediaType);
+      request.setEntity(body);
       LOG.debug("Populate Restlet {} request from exchange body: {} using media type {}",method,body,mediaType);
     }
  else {
       LOG.debug("Populate Restlet {} request from exchange using media type {}",method,mediaType);
-      request.setEntity(null);
+      request.setEntity(new EmptyRepresentation());
     }
   }
   String accept=exchange.getIn().getHeader("Accept",String.class);
