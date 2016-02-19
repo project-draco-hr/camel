@@ -1,0 +1,14 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      restConfiguration().component("jetty").host("localhost").port(getPort()).bindingMode(RestBindingMode.json);
+      rest("/users/").consumes("application/json").produces("application/json").get("blob").to("direct:blob").get("lives").to("direct:lives");
+      from("direct:blob").setHeader(Exchange.CONTENT_TYPE,constant("application/foobar")).transform().constant("Some foobar stuff goes here");
+      CountryPojo country=new CountryPojo();
+      country.setIso("EN");
+      country.setCountry("England");
+      from("direct:lives").transform().constant(country);
+    }
+  }
+;
+}
