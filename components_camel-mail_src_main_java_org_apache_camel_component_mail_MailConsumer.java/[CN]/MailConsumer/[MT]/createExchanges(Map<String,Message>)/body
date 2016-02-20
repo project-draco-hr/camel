@@ -1,12 +1,16 @@
 {
   Queue<Exchange> answer=new LinkedList<Exchange>();
   int fetchSize=getEndpoint().getConfiguration().getFetchSize();
-  int count=fetchSize == -1 ? messages.length : Math.min(fetchSize,messages.length);
+  int count=fetchSize == -1 ? messages.size() : Math.min(fetchSize,messages.size());
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Fetching {} messages. Total {} messages.",count,messages.length);
+    LOG.debug("Fetching {} messages. Total {} messages.",count,messages.size());
   }
-  for (int i=0; i < count; i++) {
-    Message message=messages[i];
+  Iterator<String> it=messages.keySet().iterator();
+  int i=0;
+  while (i < count) {
+    i++;
+    String key=it.next();
+    Message message=messages.get(key);
     if (LOG.isTraceEnabled()) {
       LOG.trace("Mail #{} is of type: {} - {}",new Object[]{i,ObjectHelper.classCanonicalName(message),message});
     }
@@ -18,13 +22,7 @@
         exchange.getIn().getHeaders();
         exchange.getIn().getAttachments();
       }
-      if (getEndpoint().getConfiguration().getProtocol().startsWith("pop3")) {
-        String uid=generatePop3Uid(message);
-        if (uid != null) {
-          exchange.setProperty(POP3_UID,uid);
-          LOG.trace("POP3 mail message using uid {}",uid);
-        }
-      }
+      exchange.setProperty(MAIL_MESSAGE_UID,key);
       answer.add(exchange);
     }
  else {

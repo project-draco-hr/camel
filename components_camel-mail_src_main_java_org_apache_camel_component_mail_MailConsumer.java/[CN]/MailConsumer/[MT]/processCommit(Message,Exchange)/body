@@ -3,14 +3,14 @@
     if (!folder.isOpen()) {
       folder.open(Folder.READ_WRITE);
     }
-    String uid=(String)exchange.removeProperty(POP3_UID);
-    if (uid != null) {
+    String uid=(String)exchange.removeProperty(MAIL_MESSAGE_UID);
+    if (getEndpoint().getConfiguration().getProtocol().startsWith("pop3")) {
       int count=folder.getMessageCount();
       Message found=null;
       LOG.trace("Looking for POP3Message with UID {} from folder with {} mails",uid,count);
       for (int i=1; i <= count; ++i) {
         Message msg=folder.getMessage(i);
-        if (uid.equals(generatePop3Uid(msg))) {
+        if (uid.equals(getEndpoint().getMailUidGenerator().generateUuid(getEndpoint(),msg))) {
           LOG.debug("Found POP3Message with UID {} from folder with {} mails",uid,count);
           found=msg;
           break;
@@ -46,6 +46,14 @@
  else {
       LOG.trace("Exchange processed, so flagging message as SEEN");
       mail.setFlag(Flags.Flag.SEEN,true);
+    }
+    if (getEndpoint().getIdempotentRepository() != null) {
+      if (getEndpoint().isIdempotentRepositoryRemoveOnCommit()) {
+        getEndpoint().getIdempotentRepository().remove(uid);
+      }
+ else {
+        getEndpoint().getIdempotentRepository().confirm(uid);
+      }
     }
   }
  catch (  MessagingException e) {
