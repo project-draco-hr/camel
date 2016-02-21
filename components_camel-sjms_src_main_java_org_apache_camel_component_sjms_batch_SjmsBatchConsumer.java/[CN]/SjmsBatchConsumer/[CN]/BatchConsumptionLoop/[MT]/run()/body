@@ -5,14 +5,17 @@
       Queue queue=session.createQueue(destinationName);
       MessageConsumer consumer=session.createConsumer(queue);
       try {
-        consumeBatchesOnLoop(session,consumer);
+        consumeBatchesOnLoop(session,consumer,completionTimeoutTrigger);
       }
   finally {
         try {
           consumer.close();
         }
  catch (        JMSException ex2) {
-          log.error("Exception caught closing consumer: {}",ex2.getMessage());
+          if (log.isDebugEnabled()) {
+            log.debug("Exception caught closing consumer",ex2);
+          }
+          log.warn("Exception caught closing consumer: {}",ex2.getMessage());
         }
       }
     }
@@ -21,12 +24,15 @@
         session.close();
       }
  catch (      JMSException ex1) {
-        log.error("Exception caught closing session: {}",ex1.getMessage());
+        if (log.isDebugEnabled()) {
+          log.debug("Exception caught closing session: {}",ex1);
+        }
+        log.warn("Exception caught closing session: {}",ex1.getMessage());
       }
     }
   }
  catch (  JMSException ex) {
-    LOG.error("Exception caught consuming from {}: {}",destinationName,getStackTrace(ex));
+    LOG.warn("Exception caught consuming from " + destinationName,ex);
   }
  finally {
     CountDownLatch consumersShutdownLatch=consumersShutdownLatchRef.get();

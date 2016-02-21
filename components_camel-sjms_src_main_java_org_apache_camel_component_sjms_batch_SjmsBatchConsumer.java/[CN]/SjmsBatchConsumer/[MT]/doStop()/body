@@ -18,8 +18,13 @@
     LOG.debug("Shutting down JMS connection");
     connection.close();
   }
- catch (  JMSException jex) {
-    LOG.error("Exception caught closing connection: {}",getStackTrace(jex));
+ catch (  Exception e) {
+    LOG.warn("Exception caught closing JMS connection",e);
   }
   getEndpoint().getCamelContext().getExecutorServiceManager().shutdown(jmsConsumerExecutors);
+  jmsConsumerExecutors=null;
+  if (shutdownTimeoutCheckerExecutorService) {
+    getEndpoint().getCamelContext().getExecutorServiceManager().shutdownNow(timeoutCheckerExecutorService);
+    timeoutCheckerExecutorService=null;
+  }
 }
