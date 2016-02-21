@@ -1,0 +1,56 @@
+{
+  final boolean usingTimeout=completionTimeout > 0;
+  LOG.trace("BatchConsumptionTask +++ start +++");
+  while (running.get()) {
+    LOG.trace("BatchConsumptionTask running");
+    if (timeout.compareAndSet(true,false) || timeoutInterval.compareAndSet(true,false)) {
+      LOG.trace("Completion batch due timeout");
+      completionBatch(session);
+      reset();
+      continue;
+    }
+    if (completionSize > 0 && messageCount >= completionSize) {
+      LOG.trace("Completion batch due size");
+      completionBatch(session);
+      reset();
+      continue;
+    }
+    long waitTime=(usingTimeout && (timeElapsed > 0)) ? getReceiveWaitTime(timeElapsed) : pollDuration;
+    Message message=consumer.receive(waitTime);
+    if (running.get()) {
+      if (message == null) {
+        LOG.trace("No message received");
+      }
+ else {
+        messageCount++;
+        LOG.debug("#{} messages received",messageCount);
+        if (usingTimeout && startTime == 0) {
+          startTime=new Date().getTime();
+        }
+        if (message instanceof ObjectMessage || message instanceof TextMessage) {
+          final Exchange exchange=getEndpoint().createExchange(message,session);
+          aggregatedExchange=aggregationStrategy.aggregate(aggregatedExchange,exchange);
+          aggregatedExchange.setProperty(SjmsBatchEndpoint.PROPERTY_BATCH_SIZE,messageCount);
+        }
+ else {
+          throw new IllegalArgumentException("Unexpected message type: " + message.getClass().toString());
+        }
+      }
+      if (usingTimeout && startTime > 0) {
+        long currentTime=new Date().getTime();
+        timeElapsed=currentTime - startTime;
+        if (timeElapsed > completionTimeout) {
+          timeout.set(true);
+        }
+ else {
+          LOG.trace("This batch has more time until the timeout, elapsed: {} timeout: {}",timeElapsed,completionTimeout);
+        }
+      }
+    }
+ else {
+      LOG.info("Shutdown signal received - rolling back batch");
+      session.rollback();
+    }
+  }
+  LOG.trace("BatchConsumptionTask +++ end +++");
+}
