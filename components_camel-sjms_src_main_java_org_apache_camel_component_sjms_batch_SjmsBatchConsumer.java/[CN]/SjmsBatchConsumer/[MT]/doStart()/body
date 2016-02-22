@@ -7,8 +7,11 @@
   }
   consumersShutdownLatchRef.set(new CountDownLatch(consumerCount));
   jmsConsumerExecutors=getEndpoint().getCamelContext().getExecutorServiceManager().newFixedThreadPool(this,"SjmsBatchConsumer",consumerCount);
+  final List<AtomicBoolean> triggers=new ArrayList<>();
   for (int i=0; i < consumerCount; i++) {
-    jmsConsumerExecutors.execute(new BatchConsumptionLoop());
+    BatchConsumptionLoop loop=new BatchConsumptionLoop();
+    triggers.add(loop.getCompletionTimeoutTrigger());
+    jmsConsumerExecutors.execute(loop);
   }
   if (completionInterval > 0) {
     LOG.info("Using CompletionInterval to run every " + completionInterval + " millis.");
@@ -16,6 +19,6 @@
       setTimeoutCheckerExecutorService(getEndpoint().getCamelContext().getExecutorServiceManager().newScheduledThreadPool(this,SJMS_BATCH_TIMEOUT_CHECKER,1));
       shutdownTimeoutCheckerExecutorService=true;
     }
-    timeoutCheckerExecutorService.scheduleAtFixedRate(new CompletionIntervalTask(completionTimeoutTrigger),completionInterval,completionInterval,TimeUnit.MILLISECONDS);
+    timeoutCheckerExecutorService.scheduleAtFixedRate(new CompletionIntervalTask(triggers),completionInterval,completionInterval,TimeUnit.MILLISECONDS);
   }
 }
