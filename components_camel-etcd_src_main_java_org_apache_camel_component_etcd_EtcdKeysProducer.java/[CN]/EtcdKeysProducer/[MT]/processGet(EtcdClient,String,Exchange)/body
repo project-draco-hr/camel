@@ -1,12 +1,9 @@
 {
   EtcdKeyGetRequest request=client.get(path);
-  if (configuration.getTimeout() != null) {
-    request.timeout(configuration.getTimeout(),TimeUnit.MILLISECONDS);
-  }
-  if (configuration.isRecursive()) {
-    request.recursive();
-  }
+  setRequestTimeout(request,exchange);
+  setRequestRecursive(request,exchange);
   try {
+    exchange.getIn().setHeader(EtcdConstants.ETCD_NAMESPACE,getNamespace());
     exchange.getIn().setBody(request.send().get());
   }
  catch (  TimeoutException e) {

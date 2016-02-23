@@ -1,15 +1,12 @@
 {
   EtcdKeyDeleteRequest request=client.delete(path);
-  if (configuration.getTimeout() != null) {
-    request.timeout(configuration.getTimeout(),TimeUnit.MILLISECONDS);
-  }
-  if (configuration.isRecursive()) {
-    request.recursive();
-  }
+  setRequestTimeout(request,exchange);
+  setRequestRecursive(request,exchange);
   if (dir) {
     request.dir();
   }
   try {
+    exchange.getIn().setHeader(EtcdConstants.ETCD_NAMESPACE,getNamespace());
     exchange.getIn().setBody(request.send().get());
   }
  catch (  TimeoutException e) {
