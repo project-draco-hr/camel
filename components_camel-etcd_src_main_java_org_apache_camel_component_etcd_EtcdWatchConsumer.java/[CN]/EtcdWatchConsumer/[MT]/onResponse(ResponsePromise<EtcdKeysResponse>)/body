@@ -11,17 +11,17 @@
     watch();
   }
  catch (  TimeoutException e) {
-    LOGGER.debug("Timeout watching for " + defaultPath);
+    LOGGER.debug("Timeout watching for {}",getPath());
     if (configuration.isSendEmptyExchangeOnTimeout()) {
+      Exchange exchange=endpoint.createExchange();
       try {
-        Exchange exchange=endpoint.createExchange();
         exchange.getIn().setHeader(EtcdConstants.ETCD_TIMEOUT,true);
-        exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,defaultPath);
+        exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,getPath());
         exchange.getIn().setBody(null);
         getProcessor().process(exchange);
       }
  catch (      Exception e1) {
-        throw new IllegalArgumentException(e);
+        getExceptionHandler().handleException("Error processing exchange",exchange,e1);
       }
     }
   }
