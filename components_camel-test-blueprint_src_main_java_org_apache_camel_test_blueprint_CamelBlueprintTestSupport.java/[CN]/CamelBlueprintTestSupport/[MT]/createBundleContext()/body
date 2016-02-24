@@ -9,6 +9,11 @@
       throw new IllegalArgumentException("The provided file \"" + file[0] + "\" from loadConfigAdminConfigurationFile doesn't exist");
     }
   }
+  Properties initialConfiguration=new Properties();
+  String pid=setConfigAdminInitialConfiguration(initialConfiguration);
+  if (pid != null) {
+    file=new String[]{prepareInitialConfigFile(initialConfiguration),pid};
+  }
   final String symbolicName=getClass().getSimpleName();
   final BundleContext answer=CamelBlueprintHelper.createBundleContext(symbolicName,getBlueprintDescriptor(),includeTestBundle(),getBundleFilter(),getBundleVersion(),getBundleDirectives(),file);
   boolean expectReload=expectBlueprintContainerReloadOnConfigAdminUpdate();
@@ -36,7 +41,7 @@
   Set<Long> bpEvents=new HashSet<>();
   CamelBlueprintHelper.waitForBlueprintContainer(bpEvents,answer,symbolicName,BlueprintEvent.CREATED,null);
   final Dictionary props=new Properties();
-  String pid=useOverridePropertiesWithConfigAdmin(props);
+  pid=useOverridePropertiesWithConfigAdmin(props);
   if (pid != null) {
     ConfigurationAdmin configAdmin=CamelBlueprintHelper.getOsgiService(answer,ConfigurationAdmin.class);
     final Configuration config=configAdmin.getConfiguration(pid,null);
