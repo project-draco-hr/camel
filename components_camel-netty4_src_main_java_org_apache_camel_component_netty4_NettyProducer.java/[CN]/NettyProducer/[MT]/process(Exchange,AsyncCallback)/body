@@ -26,11 +26,16 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("Pool[active={}, idle={}]",pool.getNumActive(),pool.getNumIdle());
   }
-  Channel existing;
+  Channel existing=null;
   try {
-    existing=pool.borrowObject();
-    if (existing != null) {
-      LOG.trace("Got channel from pool {}",existing);
+    if (getConfiguration().isReuseChannel()) {
+      existing=exchange.getProperty(NettyConstants.NETTY_CHANNEL,Channel.class);
+    }
+    if (existing == null) {
+      existing=pool.borrowObject();
+      if (existing != null) {
+        LOG.trace("Got channel from pool {}",existing);
+      }
     }
   }
  catch (  Exception e) {
@@ -42,6 +47,43 @@
     exchange.setException(new CamelExchangeException("Cannot get channel from pool",exchange));
     callback.done(true);
     return true;
+  }
+  if (getConfiguration().isReuseChannel() && exchange.getProperty(NettyConstants.NETTY_CHANNEL) == null) {
+    final Channel channel=existing;
+    exchange.setProperty(NettyConstants.NETTY_CHANNEL,existing);
+    exchange.addOnCompletion(new SynchronizationAdapter(){
+      @Override public void onComplete(      Exchange exchange){
+        Boolean close;
+        if (ExchangeHelper.isOutCapable(exchange)) {
+          close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+        }
+ else {
+          close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
+        }
+        boolean disconnect=getConfiguration().isDisconnect();
+        if (close != null) {
+          disconnect=close;
+        }
+        if (disconnect) {
+          LOG.trace("Closing channel {} as routing the Exchange is done",channel);
+          NettyHelper.close(channel);
+        }
+        try {
+          if (channel.isActive()) {
+            LOG.trace("Putting channel back to pool {}",channel);
+            pool.returnObject(channel);
+          }
+ else {
+            LOG.trace("Invalidating channel from pool {}",channel);
+            pool.invalidateObject(channel);
+          }
+        }
+ catch (        Exception e) {
+          LOG.warn("Error returning channel to pool " + channel + ". This exception will be ignored.",e);
+        }
+      }
+    }
+);
   }
   if (exchange.getIn().getHeader(NettyConstants.NETTY_REQUEST_TIMEOUT) != null) {
     long timeoutInMs=exchange.getIn().getHeader(NettyConstants.NETTY_REQUEST_TIMEOUT,Long.class);
@@ -80,7 +122,7 @@
           if (close != null) {
             disconnect=close;
           }
-          if (disconnect) {
+          if (!configuration.isReuseChannel() && disconnect) {
             if (LOG.isTraceEnabled()) {
               LOG.trace("Closing channel when complete at address: {}",getEndpoint().getConfiguration().getAddress());
             }

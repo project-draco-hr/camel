@@ -1,0 +1,23 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("netty4:tcp://localhost:{{port}}?textline=true&sync=true&reuseChannel=true&disconnect=true").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Channel channel=exchange.getProperty(NettyConstants.NETTY_CHANNEL,Channel.class);
+          channels.add(channel);
+          assertTrue("Should be active",channel.isActive());
+        }
+      }
+).to("mock:a").to("netty4:tcp://localhost:{{port}}?textline=true&sync=true&reuseChannel=true&disconnect=true").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          Channel channel=exchange.getProperty(NettyConstants.NETTY_CHANNEL,Channel.class);
+          channels.add(channel);
+          assertTrue("Should be active",channel.isActive());
+        }
+      }
+).to("mock:b");
+      from("netty4:tcp://localhost:{{port}}?textline=true&sync=true").transform(body().prepend("Hello ")).to("mock:result");
+    }
+  }
+;
+}
