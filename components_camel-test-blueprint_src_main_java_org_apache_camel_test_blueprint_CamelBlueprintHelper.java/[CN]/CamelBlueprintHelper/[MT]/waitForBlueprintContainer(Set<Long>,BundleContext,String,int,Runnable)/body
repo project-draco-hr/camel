@@ -1,9 +1,16 @@
 {
   final CountDownLatch latch=new CountDownLatch(1);
+  final Throwable[] pThrowable=new Throwable[]{null};
   ServiceRegistration<BlueprintListener> registration=context.registerService(BlueprintListener.class,new BlueprintListener(){
     @Override public void blueprintEvent(    BlueprintEvent event){
-      if (event.getType() == bpEvent && event.getBundle().getSymbolicName().equals(symbolicName)) {
-        if (eventHistory == null || eventHistory.add(event.getTimestamp())) {
+      if (event.getBundle().getSymbolicName().equals(symbolicName)) {
+        if (event.getType() == bpEvent) {
+          if (eventHistory == null || eventHistory.add(event.getTimestamp())) {
+            latch.countDown();
+          }
+        }
+ else         if (event.getType() == BlueprintEvent.FAILURE) {
+          pThrowable[0]=event.getCause();
           latch.countDown();
         }
       }
@@ -15,4 +22,7 @@
   }
   latch.await(CamelBlueprintHelper.DEFAULT_TIMEOUT,TimeUnit.MILLISECONDS);
   registration.unregister();
+  if (pThrowable[0] != null) {
+    throw new RuntimeException(pThrowable[0].getMessage(),pThrowable[0]);
+  }
 }
