@@ -1,0 +1,28 @@
+{
+  baseRequest.setHandled(true);
+  if (expectedMethod != null && !expectedMethod.equals(request.getMethod())) {
+    response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    return;
+  }
+  if (!validateQuery(request)) {
+    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    return;
+  }
+  if (expectedContent != null) {
+    StringBuilder content=new StringBuilder();
+    String line=null;
+    while ((line=request.getReader().readLine()) != null) {
+      content.append(line);
+    }
+    if (!expectedContent.equals(content.toString())) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      return;
+    }
+  }
+  response.setStatus(HttpServletResponse.SC_OK);
+  if (responseContent != null) {
+    response.setContentType("text/plain; charset=utf-8");
+    PrintWriter out=response.getWriter();
+    out.print(responseContent);
+  }
+}
