@@ -8,11 +8,21 @@
     LOG.debug("Creating CronTrigger: {}",cron);
     String timeZone=(String)triggerParameters.get("timeZone");
     if (timeZone != null) {
-      result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed().inTimeZone(TimeZone.getTimeZone(timeZone))).build();
+      if (ObjectHelper.isNotEmpty(customCalendar)) {
+        result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed().inTimeZone(TimeZone.getTimeZone(timeZone))).modifiedByCalendar(QuartzConstants.QUARTZ_CAMEL_CUSTOM_CALENDAR).build();
+      }
+ else {
+        result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed().inTimeZone(TimeZone.getTimeZone(timeZone))).build();
+      }
       jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_CRON_TIMEZONE,timeZone);
     }
  else {
-      result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).build();
+      if (ObjectHelper.isNotEmpty(customCalendar)) {
+        result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).modifiedByCalendar(QuartzConstants.QUARTZ_CAMEL_CUSTOM_CALENDAR).build();
+      }
+ else {
+        result=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(cronSchedule(cron).withMisfireHandlingInstructionFireAndProceed()).build();
+      }
     }
     jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_TYPE,"cron");
     jobDetail.getJobDataMap().put(QuartzConstants.QUARTZ_TRIGGER_CRON_EXPRESSION,cron);
@@ -31,7 +41,13 @@
       interval=EndpointHelper.resolveParameter(getCamelContext(),intervalString,Long.class);
       triggerParameters.put("repeatInterval",interval);
     }
-    TriggerBuilder<SimpleTrigger> triggerBuilder=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(simpleSchedule().withMisfireHandlingInstructionFireNow().withRepeatCount(repeat).withIntervalInMilliseconds(interval));
+    TriggerBuilder<SimpleTrigger> triggerBuilder;
+    if (ObjectHelper.isNotEmpty(customCalendar)) {
+      triggerBuilder=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(simpleSchedule().withMisfireHandlingInstructionFireNow().withRepeatCount(repeat).withIntervalInMilliseconds(interval)).modifiedByCalendar(QuartzConstants.QUARTZ_CAMEL_CUSTOM_CALENDAR);
+    }
+ else {
+      triggerBuilder=TriggerBuilder.newTrigger().withIdentity(triggerKey).startAt(startTime).withSchedule(simpleSchedule().withMisfireHandlingInstructionFireNow().withRepeatCount(repeat).withIntervalInMilliseconds(interval));
+    }
     if (fireNow) {
       triggerBuilder=triggerBuilder.startNow();
     }
