@@ -1,16 +1,15 @@
 {
-  HTableInterface table=endpoint.getTable();
-  try {
+  try (Table table=endpoint.getTable()){
     updateHeaders(exchange);
     String operation=(String)exchange.getIn().getHeader(HBaseConstants.OPERATION);
     Integer maxScanResult=exchange.getIn().getHeader(HBaseConstants.HBASE_MAX_SCAN_RESULTS,Integer.class);
     String fromRowId=(String)exchange.getIn().getHeader(HBaseConstants.FROM_ROW);
     CellMappingStrategy mappingStrategy=endpoint.getCellMappingStrategyFactory().getStrategy(exchange.getIn());
     HBaseData data=mappingStrategy.resolveModel(exchange.getIn());
-    List<Put> putOperations=new LinkedList<Put>();
-    List<Delete> deleteOperations=new LinkedList<Delete>();
-    List<HBaseRow> getOperationResult=new LinkedList<HBaseRow>();
-    List<HBaseRow> scanOperationResult=new LinkedList<HBaseRow>();
+    List<Put> putOperations=new LinkedList<>();
+    List<Delete> deleteOperations=new LinkedList<>();
+    List<HBaseRow> getOperationResult=new LinkedList<>();
+    List<HBaseRow> scanOperationResult=new LinkedList<>();
     for (    HBaseRow hRow : data.getRows()) {
       hRow.apply(rowModel);
       if (HBaseConstants.PUT.equals(operation)) {
@@ -29,7 +28,6 @@
     }
     if (!putOperations.isEmpty()) {
       table.put(putOperations);
-      table.flushCommits();
     }
  else     if (!deleteOperations.isEmpty()) {
       table.delete(deleteOperations);
@@ -41,7 +39,4 @@
       mappingStrategy.applyScanResults(exchange.getOut(),new HBaseData(scanOperationResult));
     }
   }
-  finally {
-    table.close();
-  }
-}
+ }

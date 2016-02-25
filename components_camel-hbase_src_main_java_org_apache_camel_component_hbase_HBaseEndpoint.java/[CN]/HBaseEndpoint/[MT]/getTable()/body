@@ -1,13 +1,18 @@
 {
   if (userGroupInformation != null) {
-    return userGroupInformation.doAs(new PrivilegedAction<HTableInterface>(){
-      @Override public HTableInterface run(){
-        return tablePool.getTable(tableNameBytes);
+    return userGroupInformation.doAs(new PrivilegedAction<Table>(){
+      @Override public Table run(){
+        try {
+          return connection.getTable(TableName.valueOf(tableNameBytes));
+        }
+ catch (        IOException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
 );
   }
  else {
-    return tablePool.getTable(tableNameBytes);
+    return connection.getTable(TableName.valueOf(tableNameBytes));
   }
 }

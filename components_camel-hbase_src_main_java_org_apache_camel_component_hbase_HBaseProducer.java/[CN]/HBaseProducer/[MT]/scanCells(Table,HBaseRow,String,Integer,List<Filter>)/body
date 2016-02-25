@@ -1,5 +1,5 @@
 {
-  List<HBaseRow> rowSet=new LinkedList<HBaseRow>();
+  List<HBaseRow> rowSet=new LinkedList<>();
   HBaseRow startRow=new HBaseRow(model.getCells());
   startRow.setId(start);
   Scan scan;
@@ -39,8 +39,9 @@
       resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(modelCell.getValueType(),result.getValue(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column))));
       resultCell.setFamily(modelCell.getFamily());
       resultCell.setQualifier(modelCell.getQualifier());
-      if (result.getColumnLatest(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column)) != null) {
-        resultCell.setTimestamp(result.getColumnLatest(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column)).getTimestamp());
+      Cell cell=result.getColumnLatestCell(HBaseHelper.getHBaseFieldAsBytes(family),HBaseHelper.getHBaseFieldAsBytes(column));
+      if (cell != null) {
+        resultCell.setTimestamp(cell.getTimestamp());
       }
       resultRow.getCells().add(resultCell);
     }

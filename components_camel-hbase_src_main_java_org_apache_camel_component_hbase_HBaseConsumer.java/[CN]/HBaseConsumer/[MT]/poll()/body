@@ -1,11 +1,10 @@
 {
-  HTableInterface table=endpoint.getTable();
-  try {
+  try (Table table=endpoint.getTable()){
     shutdownRunningTask=null;
     pendingExchanges=0;
-    Queue<Exchange> queue=new LinkedList<Exchange>();
+    Queue<Exchange> queue=new LinkedList<>();
     Scan scan=new Scan();
-    List<Filter> filters=new LinkedList<Filter>();
+    List<Filter> filters=new LinkedList<>();
     if (endpoint.getFilters() != null) {
       filters.addAll(endpoint.getFilters());
     }
@@ -62,7 +61,7 @@
         exchange=endpoint.createExchange();
         exchange.getIn().setHeader(CellMappingStrategyFactory.STRATEGY,CellMappingStrategyFactory.BODY);
         mappingStrategy.applyScanResults(exchange.getIn(),data);
-        exchange.getIn().setHeader(HbaseAttribute.HBASE_MARKED_ROW_ID.asHeader(),result.getRow());
+        exchange.getIn().setHeader(HBaseAttribute.HBASE_MARKED_ROW_ID.asHeader(),result.getRow());
         queue.add(exchange);
         exchangeCount++;
       }
@@ -70,7 +69,4 @@
     scanner.close();
     return queue.isEmpty() ? 0 : processBatch(CastUtils.cast(queue));
   }
-  finally {
-    table.close();
-  }
-}
+ }
