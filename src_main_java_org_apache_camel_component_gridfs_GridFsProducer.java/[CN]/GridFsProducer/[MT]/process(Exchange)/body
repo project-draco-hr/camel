@@ -1,27 +1,60 @@
 {
-  DBObject dbObjQuery=(DBObject)JSON.parse("{_id:'inventory'}");
-  DBObject dbObjUpdate=(DBObject)JSON.parse("{$inc:{seq:1}}");
-  DBObject invID=endpoint.getDbColCounters().findAndModify(dbObjQuery,dbObjUpdate);
-  String TPID=exchange.getIn().getBody().toString();
-  DBObject dbObjTPQuery=(DBObject)JSON.parse("{'tpid':'" + TPID + "'}");
-  DBObject tpName=endpoint.getDbColTP().findOne(dbObjTPQuery);
-  exchange.getIn().setHeader("tpName",tpName.get("name").toString());
-  exchange.getIn().setHeader("tpLoadType",tpName.get("load_type").toString());
-  try {
-    exchange.getIn().setHeader("tpDoLegacy",tpName.get("do_legacy").toString());
+  String operation=endpoint.getOperation();
+  if (operation == null) {
+    operation=exchange.getIn().getHeader("gridfs.operation",String.class);
   }
- catch (  Exception e) {
-    exchange.getIn().setHeader("tpDoLegacy","Y");
+  if (operation == null || "create".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    Long chunkSize=exchange.getIn().getHeader("gridfs.chunksize",Long.class);
+    InputStream ins=exchange.getIn().getMandatoryBody(InputStream.class);
+    GridFSInputFile gfsFile=endpoint.getGridFs().createFile(ins,filename,true);
+    if (chunkSize != null && chunkSize > 0) {
+      gfsFile.setChunkSize(chunkSize);
+    }
+    final String ct=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,String.class);
+    if (ct != null) {
+      gfsFile.setContentType(ct);
+    }
+    String metaData=exchange.getIn().getHeader("gridfs.metadata",String.class);
+    DBObject dbObject=(DBObject)JSON.parse(metaData);
+    gfsFile.setMetaData(dbObject);
+    gfsFile.save();
+    exchange.getIn().setHeader(Exchange.FILE_NAME_PRODUCED,gfsFile.getFilename());
   }
-  exchange.getIn().setHeader("TPID",TPID);
-  String sInv=invID.get("seq").toString();
-  sInv=sInv.substring(0,sInv.lastIndexOf("."));
-  exchange.getIn().setHeader("mInv",sInv);
-  File file=new File(exchange.getIn().getHeader("gridFsInputFile").toString());
-  GridFSInputFile gfsFile=endpoint.getGridFs().createFile(file);
-  gfsFile.setFilename(exchange.getIn().getHeader("gridFsFileName").toString());
-  String metaData="{'inventoryID':" + sInv + ", 'TPID':'"+ TPID+ "', 'doc_type':'original', 'status':'initial_save'}";
-  DBObject dbObject=(DBObject)JSON.parse(metaData);
-  gfsFile.setMetaData(dbObject);
-  gfsFile.save();
+ else   if ("remove".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    endpoint.getGridFs().remove(filename);
+  }
+ else   if ("findOne".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    GridFSDBFile file=endpoint.getGridFs().findOne(filename);
+    if (file != null) {
+      exchange.getIn().setBody(file.getInputStream(),InputStream.class);
+    }
+ else {
+      throw new FileNotFoundException("No GridFS file for " + filename);
+    }
+  }
+ else   if ("listAll".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    DBCursor cursor;
+    if (filename == null) {
+      cursor=endpoint.getGridFs().getFileList();
+    }
+ else {
+      cursor=endpoint.getGridFs().getFileList(new BasicDBObject("filename",filename));
+    }
+    exchange.getIn().setBody(new DBCursorFilenameReader(cursor),Reader.class);
+  }
+ else   if ("count".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    DBCursor cursor;
+    if (filename == null) {
+      cursor=endpoint.getGridFs().getFileList();
+    }
+ else {
+      cursor=endpoint.getGridFs().getFileList(new BasicDBObject("filename",filename));
+    }
+    exchange.getIn().setBody(cursor.count(),Integer.class);
+  }
 }
