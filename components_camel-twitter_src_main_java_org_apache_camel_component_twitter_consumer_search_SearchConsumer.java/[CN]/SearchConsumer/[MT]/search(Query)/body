@@ -1,21 +1,21 @@
 {
   Integer numberOfPages=1;
-  if (ObjectHelper.isNotEmpty(te.getProperties().getLang())) {
-    query.setLang(te.getProperties().getLang());
+  if (ObjectHelper.isNotEmpty(endpoint.getProperties().getLang())) {
+    query.setLang(endpoint.getProperties().getLang());
   }
-  if (ObjectHelper.isNotEmpty(te.getProperties().getCount())) {
-    query.setCount(te.getProperties().getCount());
+  if (ObjectHelper.isNotEmpty(endpoint.getProperties().getCount())) {
+    query.setCount(endpoint.getProperties().getCount());
   }
-  if (ObjectHelper.isNotEmpty(te.getProperties().getNumberOfPages())) {
-    numberOfPages=te.getProperties().getNumberOfPages();
+  if (ObjectHelper.isNotEmpty(endpoint.getProperties().getNumberOfPages())) {
+    numberOfPages=endpoint.getProperties().getNumberOfPages();
   }
-  if (ObjectHelper.isNotEmpty(te.getProperties().getLatitude()) && ObjectHelper.isNotEmpty(te.getProperties().getLongitude()) && ObjectHelper.isNotEmpty(te.getProperties().getRadius())) {
-    GeoLocation location=new GeoLocation(te.getProperties().getLatitude(),te.getProperties().getLongitude());
-    query.setGeoCode(location,te.getProperties().getRadius(),Unit.valueOf(te.getProperties().getDistanceMetric()));
+  if (ObjectHelper.isNotEmpty(endpoint.getProperties().getLatitude()) && ObjectHelper.isNotEmpty(endpoint.getProperties().getLongitude()) && ObjectHelper.isNotEmpty(endpoint.getProperties().getRadius())) {
+    GeoLocation location=new GeoLocation(endpoint.getProperties().getLatitude(),endpoint.getProperties().getLongitude());
+    query.setGeoCode(location,endpoint.getProperties().getRadius(),Unit.valueOf(endpoint.getProperties().getDistanceMetric()));
     LOG.debug("Searching with additional geolocation parameters.");
   }
   LOG.debug("Searching with {} pages.",numberOfPages);
-  Twitter twitter=te.getProperties().getTwitter();
+  Twitter twitter=getTwitter();
   QueryResult qr=twitter.search(query);
   List<Status> tweets=qr.getTweets();
   for (int i=1; i < numberOfPages; i++) {
@@ -25,10 +25,10 @@
     qr=twitter.search(qr.nextQuery());
     tweets.addAll(qr.getTweets());
   }
-  if (te.getProperties().isFilterOld()) {
-    for (    Status t : tweets) {
-      checkLastId(t.getId());
+  if (endpoint.getProperties().isFilterOld()) {
+    for (int i=0; i < tweets.size(); i++) {
+      setLastIdIfGreater(tweets.get(i).getId());
     }
   }
-  return tweets;
+  return TwitterEventType.STATUS.createExchangeList(endpoint,tweets);
 }
