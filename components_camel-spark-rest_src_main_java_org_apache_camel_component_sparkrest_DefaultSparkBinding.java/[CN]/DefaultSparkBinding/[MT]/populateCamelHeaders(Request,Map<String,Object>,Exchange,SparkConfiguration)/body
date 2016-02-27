@@ -3,8 +3,24 @@
   headers.put(Exchange.HTTP_QUERY,request.raw().getQueryString());
   headers.put(Exchange.HTTP_URL,request.raw().getRequestURL().toString());
   headers.put(Exchange.HTTP_URI,request.raw().getRequestURI());
-  headers.put(Exchange.HTTP_PATH,request.raw().getPathInfo());
   headers.put(Exchange.CONTENT_TYPE,request.raw().getContentType());
+  String path=request.raw().getPathInfo();
+  SparkEndpoint endpoint=(SparkEndpoint)exchange.getFromEndpoint();
+  if (endpoint.getPath() != null) {
+    String endpointPath=endpoint.getPath();
+    String matchPath=path.toLowerCase(Locale.US);
+    String match=endpointPath.toLowerCase(Locale.US);
+    if (match.endsWith("/*")) {
+      match=match.substring(0,match.length() - 2);
+    }
+    if (!match.startsWith("/")) {
+      match="/" + match;
+    }
+    if (matchPath.startsWith(match)) {
+      path=path.substring(match.length());
+    }
+  }
+  headers.put(Exchange.HTTP_PATH,path);
   for (  String key : request.attributes()) {
     Object value=request.attribute(key);
     Object decoded=shouldUrlDecodeHeader(configuration,key,value,"UTF-8");
