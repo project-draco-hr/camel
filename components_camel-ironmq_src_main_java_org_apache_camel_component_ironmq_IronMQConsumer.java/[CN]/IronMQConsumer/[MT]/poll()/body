@@ -1,0 +1,20 @@
+{
+  shutdownRunningTask=null;
+  pendingExchanges=0;
+  try {
+    Messages messages=null;
+    LOG.trace("Receiving messages with request [messagePerPoll {}, timeout {}]...",getMaxMessagesPerPoll(),getEndpoint().getConfiguration().getTimeout());
+    messages=this.ironQueue.reserve(getMaxMessagesPerPoll(),getEndpoint().getConfiguration().getTimeout(),getEndpoint().getConfiguration().getWait());
+    LOG.trace("Received {} messages",messages.getSize());
+    Queue<Exchange> exchanges=createExchanges(messages.getMessages());
+    int noProcessed=processBatch(CastUtils.cast(exchanges));
+    if (getEndpoint().getConfiguration().isBatchDelete()) {
+      LOG.trace("Batch deleting {} messages",messages.getSize());
+      this.ironQueue.deleteMessages(messages);
+    }
+    return noProcessed;
+  }
+ catch (  EmptyQueueException e) {
+    return 0;
+  }
+}

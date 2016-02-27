@@ -1,0 +1,29 @@
+{
+  int total=exchanges.size();
+  for (int index=0; index < total && isBatchAllowed(); index++) {
+    final Exchange exchange=ObjectHelper.cast(Exchange.class,exchanges.poll());
+    exchange.setProperty(Exchange.BATCH_INDEX,index);
+    exchange.setProperty(Exchange.BATCH_SIZE,total);
+    exchange.setProperty(Exchange.BATCH_COMPLETE,index == total - 1);
+    pendingExchanges=total - index - 1;
+    if (!getEndpoint().getConfiguration().isBatchDelete()) {
+      exchange.addOnCompletion(new Synchronization(){
+        final String reservationId=ExchangeHelper.getMandatoryHeader(exchange,IronMQConstants.MESSAGE_RESERVATION_ID,String.class);
+        final String messageid=ExchangeHelper.getMandatoryHeader(exchange,IronMQConstants.MESSAGE_ID,String.class);
+        public void onComplete(        Exchange exchange){
+          processCommit(exchange,messageid,reservationId);
+        }
+        public void onFailure(        Exchange exchange){
+          processRollback(exchange);
+        }
+        @Override public String toString(){
+          return "IronMQConsumerOnCompletion";
+        }
+      }
+);
+    }
+    LOG.trace("Processing exchange [{}]...",exchange);
+    getProcessor().process(exchange);
+  }
+  return total;
+}

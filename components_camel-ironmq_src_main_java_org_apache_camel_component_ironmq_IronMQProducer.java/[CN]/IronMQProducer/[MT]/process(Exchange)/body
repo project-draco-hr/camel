@@ -1,0 +1,26 @@
+{
+  IronMQConfiguration configuration=getEndpoint().getConfiguration();
+  if (IronMQConstants.CLEARQUEUE.equals(exchange.getIn().getHeader(IronMQConstants.OPERATION,String.class))) {
+    this.ironQueue.clear();
+  }
+ else {
+    Object messageId=null;
+    Object body=exchange.getIn().getBody();
+    if (body instanceof String[]) {
+      messageId=this.ironQueue.pushMessages((String[])body,configuration.getVisibilityDelay());
+    }
+ else     if (body instanceof String) {
+      if (configuration.isPreserveHeaders()) {
+        body=GsonUtil.getBodyFromMessage(exchange.getIn());
+      }
+      messageId=this.ironQueue.push((String)body,configuration.getVisibilityDelay());
+    }
+ else {
+      throw new InvalidPayloadException(exchange,String.class);
+    }
+    LOG.trace("Send request [{}] from exchange [{}]...",body,exchange);
+    LOG.trace("Received messageId [{}]",messageId);
+    Message message=getMessageForResponse(exchange);
+    message.setHeader(IronMQConstants.MESSAGE_ID,messageId);
+  }
+}
