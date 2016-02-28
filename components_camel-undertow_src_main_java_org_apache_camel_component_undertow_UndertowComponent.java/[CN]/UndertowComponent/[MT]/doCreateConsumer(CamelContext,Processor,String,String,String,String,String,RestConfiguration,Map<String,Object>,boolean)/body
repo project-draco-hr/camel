@@ -10,7 +10,7 @@
   }
   path=FileUtil.stripLeadingSeparator(path);
   String scheme="http";
-  String host="localhost";
+  String host="";
   int port=0;
   RestConfiguration config=configuration;
   if (config == null) {
@@ -32,6 +32,17 @@
     contextPath=FileUtil.stripLeadingSeparator(contextPath);
     if (ObjectHelper.isNotEmpty(contextPath)) {
       path=contextPath + "/" + path;
+    }
+  }
+  if (ObjectHelper.isEmpty(host)) {
+    if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.allLocalIp) {
+      host="0.0.0.0";
+    }
+ else     if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localHostName) {
+      host=HostUtils.getLocalHostName();
+    }
+ else     if (config.getRestHostNameResolver() == RestConfiguration.RestHostNameResolver.localIp) {
+      host=HostUtils.getLocalIp();
     }
   }
   Map<String,Object> map=new HashMap<String,Object>();
