@@ -5,13 +5,28 @@
   resultExchange.getIn().removeHeader(Exchange.BEAN_METHOD_NAME);
   String ognlPath="";
   Object beanToCall=beanHolder.getBean();
-  if (beanToCall == null) {
-    throw new IllegalArgumentException("Bean instance is null. OGNL bean expressions requires bean instances.");
+  Class<?> beanType=beanHolder.getBeanInfo().getType();
+  if (beanToCall == null && beanType == null) {
+    throw new IllegalArgumentException("Bean instance and bean type is null. OGNL bean expressions requires to have either a bean instance of the class name of the bean to use.");
   }
   List<String> methods=OgnlHelper.splitOgnl(ognl);
+  String methodChain="";
   for (  String methodName : methods) {
-    BeanHolder holder=new ConstantBeanHolder(beanToCall,exchange.getContext());
+    BeanHolder holder;
+    if (beanToCall != null) {
+      holder=new ConstantBeanHolder(beanToCall,exchange.getContext());
+    }
+ else     if (beanType != null) {
+      holder=new ConstantTypeBeanHolder(beanType,exchange.getContext());
+    }
+ else {
+      holder=null;
+    }
     boolean nullSafe=OgnlHelper.isNullSafeOperator(methodName);
+    if (holder == null) {
+      String name=getBeanName(null,beanHolder);
+      throw new RuntimeBeanExpressionException(exchange,name,ognl,"last method returned null and therefore cannot continue to invoke method " + methodName + " on a null instance");
+    }
     ognlPath+=methodName;
     methodName=OgnlHelper.removeLeadingOperators(methodName);
     String key=null;
@@ -27,6 +42,7 @@
         throw new RuntimeBeanExpressionException(exchange,beanName,methodName,resultExchange.getException());
       }
       result=invoke.getResult();
+      methodChain+="." + methodName;
     }
     if (key != null) {
       result=lookupResult(resultExchange,key,result,nullSafe,ognlPath,holder.getBean());
@@ -35,5 +51,6 @@
       return;
     }
     beanToCall=result;
+    beanType=null;
   }
 }
