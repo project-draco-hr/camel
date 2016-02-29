@@ -1,0 +1,48 @@
+{
+  DBCursor c=null;
+  java.util.Date fromDate=new java.util.Date();
+  try {
+    Thread.sleep(endpoint.getInitialDelay());
+    while (isStarted()) {
+      if (c == null || c.getCursorId() == 0) {
+        if (c != null) {
+          c.close();
+        }
+        String queryString=endpoint.getQuery();
+        DBObject query;
+        if (queryString == null) {
+          query=new BasicDBObject();
+        }
+ else {
+          query=(DBObject)JSON.parse(queryString);
+        }
+        query.put("uploadDate",new BasicDBObject("$gte",fromDate));
+        c=endpoint.getFilesCollection().find(query);
+        fromDate=new java.util.Date();
+      }
+      while (c.hasNext() && isStarted()) {
+        GridFSDBFile file=(GridFSDBFile)c.next();
+        file=endpoint.getGridFs().findOne(new BasicDBObject("_id",file.getId()));
+        Exchange exchange=endpoint.createExchange();
+        exchange.getIn().setHeader(GridFsEndpoint.GRIDFS_METADATA,JSON.serialize(file.getMetaData()));
+        exchange.getIn().setHeader(Exchange.FILE_CONTENT_TYPE,file.getContentType());
+        exchange.getIn().setHeader(Exchange.FILE_LENGTH,file.getLength());
+        exchange.getIn().setHeader(Exchange.FILE_LAST_MODIFIED,file.getUploadDate());
+        exchange.getIn().setBody(file.getInputStream(),InputStream.class);
+        try {
+          getProcessor().process(exchange);
+        }
+ catch (        Exception e) {
+          e.printStackTrace();
+        }
+      }
+      Thread.sleep(endpoint.getDelay());
+    }
+  }
+ catch (  Throwable e1) {
+    e1.printStackTrace();
+  }
+  if (c != null) {
+    c.close();
+  }
+}

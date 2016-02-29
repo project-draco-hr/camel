@@ -1,0 +1,22 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:test");
+  String data="This is some stuff to go into the db";
+  mock.expectedMessageCount(1);
+  mock.expectedBodiesReceived(data);
+  Map<String,Object> headers=new HashMap<String,Object>();
+  String fn="filename.for.db.txt";
+  assertEquals(0,gridfs.find(fn).size());
+  headers.put(Exchange.FILE_NAME,fn);
+  template.requestBodyAndHeaders("direct:create",data,headers);
+  mock.assertIsSatisfied();
+  mock.reset();
+  mock.expectedMessageCount(3);
+  mock.expectedBodiesReceived(data,data,data);
+  headers.put(Exchange.FILE_NAME,fn + "_1");
+  template.requestBodyAndHeaders("direct:create",data,headers);
+  headers.put(Exchange.FILE_NAME,fn + "_2");
+  template.requestBodyAndHeaders("direct:create",data,headers);
+  headers.put(Exchange.FILE_NAME,fn + "_3");
+  template.requestBodyAndHeaders("direct:create",data,headers);
+  mock.assertIsSatisfied();
+}
