@@ -1,0 +1,64 @@
+{
+  String operation=endpoint.getOperation();
+  if (operation == null) {
+    operation=exchange.getIn().getHeader(GridFsEndpoint.GRIDFS_OPERATION,String.class);
+  }
+  if (operation == null || "create".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    Long chunkSize=exchange.getIn().getHeader(GridFsEndpoint.GRIDFS_CHUNKSIZE,Long.class);
+    InputStream ins=exchange.getIn().getMandatoryBody(InputStream.class);
+    GridFSInputFile gfsFile=endpoint.getGridFs().createFile(ins,filename,true);
+    if (chunkSize != null && chunkSize > 0) {
+      gfsFile.setChunkSize(chunkSize);
+    }
+    final String ct=exchange.getIn().getHeader(Exchange.CONTENT_TYPE,String.class);
+    if (ct != null) {
+      gfsFile.setContentType(ct);
+    }
+    String metaData=exchange.getIn().getHeader(GridFsEndpoint.GRIDFS_METADATA,String.class);
+    DBObject dbObject=(DBObject)JSON.parse(metaData);
+    gfsFile.setMetaData(dbObject);
+    gfsFile.save();
+    exchange.getIn().setHeader(Exchange.FILE_NAME_PRODUCED,gfsFile.getFilename());
+  }
+ else   if ("remove".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    endpoint.getGridFs().remove(filename);
+  }
+ else   if ("findOne".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    GridFSDBFile file=endpoint.getGridFs().findOne(filename);
+    if (file != null) {
+      exchange.getIn().setHeader(GridFsEndpoint.GRIDFS_METADATA,JSON.serialize(file.getMetaData()));
+      exchange.getIn().setHeader(Exchange.FILE_CONTENT_TYPE,file.getContentType());
+      exchange.getIn().setHeader(Exchange.FILE_LENGTH,file.getLength());
+      exchange.getIn().setHeader(Exchange.FILE_LAST_MODIFIED,file.getUploadDate());
+      exchange.getIn().setBody(file.getInputStream(),InputStream.class);
+    }
+ else {
+      throw new FileNotFoundException("No GridFS file for " + filename);
+    }
+  }
+ else   if ("listAll".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    DBCursor cursor;
+    if (filename == null) {
+      cursor=endpoint.getGridFs().getFileList();
+    }
+ else {
+      cursor=endpoint.getGridFs().getFileList(new BasicDBObject("filename",filename));
+    }
+    exchange.getIn().setBody(new DBCursorFilenameReader(cursor),Reader.class);
+  }
+ else   if ("count".equals(operation)) {
+    final String filename=exchange.getIn().getHeader(Exchange.FILE_NAME,String.class);
+    DBCursor cursor;
+    if (filename == null) {
+      cursor=endpoint.getGridFs().getFileList();
+    }
+ else {
+      cursor=endpoint.getGridFs().getFileList(new BasicDBObject("filename",filename));
+    }
+    exchange.getIn().setBody(cursor.count(),Integer.class);
+  }
+}
