@@ -1,6 +1,33 @@
 {
   DBCursor c=null;
-  java.util.Date fromDate=new java.util.Date();
+  java.util.Date fromDate=null;
+  QueryStrategy s=endpoint.getQueryStrategy();
+  boolean usesTimestamp=(s != QueryStrategy.FileAttribute);
+  boolean persistsTimestamp=(s == QueryStrategy.PersistentTimestamp || s == QueryStrategy.PersistentTimestampAndFileAttribute);
+  boolean usesAttribute=(s == QueryStrategy.FileAttribute || s == QueryStrategy.TimeStampAndFileAttribute || s == QueryStrategy.PersistentTimestampAndFileAttribute);
+  DBCollection ptsCollection=null;
+  DBObject persistentTimestamp=null;
+  if (persistsTimestamp) {
+    ptsCollection=endpoint.getDB().getCollection(endpoint.getPersistentTSCollection());
+    try {
+      if (ptsCollection.count() < 1000) {
+        ptsCollection.createIndex(new BasicDBObject("id",1));
+      }
+    }
+ catch (    MongoException e) {
+    }
+    persistentTimestamp=ptsCollection.findOne(new BasicDBObject("id",endpoint.getPersistentTSObject()));
+    if (persistentTimestamp == null) {
+      persistentTimestamp=new BasicDBObject("id",endpoint.getPersistentTSObject());
+      fromDate=new java.util.Date();
+      persistentTimestamp.put("timestamp",fromDate);
+      ptsCollection.save(persistentTimestamp);
+    }
+    fromDate=(java.util.Date)persistentTimestamp.get("timestamp");
+  }
+ else   if (usesTimestamp) {
+    fromDate=new java.util.Date();
+  }
   try {
     Thread.sleep(endpoint.getInitialDelay());
     while (isStarted()) {
@@ -16,25 +43,52 @@
  else {
           query=(DBObject)JSON.parse(queryString);
         }
-        query.put("uploadDate",new BasicDBObject("$gte",fromDate));
+        if (usesTimestamp) {
+          query.put("uploadDate",new BasicDBObject("$gt",fromDate));
+        }
+        if (usesAttribute) {
+          query.put(endpoint.getFileAttributeName(),null);
+        }
         c=endpoint.getFilesCollection().find(query);
-        fromDate=new java.util.Date();
       }
+      boolean dateModified=false;
       while (c.hasNext() && isStarted()) {
         GridFSDBFile file=(GridFSDBFile)c.next();
-        file=endpoint.getGridFs().findOne(new BasicDBObject("_id",file.getId()));
-        Exchange exchange=endpoint.createExchange();
-        exchange.getIn().setHeader(GridFsEndpoint.GRIDFS_METADATA,JSON.serialize(file.getMetaData()));
-        exchange.getIn().setHeader(Exchange.FILE_CONTENT_TYPE,file.getContentType());
-        exchange.getIn().setHeader(Exchange.FILE_LENGTH,file.getLength());
-        exchange.getIn().setHeader(Exchange.FILE_LAST_MODIFIED,file.getUploadDate());
-        exchange.getIn().setBody(file.getInputStream(),InputStream.class);
-        try {
-          getProcessor().process(exchange);
+        GridFSDBFile forig=file;
+        if (usesAttribute) {
+          file.put(endpoint.getFileAttributeName(),"processing");
+          DBObject q=BasicDBObjectBuilder.start("_id",file.getId()).append("camel-processed",null).get();
+          forig=(GridFSDBFile)endpoint.getFilesCollection().findAndModify(q,null,null,false,file,true,false);
         }
- catch (        Exception e) {
-          e.printStackTrace();
+        if (forig != null) {
+          file=endpoint.getGridFs().findOne(new BasicDBObject("_id",file.getId()));
+          Exchange exchange=endpoint.createExchange();
+          exchange.getIn().setHeader(GridFsEndpoint.GRIDFS_METADATA,JSON.serialize(file.getMetaData()));
+          exchange.getIn().setHeader(Exchange.FILE_CONTENT_TYPE,file.getContentType());
+          exchange.getIn().setHeader(Exchange.FILE_LENGTH,file.getLength());
+          exchange.getIn().setHeader(Exchange.FILE_LAST_MODIFIED,file.getUploadDate());
+          exchange.getIn().setBody(file.getInputStream(),InputStream.class);
+          try {
+            getProcessor().process(exchange);
+            if (usesAttribute) {
+              forig.put(endpoint.getFileAttributeName(),"done");
+              endpoint.getFilesCollection().save(forig);
+            }
+            if (usesTimestamp) {
+              if (file.getUploadDate().compareTo(fromDate) > 0) {
+                fromDate=file.getUploadDate();
+                dateModified=true;
+              }
+            }
+          }
+ catch (          Exception e) {
+            e.printStackTrace();
+          }
         }
+      }
+      if (persistsTimestamp && dateModified) {
+        persistentTimestamp.put("timestamp",fromDate);
+        ptsCollection.save(persistentTimestamp);
       }
       Thread.sleep(endpoint.getDelay());
     }
