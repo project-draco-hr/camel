@@ -23,13 +23,23 @@
     if (exchange != null && exchange.getProperty(Exchange.CHARSET_NAME,String.class) != null) {
       marshaller.setProperty(Marshaller.JAXB_ENCODING,exchange.getProperty(Exchange.CHARSET_NAME,String.class));
     }
+    Object toMarshall=value;
+    if (!hasXmlRootElement(value.getClass())) {
+      Method m=getJaxbElementFactoryMethod(value.getClass());
+      try {
+        toMarshall=m.invoke(getObjectFactory(value.getClass()).newInstance(),value);
+      }
+ catch (      Exception e) {
+        LOG.error("Unable to create JAXBElement object for type {} due to {}",value.getClass().getName(),e);
+      }
+    }
     if (needFiltering(exchange)) {
       XMLStreamWriter writer=parentTypeConverter.convertTo(XMLStreamWriter.class,buffer);
       FilteringXmlStreamWriter filteringWriter=new FilteringXmlStreamWriter(writer);
-      marshaller.marshal(value,filteringWriter);
+      marshaller.marshal(toMarshall,filteringWriter);
     }
  else {
-      marshaller.marshal(value,buffer);
+      marshaller.marshal(toMarshall,buffer);
     }
     answer=parentTypeConverter.convertTo(type,exchange,buffer.toString());
   }

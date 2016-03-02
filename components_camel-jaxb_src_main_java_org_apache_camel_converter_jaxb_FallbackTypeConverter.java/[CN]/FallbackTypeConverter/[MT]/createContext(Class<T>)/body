@@ -1,8 +1,15 @@
 {
-  JAXBContext context=contexts.get(type);
+  AnnotatedElement ae=hasXmlRootElement(type) ? type : type.getPackage();
+  JAXBContext context=contexts.get(ae);
   if (context == null) {
-    context=JAXBContext.newInstance(type);
-    contexts.put(type,context);
+    if (hasXmlRootElement(type)) {
+      context=JAXBContext.newInstance(type);
+      contexts.put(type,context);
+    }
+ else {
+      context=JAXBContext.newInstance(type.getPackage().getName());
+      contexts.put(type.getPackage(),context);
+    }
   }
   return context;
 }
