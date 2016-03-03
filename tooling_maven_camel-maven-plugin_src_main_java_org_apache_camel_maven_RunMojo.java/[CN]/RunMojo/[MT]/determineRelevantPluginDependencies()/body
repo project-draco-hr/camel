@@ -13,8 +13,14 @@
     }
   }
  else {
-    relevantDependencies=Collections.emptySet();
-    getLog().debug("Plugin Dependencies will be excluded.");
+    getLog().debug("Only Direct Plugin Dependencies will be included.");
+    PluginDescriptor descriptor=(PluginDescriptor)getPluginContext().get("pluginDescriptor");
+    try {
+      relevantDependencies=artifactResolver.resolveTransitively(MavenMetadataSource.createArtifacts(this.artifactFactory,descriptor.getPlugin().getDependencies(),null,null,null),this.project.getArtifact(),Collections.emptyMap(),this.localRepository,this.remoteRepositories,metadataSource,new ScopeArtifactFilter(Artifact.SCOPE_RUNTIME),Collections.emptyList()).getArtifacts();
+    }
+ catch (    Exception ex) {
+      throw new MojoExecutionException("Encountered problems resolving dependencies of the plugin " + "in preparation for its execution.",ex);
+    }
   }
   return relevantDependencies;
 }
