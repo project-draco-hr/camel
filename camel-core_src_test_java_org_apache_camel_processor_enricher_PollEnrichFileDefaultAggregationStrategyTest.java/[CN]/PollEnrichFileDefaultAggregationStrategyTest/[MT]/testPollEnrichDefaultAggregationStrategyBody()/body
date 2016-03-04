@@ -1,0 +1,17 @@
+{
+  Thread.sleep(2000);
+  String enrichFilename="target/pollEnrich/enrich.txt";
+  String msgText="Hello Camel";
+  FileWriter enrichFile=new FileWriter(enrichFilename);
+  enrichFile.write(msgText);
+  enrichFile.close();
+  getMockEndpoint("mock:result").expectedMinimumMessageCount(1);
+  assertMockEndpointsSatisfied();
+  List<Exchange> exchanges=getMockEndpoint("mock:result").getExchanges();
+  assertEquals(1,exchanges.size());
+  Exchange ex=(Exchange)exchanges.get(0);
+  assertEquals(msgText,ex.getIn().getBody().toString());
+  Thread.sleep(300);
+  File markerFile=new File(enrichFilename + ".camelLock");
+  assertFalse("Camel markerFile " + enrichFilename + ".camelLock did not get deleted after file consumption.",markerFile.exists());
+}
