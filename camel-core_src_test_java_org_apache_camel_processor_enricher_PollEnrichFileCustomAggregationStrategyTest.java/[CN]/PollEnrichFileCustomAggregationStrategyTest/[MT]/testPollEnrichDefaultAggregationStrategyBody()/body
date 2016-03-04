@@ -1,17 +1,13 @@
 {
-  Thread.sleep(2000);
-  String enrichFilename="target/pollEnrich/enrich.txt";
-  String msgText="Hello Camel";
-  FileWriter enrichFile=new FileWriter(enrichFilename);
-  enrichFile.write(msgText);
-  enrichFile.close();
-  getMockEndpoint("mock:result").expectedMinimumMessageCount(1);
+  getMockEndpoint("mock:start").expectedBodiesReceived("Start");
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.expectedBodiesReceived("Big file");
+  mock.expectedFileExists("target/enrich/.done/AAA.fin");
+  mock.expectedFileExists("target/enrichdata/.done/AAA.dat");
+  template.sendBodyAndHeader("file://target/enrich","Start",Exchange.FILE_NAME,"AAA.fin");
+  log.info("Sleeping for 1 sec before writing enrichdata file");
+  Thread.sleep(1000);
+  template.sendBodyAndHeader("file://target/enrichdata","Big file",Exchange.FILE_NAME,"AAA.dat");
+  log.info("... write done");
   assertMockEndpointsSatisfied();
-  List<Exchange> exchanges=getMockEndpoint("mock:result").getExchanges();
-  assertEquals(1,exchanges.size());
-  Exchange ex=(Exchange)exchanges.get(0);
-  assertEquals(msgText,ex.getIn().getBody().toString());
-  Thread.sleep(300);
-  File markerFile=new File(enrichFilename + ".camelLock");
-  assertTrue("Camel markerFile " + enrichFilename + ".camelLock did not get deleted after file consumption.",markerFile.exists());
 }
