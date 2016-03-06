@@ -1,0 +1,42 @@
+{
+  return new ExpressionAdapter(){
+    private ExchangeFormatter formatter;
+    public Object evaluate(    Exchange exchange){
+      ExchangeFormatter ef=null;
+      if (detailed) {
+        ef=getOrCreateExchangeFormatter(exchange.getContext());
+      }
+      return MessageHelper.dumpMessageHistoryStacktrace(exchange,ef,false);
+    }
+    private ExchangeFormatter getOrCreateExchangeFormatter(    CamelContext camelContext){
+      if (formatter == null) {
+        Set<ExchangeFormatter> formatters=camelContext.getRegistry().findByType(ExchangeFormatter.class);
+        if (formatters != null && formatters.size() == 1) {
+          formatter=formatters.iterator().next();
+        }
+ else {
+          DefaultExchangeFormatter def=new DefaultExchangeFormatter();
+          def.setShowExchangeId(true);
+          def.setMultiline(true);
+          def.setShowHeaders(true);
+          def.setStyle(DefaultExchangeFormatter.OutputStyle.Fixed);
+          try {
+            Integer maxChars=CamelContextHelper.parseInteger(camelContext,camelContext.getProperty(Exchange.LOG_DEBUG_BODY_MAX_CHARS));
+            if (maxChars != null) {
+              def.setMaxChars(maxChars);
+            }
+          }
+ catch (          Exception e) {
+            throw ObjectHelper.wrapRuntimeCamelException(e);
+          }
+          formatter=def;
+        }
+      }
+      return formatter;
+    }
+    @Override public String toString(){
+      return "messageHistory(" + detailed + ")";
+    }
+  }
+;
+}
