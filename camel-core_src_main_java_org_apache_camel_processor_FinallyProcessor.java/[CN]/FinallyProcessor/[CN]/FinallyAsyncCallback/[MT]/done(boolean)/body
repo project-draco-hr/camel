@@ -1,0 +1,26 @@
+{
+  try {
+    if (exception == null) {
+      exchange.removeProperty(Exchange.FAILURE_ENDPOINT);
+    }
+ else {
+      exchange.setException(exception);
+      exchange.setProperty(Exchange.EXCEPTION_CAUGHT,exception);
+    }
+    if (fault) {
+      if (exchange.hasOut()) {
+        exchange.getOut().setFault(true);
+      }
+ else {
+        exchange.getIn().setFault(true);
+      }
+    }
+    if (!doneSync) {
+      ExchangeHelper.prepareOutToIn(exchange);
+      LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
+    }
+  }
+  finally {
+    callback.done(doneSync);
+  }
+}

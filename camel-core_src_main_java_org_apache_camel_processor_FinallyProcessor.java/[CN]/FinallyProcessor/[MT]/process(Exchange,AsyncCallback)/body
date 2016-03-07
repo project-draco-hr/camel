@@ -1,28 +1,20 @@
 {
-  final Exception e=exchange.getException();
+  final boolean fault;
+  if (exchange.hasOut()) {
+    fault=exchange.getOut().isFault();
+    exchange.getOut().setFault(false);
+  }
+ else {
+    fault=exchange.getIn().isFault();
+    exchange.getIn().setFault(false);
+  }
+  final Exception exception=exchange.getException();
   exchange.setException(null);
-  if (e != null) {
-    exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
+  if (exception != null) {
+    exchange.setProperty(Exchange.EXCEPTION_CAUGHT,exception);
   }
   if (exchange.getProperty(Exchange.FAILURE_ENDPOINT) == null) {
     exchange.setProperty(Exchange.FAILURE_ENDPOINT,exchange.getProperty(Exchange.TO_ENDPOINT));
   }
-  boolean sync=processor.process(exchange,new AsyncCallback(){
-    public void done(    boolean doneSync){
-      if (e == null) {
-        exchange.removeProperty(Exchange.FAILURE_ENDPOINT);
-      }
- else {
-        exchange.setException(e);
-        exchange.setProperty(Exchange.EXCEPTION_CAUGHT,e);
-      }
-      if (!doneSync) {
-        ExchangeHelper.prepareOutToIn(exchange);
-        LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
-      }
-      callback.done(doneSync);
-    }
-  }
-);
-  return sync;
+  return processor.process(exchange,new FinallyAsyncCallback(exchange,callback,exception,fault));
 }
