@@ -1,9 +1,9 @@
 {
-  Object e=graph;
+  Object element=graph;
   if (partialClass != null && getPartNamespace() != null) {
-    e=new JAXBElement<Object>(getPartNamespace(),partialClass,graph);
+    element=new JAXBElement<Object>(getPartNamespace(),partialClass,graph);
   }
-  if (introspector.isElement(e)) {
+  if (introspector.isElement(element)) {
     if (asXmlStreamWriter(exchange)) {
       XMLStreamWriter writer=typeConverter.convertTo(XMLStreamWriter.class,stream);
       if (needFiltering(exchange)) {
@@ -12,13 +12,37 @@
       if (xmlStreamWriterWrapper != null) {
         writer=xmlStreamWriterWrapper.wrapWriter(writer);
       }
-      marshaller.marshal(e,writer);
+      marshaller.marshal(element,writer);
     }
  else {
-      marshaller.marshal(e,stream);
+      marshaller.marshal(element,stream);
+    }
+    return;
+  }
+ else   if (element != null) {
+    Method m=JaxbHelper.getJaxbElementFactoryMethod(camelContext,element.getClass());
+    try {
+      Object toMarshall=m.invoke(JaxbHelper.getObjectFactory(camelContext,element.getClass()).newInstance(),element);
+      if (asXmlStreamWriter(exchange)) {
+        XMLStreamWriter writer=typeConverter.convertTo(XMLStreamWriter.class,stream);
+        if (needFiltering(exchange)) {
+          writer=new FilteringXmlStreamWriter(writer);
+        }
+        if (xmlStreamWriterWrapper != null) {
+          writer=xmlStreamWriterWrapper.wrapWriter(writer);
+        }
+        marshaller.marshal(toMarshall,writer);
+      }
+ else {
+        marshaller.marshal(toMarshall,stream);
+      }
+      return;
+    }
+ catch (    Exception e) {
+      LOG.debug("Unable to create JAXBElement object for type {} due to {}",element.getClass().getName(),e);
     }
   }
- else   if (!mustBeJAXBElement) {
+  if (!mustBeJAXBElement) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Attempt to marshalling non JAXBElement with type {} as InputStream",ObjectHelper.classCanonicalName(graph));
     }
