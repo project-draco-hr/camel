@@ -6,9 +6,13 @@
     if (isJaxbType(type)) {
       return unmarshall(type,exchange,value);
     }
-    if (value != null) {
-      if (isJaxbType(value.getClass()) && isNotStreamCacheType(type)) {
-        return marshall(type,exchange,value);
+    if (value != null && isNotStreamCacheType(type)) {
+      if (hasXmlRootElement(value.getClass())) {
+        return marshall(type,exchange,value,null);
+      }
+      Method objectFactoryMethod=JaxbHelper.getJaxbElementFactoryMethod(camelContext,value.getClass());
+      if (objectFactoryMethod != null) {
+        return marshall(type,exchange,value,objectFactoryMethod);
       }
     }
   }

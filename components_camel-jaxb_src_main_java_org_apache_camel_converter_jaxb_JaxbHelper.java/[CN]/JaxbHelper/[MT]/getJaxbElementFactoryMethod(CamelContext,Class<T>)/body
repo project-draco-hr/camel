@@ -1,24 +1,16 @@
 {
-  Method factoryMethod=null;
-  try {
-    for (    Method m : getObjectFactory(camelContext,type).getMethods()) {
+  Class factory=getObjectFactory(camelContext,type);
+  if (factory != null) {
+    for (    Method m : factory.getMethods()) {
       final XmlElementDecl a=m.getAnnotation(XmlElementDecl.class);
       if (a == null) {
         continue;
       }
       final Class<?>[] parameters=m.getParameterTypes();
       if (parameters.length == 1 && parameters[0].isAssignableFrom(type)) {
-        if (factoryMethod != null) {
-          throw new IllegalStateException("There are several possible XML schema mappings for class " + type.getName());
-        }
- else {
-          factoryMethod=m;
-        }
+        return m;
       }
     }
   }
- catch (  ClassNotFoundException e) {
-    LOG.debug(e.getMessage(),e);
-  }
-  return factoryMethod;
+  return null;
 }
