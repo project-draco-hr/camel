@@ -1,0 +1,19 @@
+{
+  final MockEndpoint mock=getMockEndpoint("mock:reverse");
+  mock.expectedMessageCount(1);
+  if (object == null) {
+    mock.message(0).body().isNull();
+  }
+ else {
+    mock.message(0).body().isNotNull();
+    if (object.getClass().isArray()) {
+      mock.message(0).body().in(arrayEqual((Object[])object));
+    }
+ else {
+      mock.message(0).body().isEqualTo(object);
+    }
+  }
+  final Object marshalled=template.requestBody("direct:in",object);
+  template.sendBody("direct:back",marshalled);
+  mock.assertIsSatisfied();
+}
