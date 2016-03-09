@@ -1,17 +1,18 @@
 {
-  if (!Arrays.asList(beans.alternatives()).contains(pat.getAnnotatedType().getJavaClass())) {
+  AnnotatedType<T> type=pat.getAnnotatedType();
+  if (!Arrays.asList(beans.alternatives()).contains(type.getJavaClass())) {
     return;
   }
   Set<AnnotatedMethod<? super T>> methods=new HashSet<>();
-  for (  AnnotatedMethod<? super T> am : pat.getAnnotatedType().getMethods()) {
-    if (am.isAnnotationPresent(Alternative.class)) {
-      methods.add(new AnnotatedMethodDecorator<>(am,PriorityLiteral.of(Priority.APPLICATION)));
+  for (  AnnotatedMethod<? super T> method : type.getMethods()) {
+    if (method.isAnnotationPresent(Alternative.class) && !method.isAnnotationPresent(Priority.class)) {
+      methods.add(new AnnotatedMethodDecorator<>(method,PriorityLiteral.of(APPLICATION)));
     }
   }
-  if (pat.getAnnotatedType().isAnnotationPresent(Alternative.class)) {
-    pat.setAnnotatedType(new AnnotatedTypeDecorator<>(pat.getAnnotatedType(),PriorityLiteral.of(Priority.APPLICATION),methods));
+  if (type.isAnnotationPresent(Alternative.class) && !type.isAnnotationPresent(Priority.class)) {
+    pat.setAnnotatedType(new AnnotatedTypeDecorator<>(type,PriorityLiteral.of(APPLICATION),methods));
   }
  else   if (!methods.isEmpty()) {
-    pat.setAnnotatedType(new AnnotatedTypeDecorator<>(pat.getAnnotatedType(),methods));
+    pat.setAnnotatedType(new AnnotatedTypeDecorator<>(type,methods));
   }
 }
