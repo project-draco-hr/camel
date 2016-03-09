@@ -1,0 +1,34 @@
+{
+  int processed=0;
+  try {
+    LOG.debug("Subscribing {} to topic {}",threadId,topicName);
+    consumer.subscribe(Arrays.asList(topicName));
+    while (isRunAllowed() && !isSuspendingOrSuspended()) {
+      ConsumerRecords<Object,Object> records=consumer.poll(Long.MAX_VALUE);
+      for (      ConsumerRecord<Object,Object> record : records) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("offset = {}, key = {}, value = {}",record.offset(),record.key(),record.value());
+        }
+        Exchange exchange=endpoint.createKafkaExchange(record);
+        try {
+          processor.process(exchange);
+        }
+ catch (        Exception e) {
+          getExceptionHandler().handleException("Error during processing",exchange,e);
+        }
+        processed++;
+        if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
+          if (processed >= endpoint.getBatchSize()) {
+            consumer.commitSync();
+            processed=0;
+          }
+        }
+      }
+    }
+    LOG.debug("Unsubscribing {} from topic {}",threadId,topicName);
+    consumer.unsubscribe();
+  }
+ catch (  Exception e) {
+    getExceptionHandler().handleException("Error consuming " + threadId + " from kafka topic",e);
+  }
+}

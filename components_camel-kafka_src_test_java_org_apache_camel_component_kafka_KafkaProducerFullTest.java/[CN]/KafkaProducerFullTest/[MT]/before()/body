@@ -1,15 +1,18 @@
 {
   Properties stringsProps=new Properties();
-  stringsProps.put("zookeeper.connect","localhost:" + getZookeeperPort());
-  stringsProps.put("group.id",GROUP_STRINGS);
-  stringsProps.put("zookeeper.session.timeout.ms","6000");
-  stringsProps.put("zookeeper.connectiontimeout.ms","12000");
-  stringsProps.put("zookeeper.sync.time.ms","200");
-  stringsProps.put("auto.commit.interval.ms","1000");
-  stringsProps.put("auto.offset.reset","smallest");
-  stringsConsumerConn=kafka.consumer.Consumer.createJavaConsumerConnector(new ConsumerConfig(stringsProps));
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,"localhost:" + getKarfkaPort());
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG,"DemoConsumer");
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,"true");
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG,"1000");
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,"30000");
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringDeserializer");
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringDeserializer");
+  stringsProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
+  stringsConsumerConn=new KafkaConsumer<String,String>(stringsProps);
   Properties bytesProps=new Properties();
   bytesProps.putAll(stringsProps);
   bytesProps.put("group.id",GROUP_BYTES);
-  bytesConsumerConn=kafka.consumer.Consumer.createJavaConsumerConnector(new ConsumerConfig(bytesProps));
+  bytesProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.ByteArrayDeserializer");
+  bytesProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.ByteArrayDeserializer");
+  bytesConsumerConn=new KafkaConsumer<byte[],byte[]>(bytesProps);
 }

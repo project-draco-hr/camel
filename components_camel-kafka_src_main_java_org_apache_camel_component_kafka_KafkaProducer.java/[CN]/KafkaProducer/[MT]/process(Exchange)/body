@@ -6,24 +6,21 @@
   if (topic == null) {
     throw new CamelExchangeException("No topic key set",exchange);
   }
-  K partitionKey=(K)exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
+  Object partitionKey=exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
   boolean hasPartitionKey=partitionKey != null;
-  K messageKey=(K)exchange.getIn().getHeader(KafkaConstants.KEY);
+  Object messageKey=exchange.getIn().getHeader(KafkaConstants.KEY);
   boolean hasMessageKey=messageKey != null;
-  V msg=(V)exchange.getIn().getBody();
-  KeyedMessage<K,V> data;
+  Object msg=exchange.getIn().getBody();
+  ProducerRecord record;
   if (hasPartitionKey && hasMessageKey) {
-    data=new KeyedMessage<K,V>(topic,messageKey,partitionKey,msg);
-  }
- else   if (hasPartitionKey) {
-    data=new KeyedMessage<K,V>(topic,partitionKey,msg);
+    record=new ProducerRecord(topic,new Integer(partitionKey.toString()),messageKey,msg);
   }
  else   if (hasMessageKey) {
-    data=new KeyedMessage<K,V>(topic,messageKey,msg);
+    record=new ProducerRecord(topic,messageKey,msg);
   }
  else {
     log.warn("No message key or partition key set");
-    data=new KeyedMessage<K,V>(topic,messageKey,partitionKey,msg);
+    record=new ProducerRecord(topic,msg);
   }
-  producer.send(data);
+  kafkaProducer.send(record);
 }

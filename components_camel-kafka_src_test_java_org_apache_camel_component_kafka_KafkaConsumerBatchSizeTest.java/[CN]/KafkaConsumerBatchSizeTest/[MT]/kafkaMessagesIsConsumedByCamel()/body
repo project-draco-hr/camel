@@ -2,23 +2,18 @@
   to.expectedBodiesReceivedInAnyOrder("m1","m2");
   for (int k=1; k <= 2; k++) {
     String msg="m" + k;
-    KeyedMessage<String,String> data=new KeyedMessage<String,String>(TOPIC,"1",msg);
+    ProducerRecord<String,String> data=new ProducerRecord<String,String>(TOPIC,"1",msg);
     producer.send(data);
   }
-  to.assertIsSatisfied(3000);
+  to.assertIsSatisfied();
   to.reset();
-  from.getCamelContext().stop();
-  from.getCamelContext().start();
-  to.expectedBodiesReceivedInAnyOrder("m1","m2","m3","m4","m5","m6","m7","m8","m9","m10");
+  to.expectedBodiesReceivedInAnyOrder("m3","m4","m5","m6","m7","m8","m9","m10");
+  context.stopRoute("foo");
+  context.startRoute("foo");
   for (int k=3; k <= 10; k++) {
     String msg="m" + k;
-    KeyedMessage<String,String> data=new KeyedMessage<String,String>(TOPIC,"1",msg);
+    ProducerRecord<String,String> data=new ProducerRecord<String,String>(TOPIC,"1",msg);
     producer.send(data);
   }
-  to.assertIsSatisfied(3000);
-  to.reset();
-  from.getCamelContext().stop();
-  from.getCamelContext().start();
-  to.expectedMessageCount(1);
-  to.assertIsSatisfied(3000);
+  to.assertIsSatisfied();
 }
