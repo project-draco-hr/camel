@@ -1,0 +1,34 @@
+{
+  List<RouteDefinition> routes=context.getRouteDefinitions();
+  if (routes.isEmpty()) {
+    return null;
+  }
+  RoutesDefinition def=new RoutesDefinition();
+  def.setRoutes(routes);
+  String xml=ModelHelper.dumpModelAsXml(context,def);
+  if (resolvePlaceholders) {
+    final AtomicBoolean changed=new AtomicBoolean();
+    InputStream is=new ByteArrayInputStream(xml.getBytes());
+    Document dom=XmlLineNumberParser.parseXml(is,new XmlLineNumberParser.XmlTextTransformer(){
+      @Override public String transform(      String text){
+        try {
+          String after=getContext().resolvePropertyPlaceholders(text);
+          if (!changed.get()) {
+            changed.set(!text.equals(after));
+          }
+          return after;
+        }
+ catch (        Exception e) {
+          return text;
+        }
+      }
+    }
+);
+    if (changed.get()) {
+      xml=context.getTypeConverter().mandatoryConvertTo(String.class,dom);
+      RoutesDefinition copy=ModelHelper.createModelFromXml(context,xml,RoutesDefinition.class);
+      xml=ModelHelper.dumpModelAsXml(context,copy);
+    }
+  }
+  return xml;
+}
