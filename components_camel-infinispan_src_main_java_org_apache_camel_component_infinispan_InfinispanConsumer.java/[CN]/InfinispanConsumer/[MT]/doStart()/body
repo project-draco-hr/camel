@@ -1,15 +1,28 @@
 {
+  super.doStart();
   BasicCacheContainer cacheContainer=configuration.getCacheContainer();
-  String cacheName=configuration.getCacheName();
-  cache=cacheName == null ? cacheContainer.getCache() : cacheContainer.getCache(cacheName);
-  if (InfinispanUtil.isEmbedded(cacheContainer)) {
-    listener=InfinispanConsumerEmbeddedHandler.INSTANCE.start(this);
-  }
- else   if (InfinispanUtil.isRemote(cacheContainer)) {
-    listener=InfinispanConsumerRemoteHandler.INSTANCE.start(this);
+  cache=InfinispanUtil.getCache(configuration.getCacheContainer(),configuration.getCacheName());
+  if (configuration.hasQueryBuilder()) {
+    if (InfinispanUtil.isRemote(cache)) {
+      RemoteCache<Object,Object> remoteCache=InfinispanUtil.asRemote(cache);
+      Query query=InfinispanRemoteOperation.buildQuery(configuration.getQueryBuilder(),remoteCache);
+      continuousQuery=Search.getContinuousQuery(remoteCache);
+      continuousQuery.addContinuousQueryListener(query,new ContinuousQueryEventListener(cache.getName()));
+    }
+ else {
+      throw new IllegalArgumentException("Can't run continuous queries against embedded cache (" + cache.getName() + ")");
+    }
   }
  else {
-    throw new UnsupportedOperationException("Consumer not support for CacheContainer: " + cacheContainer);
+    if (InfinispanUtil.isEmbedded(cacheContainer)) {
+      consumerHandler=InfinispanConsumerEmbeddedHandler.INSTANCE;
+    }
+ else     if (InfinispanUtil.isRemote(cacheContainer)) {
+      consumerHandler=InfinispanConsumerRemoteHandler.INSTANCE;
+    }
+ else {
+      throw new UnsupportedOperationException("Consumer not support for CacheContainer: " + cacheContainer);
+    }
+    listener=consumerHandler.start(this);
   }
-  super.doStart();
 }
