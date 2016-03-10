@@ -1,9 +1,12 @@
 {
   Long timeout=getAndRemoveParameter(parameters,"timeout",Long.class);
-  Endpoint endpoint=CamelContextHelper.getMandatoryEndpoint(getCamelContext(),remaining);
-  TestEndpoint answer=new TestEndpoint(uri,this,endpoint);
+  TestEndpoint answer=new TestEndpoint(uri,this);
   if (timeout != null) {
     answer.setTimeout(timeout);
   }
+  setProperties(answer,parameters);
+  String endpointUri=URISupport.appendParametersToURI(remaining,parameters);
+  Endpoint endpoint=CamelContextHelper.getMandatoryEndpoint(getCamelContext(),endpointUri);
+  answer.setExpectedMessageEndpoint(endpoint);
   return answer;
 }
