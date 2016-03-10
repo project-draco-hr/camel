@@ -5,10 +5,19 @@
     public void process(    Exchange exchange) throws Exception {
       Object body=getInBody(exchange);
       if (body instanceof WrappedFile) {
-        body=exchange.getIn().getBody(byte[].class);
+        body=exchange.getIn().getBody(String.class);
       }
-      LOG.trace("Received message body {}",body);
-      expectedBodies.add(body);
+      if (split) {
+        Iterator it=ObjectHelper.createIterator(body,"\\n|\\r",false,true);
+        while (it.hasNext()) {
+          Object line=it.next();
+          LOG.trace("Received message body {}",line);
+          expectedBodies.add(line);
+        }
+      }
+ else {
+        expectedBodies.add(body);
+      }
     }
   }
 ,timeout);
