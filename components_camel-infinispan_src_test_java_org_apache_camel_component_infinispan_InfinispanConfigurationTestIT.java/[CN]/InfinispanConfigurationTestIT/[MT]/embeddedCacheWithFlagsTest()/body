@@ -1,0 +1,17 @@
+{
+  InfinispanConfiguration configuration=new InfinispanConfiguration();
+  configuration.setHost("localhost");
+  configuration.setCacheName("misc_cache");
+  configuration.setCacheContainer(new DefaultCacheManager(true));
+  configuration.setFlags(org.infinispan.context.Flag.SKIP_CACHE_LOAD,org.infinispan.context.Flag.SKIP_CACHE_STORE);
+  InfinispanManager manager=new InfinispanManager(configuration);
+  manager.start();
+  BasicCache<Object,Object> cache=manager.getCache();
+  assertNotNull(cache);
+  assertTrue(cache instanceof DecoratedCache);
+  DecoratedCache<Object,Object> decoratedCache=(DecoratedCache<Object,Object>)cache;
+  assertTrue(decoratedCache.getFlags().contains(org.infinispan.context.Flag.SKIP_CACHE_LOAD));
+  assertTrue(decoratedCache.getFlags().contains(org.infinispan.context.Flag.SKIP_CACHE_STORE));
+  manager.getCacheContainer().stop();
+  manager.stop();
+}

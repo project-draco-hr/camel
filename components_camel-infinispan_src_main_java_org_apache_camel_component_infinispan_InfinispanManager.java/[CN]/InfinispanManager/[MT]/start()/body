@@ -1,0 +1,15 @@
+{
+  cacheContainer=configuration.getCacheContainer();
+  if (cacheContainer == null) {
+    String uri=configuration.getConfigurationUri();
+    if (uri != null && camelContext != null) {
+      uri=camelContext.resolvePropertyPlaceholders(uri);
+    }
+    ConfigurationBuilder configurationBuilder=new ConfigurationBuilder().classLoader(Thread.currentThread().getContextClassLoader());
+    if (uri != null) {
+      configurationBuilder.withProperties(InfinispanUtil.loadProperties(camelContext,uri));
+    }
+    cacheContainer=new RemoteCacheManager(configurationBuilder.addServers(configuration.getHost()).build(),true);
+    isManagedCacheContainer=true;
+  }
+}

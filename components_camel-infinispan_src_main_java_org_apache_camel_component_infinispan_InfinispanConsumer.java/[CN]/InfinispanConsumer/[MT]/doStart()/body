@@ -1,7 +1,7 @@
 {
   super.doStart();
-  BasicCacheContainer cacheContainer=configuration.getCacheContainer();
-  cache=InfinispanUtil.getCache(configuration.getCacheContainer(),configuration.getCacheName());
+  manager.start();
+  cache=manager.getCache();
   if (configuration.hasQueryBuilder()) {
     if (InfinispanUtil.isRemote(cache)) {
       RemoteCache<Object,Object> remoteCache=InfinispanUtil.asRemote(cache);
@@ -14,14 +14,14 @@
     }
   }
  else {
-    if (InfinispanUtil.isEmbedded(cacheContainer)) {
+    if (manager.isCacheContainerEmbedded()) {
       consumerHandler=InfinispanConsumerEmbeddedHandler.INSTANCE;
     }
- else     if (InfinispanUtil.isRemote(cacheContainer)) {
+ else     if (manager.isCacheContainerRemote()) {
       consumerHandler=InfinispanConsumerRemoteHandler.INSTANCE;
     }
  else {
-      throw new UnsupportedOperationException("Consumer not support for CacheContainer: " + cacheContainer);
+      throw new UnsupportedOperationException("Unsupported CacheContainer type " + manager.getCacheContainer().getClass().getName());
     }
     listener=consumerHandler.start(this);
   }
