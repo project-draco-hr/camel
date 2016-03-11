@@ -1,0 +1,17 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(sourceUri).to(dataSetUriWithDisableDataSetIndexSetToTrue).to(resultUri);
+    }
+  }
+);
+  context.start();
+  long size=dataSet.getSize();
+  MockEndpoint result=getMockEndpoint(resultUri);
+  result.expectedMessageCount((int)size);
+  result.allMessages().header(Exchange.DATASET_INDEX).isNull();
+  for (long i=0; i < size; i++) {
+    template.sendBody(sourceUri,dataSet.getDefaultBody());
+  }
+  assertMockEndpointsSatisfied();
+}

@@ -1,14 +1,14 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from(dataSetUri).to(resultUri);
+      from(dataSetUriWithDisableDataSetIndexSetToFalse).to(resultUri);
     }
   }
 );
   context.start();
-  assertEquals("expectedMessageCount should be unset(i.e. -1) for a consumer-only endpoint",-1,getMockEndpoint(dataSetUri).getExpectedCount());
   MockEndpoint result=getMockEndpoint(resultUri);
   result.expectedMessageCount((int)dataSet.getSize());
-  result.assertMessagesAscending(header(Exchange.DATASET_INDEX));
+  result.allMessages().header(Exchange.DATASET_INDEX).isNotNull();
+  result.expectsAscending(header(Exchange.DATASET_INDEX).convertTo(Number.class));
   assertMockEndpointsSatisfied();
 }
