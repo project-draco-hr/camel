@@ -8,9 +8,9 @@
       }
       Exchange target=exchange;
       index.getAndIncrement();
-      while (index.get() < count.get()) {
+      while ((predicate != null && doWhile.get()) || (index.get() < count.get())) {
         target=prepareExchange(exchange,index.get(),original);
-        boolean sync=process(target,callback,index,count,original);
+        boolean sync=process(target,callback,index,count,doWhile,original);
         if (!sync) {
           LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",target.getExchangeId());
           return;
@@ -19,6 +19,16 @@
           break;
         }
         index.getAndIncrement();
+        if (predicate != null) {
+          try {
+            boolean result=predicate.matches(exchange);
+            doWhile.set(result);
+          }
+ catch (          Exception e) {
+            exchange.setException(e);
+            doWhile.set(false);
+          }
+        }
       }
       ExchangeHelper.copyResults(exchange,target);
       LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);

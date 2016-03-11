@@ -1,22 +1,31 @@
 {
   AtomicInteger index=new AtomicInteger();
   AtomicInteger count=new AtomicInteger();
-  String text=expression.evaluate(exchange,String.class);
+  AtomicBoolean doWhile=new AtomicBoolean();
   try {
-    int num=ExchangeHelper.convertToMandatoryType(exchange,Integer.class,text);
-    count.set(num);
+    if (expression != null) {
+      String text=expression.evaluate(exchange,String.class);
+      int num=ExchangeHelper.convertToMandatoryType(exchange,Integer.class,text);
+      count.set(num);
+    }
+ else {
+      boolean result=predicate.matches(exchange);
+      doWhile.set(result);
+    }
   }
- catch (  NoTypeConversionAvailableException e) {
+ catch (  Exception e) {
     exchange.setException(e);
     callback.done(true);
     return true;
   }
   final Exchange original=exchange;
   Exchange target=exchange;
-  exchange.setProperty(Exchange.LOOP_SIZE,count);
-  while (index.get() < count.get()) {
+  if (predicate == null) {
+    exchange.setProperty(Exchange.LOOP_SIZE,count);
+  }
+  while ((predicate != null && doWhile.get()) || (index.get() < count.get())) {
     target=prepareExchange(exchange,index.get(),original);
-    boolean sync=process(target,callback,index,count,original);
+    boolean sync=process(target,callback,index,count,doWhile,original);
     if (!sync) {
       LOG.trace("Processing exchangeId: {} is continued being processed asynchronously",target.getExchangeId());
       return false;
@@ -26,6 +35,16 @@
       break;
     }
     index.getAndIncrement();
+    if (predicate != null) {
+      try {
+        boolean result=predicate.matches(exchange);
+        doWhile.set(result);
+      }
+ catch (      Exception e) {
+        exchange.setException(e);
+        doWhile.set(false);
+      }
+    }
   }
   ExchangeHelper.copyResults(exchange,target);
   LOG.trace("Processing complete for exchangeId: {} >>> {}",exchange.getExchangeId(),exchange);
