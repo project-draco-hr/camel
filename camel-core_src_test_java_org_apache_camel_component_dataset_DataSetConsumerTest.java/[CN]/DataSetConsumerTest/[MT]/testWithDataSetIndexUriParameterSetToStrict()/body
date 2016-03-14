@@ -1,0 +1,16 @@
+{
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from(dataSetUriWithDataSetIndexSetToStrict).to(resultUri);
+    }
+  }
+);
+  context.start();
+  MockEndpoint result=getMockEndpoint(resultUri);
+  result.expectedMessageCount((int)dataSet.getSize());
+  result.allMessages().header(Exchange.DATASET_INDEX).isNotNull();
+  result.expectsAscending(header(Exchange.DATASET_INDEX).convertTo(Number.class));
+  Thread.sleep(100);
+  assertMockEndpointsSatisfied();
+  System.out.println("Place for Breakpoint");
+}

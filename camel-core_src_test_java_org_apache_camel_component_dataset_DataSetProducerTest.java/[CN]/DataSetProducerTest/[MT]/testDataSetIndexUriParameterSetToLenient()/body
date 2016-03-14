@@ -1,7 +1,7 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from(sourceUri).to(dataSetUriWithDisableDataSetIndexSetToTrue).to(resultUri);
+      from(sourceUri).to(dataSetUriWithDataSetIndexSetToLenient).to(resultUri);
     }
   }
 );
@@ -9,13 +9,10 @@
   long size=dataSet.getSize();
   MockEndpoint result=getMockEndpoint(resultUri);
   result.expectedMessageCount((int)size);
+  result.expectsAscending(header(Exchange.DATASET_INDEX).convertTo(Number.class));
+  result.allMessages().header(Exchange.DATASET_INDEX).isNotNull();
   for (long i=0; i < size; i++) {
-    if (i == (size / 2)) {
-      template.sendBodyAndHeader(sourceUri,dataSet.getDefaultBody(),Exchange.DATASET_INDEX,i + 10);
-    }
- else {
-      template.sendBody(sourceUri,dataSet.getDefaultBody());
-    }
+    template.sendBodyAndHeader(sourceUri,dataSet.getDefaultBody(),Exchange.DATASET_INDEX,i);
   }
   assertMockEndpointsSatisfied();
 }

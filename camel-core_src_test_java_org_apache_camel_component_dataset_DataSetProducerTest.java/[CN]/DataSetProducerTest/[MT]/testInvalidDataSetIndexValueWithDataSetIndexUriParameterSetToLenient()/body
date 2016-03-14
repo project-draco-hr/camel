@@ -1,7 +1,7 @@
 {
   context.addRoutes(new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from(sourceUri).to(dataSetUriWithDisableDataSetIndexSetToFalse).to(resultUri);
+      from(sourceUri).to(dataSetUriWithDataSetIndexSetToLenient).to(resultUri);
     }
   }
 );
@@ -15,14 +15,14 @@
       template.sendBodyAndHeader(sourceUri,dataSet.getDefaultBody(),Exchange.DATASET_INDEX,i + 10);
     }
  else {
-      template.sendBodyAndHeader(sourceUri,dataSet.getDefaultBody(),Exchange.DATASET_INDEX,i);
+      template.sendBody(sourceUri,dataSet.getDefaultBody());
     }
   }
   try {
     assertMockEndpointsSatisfied();
   }
  catch (  AssertionError assertionError) {
-    String expectedErrorString=dataSetUriWithDisableDataSetIndexSetToFalse + " Failed due to caught exception: " + AssertionError.class.getName()+ ": Header: "+ Exchange.DATASET_INDEX+ " does not match. Expected: "+ size / 2 + " but was: " + (size / 2 + 10) + " on Exchange";
+    String expectedErrorString=dataSetUriWithDataSetIndexSetToLenient + " Failed due to caught exception: " + AssertionError.class.getName()+ ": Header: "+ Exchange.DATASET_INDEX+ " does not match. Expected: "+ size / 2 + " but was: " + (size / 2 + 10) + " on Exchange";
     String actualErrorString=assertionError.getMessage();
     if (actualErrorString.startsWith(expectedErrorString)) {
       return;

@@ -1,16 +1,21 @@
 {
-  if (disableDataSetIndex == null) {
-    Long dataSetIndexHeaderValue=actual.getIn().getHeader(Exchange.DATASET_INDEX,Long.class);
-    if (dataSetIndexHeaderValue != null) {
-      assertEquals("Header: " + Exchange.DATASET_INDEX,index,dataSetIndexHeaderValue,actual);
-    }
+switch (getDataSetIndex()) {
+case "off":
+    break;
+case "strict":
+  long actualCounter=ExchangeHelper.getMandatoryHeader(actual,Exchange.DATASET_INDEX,Long.class);
+assertEquals("Header: " + Exchange.DATASET_INDEX,index,actualCounter,actual);
+break;
+case "lenient":
+default :
+Long dataSetIndexHeaderValue=actual.getIn().getHeader(Exchange.DATASET_INDEX,Long.class);
+if (dataSetIndexHeaderValue != null) {
+assertEquals("Header: " + Exchange.DATASET_INDEX,index,dataSetIndexHeaderValue,actual);
+}
  else {
-      actual.getIn().setHeader(Exchange.DATASET_INDEX,index);
-    }
-  }
- else   if (!disableDataSetIndex) {
-    long actualCounter=ExchangeHelper.getMandatoryHeader(actual,Exchange.DATASET_INDEX,Long.class);
-    assertEquals("Header: " + Exchange.DATASET_INDEX,index,actualCounter,actual);
-  }
-  getDataSet().assertMessageExpected(this,expected,actual,index);
+actual.getIn().setHeader(Exchange.DATASET_INDEX,index);
+}
+break;
+}
+getDataSet().assertMessageExpected(this,expected,actual,index);
 }
