@@ -14,8 +14,14 @@
     config=getCamelContext().getRestConfiguration("servlet",true);
   }
   Map<String,Object> map=new HashMap<String,Object>();
-  if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
-    map.putAll(config.getEndpointProperties());
+  if (config.getComponent() == null || config.getComponent().equals("servlet")) {
+    if (config.getEndpointProperties() != null && !config.getEndpointProperties().isEmpty()) {
+      map.putAll(config.getEndpointProperties());
+    }
+  }
+  boolean cors=config.isEnableCORS();
+  if (cors) {
+    map.put("optionsEnabled","true");
   }
   String query=URISupport.createQueryString(map);
   String url;
@@ -26,17 +32,22 @@
     url="servlet:///%s?httpMethodRestrict=%s";
   }
   String restrict=verb.toUpperCase(Locale.US);
+  if (cors) {
+    restrict+=",OPTIONS";
+  }
   url=String.format(url,path,restrict);
   if (!query.isEmpty()) {
     url=url + "&" + query;
   }
   ServletEndpoint endpoint=camelContext.getEndpoint(url,ServletEndpoint.class);
   setProperties(endpoint,parameters);
-  HttpBinding binding=new ServletRestHttpBinding();
-  binding.setHeaderFilterStrategy(endpoint.getHeaderFilterStrategy());
-  binding.setTransferException(endpoint.isTransferException());
-  binding.setEagerCheckContentAvailable(endpoint.isEagerCheckContentAvailable());
-  endpoint.setBinding(binding);
+  if (!map.containsKey("httpBindingRef")) {
+    HttpBinding binding=new ServletRestHttpBinding();
+    binding.setHeaderFilterStrategy(endpoint.getHeaderFilterStrategy());
+    binding.setTransferException(endpoint.isTransferException());
+    binding.setEagerCheckContentAvailable(endpoint.isEagerCheckContentAvailable());
+    endpoint.setHttpBinding(binding);
+  }
   Consumer consumer=endpoint.createConsumer(processor);
   if (config.getConsumerProperties() != null && !config.getConsumerProperties().isEmpty()) {
     setProperties(consumer,config.getConsumerProperties());
