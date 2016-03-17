@@ -1,25 +1,31 @@
 {
-  List<OptionalParameter> oplist=Arrays.asList(deliverSm.getOptionalParametes());
+  List<OptionalParameter> oplist=Arrays.asList(deliverSm.getOptionalParameters());
   Map<String,Object> optParams=new HashMap<String,Object>();
   for (  OptionalParameter optPara : oplist) {
     try {
-      if (COctetString.class.isInstance(optPara)) {
-        optParams.put(OptionalParameter.Tag.valueOf(optPara.tag).toString(),((COctetString)optPara).getValueAsString());
+      Tag valueOfTag=OptionalParameter.Tag.valueOf(optPara.tag);
+      if (valueOfTag != null) {
+        if (COctetString.class.isInstance(optPara)) {
+          optParams.put(valueOfTag.toString(),((COctetString)optPara).getValueAsString());
+        }
+ else         if (org.jsmpp.bean.OptionalParameter.OctetString.class.isInstance(optPara)) {
+          optParams.put(valueOfTag.toString(),((OctetString)optPara).getValueAsString());
+        }
+ else         if (org.jsmpp.bean.OptionalParameter.Byte.class.isInstance(optPara)) {
+          optParams.put(valueOfTag.toString(),Byte.valueOf(((org.jsmpp.bean.OptionalParameter.Byte)optPara).getValue()));
+        }
+ else         if (org.jsmpp.bean.OptionalParameter.Short.class.isInstance(optPara)) {
+          optParams.put(valueOfTag.toString(),Short.valueOf(((org.jsmpp.bean.OptionalParameter.Short)optPara).getValue()));
+        }
+ else         if (org.jsmpp.bean.OptionalParameter.Int.class.isInstance(optPara)) {
+          optParams.put(valueOfTag.toString(),Integer.valueOf(((org.jsmpp.bean.OptionalParameter.Int)optPara).getValue()));
+        }
+ else         if (Null.class.isInstance(optPara)) {
+          optParams.put(valueOfTag.toString(),null);
+        }
       }
- else       if (org.jsmpp.bean.OptionalParameter.OctetString.class.isInstance(optPara)) {
-        optParams.put(OptionalParameter.Tag.valueOf(optPara.tag).toString(),((OctetString)optPara).getValueAsString());
-      }
- else       if (org.jsmpp.bean.OptionalParameter.Byte.class.isInstance(optPara)) {
-        optParams.put(OptionalParameter.Tag.valueOf(optPara.tag).toString(),Byte.valueOf(((org.jsmpp.bean.OptionalParameter.Byte)optPara).getValue()));
-      }
- else       if (org.jsmpp.bean.OptionalParameter.Short.class.isInstance(optPara)) {
-        optParams.put(OptionalParameter.Tag.valueOf(optPara.tag).toString(),Short.valueOf(((org.jsmpp.bean.OptionalParameter.Short)optPara).getValue()));
-      }
- else       if (org.jsmpp.bean.OptionalParameter.Int.class.isInstance(optPara)) {
-        optParams.put(OptionalParameter.Tag.valueOf(optPara.tag).toString(),Integer.valueOf(((org.jsmpp.bean.OptionalParameter.Int)optPara).getValue()));
-      }
- else       if (Null.class.isInstance(optPara)) {
-        optParams.put(OptionalParameter.Tag.valueOf(optPara.tag).toString(),null);
+ else {
+        LOG.debug("Skipping optional parameter with tag {} because it was not recogized",optPara.tag);
       }
     }
  catch (    IllegalArgumentException e) {

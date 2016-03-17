@@ -1,8 +1,8 @@
 {
   SmppMessage smppMessage=new SmppMessage(deliverSm,configuration);
   String messagePayload=null;
-  if (deliverSm.getShortMessage() == null && deliverSm.getOptionalParametes() != null) {
-    List<OptionalParameter> oplist=Arrays.asList(deliverSm.getOptionalParametes());
+  if (deliverSm.getShortMessage() == null && deliverSm.getOptionalParameters() != null) {
+    List<OptionalParameter> oplist=Arrays.asList(deliverSm.getOptionalParameters());
     for (    OptionalParameter optPara : oplist) {
       if (OptionalParameter.Tag.MESSAGE_PAYLOAD.code() == optPara.tag && OctetString.class.isInstance(optPara)) {
         messagePayload=((OctetString)optPara).getValueAsString();
@@ -31,7 +31,7 @@
       smppMessage.setHeader(SmppConstants.SUBMITTED,smscDeliveryReceipt.getSubmitted());
       smppMessage.setHeader(SmppConstants.FINAL_STATUS,smscDeliveryReceipt.getFinalStatus());
     }
-    if (deliverSm.getOptionalParametes() != null && deliverSm.getOptionalParametes().length > 0) {
+    if (deliverSm.getOptionalParameters() != null && deliverSm.getOptionalParameters().length > 0) {
       Map<String,Object> optionalParameters=createOptionalParameterByName(deliverSm);
       smppMessage.setHeader(SmppConstants.OPTIONAL_PARAMETERS,optionalParameters);
       Map<Short,Object> optionalParameter=createOptionalParameterByCode(deliverSm);
@@ -41,7 +41,8 @@
  else {
     smppMessage.setHeader(SmppConstants.MESSAGE_TYPE,SmppMessageType.DeliverSm.toString());
     if (deliverSm.getShortMessage() != null) {
-      if (SmppUtils.parseAlphabetFromDataCoding(deliverSm.getDataCoding()) == Alphabet.ALPHA_8_BIT) {
+      Alphabet alphabet=Alphabet.parseDataCoding(deliverSm.getDataCoding());
+      if (SmppUtils.is8Bit(alphabet)) {
         smppMessage.setBody(deliverSm.getShortMessage());
       }
  else {
