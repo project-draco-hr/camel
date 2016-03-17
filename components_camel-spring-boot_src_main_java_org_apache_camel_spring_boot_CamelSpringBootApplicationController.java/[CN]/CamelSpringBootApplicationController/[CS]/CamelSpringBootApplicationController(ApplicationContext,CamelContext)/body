@@ -1,10 +1,19 @@
 {
-  this.mainSupport=new MainSupport(){
+  this.main=new Main(){
     @Override protected ProducerTemplate findOrCreateCamelTemplate(){
       return applicationContext.getBean(ProducerTemplate.class);
     }
     @Override protected Map<String,CamelContext> getCamelContextMap(){
       return Collections.singletonMap("camelContext",camelContext);
+    }
+    @Override protected void doStop() throws Exception {
+      LOG.debug("Controller is shutting down CamelContext");
+      try {
+        super.doStop();
+      }
+  finally {
+        latch.countDown();
+      }
     }
   }
 ;
