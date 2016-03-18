@@ -1,0 +1,28 @@
+{
+  String answer;
+  if (allowNamedParameters && hasNamedParameters(query)) {
+    if (exchange != null) {
+      Matcher matcher=REPLACE_IN_PATTERN.matcher(query);
+      while (matcher.find()) {
+        String found=matcher.group(1);
+        Object parameter=lookupParameter(found,exchange,exchange.getIn().getBody());
+        if (parameter != null) {
+          Iterator it=createInParameterIterator(parameter);
+          CollectionStringBuffer csb=new CollectionStringBuffer(",");
+          while (it.hasNext()) {
+            it.next();
+            csb.append("\\?");
+          }
+          String replace=csb.toString();
+          query=matcher.replaceAll(replace);
+        }
+      }
+    }
+    answer=REPLACE_PATTERN.matcher(query).replaceAll("\\?");
+  }
+ else {
+    answer=query;
+  }
+  LOG.trace("Prepared query: {}",answer);
+  return answer;
+}
