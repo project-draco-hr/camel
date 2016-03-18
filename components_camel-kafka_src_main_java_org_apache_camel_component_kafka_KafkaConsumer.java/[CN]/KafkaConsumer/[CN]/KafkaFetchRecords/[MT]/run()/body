@@ -5,6 +5,7 @@
     consumer.subscribe(Arrays.asList(topicName));
     if (endpoint.isSeekToBeginning()) {
       LOG.debug("{} is seeking to the beginning on topic {}",threadId,topicName);
+      consumer.poll(100);
       consumer.seekToBeginning();
     }
     while (isRunAllowed() && !isSuspendingOrSuspended()) {
@@ -32,7 +33,12 @@
     LOG.debug("Unsubscribing {} from topic {}",threadId,topicName);
     consumer.unsubscribe();
   }
- catch (  Exception e) {
+ catch (  InterruptException e) {
+    getExceptionHandler().handleException("Interrupted while consuming " + threadId + " from kafka topic",e);
+    consumer.unsubscribe();
+    Thread.currentThread().interrupt();
+  }
+catch (  Exception e) {
     getExceptionHandler().handleException("Error consuming " + threadId + " from kafka topic",e);
   }
 }
