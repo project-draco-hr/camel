@@ -5,8 +5,6 @@
     response.setHeader("Access-Control-Allow-Methods","GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH");
     response.setHeader("Access-Control-Allow-Origin","*");
   }
-  response.setHeader(Exchange.CONTENT_TYPE,"application/json");
-  StringBuffer sb=new StringBuffer();
   List<String> contexts=findCamelContexts();
   if (contextIdPattern != null) {
     Iterator<String> it=contexts.iterator();
@@ -24,15 +22,26 @@
       }
     }
   }
-  sb.append("[\n");
-  for (int i=0; i < contexts.size(); i++) {
-    String name=contexts.get(i);
-    sb.append("{\"name\": \"").append(name).append("\"}");
-    if (i < contexts.size() - 1) {
-      sb.append(",\n");
+  StringBuffer sb=new StringBuffer();
+  if (json) {
+    response.setHeader(Exchange.CONTENT_TYPE,"text/json");
+    sb.append("[\n");
+    for (int i=0; i < contexts.size(); i++) {
+      String name=contexts.get(i);
+      sb.append("{\"name\": \"").append(name).append("\"}");
+      if (i < contexts.size() - 1) {
+        sb.append(",\n");
+      }
+    }
+    sb.append("\n]");
+  }
+ else {
+    response.setHeader(Exchange.CONTENT_TYPE,"text/yaml");
+    for (int i=0; i < contexts.size(); i++) {
+      String name=contexts.get(i);
+      sb.append("- \"").append(name).append("\"\n");
     }
   }
-  sb.append("\n]");
   int len=sb.length();
   response.setHeader(Exchange.CONTENT_LENGTH,"" + len);
   response.writeBytes(sb.toString().getBytes());

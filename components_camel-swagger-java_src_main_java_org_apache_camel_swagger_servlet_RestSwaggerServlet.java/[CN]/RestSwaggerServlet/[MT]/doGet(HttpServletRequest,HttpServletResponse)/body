@@ -4,10 +4,28 @@
   }
   String contextId=null;
   String route=request.getPathInfo();
+  String accept=request.getHeader(Exchange.ACCEPT_CONTENT_TYPE);
+  boolean json=false;
+  boolean yaml=false;
+  if (route != null && route.endsWith("/swagger.json")) {
+    json=true;
+    route=route.substring(0,route.length() - 13);
+  }
+ else   if (route != null && route.endsWith("/swagger.yaml")) {
+    yaml=true;
+    route=route.substring(0,route.length() - 13);
+  }
+  if (accept != null && !json && !yaml) {
+    json=accept.contains("json");
+    yaml=accept.contains("yaml");
+  }
+  if (!json && !yaml) {
+    json=true;
+  }
   RestApiResponseAdapter adapter=new ServletRestApiResponseAdapter(response);
   try {
     if (apiContextIdListing && (ObjectHelper.isEmpty(route) || route.equals("/"))) {
-      support.renderCamelContexts(adapter,contextId,apiContextIdPattern);
+      support.renderCamelContexts(adapter,contextId,apiContextIdPattern,json,yaml);
     }
  else {
       String name=null;
@@ -45,7 +63,7 @@
         adapter.noContent();
       }
  else {
-        support.renderResourceListing(adapter,swaggerConfig,name,route,classResolver);
+        support.renderResourceListing(adapter,swaggerConfig,name,route,json,yaml,classResolver);
       }
     }
   }
