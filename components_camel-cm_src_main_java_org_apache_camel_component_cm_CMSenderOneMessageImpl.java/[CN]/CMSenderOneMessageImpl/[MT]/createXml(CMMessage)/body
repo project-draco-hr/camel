@@ -1,0 +1,61 @@
+{
+  try {
+    final ByteArrayOutputStream xml=new ByteArrayOutputStream();
+    final DocumentBuilderFactory factory=DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    final DocumentBuilder docBuilder=factory.newDocumentBuilder();
+    final DOMImplementation impl=docBuilder.getDOMImplementation();
+    final Document doc=impl.createDocument(null,"MESSAGES",null);
+    final Element root=doc.getDocumentElement();
+    final Element authenticationElement=doc.createElement("AUTHENTICATION");
+    final Element productTokenElement=doc.createElement("PRODUCTTOKEN");
+    authenticationElement.appendChild(productTokenElement);
+    final Text productTokenValue=doc.createTextNode("" + productToken);
+    productTokenElement.appendChild(productTokenValue);
+    root.appendChild(authenticationElement);
+    final Element msgElement=doc.createElement("MSG");
+    root.appendChild(msgElement);
+    final Element fromElement=doc.createElement("FROM");
+    fromElement.appendChild(doc.createTextNode(message.getSender()));
+    msgElement.appendChild(fromElement);
+    final Element bodyElement=doc.createElement("BODY");
+    bodyElement.appendChild(doc.createTextNode(message.getMessage()));
+    msgElement.appendChild(bodyElement);
+    final Element toElement=doc.createElement("TO");
+    toElement.appendChild(doc.createTextNode(message.getPhoneNumber()));
+    msgElement.appendChild(toElement);
+    if (message.isUnicode()) {
+      final Element dcsElement=doc.createElement("DCS");
+      dcsElement.appendChild(doc.createTextNode("8"));
+      msgElement.appendChild(dcsElement);
+    }
+    final String id=message.getIdAsString();
+    if (id != null && !id.isEmpty()) {
+      final Element refElement=doc.createElement("REFERENCE");
+      refElement.appendChild(doc.createTextNode("" + message.getIdAsString()));
+      msgElement.appendChild(refElement);
+    }
+    if (message.isMultipart()) {
+      final Element minMessagePartsElement=doc.createElement("MINIMUMNUMBEROFMESSAGEPARTS");
+      minMessagePartsElement.appendChild(doc.createTextNode("1"));
+      msgElement.appendChild(minMessagePartsElement);
+      final Element maxMessagePartsElement=doc.createElement("MAXIMUMNUMBEROFMESSAGEPARTS");
+      maxMessagePartsElement.appendChild(doc.createTextNode(Integer.toString(message.getMultiparts())));
+      msgElement.appendChild(maxMessagePartsElement);
+    }
+    final Transformer aTransformer=TransformerFactory.newInstance().newTransformer();
+    aTransformer.setOutputProperty(OutputKeys.INDENT,"yes");
+    final Source src=new DOMSource(doc);
+    final Result dest=new StreamResult(xml);
+    aTransformer.transform(src,dest);
+    return xml.toString();
+  }
+ catch (  final TransformerException e) {
+    LOG.error("Cant serialize CMMessage {}: ",message,e);
+    throw new XMLConstructionException(e);
+  }
+catch (  final ParserConfigurationException e) {
+    LOG.error("Cant serialize CMMessage {}: ",message,e);
+    throw new XMLConstructionException(e);
+  }
+}

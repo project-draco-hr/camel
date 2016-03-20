@@ -1,0 +1,29 @@
+{
+  LOG.info("Creating CM Endpoint ... ");
+  final String url=CMConstants.DEFAULT_SCHEME + remaining;
+  if (!UrlValidator.getInstance().isValid(url)) {
+    final String errorMessage=String.format("HOST provided: %s seem to be invalid. Remember SCHEME has to be excluded.",url);
+    final Exception t=new InvalidURLException(errorMessage);
+    LOG.error(errorMessage,t);
+    throw t;
+  }
+  LOG.info("Uri=[{}], path=[{}], parameters=[{}]",new Object[]{URISupport.sanitizeUri(uri),URISupport.sanitizePath(remaining),parameters});
+  final CMConfiguration config=new CMConfiguration();
+  setProperties(config,parameters);
+  LOG.info("Validating uri based configuration");
+  final Set<ConstraintViolation<CMConfiguration>> constraintViolations=validator.validate(config);
+  if (constraintViolations.size() > 0) {
+    final StringBuffer msg=new StringBuffer();
+    for (    final ConstraintViolation<CMConfiguration> cv : constraintViolations) {
+      msg.append(String.format("- Invalid value for %s: %s",cv.getPropertyPath().toString(),cv.getMessage()));
+    }
+    LOG.error(msg.toString());
+    throw new InvalidUriEndpointException(msg.toString());
+  }
+  LOG.info("CMConfiguration - OK!");
+  LOG.info("Creating CMEndpoint");
+  final CMEndpoint endpoint=new CMEndpoint(uri,this);
+  endpoint.setConfiguration(config);
+  endpoint.setHost(remaining);
+  return endpoint;
+}
