@@ -1,0 +1,28 @@
+{
+  if (b == null) {
+    throw new NullPointerException("Byte array must not be null");
+  }
+  if (len < 0 || off < 0 || (off + len) > b.length) {
+    throw new IndexOutOfBoundsException("Array Size=" + b.length + ", offset="+ off+ ", length="+ len);
+  }
+  int read=0;
+  if (len == 0) {
+    return 0;
+  }
+  while (len > 0) {
+    if (encoderOut.hasRemaining()) {
+      int c=Math.min(encoderOut.remaining(),len);
+      encoderOut.get(b,off,c);
+      off+=c;
+      len-=c;
+      read+=c;
+    }
+ else {
+      fillBuffer();
+      if (endOfInput && !encoderOut.hasRemaining()) {
+        break;
+      }
+    }
+  }
+  return read == 0 && endOfInput ? -1 : read;
+}
