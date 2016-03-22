@@ -1,14 +1,17 @@
 {
-  Exchange exchange=template.send("direct:putasync",new Processor(){
+  final Exchange exchange=template.send("direct:putasync",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
       exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
       exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_ONE);
     }
   }
 );
-  Thread.sleep(10000);
-  NotifyingFuture resultPutAsync=exchange.getIn().getHeader(InfinispanConstants.RESULT,NotifyingFuture.class);
-  assertEquals(Boolean.TRUE,resultPutAsync.isDone());
-  Object value=currentCache().get(KEY_ONE);
-  assertEquals(VALUE_ONE,value.toString());
+  waitFor(new Condition(){
+    @Override public boolean isSatisfied() throws Exception {
+      NotifyingFuture resultPutAsync=exchange.getIn().getHeader(InfinispanConstants.RESULT,NotifyingFuture.class);
+      Object value=currentCache().get(KEY_ONE);
+      return resultPutAsync.isDone() && value.toString().equals(VALUE_ONE);
+    }
+  }
+,5000);
 }

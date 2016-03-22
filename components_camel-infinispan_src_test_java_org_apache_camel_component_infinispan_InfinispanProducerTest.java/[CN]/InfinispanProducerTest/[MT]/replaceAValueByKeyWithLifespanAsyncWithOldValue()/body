@@ -6,19 +6,11 @@
       exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_TWO);
       exchange.getIn().setHeader(InfinispanConstants.OLD_VALUE,VALUE_ONE);
       exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME,new Long(LIFESPAN_TIME));
-      exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME_UNIT,TimeUnit.SECONDS.toString());
+      exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME_UNIT,TimeUnit.MILLISECONDS.toString());
     }
   }
 );
   assertTrue(exchange.getIn().getHeader(InfinispanConstants.RESULT,Boolean.class));
   assertEquals(VALUE_TWO,currentCache().get(KEY_ONE));
-  Thread.sleep(LIFESPAN_TIME * 1100);
-  exchange=template.send("direct:get",new Processor(){
-    @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
-    }
-  }
-);
-  String resultGet=exchange.getIn().getHeader(InfinispanConstants.RESULT,String.class);
-  assertNull(resultGet);
+  waitForNullValue(KEY_ONE);
 }

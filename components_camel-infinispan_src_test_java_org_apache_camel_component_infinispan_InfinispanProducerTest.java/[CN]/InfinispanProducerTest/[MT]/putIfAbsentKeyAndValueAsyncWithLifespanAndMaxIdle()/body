@@ -1,27 +1,22 @@
 {
-  Exchange exchange=template.send("direct:putifabsentasync",new Processor(){
+  final Exchange exchange=template.send("direct:putifabsentasync",new Processor(){
     @Override public void process(    Exchange exchange) throws Exception {
       exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
       exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_ONE);
       exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME,new Long(LIFESPAN_FOR_MAX_IDLE));
-      exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME_UNIT,TimeUnit.SECONDS.toString());
+      exchange.getIn().setHeader(InfinispanConstants.LIFESPAN_TIME_UNIT,TimeUnit.MILLISECONDS.toString());
       exchange.getIn().setHeader(InfinispanConstants.MAX_IDLE_TIME,new Long(MAX_IDLE_TIME));
-      exchange.getIn().setHeader(InfinispanConstants.MAX_IDLE_TIME_UNIT,TimeUnit.SECONDS.toString());
+      exchange.getIn().setHeader(InfinispanConstants.MAX_IDLE_TIME_UNIT,TimeUnit.MILLISECONDS.toString());
     }
   }
 );
-  Thread.sleep(1000);
-  NotifyingFuture resultPutAsync=exchange.getIn().getHeader(InfinispanConstants.RESULT,NotifyingFuture.class);
-  assertEquals(Boolean.TRUE,resultPutAsync.isDone());
-  Object value=currentCache().get(KEY_ONE);
-  assertEquals(VALUE_ONE,value.toString());
-  Thread.sleep(10000);
-  exchange=template.send("direct:get",new Processor(){
-    @Override public void process(    Exchange exchange) throws Exception {
-      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+  waitFor(new Condition(){
+    @Override public boolean isSatisfied() throws Exception {
+      NotifyingFuture resultPutAsync=exchange.getIn().getHeader(InfinispanConstants.RESULT,NotifyingFuture.class);
+      return resultPutAsync.isDone() && currentCache().get(KEY_ONE).equals(VALUE_ONE);
     }
   }
-);
-  String resultGet=exchange.getIn().getHeader(InfinispanConstants.RESULT,String.class);
-  assertNull(resultGet);
+,500);
+  Thread.sleep(300);
+  waitForNullValue(KEY_ONE);
 }
