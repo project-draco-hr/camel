@@ -20,14 +20,24 @@
   List<MethodInfo> candidates=new ArrayList<MethodInfo>();
   MethodInfo fallbackCandidate=null;
   for (  MethodInfo info : operations) {
-    it=ObjectHelper.createIterator(parameters);
+    it=ObjectHelper.createIterator(parameters,",",false);
     int index=0;
     boolean matches=true;
     while (it.hasNext()) {
       String parameter=(String)it.next();
+      if (parameter != null) {
+        parameter=parameter.trim();
+      }
       Class<?> parameterType=BeanHelper.getValidParameterType(parameter);
       Class<?> expectedType=info.getParameters().get(index).getType();
       if (parameterType != null && expectedType != null) {
+        if (StringHelper.hasStartToken(parameter,"simple")) {
+          LOG.trace("Evaluating simple expression for parameter #{}: {} to determine the class type of the parameter",index,parameter);
+          Object out=getCamelContext().resolveLanguage("simple").createExpression(parameter).evaluate(exchange,Object.class);
+          if (out != null) {
+            parameterType=out.getClass();
+          }
+        }
         if (Object.class.equals(expectedType)) {
           fallbackCandidate=info;
           matches=false;
