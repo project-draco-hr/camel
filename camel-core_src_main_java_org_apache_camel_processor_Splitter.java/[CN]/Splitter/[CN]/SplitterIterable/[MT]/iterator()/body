@@ -20,21 +20,26 @@
     }
     public ProcessorExchangePair next(){
       Object part=iterator.next();
-      Exchange newExchange=ExchangeHelper.createCorrelatedCopy(copy,false);
-      if (newExchange.getProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK) == null) {
-        newExchange.setProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK,original.getUnitOfWork());
-      }
-      if (isShareUnitOfWork()) {
-        prepareSharedUnitOfWork(newExchange,copy);
-      }
-      if (part instanceof Message) {
-        newExchange.setIn((Message)part);
+      if (part != null) {
+        Exchange newExchange=ExchangeHelper.createCorrelatedCopy(copy,false);
+        if (newExchange.getProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK) == null) {
+          newExchange.setProperty(Exchange.STREAM_CACHE_UNIT_OF_WORK,original.getUnitOfWork());
+        }
+        if (isShareUnitOfWork()) {
+          prepareSharedUnitOfWork(newExchange,copy);
+        }
+        if (part instanceof Message) {
+          newExchange.setIn((Message)part);
+        }
+ else {
+          Message in=newExchange.getIn();
+          in.setBody(part);
+        }
+        return createProcessorExchangePair(index++,getProcessors().iterator().next(),newExchange,routeContext);
       }
  else {
-        Message in=newExchange.getIn();
-        in.setBody(part);
+        return null;
       }
-      return createProcessorExchangePair(index++,getProcessors().iterator().next(),newExchange,routeContext);
     }
     public void remove(){
       throw new UnsupportedOperationException("Remove is not supported by this iterator");
