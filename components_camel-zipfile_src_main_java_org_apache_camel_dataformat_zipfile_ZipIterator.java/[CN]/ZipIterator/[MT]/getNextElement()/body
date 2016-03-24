@@ -1,24 +1,29 @@
 {
-  Message answer=null;
-  if (zipInputStream != null) {
-    try {
-      ZipEntry current=getNextEntry();
-      if (current != null) {
-        LOGGER.debug("read zipEntry {}",current.getName());
-        answer=new DefaultMessage();
-        answer.getHeaders().putAll(inputMessage.getHeaders());
-        answer.setHeader("zipFileName",current.getName());
-        answer.setHeader(Exchange.FILE_NAME,current.getName());
+  if (zipInputStream == null) {
+    return null;
+  }
+  try {
+    ZipEntry current=getNextEntry();
+    if (current != null) {
+      LOGGER.debug("read zipEntry {}",current.getName());
+      Message answer=new DefaultMessage();
+      answer.getHeaders().putAll(inputMessage.getHeaders());
+      answer.setHeader("zipFileName",current.getName());
+      answer.setHeader(Exchange.FILE_NAME,current.getName());
+      if (current.getSize() > 0) {
         answer.setBody(new ZipInputStreamWrapper(zipInputStream));
-        return answer;
       }
  else {
-        LOGGER.trace("close zipInputStream");
+        answer.setBody(new ByteArrayInputStream(new byte[0]));
       }
+      return answer;
     }
- catch (    IOException exception) {
-      throw new RuntimeCamelException(exception);
+ else {
+      LOGGER.trace("close zipInputStream");
+      return null;
     }
   }
-  return answer;
+ catch (  IOException exception) {
+    throw new RuntimeCamelException(exception);
+  }
 }
