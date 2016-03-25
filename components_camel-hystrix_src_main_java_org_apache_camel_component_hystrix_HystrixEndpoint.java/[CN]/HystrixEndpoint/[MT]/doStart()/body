@@ -1,0 +1,14 @@
+{
+  HystrixPlugins.getInstance().registerConcurrencyStrategy(new HystrixConcurrencyStrategy(){
+    @Override public ThreadPoolExecutor getThreadPool(    final HystrixThreadPoolKey threadPoolKey,    HystrixProperty<Integer> corePoolSize,    HystrixProperty<Integer> maximumPoolSize,    HystrixProperty<Integer> keepAliveTime,    TimeUnit unit,    BlockingQueue<Runnable> workQueue){
+      return new ThreadPoolExecutor(corePoolSize.get(),maximumPoolSize.get(),keepAliveTime.get(),unit,workQueue,new ThreadFactory(){
+        @Override public Thread newThread(        Runnable r){
+          return getCamelContext().getExecutorServiceManager().newThread("camel-hystrix-" + threadPoolKey.name(),r);
+        }
+      }
+);
+    }
+  }
+);
+  super.doStart();
+}
