@@ -1,0 +1,42 @@
+{
+  String answer=null;
+  String id=routeIdExpression().evaluate(exchange,String.class);
+  for (  Map.Entry<String,String> entry : serviceMappings.entrySet()) {
+    String pattern=entry.getKey();
+    if (EndpointHelper.matchPattern(pattern,id)) {
+      answer=entry.getValue();
+      break;
+    }
+  }
+  if (answer == null) {
+    id=exchange.getFromRouteId();
+    for (    Map.Entry<String,String> entry : serviceMappings.entrySet()) {
+      String pattern=entry.getKey();
+      if (EndpointHelper.matchPattern(pattern,id)) {
+        answer=entry.getValue();
+        break;
+      }
+    }
+  }
+  if (answer == null && endpoint != null) {
+    String url=endpoint.getEndpointUri();
+    for (    Map.Entry<String,String> entry : serviceMappings.entrySet()) {
+      String pattern=entry.getKey();
+      if (EndpointHelper.matchEndpoint(exchange.getContext(),url,pattern)) {
+        answer=entry.getValue();
+        break;
+      }
+    }
+  }
+  if (answer == null && exchange.getFromEndpoint() != null) {
+    String url=exchange.getFromEndpoint().getEndpointUri();
+    for (    Map.Entry<String,String> entry : serviceMappings.entrySet()) {
+      String pattern=entry.getKey();
+      if (EndpointHelper.matchEndpoint(exchange.getContext(),url,pattern)) {
+        answer=entry.getValue();
+        break;
+      }
+    }
+  }
+  return answer;
+}

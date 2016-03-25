@@ -1,0 +1,20 @@
+{
+  super.doStart();
+  if (serviceMappings.isEmpty()) {
+    throw new IllegalStateException("At least one service name must be configured");
+  }
+  for (  Map.Entry<String,String> entry : serviceMappings.entrySet()) {
+    String pattern=entry.getKey();
+    String serviceName=entry.getValue();
+    Brave brave=braves.get(pattern);
+    if (brave == null) {
+      Brave.Builder builder=new Brave.Builder(serviceName);
+      builder=builder.traceSampler(Sampler.create(rate));
+      if (spanCollector != null) {
+        builder=builder.spanCollector(spanCollector);
+      }
+      brave=builder.build();
+      braves.put(serviceName,brave);
+    }
+  }
+}
