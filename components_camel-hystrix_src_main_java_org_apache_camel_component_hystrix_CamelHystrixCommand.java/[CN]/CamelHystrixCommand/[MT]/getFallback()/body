@@ -4,10 +4,17 @@
   }
   try {
     Endpoint endpoint=findEndpoint(fallbackEndpointId);
+    if (exchange.getException() != null) {
+      Exception exception=exchange.getException();
+      exchange.setException(null);
+      if (exception instanceof InterruptedException) {
+        exchange.removeProperty(Exchange.ROUTE_STOP);
+      }
+    }
     endpoint.createProducer().process(exchange);
   }
- catch (  Exception e) {
-    throw new RuntimeException(e.getMessage());
+ catch (  Exception exception) {
+    throw new RuntimeException(exception.getMessage());
   }
   return exchange;
 }
