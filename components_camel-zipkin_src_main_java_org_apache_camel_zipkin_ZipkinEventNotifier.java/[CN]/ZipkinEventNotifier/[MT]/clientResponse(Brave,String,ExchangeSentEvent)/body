@@ -1,0 +1,10 @@
+{
+  ClientSpanThreadBinder binder=brave.clientSpanThreadBinder();
+  Span span=event.getExchange().getProperty("CamelZipkinClientSpan",Span.class);
+  binder.setCurrentSpan(span);
+  brave.clientResponseInterceptor().handle(new ZipkinClientResponseAdaptor(event.getExchange(),event.getEndpoint()));
+  binder.setCurrentSpan(null);
+  if (log.isDebugEnabled()) {
+    log.debug("clientResponse: service={}, id={} ",serviceName,span != null ? span.getId() : "<null>");
+  }
+}
