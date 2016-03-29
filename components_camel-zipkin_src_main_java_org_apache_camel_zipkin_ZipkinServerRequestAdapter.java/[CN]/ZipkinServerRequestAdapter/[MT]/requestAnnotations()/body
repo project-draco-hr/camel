@@ -1,8 +1,18 @@
 {
-  String id=exchange.getExchangeId();
-  String mep=exchange.getPattern().name();
   KeyValueAnnotation key1=KeyValueAnnotation.create("camel.server.endpoint.url",url);
-  KeyValueAnnotation key2=KeyValueAnnotation.create("camel.server.exchange.id",id);
-  KeyValueAnnotation key3=KeyValueAnnotation.create("camel.server.exchange.pattern",mep);
-  return Arrays.asList(key1,key2,key3);
+  KeyValueAnnotation key2=KeyValueAnnotation.create("camel.server.exchange.id",exchange.getExchangeId());
+  KeyValueAnnotation key3=KeyValueAnnotation.create("camel.server.exchange.pattern",exchange.getPattern().name());
+  KeyValueAnnotation key4=null;
+  if (eventNotifier.isIncludeMessageBody()) {
+    String body=MessageHelper.extractBodyForLogging(exchange.hasOut() ? exchange.getOut() : exchange.getIn(),"");
+    key4=KeyValueAnnotation.create("camel.server.exchange.message.request.body",body);
+  }
+  List<KeyValueAnnotation> list=new ArrayList<>();
+  list.add(key1);
+  list.add(key2);
+  list.add(key3);
+  if (key4 != null) {
+    list.add(key4);
+  }
+  return list;
 }
