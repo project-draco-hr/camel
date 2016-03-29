@@ -1,5 +1,16 @@
 {
   super.doStart();
+  ObjectHelper.notNull(camelContext,"CamelContext",this);
+  if (spanCollector == null) {
+    String host=camelContext.resolvePropertyPlaceholders("{{service.host:zipkin}}");
+    String port=camelContext.resolvePropertyPlaceholders("{{service.port:zipkin}}");
+    if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
+      log.info("Auto-configuring ZipkinScribeSpanCollector using host: {} and port: {}",host,port);
+      int num=camelContext.getTypeConverter().mandatoryConvertTo(Integer.class,port);
+      spanCollector=new ScribeSpanCollector(host,num);
+    }
+  }
+  ObjectHelper.notNull(spanCollector,"SpanCollector",this);
   if (serviceMappings.isEmpty()) {
     log.warn("No service name(s) has been configured. Camel will fallback and use endpoint uris as service names.");
     useFallbackServiceNames=true;
