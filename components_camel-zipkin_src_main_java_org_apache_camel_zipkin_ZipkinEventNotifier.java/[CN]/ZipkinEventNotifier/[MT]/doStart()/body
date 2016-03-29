@@ -2,12 +2,18 @@
   super.doStart();
   ObjectHelper.notNull(camelContext,"CamelContext",this);
   if (spanCollector == null) {
-    String host=camelContext.resolvePropertyPlaceholders("{{service.host:zipkin}}");
-    String port=camelContext.resolvePropertyPlaceholders("{{service.port:zipkin}}");
-    if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
-      log.info("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}",host,port);
-      int num=camelContext.getTypeConverter().mandatoryConvertTo(Integer.class,port);
-      spanCollector=new ScribeSpanCollector(host,num);
+    if (hostName != null && port > 0) {
+      log.info("Configuring Zipkin ScribeSpanCollector using host: {} and port: {}",hostName,port);
+      spanCollector=new ScribeSpanCollector(hostName,port);
+    }
+ else {
+      String host=new ServiceHostPropertiesFunction().apply("zipkin");
+      String port=new ServicePortPropertiesFunction().apply("zipkin");
+      if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
+        log.info("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}",host,port);
+        int num=camelContext.getTypeConverter().mandatoryConvertTo(Integer.class,port);
+        spanCollector=new ScribeSpanCollector(host,num);
+      }
     }
   }
   ObjectHelper.notNull(spanCollector,"SpanCollector",this);
