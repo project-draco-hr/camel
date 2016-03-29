@@ -2,9 +2,14 @@
   String answer=null;
   String id=routeIdExpression().evaluate(exchange,String.class);
   if (id != null) {
+    for (    String pattern : excludePatterns) {
+      if (EndpointHelper.matchPattern(id,pattern)) {
+        return null;
+      }
+    }
     for (    Map.Entry<String,String> entry : serviceMappings.entrySet()) {
       String pattern=entry.getKey();
-      if (EndpointHelper.matchPattern(pattern,id)) {
+      if (EndpointHelper.matchPattern(id,pattern)) {
         answer=entry.getValue();
         break;
       }
@@ -13,9 +18,14 @@
   if (answer == null) {
     id=exchange.getFromRouteId();
     if (id != null) {
+      for (      String pattern : excludePatterns) {
+        if (EndpointHelper.matchPattern(id,pattern)) {
+          return null;
+        }
+      }
       for (      Map.Entry<String,String> entry : serviceMappings.entrySet()) {
         String pattern=entry.getKey();
-        if (EndpointHelper.matchPattern(pattern,id)) {
+        if (EndpointHelper.matchPattern(id,pattern)) {
           answer=entry.getValue();
           break;
         }
@@ -25,6 +35,11 @@
   if (answer == null && endpoint != null) {
     String url=endpoint.getEndpointUri();
     if (url != null) {
+      for (      String pattern : excludePatterns) {
+        if (EndpointHelper.matchPattern(url,pattern)) {
+          return null;
+        }
+      }
       for (      Map.Entry<String,String> entry : serviceMappings.entrySet()) {
         String pattern=entry.getKey();
         if (EndpointHelper.matchEndpoint(exchange.getContext(),url,pattern)) {
@@ -37,6 +52,11 @@
   if (answer == null && exchange.getFromEndpoint() != null) {
     String url=exchange.getFromEndpoint().getEndpointUri();
     if (url != null) {
+      for (      String pattern : excludePatterns) {
+        if (EndpointHelper.matchPattern(url,pattern)) {
+          return null;
+        }
+      }
       for (      Map.Entry<String,String> entry : serviceMappings.entrySet()) {
         String pattern=entry.getKey();
         if (EndpointHelper.matchEndpoint(exchange.getContext(),url,pattern)) {
@@ -46,5 +66,28 @@
       }
     }
   }
-  return answer;
+  if (answer == null && useFallbackServiceNames) {
+    String key=null;
+    if (endpoint != null) {
+      key=endpoint.getEndpointKey();
+    }
+ else     if (exchange.getFromEndpoint() != null) {
+      key=exchange.getFromEndpoint().getEndpointKey();
+    }
+    for (    String pattern : excludePatterns) {
+      if (EndpointHelper.matchPattern(key,pattern)) {
+        return null;
+      }
+    }
+    if (log.isTraceEnabled() && key != null) {
+      log.trace("Using serviceName: {} as fallback",key);
+    }
+    return key;
+  }
+ else {
+    if (log.isTraceEnabled() && answer != null) {
+      log.trace("Using serviceName: {}",answer);
+    }
+    return answer;
+  }
 }
