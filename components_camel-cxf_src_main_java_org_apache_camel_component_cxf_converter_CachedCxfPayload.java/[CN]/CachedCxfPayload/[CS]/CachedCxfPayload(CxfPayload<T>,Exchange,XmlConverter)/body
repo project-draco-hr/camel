@@ -1,7 +1,6 @@
 {
   super(orig.getHeaders(),new ArrayList<Source>(orig.getBodySources()),orig.getNsMap());
   ListIterator<Source> li=getBodySources().listIterator();
-  this.xml=xml;
   while (li.hasNext()) {
     Source source=li.next();
     XMLStreamReader reader=null;
@@ -14,15 +13,14 @@
     if (reader != null) {
       Map<String,String> nsmap=getNsMap();
       if (nsmap != null && !(reader instanceof DelegatingXMLStreamReader)) {
-        source=new StAXSource(new DelegatingXMLStreamReader(reader,nsmap));
+        reader=new DelegatingXMLStreamReader(reader,nsmap);
       }
       CachedOutputStream cos=new CachedOutputStream(exchange);
-      StreamResult sr=new StreamResult(cos);
       try {
-        xml.toResult(source,sr);
+        StaxUtils.copy(reader,cos);
         li.set(new StreamSourceCache(cos.newStreamCache()));
       }
- catch (      TransformerException e) {
+ catch (      XMLStreamException e) {
         LOG.error("Transformation failed ",e);
       }
 catch (      IOException e) {
@@ -30,9 +28,9 @@ catch (      IOException e) {
       }
     }
  else     if (!(source instanceof DOMSource)) {
-      Document document=exchange.getContext().getTypeConverter().convertTo(Document.class,exchange,source);
+      DOMSource document=exchange.getContext().getTypeConverter().convertTo(DOMSource.class,exchange,source);
       if (document != null) {
-        li.set(new DOMSource(document));
+        li.set(document);
       }
     }
   }
