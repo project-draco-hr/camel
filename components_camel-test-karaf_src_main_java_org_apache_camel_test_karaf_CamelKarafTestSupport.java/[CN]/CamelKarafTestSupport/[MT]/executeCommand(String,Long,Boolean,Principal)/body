@@ -1,0 +1,52 @@
+{
+  waitForCommandService(command);
+  String response;
+  final ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
+  final PrintStream printStream=new PrintStream(byteArrayOutputStream);
+  final Callable<String> commandCallable=new Callable<String>(){
+    @Override public String call() throws Exception {
+      try {
+        if (!silent) {
+          System.err.println(command);
+        }
+        final CommandProcessor commandProcessor=getOsgiService(CommandProcessor.class);
+        final CommandSession commandSession=commandProcessor.createSession(System.in,printStream,System.err);
+        commandSession.execute(command);
+      }
+ catch (      Exception e) {
+        throw new RuntimeException(e.getMessage(),e);
+      }
+      printStream.flush();
+      return byteArrayOutputStream.toString();
+    }
+  }
+;
+  FutureTask<String> commandFuture;
+  if (principals.length == 0) {
+    commandFuture=new FutureTask<String>(commandCallable);
+  }
+ else {
+    commandFuture=new FutureTask<String>(new Callable<String>(){
+      @Override public String call() throws Exception {
+        Subject subject=new Subject();
+        subject.getPrincipals().addAll(Arrays.asList(principals));
+        return Subject.doAs(subject,new PrivilegedExceptionAction<String>(){
+          @Override public String run() throws Exception {
+            return commandCallable.call();
+          }
+        }
+);
+      }
+    }
+);
+  }
+  try {
+    executor.submit(commandFuture);
+    response=commandFuture.get(timeout,TimeUnit.MILLISECONDS);
+  }
+ catch (  Exception e) {
+    e.printStackTrace(System.err);
+    response="SHELL COMMAND TIMED OUT: ";
+  }
+  return response;
+}
