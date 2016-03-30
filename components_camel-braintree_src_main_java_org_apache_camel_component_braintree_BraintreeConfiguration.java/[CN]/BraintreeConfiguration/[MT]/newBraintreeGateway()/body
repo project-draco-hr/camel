@@ -3,5 +3,17 @@
   if (ObjectHelper.isNotEmpty(proxyHost) && ObjectHelper.isNotEmpty(proxyPort)) {
     gateway.setProxy(proxyHost,proxyPort);
   }
+  if (httpReadTimeout != null) {
+    gateway.getConfiguration().setTimeout(httpReadTimeout);
+  }
+  final Logger logger=ObjectHelper.isNotEmpty(httpLogName) ? Logger.getLogger(httpLogName) : gateway.getConfiguration().getLogger();
+  for (  Handler handler : logger.getHandlers()) {
+    logger.removeHandler(handler);
+  }
+  logger.addHandler(new SLF4JBridgeHandler());
+  if (httpLogLevel != null) {
+    logger.setLevel(httpLogLevel);
+  }
+  gateway.getConfiguration().setLogger(logger);
   return gateway;
 }
