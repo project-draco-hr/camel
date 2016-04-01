@@ -1,0 +1,31 @@
+{
+  ServerSpanThreadBinder serverBinder=brave.serverSpanThreadBinder();
+  ZipkinState state=exchange.getProperty(ZipkinState.KEY,ZipkinState.class);
+  if (state == null) {
+    state=new ZipkinState();
+    exchange.setProperty(ZipkinState.KEY,state);
+  }
+  ServerSpan last=state.peekServerSpan();
+  if (last != null) {
+    serverBinder.setCurrentSpan(last);
+  }
+  brave.serverRequestInterceptor().handle(new ZipkinServerRequestAdapter(this,exchange));
+  ServerSpan span=serverBinder.getCurrentServerSpan();
+  state.pushServerSpan(span);
+  serverBinder.setCurrentSpan(null);
+  if (log.isDebugEnabled()) {
+    String traceId="<null>";
+    if (span.getSpan() != null) {
+      traceId="" + span.getSpan().getTrace_id();
+    }
+    String spanId="<null>";
+    if (span.getSpan() != null) {
+      spanId="" + span.getSpan().getId();
+    }
+    String parentId="<null>";
+    if (span.getSpan() != null) {
+      parentId="" + span.getSpan().getParent_id();
+    }
+    log.debug("serverRequest [service={}, traceId={}, spanId={}, parentId={}]",serviceName,traceId,spanId,parentId);
+  }
+}

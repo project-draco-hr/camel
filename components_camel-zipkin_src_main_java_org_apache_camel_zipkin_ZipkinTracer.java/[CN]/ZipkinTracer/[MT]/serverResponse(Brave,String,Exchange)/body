@@ -1,0 +1,28 @@
+{
+  ServerSpan span=null;
+  ZipkinState state=exchange.getProperty(ZipkinState.KEY,ZipkinState.class);
+  if (state != null) {
+    span=state.popServerSpan();
+  }
+  if (span != null) {
+    ServerSpanThreadBinder serverBinder=brave.serverSpanThreadBinder();
+    serverBinder.setCurrentSpan(span);
+    brave.serverResponseInterceptor().handle(new ZipkinServerResponseAdapter(this,exchange));
+    serverBinder.setCurrentSpan(null);
+    if (log.isDebugEnabled()) {
+      String traceId="<null>";
+      if (span.getSpan() != null) {
+        traceId="" + span.getSpan().getTrace_id();
+      }
+      String spanId="<null>";
+      if (span.getSpan() != null) {
+        spanId="" + span.getSpan().getId();
+      }
+      String parentId="<null>";
+      if (span.getSpan() != null) {
+        parentId="" + span.getSpan().getParent_id();
+      }
+      log.debug("serverResponse[service={}, traceId={}, spanId={}, parentId={}]",serviceName,traceId,spanId,parentId);
+    }
+  }
+}
