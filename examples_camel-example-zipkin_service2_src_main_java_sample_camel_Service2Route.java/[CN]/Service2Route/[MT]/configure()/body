@@ -1,3 +1,8 @@
 {
-  from("jetty:http://0.0.0.0:{{service2.port}}/service2").routeId("service2").removeHeaders("CamelHttp*").convertBodyTo(String.class).delay(simple("${random(1000,2000)}")).transform(simple("Hello: ${body}")).to("http://0.0.0.0:{{service3.port}}/service3");
+  ZipkinEventNotifier zipkin=new ZipkinEventNotifier();
+  zipkin.setHostName("192.168.99.100");
+  zipkin.setPort(9410);
+  zipkin.setServiceName("service2");
+  getContext().getManagementStrategy().addEventNotifier(zipkin);
+  from("undertow:http://0.0.0.0:7070/service2").routeId("service2").convertBodyTo(String.class).delay(simple("${random(1000,2000)}")).transform(simple("Bye: ${body}"));
 }
