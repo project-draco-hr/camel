@@ -1,5 +1,6 @@
 {
-  ClientSpanThreadBinder binder=brave.clientSpanThreadBinder();
+  ClientSpanThreadBinder clientBinder=brave.clientSpanThreadBinder();
+  ServerSpanThreadBinder serverBinder=brave.serverSpanThreadBinder();
   ZipkinState state=event.getExchange().getProperty(ZipkinState.KEY,ZipkinState.class);
   if (state == null) {
     state=new ZipkinState();
@@ -7,16 +8,16 @@
   }
   Object last=state.getLast();
   if (last != null && last instanceof Span) {
-    binder.setCurrentSpan((Span)last);
+    clientBinder.setCurrentSpan((Span)last);
   }
  else   if (last != null && last instanceof ServerSpan) {
-    Span span=((ServerSpan)last).getSpan();
-    binder.setCurrentSpan(span);
+    serverBinder.setCurrentSpan((ServerSpan)last);
   }
   brave.clientRequestInterceptor().handle(new ZipkinClientRequestAdapter(this,serviceName,event.getExchange(),event.getEndpoint()));
-  Span span=binder.getCurrentClientSpan();
+  Span span=clientBinder.getCurrentClientSpan();
   state.pushClientSpan(span);
-  binder.setCurrentSpan(null);
+  clientBinder.setCurrentSpan(null);
+  serverBinder.setCurrentSpan(null);
   if (log.isDebugEnabled()) {
     String traceId="<null>";
     if (span != null) {
