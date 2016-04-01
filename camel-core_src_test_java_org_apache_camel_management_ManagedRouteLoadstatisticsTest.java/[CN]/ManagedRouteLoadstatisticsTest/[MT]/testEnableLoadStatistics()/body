@@ -3,7 +3,12 @@
     return;
   }
   context.getManagementStrategy().getManagementAgent().setLoadStatisticsEnabled(true);
-  context.stop();
+  context.addRoutes(new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("log:foo").delay(2000).to("mock:result");
+    }
+  }
+);
   context.start();
   MBeanServer mbeanServer=getMBeanServer();
   ObjectName on=ObjectName.getInstance("org.apache.camel:context=camel-1,type=routes,name=\"route1\"");

@@ -8,6 +8,12 @@
     inputs.put(order.getStartupOrder(),order);
   }
   doWarmUpRoutes(inputs,startConsumer);
+  Collections.sort(startupListeners,new OrderedComparator());
+  for (  StartupListener startup : startupListeners) {
+    startup.onCamelContextStarted(this,isStarted());
+  }
+  List<StartupListener> backup=new ArrayList<>(startupListeners);
+  startupListeners.clear();
   if (startConsumer) {
     if (resumeConsumer) {
       doResumeRouteConsumers(inputs,addingRoutes);
@@ -16,5 +22,10 @@
       doStartRouteConsumers(inputs,addingRoutes);
     }
   }
+  Collections.sort(startupListeners,new OrderedComparator());
+  for (  StartupListener startup : startupListeners) {
+    startup.onCamelContextStarted(this,isStarted());
+  }
+  startupListeners.addAll(0,backup);
   inputs.clear();
 }

@@ -1,37 +1,8 @@
 {
-  if (endpointDone.compareAndSet(false,true)) {
-    for (    Route route : routes) {
-      ServiceHelper.startService(route.getEndpoint());
-    }
+  try {
+    doWarmUp();
   }
-  if (warmUpDone.compareAndSet(false,true)) {
-    for (    Route route : routes) {
-      route.warmUp();
-      LOG.debug("Starting services on route: {}",route.getId());
-      List<Service> services=route.getServices();
-      route.onStartingServices(services);
-      Set<Service> list=new LinkedHashSet<Service>();
-      for (      Service service : services) {
-        list.addAll(ServiceHelper.getChildServices(service));
-      }
-      List<Service> childServices=new ArrayList<Service>();
-      for (      Service service : list) {
-        if (service instanceof RouteAware) {
-          ((RouteAware)service).setRoute(route);
-        }
-        if (service instanceof Consumer) {
-          inputs.put(route,(Consumer)service);
-        }
- else {
-          childServices.add(service);
-        }
-      }
-      startChildService(route,childServices);
-      EventHelper.notifyRouteAdded(camelContext,route);
-    }
-    for (    LifecycleStrategy strategy : camelContext.getLifecycleStrategies()) {
-      strategy.onRoutesAdd(routes);
-    }
-    camelContext.addRouteCollection(routes);
+ catch (  Exception e) {
+    throw new FailedToCreateRouteException(routeDefinition.getId(),routeDefinition.toString(),e);
   }
 }

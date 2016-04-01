@@ -1,6 +1,20 @@
 {
-  for (  Service service : services) {
-    ServiceHelper.startService(service);
+  while (!services.isEmpty()) {
+    Service service=services.iterator().next();
+    try {
+      ServiceHelper.startService(service);
+    }
+ catch (    Exception e) {
+      if (service instanceof Endpoint) {
+        Endpoint endpoint=(Endpoint)service;
+        throw new ResolveEndpointFailedException(endpoint.getEndpointUri(),e);
+      }
+ else {
+        throw e;
+      }
+    }
+ finally {
+      services.remove(service);
+    }
   }
-  services.clear();
 }
