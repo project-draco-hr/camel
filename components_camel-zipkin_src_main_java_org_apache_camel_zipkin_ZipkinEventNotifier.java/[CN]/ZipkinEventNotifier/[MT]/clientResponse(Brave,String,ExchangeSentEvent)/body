@@ -1,15 +1,19 @@
 {
-  ClientSpanThreadBinder binder=brave.clientSpanThreadBinder();
-  String key="CamelZipkinClientSpan-" + serviceName;
-  Span span=event.getExchange().getProperty(key,Span.class);
-  binder.setCurrentSpan(span);
-  brave.clientResponseInterceptor().handle(new ZipkinClientResponseAdaptor(this,event.getExchange(),event.getEndpoint()));
-  binder.setCurrentSpan(null);
-  if (log.isDebugEnabled()) {
-    String id="<null>";
-    if (span != null) {
-      id="" + span.getId();
+  Span span=null;
+  ZipkinState state=event.getExchange().getProperty(ZipkinState.KEY,ZipkinState.class);
+  if (state != null) {
+    span=state.popClientSpan();
+  }
+  if (span != null) {
+    ClientSpanThreadBinder binder=brave.clientSpanThreadBinder();
+    binder.setCurrentSpan(span);
+    brave.clientResponseInterceptor().handle(new ZipkinClientResponseAdaptor(this,event.getExchange(),event.getEndpoint()));
+    binder.setCurrentSpan(null);
+    if (log.isDebugEnabled()) {
+      String traceId="" + span.getTrace_id();
+      String spanId="" + span.getId();
+      String parentId="" + span.getParent_id();
+      log.debug("clientResponse[service={}, traceId={}, spanId={}, parentId={}]",serviceName,traceId,spanId,parentId);
     }
-    log.debug("clientResponse\t[service={}, spanId={}]",serviceName,id);
   }
 }

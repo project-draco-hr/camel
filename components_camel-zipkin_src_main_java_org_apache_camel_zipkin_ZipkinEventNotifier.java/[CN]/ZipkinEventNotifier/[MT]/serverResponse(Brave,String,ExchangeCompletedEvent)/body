@@ -1,15 +1,28 @@
 {
-  ServerSpanThreadBinder binder=brave.serverSpanThreadBinder();
-  String key="CamelZipkinServerSpan-" + serviceName;
-  ServerSpan span=event.getExchange().getProperty(key,ServerSpan.class);
-  binder.setCurrentSpan(span);
-  brave.serverResponseInterceptor().handle(new ZipkinServerResponseAdapter(this,event.getExchange()));
-  binder.setCurrentSpan(null);
-  if (log.isDebugEnabled()) {
-    String id="<null>";
-    if (span != null && span.getSpan() != null) {
-      id="" + span.getSpan().getId();
+  ServerSpan span=null;
+  ZipkinState state=event.getExchange().getProperty(ZipkinState.KEY,ZipkinState.class);
+  if (state != null) {
+    span=state.popServerSpan();
+  }
+  if (span != null) {
+    ServerSpanThreadBinder binder=brave.serverSpanThreadBinder();
+    binder.setCurrentSpan(span);
+    brave.serverResponseInterceptor().handle(new ZipkinServerResponseAdapter(this,event.getExchange()));
+    binder.setCurrentSpan(null);
+    if (log.isDebugEnabled()) {
+      String traceId="<null>";
+      if (span.getSpan() != null) {
+        traceId="" + span.getSpan().getTrace_id();
+      }
+      String spanId="<null>";
+      if (span.getSpan() != null) {
+        spanId="" + span.getSpan().getId();
+      }
+      String parentId="<null>";
+      if (span.getSpan() != null) {
+        parentId="" + span.getSpan().getParent_id();
+      }
+      log.debug("serverResponse[service={}, traceId={}, spanId={}, parentId={}] [status=exchangeFailed]",serviceName,traceId,spanId,parentId);
     }
-    log.debug("serverResponse\t[service={}, spanId={}]\t[status=exchangeCompleted]",serviceName,id);
   }
 }

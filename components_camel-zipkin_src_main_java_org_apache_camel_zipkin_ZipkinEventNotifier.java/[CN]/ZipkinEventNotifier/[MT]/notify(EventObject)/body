@@ -1,7 +1,7 @@
 {
   if (event instanceof ExchangeSendingEvent) {
     ExchangeSendingEvent ese=(ExchangeSendingEvent)event;
-    String serviceName=getServiceName(ese.getExchange(),ese.getEndpoint());
+    String serviceName=getServiceName(ese,ese.getExchange(),ese.getEndpoint(),false,true);
     Brave brave=getBrave(serviceName);
     if (brave != null) {
       clientRequest(brave,serviceName,ese);
@@ -9,23 +9,25 @@
   }
  else   if (event instanceof ExchangeSentEvent) {
     ExchangeSentEvent ese=(ExchangeSentEvent)event;
-    String serviceName=getServiceName(ese.getExchange(),ese.getEndpoint());
+    String serviceName=getServiceName(ese,ese.getExchange(),ese.getEndpoint(),false,true);
     Brave brave=getBrave(serviceName);
     if (brave != null) {
       clientResponse(brave,serviceName,ese);
     }
   }
- else   if (event instanceof ExchangeCreatedEvent) {
+  if (event instanceof ExchangeCreatedEvent) {
     ExchangeCreatedEvent ece=(ExchangeCreatedEvent)event;
-    String serviceName=getServiceName(ece.getExchange(),null);
-    Brave brave=getBrave(serviceName);
-    if (brave != null) {
-      serverRequest(brave,serviceName,ece);
+    if (hasZipkinTraceId(ece.getExchange())) {
+      String serviceName=getServiceName(ece,ece.getExchange(),null,true,false);
+      Brave brave=getBrave(serviceName);
+      if (brave != null) {
+        serverRequest(brave,serviceName,ece);
+      }
     }
   }
- else   if (event instanceof ExchangeCompletedEvent) {
+  if (event instanceof ExchangeCompletedEvent) {
     ExchangeCompletedEvent ece=(ExchangeCompletedEvent)event;
-    String serviceName=getServiceName(ece.getExchange(),null);
+    String serviceName=getServiceName(ece,ece.getExchange(),null,true,false);
     Brave brave=getBrave(serviceName);
     if (brave != null) {
       serverResponse(brave,serviceName,ece);
@@ -33,7 +35,7 @@
   }
  else   if (event instanceof ExchangeFailedEvent) {
     ExchangeFailedEvent efe=(ExchangeFailedEvent)event;
-    String serviceName=getServiceName(efe.getExchange(),null);
+    String serviceName=getServiceName(efe,efe.getExchange(),null,true,false);
     Brave brave=getBrave(serviceName);
     if (brave != null) {
       serverResponse(brave,serviceName,efe);

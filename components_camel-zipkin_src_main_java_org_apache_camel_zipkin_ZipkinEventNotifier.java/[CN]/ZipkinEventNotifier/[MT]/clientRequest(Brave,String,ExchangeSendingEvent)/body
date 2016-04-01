@@ -1,14 +1,35 @@
 {
   ClientSpanThreadBinder binder=brave.clientSpanThreadBinder();
-  brave.clientRequestInterceptor().handle(new ZipkinClientRequestAdapter(this,serviceName,event.getExchange(),event.getEndpoint()));
+  ZipkinState state=event.getExchange().getProperty(ZipkinState.KEY,ZipkinState.class);
+  if (state == null) {
+    state=new ZipkinState();
+    event.getExchange().setProperty(ZipkinState.KEY,state);
+  }
+  Object last=state.getLast();
+  if (last != null && last instanceof Span) {
+    binder.setCurrentSpan((Span)last);
+  }
+ else   if (last != null && last instanceof ServerSpan) {
+    Span span=((ServerSpan)last).getSpan();
+    binder.setCurrentSpan(span);
+  }
+  brave.brave.clientRequestInterceptor().handle(new ZipkinClientRequestAdapter(this,serviceName,event.getExchange(),event.getEndpoint()));
   Span span=binder.getCurrentClientSpan();
-  String key="CamelZipkinClientSpan-" + serviceName;
-  event.getExchange().setProperty(key,span);
+  state.pushClientSpan(span);
+  binder.setCurrentSpan(null);
   if (log.isDebugEnabled()) {
-    String id="<null>";
+    String traceId="<null>";
     if (span != null) {
-      id="" + span.getId();
+      traceId="" + span.getTrace_id();
     }
-    log.debug("clientRequest\t[service={}, spanId={}]",serviceName,id);
+    String spanId="<null>";
+    if (span != null) {
+      spanId="" + span.getId();
+    }
+    String parentId="<null>";
+    if (span != null) {
+      parentId="" + span.getParent_id();
+    }
+    log.debug("clientRequest [service={}, traceId={}, spanId={}, parentId={}]",serviceName,traceId,spanId,parentId);
   }
 }
