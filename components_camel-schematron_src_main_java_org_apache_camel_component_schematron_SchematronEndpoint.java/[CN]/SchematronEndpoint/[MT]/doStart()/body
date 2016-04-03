@@ -9,10 +9,16 @@
       InputStream schRules=ResourceHelper.resolveMandatoryResourceAsInputStream(getCamelContext(),path);
       rules=TemplatesFactory.newInstance().getTemplates(schRules,transformerFactory);
     }
- catch (    Exception e) {
-      LOG.debug("Schamatron rules not found in class path, attempting file system {}",path);
-      InputStream schRules=FileUtils.openInputStream(new File(path));
-      rules=TemplatesFactory.newInstance().getTemplates(schRules,transformerFactory);
+ catch (    Exception classPathException) {
+      LOG.debug("Error loading schematron rules from class path, attempting file system {}",path);
+      try {
+        InputStream schRules=FileUtils.openInputStream(new File(path));
+        rules=TemplatesFactory.newInstance().getTemplates(schRules,transformerFactory);
+      }
+ catch (      FileNotFoundException e) {
+        LOG.debug("Schematron rules not found in the file system {}",path);
+        throw classPathException;
+      }
     }
     if (rules == null) {
       LOG.error("Failed to load schematron rules {}",path);
