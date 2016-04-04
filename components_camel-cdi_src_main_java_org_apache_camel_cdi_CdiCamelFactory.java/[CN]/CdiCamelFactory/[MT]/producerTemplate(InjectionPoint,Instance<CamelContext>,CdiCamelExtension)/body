@@ -1,13 +1,9 @@
 {
   Uri uri=CdiSpiHelper.getQualifierByType(ip,Uri.class);
-  try {
-    CamelContext context=uri.context().isEmpty() ? selectContext(ip,instance,extension) : selectContext(uri.context(),instance);
-    ProducerTemplate producerTemplate=context.createProducerTemplate();
-    Endpoint endpoint=context.getEndpoint(uri.value(),Endpoint.class);
-    producerTemplate.setDefaultEndpoint(endpoint);
-    return producerTemplate;
+  if (uri != null) {
+    return producerTemplateFromUri(ip,instance,extension,uri);
   }
- catch (  Exception cause) {
-    throw new InjectionException("Error injecting producer template annotated with " + uri + " into "+ ip,cause);
+ else {
+    return defaultProducerTemplate(ip,instance,extension);
   }
 }
