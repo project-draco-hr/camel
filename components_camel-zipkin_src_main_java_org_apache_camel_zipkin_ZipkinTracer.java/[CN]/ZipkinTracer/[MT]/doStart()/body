@@ -1,16 +1,19 @@
 {
-  super.doStart();
   ObjectHelper.notNull(camelContext,"CamelContext",this);
+  camelContext.getManagementStrategy().addEventNotifier(eventNotifier);
+  if (!camelContext.getRoutePolicyFactories().contains(this)) {
+    camelContext.addRoutePolicyFactory(this);
+  }
   if (spanCollector == null) {
     if (hostName != null && port > 0) {
-      log.info("Configuring Zipkin ScribeSpanCollector using host: {} and port: {}",hostName,port);
+      LOG.info("Configuring Zipkin ScribeSpanCollector using host: {} and port: {}",hostName,port);
       spanCollector=new ScribeSpanCollector(hostName,port);
     }
  else {
       String host=new ServiceHostPropertiesFunction().apply("zipkin-collector");
       String port=new ServicePortPropertiesFunction().apply("zipkin-collector");
       if (ObjectHelper.isNotEmpty(host) && ObjectHelper.isNotEmpty(port)) {
-        log.info("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}",host,port);
+        LOG.info("Auto-configuring Zipkin ScribeSpanCollector using host: {} and port: {}",host,port);
         int num=camelContext.getTypeConverter().mandatoryConvertTo(Integer.class,port);
         spanCollector=new ScribeSpanCollector(host,num);
       }
@@ -18,7 +21,7 @@
   }
   ObjectHelper.notNull(spanCollector,"SpanCollector",this);
   if (clientServiceMappings.isEmpty() && serverServiceMappings.isEmpty()) {
-    log.warn("No service name(s) has been mapped in clientServiceMappings or serverServiceMappings. Camel will fallback and use endpoint uris as service names.");
+    LOG.warn("No service name(s) has been mapped in clientServiceMappings or serverServiceMappings. Camel will fallback and use endpoint uris as service names.");
     useFallbackServiceNames=true;
   }
   for (  Map.Entry<String,String> entry : clientServiceMappings.entrySet()) {
