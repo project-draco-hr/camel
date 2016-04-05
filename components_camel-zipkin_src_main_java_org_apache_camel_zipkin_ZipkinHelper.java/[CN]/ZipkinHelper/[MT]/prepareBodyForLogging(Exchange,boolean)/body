@@ -1,0 +1,20 @@
+{
+  if (!streams) {
+    return null;
+  }
+  Message message=exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+  Object body=message.getBody();
+  if (body == null) {
+    return null;
+  }
+ else   if (body instanceof StreamCache) {
+    StreamCache sc=(StreamCache)body;
+    sc.reset();
+    return sc;
+  }
+  StreamCache sc=exchange.getContext().getStreamCachingStrategy().cache(exchange);
+  if (sc != null) {
+    message.setBody(sc);
+  }
+  return sc;
+}
