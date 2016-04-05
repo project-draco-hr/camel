@@ -13,20 +13,18 @@
   ServerSpan span=serverBinder.getCurrentServerSpan();
   state.pushServerSpan(span);
   serverBinder.setCurrentSpan(null);
-  if (log.isDebugEnabled()) {
-    String traceId="<null>";
-    if (span.getSpan() != null) {
-      traceId="" + span.getSpan().getTrace_id();
+  if (span != null && span.getSpan() != null && log.isDebugEnabled()) {
+    String traceId="" + span.getSpan().getTrace_id();
+    String spanId="" + span.getSpan().getId();
+    String parentId=span.getSpan().getParent_id() != null ? "" + span.getSpan().getParent_id() : null;
+    if (log.isDebugEnabled()) {
+      if (parentId != null) {
+        log.debug(String.format("serverRequest [service=%s, traceId=%20s, spanId=%20s, parentId=%20s]",serviceName,traceId,spanId,parentId));
+      }
+ else {
+        log.debug(String.format("serverRequest [service=%s, traceId=%20s, spanId=%20s]",serviceName,traceId,spanId));
+      }
     }
-    String spanId="<null>";
-    if (span.getSpan() != null) {
-      spanId="" + span.getSpan().getId();
-    }
-    String parentId="<null>";
-    if (span.getSpan() != null) {
-      parentId="" + span.getSpan().getParent_id();
-    }
-    log.debug("serverRequest [service={}, traceId={}, spanId={}, parentId={}]",serviceName,traceId,spanId,parentId);
   }
   return span;
 }
