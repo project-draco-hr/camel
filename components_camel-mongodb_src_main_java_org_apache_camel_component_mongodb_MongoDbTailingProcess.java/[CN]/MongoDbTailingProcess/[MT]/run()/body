@@ -1,21 +1,24 @@
 {
-  while (keepRunning) {
-    doRun();
-    if (keepRunning) {
-      cursor.close();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Regenerating cursor with lastVal: {}, waiting {}ms first",tailTracking.lastVal,cursorRegenerationDelay);
-      }
-      if (cursorRegenerationDelayEnabled) {
-        try {
-          Thread.sleep(cursorRegenerationDelay);
+  try {
+    while (keepRunning) {
+      doRun();
+      if (keepRunning) {
+        cursor.close();
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Regenerating cursor with lastVal: {}, waiting {}ms first",tailTracking.lastVal,cursorRegenerationDelay);
         }
- catch (        InterruptedException e) {
-          LOG.error("Thread was interrupted",e);
+        if (cursorRegenerationDelayEnabled) {
+          try {
+            Thread.sleep(cursorRegenerationDelay);
+          }
+ catch (          InterruptedException e) {
+          }
         }
+        cursor=initializeCursor();
       }
-      cursor=initializeCursor();
     }
   }
-  stopped=true;
+  finally {
+    latch.countDown();
+  }
 }
