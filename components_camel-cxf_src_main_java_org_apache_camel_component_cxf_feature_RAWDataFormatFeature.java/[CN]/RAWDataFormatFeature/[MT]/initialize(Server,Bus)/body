@@ -8,4 +8,15 @@
   server.getEndpoint().getBinding().getOutInterceptors().clear();
   server.getEndpoint().getOutInterceptors().add(new RawMessageContentRedirectInterceptor());
   server.getEndpoint().getInInterceptors().add(RawMessageWSDLGetInterceptor.INSTANCE);
+  if (isOneway()) {
+    Interceptor<? extends Message> toRemove=null;
+    for (    Interceptor<? extends Message> i : server.getEndpoint().getService().getInInterceptors()) {
+      if (i.getClass().getName().equals("org.apache.cxf.interceptor.OutgoingChainInterceptor")) {
+        toRemove=i;
+      }
+    }
+    server.getEndpoint().getService().getInInterceptors().remove(toRemove);
+    server.getEndpoint().getInInterceptors().add(new OneWayOutgoingChainInterceptor());
+    server.getEndpoint().getInInterceptors().add(new OneWayProcessorInterceptor());
+  }
 }
