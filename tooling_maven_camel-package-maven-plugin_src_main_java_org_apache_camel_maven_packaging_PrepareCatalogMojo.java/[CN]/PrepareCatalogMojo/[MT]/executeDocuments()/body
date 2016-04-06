@@ -1,0 +1,63 @@
+{
+  getLog().info("Copying all Camel documents (ascii docs)");
+  Set<File> adocFiles=new TreeSet<File>();
+  Set<File> missingAdocFiles=new TreeSet<File>();
+  Set<File> duplicateAdocFiles=new TreeSet<File>();
+  if (componentsDir != null && componentsDir.isDirectory()) {
+    File[] components=componentsDir.listFiles();
+    if (components != null) {
+      for (      File dir : components) {
+        if (dir.isDirectory() && !"target".equals(dir.getName())) {
+          File target=new File(dir,"src/main/docs");
+          int before=adocFiles.size();
+          findAsciiDocFilesRecursive(target,adocFiles,new CamelAsciiDocFileFilter());
+          int after=adocFiles.size();
+          if (before != after) {
+            missingAdocFiles.add(dir);
+          }
+        }
+      }
+    }
+  }
+  if (coreDir != null && coreDir.isDirectory()) {
+    File target=new File(coreDir,"src/main/docs");
+    findAsciiDocFilesRecursive(target,adocFiles,new CamelAsciiDocFileFilter());
+  }
+  getLog().info("Found " + adocFiles.size() + " ascii document files");
+  documentsOutDir.mkdirs();
+  for (  File file : adocFiles) {
+    File to=new File(documentsOutDir,file.getName());
+    if (to.exists()) {
+      duplicateAdocFiles.add(to);
+      getLog().warn("Duplicate document name detected: " + to);
+    }
+    try {
+      copyFile(file,to);
+    }
+ catch (    IOException e) {
+      throw new MojoFailureException("Cannot copy file from " + file + " -> "+ to,e);
+    }
+  }
+  File all=new File(documentsOutDir,"../docs.properties");
+  try {
+    FileOutputStream fos=new FileOutputStream(all,false);
+    String[] names=documentsOutDir.list();
+    List<String> documents=new ArrayList<String>();
+    for (    String name : names) {
+      if (name.endsWith(".adoc")) {
+        String documentName=name.substring(0,name.length() - 5);
+        documents.add(documentName);
+      }
+    }
+    Collections.sort(documents);
+    for (    String name : documents) {
+      fos.write(name.getBytes());
+      fos.write("\n".getBytes());
+    }
+    fos.close();
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error writing to file " + all);
+  }
+  printDocumentsReport(adocFiles,duplicateAdocFiles,missingAdocFiles);
+}
