@@ -3,19 +3,20 @@
   if (mapHttpMessageBody) {
     message.getBody();
   }
-  Map<String,Object> headers=message.getHeaders();
+  Map<String,Object> headers=new HashMap<String,Object>();
   if (mapHttpMessageHeaders) {
-    Enumeration<?> names=request.getHeaderNames();
-    while (names.hasMoreElements()) {
-      String name=(String)names.nextElement();
-      String value=request.getHeader(name);
-      Object extracted=HttpHelper.extractHttpParameterValue(value);
-      if (name.toLowerCase().equals("content-type")) {
-        name=Exchange.CONTENT_TYPE;
-      }
-      if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,message.getExchange())) {
-        HttpHelper.appendHeader(headers,name,extracted);
-      }
+    headers=message.getHeaders();
+  }
+  Enumeration<?> names=request.getHeaderNames();
+  while (names.hasMoreElements()) {
+    String name=(String)names.nextElement();
+    String value=request.getHeader(name);
+    Object extracted=HttpHelper.extractHttpParameterValue(value);
+    if (name.toLowerCase().equals("content-type")) {
+      name=Exchange.CONTENT_TYPE;
+    }
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,message.getExchange())) {
+      HttpHelper.appendHeader(headers,name,extracted);
     }
   }
   if (request.getCharacterEncoding() != null) {
