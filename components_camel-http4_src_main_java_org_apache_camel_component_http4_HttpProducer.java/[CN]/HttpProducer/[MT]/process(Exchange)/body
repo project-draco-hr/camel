@@ -62,11 +62,24 @@
     }
   }
   finally {
-    if (httpResponse != null && !getEndpoint().isDisableStreamCache()) {
-      try {
-        EntityUtils.consume(httpResponse.getEntity());
+    final HttpResponse response=httpResponse;
+    if (httpResponse != null && getEndpoint().isDisableStreamCache()) {
+      exchange.addOnCompletion(new SynchronizationAdapter(){
+        @Override public void onDone(        Exchange exchange){
+          try {
+            EntityUtils.consume(response.getEntity());
+          }
+ catch (          Throwable e) {
+          }
+        }
       }
- catch (      IOException e) {
+);
+    }
+ else     if (httpResponse != null) {
+      try {
+        EntityUtils.consume(response.getEntity());
+      }
+ catch (      Throwable e) {
       }
     }
   }
