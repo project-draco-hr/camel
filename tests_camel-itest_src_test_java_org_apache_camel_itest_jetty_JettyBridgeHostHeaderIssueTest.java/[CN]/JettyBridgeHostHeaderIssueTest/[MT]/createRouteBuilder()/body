@@ -2,11 +2,35 @@
   port=AvailablePortFinder.getNextAvailable(12000);
   port2=AvailablePortFinder.getNextAvailable(12100);
   port3=AvailablePortFinder.getNextAvailable(12200);
+  port4=AvailablePortFinder.getNextAvailable(12300);
+  port5=AvailablePortFinder.getNextAvailable(12400);
   return new RouteBuilder(){
     @Override public void configure() throws Exception {
-      from("jetty:http://localhost:" + port + "/myapp?matchOnUriPrefix=true").loadBalance().roundRobin().to("http4://localhost:" + port2 + "/foo?bridgeEndpoint=true&throwExceptionOnFailure=false").to("http4://localhost:" + port3 + "/bar?bridgeEndpoint=true&throwExceptionOnFailure=false");
-      from("jetty:http://localhost:" + port2 + "/foo").transform().constant("foo");
-      from("jetty:http://localhost:" + port3 + "/bar").transform().constant("bar");
+      from("jetty:http://localhost:" + port + "/myapp?matchOnUriPrefix=true").loadBalance().roundRobin().to("http4://localhost:" + port2 + "/foo?bridgeEndpoint=true&throwExceptionOnFailure=false&preserveHostHeader=true").to("http4://localhost:" + port3 + "/bar?bridgeEndpoint=true&throwExceptionOnFailure=false").to("jetty:http://localhost:" + port4 + "/jbar?bridgeEndpoint=true&throwExceptionOnFailure=false&preserveHostHeader=true").to("jetty:http://localhost:" + port5 + "/jbarf?bridgeEndpoint=true&throwExceptionOnFailure=false");
+      from("jetty:http://localhost:" + port2 + "/foo").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          receivedHostHeaderEndpoint1=exchange.getIn().getHeader("Host",String.class);
+        }
+      }
+).transform().constant("foo");
+      from("jetty:http://localhost:" + port3 + "/bar").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          receivedHostHeaderEndpoint2=exchange.getIn().getHeader("Host",String.class);
+        }
+      }
+).transform().constant("bar");
+      from("jetty:http://localhost:" + port4 + "/jbar").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          receivedHostHeaderEndpoint3=exchange.getIn().getHeader("Host",String.class);
+        }
+      }
+).transform().constant("jbar");
+      from("jetty:http://localhost:" + port5 + "/jbarf").process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          receivedHostHeaderEndpoint4=exchange.getIn().getHeader("Host",String.class);
+        }
+      }
+).transform().constant("java???");
     }
   }
 ;

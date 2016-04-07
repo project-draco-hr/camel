@@ -67,7 +67,6 @@
     if (queryString != null) {
       skipRequestHeaders=URISupport.parseQuery(queryString,false,true);
     }
-    exchange.getIn().getHeaders().remove("host");
   }
   Message in=exchange.getIn();
   HeaderFilterStrategy strategy=getEndpoint().getHeaderFilterStrategy();
@@ -90,6 +89,12 @@
         String s=values.size() > 1 ? values.toString() : values.get(0);
         httpExchange.addRequestHeader(key,s);
       }
+    }
+  }
+  if (getEndpoint().isPreserveHostHeader()) {
+    String hostHeader=exchange.getIn().getHeader("Host",String.class);
+    if (hostHeader != null) {
+      httpExchange.addRequestHeader("Host",hostHeader);
     }
   }
   if (LOG.isDebugEnabled()) {
