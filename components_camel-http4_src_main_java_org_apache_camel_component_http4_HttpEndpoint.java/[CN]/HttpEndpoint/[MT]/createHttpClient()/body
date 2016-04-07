@@ -6,16 +6,21 @@
   if (getComponent() != null && getComponent().getClientConnectionManager() == getClientConnectionManager()) {
     clientBuilder.setConnectionManagerShared(true);
   }
-  if (ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyHost")) && ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyPort"))) {
-    String host=getCamelContext().getProperty("http.proxyHost");
-    int port=Integer.parseInt(getCamelContext().getProperty("http.proxyPort"));
-    String scheme=getCamelContext().getProperty("http.proxyScheme");
-    if (scheme == null) {
-      scheme=HttpHelper.isSecureConnection(getEndpointUri()) ? "https" : "http";
+  if (!useSystemProperties) {
+    if (ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyHost")) && ObjectHelper.isNotEmpty(getCamelContext().getProperty("http.proxyPort"))) {
+      String host=getCamelContext().getProperty("http.proxyHost");
+      int port=Integer.parseInt(getCamelContext().getProperty("http.proxyPort"));
+      String scheme=getCamelContext().getProperty("http.proxyScheme");
+      if (scheme == null) {
+        scheme=HttpHelper.isSecureConnection(getEndpointUri()) ? "https" : "http";
+      }
+      LOG.debug("CamelContext properties http.proxyHost, http.proxyPort, and http.proxyScheme detected. Using http proxy host: {} port: {} scheme: {}",new Object[]{host,port,scheme});
+      HttpHost proxy=new HttpHost(host,port,scheme);
+      clientBuilder.setProxy(proxy);
     }
-    LOG.debug("CamelContext properties http.proxyHost, http.proxyPort, and http.proxyScheme detected. Using http proxy host: {} port: {} scheme: {}",new Object[]{host,port,scheme});
-    HttpHost proxy=new HttpHost(host,port,scheme);
-    clientBuilder.setProxy(proxy);
+  }
+ else {
+    clientBuilder.useSystemProperties();
   }
   if (isAuthenticationPreemptive()) {
     clientBuilder.addInterceptorFirst(new PreemptiveAuthInterceptor());
