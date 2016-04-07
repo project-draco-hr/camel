@@ -1,0 +1,16 @@
+{
+  final String[] values=new String[updates];
+  for (int i=0; i < updates; i++) {
+    values[i]=key + "=myValue-" + i;
+  }
+  MockEndpoint mock=getMockEndpoint(mockEndpoint);
+  mock.expectedMessageCount(2);
+  mock.expectedHeaderReceived(EtcdConstants.ETCD_NAMESPACE,EtcdNamespace.watch.name());
+  mock.expectedHeaderReceived(EtcdConstants.ETCD_PATH,key);
+  mock.expectedBodiesReceived(values);
+  final EtcdClient client=getClient();
+  for (int i=0; i < updates; i++) {
+    client.put(key,"myValue-" + i).send().get();
+  }
+  mock.assertIsSatisfied();
+}

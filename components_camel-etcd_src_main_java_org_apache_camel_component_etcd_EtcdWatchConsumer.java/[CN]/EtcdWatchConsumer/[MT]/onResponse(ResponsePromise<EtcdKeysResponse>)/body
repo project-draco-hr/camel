@@ -2,32 +2,56 @@
   if (!isRunAllowed()) {
     return;
   }
-  try {
-    EtcdKeysResponse response=promise.get();
-    Exchange exchange=endpoint.createExchange();
-    exchange.getIn().setHeader(EtcdConstants.ETCD_NAMESPACE,getNamespace());
-    exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,response.node.key);
-    exchange.getIn().setBody(response);
-    getProcessor().process(exchange);
-    watch();
+  Exchange exchange=null;
+  Throwable throwable=promise.getException();
+  if (throwable != null && throwable instanceof EtcdException) {
+    EtcdException exception=(EtcdException)throwable;
+    if (isOutdatedIndexException(exception)) {
+      LOGGER.debug("Outdated index, key: {}, cause={}",getPath(),exception.etcdCause);
+      index.set(exception.index + 1);
+      throwable=null;
+    }
   }
- catch (  TimeoutException e) {
-    LOGGER.debug("Timeout watching for {}",getPath());
-    if (configuration.isSendEmptyExchangeOnTimeout()) {
-      Exchange exchange=endpoint.createExchange();
-      try {
+ else {
+    try {
+      EtcdKeysResponse response=promise.get();
+      exchange=endpoint.createExchange();
+      exchange.getIn().setHeader(EtcdConstants.ETCD_NAMESPACE,getNamespace());
+      exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,response.node.key);
+      exchange.getIn().setBody(response);
+      index.set(response.node.modifiedIndex + 1);
+    }
+ catch (    TimeoutException e) {
+      LOGGER.debug("Timeout watching for {}",getPath());
+      if (configuration.isSendEmptyExchangeOnTimeout()) {
+        exchange=endpoint.createExchange();
         exchange.getIn().setHeader(EtcdConstants.ETCD_NAMESPACE,getNamespace());
         exchange.getIn().setHeader(EtcdConstants.ETCD_TIMEOUT,true);
         exchange.getIn().setHeader(EtcdConstants.ETCD_PATH,getPath());
         exchange.getIn().setBody(null);
+      }
+      throwable=null;
+    }
+catch (    Exception e1) {
+      throwable=e1;
+    }
+    if (exchange != null) {
+      try {
+        throwable=null;
         getProcessor().process(exchange);
       }
- catch (      Exception e1) {
-        getExceptionHandler().handleException("Error processing exchange",exchange,e1);
+ catch (      Exception e) {
+        getExceptionHandler().handleException("Error processing exchange",exchange,e);
       }
     }
   }
-catch (  Exception e) {
-    throw new IllegalArgumentException(e);
+  if (throwable != null) {
+    handleException("Error processing etcd response",throwable);
+  }
+  try {
+    watch();
+  }
+ catch (  Exception e) {
+    handleException("Error watching key " + getPath(),e);
   }
 }
