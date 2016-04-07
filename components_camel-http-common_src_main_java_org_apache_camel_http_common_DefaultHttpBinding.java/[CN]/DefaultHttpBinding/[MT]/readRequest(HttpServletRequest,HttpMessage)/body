@@ -1,69 +1,27 @@
 {
   LOG.trace("readRequest {}",request);
-  if (mapHttpMessageBody) {
-    message.getBody();
-  }
-  Map<String,Object> headers=new HashMap<String,Object>();
   if (mapHttpMessageHeaders) {
-    headers=message.getHeaders();
+    readHeaders(request,message);
   }
-  Enumeration<?> names=request.getHeaderNames();
-  while (names.hasMoreElements()) {
-    String name=(String)names.nextElement();
-    String value=request.getHeader(name);
-    Object extracted=HttpHelper.extractHttpParameterValue(value);
-    if (name.toLowerCase().equals("content-type")) {
-      name=Exchange.CONTENT_TYPE;
-    }
-    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,message.getExchange())) {
-      HttpHelper.appendHeader(headers,name,extracted);
-    }
+  if (mapHttpMessageBody) {
+    readBody(request,message);
   }
-  if (request.getCharacterEncoding() != null) {
-    headers.put(Exchange.HTTP_CHARACTER_ENCODING,request.getCharacterEncoding());
-    message.getExchange().setProperty(Exchange.CHARSET_NAME,request.getCharacterEncoding());
-  }
-  try {
-    populateRequestParameters(request,message);
-  }
- catch (  Exception e) {
-    throw new RuntimeCamelException("Cannot read request parameters due " + e.getMessage(),e);
-  }
-  Object body=message.getBody();
-  if (body instanceof StreamCache) {
-    ((StreamCache)body).reset();
-  }
+  Map<String,Object> headers=message.getHeaders();
   String rawPath=getRawPath(request);
   headers.put(Exchange.HTTP_METHOD,request.getMethod());
   headers.put(Exchange.HTTP_QUERY,request.getQueryString());
   headers.put(Exchange.HTTP_URL,request.getRequestURL().toString());
   headers.put(Exchange.HTTP_URI,request.getRequestURI());
   headers.put(Exchange.HTTP_PATH,rawPath);
-  headers.put(Exchange.CONTENT_TYPE,request.getContentType());
+  if (!headers.containsKey(Exchange.CONTENT_TYPE)) {
+    headers.put(Exchange.CONTENT_TYPE,request.getContentType());
+  }
   if (LOG.isTraceEnabled()) {
     LOG.trace("HTTP method {}",request.getMethod());
     LOG.trace("HTTP query {}",request.getQueryString());
     LOG.trace("HTTP url {}",request.getRequestURL());
     LOG.trace("HTTP uri {}",request.getRequestURI());
     LOG.trace("HTTP path {}",rawPath);
-    LOG.trace("HTTP content-type {}",request.getContentType());
+    LOG.trace("HTTP content-type {}",headers.get(Exchange.CONTENT_TYPE));
   }
-  if (request.getContentType() != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(request.getContentType())) {
-    if (allowJavaSerializedObject || isTransferException()) {
-      try {
-        InputStream is=message.getExchange().getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,body);
-        Object object=HttpHelper.deserializeJavaObjectFromStream(is,message.getExchange().getContext());
-        if (object != null) {
-          message.setBody(object);
-        }
-      }
- catch (      Exception e) {
-        throw new RuntimeCamelException("Cannot deserialize body to Java object",e);
-      }
-    }
- else {
-      message.setBody(null);
-    }
-  }
-  populateAttachments(request,message);
 }

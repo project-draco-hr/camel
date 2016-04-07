@@ -1,0 +1,25 @@
+{
+  LOG.trace("readBody {}",request);
+  Object body=message.getBody();
+  if (body instanceof StreamCache) {
+    ((StreamCache)body).reset();
+  }
+  if (request.getContentType() != null && HttpConstants.CONTENT_TYPE_JAVA_SERIALIZED_OBJECT.equals(request.getContentType())) {
+    if (allowJavaSerializedObject || isTransferException()) {
+      try {
+        InputStream is=message.getExchange().getContext().getTypeConverter().mandatoryConvertTo(InputStream.class,body);
+        Object object=HttpHelper.deserializeJavaObjectFromStream(is,message.getExchange().getContext());
+        if (object != null) {
+          message.setBody(object);
+        }
+      }
+ catch (      Exception e) {
+        throw new RuntimeCamelException("Cannot deserialize body to Java object",e);
+      }
+    }
+ else {
+      message.setBody(null);
+    }
+  }
+  populateAttachments(request,message);
+}

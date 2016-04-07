@@ -1,0 +1,26 @@
+{
+  LOG.trace("readHeaders {}",request);
+  Map<String,Object> headers=message.getHeaders();
+  Enumeration<?> names=request.getHeaderNames();
+  while (names.hasMoreElements()) {
+    String name=(String)names.nextElement();
+    String value=request.getHeader(name);
+    Object extracted=HttpHelper.extractHttpParameterValue(value);
+    if (name.toLowerCase().equals("content-type")) {
+      name=Exchange.CONTENT_TYPE;
+    }
+    if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(name,extracted,message.getExchange())) {
+      HttpHelper.appendHeader(headers,name,extracted);
+    }
+  }
+  if (request.getCharacterEncoding() != null) {
+    headers.put(Exchange.HTTP_CHARACTER_ENCODING,request.getCharacterEncoding());
+    message.getExchange().setProperty(Exchange.CHARSET_NAME,request.getCharacterEncoding());
+  }
+  try {
+    populateRequestParameters(request,message);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException("Cannot read request parameters due " + e.getMessage(),e);
+  }
+}
