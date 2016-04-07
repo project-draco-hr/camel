@@ -1,0 +1,20 @@
+{
+  LOG.info("Loading additional Camel XML rests from: {}",directory);
+  try {
+    final Resource[] xmlRests=applicationContext.getResources(directory);
+    for (    final Resource xmlRest : xmlRests) {
+      final RestsDefinition xmlDefinitions=camelContext.loadRestsDefinition(xmlRest.getInputStream());
+      camelContext.addRestDefinitions(xmlDefinitions.getRests());
+      for (      final RestDefinition xmlDefinition : xmlDefinitions.getRests()) {
+        final List<RouteDefinition> routeDefinitions=xmlDefinition.asRouteDefinition(camelContext);
+        camelContext.addRouteDefinitions(routeDefinitions);
+      }
+    }
+  }
+ catch (  FileNotFoundException e) {
+    LOG.debug("No XML rests found in {}. Skipping XML rests detection.",directory);
+  }
+catch (  Exception e) {
+    throw new RuntimeException(e);
+  }
+}
