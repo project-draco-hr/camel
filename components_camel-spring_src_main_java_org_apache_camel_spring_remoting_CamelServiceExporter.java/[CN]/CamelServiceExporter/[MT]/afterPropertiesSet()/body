@@ -10,6 +10,12 @@
   Endpoint endpoint=CamelContextHelper.getMandatoryEndpoint(camelContext,uri);
   notNull(getService(),"service");
   Object proxy=getProxyForService();
-  consumer=endpoint.createConsumer(new BeanProcessor(proxy,camelContext));
-  ServiceHelper.startService(consumer);
+  try {
+    ServiceHelper.startService(endpoint);
+    consumer=endpoint.createConsumer(new BeanProcessor(proxy,camelContext));
+    camelContext.addService(consumer,true,true);
+  }
+ catch (  Exception e) {
+    throw new FailedToCreateConsumerException(endpoint,e);
+  }
 }
