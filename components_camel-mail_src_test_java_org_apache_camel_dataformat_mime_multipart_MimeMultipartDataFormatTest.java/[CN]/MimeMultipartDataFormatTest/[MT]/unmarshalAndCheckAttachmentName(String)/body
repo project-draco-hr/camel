@@ -1,0 +1,15 @@
+{
+  Exchange intermediate=template.send("direct:unmarshalonlyinlineheaders",exchange);
+  assertNotNull(intermediate.getOut());
+  String bodyStr=intermediate.getOut().getBody(String.class);
+  assertNotNull(bodyStr);
+  assertThat(bodyStr,startsWith("25"));
+  assertEquals(1,intermediate.getOut().getAttachmentNames().size());
+  assertThat(intermediate.getOut().getAttachmentNames().iterator().next(),containsString(matcher));
+  DataHandler dh=intermediate.getOut().getAttachment(intermediate.getOut().getAttachmentNames().iterator().next());
+  assertNotNull(dh);
+  ByteArrayOutputStream bos=new ByteArrayOutputStream();
+  dh.writeTo(bos);
+  String attachmentString=new String(bos.toByteArray(),"UTF-8");
+  assertThat(attachmentString,startsWith("Old MacDonald had a farm"));
+}
