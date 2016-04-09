@@ -1,18 +1,21 @@
 {
   Message msg=exchange.getIn();
   Object body=msg.getBody();
-  StreamFactory sf=dataFormat.getFactory();
+  if (factory == null) {
+    factory=createStreamFactory(exchange.getContext());
+  }
   BeanReader beanReader=null;
   if (body instanceof WrappedFile) {
     body=((WrappedFile)body).getFile();
   }
   if (body instanceof File) {
     File file=(File)body;
-    beanReader=sf.createReader(dataFormat.getStreamName(),file);
+    beanReader=factory.createReader(getStreamName(),file);
   }
   if (beanReader == null) {
     Reader reader=msg.getMandatoryBody(Reader.class);
-    beanReader=sf.createReader(dataFormat.getStreamName(),reader);
+    beanReader=factory.createReader(getStreamName(),reader);
   }
+  beanReader.setErrorHandler(new BeanIOErrorHandler(configuration));
   return new BeanIOIterator(beanReader);
 }
