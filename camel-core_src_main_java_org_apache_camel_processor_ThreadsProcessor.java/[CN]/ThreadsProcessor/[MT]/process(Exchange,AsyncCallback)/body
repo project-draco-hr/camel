@@ -7,22 +7,23 @@
     callback.done(true);
     return true;
   }
-  ProcessCall call=new ProcessCall(exchange,callback);
   try {
+    ProcessCall call=new ProcessCall(exchange,callback,false);
     LOG.trace("Submitting task {}",call);
     executorService.submit(call);
     return false;
   }
- catch (  RejectedExecutionException e) {
-    boolean callerRuns=isCallerRunsWhenRejected();
-    if (!callerRuns) {
+ catch (  Throwable e) {
+    if (executorService instanceof ThreadPoolExecutor) {
+      ThreadPoolExecutor tpe=(ThreadPoolExecutor)executorService;
+      ProcessCall call=new ProcessCall(exchange,callback,true);
+      rejectedPolicy.asRejectedExecutionHandler().rejectedExecution(call,tpe);
+      return true;
+    }
+ else {
       exchange.setException(e);
+      callback.done(true);
+      return true;
     }
-    LOG.trace("{} executing task {}",callerRuns ? "CallerRuns" : "Aborted",call);
-    if (shutdown.get()) {
-      exchange.setException(new RejectedExecutionException());
-    }
-    callback.done(true);
-    return true;
   }
 }

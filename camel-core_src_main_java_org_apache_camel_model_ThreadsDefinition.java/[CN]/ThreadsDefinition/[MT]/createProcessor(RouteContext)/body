@@ -2,9 +2,19 @@
   String name=getThreadName() != null ? getThreadName() : "Threads";
   boolean shutdownThreadPool=ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext,this,true);
   ExecutorService threadPool=ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext,name,this,false);
+  ThreadPoolRejectedPolicy policy=resolveRejectedPolicy(routeContext);
+  if (policy == null) {
+    if (callerRunsWhenRejected == null || callerRunsWhenRejected) {
+      policy=ThreadPoolRejectedPolicy.CallerRuns;
+    }
+ else {
+      policy=ThreadPoolRejectedPolicy.Abort;
+    }
+  }
+  log.debug("Using ThreadPoolRejectedPolicy: {}",policy);
   if (threadPool == null) {
     ExecutorServiceManager manager=routeContext.getCamelContext().getExecutorServiceManager();
-    ThreadPoolProfile profile=new ThreadPoolProfileBuilder(name).poolSize(getPoolSize()).maxPoolSize(getMaxPoolSize()).keepAliveTime(getKeepAliveTime(),getTimeUnit()).maxQueueSize(getMaxQueueSize()).rejectedPolicy(getRejectedPolicy()).allowCoreThreadTimeOut(getAllowCoreThreadTimeOut()).build();
+    ThreadPoolProfile profile=new ThreadPoolProfileBuilder(name).poolSize(getPoolSize()).maxPoolSize(getMaxPoolSize()).keepAliveTime(getKeepAliveTime(),getTimeUnit()).maxQueueSize(getMaxQueueSize()).rejectedPolicy(policy).allowCoreThreadTimeOut(getAllowCoreThreadTimeOut()).build();
     threadPool=manager.newThreadPool(this,name,profile);
     shutdownThreadPool=true;
   }
@@ -21,6 +31,9 @@
     if (getKeepAliveTime() != null) {
       throw new IllegalArgumentException("KeepAliveTime and executorServiceRef options cannot be used together.");
     }
+    if (getTimeUnit() != null) {
+      throw new IllegalArgumentException("TimeUnit and executorServiceRef options cannot be used together.");
+    }
     if (getMaxQueueSize() != null) {
       throw new IllegalArgumentException("MaxQueueSize and executorServiceRef options cannot be used together.");
     }
@@ -31,14 +44,7 @@
       throw new IllegalArgumentException("AllowCoreThreadTimeOut and executorServiceRef options cannot be used together.");
     }
   }
-  ThreadsProcessor thread=new ThreadsProcessor(routeContext.getCamelContext(),threadPool,shutdownThreadPool);
-  if (getCallerRunsWhenRejected() == null) {
-    thread.setCallerRunsWhenRejected(true);
-  }
- else {
-    thread.setCallerRunsWhenRejected(getCallerRunsWhenRejected());
-  }
-  thread.setRejectedPolicy(resolveRejectedPolicy(routeContext));
+  ThreadsProcessor thread=new ThreadsProcessor(routeContext.getCamelContext(),threadPool,shutdownThreadPool,policy);
   List<Processor> pipe=new ArrayList<Processor>(2);
   pipe.add(thread);
   pipe.add(createChildProcessor(routeContext,true));
