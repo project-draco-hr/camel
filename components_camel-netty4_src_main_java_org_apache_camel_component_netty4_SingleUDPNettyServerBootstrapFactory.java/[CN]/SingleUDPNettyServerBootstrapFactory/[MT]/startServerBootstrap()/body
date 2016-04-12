@@ -11,10 +11,30 @@
   bootstrap.option(ChannelOption.SO_RCVBUF,configuration.getReceiveBufferSize());
   bootstrap.option(ChannelOption.SO_BROADCAST,configuration.isBroadcast());
   bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
+  if (configuration.getReceiveBufferSizePredictor() > 0) {
+    bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR,new FixedRecvByteBufAllocator(configuration.getReceiveBufferSizePredictor()));
+  }
   if (configuration.getBacklog() > 0) {
     bootstrap.option(ChannelOption.SO_BACKLOG,configuration.getBacklog());
   }
-  LOG.debug("Created ConnectionlessBootstrap {}",bootstrap);
+  Map<String,Object> options=configuration.getOptions();
+  if (options != null) {
+    for (    Map.Entry<String,Object> entry : options.entrySet()) {
+      Object value=entry.getValue();
+      ChannelOption<Object> option=ChannelOption.valueOf(entry.getKey());
+      if (EndpointHelper.isReferenceParameter(value.toString())) {
+        String name=((String)value).substring(1);
+        Object o=CamelContextHelper.mandatoryLookup(camelContext,name);
+        ;
+        bootstrap.option(option,o);
+      }
+ else {
+        bootstrap.option(ChannelOption.valueOf(entry.getKey()),value);
+        bootstrap.option(option,value);
+      }
+    }
+  }
+  LOG.debug("Created Bootstrap {}",bootstrap);
   bootstrap.handler(pipelineFactory);
   InetSocketAddress hostAddress=new InetSocketAddress(configuration.getHost(),configuration.getPort());
   SubnetUtils multicastSubnet=new SubnetUtils(MULTICAST_SUBNET);
