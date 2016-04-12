@@ -1,15 +1,10 @@
 {
   PersistentVolume pv=null;
   String pvName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_PERSISTENT_VOLUME_NAME,String.class);
-  String namespaceName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,String.class);
   if (ObjectHelper.isEmpty(pvName)) {
     LOG.error("Get a specific Persistent Volume require specify a Persistent Volume name");
     throw new IllegalArgumentException("Get a specific Persistent Volume require specify a Persistent Volume name");
   }
-  if (ObjectHelper.isEmpty(namespaceName)) {
-    LOG.error("Get a specific Persistent Volume require specify a namespace name");
-    throw new IllegalArgumentException("Get a specific Persistent Volume require specify a namespace name");
-  }
-  pv=getEndpoint().getKubernetesClient().persistentVolumes().inNamespace(namespaceName).withName(pvName).get();
+  pv=getEndpoint().getKubernetesClient().persistentVolumes().withName(pvName).get();
   exchange.getOut().setBody(pv);
 }
