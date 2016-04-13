@@ -1,16 +1,17 @@
 {
   int port=consumer.getEndpoint().getHttpURI().getPort();
   if (serversRegistry.containsKey(port)) {
-    serversRegistry.get(port).unregisterConsumer(consumer);
-  }
-  if (serversRegistry.get(port).isEmpty()) {
-    Undertow server=serversRegistry.get(port).getServer();
-    if (server != null) {
-      server.stop();
+    UndertowRegistry undertowRegistry=serversRegistry.get(port);
+    undertowRegistry.unregisterConsumer(consumer);
+    if (undertowRegistry.isEmpty()) {
+      Undertow server=undertowRegistry.getServer();
+      if (server != null) {
+        server.stop();
+      }
+      serversRegistry.remove(port);
     }
-    serversRegistry.remove(port);
-  }
  else {
-    startServer(consumer);
+      startServer(consumer);
+    }
   }
 }
