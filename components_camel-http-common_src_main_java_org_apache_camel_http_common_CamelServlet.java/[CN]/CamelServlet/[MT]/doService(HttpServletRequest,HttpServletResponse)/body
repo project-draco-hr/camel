@@ -1,0 +1,90 @@
+{
+  log.trace("Service: {}",request);
+  HttpConsumer consumer=resolve(request);
+  if (consumer == null) {
+    log.debug("No consumer to service request {}",request);
+    response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    return;
+  }
+  if (consumer.isSuspended()) {
+    log.debug("Consumer suspended, cannot service request {}",request);
+    response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    return;
+  }
+  if ("OPTIONS".equals(request.getMethod()) && !consumer.isOptionsEnabled()) {
+    String s;
+    if (consumer.getEndpoint().getHttpMethodRestrict() != null) {
+      s="OPTIONS," + consumer.getEndpoint().getHttpMethodRestrict();
+    }
+ else {
+      s="GET,HEAD,POST,PUT,DELETE,TRACE,OPTIONS,CONNECT,PATCH";
+    }
+    response.addHeader("Allow",s);
+    response.setStatus(HttpServletResponse.SC_OK);
+    return;
+  }
+  if (consumer.getEndpoint().getHttpMethodRestrict() != null && !consumer.getEndpoint().getHttpMethodRestrict().contains(request.getMethod())) {
+    response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    return;
+  }
+  if ("TRACE".equals(request.getMethod()) && !consumer.isTraceEnabled()) {
+    response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    return;
+  }
+  Exchange exchange=new DefaultExchange(consumer.getEndpoint(),ExchangePattern.InOut);
+  if (consumer.getEndpoint().isBridgeEndpoint()) {
+    exchange.setProperty(Exchange.SKIP_GZIP_ENCODING,Boolean.TRUE);
+    exchange.setProperty(Exchange.SKIP_WWW_FORM_URLENCODED,Boolean.TRUE);
+  }
+  if (consumer.getEndpoint().isDisableStreamCache()) {
+    exchange.setProperty(Exchange.DISABLE_HTTP_STREAM_CACHE,Boolean.TRUE);
+  }
+  ClassLoader oldTccl=overrideTccl(exchange);
+  HttpHelper.setCharsetFromContentType(request.getContentType(),exchange);
+  exchange.setIn(new HttpMessage(exchange,request,response));
+  String contextPath=consumer.getEndpoint().getPath();
+  exchange.getIn().setHeader("CamelServletContextPath",contextPath);
+  String httpPath=(String)exchange.getIn().getHeader(Exchange.HTTP_PATH);
+  if (contextPath != null && httpPath.startsWith(contextPath)) {
+    exchange.getIn().setHeader(Exchange.HTTP_PATH,httpPath.substring(contextPath.length()));
+  }
+  try {
+    consumer.createUoW(exchange);
+  }
+ catch (  Exception e) {
+    log.error("Error processing request",e);
+    throw new ServletException(e);
+  }
+  try {
+    if (log.isTraceEnabled()) {
+      log.trace("Processing request for exchangeId: {}",exchange.getExchangeId());
+    }
+    consumer.getProcessor().process(exchange);
+  }
+ catch (  Exception e) {
+    exchange.setException(e);
+  }
+  try {
+    if (log.isTraceEnabled()) {
+      log.trace("Writing response for exchangeId: {}",exchange.getExchangeId());
+    }
+    Integer bs=consumer.getEndpoint().getResponseBufferSize();
+    if (bs != null) {
+      log.trace("Using response buffer size: {}",bs);
+      response.setBufferSize(bs);
+    }
+    consumer.getBinding().writeResponse(exchange,response);
+  }
+ catch (  IOException e) {
+    log.error("Error processing request",e);
+    throw e;
+  }
+catch (  Exception e) {
+    log.error("Error processing request",e);
+    throw new ServletException(e);
+  }
+ finally {
+    consumer.doneUoW(exchange);
+    restoreTccl(exchange,oldTccl);
+  }
+}
