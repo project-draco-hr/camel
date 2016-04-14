@@ -1,5 +1,5 @@
 {
-  if (fallbackProducer == null) {
+  if (fallbackEndpoint == null) {
     return exchange;
   }
   try {
@@ -10,7 +10,18 @@
         exchange.removeProperty(Exchange.ROUTE_STOP);
       }
     }
-    fallbackProducer.process(exchange);
+    cache.doInProducer(fallbackEndpoint,exchange,exchange.getPattern(),new ProducerCallback<Exchange>(){
+      @Override public Exchange doInProducer(      Producer producer,      Exchange exchange,      ExchangePattern exchangePattern) throws Exception {
+        try {
+          producer.process(exchange);
+        }
+ catch (        Exception e) {
+          exchange.setException(e);
+        }
+        return exchange;
+      }
+    }
+);
   }
  catch (  Exception e) {
     exchange.setException(e);

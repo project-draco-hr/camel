@@ -1,6 +1,17 @@
 {
   try {
-    runProducer.process(exchange);
+    cache.doInProducer(runEndpoint,exchange,exchange.getPattern(),new ProducerCallback<Exchange>(){
+      @Override public Exchange doInProducer(      Producer producer,      Exchange exchange,      ExchangePattern exchangePattern) throws Exception {
+        try {
+          producer.process(exchange);
+        }
+ catch (        Exception e) {
+          exchange.setException(e);
+        }
+        return exchange;
+      }
+    }
+);
   }
  catch (  Exception e) {
     exchange.setException(e);
