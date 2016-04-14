@@ -1,3 +1,22 @@
 {
-  return configuration.getCacheKeyExpression() != null ? configuration.getCacheKeyExpression().evaluate(exchange,String.class) : null;
+  Object cacheKey=exchange.getIn().getHeader(HystrixConstants.CAMEL_HYSTRIX_CACHE_KEY,configuration.getCacheKey(),Object.class);
+  if (cacheKey == null) {
+    return null;
+  }
+  String answer;
+  Expression expression;
+  if (cacheKey instanceof Expression) {
+    expression=(Expression)cacheKey;
+  }
+ else {
+    String key=cacheKey.toString();
+    if (EndpointHelper.isReferenceParameter(key)) {
+      expression=CamelContextHelper.mandatoryLookup(exchange.getContext(),key.substring(1),Expression.class);
+    }
+ else {
+      expression=exchange.getContext().resolveLanguage("simple").createExpression(key);
+    }
+  }
+  answer=expression.evaluate(exchange,String.class);
+  return answer;
 }
