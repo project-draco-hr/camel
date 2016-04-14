@@ -1,4 +1,13 @@
 {
+  Endpoint runEndpoint=getEndpoint().getCamelContext().getEndpoint(configuration.getRunEndpointId());
+  Endpoint fallbackEndpoint=null;
+  if (ObjectHelper.isNotEmpty(configuration.getFallbackEndpointId())) {
+    fallbackEndpoint=getEndpoint().getCamelContext().getEndpoint(configuration.getFallbackEndpointId());
+  }
+  ServiceHelper.startServices(runEndpoint,fallbackEndpoint);
+  runProducer=runEndpoint.createProducer();
+  fallbackProducer=fallbackEndpoint != null ? fallbackEndpoint.createProducer() : null;
+  ServiceHelper.startServices(runProducer,fallbackProducer);
   if (configuration.getInitializeRequestContext() != null && configuration.getInitializeRequestContext()) {
     requestContext=HystrixRequestContext.initializeContext();
   }

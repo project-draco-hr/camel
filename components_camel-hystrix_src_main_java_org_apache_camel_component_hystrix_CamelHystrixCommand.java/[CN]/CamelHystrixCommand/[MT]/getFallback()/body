@@ -1,9 +1,8 @@
 {
-  if (fallbackEndpointId == null) {
-    super.getFallback();
+  if (fallbackProducer == null) {
+    return exchange;
   }
   try {
-    Endpoint endpoint=findEndpoint(fallbackEndpointId);
     if (exchange.getException() != null) {
       Exception exception=exchange.getException();
       exchange.setException(null);
@@ -11,10 +10,10 @@
         exchange.removeProperty(Exchange.ROUTE_STOP);
       }
     }
-    endpoint.createProducer().process(exchange);
+    fallbackProducer.process(exchange);
   }
- catch (  Exception exception) {
-    throw new RuntimeException(exception.getMessage());
+ catch (  Exception e) {
+    exchange.setException(e);
   }
   return exchange;
 }
