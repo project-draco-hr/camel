@@ -1,3 +1,15 @@
 {
-  return new HystrixDummyProcessor();
+  if (definition instanceof HystrixCircuitBreakerDefinition) {
+    HystrixCircuitBreakerDefinition cb=(HystrixCircuitBreakerDefinition)definition;
+    String id=cb.idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
+    Processor processor=cb.createChildProcessor(routeContext,true);
+    Processor fallback=null;
+    if (cb.getFallback() != null) {
+      fallback=cb.getFallback().createProcessor(routeContext);
+    }
+    return new HystrixProcessor(id,processor,fallback);
+  }
+ else {
+    return null;
+  }
 }
