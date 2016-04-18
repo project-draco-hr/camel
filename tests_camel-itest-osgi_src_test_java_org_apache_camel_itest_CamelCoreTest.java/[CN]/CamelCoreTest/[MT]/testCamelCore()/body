@@ -1,5 +1,9 @@
 {
   URL url=ObjectHelper.loadResourceAsURL("org/apache/camel/itest/CamelCoreTest.xml",CamelCoreTest.class.getClassLoader());
-  System.out.println(">>>> " + url);
-  installBlueprintAsBundle("CamelCoreTest",url);
+  installBlueprintAsBundle("CamelCoreTest",url,true);
+  CamelContext camel=getOsgiService(bundleContext,CamelContext.class);
+  MockEndpoint mock=camel.getEndpoint("mock:result",MockEndpoint.class);
+  mock.expectedBodiesReceived("Hello World");
+  camel.createProducerTemplate().sendBody("direct:start","World");
+  mock.assertIsSatisfied();
 }
