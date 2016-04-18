@@ -1,0 +1,16 @@
+{
+  List<String> camel=new ArrayList<>();
+  camel.add("camel");
+  camel.add("camel-test-karaf");
+  if (extra != null && extra.length > 0) {
+    for (    String e : extra) {
+      camel.add(e);
+    }
+  }
+  final String[] camelFeatures=camel.toArray(new String[camel.size()]);
+  switchPlatformEncodingToUTF8();
+  String karafVersion=getKarafVersion();
+  LOG.info("*** Apache Karaf version is " + karafVersion + " ***");
+  Option[] options=new Option[]{KarafDistributionOption.karafDistributionConfiguration().frameworkUrl(maven().groupId("org.apache.karaf").artifactId("apache-karaf").type("tar.gz").versionAsInProject()).karafVersion(karafVersion).name("Apache Karaf").useDeployFolder(false).unpackDirectory(new File("target/paxexam/unpack/")),logLevel(LogLevelOption.LogLevel.INFO),keepRuntimeFolder(),configureConsole().ignoreRemoteShell(),vmOption("-Dfile.encoding=UTF-8"),editConfigurationFilePut("etc/custom.properties","karaf.shutdown.port","-1"),CoreOptions.junitBundles(),features(getCamelKarafFeatureUrl(),camelFeatures)};
+  return options;
+}
