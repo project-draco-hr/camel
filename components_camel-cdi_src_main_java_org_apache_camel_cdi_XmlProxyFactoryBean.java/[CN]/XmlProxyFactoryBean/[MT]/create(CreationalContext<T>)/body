@@ -1,0 +1,33 @@
+{
+  try {
+    CamelContext context=isNotEmpty(proxy.getCamelContextId()) ? getReferenceByName(manager,proxy.getCamelContextId(),CamelContext.class).get() : getReference(manager,CamelContext.class,this.context);
+    Endpoint endpoint;
+    if (ObjectHelper.isNotEmpty(proxy.getServiceRef())) {
+      endpoint=context.getRegistry().lookupByNameAndType(proxy.getServiceRef(),Endpoint.class);
+    }
+ else {
+      if (ObjectHelper.isNotEmpty(proxy.getServiceUrl())) {
+        endpoint=context.getEndpoint(proxy.getServiceUrl());
+      }
+ else {
+        throw new IllegalStateException("serviceUrl or serviceRef must not be empty!");
+      }
+    }
+    if (endpoint == null) {
+      throw new UnsatisfiedResolutionException("Could not resolve endpoint: " + (ObjectHelper.isNotEmpty(proxy.getServiceRef()) ? proxy.getServiceRef() : proxy.getServiceUrl()));
+    }
+    boolean bind=proxy.getBinding() != null ? proxy.getBinding() : true;
+    try {
+      ServiceHelper.startService(endpoint);
+      Producer producer=endpoint.createProducer();
+      context.addService(producer,true,true);
+      return ProxyHelper.createProxy(endpoint,bind,producer,(Class<T>)proxy.getServiceInterface());
+    }
+ catch (    Exception cause) {
+      throw new FailedToCreateProducerException(endpoint,cause);
+    }
+  }
+ catch (  Exception cause) {
+    throw new CreationException("Error while creating instance for " + this,cause);
+  }
+}

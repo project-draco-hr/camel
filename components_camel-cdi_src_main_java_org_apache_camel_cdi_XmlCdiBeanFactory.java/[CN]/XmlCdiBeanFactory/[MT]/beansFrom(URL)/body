@@ -1,0 +1,55 @@
+{
+  try (InputStream xml=url.openStream()){
+    Object node=XmlCdiJaxbContexts.CAMEL_CDI.instance().createUnmarshaller().unmarshal(xml);
+    if (node instanceof RoutesDefinition) {
+      RoutesDefinition routes=(RoutesDefinition)node;
+      return Collections.singleton(routesDefinitionBean(routes,url));
+    }
+ else     if (node instanceof ApplicationContextFactoryBean) {
+      ApplicationContextFactoryBean app=(ApplicationContextFactoryBean)node;
+      Set<SyntheticBean<?>> beans=new HashSet<>();
+      for (      CamelContextFactoryBean factory : app.getContexts()) {
+        SyntheticBean<?> bean=camelContextBean(factory,url);
+        beans.add(bean);
+        beans.addAll(camelContextBeans(factory,bean,url));
+      }
+      for (      ErrorHandlerDefinition definition : app.getErrorHandlers()) {
+        beans.add(errorHandlerBean(definition,url));
+      }
+      for (      ImportDefinition definition : app.getImports()) {
+        String path=url.getFile().substring(0,url.getFile().lastIndexOf('/'));
+        String base=url.getProtocol() + "://" + url.getHost()+ path;
+        beans.addAll(beansFrom(base + "/" + definition.getResource()));
+      }
+      for (      RestContextDefinition factory : app.getRestContexts()) {
+        beans.add(restContextBean(factory,url));
+      }
+      for (      RouteContextDefinition factory : app.getRouteContexts()) {
+        beans.add(routeContextBean(factory,url));
+      }
+      for (      AbstractCamelFactoryBean<?> factory : app.getBeans()) {
+        if (factory.getId() != null) {
+          beans.add(camelContextBean(null,factory,url));
+        }
+      }
+      return beans;
+    }
+ else     if (node instanceof CamelContextFactoryBean) {
+      CamelContextFactoryBean factory=(CamelContextFactoryBean)node;
+      Set<SyntheticBean<?>> beans=new HashSet<>();
+      SyntheticBean<?> bean=camelContextBean(factory,url);
+      beans.add(bean);
+      beans.addAll(camelContextBeans(factory,bean,url));
+      return beans;
+    }
+ else     if (node instanceof RestContextDefinition) {
+      RestContextDefinition factory=(RestContextDefinition)node;
+      return Collections.singleton(restContextBean(factory,url));
+    }
+ else     if (node instanceof RouteContextDefinition) {
+      RouteContextDefinition factory=(RouteContextDefinition)node;
+      return Collections.singleton(routeContextBean(factory,url));
+    }
+  }
+   return Collections.emptySet();
+}
