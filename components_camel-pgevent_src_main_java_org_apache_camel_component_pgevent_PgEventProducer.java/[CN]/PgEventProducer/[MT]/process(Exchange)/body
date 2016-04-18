@@ -1,0 +1,24 @@
+{
+  try {
+    if (dbConnection.isClosed()) {
+      dbConnection=endpoint.initJdbc();
+    }
+  }
+ catch (  Exception e) {
+    throw new InvalidStateException("Database connection closed and could not be re-opened.",e);
+  }
+  String payload=exchange.getIn().getBody(String.class);
+  if (dbConnection.isServerMinimumVersion(9,0)) {
+    try (CallableStatement statement=dbConnection.prepareCall("{call pg_notify(?, ?)}")){
+      statement.setString(1,endpoint.getChannel());
+      statement.setString(2,payload);
+      statement.execute();
+    }
+   }
+ else {
+    String sql=String.format("NOTIFY %s, '%s'",endpoint.getChannel(),payload);
+    try (PreparedStatement statement=dbConnection.prepareStatement(sql)){
+      statement.execute();
+    }
+   }
+}
