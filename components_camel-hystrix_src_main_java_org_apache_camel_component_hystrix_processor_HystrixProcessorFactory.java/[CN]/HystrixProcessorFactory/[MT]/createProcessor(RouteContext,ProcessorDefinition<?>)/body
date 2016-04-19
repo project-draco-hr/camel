@@ -6,25 +6,36 @@
     if (cb.getFallback() != null) {
       fallback=cb.getFallback().createProcessor(routeContext);
     }
-    String groupKey=HystrixDefinition.DEFAULT_GROUP_KEY;
-    String threadPoolKey=HystrixDefinition.DEFAULT_THREAD_POOL_KEY;
-    if (cb.getGroupKey() != null) {
-      groupKey=cb.getGroupKey();
+    HystrixConfigurationDefinition config=cb.getHystrixConfiguration();
+    HystrixConfigurationDefinition configRef=null;
+    if (cb.getHystrixConfigurationRef() != null) {
+      configRef=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),cb.getHystrixConfigurationRef(),HystrixConfigurationDefinition.class);
     }
-    if (cb.getThreadPoolKey() != null) {
-      threadPoolKey=cb.getThreadPoolKey();
+    String groupKey=null;
+    String threadPoolKey=null;
+    if (configRef != null) {
+      groupKey=configRef.getGroupKey();
+      threadPoolKey=configRef.getThreadPoolKey();
+    }
+    if (config != null && config.getGroupKey() != null) {
+      groupKey=config.getGroupKey();
+      threadPoolKey=config.getThreadPoolKey();
+    }
+    if (groupKey == null) {
+      groupKey=HystrixConfigurationDefinition.DEFAULT_GROUP_KEY;
+    }
+    if (threadPoolKey == null) {
+      threadPoolKey=groupKey;
     }
     HystrixCommand.Setter setter=HystrixCommand.Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey)).andThreadPoolKey(HystrixThreadPoolKey.Factory.asKey(threadPoolKey));
     HystrixCommandProperties.Setter command=HystrixCommandProperties.Setter();
     setter.andCommandPropertiesDefaults(command);
     HystrixThreadPoolProperties.Setter threadPool=HystrixThreadPoolProperties.Setter();
     setter.andThreadPoolPropertiesDefaults(threadPool);
-    if (cb.getHystrixConfigurationRef() != null) {
-      HystrixConfigurationDefinition config=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),cb.getHystrixConfigurationRef(),HystrixConfigurationDefinition.class);
-      configureHystrix(command,threadPool,config);
+    if (configRef != null) {
+      configureHystrix(command,threadPool,configRef);
     }
-    if (cb.getHystrixConfiguration() != null) {
-      HystrixConfigurationDefinition config=cb.getHystrixConfiguration();
+    if (config != null) {
       configureHystrix(command,threadPool,config);
     }
     Expression cacheKey=null;
