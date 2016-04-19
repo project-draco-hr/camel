@@ -1,6 +1,5 @@
 {
   LOG.debug("Running processor: {} with exchange: {}",processor,exchange);
-  exchange.setProperty(Exchange.TRY_ROUTE_BLOCK,true);
   try {
     processor.process(exchange,callback);
   }
@@ -11,13 +10,6 @@
   if (fallbackEnabled == null || fallbackEnabled && exchange.getException() != null) {
     throw exchange.getException();
   }
-  try {
-    LOG.debug("Running processor: {} with exchange: {} done",processor,exchange);
-    exchange.removeProperty(Exchange.TRY_ROUTE_BLOCK);
-    callback.done(false);
-  }
- catch (  Throwable e) {
-    exchange.setException(e);
-  }
-  return exchange;
+  LOG.debug("Running processor: {} with exchange: {} done",processor,exchange);
+  return exchange.hasOut() ? exchange.getOut() : exchange.getIn();
 }
