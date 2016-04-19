@@ -1,14 +1,11 @@
 {
-  exchange.setProperty(Exchange.TRY_ROUTE_BLOCK,true);
-  AsyncCallback hystrixCallback=new HystrixAsyncCallback(exchange,callback);
   HystrixCommandGroupKey key=HystrixCommandGroupKey.Factory.asKey(id);
-  HystrixProcessorCommand command=new HystrixProcessorCommand(key,exchange,hystrixCallback,processor,fallback);
+  HystrixProcessorCommand command=new HystrixProcessorCommand(key,exchange,callback,processor,fallback);
   try {
     command.queue();
   }
  catch (  Throwable e) {
     exchange.setException(e);
-    exchange.removeProperty(Exchange.TRY_ROUTE_BLOCK);
     callback.done(true);
     return true;
   }
