@@ -12,8 +12,11 @@
     setter.andCommandPropertiesDefaults(command);
     HystrixThreadPoolProperties.Setter threadPool=HystrixThreadPoolProperties.Setter();
     setter.andThreadPoolPropertiesDefaults(threadPool);
-    if (cb.getHystrixConfiguration() != null) {
+    if (cb.getHystrixConfiguration() != null || cb.getHystrixConfigurationRef() != null) {
       HystrixConfigurationDefinition config=cb.getHystrixConfiguration();
+      if (config == null && cb.getHystrixConfigurationRef() != null) {
+        config=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),cb.getHystrixConfigurationRef(),HystrixConfigurationDefinition.class);
+      }
       if (config.getCircuitBreakerEnabled() != null) {
         command.withCircuitBreakerEnabled(config.getCircuitBreakerEnabled());
       }
