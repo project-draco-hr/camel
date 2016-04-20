@@ -1,24 +1,2 @@
 {
-  T context=super.produce(ctx);
-  if (context.getNameStrategy() instanceof DefaultCamelContextNameStrategy) {
-    context.setNameStrategy(nameStrategy(annotated));
-  }
-  if (context instanceof DefaultCamelContext) {
-    DefaultCamelContext adapted=context.adapt(DefaultCamelContext.class);
-    adapted.setRegistry(new CdiCamelRegistry(manager));
-    adapted.setInjector(new CdiCamelInjector(context.getInjector(),manager));
-  }
- else {
-    throw new InjectionException("Camel CDI requires Camel context [" + context.getName() + "] to be a subtype of DefaultCamelContext");
-  }
-  Set<Annotation> qualifiers=CdiSpiHelper.excludeElementOfTypes(CdiSpiHelper.getQualifiers(annotated,manager),Named.class);
-  qualifiers.add(ANY);
-  if (qualifiers.size() == 1) {
-    qualifiers.add(DEFAULT);
-  }
-  qualifiers.retainAll(extension.getObserverEvents());
-  if (!qualifiers.isEmpty()) {
-    context.getManagementStrategy().addEventNotifier(new CdiEventNotifier(manager,qualifiers));
-  }
-  return context;
 }
