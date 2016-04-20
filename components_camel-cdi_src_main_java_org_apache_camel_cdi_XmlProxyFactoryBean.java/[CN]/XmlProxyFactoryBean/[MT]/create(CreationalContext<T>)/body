@@ -2,11 +2,11 @@
   try {
     CamelContext context=isNotEmpty(proxy.getCamelContextId()) ? getReferenceByName(manager,proxy.getCamelContextId(),CamelContext.class).get() : getReference(manager,CamelContext.class,this.context);
     Endpoint endpoint;
-    if (ObjectHelper.isNotEmpty(proxy.getServiceRef())) {
+    if (isNotEmpty(proxy.getServiceRef())) {
       endpoint=context.getRegistry().lookupByNameAndType(proxy.getServiceRef(),Endpoint.class);
     }
  else {
-      if (ObjectHelper.isNotEmpty(proxy.getServiceUrl())) {
+      if (isNotEmpty(proxy.getServiceUrl())) {
         endpoint=context.getEndpoint(proxy.getServiceUrl());
       }
  else {
@@ -14,14 +14,14 @@
       }
     }
     if (endpoint == null) {
-      throw new UnsatisfiedResolutionException("Could not resolve endpoint: " + (ObjectHelper.isNotEmpty(proxy.getServiceRef()) ? proxy.getServiceRef() : proxy.getServiceUrl()));
+      throw new UnsatisfiedResolutionException("Could not resolve endpoint: " + (isNotEmpty(proxy.getServiceRef()) ? proxy.getServiceRef() : proxy.getServiceUrl()));
     }
     boolean bind=proxy.getBinding() != null ? proxy.getBinding() : true;
     try {
-      ServiceHelper.startService(endpoint);
+      startService(endpoint);
       Producer producer=endpoint.createProducer();
       context.addService(producer,true,true);
-      return ProxyHelper.createProxy(endpoint,bind,producer,(Class<T>)proxy.getServiceInterface());
+      return createProxy(endpoint,bind,producer,(Class<T>)proxy.getServiceInterface());
     }
  catch (    Exception cause) {
       throw new FailedToCreateProducerException(endpoint,cause);
