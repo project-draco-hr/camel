@@ -1,0 +1,19 @@
+{
+  getMockEndpoint("mock:result").expectedBodiesReceived("Bye World");
+  template.sendBody("direct:start","Hello World");
+  assertMockEndpointsSatisfied();
+  MBeanServer mbeanServer=getMBeanServer();
+  String name=context.getManagementName();
+  ObjectName on=ObjectName.getInstance("org.apache.camel:context=" + name + ",type=processors,name=\"myHystrix\"");
+  String routeId=(String)mbeanServer.getAttribute(on,"RouteId");
+  assertEquals("start",routeId);
+  String commandKey=(String)mbeanServer.getAttribute(on,"CommandKey");
+  assertEquals("myHystrix",commandKey);
+  String groupKey=(String)mbeanServer.getAttribute(on,"GroupKey");
+  assertEquals("CamelHystrix",groupKey);
+  Thread.sleep(1000);
+  Long totalRequests=(Long)mbeanServer.getAttribute(on,"TotalRequests");
+  assertEquals(1,totalRequests.longValue());
+  Long errorCount=(Long)mbeanServer.getAttribute(on,"ErrorCount");
+  assertEquals(0,errorCount.longValue());
+}

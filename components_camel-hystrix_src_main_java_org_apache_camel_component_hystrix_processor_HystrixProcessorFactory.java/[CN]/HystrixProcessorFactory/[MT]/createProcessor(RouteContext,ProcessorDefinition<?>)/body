@@ -27,7 +27,10 @@
     if (threadPoolKey == null) {
       threadPoolKey=groupKey;
     }
-    HystrixCommand.Setter setter=HystrixCommand.Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey)).andThreadPoolKey(HystrixThreadPoolKey.Factory.asKey(threadPoolKey));
+    String id=cb.idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
+    HystrixCommandKey hcCommandKey=HystrixCommandKey.Factory.asKey(id);
+    HystrixCommandGroupKey hcGroupKey=HystrixCommandGroupKey.Factory.asKey(groupKey);
+    HystrixCommand.Setter setter=HystrixCommand.Setter.withGroupKey(hcGroupKey).andCommandKey(hcCommandKey).andThreadPoolKey(HystrixThreadPoolKey.Factory.asKey(threadPoolKey));
     HystrixCommandProperties.Setter command=HystrixCommandProperties.Setter();
     setter.andCommandPropertiesDefaults(command);
     HystrixThreadPoolProperties.Setter threadPool=HystrixThreadPoolProperties.Setter();
@@ -38,7 +41,7 @@
     if (config != null) {
       configureHystrix(command,threadPool,config);
     }
-    return new HystrixProcessor(setter,processor,fallback);
+    return new HystrixProcessor(hcCommandKey,hcGroupKey,setter,processor,fallback);
   }
  else {
     return null;
