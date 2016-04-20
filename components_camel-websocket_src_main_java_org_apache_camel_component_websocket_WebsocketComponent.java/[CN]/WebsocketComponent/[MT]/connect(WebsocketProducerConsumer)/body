@@ -5,12 +5,16 @@
 synchronized (CONNECTORS) {
     ConnectorRef connectorRef=CONNECTORS.get(connectorKey);
     if (connectorRef == null) {
-      Connector connector;
+      ServerConnector connector;
+      server=createServer();
+      if (endpoint.isEnableJmx()) {
+        enableJmx(server);
+      }
       if (endpoint.getSslContextParameters() != null) {
-        connector=getSslSocketConnector(endpoint.getSslContextParameters());
+        connector=getSslSocketConnector(server,endpoint.getSslContextParameters());
       }
  else {
-        connector=new SelectChannelConnector();
+        connector=new ServerConnector(server);
       }
       if (endpoint.getPort() != null) {
         connector.setPort(endpoint.getPort());
@@ -23,10 +27,6 @@ synchronized (CONNECTORS) {
       }
  else {
         connector.setHost(host);
-      }
-      server=createServer();
-      if (endpoint.isEnableJmx()) {
-        enableJmx(server);
       }
       server.addConnector(connector);
       LOG.trace("Jetty Connector added: {}",connector.getName());
