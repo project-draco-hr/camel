@@ -1,2 +1,17 @@
 {
+  exchange.setProperty(Exchange.TRY_ROUTE_BLOCK,true);
+  try {
+    HystrixProcessorCommandFallbackViaNetwork fallbackCommand=null;
+    if (fallbackViaNetwork) {
+      fallbackCommand=new HystrixProcessorCommandFallbackViaNetwork(fallbackSetter,exchange,fallback);
+    }
+    HystrixProcessorCommand command=new HystrixProcessorCommand(setter,exchange,processor,fallback,fallbackCommand);
+    command.execute();
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+  }
+  exchange.removeProperty(Exchange.TRY_ROUTE_BLOCK);
+  callback.done(true);
+  return true;
 }
