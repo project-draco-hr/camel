@@ -1,9 +1,10 @@
 {
   when(store.getAll()).thenReturn(sockets);
-  when(defaultWebsocket1.getConnection()).thenReturn(connection);
-  when(defaultWebsocket2.getConnection()).thenReturn(connection);
-  doThrow(exception).when(connection).sendMessage(MESSAGE);
-  when(connection.isOpen()).thenReturn(true);
+  when(defaultWebsocket1.getSession()).thenReturn(session);
+  when(defaultWebsocket2.getSession()).thenReturn(session);
+  when(session.getRemote()).thenReturn(remoteEndpoint);
+  doThrow(exception).when(remoteEndpoint).sendString(MESSAGE);
+  when(session.isOpen()).thenReturn(true);
   try {
     websocketProducer.sendToAll(store,MESSAGE,exchange);
     fail("Exception expected");
@@ -11,15 +12,15 @@
  catch (  Exception e) {
     assertEquals(exception,e.getCause());
   }
-  InOrder inOrder=inOrder(store,connection,defaultWebsocket1,defaultWebsocket2);
+  InOrder inOrder=inOrder(store,session,defaultWebsocket1,defaultWebsocket2,remoteEndpoint);
   inOrder.verify(store,times(1)).getAll();
-  inOrder.verify(defaultWebsocket1,times(1)).getConnection();
-  inOrder.verify(connection,times(1)).isOpen();
-  inOrder.verify(defaultWebsocket1,times(1)).getConnection();
-  inOrder.verify(connection,times(1)).sendMessage(MESSAGE);
-  inOrder.verify(defaultWebsocket2,times(1)).getConnection();
-  inOrder.verify(connection,times(1)).isOpen();
-  inOrder.verify(defaultWebsocket2,times(1)).getConnection();
-  inOrder.verify(connection,times(1)).sendMessage(MESSAGE);
+  inOrder.verify(defaultWebsocket1,times(1)).getSession();
+  inOrder.verify(session,times(1)).isOpen();
+  inOrder.verify(defaultWebsocket1,times(1)).getSession();
+  inOrder.verify(remoteEndpoint,times(1)).sendString(MESSAGE);
+  inOrder.verify(defaultWebsocket2,times(1)).getSession();
+  inOrder.verify(session,times(1)).isOpen();
+  inOrder.verify(defaultWebsocket2,times(1)).getSession();
+  inOrder.verify(remoteEndpoint,times(1)).sendString(MESSAGE);
   inOrder.verifyNoMoreInteractions();
 }
