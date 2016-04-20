@@ -2,5 +2,11 @@
   NatsConfiguration config=getEndpoint().getNatsConfiguration();
   String body=exchange.getIn().getMandatoryBody(String.class);
   LOG.debug("Publishing to topic: {}",config.getTopic());
-  connection.publish(config.getTopic(),body.getBytes());
+  if (ObjectHelper.isNotEmpty(config.getReplySubject())) {
+    String replySubject=config.getReplySubject();
+    connection.publish(config.getTopic(),replySubject,body.getBytes());
+  }
+ else {
+    connection.publish(config.getTopic(),body.getBytes());
+  }
 }
