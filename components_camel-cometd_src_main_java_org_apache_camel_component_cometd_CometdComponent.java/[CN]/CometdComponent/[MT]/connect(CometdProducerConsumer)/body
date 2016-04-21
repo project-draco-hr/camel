@@ -1,24 +1,25 @@
 {
+  Server server=null;
   CometdEndpoint endpoint=prodcon.getEndpoint();
   String connectorKey=endpoint.getProtocol() + ":" + endpoint.getUri().getHost()+ ":"+ endpoint.getPort();
 synchronized (connectors) {
     ConnectorRef connectorRef=connectors.get(connectorKey);
     if (connectorRef == null) {
-      Connector connector;
+      ServerConnector connector;
+      server=createServer();
       if ("cometds".equals(endpoint.getProtocol())) {
-        connector=getSslSocketConnector();
+        connector=getSslSocketConnector(server);
       }
  else {
-        connector=new SelectChannelConnector();
+        connector=new ServerConnector(server);
       }
       connector.setPort(endpoint.getPort());
       connector.setHost(endpoint.getUri().getHost());
       if ("localhost".equalsIgnoreCase(endpoint.getUri().getHost())) {
         LOG.warn("You use localhost interface! It means that no external connections will be available." + " Don't you want to use 0.0.0.0 instead (all network interfaces)?");
       }
-      Server server=createServer();
       server.addConnector(connector);
-      CometdServlet servlet=createServletForConnector(server,connector,endpoint);
+      CometDServlet servlet=createServletForConnector(server,connector,endpoint);
       connectorRef=new ConnectorRef(connector,servlet,server);
       server.start();
       connectors.put(connectorKey,connectorRef);
