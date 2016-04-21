@@ -1,8 +1,19 @@
 {
   if (currentShardIterator == null) {
-    DescribeStreamRequest req1=new DescribeStreamRequest().withStreamName(getEndpoint().getStreamName());
-    DescribeStreamResult res1=getClient().describeStream(req1);
-    GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamName(getEndpoint().getStreamName()).withShardId(res1.getStreamDescription().getShards().get(0).getShardId()).withShardIteratorType(getEndpoint().getIteratorType());
+    String shardId;
+    if (!getEndpoint().getShardId().isEmpty()) {
+      shardId=getEndpoint().getShardId();
+    }
+ else {
+      DescribeStreamRequest req1=new DescribeStreamRequest().withStreamName(getEndpoint().getStreamName());
+      DescribeStreamResult res1=getClient().describeStream(req1);
+      shardId=res1.getStreamDescription().getShards().get(0).getShardId();
+    }
+    LOG.debug("ShardId is: {}",shardId);
+    GetShardIteratorRequest req=new GetShardIteratorRequest().withStreamName(getEndpoint().getStreamName()).withShardId(shardId).withShardIteratorType(getEndpoint().getIteratorType());
+    if (hasSequenceNumber()) {
+      req.withStartingSequenceNumber(getEndpoint().getSequenceNumber());
+    }
     GetShardIteratorResult result=getClient().getShardIterator(req);
     currentShardIterator=result.getShardIterator();
   }
