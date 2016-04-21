@@ -1,2 +1,106 @@
 {
+  List<Handler> handlerList=resolveAndRemoveReferenceListParameter(parameters,"handlers",Handler.class);
+  HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBindingRef",HttpBinding.class);
+  JettyHttpBinding jettyBinding=resolveAndRemoveReferenceParameter(parameters,"jettyHttpBindingRef",JettyHttpBinding.class);
+  Boolean enableJmx=getAndRemoveParameter(parameters,"enableJmx",Boolean.class);
+  Boolean enableMultipartFilter=getAndRemoveParameter(parameters,"enableMultipartFilter",Boolean.class,true);
+  Filter multipartFilter=resolveAndRemoveReferenceParameter(parameters,"multipartFilterRef",Filter.class);
+  List<Filter> filters=resolveAndRemoveReferenceListParameter(parameters,"filtersRef",Filter.class);
+  Boolean enableCors=getAndRemoveParameter(parameters,"enableCORS",Boolean.class,false);
+  HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
+  UrlRewrite urlRewrite=resolveAndRemoveReferenceParameter(parameters,"urlRewrite",UrlRewrite.class);
+  SSLContextParameters sslContextParameters=resolveAndRemoveReferenceParameter(parameters,"sslContextParametersRef",SSLContextParameters.class);
+  SSLContextParameters ssl=sslContextParameters != null ? sslContextParameters : this.sslContextParameters;
+  String proxyHost=getAndRemoveParameter(parameters,"proxyHost",String.class,getProxyHost());
+  Integer proxyPort=getAndRemoveParameter(parameters,"proxyPort",Integer.class,getProxyPort());
+  Integer httpClientMinThreads=getAndRemoveParameter(parameters,"httpClientMinThreads",Integer.class,this.httpClientMinThreads);
+  Integer httpClientMaxThreads=getAndRemoveParameter(parameters,"httpClientMaxThreads",Integer.class,this.httpClientMaxThreads);
+  HttpClient httpClient=resolveAndRemoveReferenceParameter(parameters,"httpClient",HttpClient.class);
+  Boolean async=getAndRemoveParameter(parameters,"async",Boolean.class);
+  Map<String,Object> httpClientParameters=IntrospectionSupport.extractProperties(parameters,"httpClient.");
+  Map<String,String> filterInitParameters=IntrospectionSupport.extractStringProperties(IntrospectionSupport.extractProperties(parameters,"filterInit."));
+  String address=remaining;
+  URI addressUri=new URI(UnsafeUriCharactersEncoder.encodeHttpURI(address));
+  URI endpointUri=URISupport.createRemainingURI(addressUri,parameters);
+  String httpMethodRestrict=getAndRemoveParameter(parameters,"httpMethodRestrict",String.class);
+  URI httpUri=URISupport.createRemainingURI(addressUri,parameters);
+  String scheme=ObjectHelper.before(uri,":");
+  endpointUri=new URI(scheme + ":" + endpointUri);
+  JettyHttpEndpoint endpoint=createEndpoint(endpointUri,httpUri);
+  if (async != null) {
+    endpoint.setAsync(async);
+  }
+  if (headerFilterStrategy != null) {
+    endpoint.setHeaderFilterStrategy(headerFilterStrategy);
+  }
+ else {
+    setEndpointHeaderFilterStrategy(endpoint);
+  }
+  if (proxyHost != null) {
+    endpoint.setProxyHost(proxyHost);
+    endpoint.setProxyPort(proxyPort);
+  }
+  if (urlRewrite != null) {
+    getCamelContext().addService(urlRewrite);
+    endpoint.setUrlRewrite(urlRewrite);
+  }
+  if (httpClientParameters != null && !httpClientParameters.isEmpty()) {
+    endpoint.setHttpClientParameters(httpClientParameters);
+  }
+  if (filterInitParameters != null && !filterInitParameters.isEmpty()) {
+    endpoint.setFilterInitParameters(filterInitParameters);
+  }
+  if (handlerList.size() > 0) {
+    endpoint.setHandlers(handlerList);
+  }
+  if (binding == null) {
+    binding=getHttpBinding();
+  }
+  if (binding != null) {
+    endpoint.setBinding(binding);
+  }
+  if (jettyBinding == null) {
+    jettyBinding=getJettyHttpBinding();
+  }
+  if (jettyBinding != null) {
+    endpoint.setJettyBinding(jettyBinding);
+  }
+  if (enableJmx != null) {
+    endpoint.setEnableJmx(enableJmx);
+  }
+ else {
+    endpoint.setEnableJmx(isEnableJmx());
+  }
+  endpoint.setEnableMultipartFilter(enableMultipartFilter);
+  if (multipartFilter != null) {
+    endpoint.setMultipartFilter(multipartFilter);
+    endpoint.setEnableMultipartFilter(true);
+  }
+  if (enableCors) {
+    endpoint.setEnableCORS(enableCors);
+    if (filters == null) {
+      filters=new ArrayList<Filter>(1);
+    }
+    filters.add(new CrossOriginFilter());
+  }
+  if (filters != null) {
+    endpoint.setFilters(filters);
+  }
+  if (httpMethodRestrict != null) {
+    endpoint.setHttpMethodRestrict(httpMethodRestrict);
+  }
+  if (ssl != null) {
+    endpoint.setSslContextParameters(ssl);
+  }
+  if (httpClientMinThreads != null) {
+    endpoint.setHttpClientMinThreads(httpClientMinThreads);
+  }
+  if (httpClientMaxThreads != null) {
+    endpoint.setHttpClientMaxThreads(httpClientMaxThreads);
+  }
+  if (httpClient != null) {
+    endpoint.setHttpClient(httpClient);
+  }
+  setProperties(endpoint,parameters);
+  return endpoint;
 }

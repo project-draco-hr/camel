@@ -1,2 +1,55 @@
 {
+  Boolean throwExceptionOnFailure=getAndRemoveParameter(parameters,"throwExceptionOnFailure",Boolean.class);
+  Boolean transferException=getAndRemoveParameter(parameters,"transferException",Boolean.class);
+  Boolean bridgeEndpoint=getAndRemoveParameter(parameters,"bridgeEndpoint",Boolean.class);
+  HttpBinding binding=resolveAndRemoveReferenceParameter(parameters,"httpBinding",HttpBinding.class);
+  Boolean matchOnUriPrefix=getAndRemoveParameter(parameters,"matchOnUriPrefix",Boolean.class);
+  String servletName=getAndRemoveParameter(parameters,"servletName",String.class,getServletName());
+  String httpMethodRestrict=getAndRemoveParameter(parameters,"httpMethodRestrict",String.class);
+  HeaderFilterStrategy headerFilterStrategy=resolveAndRemoveReferenceParameter(parameters,"headerFilterStrategy",HeaderFilterStrategy.class);
+  Boolean async=getAndRemoveParameter(parameters,"async",Boolean.class);
+  if (lenientContextPath()) {
+    String scheme=ObjectHelper.before(uri,":");
+    String after=ObjectHelper.after(uri,":");
+    while (after.startsWith("/")) {
+      after=after.substring(1);
+    }
+    after="/" + after;
+    uri=scheme + ":" + after;
+  }
+  URI httpUri=URISupport.createRemainingURI(new URI(UnsafeUriCharactersEncoder.encodeHttpURI(uri)),parameters);
+  ServletEndpoint endpoint=createServletEndpoint(uri,this,httpUri);
+  endpoint.setServletName(servletName);
+  if (async != null) {
+    endpoint.setAsync(async);
+  }
+  if (headerFilterStrategy != null) {
+    endpoint.setHeaderFilterStrategy(headerFilterStrategy);
+  }
+ else {
+    setEndpointHeaderFilterStrategy(endpoint);
+  }
+  if (binding == null) {
+    binding=getHttpBinding();
+  }
+  if (binding != null) {
+    endpoint.setBinding(binding);
+  }
+  if (throwExceptionOnFailure != null) {
+    endpoint.setThrowExceptionOnFailure(throwExceptionOnFailure);
+  }
+  if (transferException != null) {
+    endpoint.setTransferException(transferException);
+  }
+  if (bridgeEndpoint != null) {
+    endpoint.setBridgeEndpoint(bridgeEndpoint);
+  }
+  if (matchOnUriPrefix != null) {
+    endpoint.setMatchOnUriPrefix(matchOnUriPrefix);
+  }
+  if (httpMethodRestrict != null) {
+    endpoint.setHttpMethodRestrict(httpMethodRestrict);
+  }
+  setProperties(endpoint,parameters);
+  return endpoint;
 }
