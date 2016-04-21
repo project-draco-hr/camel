@@ -1,12 +1,17 @@
 {
   if (unsubscribed.compareAndSet(false,true)) {
     if (consumer != null) {
-      try {
-        ServiceHelper.stopServices(consumer);
+      workerPool.submit(new Runnable(){
+        @Override public void run(){
+          try {
+            ServiceHelper.stopServices(consumer);
+          }
+ catch (          Exception e) {
+            LOG.warn("Error stopping consumer: " + consumer + " due "+ e.getMessage()+ ". This exception is ignored.",e);
+          }
+        }
       }
- catch (      Exception e) {
-        LOG.warn("Error stopping consumer: " + consumer + " due "+ e.getMessage()+ ". This exception is ignored.",e);
-      }
+);
     }
   }
 }
