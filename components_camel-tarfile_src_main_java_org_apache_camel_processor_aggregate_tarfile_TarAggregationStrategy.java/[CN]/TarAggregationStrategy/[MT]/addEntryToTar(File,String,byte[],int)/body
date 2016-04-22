@@ -1,10 +1,11 @@
 {
-  File tmpTar=File.createTempFile(source.getName(),null);
+  File tmpTar=File.createTempFile(source.getName(),null,parentDir);
   tmpTar.delete();
   if (!source.renameTo(tmpTar)) {
     throw new IOException("Cannot create temp file: " + source.getName());
   }
-  TarArchiveInputStream tin=(TarArchiveInputStream)new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR,new FileInputStream(tmpTar));
+  FileInputStream fis=new FileInputStream(tmpTar);
+  TarArchiveInputStream tin=(TarArchiveInputStream)new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR,fis);
   TarArchiveOutputStream tos=new TarArchiveOutputStream(new FileOutputStream(source));
   tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
   tos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_POSIX);
@@ -19,6 +20,7 @@
   tos.putArchiveEntry(entry);
   tos.write(buffer,0,length);
   tos.closeArchiveEntry();
-  IOHelper.close(tin);
-  IOHelper.close(tos);
+  IOHelper.close(fis,tin,tos);
+  LOG.trace("Deleting temporary file: {}",tmpTar);
+  FileUtil.deleteFile(tmpTar);
 }
