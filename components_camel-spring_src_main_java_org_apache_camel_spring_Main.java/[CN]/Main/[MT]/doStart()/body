@@ -1,16 +1,25 @@
 {
-  super.doStart();
-  if (applicationContext == null) {
-    applicationContext=createDefaultApplicationContext();
+  try {
+    super.doStart();
+    if (applicationContext == null) {
+      applicationContext=createDefaultApplicationContext();
+    }
+    if (additionalApplicationContext == null) {
+      additionalApplicationContext=createAdditionalLocationsFromClasspath();
+      if (additionalApplicationContext != null) {
+        LOG.debug("Starting Additional ApplicationContext: " + additionalApplicationContext.getId());
+        additionalApplicationContext.start();
+      }
+    }
+    LOG.debug("Starting Spring ApplicationContext: " + applicationContext.getId());
+    applicationContext.start();
+    postProcessContext();
   }
-  if (additionalApplicationContext == null) {
-    additionalApplicationContext=createAdditionalLocationsFromClasspath();
-    if (additionalApplicationContext != null) {
-      LOG.debug("Starting Additional ApplicationContext: " + additionalApplicationContext.getId());
-      additionalApplicationContext.start();
+  finally {
+    if (camelContexts != null && !camelContexts.isEmpty()) {
+      if (getCamelContexts().get(0).isVetoStarted()) {
+        completed();
+      }
     }
   }
-  LOG.debug("Starting Spring ApplicationContext: " + applicationContext.getId());
-  applicationContext.start();
-  postProcessContext();
 }
