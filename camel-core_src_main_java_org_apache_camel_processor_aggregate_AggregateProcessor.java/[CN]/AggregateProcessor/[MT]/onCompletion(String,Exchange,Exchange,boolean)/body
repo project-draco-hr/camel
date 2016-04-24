@@ -14,9 +14,13 @@
     closedCorrelationKeys.put(key,key);
   }
   if (fromTimeout) {
-    if (aggregationStrategy instanceof TimeoutAwareAggregationStrategy) {
+    AggregationStrategy strategy=aggregationStrategy;
+    if (strategy instanceof DelegateAggregationStrategy) {
+      strategy=((DelegateAggregationStrategy)strategy).getDelegate();
+    }
+    if (strategy instanceof TimeoutAwareAggregationStrategy) {
       long timeout=getCompletionTimeout() > 0 ? getCompletionTimeout() : -1;
-      ((TimeoutAwareAggregationStrategy)aggregationStrategy).timeout(aggregated,-1,-1,timeout);
+      ((TimeoutAwareAggregationStrategy)strategy).timeout(aggregated,-1,-1,timeout);
     }
   }
   Exchange answer;
