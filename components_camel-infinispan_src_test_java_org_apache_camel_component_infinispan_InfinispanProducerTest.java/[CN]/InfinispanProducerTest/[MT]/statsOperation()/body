@@ -1,0 +1,31 @@
+{
+  ((Cache)currentCache()).getAdvancedCache().getStats().setStatisticsEnabled(true);
+  template.send("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_ONE);
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_ONE);
+      exchange.getIn().setHeader(InfinispanConstants.OPERATION,InfinispanConstants.PUT);
+    }
+  }
+);
+  Object value=currentCache().get(KEY_ONE);
+  assertEquals(VALUE_ONE,value.toString());
+  template.send("direct:start",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(InfinispanConstants.KEY,KEY_TWO);
+      exchange.getIn().setHeader(InfinispanConstants.VALUE,VALUE_TWO);
+      exchange.getIn().setHeader(InfinispanConstants.OPERATION,InfinispanConstants.PUT);
+    }
+  }
+);
+  value=currentCache().get(KEY_TWO);
+  assertEquals(VALUE_TWO,value.toString());
+  Exchange exchange;
+  exchange=template.send("direct:stats",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+    }
+  }
+);
+  Stats resultStats=exchange.getIn().getHeader(InfinispanConstants.RESULT,Stats.class);
+  assertEquals(2L,resultStats.getTotalNumberOfEntries());
+}

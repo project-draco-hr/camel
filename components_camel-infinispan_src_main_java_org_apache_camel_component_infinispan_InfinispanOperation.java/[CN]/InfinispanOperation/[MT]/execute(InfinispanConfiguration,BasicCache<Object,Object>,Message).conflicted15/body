@@ -1,3 +1,34 @@
 {
-  setResult(cache.containsKey(getKey(message)),message);
+  NotifyingFuture result;
+  if (hasLifespan(message)) {
+    long lifespan=message.getHeader(InfinispanConstants.LIFESPAN_TIME,long.class);
+    TimeUnit timeUnit=message.getHeader(InfinispanConstants.LIFESPAN_TIME_UNIT,TimeUnit.class);
+    if (hasMaxIdleTime(message)) {
+      long maxIdle=message.getHeader(InfinispanConstants.MAX_IDLE_TIME,long.class);
+      TimeUnit maxIdleTimeUnit=message.getHeader(InfinispanConstants.MAX_IDLE_TIME_UNIT,TimeUnit.class);
+      if (ObjectHelper.isEmpty(getOldValue(message))) {
+        result=cache.replaceAsync(getKey(message),getValue(message),lifespan,timeUnit,maxIdle,maxIdleTimeUnit);
+      }
+ else {
+        result=cache.replaceAsync(getKey(message),getOldValue(message),getValue(message),lifespan,timeUnit,maxIdle,maxIdleTimeUnit);
+      }
+    }
+ else {
+      if (ObjectHelper.isEmpty(getOldValue(message))) {
+        result=cache.replaceAsync(getKey(message),getValue(message),lifespan,timeUnit);
+      }
+ else {
+        result=cache.replaceAsync(getKey(message),getOldValue(message),getValue(message),lifespan,timeUnit);
+      }
+    }
+  }
+ else {
+    if (ObjectHelper.isEmpty(getOldValue(message))) {
+      result=cache.replaceAsync(getKey(message),getValue(message));
+    }
+ else {
+      result=cache.replaceAsync(getKey(message),getOldValue(message),getValue(message));
+    }
+  }
+  setResult(result,message);
 }
