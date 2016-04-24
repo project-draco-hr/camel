@@ -1,0 +1,41 @@
+{
+  List<InflightExchange> answer=new ArrayList<InflightExchange>();
+  List<Exchange> values;
+  if (fromRouteId == null) {
+    values=new ArrayList<Exchange>(inflight.values());
+  }
+ else {
+    values=new ArrayList<Exchange>();
+    for (    Exchange exchange : inflight.values()) {
+      String exchangeRouteId=exchange.getFromRouteId();
+      if (fromRouteId.equals(exchangeRouteId)) {
+        values.add(exchange);
+      }
+    }
+  }
+  if (sortByLongestDuration) {
+    Collections.sort(values,new Comparator<Exchange>(){
+      @Override public int compare(      Exchange e1,      Exchange e2){
+        long d1=getExchangeDuration(e1);
+        long d2=getExchangeDuration(e2);
+        return Long.compare(d1,d2);
+      }
+    }
+);
+  }
+ else {
+    Collections.sort(values,new Comparator<Exchange>(){
+      @Override public int compare(      Exchange e1,      Exchange e2){
+        return e1.getExchangeId().compareTo(e2.getExchangeId());
+      }
+    }
+);
+  }
+  for (  Exchange exchange : values) {
+    answer.add(new InflightExchangeEntry(exchange));
+    if (limit > 0 && answer.size() >= limit) {
+      break;
+    }
+  }
+  return Collections.unmodifiableCollection(answer);
+}
