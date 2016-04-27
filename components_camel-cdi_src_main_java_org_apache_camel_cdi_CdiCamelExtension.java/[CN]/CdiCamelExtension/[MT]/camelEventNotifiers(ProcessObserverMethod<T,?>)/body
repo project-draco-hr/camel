@@ -1,6 +1,15 @@
 {
   Type type=pom.getObserverMethod().getObservedType();
   if (type instanceof Class && Class.class.cast(type).getPackage().equals(AbstractExchangeEvent.class.getPackage())) {
-    eventQualifiers.addAll(pom.getObserverMethod().getObservedQualifiers().isEmpty() ? singleton(ANY) : pom.getObserverMethod().getObservedQualifiers());
+    Set<Annotation> qualifiers=pom.getObserverMethod().getObservedQualifiers();
+    if (qualifiers.isEmpty()) {
+      eventQualifiers.add(ANY);
+    }
+ else     if (qualifiers.size() == 1 && qualifiers.stream().filter(isAnnotationType(Named.class)).findAny().isPresent()) {
+      eventQualifiers.add(DEFAULT);
+    }
+ else {
+      eventQualifiers.addAll(qualifiers);
+    }
   }
 }
