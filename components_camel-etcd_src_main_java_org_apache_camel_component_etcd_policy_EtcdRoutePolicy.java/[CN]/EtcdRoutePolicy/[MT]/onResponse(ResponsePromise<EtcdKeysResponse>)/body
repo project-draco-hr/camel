@@ -1,0 +1,44 @@
+{
+  if (!isRunAllowed()) {
+    return;
+  }
+  Throwable throwable=promise.getException();
+  if (throwable != null && throwable instanceof EtcdException) {
+    EtcdException exception=(EtcdException)throwable;
+    if (EtcdHelper.isOutdatedIndexException(exception)) {
+      LOGGER.debug("Outdated index, key={}, cause={}",servicePath,exception.etcdCause);
+      index.set(exception.index + 1);
+      throwable=null;
+    }
+  }
+ else {
+    try {
+      EtcdKeysResponse response=promise.get();
+      setIndex(response);
+      if (response.node.value == null) {
+        setLeader(tryTakeLeadership());
+      }
+ else       if (!ObjectHelper.equal(serviceName,response.node.value) && leader.get()) {
+        setLeader(false);
+      }
+    }
+ catch (    TimeoutException e) {
+      LOGGER.debug("Timeout watching for {}",servicePath);
+      throwable=null;
+    }
+catch (    Exception e1) {
+      throwable=e1;
+    }
+  }
+  if (throwable == null) {
+    try {
+      watch();
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException(e);
+    }
+  }
+ else {
+    throw new RuntimeCamelException(throwable);
+  }
+}

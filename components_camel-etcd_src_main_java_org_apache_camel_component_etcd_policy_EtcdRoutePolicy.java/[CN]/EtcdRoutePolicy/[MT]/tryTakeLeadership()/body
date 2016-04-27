@@ -1,0 +1,14 @@
+{
+  boolean result=false;
+  try {
+    EtcdKeysResponse response=getClient().put(servicePath,serviceName).prevExist(false).ttl(ttl).send().get();
+    result=ObjectHelper.equal(serviceName,response.node.value);
+    setIndex(response);
+  }
+ catch (  EtcdException e) {
+    if (!e.isErrorCode(EtcdErrorCode.NodeExist)) {
+      throw e;
+    }
+  }
+  return result;
+}
