@@ -4,43 +4,35 @@
   String fileName=getConfiguration().getFileName();
   String bucketName=getConfiguration().getBucketName();
   Queue<Exchange> exchanges;
-  if (filesConsumed) {
-    exchanges=new LinkedList<Exchange>();
+  if (fileName != null) {
+    LOG.trace("Getting object in bucket [{}] with file name [{}]...",bucketName,fileName);
+    S3Object s3Object=getAmazonS3Client().getObject(new GetObjectRequest(bucketName,fileName));
+    exchanges=createExchanges(s3Object);
   }
  else {
-    if (fileName != null) {
-      LOG.trace("Getting object in bucket [{}] with file name [{}]...",bucketName,fileName);
-      S3Object s3Object=getAmazonS3Client().getObject(new GetObjectRequest(bucketName,fileName));
-      exchanges=createExchanges(s3Object);
-      if (!getConfiguration().isDeleteAfterRead()) {
-        filesConsumed=true;
-      }
+    LOG.trace("Queueing objects in bucket [{}]...",bucketName);
+    ListObjectsRequest listObjectsRequest=new ListObjectsRequest();
+    listObjectsRequest.setBucketName(bucketName);
+    listObjectsRequest.setPrefix(getConfiguration().getPrefix());
+    if (maxMessagesPerPoll > 0) {
+      listObjectsRequest.setMaxKeys(maxMessagesPerPoll);
+    }
+    if (marker != null) {
+      LOG.trace("Resuming from marker: {}",marker);
+      listObjectsRequest.setMarker(marker);
+    }
+    ObjectListing listObjects=getAmazonS3Client().listObjects(listObjectsRequest);
+    if (listObjects.isTruncated()) {
+      marker=listObjects.getNextMarker();
+      LOG.trace("Returned list is truncated, so setting next marker: {}",marker);
     }
  else {
-      LOG.trace("Queueing objects in bucket [{}]...",bucketName);
-      ListObjectsRequest listObjectsRequest=new ListObjectsRequest();
-      listObjectsRequest.setBucketName(bucketName);
-      listObjectsRequest.setPrefix(getConfiguration().getPrefix());
-      if (maxMessagesPerPoll > 0) {
-        listObjectsRequest.setMaxKeys(maxMessagesPerPoll);
-      }
-      if (marker != null && !getConfiguration().isDeleteAfterRead()) {
-        listObjectsRequest.setMarker(marker);
-      }
-      ObjectListing listObjects=getAmazonS3Client().listObjects(listObjectsRequest);
-      if (!getConfiguration().isDeleteAfterRead()) {
-        if (listObjects.getNextMarker() != null) {
-          marker=listObjects.getNextMarker();
-        }
- else {
-          filesConsumed=true;
-        }
-      }
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Found {} objects in bucket [{}]...",listObjects.getObjectSummaries().size(),bucketName);
-      }
-      exchanges=createExchanges(listObjects.getObjectSummaries());
+      marker=null;
     }
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Found {} objects in bucket [{}]...",listObjects.getObjectSummaries().size(),bucketName);
+    }
+    exchanges=createExchanges(listObjects.getObjectSummaries());
   }
   return processBatch(CastUtils.cast(exchanges));
 }
