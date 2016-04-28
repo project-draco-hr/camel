@@ -8,6 +8,21 @@
  catch (  FileNotFoundException e) {
     LOG.trace("Could not open resource [" + resource + "] as a file.",e);
   }
+  if (is == null && this.context != null) {
+    LOG.trace("Trying to open resource using the CamelContext ClassResolver [{}].",context.getClassResolver());
+    try {
+      is=context.getClassResolver().loadResourceAsStream(resource);
+      if (is == null) {
+        LOG.trace("Could not to open resource [{}] using the CamelContext ClassResolver [{}].",resource,context.getClassResolver());
+      }
+ else {
+        LOG.debug("Opened resource [{}] using the CamelContext ClassResolver [{}].",resource,this.getClass().getClassLoader());
+      }
+    }
+ catch (    Throwable e) {
+      LOG.trace("Could not open resource [" + resource + "]  using the CamelContext ClassResolver.",e);
+    }
+  }
   if (is == null && Thread.currentThread().getContextClassLoader() != null) {
     LOG.trace("Trying to open resource [{}] as a class path resource with the TCCL [{}].",resource,Thread.currentThread().getContextClassLoader());
     is=Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
@@ -36,16 +51,6 @@
     }
  catch (    IOException e) {
       LOG.trace("Could not open resource [" + resource + "] as a URL.",e);
-    }
-  }
-  if (is == null && this.context != null) {
-    LOG.trace("Trying to open resource using the CamelContext ClassResolver [{}].",context.getClassResolver());
-    is=context.getClassResolver().loadResourceAsStream(resource);
-    if (is == null) {
-      LOG.trace("Could not to open resource [{}] using the CamelContext ClassResolver [{}].",resource,context.getClassResolver());
-    }
- else {
-      LOG.debug("Opened resource [{}] using the CamelContext ClassResolver [{}].",resource,this.getClass().getClassLoader());
     }
   }
   if (is == null) {
