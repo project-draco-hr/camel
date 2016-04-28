@@ -1,31 +1,3 @@
 {
-  LOG.trace("Creating SSLContext from SSLContextParameters [{}].",this);
-  LOG.info("Available providers: {}.",Security.getProviders());
-  KeyManager[] keyManagers=this.keyManagers == null ? null : this.keyManagers.createKeyManagers();
-  TrustManager[] trustManagers=this.trustManagers == null ? null : this.trustManagers.createTrustManagers();
-  SecureRandom secureRandom=this.secureRandom == null ? null : this.secureRandom.createSecureRandom();
-  SSLContext context;
-  if (this.getProvider() == null) {
-    context=SSLContext.getInstance(this.parsePropertyValue(this.getSecureSocketProtocol()));
-  }
- else {
-    context=SSLContext.getInstance(this.parsePropertyValue(this.getSecureSocketProtocol()),this.parsePropertyValue(this.getProvider()));
-  }
-  if (this.getCertAlias() != null && keyManagers != null) {
-    for (int idx=0; idx < keyManagers.length; idx++) {
-      if (keyManagers[idx] instanceof X509KeyManager) {
-        try {
-          keyManagers[idx]=new AliasedX509ExtendedKeyManager(this.getCertAlias(),(X509KeyManager)keyManagers[idx]);
-        }
- catch (        Exception e) {
-          throw new GeneralSecurityException(e);
-        }
-      }
-    }
-  }
-  LOG.debug("SSLContext [{}], initialized from [{}], is using provider [{}], protocol [{}], key managers {}, trust managers {}, and secure random [{}].",new Object[]{context,this,context.getProvider(),context.getProtocol(),keyManagers,trustManagers,secureRandom});
-  context.init(keyManagers,trustManagers,secureRandom);
-  this.configureSSLContext(context);
-  context=new SSLContextDecorator(new SSLContextSpiDecorator(context,this.getSSLEngineConfigurers(context),this.getSSLSocketFactoryConfigurers(context),this.getSSLServerSocketFactoryConfigurers(context)));
-  return context;
+  return createSSLContext(null);
 }
