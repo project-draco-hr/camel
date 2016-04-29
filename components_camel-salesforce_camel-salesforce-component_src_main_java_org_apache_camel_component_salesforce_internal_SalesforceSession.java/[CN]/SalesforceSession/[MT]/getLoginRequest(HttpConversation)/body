@@ -1,0 +1,19 @@
+{
+  final String loginUrl=(instanceUrl == null ? config.getLoginUrl() : instanceUrl) + OAUTH2_TOKEN_PATH;
+  LOG.info("Login user {} at Salesforce loginUrl: {}",config.getUserName(),loginUrl);
+  final Fields fields=new Fields(true);
+  fields.put("grant_type","password");
+  fields.put("client_id",config.getClientId());
+  fields.put("client_secret",config.getClientSecret());
+  fields.put("username",config.getUserName());
+  fields.put("password",config.getPassword());
+  fields.put("format","json");
+  final Request post;
+  if (conversation == null) {
+    post=httpClient.POST(loginUrl);
+  }
+ else {
+    post=httpClient.newHttpRequest(conversation,URI.create(loginUrl)).method(HttpMethod.POST);
+  }
+  return post.content(new FormContentProvider(fields)).timeout(timeout,TimeUnit.MILLISECONDS);
+}

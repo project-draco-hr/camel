@@ -1,21 +1,23 @@
 {
   server=new Server();
-  Connector connector=new SelectChannelConnector();
+  ServerConnector connector=new ServerConnector(server);
   connector.setHost(HTTP_PROXY_HOST);
-  server.setConnectors(new Connector[]{connector});
+  server.addConnector(connector);
   final String authenticationString="Basic " + B64Code.encode(HTTP_PROXY_USER_NAME + ":" + HTTP_PROXY_PASSWORD,StringUtil.__ISO_8859_1);
-  ConnectHandler handler=new ConnectHandler(){
-    @Override protected boolean handleAuthentication(    HttpServletRequest request,    HttpServletResponse response,    String address) throws ServletException, IOException {
-      final String header=request.getHeader(HttpHeaders.PROXY_AUTHORIZATION);
+  ConnectHandler connectHandler=new ConnectHandler(){
+    @Override protected boolean handleAuthentication(    HttpServletRequest request,    HttpServletResponse response,    String address){
+      final String header=request.getHeader(PROXY_AUTHORIZATION.toString());
       if (!authenticationString.equals(header)) {
-        throw new ServletException("Missing header " + HttpHeaders.PROXY_AUTHORIZATION);
+        LOG.warn("Missing header " + PROXY_AUTHORIZATION);
+        response.setHeader(PROXY_AUTHENTICATE.toString(),String.format("Basic realm=\"%s\"",HTTP_PROXY_REALM));
+        return false;
       }
-      LOG.info("CONNECT exchange contains required header " + HttpHeaders.PROXY_AUTHORIZATION);
-      return super.handleAuthentication(request,response,address);
+      LOG.info("Request contains required header " + PROXY_AUTHORIZATION);
+      return true;
     }
   }
 ;
-  server.setHandler(handler);
+  server.setHandler(connectHandler);
   LOG.info("Starting proxy server...");
   server.start();
   httpProxyPort=connector.getLocalPort();

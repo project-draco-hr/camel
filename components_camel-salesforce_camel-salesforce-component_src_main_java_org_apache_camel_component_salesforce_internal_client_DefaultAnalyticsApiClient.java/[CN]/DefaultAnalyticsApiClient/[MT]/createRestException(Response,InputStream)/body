@@ -1,0 +1,21 @@
+{
+  final int statusCode=response.getStatus();
+  try {
+    if (responseContent != null) {
+      final List<RestError> errors=objectMapper.readValue(responseContent,new TypeReference<List<RestError>>(){
+      }
+);
+      return new SalesforceException(errors,statusCode);
+    }
+  }
+ catch (  UnsupportedEncodingException e) {
+    String msg="Unexpected Error parsing JSON error response body + [" + responseContent + "] : "+ e.getMessage();
+    log.warn(msg,e);
+  }
+catch (  IOException e) {
+    String msg="Unexpected Error parsing JSON error response body + [" + responseContent + "] : "+ e.getMessage();
+    log.warn(msg,e);
+  }
+  String message=String.format("Unexpected error: %s, with content: %s",response.getReason(),responseContent);
+  return new SalesforceException(message,statusCode);
+}

@@ -1,13 +1,12 @@
 {
   final SslContextFactory sslContextFactory=new SslContextFactory();
   sslContextFactory.setSslContext(new SSLContextParameters().createSSLContext());
-  final HttpClient httpClient=new HttpClient(sslContextFactory);
+  final SalesforceHttpClient httpClient=new SalesforceHttpClient(sslContextFactory);
   httpClient.setConnectTimeout(TIMEOUT);
-  httpClient.setTimeout(TIMEOUT);
-  httpClient.registerListener(RedirectListener.class.getName());
-  httpClient.start();
-  final SalesforceSession session=new SalesforceSession(httpClient,LoginConfigHelper.getLoginConfig());
+  final SalesforceSession session=new SalesforceSession(httpClient,TIMEOUT,LoginConfigHelper.getLoginConfig());
   session.addListener(this);
+  httpClient.setSession(session);
+  httpClient.start();
   try {
     String loginToken=session.login(session.getAccessToken());
     LOG.info("First token " + loginToken);

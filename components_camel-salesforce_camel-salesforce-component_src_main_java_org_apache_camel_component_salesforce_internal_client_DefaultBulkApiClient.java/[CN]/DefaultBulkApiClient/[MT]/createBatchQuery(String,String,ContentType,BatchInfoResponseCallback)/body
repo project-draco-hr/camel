@@ -1,8 +1,15 @@
 {
-  final ContentExchange post=getContentExchange(HttpMethods.POST,batchUrl(jobId,null));
-  byte[] queryBytes=soqlQuery.getBytes(StringUtil.__UTF8_CHARSET);
-  post.setRequestContent(new ByteArrayBuffer(queryBytes));
-  post.setRequestContentType(getContentType(jobContentType) + ";charset=" + StringUtil.__UTF8);
+  final Request post=getRequest(HttpMethod.POST,batchUrl(jobId,null));
+  final byte[] queryBytes;
+  try {
+    queryBytes=soqlQuery.getBytes(StringUtil.__UTF8);
+  }
+ catch (  UnsupportedEncodingException e) {
+    callback.onResponse(null,new SalesforceException("Unexpected exception: " + e.getMessage(),e));
+    return;
+  }
+  post.content(new BytesContentProvider(queryBytes));
+  post.header(HttpHeader.CONTENT_TYPE,getContentType(jobContentType) + ";charset=" + StringUtil.__UTF8);
   doHttpRequest(post,new ClientResponseCallback(){
     @Override public void onResponse(    InputStream response,    SalesforceException ex){
       BatchInfo value=null;

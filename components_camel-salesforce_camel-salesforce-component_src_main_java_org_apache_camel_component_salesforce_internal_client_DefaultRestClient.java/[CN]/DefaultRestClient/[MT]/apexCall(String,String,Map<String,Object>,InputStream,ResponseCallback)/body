@@ -1,13 +1,13 @@
 {
-  final ContentExchange exchange;
+  final Request request;
   try {
-    exchange=getContentExchange(httpMethod,apexCallUrl(apexUrl,queryParams));
+    request=getRequest(httpMethod,apexCallUrl(apexUrl,queryParams));
     if (requestDto != null) {
-      exchange.setRequestContentSource(requestDto);
-      exchange.setRequestContentType(PayloadFormat.JSON.equals(format) ? APPLICATION_JSON_UTF8 : APPLICATION_XML_UTF8);
+      request.content(new InputStreamContentProvider(requestDto));
+      request.header(HttpHeader.CONTENT_TYPE,PayloadFormat.JSON.equals(format) ? APPLICATION_JSON_UTF8 : APPLICATION_XML_UTF8);
     }
-    setAccessToken(exchange);
-    doHttpRequest(exchange,new DelegatingClientCallback(callback));
+    setAccessToken(request);
+    doHttpRequest(request,new DelegatingClientCallback(callback));
   }
  catch (  UnsupportedEncodingException e) {
     String msg="Unexpected error: " + e.getMessage();

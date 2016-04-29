@@ -1,22 +1,22 @@
 {
   final boolean useGet=reportMetadata == null;
-  final ContentExchange contentExchange=getContentExchange(useGet ? HttpMethods.GET : HttpMethods.POST,reportsUrl(reportId,includeDetails));
+  final Request Request=getRequest(useGet ? HttpMethod.GET : HttpMethod.POST,reportsUrl(reportId,includeDetails));
   if (!useGet) {
     try {
       final HashMap<String,Object> request=new HashMap<String,Object>();
       request.put("reportMetadata",reportMetadata);
-      marshalRequest(request,contentExchange);
+      marshalRequest(request,Request);
     }
  catch (    SalesforceException e) {
       callback.onResponse(null,e);
       return;
     }
   }
-  doHttpRequest(contentExchange,new ClientResponseCallback(){
+  doHttpRequest(Request,new ClientResponseCallback(){
     @Override public void onResponse(    InputStream response,    SalesforceException ex){
       SyncReportResults reportResults=null;
       try {
-        reportResults=unmarshalResponse(response,contentExchange,SyncReportResults.class);
+        reportResults=unmarshalResponse(response,Request,SyncReportResults.class);
       }
  catch (      SalesforceException e) {
         ex=e;

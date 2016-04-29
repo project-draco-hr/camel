@@ -1,0 +1,24 @@
+{
+  final Request newRequest;
+  if (copy) {
+    newRequest=httpClient.copyRequest(request,request.getURI());
+    newRequest.method(request.getMethod());
+  }
+ else {
+    newRequest=request;
+  }
+  conversation.setAttribute(AUTHENTICATION_RETRIES_ATTRIBUTE,++retries);
+  LOG.debug("Retry attempt {} on authentication error for {}",retries,request);
+  String currentToken=session.getAccessToken();
+  if (client != null) {
+    client.setAccessToken(currentToken);
+    client.setInstanceUrl(session.getInstanceUrl());
+    client.setAccessToken(newRequest);
+  }
+ else {
+    newRequest.header(HttpHeader.AUTHORIZATION,"OAuth " + currentToken);
+  }
+  conversation.updateResponseListeners(null);
+  newRequest.onRequestBegin(getRequestAbortListener(request));
+  newRequest.send(null);
+}

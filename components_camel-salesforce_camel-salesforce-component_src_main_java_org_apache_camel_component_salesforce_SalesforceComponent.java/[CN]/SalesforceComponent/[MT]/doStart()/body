@@ -5,32 +5,50 @@
       httpClient=config.getHttpClient();
     }
  else {
-      httpClient=new HttpClient();
-      httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
+      final SSLContextParameters contextParameters=sslContextParameters != null ? sslContextParameters : new SSLContextParameters();
+      final SslContextFactory sslContextFactory=new SslContextFactory();
+      sslContextFactory.setSslContext(contextParameters.createSSLContext(getCamelContext()));
+      httpClient=new SalesforceHttpClient(sslContextFactory);
       httpClient.setConnectTimeout(CONNECTION_TIMEOUT);
-      httpClient.setTimeout(RESPONSE_TIMEOUT);
     }
   }
-  final SSLContextParameters contextParameters=sslContextParameters != null ? sslContextParameters : new SSLContextParameters();
-  final SslContextFactory sslContextFactory=httpClient.getSslContextFactory();
-  sslContextFactory.setSslContext(contextParameters.createSSLContext(getCamelContext()));
   if (httpClientProperties != null && !httpClientProperties.isEmpty()) {
     IntrospectionSupport.setProperties(getCamelContext().getTypeConverter(),httpClient,new HashMap<String,Object>(httpClientProperties));
   }
   if (this.httpProxyHost != null && httpProxyPort != null) {
-    httpClient.setProxy(new Address(this.httpProxyHost,this.httpProxyPort));
+    Origin.Address proxyAddress=new Origin.Address(this.httpProxyHost,this.httpProxyPort);
+    ProxyConfiguration.Proxy proxy;
+    if (isHttpProxySocks4) {
+      proxy=new Socks4Proxy(proxyAddress,isHttpProxySecure);
+    }
+ else {
+      proxy=new HttpProxy(proxyAddress,isHttpProxySecure);
+    }
+    if (httpProxyIncludedAddresses != null && !httpProxyIncludedAddresses.isEmpty()) {
+      proxy.getIncludedAddresses().addAll(httpProxyIncludedAddresses);
+    }
+    if (httpProxyExcludedAddresses != null && !httpProxyExcludedAddresses.isEmpty()) {
+      proxy.getExcludedAddresses().addAll(httpProxyExcludedAddresses);
+    }
+    httpClient.getProxyConfiguration().getProxies().add(proxy);
   }
   if (this.httpProxyUsername != null && httpProxyPassword != null) {
-    httpClient.setProxyAuthentication(new ProxyAuthorization(this.httpProxyUsername,this.httpProxyPassword));
+    ObjectHelper.notEmpty(httpProxyAuthUri,"httpProxyAuthUri");
+    ObjectHelper.notEmpty(httpProxyRealm,"httpProxyRealm");
+    final Authentication authentication;
+    if (httpProxyUseDigestAuth) {
+      authentication=new DigestAuthentication(new URI(httpProxyAuthUri),httpProxyRealm,httpProxyUsername,httpProxyPassword);
+    }
+ else {
+      authentication=new BasicAuthentication(new URI(httpProxyAuthUri),httpProxyRealm,httpProxyUsername,httpProxyPassword);
+    }
+    httpClient.getAuthenticationStore().addAuthentication(authentication);
   }
-  String listenerClass=RedirectListener.class.getName();
-  if (httpClient.getRegisteredListeners() == null || !httpClient.getRegisteredListeners().contains(listenerClass)) {
-    httpClient.registerListener(listenerClass);
-  }
-  httpClient.start();
   if (null == this.session) {
-    this.session=new SalesforceSession(httpClient,loginConfig);
+    this.session=new SalesforceSession(httpClient,httpClient.getTimeout(),loginConfig);
   }
+  httpClient.setSession(this.session);
+  httpClient.start();
   if (!loginConfig.isLazyLogin()) {
     ServiceHelper.startService(session);
   }

@@ -1,0 +1,33 @@
+{
+  final int responseStatus=loginResponse.getStatus();
+  try {
+switch (responseStatus) {
+case HttpStatus.OK_200:
+      LoginToken token=objectMapper.readValue(responseContent,LoginToken.class);
+    LOG.info("Login successful");
+  accessToken=token.getAccessToken();
+instanceUrl=token.getInstanceUrl();
+for (SalesforceSessionListener listener : listeners) {
+try {
+  listener.onLogin(accessToken,instanceUrl);
+}
+ catch (Throwable t) {
+  LOG.warn("Unexpected error from listener {}: {}",listener,t.getMessage());
+}
+}
+break;
+case HttpStatus.BAD_REQUEST_400:
+final LoginError error=objectMapper.readValue(responseContent,LoginError.class);
+final String msg=String.format("Login error code:[%s] description:[%s]",error.getError(),error.getErrorDescription());
+final List<RestError> errors=new ArrayList<RestError>();
+errors.add(new RestError(msg,error.getErrorDescription()));
+throw new SalesforceException(errors,HttpStatus.BAD_REQUEST_400);
+default :
+throw new SalesforceException(String.format("Login error status:[%s] reason:[%s]",responseStatus,loginResponse.getReason()),responseStatus);
+}
+}
+ catch (IOException e) {
+String msg="Login error: response parse exception " + e.getMessage();
+throw new SalesforceException(msg,e);
+}
+}

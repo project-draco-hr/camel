@@ -1,13 +1,10 @@
 {
-  final HttpClient httpClient=new HttpClient();
-  httpClient.registerListener(RedirectListener.class.getName());
-  httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
-  httpClient.setConnectTimeout(DEFAULT_TIMEOUT);
-  httpClient.setTimeout(DEFAULT_TIMEOUT);
+  final SalesforceHttpClient httpClient;
   try {
     final SSLContextParameters contextParameters=sslContextParameters != null ? sslContextParameters : new SSLContextParameters();
-    final SslContextFactory sslContextFactory=httpClient.getSslContextFactory();
+    final SslContextFactory sslContextFactory=new SslContextFactory();
     sslContextFactory.setSslContext(contextParameters.createSSLContext());
+    httpClient=new SalesforceHttpClient(sslContextFactory);
   }
  catch (  GeneralSecurityException e) {
     throw new MojoExecutionException("Error creating default SSL context: " + e.getMessage(),e);
@@ -15,6 +12,9 @@
 catch (  IOException e) {
     throw new MojoExecutionException("Error creating default SSL context: " + e.getMessage(),e);
   }
+  httpClient.setConnectTimeout(DEFAULT_TIMEOUT);
+  httpClient.setTimeout(DEFAULT_TIMEOUT);
+  httpClient.setFollowRedirects(true);
   if (httpClientProperties != null && !httpClientProperties.isEmpty()) {
     try {
       IntrospectionSupport.setProperties(httpClient,new HashMap<String,Object>(httpClientProperties));
@@ -25,20 +25,36 @@ catch (  IOException e) {
   }
   responseTimeout=httpClient.getTimeout() + 1000L;
   if (this.httpProxyHost != null && httpProxyPort != null) {
-    httpClient.setProxy(new Address(this.httpProxyHost,this.httpProxyPort));
+    Origin.Address proxyAddress=new Origin.Address(this.httpProxyHost,this.httpProxyPort);
+    ProxyConfiguration.Proxy proxy;
+    if (isHttpProxySocks4) {
+      proxy=new Socks4Proxy(proxyAddress,isHttpProxySecure);
+    }
+ else {
+      proxy=new HttpProxy(proxyAddress,isHttpProxySecure);
+    }
+    if (httpProxyIncludedAddresses != null && !httpProxyIncludedAddresses.isEmpty()) {
+      proxy.getIncludedAddresses().addAll(httpProxyIncludedAddresses);
+    }
+    if (httpProxyExcludedAddresses != null && !httpProxyExcludedAddresses.isEmpty()) {
+      proxy.getExcludedAddresses().addAll(httpProxyExcludedAddresses);
+    }
+    httpClient.getProxyConfiguration().getProxies().add(proxy);
   }
   if (this.httpProxyUsername != null && httpProxyPassword != null) {
-    try {
-      httpClient.setProxyAuthentication(new ProxyAuthorization(this.httpProxyUsername,this.httpProxyPassword));
+    ObjectHelper.notEmpty(httpProxyAuthUri,"httpProxyAuthUri");
+    ObjectHelper.notEmpty(httpProxyRealm,"httpProxyRealm");
+    final Authentication authentication;
+    if (httpProxyUseDigestAuth) {
+      authentication=new DigestAuthentication(URI.create(httpProxyAuthUri),httpProxyRealm,httpProxyUsername,httpProxyPassword);
     }
- catch (    IOException e) {
-      throw new MojoExecutionException("Error configuring proxy authorization: " + e.getMessage(),e);
+ else {
+      authentication=new BasicAuthentication(URI.create(httpProxyAuthUri),httpProxyRealm,httpProxyUsername,httpProxyPassword);
     }
+    httpClient.getAuthenticationStore().addAuthentication(authentication);
   }
-  String listenerClass=RedirectListener.class.getName();
-  if (httpClient.getRegisteredListeners() == null || !httpClient.getRegisteredListeners().contains(listenerClass)) {
-    httpClient.registerListener(listenerClass);
-  }
+  final SalesforceSession session=new SalesforceSession(httpClient,httpClient.getTimeout(),new SalesforceLoginConfig(loginUrl,clientId,clientSecret,userName,password,false));
+  httpClient.setSession(session);
   try {
     httpClient.start();
   }

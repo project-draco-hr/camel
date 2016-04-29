@@ -1,0 +1,54 @@
+{
+  SalesforceHttpRequest request=(SalesforceHttpRequest)result.getRequest();
+  ContentResponse response=new HttpContentResponse(result.getResponse(),getContent(),getMediaType(),getEncoding());
+  HttpConversation conversation=request.getConversation();
+  Integer retries=(Integer)conversation.getAttribute(AUTHENTICATION_RETRIES_ATTRIBUTE);
+  if (retries == null) {
+    retries=0;
+  }
+  final AbstractClientBase client=(AbstractClientBase)conversation.getAttribute(CLIENT_ATTRIBUTE);
+  if (result.isFailed()) {
+    Throwable failure=result.getFailure();
+    retryOnFailure(request,conversation,retries,client,failure);
+    return;
+  }
+  SalesforceHttpRequest origRequest=(SalesforceHttpRequest)conversation.getAttribute(AUTHENTICATION_REQUEST_ATTRIBUTE);
+  if (origRequest != null) {
+    try {
+      session.parseLoginResponse(response,response.getContentAsString());
+    }
+ catch (    SalesforceException e) {
+      if (retries < maxAuthenticationRetries) {
+        retryOnFailure(request,conversation,retries,client,e);
+      }
+ else {
+        forwardFailureComplete(origRequest,null,response,e);
+      }
+      return;
+    }
+    conversation.removeAttribute(AUTHENTICATION_REQUEST_ATTRIBUTE);
+    retryRequest(origRequest,client,retries,conversation,true);
+    return;
+  }
+  final int status=response.getStatus();
+  final String reason=response.getReason();
+  if (retries >= maxAuthenticationRetries) {
+    forwardSuccessComplete(request,response);
+    return;
+  }
+  if (status == HttpStatus.UNAUTHORIZED_401) {
+    LOG.warn("Retrying on Salesforce authentication error [{}]: [{}]",status,reason);
+    retryLogin(request,retries);
+  }
+ else   if (status < HttpStatus.OK_200 || status >= HttpStatus.MULTIPLE_CHOICES_300) {
+    final InputStream inputStream=getContent().length == 0 ? null : getContentAsInputStream();
+    final SalesforceException cause=client != null ? client.createRestException(response,inputStream) : null;
+    if (status == HttpStatus.BAD_REQUEST_400 && cause != null && isInvalidSessionError(cause)) {
+      LOG.warn("Retrying on Bulk API Salesforce authentication error [{}]: [{}]",status,reason);
+      retryLogin(request,retries);
+    }
+ else {
+      forwardSuccessComplete(request,response);
+    }
+  }
+}
