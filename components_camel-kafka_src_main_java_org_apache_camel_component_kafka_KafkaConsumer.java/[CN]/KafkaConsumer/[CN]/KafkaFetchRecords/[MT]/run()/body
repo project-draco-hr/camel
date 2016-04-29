@@ -9,24 +9,24 @@
       consumer.seekToBeginning();
     }
     while (isRunAllowed() && !isSuspendingOrSuspended()) {
-      ConsumerRecords<Object,Object> records=consumer.poll(Long.MAX_VALUE);
-      for (      ConsumerRecord<Object,Object> record : records) {
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("offset = {}, key = {}, value = {}",record.offset(),record.key(),record.value());
-        }
-        Exchange exchange=endpoint.createKafkaExchange(record);
-        try {
-          processor.process(exchange);
-        }
- catch (        Exception e) {
-          getExceptionHandler().handleException("Error during processing",exchange,e);
-        }
-        processed++;
-        if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
-          if (processed >= endpoint.getBatchSize()) {
-            consumer.commitSync();
-            processed=0;
+      ConsumerRecords<Object,Object> allRecords=consumer.poll(Long.MAX_VALUE);
+      for (      TopicPartition partition : allRecords.partitions()) {
+        List<ConsumerRecord<Object,Object>> partitionRecords=allRecords.records(partition);
+        for (        ConsumerRecord<Object,Object> record : partitionRecords) {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("partition = {}, offset = {}, key = {}, value = {}",record.partition(),record.offset(),record.key(),record.value());
           }
+          Exchange exchange=endpoint.createKafkaExchange(record);
+          try {
+            processor.process(exchange);
+          }
+ catch (          Exception e) {
+            getExceptionHandler().handleException("Error during processing",exchange,e);
+          }
+        }
+        if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
+          long partitionLastoffset=partitionRecords.get(partitionRecords.size() - 1).offset();
+          consumer.commitSync(Collections.singletonMap(partition,new OffsetAndMetadata(partitionLastoffset + 1)));
         }
       }
     }
