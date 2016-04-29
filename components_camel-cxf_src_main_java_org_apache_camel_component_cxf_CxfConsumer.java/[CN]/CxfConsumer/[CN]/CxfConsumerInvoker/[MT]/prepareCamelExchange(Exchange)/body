@@ -1,0 +1,41 @@
+{
+  CxfEndpoint endpoint=(CxfEndpoint)getEndpoint();
+  CxfBinding binding=endpoint.getCxfBinding();
+  org.apache.camel.Exchange camelExchange=endpoint.createExchange();
+  DataFormat dataFormat=endpoint.getDataFormat();
+  BindingOperationInfo boi=cxfExchange.getBindingOperationInfo();
+  if (boi != null && dataFormat == DataFormat.PAYLOAD && boi.isUnwrapped()) {
+    boi=boi.getWrappedOperation();
+    cxfExchange.put(BindingOperationInfo.class,boi);
+  }
+  if (boi != null) {
+    camelExchange.setProperty(BindingOperationInfo.class.getName(),boi);
+    LOG.trace("Set exchange property: BindingOperationInfo: {}",boi);
+    if (boi.getOperationInfo().isOneWay()) {
+      camelExchange.setPattern(ExchangePattern.InOnly);
+    }
+  }
+ else {
+    if (cxfEndpoint.getExchangePattern().equals(ExchangePattern.InOnly)) {
+      camelExchange.setPattern(ExchangePattern.InOnly);
+    }
+  }
+  camelExchange.setProperty(CxfConstants.DATA_FORMAT_PROPERTY,dataFormat);
+  LOG.trace("Set Exchange property: {}={}",DataFormat.class.getName(),dataFormat);
+  camelExchange.setProperty(Message.MTOM_ENABLED,String.valueOf(endpoint.isMtomEnabled()));
+  if (endpoint.getMergeProtocolHeaders()) {
+    camelExchange.setProperty(CxfConstants.CAMEL_CXF_PROTOCOL_HEADERS_MERGED,Boolean.TRUE);
+  }
+  binding.populateExchangeFromCxfRequest(cxfExchange,camelExchange);
+  Map<String,Object> context=new HashMap<String,Object>();
+  binding.extractJaxWsContext(cxfExchange,context);
+  camelExchange.setProperty(CxfConstants.JAXWS_CONTEXT,context);
+  try {
+    CxfConsumer.this.createUoW(camelExchange);
+  }
+ catch (  Exception e) {
+    log.error("Error processing request",e);
+    throw new Fault(e);
+  }
+  return camelExchange;
+}

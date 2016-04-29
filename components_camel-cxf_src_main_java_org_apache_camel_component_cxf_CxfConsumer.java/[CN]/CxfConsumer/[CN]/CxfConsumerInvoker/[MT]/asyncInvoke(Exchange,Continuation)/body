@@ -1,0 +1,29 @@
+{
+synchronized (continuation) {
+    if (continuation.isNew()) {
+      final org.apache.camel.Exchange camelExchange=prepareCamelExchange(cxfExchange);
+      LOG.trace("Suspending continuation of exchangeId: {}",camelExchange.getExchangeId());
+      continuation.suspend(cxfEndpoint.getContinuationTimeout());
+      getAsyncProcessor().process(camelExchange,new AsyncCallback(){
+        public void done(        boolean doneSync){
+synchronized (continuation) {
+            LOG.trace("Resuming continuation of exchangeId: {}",camelExchange.getExchangeId());
+            continuation.setObject(camelExchange);
+            continuation.resume();
+          }
+        }
+      }
+);
+    }
+ else     if (continuation.isResumed()) {
+      org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
+      try {
+        setResponseBack(cxfExchange,camelExchange);
+      }
+  finally {
+        CxfConsumer.this.doneUoW(camelExchange);
+      }
+    }
+  }
+  return null;
+}
