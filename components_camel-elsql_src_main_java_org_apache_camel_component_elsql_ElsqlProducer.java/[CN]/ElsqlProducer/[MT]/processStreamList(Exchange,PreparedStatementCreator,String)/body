@@ -1,0 +1,32 @@
+{
+  log.trace("processStreamList: {}",preparedQuery);
+  Connection con=null;
+  PreparedStatement ps=null;
+  ResultSet rs=null;
+  try {
+    con=dataSource.getConnection();
+    ps=statementCreator.createPreparedStatement(con);
+    boolean isResultSet=ps.execute();
+    if (isResultSet) {
+      rs=ps.getResultSet();
+      ResultSetIterator iterator=getEndpoint().queryForStreamList(con,ps,rs);
+      if (getEndpoint().isNoop()) {
+        exchange.getOut().setBody(exchange.getIn().getBody());
+      }
+ else       if (getEndpoint().getOutputHeader() != null) {
+        exchange.getOut().setBody(exchange.getIn().getBody());
+        exchange.getOut().setHeader(getEndpoint().getOutputHeader(),iterator);
+      }
+ else {
+        exchange.getOut().setBody(iterator);
+      }
+      exchange.addOnCompletion(new ResultSetIteratorCompletion(iterator));
+    }
+  }
+ catch (  Exception e) {
+    closeConnection(con);
+    closeStatement(ps);
+    closeResultSet(rs);
+    throw e;
+  }
+}

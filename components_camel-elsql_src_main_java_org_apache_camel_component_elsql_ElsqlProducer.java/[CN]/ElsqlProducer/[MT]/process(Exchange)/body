@@ -3,6 +3,12 @@
   final SqlParameterSource param=new ElsqlSqlMapSource(exchange,data);
   final String sql=elSql.getSql(elSqlName,new SpringSqlParams(param));
   LOG.debug("ElsqlProducer @{} using sql: {}",elSqlName,sql);
+  SqlOutputType outputType=getEndpoint().getOutputType();
+  if (outputType == SqlOutputType.StreamList) {
+    processStreamList(exchange,sql,param);
+    return;
+  }
+  log.trace("jdbcTemplate.execute: {}",sql);
   jdbcTemplate.execute(sql,param,new PreparedStatementCallback<Object>(){
     @Override public Object doInPreparedStatement(    PreparedStatement ps) throws SQLException, DataAccessException {
       ResultSet rs=null;
