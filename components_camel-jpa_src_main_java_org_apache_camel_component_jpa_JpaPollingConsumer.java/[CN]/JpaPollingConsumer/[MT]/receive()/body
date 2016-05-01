@@ -1,0 +1,29 @@
+{
+  final EntityManager entityManager=getTargetEntityManager(null,entityManagerFactory,getEndpoint().isUsePassedInEntityManager(),getEndpoint().isSharedEntityManager(),true);
+  Object out=transactionTemplate.execute(new TransactionCallback<Object>(){
+    public Object doInTransaction(    TransactionStatus status){
+      if (getEndpoint().isJoinTransaction()) {
+        entityManager.joinTransaction();
+      }
+      Query query=getQueryFactory().createQuery(entityManager);
+      configureParameters(query);
+      LOG.trace("Created query {}",query);
+      Object answer;
+      List<?> results=query.getResultList();
+      if (results != null && results.size() == 1) {
+        answer=results.get(0);
+      }
+ else {
+        answer=results;
+      }
+      LOG.debug("Flushing EntityManager");
+      entityManager.flush();
+      entityManager.clear();
+      return answer;
+    }
+  }
+);
+  Exchange exchange=createExchange(out,entityManager);
+  exchange.getIn().setBody(out);
+  return exchange;
+}
