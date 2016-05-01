@@ -2,15 +2,24 @@
   shutdownRunningTask=null;
   pendingExchanges=0;
   final String preparedQuery=sqlPrepareStatementStrategy.prepareQuery(resolvedQuery,getEndpoint().isAllowNamedParameters(),null);
+  log.trace("poll: {}",preparedQuery);
   final PreparedStatementCallback<Integer> callback=new PreparedStatementCallback<Integer>(){
-    @Override public Integer doInPreparedStatement(    PreparedStatement preparedStatement) throws SQLException, DataAccessException {
+    @Override public Integer doInPreparedStatement(    PreparedStatement ps) throws SQLException, DataAccessException {
       Queue<DataHolder> answer=new LinkedList<DataHolder>();
       log.debug("Executing query: {}",preparedQuery);
-      ResultSet rs=preparedStatement.executeQuery();
+      ResultSet rs=ps.executeQuery();
       SqlOutputType outputType=getEndpoint().getOutputType();
+      boolean closeEager=true;
       try {
         log.trace("Got result list from query: {}, outputType={}",rs,outputType);
-        if (outputType == SqlOutputType.SelectList) {
+        if (outputType == SqlOutputType.StreamList) {
+          ResultSetIterator data=getEndpoint().queryForStreamList(ps.getConnection(),ps,rs);
+          if (data.hasNext()) {
+            addListToQueue(data,answer);
+            closeEager=false;
+          }
+        }
+ else         if (outputType == SqlOutputType.SelectList) {
           List<?> data=getEndpoint().queryForList(rs,true);
           addListToQueue(data,answer);
         }
@@ -25,14 +34,24 @@
         }
       }
   finally {
-        closeResultSet(rs);
+        if (closeEager) {
+          closeResultSet(rs);
+        }
       }
       try {
-        int rows=processBatch(CastUtils.cast(answer));
-        return rows;
+        if (answer.isEmpty()) {
+          return 0;
+        }
+ else {
+          int rows=processBatch(CastUtils.cast(answer));
+          return rows;
+        }
       }
  catch (      Exception e) {
         throw ObjectHelper.wrapRuntimeCamelException(e);
+      }
+ finally {
+        closeResultSet(rs);
       }
     }
   }
