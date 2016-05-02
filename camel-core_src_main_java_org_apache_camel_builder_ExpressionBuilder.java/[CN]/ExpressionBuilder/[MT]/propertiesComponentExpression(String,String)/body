@@ -1,12 +1,14 @@
 {
   return new ExpressionAdapter(){
     public Object evaluate(    Exchange exchange){
+      String text=simpleExpression(key).evaluate(exchange,String.class);
+      String text2=simpleExpression(locations).evaluate(exchange,String.class);
       try {
-        if (locations != null) {
+        if (text2 != null) {
           Component component=exchange.getContext().getComponent("properties");
           PropertiesComponent pc=exchange.getContext().getTypeConverter().mandatoryConvertTo(PropertiesComponent.class,component);
-          String[] paths=locations.split(",");
-          return pc.parseUri(pc.getPrefixToken() + key + pc.getSuffixToken(),paths);
+          String[] paths=text2.split(",");
+          return pc.parseUri(pc.getPrefixToken() + text + pc.getSuffixToken(),paths);
         }
  else {
           Component component=exchange.getContext().hasComponent("properties");
@@ -14,7 +16,7 @@
             throw new IllegalArgumentException("PropertiesComponent with name properties must be defined" + " in CamelContext to support property placeholders in expressions");
           }
           PropertiesComponent pc=exchange.getContext().getTypeConverter().mandatoryConvertTo(PropertiesComponent.class,component);
-          return pc.parseUri(pc.getPrefixToken() + key + pc.getSuffixToken());
+          return pc.parseUri(pc.getPrefixToken() + text + pc.getSuffixToken());
         }
       }
  catch (      Exception e) {

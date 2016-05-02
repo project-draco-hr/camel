@@ -1,20 +1,21 @@
 {
   return new ExpressionAdapter(){
     public Object evaluate(    Exchange exchange){
-      Class<?> type=exchange.getContext().getClassResolver().resolveClass(name);
+      String text=simpleExpression(name).evaluate(exchange,String.class);
+      Class<?> type=exchange.getContext().getClassResolver().resolveClass(text);
       if (type != null) {
         return type;
       }
-      int pos=name.lastIndexOf(".");
+      int pos=text.lastIndexOf(".");
       if (pos > 0) {
-        String before=name.substring(0,pos);
-        String after=name.substring(pos + 1);
+        String before=text.substring(0,pos);
+        String after=text.substring(pos + 1);
         type=exchange.getContext().getClassResolver().resolveClass(before);
         if (type != null) {
           return ObjectHelper.lookupConstantFieldValue(type,after);
         }
       }
-      throw ObjectHelper.wrapCamelExecutionException(exchange,new ClassNotFoundException("Cannot find type " + name));
+      throw ObjectHelper.wrapCamelExecutionException(exchange,new ClassNotFoundException("Cannot find type " + text));
     }
     @Override public String toString(){
       return "type:" + name;
