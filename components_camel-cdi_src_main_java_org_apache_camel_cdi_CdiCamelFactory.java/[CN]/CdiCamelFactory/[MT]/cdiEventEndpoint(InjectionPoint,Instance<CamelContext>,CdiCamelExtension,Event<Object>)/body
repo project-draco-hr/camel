@@ -1,2 +1,12 @@
 {
+  CamelContext context=selectContext(ip,instance,extension);
+  Type type=Object.class;
+  if (ip.getType() instanceof ParameterizedType) {
+    type=((ParameterizedType)ip.getType()).getActualTypeArguments()[0];
+  }
+  String uri=eventEndpointUri(type,ip.getQualifiers());
+  if (context.hasEndpoint(uri) == null) {
+    context.addEndpoint(uri,extension.getEventEndpoint(uri));
+  }
+  return context.getEndpoint(uri,CdiEventEndpoint.class);
 }
