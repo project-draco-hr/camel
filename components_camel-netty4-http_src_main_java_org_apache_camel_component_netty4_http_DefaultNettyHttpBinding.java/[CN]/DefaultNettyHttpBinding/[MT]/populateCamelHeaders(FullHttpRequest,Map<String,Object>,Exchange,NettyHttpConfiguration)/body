@@ -72,7 +72,14 @@
   }
   if (request.getMethod().name().equals("POST") && request.headers().get(Exchange.CONTENT_TYPE) != null && request.headers().get(Exchange.CONTENT_TYPE).startsWith(NettyHttpConstants.CONTENT_TYPE_WWW_FORM_URLENCODED) && !configuration.isBridgeEndpoint()) {
     String charset="UTF-8";
-    String body=request.content().toString(Charset.forName(charset));
+    String body=null;
+    ByteBuf buffer=request.content();
+    try {
+      body=buffer.toString(Charset.forName(charset));
+    }
+  finally {
+      buffer.release();
+    }
     if (ObjectHelper.isNotEmpty(body)) {
       for (      String param : body.split("&")) {
         String[] pair=param.split("=",2);
