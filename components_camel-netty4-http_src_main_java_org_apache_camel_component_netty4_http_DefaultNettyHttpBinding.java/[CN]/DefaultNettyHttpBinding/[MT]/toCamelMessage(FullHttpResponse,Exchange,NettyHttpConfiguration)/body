@@ -5,6 +5,18 @@
   if (configuration.isMapHeaders()) {
     populateCamelHeaders(response,answer.getHeaders(),exchange,configuration);
   }
-  answer.setBody(response.content());
+  if (configuration.isDisableStreamCache()) {
+    answer.setBody(response.content());
+  }
+ else {
+    response.retain();
+    try {
+      byte[] bytes=exchange.getContext().getTypeConverter().convertTo(byte[].class,exchange,response.content());
+      answer.setBody(bytes);
+    }
+  finally {
+      response.release();
+    }
+  }
   return answer;
 }

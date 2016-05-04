@@ -1,7 +1,7 @@
 {
   String uri=NettyHttpHelper.createURL(exchange,getEndpoint());
   URI u=NettyHttpHelper.createURI(exchange,uri,getEndpoint());
-  HttpRequest request=getEndpoint().getNettyHttpBinding().toNettyRequest(exchange.getIn(),u.toString(),getConfiguration());
+  final HttpRequest request=getEndpoint().getNettyHttpBinding().toNettyRequest(exchange.getIn(),u.toString(),getConfiguration());
   String actualUri=request.getUri();
   exchange.getIn().setHeader(Exchange.HTTP_URL,actualUri);
   if (!HttpHeaders.isKeepAlive(request)) {
@@ -10,5 +10,16 @@
   if (getConfiguration().isBridgeEndpoint()) {
     exchange.getIn().removeHeader("host");
   }
+  exchange.addOnCompletion(new SynchronizationAdapter(){
+    @Override public void onDone(    Exchange exchange){
+      if (request instanceof ReferenceCounted) {
+        if (((ReferenceCounted)request).refCnt() > 0) {
+          log.debug("Releasing Netty HttpRequest ByteBuf");
+          ReferenceCountUtil.release(request);
+        }
+      }
+    }
+  }
+);
   return request;
 }

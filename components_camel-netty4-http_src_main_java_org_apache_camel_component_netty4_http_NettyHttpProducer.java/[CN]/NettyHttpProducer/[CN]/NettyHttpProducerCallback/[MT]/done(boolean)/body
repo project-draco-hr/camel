@@ -1,17 +1,28 @@
 {
   try {
-    NettyHttpMessage nettyMessage=exchange.hasOut() ? exchange.getOut(NettyHttpMessage.class) : exchange.getIn(NettyHttpMessage.class);
-    if (nettyMessage != null) {
-      FullHttpResponse response=nettyMessage.getHttpResponse();
-      if (response != null) {
-        response.content().retain();
-        String actualUrl=exchange.getIn().getHeader(Exchange.HTTP_URL,String.class);
-        int code=response.getStatus() != null ? response.getStatus().code() : -1;
-        log.debug("Http responseCode: {}",code);
-        boolean ok=NettyHttpHelper.isStatusCodeOk(code,configuration.getOkStatusCodeRange());
-        if (!ok && getConfiguration().isThrowExceptionOnFailure()) {
-          Exception cause=NettyHttpHelper.populateNettyHttpOperationFailedException(exchange,actualUrl,response,code,getConfiguration().isTransferException());
-          exchange.setException(cause);
+    if (!doneSync) {
+      NettyHttpMessage nettyMessage=exchange.hasOut() ? exchange.getOut(NettyHttpMessage.class) : exchange.getIn(NettyHttpMessage.class);
+      if (nettyMessage != null) {
+        final FullHttpResponse response=nettyMessage.getHttpResponse();
+        if (response != null) {
+          response.content().retain();
+          exchange.addOnCompletion(new SynchronizationAdapter(){
+            @Override public void onDone(            Exchange exchange){
+              if (response.refCnt() > 0) {
+                log.debug("Releasing Netty HttpResonse ByteBuf");
+                ReferenceCountUtil.release(response);
+              }
+            }
+          }
+);
+          String actualUrl=exchange.getIn().getHeader(Exchange.HTTP_URL,String.class);
+          int code=response.getStatus() != null ? response.getStatus().code() : -1;
+          log.debug("Http responseCode: {}",code);
+          boolean ok=NettyHttpHelper.isStatusCodeOk(code,configuration.getOkStatusCodeRange());
+          if (!ok && getConfiguration().isThrowExceptionOnFailure()) {
+            Exception cause=NettyHttpHelper.populateNettyHttpOperationFailedException(exchange,actualUrl,response,code,getConfiguration().isTransferException());
+            exchange.setException(cause);
+          }
         }
       }
     }
