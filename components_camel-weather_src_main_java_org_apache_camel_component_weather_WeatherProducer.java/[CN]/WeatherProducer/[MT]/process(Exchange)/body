@@ -4,18 +4,29 @@
   if (location != null) {
     q=getEndpoint().getConfiguration().getQuery(location);
   }
-  log.debug("Going to execute the Weather query {}",q);
-  String weather=getEndpoint().getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,new URL(q));
-  log.debug("Got back the Weather information {}",weather);
-  if (ObjectHelper.isEmpty(weather)) {
-    throw new IllegalStateException("Got the unexpected value '" + weather + "' as the result of the query '"+ q+ "'");
-  }
-  String header=getEndpoint().getConfiguration().getHeaderName();
-  if (header != null) {
-    exchange.getIn().setHeader(header,weather);
-  }
+  HttpClient httpClient=new HttpClient();
+  GetMethod method=new GetMethod(q);
+  try {
+    log.debug("Going to execute the Weather query {}",q);
+    int statusCode=httpClient.executeMethod(method);
+    if (statusCode != HttpStatus.SC_OK) {
+      throw new IllegalStateException("Got the invalid http status value '" + method.getStatusLine() + "' as the result of the query '"+ query+ "'");
+    }
+    String weather=getEndpoint().getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,method.getResponseBodyAsStream());
+    log.debug("Got back the Weather information {}",weather);
+    if (ObjectHelper.isEmpty(weather)) {
+      throw new IllegalStateException("Got the unexpected value '" + weather + "' as the result of the query '"+ q+ "'");
+    }
+    String header=getEndpoint().getConfiguration().getHeaderName();
+    if (header != null) {
+      exchange.getIn().setHeader(header,weather);
+    }
  else {
-    exchange.getIn().setBody(weather);
+      exchange.getIn().setBody(weather);
+    }
+    exchange.getIn().setHeader(WeatherConstants.WEATHER_QUERY,q);
   }
-  exchange.getIn().setHeader(WeatherConstants.WEATHER_QUERY,q);
+  finally {
+    method.releaseConnection();
+  }
 }
