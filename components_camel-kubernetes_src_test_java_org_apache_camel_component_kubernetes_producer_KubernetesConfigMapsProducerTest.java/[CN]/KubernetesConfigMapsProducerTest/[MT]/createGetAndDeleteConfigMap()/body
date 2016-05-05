@@ -1,0 +1,41 @@
+{
+  if (ObjectHelper.isEmpty(authToken)) {
+    return;
+  }
+  Exchange ex=template.request("direct:createConfigMap",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_CONFIGMAP_NAME,"test");
+      Map<String,String> labels=new HashMap<String,String>();
+      labels.put("this","rocks");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_CONFIGMAPS_LABELS,labels);
+      Map<String,String> data=new HashMap<String,String>();
+      data.put("test","test1");
+      data.put("test1","test2");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_CONFIGMAP_DATA,data);
+    }
+  }
+);
+  ex=template.request("direct:getConfigMap",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_CONFIGMAP_NAME,"test");
+    }
+  }
+);
+  ConfigMap result=ex.getOut().getBody(ConfigMap.class);
+  assertNotNull(result);
+  assertTrue(result.getData().containsKey("test"));
+  assertTrue(result.getData().containsKey("test1"));
+  assertEquals("test1",result.getData().get("test"));
+  assertEquals("test2",result.getData().get("test1"));
+  ex=template.request("direct:deleteConfigMap",new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,"default");
+      exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_CONFIGMAP_NAME,"test");
+    }
+  }
+);
+  boolean configMapDeleted=ex.getOut().getBody(Boolean.class);
+  assertTrue(configMapDeleted);
+}

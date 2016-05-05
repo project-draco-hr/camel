@@ -1,0 +1,10 @@
+{
+  ConfigMapList configMapsList=null;
+  Map<String,String> labels=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_CONFIGMAPS_LABELS,Map.class);
+  ClientNonNamespaceOperation<ConfigMap,ConfigMapList,DoneableConfigMap,ClientResource<ConfigMap,DoneableConfigMap>> configMaps=getEndpoint().getKubernetesClient().configMaps();
+  for (  Map.Entry<String,String> entry : labels.entrySet()) {
+    configMaps.withLabel(entry.getKey(),entry.getValue());
+  }
+  configMapsList=configMaps.list();
+  exchange.getOut().setBody(configMapsList.getItems());
+}
