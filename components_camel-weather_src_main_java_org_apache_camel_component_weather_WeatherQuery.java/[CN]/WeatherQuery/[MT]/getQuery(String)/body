@@ -1,0 +1,35 @@
+{
+  String answer="http://api.openweathermap.org/data/2.5/";
+  if (weatherConfiguration.getLat() != null && weatherConfiguration.getLon() != null && weatherConfiguration.getRightLon() == null && weatherConfiguration.getTopLat() == null) {
+    location="lat=" + weatherConfiguration.getLat() + "&lon="+ weatherConfiguration.getLon();
+  }
+ else   if (weatherConfiguration.getLat() != null && weatherConfiguration.getLon() != null && weatherConfiguration.getRightLon() != null && weatherConfiguration.getTopLat() != null) {
+    location="bbox=" + weatherConfiguration.getLon() + ","+ weatherConfiguration.getLat()+ ","+ weatherConfiguration.getRightLon()+ ","+ weatherConfiguration.getTopLat()+ ","+ weatherConfiguration.getZoom()+ "&cluster=yes";
+  }
+ else   if (isEmpty(location) || "current".equals(location)) {
+    location=getCurrentGeoLocation();
+  }
+ else {
+    location="q=" + location;
+  }
+  location=location + "&lang=" + weatherConfiguration.getLanguage();
+  if (weatherConfiguration.getTopLat() != null && weatherConfiguration.getRightLon() != null) {
+    answer+="box?" + location;
+  }
+ else   if (isEmpty(weatherConfiguration.getPeriod())) {
+    answer+="weather?" + location;
+  }
+ else {
+    answer+="forecast/daily?" + location + "&cnt="+ weatherConfiguration.getPeriod();
+  }
+  if (weatherConfiguration.getUnits() != METRIC) {
+    answer+="&units=" + weatherConfiguration.getUnits().name().toLowerCase();
+  }
+  if (weatherConfiguration.getMode() != JSON) {
+    answer+="&mode=" + weatherConfiguration.getMode().name().toLowerCase();
+  }
+  if (weatherConfiguration.getAppid() != null) {
+    answer+="&APPID=" + weatherConfiguration.getAppid();
+  }
+  return answer;
+}
