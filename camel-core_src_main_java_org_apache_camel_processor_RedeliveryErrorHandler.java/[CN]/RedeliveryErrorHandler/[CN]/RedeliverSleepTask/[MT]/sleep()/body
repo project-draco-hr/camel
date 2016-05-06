@@ -1,0 +1,21 @@
+{
+  if (delay < 1000) {
+    policy.sleep(delay);
+    return true;
+  }
+  StopWatch watch=new StopWatch();
+  log.debug("Sleeping for: {} millis until attempting redelivery",delay);
+  while (watch.taken() < delay) {
+    long delta=delay - watch.taken();
+    long max=Math.min(1000,delta);
+    if (max > 0) {
+      log.trace("Sleeping for: {} millis until waking up for re-check",max);
+      Thread.sleep(max);
+    }
+    if (preparingShutdown && !policy.isAllowRedeliveryWhileStopping()) {
+      log.debug("Rejected redelivery while stopping");
+      return false;
+    }
+  }
+  return true;
+}

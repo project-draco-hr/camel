@@ -49,8 +49,14 @@
  else {
           try {
             redeliverySleepCounter.incrementAndGet();
-            data.currentRedeliveryPolicy.sleep(data.redeliveryDelay);
+            RedeliverSleepTask task=new RedeliverSleepTask(data.currentRedeliveryPolicy,data.redeliveryDelay);
+            boolean complete=task.sleep();
             redeliverySleepCounter.decrementAndGet();
+            if (!complete) {
+              exchange.setException(new RejectedExecutionException("Redelivery not allowed while stopping"));
+              exchange.setProperty(Exchange.REDELIVERY_EXHAUSTED,Boolean.TRUE);
+              continue;
+            }
           }
  catch (          InterruptedException e) {
             redeliverySleepCounter.decrementAndGet();
