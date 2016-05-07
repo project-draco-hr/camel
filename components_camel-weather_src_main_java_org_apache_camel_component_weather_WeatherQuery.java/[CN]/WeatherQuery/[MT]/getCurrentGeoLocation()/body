@@ -1,22 +1,4 @@
 {
-  HttpClient httpClient=new HttpClient();
-  GetMethod getMethod=new GetMethod("http://freegeoip.io/json/");
-  try {
-    int statusCode=httpClient.executeMethod(getMethod);
-    if (statusCode != HttpStatus.SC_OK) {
-      throw new IllegalStateException("Got the unexpected http-status '" + getMethod.getStatusLine() + "' for the geolocation");
-    }
-    String geoLocation=component.getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,getMethod.getResponseBodyAsStream());
-    if (isEmpty(geoLocation)) {
-      throw new IllegalStateException("Got the unexpected value '" + geoLocation + "' for the geolocation");
-    }
-    ObjectMapper mapper=new ObjectMapper();
-    JsonNode node=mapper.readValue(geoLocation,JsonNode.class);
-    JsonNode latitudeNode=notNull(node.get("latitude"),"latitude");
-    JsonNode longitudeNode=notNull(node.get("longitude"),"longitude");
-    return "lat=" + latitudeNode + "&lon="+ longitudeNode;
-  }
-  finally {
-    getMethod.releaseConnection();
-  }
+  GeoLocation geoLocation=geoLocationProvider.getCurrentGeoLocation();
+  return "lat=" + geoLocation.getLatitude() + "&lon="+ geoLocation.getLongitude();
 }
