@@ -1,0 +1,27 @@
+{
+  String elprop=System.getProperty("javax.el.ExpressionFactory");
+  ClassLoader tccl=Thread.currentThread().getContextClassLoader();
+  try {
+    ClassLoader appcl=getCamelContext().getApplicationContextClassLoader();
+    ClassLoader auxcl=appcl != null ? appcl : DozerEndpoint.class.getClassLoader();
+    Thread.currentThread().setContextClassLoader(auxcl);
+    try {
+      Class<?> clazz=auxcl.loadClass("com.sun.el.ExpressionFactoryImpl");
+      ExpressionFactory factory=(ExpressionFactory)clazz.newInstance();
+      System.setProperty("javax.el.ExpressionFactory",factory.getClass().getName());
+    }
+ catch (    ClassNotFoundException|InstantiationException|IllegalAccessException ex) {
+      LOG.debug("Cannot load glasfish expression engine, using default");
+    }
+    ELEngine engine=new ELEngine();
+    engine.init();
+    BeanContainer.getInstance().setElEngine(engine);
+    ElementReader reader=new ExpressionElementReader(engine);
+    BeanContainer.getInstance().setElementReader(reader);
+  }
+  finally {
+    Thread.currentThread().setContextClassLoader(tccl);
+    if (elprop != null)     System.setProperty("javax.el.ExpressionFactory",elprop);
+ else     System.clearProperty("javax.el.ExpressionFactory");
+  }
+}
