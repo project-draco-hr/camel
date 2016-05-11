@@ -1,27 +1,5 @@
 {
-  String topic=endpoint.getTopic();
-  if (!endpoint.isBridgeEndpoint()) {
-    topic=exchange.getIn().getHeader(KafkaConstants.TOPIC,topic,String.class);
-  }
-  if (topic == null) {
-    throw new CamelExchangeException("No topic key set",exchange);
-  }
-  Object partitionKey=exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
-  boolean hasPartitionKey=partitionKey != null;
-  Object messageKey=exchange.getIn().getHeader(KafkaConstants.KEY);
-  boolean hasMessageKey=messageKey != null;
-  Object msg=exchange.getIn().getBody();
-  ProducerRecord record;
-  if (hasPartitionKey && hasMessageKey) {
-    record=new ProducerRecord(topic,new Integer(partitionKey.toString()),messageKey,msg);
-  }
- else   if (hasMessageKey) {
-    record=new ProducerRecord(topic,messageKey,msg);
-  }
- else {
-    log.warn("No message key or partition key set");
-    record=new ProducerRecord(topic,msg);
-  }
+  ProducerRecord record=createRecorder(exchange);
   try {
     kafkaProducer.send(record).get();
   }

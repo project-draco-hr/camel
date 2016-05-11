@@ -1,0 +1,11 @@
+{
+  endpoint.setTopic("sometopic");
+  Mockito.when(exchange.getIn()).thenReturn(in);
+  org.apache.kafka.clients.producer.KafkaProducer kp=producer.getKafkaProducer();
+  Mockito.when(kp.send(Mockito.any(),Mockito.any())).thenThrow(new ApiException());
+  in.setHeader(KafkaConstants.PARTITION_KEY,"4");
+  producer.process(exchange,callback);
+  Mockito.verify(producer.getKafkaProducer()).send(Matchers.any(ProducerRecord.class),Matchers.any(Callback.class));
+  Mockito.verify(exchange).setException(Matchers.isA(ApiException.class));
+  Mockito.verify(callback).done(Matchers.eq(true));
+}
