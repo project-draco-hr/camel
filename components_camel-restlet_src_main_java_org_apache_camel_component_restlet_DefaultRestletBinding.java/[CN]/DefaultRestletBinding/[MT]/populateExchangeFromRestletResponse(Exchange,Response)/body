@@ -16,9 +16,13 @@
       LOG.debug("Setting the Content-Type to be {}",mediaType.toString());
       exchange.getOut().setHeader(Exchange.CONTENT_TYPE,mediaType.toString());
     }
-    if (response.getEntity() instanceof StreamRepresentation) {
+    if (streamRepresentation && response.getEntity() instanceof StreamRepresentation) {
       Representation representationDecoded=new DecodeRepresentation(response.getEntity());
-      exchange.getOut().setBody(representationDecoded.getStream());
+      InputStream is=representationDecoded.getStream();
+      exchange.getOut().setBody(is);
+      if (autoCloseStream) {
+        exchange.addOnCompletion(new RestletOnCompletion(is));
+      }
     }
  else     if (response.getEntity() instanceof Representation) {
       Representation representationDecoded=new DecodeRepresentation(response.getEntity());
