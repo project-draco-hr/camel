@@ -1,0 +1,19 @@
+{
+  HttpConnectionManager connectionManager=configuration.getHttpConnectionManager();
+  if (connectionManager == null) {
+    connectionManager=new MultiThreadedHttpConnectionManager();
+  }
+  HttpClient httpClient=new HttpClient(connectionManager);
+  if (configuration.getProxyHost() != null && configuration.getProxyPort() != null) {
+    httpClient.getHostConfiguration().setProxy(configuration.getProxyHost(),configuration.getProxyPort());
+  }
+  if (configuration.getProxyAuthUsername() != null && configuration.getProxyAuthMethod() == null) {
+    throw new IllegalArgumentException("Option proxyAuthMethod must be provided to use proxy authentication");
+  }
+  CompositeHttpConfigurer configurer=new CompositeHttpConfigurer();
+  if (configuration.getProxyAuthMethod() != null) {
+    configureProxyAuth(configurer,configuration.getProxyAuthMethod(),configuration.getProxyAuthUsername(),configuration.getProxyAuthPassword(),configuration.getProxyAuthDomain(),configuration.getProxyAuthHost());
+  }
+  configurer.configureHttpClient(httpClient);
+  return httpClient;
+}
