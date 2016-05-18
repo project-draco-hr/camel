@@ -10,8 +10,16 @@
     form=new Form();
     String body=exchange.getIn().getBody(String.class);
     if (body != null) {
-      form.add(body,null);
+      List<NameValuePair> pairs=URLEncodedUtils.parse(body,Charset.forName(IOHelper.getCharsetName(exchange,true)));
+      for (      NameValuePair p : pairs) {
+        form.add(p.getName(),p.getValue());
+      }
     }
+  }
+  Series<Header> restletHeaders=(Series)request.getAttributes().get(HeaderConstants.ATTRIBUTE_HEADERS);
+  if (restletHeaders == null) {
+    restletHeaders=new Series<>(Header.class);
+    request.getAttributes().put(HeaderConstants.ATTRIBUTE_HEADERS,restletHeaders);
   }
   String login=exchange.getIn().getHeader(RestletConstants.RESTLET_LOGIN,String.class);
   String password=exchange.getIn().getHeader(RestletConstants.RESTLET_PASSWORD,String.class);
@@ -32,15 +40,17 @@
           if (value instanceof Collection) {
             for (            Object v : (Collection<?>)value) {
               form.add(key,v.toString());
+              restletHeaders.set(key,value.toString());
             }
           }
  else {
             form.add(key,value.toString());
+            restletHeaders.set(key,value.toString());
           }
         }
       }
  else {
-        request.getAttributes().put(key,value);
+        restletHeaders.set(key,value.toString());
       }
       LOG.debug("Populate Restlet request from exchange header: {} value: {}",key,value);
     }

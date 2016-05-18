@@ -6,15 +6,16 @@
     if (!headerFilterStrategy.applyFilterToExternalHeaders(entry.getKey(),entry.getValue(),exchange)) {
       String key=entry.getKey();
       Object value=entry.getValue();
-      inMessage.setHeader(key,value);
+      if (HeaderConstants.ATTRIBUTE_HEADERS.equalsIgnoreCase(key)) {
+        Series<Header> series=(Series<Header>)value;
+        for (        Header header : series) {
+          if (!header.getName().equalsIgnoreCase("Content-length"))           inMessage.setHeader(header.getName(),header.getValue());
+        }
+      }
+ else {
+        inMessage.setHeader(key,value);
+      }
       LOG.debug("Populate exchange from Restlet request header: {} value: {}",key,value);
-    }
-  }
-  Series<Header> series=(Series<Header>)request.getAttributes().get(HeaderConstants.ATTRIBUTE_HEADERS);
-  if (series != null) {
-    String type=series.getFirstValue(Exchange.CONTENT_TYPE,true);
-    if (type != null) {
-      inMessage.setHeader(Exchange.CONTENT_TYPE,type);
     }
   }
   String query=request.getResourceRef().getQuery();
