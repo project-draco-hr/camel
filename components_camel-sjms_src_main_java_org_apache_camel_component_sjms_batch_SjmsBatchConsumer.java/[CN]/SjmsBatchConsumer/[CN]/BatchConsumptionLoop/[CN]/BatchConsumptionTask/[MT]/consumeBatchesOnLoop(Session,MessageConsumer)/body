@@ -30,6 +30,25 @@
         final Exchange exchange=getEndpoint().createExchange(message,session);
         aggregatedExchange=aggregationStrategy.aggregate(aggregatedExchange,exchange);
         aggregatedExchange.setProperty(Exchange.BATCH_SIZE,messageCount);
+        if (completionPredicate != null) {
+          try {
+            boolean complete;
+            if (eagerCheckCompletion) {
+              complete=completionPredicate.matches(exchange);
+            }
+ else {
+              complete=completionPredicate.matches(aggregatedExchange);
+            }
+            if (complete) {
+              LOG.trace("Completion batch due predicate");
+              completionBatch(session);
+              reset();
+            }
+          }
+ catch (          Exception e) {
+            LOG.warn("Error during evaluation of completion predicate " + e.getMessage() + ". This exception is ignored.",e);
+          }
+        }
       }
       if (usingTimeout && startTime > 0) {
         long currentTime=new Date().getTime();
