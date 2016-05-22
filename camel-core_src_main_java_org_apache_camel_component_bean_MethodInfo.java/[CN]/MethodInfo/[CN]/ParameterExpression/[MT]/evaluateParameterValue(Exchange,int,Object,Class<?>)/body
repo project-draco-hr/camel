@@ -1,0 +1,56 @@
+{
+  Object answer=null;
+  String exp=exchange.getContext().getTypeConverter().convertTo(String.class,exchange,parameterValue);
+  if (exp != null) {
+    boolean valid=BeanHelper.isValidParameterValue(exp);
+    if (!valid) {
+      Boolean isClass=BeanHelper.isAssignableToExpectedType(exchange.getContext().getClassResolver(),exp,parameterType);
+      if (isClass != null) {
+        return null;
+      }
+    }
+    Expression expression=null;
+    try {
+      expression=exchange.getContext().resolveLanguage("simple").createExpression(exp);
+      parameterValue=expression.evaluate(exchange,Object.class);
+      if (parameterValue == null) {
+        parameterValue="null";
+      }
+    }
+ catch (    Exception e) {
+      throw new ExpressionEvaluationException(expression,"Cannot create/evaluate simple expression: " + exp + " to be bound to parameter at index: "+ index+ " on method: "+ getMethod(),exchange,e);
+    }
+    if ("null".equals(parameterValue)) {
+      return Void.TYPE;
+    }
+    if (parameterType.isAssignableFrom(parameterValue.getClass())) {
+      valid=true;
+    }
+ else {
+      exp=exchange.getContext().getTypeConverter().tryConvertTo(String.class,parameterValue);
+      if (!valid) {
+        valid=parameterValue instanceof String || BeanHelper.isValidParameterValue(exp);
+      }
+    }
+    if (valid) {
+      if (parameterValue instanceof String) {
+        parameterValue=StringHelper.removeLeadingAndEndingQuotes((String)parameterValue);
+      }
+      if (parameterValue != null) {
+        try {
+          answer=exchange.getContext().getTypeConverter().mandatoryConvertTo(parameterType,exchange,parameterValue);
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Parameter #{} evaluated as: {} type: ",new Object[]{index,answer,ObjectHelper.type(answer)});
+          }
+        }
+ catch (        Exception e) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Cannot convert from type: {} to type: {} for parameter #{}",new Object[]{ObjectHelper.type(parameterValue),parameterType,index});
+          }
+          throw new ParameterBindingException(e,method,index,parameterType,parameterValue);
+        }
+      }
+    }
+  }
+  return answer;
+}

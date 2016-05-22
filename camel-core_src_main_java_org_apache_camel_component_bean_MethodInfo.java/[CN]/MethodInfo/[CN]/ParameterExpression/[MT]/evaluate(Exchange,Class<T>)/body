@@ -1,0 +1,23 @@
+{
+  Object body=exchange.getIn().getBody();
+  boolean multiParameterArray=false;
+  if (exchange.getIn().getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) != null) {
+    multiParameterArray=exchange.getIn().getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY,Boolean.class);
+    if (multiParameterArray) {
+      if (!(body instanceof Object[])) {
+        body=exchange.getIn().getBody(Object[].class);
+      }
+    }
+  }
+  String methodName=exchange.getIn().getHeader(Exchange.BEAN_METHOD_NAME,"",String.class);
+  String methodParameters=ObjectHelper.betweenOuterPair(methodName,'(',')');
+  Iterator<?> it=null;
+  if (methodParameters != null) {
+    String[] parameters=StringQuoteHelper.splitSafeQuote(methodParameters,',',true);
+    it=ObjectHelper.createIterator(parameters,",",true);
+  }
+  exchange.getIn().removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
+  exchange.getIn().removeHeader(Exchange.BEAN_METHOD_NAME);
+  Object[] answer=evaluateParameterExpressions(exchange,body,multiParameterArray,it);
+  return (T)answer;
+}
