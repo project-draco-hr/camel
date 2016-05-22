@@ -1,0 +1,28 @@
+{
+  return new ExpressionAdapter(){
+    public Object evaluate(    Exchange exchange){
+      String text=simpleExpression(name).evaluate(exchange,String.class);
+      Class<?> type;
+      try {
+        type=exchange.getContext().getClassResolver().resolveMandatoryClass(text);
+      }
+ catch (      ClassNotFoundException e) {
+        throw ObjectHelper.wrapCamelExecutionException(exchange,e);
+      }
+      Object body;
+      try {
+        body=exchange.getIn().getMandatoryBody(type);
+      }
+ catch (      InvalidPayloadException e) {
+        throw ObjectHelper.wrapCamelExecutionException(exchange,e);
+      }
+      MethodCallExpression call=new MethodCallExpression(exchange,ognl);
+      call.setInstance(body);
+      return call.evaluate(exchange);
+    }
+    @Override public String toString(){
+      return "mandatoryBodyAs[" + name + "]("+ ognl+ ")";
+    }
+  }
+;
+}
