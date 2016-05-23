@@ -1,0 +1,12 @@
+{
+  if (sessionId == null) {
+    sessionId=sessionClient.createSession(ImmutableSession.builder().name(serviceName).ttl(ttl + "s").lockDelay(lockDelay + "s").build()).getId();
+    LOGGER.debug("SessionID = {}",sessionId);
+    if (executorService == null) {
+      executorService=Executors.newSingleThreadExecutor();
+    }
+    setLeader(keyValueClient.acquireLock(servicePath,sessionId));
+    executorService.submit(new Watcher());
+  }
+  super.doStart();
+}

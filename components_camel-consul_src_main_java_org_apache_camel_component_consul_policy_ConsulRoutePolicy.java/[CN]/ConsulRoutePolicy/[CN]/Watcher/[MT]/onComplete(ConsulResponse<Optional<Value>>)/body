@@ -1,0 +1,17 @@
+{
+  if (isRunAllowed()) {
+    Value response=consulResponse.getResponse().orNull();
+    if (response != null) {
+      String sid=response.getSession().orNull();
+      if (ObjectHelper.isEmpty(sid)) {
+        LOGGER.debug("Try to take leadership ...");
+        setLeader(keyValueClient.acquireLock(servicePath,sessionId));
+      }
+ else       if (!sessionId.equals(sid) && leader.get()) {
+        setLeader(false);
+      }
+    }
+    index.set(consulResponse.getIndex());
+    run();
+  }
+}
