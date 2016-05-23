@@ -1,26 +1,36 @@
 {
   String answer="http://api.openweathermap.org/data/2.5/";
+  boolean point=false;
   if (weatherConfiguration.getLat() != null && weatherConfiguration.getLon() != null && weatherConfiguration.getRightLon() == null && weatherConfiguration.getTopLat() == null) {
-    location="lat=" + weatherConfiguration.getLat() + "&lon="+ weatherConfiguration.getLon();
+    location=createLatLonQueryString();
+    point=true;
   }
  else   if (weatherConfiguration.getLat() != null && weatherConfiguration.getLon() != null && weatherConfiguration.getRightLon() != null && weatherConfiguration.getTopLat() != null) {
     location="bbox=" + weatherConfiguration.getLon() + ","+ weatherConfiguration.getLat()+ ","+ weatherConfiguration.getRightLon()+ ","+ weatherConfiguration.getTopLat()+ ","+ weatherConfiguration.getZoom()+ "&cluster=yes";
   }
+ else   if (!isEmpty(weatherConfiguration.getZip())) {
+    location="zip=" + weatherConfiguration.getZip();
+  }
+ else   if (weatherConfiguration.getIds() != null && weatherConfiguration.getIds().size() > 0) {
+    location="id=" + String.join(",",weatherConfiguration.getIds());
+  }
  else   if (isEmpty(location) || "current".equals(location)) {
-    location=getCurrentGeoLocation();
+    GeoLocation geoLocation=getCurrentGeoLocation();
+    weatherConfiguration.setLat(geoLocation.getLatitude());
+    weatherConfiguration.setLon(geoLocation.getLongitude());
+    location=createLatLonQueryString();
   }
  else {
     location="q=" + location;
   }
   location=location + "&lang=" + weatherConfiguration.getLanguage();
-  if (weatherConfiguration.getTopLat() != null && weatherConfiguration.getRightLon() != null) {
-    answer+="box/city?" + location;
+  String context=createContext();
+  answer+=context + location;
+  if (!isEmpty(weatherConfiguration.getPeriod())) {
+    answer+="&cnt=" + weatherConfiguration.getPeriod();
   }
- else   if (isEmpty(weatherConfiguration.getPeriod())) {
-    answer+="weather?" + location;
-  }
- else {
-    answer+="forecast/daily?" + location + "&cnt="+ weatherConfiguration.getPeriod();
+ else   if (weatherConfiguration.getCnt() != null) {
+    answer+="&cnt=" + weatherConfiguration.getCnt();
   }
   if (weatherConfiguration.getUnits() != null) {
     answer+="&units=" + weatherConfiguration.getUnits().name().toLowerCase();
