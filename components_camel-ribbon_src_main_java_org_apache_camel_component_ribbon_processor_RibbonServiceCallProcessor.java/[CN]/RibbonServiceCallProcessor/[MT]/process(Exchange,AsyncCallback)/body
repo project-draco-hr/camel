@@ -1,0 +1,22 @@
+{
+  Server server=null;
+  try {
+    server=ribbonLoadBalancer.chooseServer();
+    if (server == null) {
+      exchange.setException(new RejectedExecutionException("No active services with name " + name));
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
+    callback.done(true);
+    return true;
+  }
+  String ip=server.getHost();
+  int port=server.getPort();
+  LOG.debug("Service {} active at server: {}:{}",name,ip,port);
+  exchange.getIn().setHeader(RibbonConstants.RIBBON_SERVER_IP,ip);
+  exchange.getIn().setHeader(RibbonConstants.RIBBON_SERVER_PORT,port);
+  return processor.process(exchange,callback);
+}

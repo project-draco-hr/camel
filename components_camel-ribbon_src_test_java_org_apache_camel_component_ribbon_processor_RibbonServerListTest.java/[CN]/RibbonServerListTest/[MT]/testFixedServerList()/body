@@ -1,0 +1,13 @@
+{
+  List<RibbonServer> servers=new ArrayList<>();
+  servers.add(new RibbonServer("localhost",9090));
+  servers.add(new RibbonServer("localhost",9091));
+  ServerList<RibbonServer> list=new RibbonServiceCallStaticServerListStrategy(servers);
+  ZoneAwareLoadBalancer<RibbonServer> lb=LoadBalancerBuilder.<RibbonServer>newBuilder().withDynamicServerList(list).withRule(new RoundRobinRule()).buildDynamicServerListLoadBalancer();
+  Server server=lb.chooseServer();
+  assertEquals("localhost",server.getHost());
+  assertEquals(9091,server.getPort());
+  server=lb.chooseServer();
+  assertEquals("localhost",server.getHost());
+  assertEquals(9090,server.getPort());
+}

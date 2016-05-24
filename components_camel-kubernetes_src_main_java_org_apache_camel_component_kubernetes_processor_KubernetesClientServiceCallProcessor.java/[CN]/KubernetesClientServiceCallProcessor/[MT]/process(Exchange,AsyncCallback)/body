@@ -1,0 +1,23 @@
+{
+  Collection<KubernetesServer> servers=null;
+  try {
+    servers=serverListStrategy.getUpdatedListOfServers();
+    if (servers == null || servers.isEmpty()) {
+      exchange.setException(new RejectedExecutionException("No active services with name " + name + " in namespace "+ namespace));
+    }
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+  }
+  if (exchange.getException() != null) {
+    callback.done(true);
+    return true;
+  }
+  KubernetesServer server=loadBalancer.chooseServer(servers);
+  String ip=server.getIp();
+  int port=server.getPort();
+  LOG.debug("Service {} active at server: {}:{}",name,ip,port);
+  exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVER_IP,ip);
+  exchange.getIn().setHeader(KubernetesConstants.KUBERNETES_SERVER_PORT,port);
+  return processor.process(exchange,callback);
+}

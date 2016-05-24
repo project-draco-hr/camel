@@ -1,0 +1,33 @@
+{
+  ObjectHelper.notEmpty(name,"name",this);
+  if (serverListStrategy == null) {
+    serverListStrategy=new RibbonServiceCallStaticServerListStrategy();
+  }
+  if (!(serverListStrategy instanceof ServerList)) {
+    throw new IllegalArgumentException("ServerListStrategy must be instanceof com.netflix.loadbalancer.ServerList but is of type: " + serverListStrategy.getClass().getName());
+  }
+  if (rule == null) {
+    rule=new RoundRobinRule();
+  }
+  if (ping == null) {
+    ping=new DummyPing();
+  }
+  IClientConfig config=IClientConfig.Builder.newBuilder(name).build();
+  if (ribbonClientConfig != null) {
+    for (    Map.Entry<String,String> entry : ribbonClientConfig.entrySet()) {
+      IClientConfigKey key=IClientConfigKey.Keys.valueOf(entry.getKey());
+      String value=entry.getValue();
+      LOG.debug("RibbonClientConfig: {}={}",key.key(),value);
+      config.set(key,entry.getValue());
+    }
+  }
+  ServerListUpdater updater=new PollingServerListUpdater(config);
+  ribbonLoadBalancer=new ZoneAwareLoadBalancer<>(config,rule,ping,(ServerList<RibbonServer>)serverListStrategy,null,updater);
+  LOG.info("RibbonServiceCall with service name: {} is using load balancer: {} and server list: {}",name,ribbonLoadBalancer,serverListStrategy);
+  processor=new SendDynamicProcessor(uri,serviceCallExpression);
+  processor.setCamelContext(getCamelContext());
+  if (exchangePattern != null) {
+    processor.setPattern(exchangePattern);
+  }
+  ServiceHelper.startServices(serverListStrategy,processor);
+}

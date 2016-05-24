@@ -1,0 +1,13 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      RibbonServiceCallStaticServerListStrategy servers=new RibbonServiceCallStaticServerListStrategy();
+      servers.addServer("localhost",9090);
+      servers.addServer("localhost",9091);
+      from("direct:start").serviceCall().name("myService").ribbonConfiguration().serverListStrategy(servers).end().to("mock:result");
+      from("jetty:http://localhost:9090").to("mock:9090").transform().constant("9090");
+      from("jetty:http://localhost:9091").to("mock:9091").transform().constant("9091");
+    }
+  }
+;
+}

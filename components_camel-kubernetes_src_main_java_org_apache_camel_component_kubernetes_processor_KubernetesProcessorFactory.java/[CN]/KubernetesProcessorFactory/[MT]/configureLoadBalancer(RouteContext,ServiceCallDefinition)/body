@@ -1,0 +1,19 @@
+{
+  ServiceCallLoadBalancer lb=null;
+  if (sd != null) {
+    lb=sd.getLoadBalancer();
+    if (lb == null && sd.getLoadBalancerRef() != null) {
+      String ref=sd.getLoadBalancerRef();
+      if ("random".equalsIgnoreCase(ref)) {
+        lb=new RandomLoadBalancer();
+      }
+ else       if ("roundrobin".equalsIgnoreCase(ref)) {
+        lb=new RoundRobinBalancer();
+      }
+ else {
+        lb=CamelContextHelper.mandatoryLookup(routeContext.getCamelContext(),ref,ServiceCallLoadBalancer.class);
+      }
+    }
+  }
+  return lb;
+}
