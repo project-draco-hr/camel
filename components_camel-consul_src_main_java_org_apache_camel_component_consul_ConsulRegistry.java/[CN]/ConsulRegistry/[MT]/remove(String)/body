@@ -1,0 +1,17 @@
+{
+  SessionClient sessionClient=consul.sessionClient();
+  String sessionName="session_" + UUID.randomUUID().toString();
+  SessionCreatedResponse response=sessionClient.createSession(ImmutableSession.builder().name(sessionName).build());
+  String sessionId=response.getId();
+  kvClient=consul.keyValueClient();
+  String lockKey="lock_" + key;
+  kvClient.acquireLock(lockKey,sessionName,sessionId);
+  Object object=lookupByName(key);
+  if (object == null) {
+    String msg="Bean with key '" + key + "' did not exist in Consul Registry.";
+    throw new NoSuchBeanException(msg);
+  }
+  kvClient.deleteKey(key);
+  kvClient.deleteKey(object.getClass().getName() + "/" + key);
+  kvClient.releaseLock(lockKey,sessionId);
+}

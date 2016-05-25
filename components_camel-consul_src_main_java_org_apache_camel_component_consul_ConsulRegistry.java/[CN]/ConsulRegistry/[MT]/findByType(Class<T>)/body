@@ -1,0 +1,25 @@
+{
+  String keyPrefix=type.getName().replaceAll("\\$","/");
+  logger.debug("find by type using keyPrefix: " + keyPrefix);
+  Object object=null;
+  Set<T> result=new HashSet<T>();
+  List<String> keys=null;
+  try {
+    keys=kvClient.getKeys(keyPrefix);
+  }
+ catch (  ConsulException e) {
+    logger.debug("no keys found");
+    return result;
+  }
+  if (keys != null) {
+    for (    String key : keys) {
+      key=key.substring((key.lastIndexOf('/') + 1));
+      logger.debug("now going for key :" + key);
+      object=lookupByName(key.replaceAll("\\$","/"));
+      if (type.isInstance(object)) {
+        result.add(type.cast(object));
+      }
+    }
+  }
+  return result;
+}

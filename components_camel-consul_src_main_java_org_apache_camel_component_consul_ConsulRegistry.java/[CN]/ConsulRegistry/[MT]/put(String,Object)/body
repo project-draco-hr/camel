@@ -1,0 +1,22 @@
+{
+  key=key.replaceAll("\\$","/");
+  SessionClient sessionClient=consul.sessionClient();
+  String sessionName="session_" + UUID.randomUUID().toString();
+  SessionCreatedResponse response=sessionClient.createSession(ImmutableSession.builder().name(sessionName).build());
+  String sessionId=response.getId();
+  kvClient=consul.keyValueClient();
+  String lockKey="lock_" + key;
+  kvClient.acquireLock(lockKey,sessionName,sessionId);
+  if (lookupByName(key) != null) {
+    remove(key);
+  }
+  Object clone=SerializationUtils.clone((Serializable)object);
+  byte[] serializedObject=SerializationUtils.serialize((Serializable)clone);
+  byte[] preEncodedValue=Base64.encodeBase64(serializedObject);
+  String value=new String(preEncodedValue);
+  logger.debug("store value: " + value + " ,under key: "+ key);
+  kvClient.putValue(key,value);
+  logger.debug("store bookmark: " + 1 + " ,under key: "+ object.getClass().getName().replaceAll("\\$","/")+ "/"+ key);
+  kvClient.putValue(object.getClass().getName().replaceAll("\\$","/") + "/" + key,"1");
+  kvClient.releaseLock(lockKey,sessionId);
+}
