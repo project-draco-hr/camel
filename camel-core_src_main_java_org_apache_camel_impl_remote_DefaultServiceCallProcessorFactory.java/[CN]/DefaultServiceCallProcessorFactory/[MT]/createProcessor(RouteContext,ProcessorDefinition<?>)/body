@@ -1,0 +1,57 @@
+{
+  if (definition instanceof ServiceCallDefinition) {
+    ServiceCallDefinition sc=(ServiceCallDefinition)definition;
+    String name=sc.getName();
+    String uri=sc.getUri();
+    ExchangePattern mep=sc.getPattern();
+    ServiceCallConfigurationDefinition config=sc.getServiceCallConfiguration();
+    ServiceCallConfigurationDefinition configRef=null;
+    if (sc.getServiceCallConfigurationRef() != null) {
+      configRef=CamelContextHelper.lookup(routeContext.getCamelContext(),sc.getServiceCallConfigurationRef(),ServiceCallConfigurationDefinition.class);
+      if (configRef == null) {
+        routeContext.getCamelContext().getServiceCallConfiguration(sc.getServiceCallConfigurationRef(),ServiceCallConfigurationDefinition.class);
+      }
+    }
+    if (config == null && configRef == null) {
+      config=routeContext.getCamelContext().getServiceCallConfiguration(null,ServiceCallConfigurationDefinition.class);
+    }
+    if (config == null) {
+      Set<ServiceCallConfigurationDefinition> set=routeContext.getCamelContext().getRegistry().findByType(ServiceCallConfigurationDefinition.class);
+      if (set.size() == 1) {
+        config=set.iterator().next();
+      }
+    }
+    if (config == null && configRef == null) {
+      throw new IllegalStateException("The ServiceCall: " + definition + " must be configured before it can be used.");
+    }
+    Map<String,Object> parameters=new HashMap<>();
+    if (configRef != null) {
+      IntrospectionSupport.getProperties(configRef,parameters,null);
+    }
+    if (config != null) {
+      IntrospectionSupport.getProperties(config,parameters,null);
+    }
+    ServiceCallLoadBalancer lb=configureLoadBalancer(routeContext,sc);
+    if (lb == null && config != null) {
+      lb=configureLoadBalancer(routeContext,config);
+    }
+    if (lb == null && configRef != null) {
+      lb=configureLoadBalancer(routeContext,configRef);
+    }
+    ServiceCallServerListStrategy sl=configureServerListStrategy(routeContext,sc);
+    if (sl == null && config != null) {
+      sl=configureServerListStrategy(routeContext,config);
+    }
+    if (sl == null && configRef != null) {
+      sl=configureServerListStrategy(routeContext,configRef);
+    }
+    String component=config != null ? config.getComponent() : null;
+    if (component == null && configRef != null) {
+      component=configRef.getComponent();
+    }
+    return createProcessor(name,component,uri,mep,parameters,lb,sl);
+  }
+ else {
+    return null;
+  }
+}
