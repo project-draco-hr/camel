@@ -6,11 +6,22 @@
   }
  catch (  Throwable e) {
   }
-  try {
-    value.onTimeout(key);
+  final Runnable task=new Runnable(){
+    @Override public void run(){
+      try {
+        value.onTimeout(key);
+      }
+ catch (      Throwable e) {
+        log.warn("Error processing onTimeout for correlationID: " + key + " due: "+ e.getMessage()+ ". This exception is ignored.",e);
+      }
+    }
   }
- catch (  Throwable e) {
-    log.warn("Error processing onTimeout for correlationID: " + key + " due: "+ e.getMessage()+ ". This exception is ignored.",e);
+;
+  if (executorService != null) {
+    executorService.submit(task);
+  }
+ else {
+    task.run();
   }
   log.trace("Evicted correlationID: {}",key);
   return true;
