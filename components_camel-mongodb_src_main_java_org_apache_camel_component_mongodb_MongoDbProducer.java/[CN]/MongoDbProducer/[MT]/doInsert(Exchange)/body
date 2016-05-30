@@ -1,5 +1,5 @@
 {
-  DBCollection dbCol=calculateCollection(exchange);
+  MongoCollection<BasicDBObject> dbCol=calculateCollection(exchange);
   boolean singleInsert=true;
   Object insert=exchange.getIn().getBody(DBObject.class);
   if (insert == null) {
@@ -12,23 +12,20 @@
       throw new CamelMongoDbException("MongoDB operation = insert, Body is not conversible to type DBObject nor List<DBObject>");
     }
   }
-  WriteResult result;
-  WriteConcern wc=extractWriteConcern(exchange);
   if (singleInsert) {
-    DBObject insertObject=(DBObject)insert;
-    result=wc == null ? dbCol.insert(insertObject) : dbCol.insert(insertObject,wc);
+    BasicDBObject insertObject=(BasicDBObject)insert;
+    dbCol.insertOne(insertObject);
     exchange.getIn().setHeader(MongoDbConstants.OID,insertObject.get("_id"));
   }
  else {
-    List<DBObject> insertObjects=(List<DBObject>)insert;
-    result=wc == null ? dbCol.insert(insertObjects) : dbCol.insert(insertObjects,wc);
+    List<BasicDBObject> insertObjects=(List<BasicDBObject>)insert;
+    dbCol.insertMany(insertObjects);
     List<Object> oids=new ArrayList<Object>(insertObjects.size());
     for (    DBObject insertObject : insertObjects) {
       oids.add(insertObject.get("_id"));
     }
     exchange.getIn().setHeader(MongoDbConstants.OID,oids);
   }
-  Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.insert);
-  processAndTransferWriteResult(result,exchange);
-  resultMessage.setBody(result);
+  prepareResponseMessage(exchange,MongoDbOperation.insert);
+  processAndTransferResult(insert,exchange);
 }

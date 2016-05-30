@@ -1,21 +1,21 @@
 {
   if (!endpoint.isDynamicity()) {
-    return endpoint.getDbCollection();
+    return endpoint.getMongoCollection();
   }
   String dynamicDB=exchange.getIn().getHeader(MongoDbConstants.DATABASE,String.class);
   String dynamicCollection=exchange.getIn().getHeader(MongoDbConstants.COLLECTION,String.class);
-  @SuppressWarnings("unchecked") List<DBObject> dynamicIndex=exchange.getIn().getHeader(MongoDbConstants.COLLECTION_INDEX,List.class);
-  DBCollection dbCol=null;
+  @SuppressWarnings("unchecked") List<BasicDBObject> dynamicIndex=exchange.getIn().getHeader(MongoDbConstants.COLLECTION_INDEX,List.class);
+  MongoCollection<BasicDBObject> dbCol;
   if (dynamicDB == null && dynamicCollection == null) {
-    dbCol=endpoint.getDbCollection();
+    dbCol=endpoint.getMongoCollection();
   }
  else {
-    DB db=calculateDb(exchange);
+    MongoDatabase db=calculateDb(exchange);
     if (dynamicCollection == null) {
-      dbCol=db.getCollection(endpoint.getCollection());
+      dbCol=db.getCollection(endpoint.getCollection(),BasicDBObject.class);
     }
  else {
-      dbCol=db.getCollection(dynamicCollection);
+      dbCol=db.getCollection(dynamicCollection,BasicDBObject.class);
       if (dynamicIndex == null) {
         endpoint.ensureIndex(dbCol,endpoint.createIndex());
       }
@@ -25,7 +25,7 @@
     }
   }
   if (LOG.isDebugEnabled()) {
-    LOG.debug("Dynamic database and/or collection selected: {}->{}",dbCol.getDB().getName(),dbCol.getName());
+    LOG.debug("Dynamic database and/or collection selected: {}->{}",endpoint.getDatabase(),endpoint.getCollection());
   }
   return dbCol;
 }

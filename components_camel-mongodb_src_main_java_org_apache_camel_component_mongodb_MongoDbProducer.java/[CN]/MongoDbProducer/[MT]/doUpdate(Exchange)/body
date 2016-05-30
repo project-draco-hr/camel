@@ -1,22 +1,30 @@
 {
-  DBCollection dbCol=calculateCollection(exchange);
-  List<DBObject> saveObj=exchange.getIn().getMandatoryBody((Class<List<DBObject>>)(Class<?>)List.class);
+  MongoCollection<BasicDBObject> dbCol=calculateCollection(exchange);
+  List<BasicDBObject> saveObj=exchange.getIn().getMandatoryBody((Class<List<BasicDBObject>>)(Class<?>)List.class);
   if (saveObj.size() != 2) {
     throw new CamelMongoDbException("MongoDB operation = insert, failed because body is not a List of DBObject objects with size = 2");
   }
-  DBObject updateCriteria=saveObj.get(0);
-  DBObject objNew=saveObj.get(1);
+  BasicDBObject updateCriteria=saveObj.get(0);
+  BasicDBObject objNew=saveObj.get(1);
   Boolean multi=exchange.getIn().getHeader(MongoDbConstants.MULTIUPDATE,Boolean.class);
   Boolean upsert=exchange.getIn().getHeader(MongoDbConstants.UPSERT,Boolean.class);
-  WriteResult result;
+  UpdateResult result;
   WriteConcern wc=extractWriteConcern(exchange);
   if (multi == null && upsert == null) {
-    result=wc == null ? dbCol.update(updateCriteria,objNew) : dbCol.update(updateCriteria,objNew,false,false,wc);
+    result=dbCol.updateOne(updateCriteria,objNew);
+  }
+ else   if (multi == null) {
+    UpdateOptions options=new UpdateOptions().upsert(true);
+    result=dbCol.updateOne(updateCriteria,objNew,options);
+  }
+ else   if (upsert == null) {
+    result=dbCol.updateMany(updateCriteria,objNew);
   }
  else {
-    result=wc == null ? dbCol.update(updateCriteria,objNew,calculateBooleanValue(upsert),calculateBooleanValue(multi)) : dbCol.update(updateCriteria,objNew,calculateBooleanValue(upsert),calculateBooleanValue(multi),wc);
+    UpdateOptions options=new UpdateOptions().upsert(true);
+    result=dbCol.updateOne(updateCriteria,objNew,options);
   }
   Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.update);
-  processAndTransferWriteResult(result,exchange);
-  resultMessage.setHeader(MongoDbConstants.RECORDS_AFFECTED,result.getN());
+  processAndTransferUpdateResult(result,exchange);
+  resultMessage.setHeader(MongoDbConstants.RECORDS_AFFECTED,result.getModifiedCount());
 }

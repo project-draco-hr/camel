@@ -1,13 +1,13 @@
 {
-  DBCollection dbCol=calculateCollection(exchange);
-  DBObject o=exchange.getIn().getMandatoryBody(DBObject.class);
-  DBObject ret;
-  DBObject fieldFilter=exchange.getIn().getHeader(MongoDbConstants.FIELDS_FILTER,DBObject.class);
+  MongoCollection<BasicDBObject> dbCol=calculateCollection(exchange);
+  BasicDBObject o=exchange.getIn().getMandatoryBody(BasicDBObject.class);
+  BasicDBObject ret;
+  BasicDBObject fieldFilter=exchange.getIn().getHeader(MongoDbConstants.FIELDS_FILTER,BasicDBObject.class);
   if (fieldFilter == null) {
-    ret=dbCol.findOne(o);
+    ret=dbCol.find(o).first();
   }
  else {
-    ret=dbCol.findOne(o,fieldFilter);
+    ret=dbCol.find(o).filter(fieldFilter).first();
   }
   Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.findOneByQuery);
   resultMessage.setBody(ret);

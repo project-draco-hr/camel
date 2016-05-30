@@ -3,21 +3,19 @@
   if (database == null || (collection == null && !(MongoDbOperation.getDbStats.equals(operation) || MongoDbOperation.command.equals(operation)))) {
     throw new CamelMongoDbException("Missing required endpoint configuration: database and/or collection");
   }
-  db=mongoConnection.getDB(database);
   mongoDatabase=mongoConnection.getDatabase(database);
-  if (db == null) {
+  if (mongoDatabase == null) {
     throw new CamelMongoDbException("Could not initialise MongoDbComponent. Database " + database + " does not exist.");
   }
   if (collection != null) {
-    if (!createCollection && !db.collectionExists(collection)) {
+    if (!createCollection && !databaseContainsCollection(collection)) {
       throw new CamelMongoDbException("Could not initialise MongoDbComponent. Collection " + collection + " and createCollection is false.");
     }
-    dbCollection=db.getCollection(collection);
     mongoCollection=mongoDatabase.getCollection(collection,BasicDBObject.class);
-    LOG.debug("MongoDb component initialised and endpoint bound to MongoDB collection with the following parameters. Address list: {}, Db: {}, Collection: {}",new Object[]{mongoConnection.getAllAddress().toString(),db.getName(),dbCollection.getName()});
+    LOG.debug("MongoDb component initialised and endpoint bound to MongoDB collection with the following parameters. Address list: {}, Db: {}, Collection: {}",new Object[]{mongoConnection.getAllAddress().toString(),mongoDatabase.getName(),collection});
     try {
       if (ObjectHelper.isNotEmpty(collectionIndex)) {
-        ensureIndex(dbCollection,createIndex());
+        ensureIndex(mongoCollection,createIndex());
       }
     }
  catch (    Exception e) {
