@@ -1,0 +1,27 @@
+{
+  LOG.debug("Discovering endpoints from namespace: {} with name: {}",getNamespace(),name);
+  Endpoints endpoints=client.endpoints().inNamespace(getNamespace()).withName(name).get();
+  List<ServiceCallServer> result=new ArrayList<>();
+  if (endpoints != null) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Found {} endpoints in namespace: {} for name: {} and portName: {}",endpoints.getSubsets().size(),getNamespace(),name,getPortName());
+    }
+    for (    EndpointSubset subset : endpoints.getSubsets()) {
+      if (subset.getPorts().size() == 1) {
+        addServers(result,subset.getPorts().get(FIRST),subset);
+      }
+ else {
+        final List<EndpointPort> ports=subset.getPorts();
+        final int portSize=ports.size();
+        EndpointPort port;
+        for (int p=0; p < portSize; p++) {
+          port=ports.get(p);
+          if (ObjectHelper.isEmpty(getPortName()) || getPortName().endsWith(port.getName())) {
+            addServers(result,port,subset);
+          }
+        }
+      }
+    }
+  }
+  return result;
+}

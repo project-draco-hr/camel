@@ -1,0 +1,60 @@
+{
+  String name=definition.getName();
+  String uri=definition.getUri();
+  ExchangePattern mep=definition.getPattern();
+  RibbonConfigurationDefinition config=(RibbonConfigurationDefinition)definition.getServiceCallConfiguration();
+  RibbonConfigurationDefinition configRef=null;
+  if (definition.getServiceCallConfigurationRef() != null) {
+    configRef=CamelContextHelper.lookup(routeContext.getCamelContext(),definition.getServiceCallConfigurationRef(),RibbonConfigurationDefinition.class);
+    if (configRef == null) {
+      routeContext.getCamelContext().getServiceCallConfiguration(definition.getServiceCallConfigurationRef(),RibbonConfigurationDefinition.class);
+    }
+  }
+  if (config == null && configRef == null) {
+    config=routeContext.getCamelContext().getServiceCallConfiguration(null,RibbonConfigurationDefinition.class);
+  }
+  if (config == null) {
+    Set<RibbonConfigurationDefinition> set=routeContext.getCamelContext().getRegistry().findByType(RibbonConfigurationDefinition.class);
+    if (set.size() == 1) {
+      config=set.iterator().next();
+    }
+  }
+  if (config == null && configRef == null) {
+    throw new IllegalStateException("The ServiceCall: " + definition + " must be configured before it can be used.");
+  }
+  Map<String,Object> parameters=new HashMap<>();
+  if (configRef != null) {
+    IntrospectionSupport.getProperties(configRef,parameters,null);
+  }
+  if (config != null) {
+    IntrospectionSupport.getProperties(config,parameters,null);
+  }
+  IntrospectionSupport.setProperties(cfg,parameters);
+  Object lb=configureLoadBalancer(routeContext,definition);
+  if (lb == null && config != null) {
+    lb=configureLoadBalancer(routeContext,config);
+  }
+  if (lb == null && configRef != null) {
+    lb=configureLoadBalancer(routeContext,configRef);
+  }
+  ServiceCallServerListStrategy sl=configureServerListStrategy(routeContext,definition);
+  if (sl == null && config != null) {
+    sl=configureServerListStrategy(routeContext,config);
+  }
+  if (sl == null && configRef != null) {
+    sl=configureServerListStrategy(routeContext,configRef);
+  }
+  if (lb != null && !(lb instanceof IRule)) {
+    throw new IllegalArgumentException("Load balancer must be of type: " + IRule.class + " but is of type: "+ lb.getClass().getName());
+  }
+  String component=config != null ? config.getComponent() : null;
+  if (component == null && configRef != null) {
+    component=configRef.getComponent();
+  }
+  Map<String,String> properties=configureProperties(routeContext,config,configRef);
+  RibbonServiceCallProcessor processor=new RibbonServiceCallProcessor(name,uri,component,mep,cfg);
+  processor.setRule((IRule)lb);
+  processor.setServerListStrategy(sl);
+  processor.setRibbonClientConfig(properties);
+  return processor;
+}

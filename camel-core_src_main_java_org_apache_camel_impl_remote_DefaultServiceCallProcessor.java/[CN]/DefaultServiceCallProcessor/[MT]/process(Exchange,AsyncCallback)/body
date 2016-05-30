@@ -1,24 +1,15 @@
 {
-  Collection<ServiceCallServer> servers=null;
-  String serviceName=exchange.getIn().getHeader(ServiceCallConstants.SERVICE_NAME,name,String.class);
-  try {
-    servers=serverListStrategy.getUpdatedListOfServers(serviceName);
-    if (servers == null || servers.isEmpty()) {
-      exchange.setException(new RejectedExecutionException("No active services with name " + name));
-    }
-  }
- catch (  Throwable e) {
-    exchange.setException(e);
-  }
+  final String serviceName=exchange.getIn().getHeader(ServiceCallConstants.SERVICE_NAME,name,String.class);
+  final ServiceCallServer server=chooseServer(exchange,serviceName);
   if (exchange.getException() != null) {
     callback.done(true);
     return true;
   }
-  ServiceCallServer server=loadBalancer.chooseServer(servers);
   String ip=server.getIp();
   int port=server.getPort();
   LOG.debug("Service {} active at server: {}:{}",name,ip,port);
   exchange.getIn().setHeader(ServiceCallConstants.SERVER_IP,ip);
   exchange.getIn().setHeader(ServiceCallConstants.SERVER_PORT,port);
+  exchange.getIn().setHeader(ServiceCallConstants.SERVICE_NAME,serviceName);
   return processor.process(exchange,callback);
 }

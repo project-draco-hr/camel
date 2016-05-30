@@ -1,0 +1,74 @@
+{
+  String name=definition.getName();
+  String uri=definition.getUri();
+  ExchangePattern mep=definition.getPattern();
+  ServiceCallConfigurationDefinition config=definition.getServiceCallConfiguration();
+  ServiceCallConfigurationDefinition configRef=null;
+  if (definition.getServiceCallConfigurationRef() != null) {
+    configRef=CamelContextHelper.lookup(routeContext.getCamelContext(),definition.getServiceCallConfigurationRef(),ServiceCallConfigurationDefinition.class);
+    if (configRef == null) {
+      routeContext.getCamelContext().getServiceCallConfiguration(definition.getServiceCallConfigurationRef(),ServiceCallConfigurationDefinition.class);
+    }
+  }
+  if (config == null && configRef == null) {
+    config=routeContext.getCamelContext().getServiceCallConfiguration(null,ServiceCallConfigurationDefinition.class);
+  }
+  if (config == null) {
+    Set<ServiceCallConfigurationDefinition> set=routeContext.getCamelContext().getRegistry().findByType(ServiceCallConfigurationDefinition.class);
+    if (set.size() == 1) {
+      config=set.iterator().next();
+    }
+  }
+  if (config == null && configRef == null) {
+    throw new IllegalStateException("The ServiceCall: " + definition + " must be configured before it can be used.");
+  }
+  Map<String,Object> parameters=new HashMap<>();
+  if (configRef != null) {
+    IntrospectionSupport.getProperties(configRef,parameters,null);
+  }
+  if (config != null) {
+    IntrospectionSupport.getProperties(config,parameters,null);
+  }
+  if (cfg != null) {
+    IntrospectionSupport.setProperties(cfg,parameters);
+  }
+  ServiceCallLoadBalancer lb=configureLoadBalancer(cfg,routeContext,definition);
+  if (lb == null && config != null) {
+    lb=configureLoadBalancer(cfg,routeContext,config);
+  }
+  if (lb == null && configRef != null) {
+    lb=configureLoadBalancer(cfg,routeContext,configRef);
+  }
+  ServiceCallServerListStrategy sl=configureServerListStrategy(cfg,routeContext,definition);
+  if (sl == null && config != null) {
+    sl=configureServerListStrategy(cfg,routeContext,config);
+  }
+  if (sl == null && configRef != null) {
+    sl=configureServerListStrategy(cfg,routeContext,configRef);
+  }
+  String component=config != null ? config.getComponent() : null;
+  if (component == null && configRef != null) {
+    component=configRef.getComponent();
+  }
+  if (ObjectHelper.isNotEmpty(lb) && lb instanceof CamelContextAware) {
+    ((CamelContextAware)lb).setCamelContext(routeContext.getCamelContext());
+  }
+  if (ObjectHelper.isNotEmpty(sl) && sl instanceof CamelContextAware) {
+    ((CamelContextAware)sl).setCamelContext(routeContext.getCamelContext());
+  }
+  if (sl == null) {
+    sl=createDefaultServerListStrategy(cfg);
+  }
+  if (lb == null) {
+    lb=createDefaultLoadBalancer(cfg);
+  }
+  Map<String,String> properties=configureProperties(routeContext,config,configRef);
+  DefaultServiceCallProcessor processor=createProcessor(name,component,uri,mep,cfg,properties);
+  if (sl != null && processor.getServerListStrategy() != null) {
+    processor.setServerListStrategy(sl);
+  }
+  if (lb != null && processor.getLoadBalancer() != null) {
+    processor.setLoadBalancer(lb);
+  }
+  return processor;
+}
