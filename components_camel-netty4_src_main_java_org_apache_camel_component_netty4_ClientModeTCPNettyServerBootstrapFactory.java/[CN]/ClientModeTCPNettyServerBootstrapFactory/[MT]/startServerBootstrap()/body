@@ -1,11 +1,16 @@
 {
   EventLoopGroup wg=configuration.getWorkerGroup();
   if (wg == null) {
-    workerGroup=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    workerGroup=new NettyWorkerPoolBuilder().withNativeTransport(configuration.isNativeTransport()).withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
     wg=workerGroup;
   }
   clientBootstrap=new Bootstrap();
-  clientBootstrap.channel(NioSocketChannel.class);
+  if (configuration.isNativeTransport()) {
+    clientBootstrap.channel(EpollSocketChannel.class);
+  }
+ else {
+    clientBootstrap.channel(NioSocketChannel.class);
+  }
   clientBootstrap.group(wg);
   clientBootstrap.option(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
   clientBootstrap.option(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());

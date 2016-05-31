@@ -2,15 +2,20 @@
   EventLoopGroup bg=configuration.getBossGroup();
   EventLoopGroup wg=configuration.getWorkerGroup();
   if (bg == null) {
-    bossGroup=new NettyServerBossPoolBuilder().withBossCount(configuration.getBossCount()).withName("NettyServerTCPBoss").build();
+    bossGroup=new NettyServerBossPoolBuilder().withNativeTransport(configuration.isNativeTransport()).withBossCount(configuration.getBossCount()).withName("NettyServerTCPBoss").build();
     bg=bossGroup;
   }
   if (wg == null) {
-    workerGroup=new NettyWorkerPoolBuilder().withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
+    workerGroup=new NettyWorkerPoolBuilder().withNativeTransport(configuration.isNativeTransport()).withWorkerCount(configuration.getWorkerCount()).withName("NettyServerTCPWorker").build();
     wg=workerGroup;
   }
   serverBootstrap=new ServerBootstrap();
-  serverBootstrap.group(bg,wg).channel(NioServerSocketChannel.class);
+  if (configuration.isNativeTransport()) {
+    serverBootstrap.group(bg,wg).channel(EpollServerSocketChannel.class);
+  }
+ else {
+    serverBootstrap.group(bg,wg).channel(NioServerSocketChannel.class);
+  }
   serverBootstrap.childOption(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
   serverBootstrap.childOption(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());
   serverBootstrap.option(ChannelOption.SO_REUSEADDR,configuration.isReuseAddress());

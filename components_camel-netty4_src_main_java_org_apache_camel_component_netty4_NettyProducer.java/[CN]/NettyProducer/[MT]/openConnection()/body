@@ -2,7 +2,12 @@
   ChannelFuture answer;
   if (isTcp()) {
     Bootstrap clientBootstrap=new Bootstrap();
-    clientBootstrap.channel(NioSocketChannel.class);
+    if (configuration.isNativeTransport()) {
+      clientBootstrap.channel(EpollSocketChannel.class);
+    }
+ else {
+      clientBootstrap.channel(NioSocketChannel.class);
+    }
     clientBootstrap.group(getWorkerGroup());
     clientBootstrap.option(ChannelOption.SO_KEEPALIVE,configuration.isKeepAlive());
     clientBootstrap.option(ChannelOption.TCP_NODELAY,configuration.isTcpNoDelay());
@@ -17,7 +22,12 @@
   }
  else {
     Bootstrap connectionlessClientBootstrap=new Bootstrap();
-    connectionlessClientBootstrap.channel(NioDatagramChannel.class);
+    if (configuration.isNativeTransport()) {
+      connectionlessClientBootstrap.channel(EpollDatagramChannel.class);
+    }
+ else {
+      connectionlessClientBootstrap.channel(NioDatagramChannel.class);
+    }
     connectionlessClientBootstrap.group(getWorkerGroup());
     connectionlessClientBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,configuration.getConnectTimeout());
     connectionlessClientBootstrap.option(ChannelOption.SO_BROADCAST,configuration.isBroadcast());
