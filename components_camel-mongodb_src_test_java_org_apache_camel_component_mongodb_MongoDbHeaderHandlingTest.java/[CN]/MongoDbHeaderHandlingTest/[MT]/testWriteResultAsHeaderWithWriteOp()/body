@@ -3,7 +3,7 @@
   Object[] req=new Object[]{"{\"_id\":\"testSave1\", \"scientist\":\"Einstein\"}","{\"_id\":\"testSave2\", \"scientist\":\"Copernicus\"}"};
   Object result=template.requestBody("direct:insert",req);
   assertEquals("Number of records persisted must be 2",2,testCollection.count());
-  final DBObject record1=testCollection.findOne("testSave1");
+  final DBObject record1=testCollection.find(new BasicDBObject("_id","testSave1")).first();
   assertEquals("Scientist field of 'testSave1' must equal 'Einstein'","Einstein",record1.get("scientist"));
   record1.put("scientist","Darwin");
   Exchange resultExch=template.request("direct:save",new Processor(){
@@ -15,6 +15,6 @@
   assertTrue(resultExch.getOut().getBody() instanceof BasicDBObject);
   assertTrue(resultExch.getOut().getBody().equals(record1));
   assertTrue(resultExch.getOut().getHeader(MongoDbConstants.WRITERESULT) instanceof UpdateResult);
-  DBObject record2=testCollection.findOne("testSave1");
+  DBObject record2=testCollection.find(new BasicDBObject("_id","testSave1")).first();
   assertEquals("Scientist field of 'testSave1' must equal 'Darwin' after save operation","Darwin",record2.get("scientist"));
 }

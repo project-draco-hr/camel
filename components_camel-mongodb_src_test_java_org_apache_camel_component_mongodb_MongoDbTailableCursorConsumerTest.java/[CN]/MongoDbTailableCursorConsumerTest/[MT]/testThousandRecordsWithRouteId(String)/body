@@ -2,9 +2,10 @@
   assertEquals(0,cappedTestCollection.count());
   MockEndpoint mock=getMockEndpoint("mock:test");
   mock.expectedMessageCount(1000);
-  cappedTestCollection=db.createCollection(cappedTestCollectionName,BasicDBObjectBuilder.start().add("capped",true).add("size",1000000000).add("max",1000).get());
+  db.createCollection(cappedTestCollectionName,new CreateCollectionOptions().capped(true).sizeInBytes(1000000000).maxDocuments(1000));
+  cappedTestCollection=db.getCollection(cappedTestCollectionName,BasicDBObject.class);
   for (int i=0; i < 1000; i++) {
-    cappedTestCollection.insert(BasicDBObjectBuilder.start("increasing",i).add("string","value" + i).get(),WriteConcern.SAFE);
+    cappedTestCollection.insertOne(new BasicDBObject("increasing",i).append("string","value" + i));
   }
   assertEquals(1000,cappedTestCollection.count());
   addTestRoutes();

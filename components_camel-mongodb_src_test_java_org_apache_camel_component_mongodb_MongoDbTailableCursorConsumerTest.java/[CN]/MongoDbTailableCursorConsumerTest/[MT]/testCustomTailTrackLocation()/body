@@ -1,17 +1,18 @@
 {
   assertEquals(0,cappedTestCollection.count());
   final MockEndpoint mock=getMockEndpoint("mock:test");
-  DBCollection trackingCol=mongo.getDB("einstein").getCollection("curie");
+  MongoCollection<BasicDBObject> trackingCol=mongo.getDatabase("einstein").getCollection("curie",BasicDBObject.class);
   trackingCol.drop();
-  trackingCol=mongo.getDB("einstein").getCollection("curie");
-  cappedTestCollection=db.createCollection(cappedTestCollectionName,BasicDBObjectBuilder.start().add("capped",true).add("size",1000000000).add("max",1000).get());
+  trackingCol=mongo.getDatabase("einstein").getCollection("curie",BasicDBObject.class);
+  db.createCollection(cappedTestCollectionName,new CreateCollectionOptions().capped(true).sizeInBytes(1000000000).maxDocuments(1000));
+  cappedTestCollection=db.getCollection(cappedTestCollectionName,BasicDBObject.class);
   addTestRoutes();
   context.startRoute("tailableCursorConsumer3");
   mock.expectedMessageCount(300);
   Thread t=new Thread(new Runnable(){
     @Override public void run(){
       for (int i=1; i <= 300; i++) {
-        cappedTestCollection.insert(BasicDBObjectBuilder.start("increasing",i).add("string","value" + i).get(),WriteConcern.SAFE);
+        cappedTestCollection.insertOne(new BasicDBObject("increasing",i).append("string","value" + i));
       }
     }
   }
@@ -21,13 +22,13 @@
   mock.assertIsSatisfied();
   mock.reset();
   context.stopRoute("tailableCursorConsumer3");
-  assertEquals(300,trackingCol.findOne(new BasicDBObject("persistentId","darwin")).get("newton"));
+  assertEquals(300,trackingCol.find(new BasicDBObject("persistentId","darwin")).first().get("newton"));
   context.startRoute("tailableCursorConsumer3");
   mock.expectedMessageCount(300);
   t=new Thread(new Runnable(){
     @Override public void run(){
       for (int i=301; i <= 600; i++) {
-        cappedTestCollection.insert(BasicDBObjectBuilder.start("increasing",i).add("string","value" + i).get(),WriteConcern.SAFE);
+        cappedTestCollection.insertOne(new BasicDBObject("increasing",i).append("string","value" + i));
       }
     }
   }
@@ -39,5 +40,5 @@
   assertTrue(firstBody instanceof DBObject);
   assertEquals(301,((DBObject)firstBody).get("increasing"));
   context.stopRoute("tailableCursorConsumer3");
-  assertEquals(600,trackingCol.findOne(new BasicDBObject("persistentId","darwin")).get("newton"));
+  assertEquals(600,trackingCol.find(new BasicDBObject("persistentId","darwin")).first().get("newton"));
 }
