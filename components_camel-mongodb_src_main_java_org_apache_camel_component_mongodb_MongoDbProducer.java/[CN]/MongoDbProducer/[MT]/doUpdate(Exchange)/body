@@ -9,7 +9,6 @@
   Boolean multi=exchange.getIn().getHeader(MongoDbConstants.MULTIUPDATE,Boolean.class);
   Boolean upsert=exchange.getIn().getHeader(MongoDbConstants.UPSERT,Boolean.class);
   UpdateResult result;
-  WriteConcern wc=extractWriteConcern(exchange);
   if (multi == null && upsert == null) {
     result=dbCol.updateOne(updateCriteria,objNew);
   }
@@ -24,7 +23,7 @@
     UpdateOptions options=new UpdateOptions().upsert(true);
     result=dbCol.updateOne(updateCriteria,objNew,options);
   }
-  Message resultMessage=prepareResponseMessage(exchange,MongoDbOperation.update);
-  processAndTransferUpdateResult(result,exchange);
-  resultMessage.setHeader(MongoDbConstants.RECORDS_AFFECTED,result.getModifiedCount());
+  copyHeaders(exchange);
+  moveBodyToOutIfResultIsReturnedAsHeader(exchange,MongoDbOperation.update);
+  processAndTransferResult(result,exchange,MongoDbOperation.update);
 }

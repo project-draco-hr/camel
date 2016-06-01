@@ -1,5 +1,5 @@
 {
-  Document result=null;
+  Document result;
   if (operation == MongoDbOperation.getColStats) {
     result=calculateDb(exchange).runCommand(createCollStatsCommand(calculateCollectionName(exchange)));
   }
@@ -9,6 +9,7 @@
  else {
     throw new CamelMongoDbException("Internal error: wrong operation for getStats variant" + operation);
   }
-  Message responseMessage=prepareResponseMessage(exchange,operation);
-  responseMessage.setBody(result);
+  copyHeaders(exchange);
+  moveBodyToOutIfResultIsReturnedAsHeader(exchange,operation);
+  processAndTransferResult(result,exchange,operation);
 }
