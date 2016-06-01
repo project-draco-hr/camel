@@ -27,6 +27,17 @@
     callback.done(true);
     return true;
   }
+  Consumer delegate=consumer;
+  if (consumer instanceof EventDrivenPollingConsumer) {
+    delegate=((EventDrivenPollingConsumer)consumer).getDelegateConsumer();
+  }
+  boolean bridgeErrorHandler=false;
+  if (delegate instanceof DefaultConsumer) {
+    ExceptionHandler handler=((DefaultConsumer)delegate).getExceptionHandler();
+    if (handler != null && handler instanceof BridgeExceptionHandlerToErrorHandler) {
+      bridgeErrorHandler=true;
+    }
+  }
   Exchange resourceExchange;
   try {
     if (timeout < 0) {
@@ -56,6 +67,13 @@
  finally {
     consumerCache.releasePollingConsumer(endpoint,consumer);
   }
+  Object redeliveried=exchange.getIn().getHeader(Exchange.REDELIVERED);
+  Object redeliveryCounter=exchange.getIn().getHeader(Exchange.REDELIVERY_COUNTER);
+  Object redeliveryMaxCounter=exchange.getIn().getHeader(Exchange.REDELIVERY_MAX_COUNTER);
+  Throwable cause=null;
+  if (resourceExchange != null && bridgeErrorHandler) {
+    cause=resourceExchange.getException();
+  }
   try {
     if (!isAggregateOnException() && (resourceExchange != null && resourceExchange.isFailed())) {
       copyResultsPreservePattern(exchange,resourceExchange);
@@ -68,6 +86,34 @@
         copyResultsPreservePattern(exchange,aggregatedExchange);
         if (resourceExchange != null) {
           resourceExchange.handoverCompletions(exchange);
+        }
+      }
+    }
+    if (cause != null) {
+      exchange.setException(cause);
+      exchange.removeProperties(Exchange.REDELIVERY_EXHAUSTED);
+      if (redeliveried != null) {
+        if (exchange.hasOut()) {
+          exchange.getOut().setHeader(Exchange.REDELIVERED,redeliveried);
+        }
+ else {
+          exchange.getIn().setHeader(Exchange.REDELIVERED,redeliveried);
+        }
+      }
+      if (redeliveryCounter != null) {
+        if (exchange.hasOut()) {
+          exchange.getOut().setHeader(Exchange.REDELIVERY_COUNTER,redeliveryCounter);
+        }
+ else {
+          exchange.getIn().setHeader(Exchange.REDELIVERY_COUNTER,redeliveryCounter);
+        }
+      }
+      if (redeliveryMaxCounter != null) {
+        if (exchange.hasOut()) {
+          exchange.getOut().setHeader(Exchange.REDELIVERY_MAX_COUNTER,redeliveryMaxCounter);
+        }
+ else {
+          exchange.getIn().setHeader(Exchange.REDELIVERY_MAX_COUNTER,redeliveryMaxCounter);
         }
       }
     }
