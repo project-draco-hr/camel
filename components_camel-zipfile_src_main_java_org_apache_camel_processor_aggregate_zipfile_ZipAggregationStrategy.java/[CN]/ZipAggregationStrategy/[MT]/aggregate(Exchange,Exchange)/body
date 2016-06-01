@@ -17,12 +17,17 @@
  else {
     zipFile=oldExchange.getIn().getBody(File.class);
   }
-  if (GenericFileMessage.class.isAssignableFrom(newExchange.getIn().getClass())) {
+  Object body=newExchange.getIn().getBody();
+  if (body instanceof WrappedFile) {
+    body=((WrappedFile)body).getFile();
+  }
+  if (body instanceof File) {
     try {
-      File appendFile=newExchange.getIn().getMandatoryBody(File.class);
-      if (appendFile != null) {
-        addFileToZip(zipFile,appendFile,this.preserveFolderStructure ? newExchange.getIn().toString() : null);
-        GenericFile<File> genericFile=FileConsumer.asGenericFile(zipFile.getParent(),zipFile,Charset.defaultCharset().toString());
+      File appendFile=(File)body;
+      if (appendFile.length() > 0) {
+        String entryName=preserveFolderStructure ? newExchange.getIn().getHeader(Exchange.FILE_NAME,String.class) : newExchange.getIn().getMessageId();
+        addFileToZip(zipFile,appendFile,this.preserveFolderStructure ? entryName : null);
+        GenericFile<File> genericFile=FileConsumer.asGenericFile(zipFile.getParent(),zipFile,Charset.defaultCharset().toString(),false);
         genericFile.bindToExchange(answer);
       }
     }
@@ -33,10 +38,12 @@
  else {
     try {
       byte[] buffer=newExchange.getIn().getMandatoryBody(byte[].class);
-      String entryName=useFilenameHeader ? newExchange.getIn().getHeader(Exchange.FILE_NAME,String.class) : newExchange.getIn().getMessageId();
-      addEntryToZip(zipFile,entryName,buffer,buffer.length);
-      GenericFile<File> genericFile=FileConsumer.asGenericFile(zipFile.getParent(),zipFile,Charset.defaultCharset().toString());
-      genericFile.bindToExchange(answer);
+      if (buffer.length > 0) {
+        String entryName=useFilenameHeader ? newExchange.getIn().getHeader(Exchange.FILE_NAME,String.class) : newExchange.getIn().getMessageId();
+        addEntryToZip(zipFile,entryName,buffer,buffer.length);
+        GenericFile<File> genericFile=FileConsumer.asGenericFile(zipFile.getParent(),zipFile,Charset.defaultCharset().toString(),false);
+        genericFile.bindToExchange(answer);
+      }
     }
  catch (    Exception e) {
       throw new GenericFileOperationFailedException(e.getMessage(),e);

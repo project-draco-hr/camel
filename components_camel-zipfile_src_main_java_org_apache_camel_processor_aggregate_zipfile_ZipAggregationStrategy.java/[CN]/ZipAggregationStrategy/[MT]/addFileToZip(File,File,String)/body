@@ -5,22 +5,27 @@
     throw new IOException("Could not make temp file (" + source.getName() + ")");
   }
   byte[] buffer=new byte[8192];
-  ZipInputStream zin=new ZipInputStream(new FileInputStream(tmpZip));
+  FileInputStream fis=new FileInputStream(tmpZip);
+  ZipInputStream zin=new ZipInputStream(fis);
   ZipOutputStream out=new ZipOutputStream(new FileOutputStream(source));
-  InputStream in=new FileInputStream(file);
-  out.putNextEntry(new ZipEntry(fileName == null ? file.getName() : fileName));
-  for (int read=in.read(buffer); read > -1; read=in.read(buffer)) {
-    out.write(buffer,0,read);
-  }
-  out.closeEntry();
-  IOHelper.close(in);
-  for (ZipEntry ze=zin.getNextEntry(); ze != null; ze=zin.getNextEntry()) {
-    out.putNextEntry(ze);
-    for (int read=zin.read(buffer); read > -1; read=zin.read(buffer)) {
+  try {
+    InputStream in=new FileInputStream(file);
+    out.putNextEntry(new ZipEntry(fileName == null ? file.getName() : fileName));
+    for (int read=in.read(buffer); read > -1; read=in.read(buffer)) {
       out.write(buffer,0,read);
     }
     out.closeEntry();
+    IOHelper.close(in);
+    for (ZipEntry ze=zin.getNextEntry(); ze != null; ze=zin.getNextEntry()) {
+      out.putNextEntry(ze);
+      for (int read=zin.read(buffer); read > -1; read=zin.read(buffer)) {
+        out.write(buffer,0,read);
+      }
+      out.closeEntry();
+    }
   }
-  IOHelper.close(zin,out);
+  finally {
+    IOHelper.close(fis,zin,out);
+  }
   tmpZip.delete();
 }
