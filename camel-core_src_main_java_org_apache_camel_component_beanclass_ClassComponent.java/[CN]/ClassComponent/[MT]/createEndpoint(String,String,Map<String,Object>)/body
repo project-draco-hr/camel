@@ -3,12 +3,18 @@
   endpoint.setBeanName(remaining);
   String name=endpoint.getBeanName();
   Class<?> clazz=getCamelContext().getClassResolver().resolveMandatoryClass(name);
-  Object bean=getCamelContext().getInjector().newInstance(clazz);
   Map<String,Object> options=IntrospectionSupport.extractProperties(parameters,"bean.");
   endpoint.setParameters(options);
-  setProperties(bean,options);
+  BeanHolder holder;
+  if (!options.isEmpty()) {
+    Object bean=getCamelContext().getInjector().newInstance(clazz);
+    setProperties(bean,options);
+    holder=new ConstantBeanHolder(bean,getCamelContext());
+  }
+ else {
+    holder=new ConstantTypeBeanHolder(clazz,getCamelContext());
+  }
   validateParameters(uri,options,null);
-  BeanHolder holder=new ConstantBeanHolder(bean,getCamelContext());
   endpoint.setBeanHolder(holder);
   return endpoint;
 }
