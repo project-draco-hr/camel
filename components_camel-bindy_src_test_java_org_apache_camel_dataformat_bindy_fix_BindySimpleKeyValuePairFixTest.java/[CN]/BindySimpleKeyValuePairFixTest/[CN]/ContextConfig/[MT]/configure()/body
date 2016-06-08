@@ -1,0 +1,23 @@
+{
+  DataFormat bindy=new BindyKeyValuePairDataFormat(FixOrder.class);
+  from("direct:fix").unmarshal(bindy).process(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      FixOrder order=exchange.getIn().getBody(FixOrder.class);
+      Object body=exchange.getIn().getBody();
+      if (order.getProduct().equals("butter")) {
+        order.setQuantity("2");
+        body=order;
+      }
+ else       if (order.getProduct().equals("milk")) {
+        order.setQuantity("4");
+        body=Collections.singletonMap(order.getClass().getName(),order);
+      }
+ else       if (order.getProduct().equals("bread")) {
+        order.setQuantity("6");
+        body=Collections.singletonList(Collections.singletonMap(order.getClass().getName(),order));
+      }
+      exchange.getIn().setBody(body);
+    }
+  }
+).marshal(bindy).to("mock:result");
+}
