@@ -1,0 +1,21 @@
+{
+  List<String> dataFormatNames=findDataFormatNames();
+  final Set<File> jsonFiles=new TreeSet<File>();
+  PackageHelper.findJsonFiles(buildDir,jsonFiles,new PackageHelper.CamelComponentsModelFilter());
+  if (!dataFormatNames.isEmpty()) {
+    getLog().debug("Found " + dataFormatNames.size() + " dataformats");
+    for (    String dataFormatName : dataFormatNames) {
+      String json=loadDataFormaatJson(jsonFiles,dataFormatName);
+      if (json != null) {
+        DataFormatModel model=generateDataFormatModel(dataFormatName,json);
+        if (!model.getDataFormatOptions().isEmpty()) {
+          int pos=model.getJavaType().lastIndexOf(".");
+          String pkg=model.getJavaType().substring(0,pos) + ".springboot";
+          createDataFormatConfigurationSource(pkg,model);
+          createDataFormatAutoConfigurationSource(pkg,model);
+          createDataFormatSpringFactorySource(pkg,model);
+        }
+      }
+    }
+  }
+}
