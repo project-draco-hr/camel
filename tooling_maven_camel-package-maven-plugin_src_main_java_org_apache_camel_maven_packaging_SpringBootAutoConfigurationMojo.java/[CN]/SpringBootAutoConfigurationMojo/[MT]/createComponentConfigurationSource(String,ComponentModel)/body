@@ -14,12 +14,23 @@
   for (  ComponentOptionModel option : model.getComponentOptions()) {
     String type=option.getJavaType();
     type=type.replaceAll("\\<\\?\\>","");
+    if ("boolean".equals(type)) {
+      type="java.lang.Boolean";
+    }
     PropertySource<JavaClassSource> prop=javaClass.addProperty(type,option.getName());
     if ("true".equals(option.getDeprecated())) {
       prop.getField().addAnnotation(Deprecated.class);
     }
     if (!Strings.isBlank(option.getDescription())) {
       prop.getField().getJavaDoc().setFullText(option.getDescription());
+    }
+    if (!Strings.isBlank(option.getDefaultValue())) {
+      if ("java.lang.String".equals(option.getJavaType())) {
+        prop.getField().setStringInitializer(option.getDefaultValue());
+      }
+ else       if ("integer".equals(option.getType()) || "boolean".equals(option.getType())) {
+        prop.getField().setLiteralInitializer(option.getDefaultValue());
+      }
     }
   }
   sortImports(javaClass);
