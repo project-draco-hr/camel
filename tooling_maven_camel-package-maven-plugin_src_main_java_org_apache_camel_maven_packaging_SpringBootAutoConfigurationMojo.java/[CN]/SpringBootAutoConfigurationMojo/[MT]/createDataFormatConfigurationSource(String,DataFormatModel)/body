@@ -23,6 +23,9 @@
     PropertySource<JavaClassSource> prop=javaClass.addProperty(type,option.getName());
     if ("true".equals(option.getDeprecated())) {
       prop.getField().addAnnotation(Deprecated.class);
+      prop.getAccessor().addAnnotation(Deprecated.class);
+      prop.getMutator().addAnnotation(Deprecated.class);
+      prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
     }
     if (!Strings.isBlank(option.getDescription())) {
       prop.getField().getJavaDoc().setFullText(option.getDescription());
@@ -33,6 +36,11 @@
       }
  else       if ("integer".equals(option.getType()) || "boolean".equals(option.getType())) {
         prop.getField().setLiteralInitializer(option.getDefaultValue());
+      }
+ else       if (!Strings.isBlank(option.getEnumValues())) {
+        String enumShortName=type.substring(type.lastIndexOf(".") + 1);
+        prop.getField().setLiteralInitializer(enumShortName + "." + option.getDefaultValue());
+        javaClass.addImport(model.getJavaType());
       }
     }
   }
