@@ -3,10 +3,10 @@
   boolean sync=producerCache.doInAsyncProducer(endpoint,exchange,null,callback,new AsyncProducerCallback(){
     public boolean doInAsyncProducer(    Producer producer,    AsyncProcessor asyncProducer,    final Exchange exchange,    ExchangePattern exchangePattern,    final AsyncCallback callback){
       RouteContext routeContext=exchange.getUnitOfWork() != null ? exchange.getUnitOfWork().getRouteContext() : null;
-      asyncProducer=createErrorHandler(routeContext,exchange,asyncProducer,endpoint);
+      AsyncProcessor target=createErrorHandler(routeContext,exchange,asyncProducer,endpoint);
       exchange.setProperty(Exchange.TO_ENDPOINT,endpoint.getEndpointUri());
       exchange.setProperty(Exchange.SLIP_ENDPOINT,endpoint.getEndpointUri());
-      return asyncProducer.process(exchange,new AsyncCallback(){
+      boolean answer=target.process(exchange,new AsyncCallback(){
         public void done(        boolean doneSync){
           if (doneSync) {
             callback.done(doneSync);
@@ -46,10 +46,31 @@
           }
           log.trace("Processing complete for exchangeId: {} >>> {}",original.getExchangeId(),current);
           ExchangeHelper.copyResults(original,current);
+          if (target instanceof DeadLetterChannel) {
+            Processor deadLetter=((DeadLetterChannel)target).getDeadLetter();
+            try {
+              ServiceHelper.stopService(deadLetter);
+            }
+ catch (            Exception e) {
+              log.warn("Error stopping DeadLetterChannel error handler on routing slip. This exception is ignored.",e);
+            }
+          }
           callback.done(false);
         }
       }
 );
+      if (answer) {
+        if (target instanceof DeadLetterChannel) {
+          Processor deadLetter=((DeadLetterChannel)target).getDeadLetter();
+          try {
+            ServiceHelper.stopService(deadLetter);
+          }
+ catch (          Exception e) {
+            log.warn("Error stopping DeadLetterChannel error handler on routing slip. This exception is ignored.",e);
+          }
+        }
+      }
+      return answer;
     }
   }
 );
