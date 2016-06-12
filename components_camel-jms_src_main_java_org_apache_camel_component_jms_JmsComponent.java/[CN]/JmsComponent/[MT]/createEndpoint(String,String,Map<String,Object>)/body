@@ -43,19 +43,26 @@
   if (cf != null) {
     endpoint.getConfiguration().setConnectionFactory(cf);
   }
-  String username=getAndRemoveParameter(parameters,"username",String.class);
-  String password=getAndRemoveParameter(parameters,"password",String.class);
-  if (username != null && password != null) {
+  String cfUsername=getAndRemoveParameter(parameters,"username",String.class,getConfiguration().getUsername());
+  String cfPassword=getAndRemoveParameter(parameters,"password",String.class,getConfiguration().getPassword());
+  if (cfUsername != null && cfPassword != null) {
     cf=endpoint.getConfiguration().getConnectionFactory();
+    ObjectHelper.notNull(cf,"ConnectionFactory");
+    LOG.debug("Wrapping existing ConnectionFactory with UserCredentialsConnectionFactoryAdapter using username: {} and password: ******",cfUsername);
     UserCredentialsConnectionFactoryAdapter ucfa=new UserCredentialsConnectionFactoryAdapter();
     ucfa.setTargetConnectionFactory(cf);
-    ucfa.setPassword(password);
-    ucfa.setUsername(username);
+    ucfa.setPassword(cfPassword);
+    ucfa.setUsername(cfUsername);
     endpoint.getConfiguration().setConnectionFactory(ucfa);
   }
  else {
-    if (username != null || password != null) {
-      throw new IllegalArgumentException("The JmsComponent's username or password is null");
+    if (cfUsername != null || cfPassword != null) {
+      if (cfUsername == null) {
+        throw new IllegalArgumentException("Password must also be provided when using username/password as credentials.");
+      }
+ else {
+        throw new IllegalArgumentException("Username must also be provided when using username/password as credentials.");
+      }
     }
   }
   String strategyVal=getAndRemoveParameter(parameters,KEY_FORMAT_STRATEGY_PARAM,String.class);
