@@ -97,7 +97,13 @@
     }
   }
   final Channel channel=existing;
-  final AsyncCallback producerCallback=new NettyProducerCallback(channel,callback);
+  final AsyncCallback producerCallback;
+  if (configuration.isReuseChannel()) {
+    producerCallback=callback;
+  }
+ else {
+    producerCallback=new NettyProducerCallback(channel,callback);
+  }
   putState(channel,new NettyCamelState(producerCallback,exchange));
   InetSocketAddress remoteAddress=null;
   if (!isTcp()) {
