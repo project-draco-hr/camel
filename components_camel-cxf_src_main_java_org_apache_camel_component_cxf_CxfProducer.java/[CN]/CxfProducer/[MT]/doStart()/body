@@ -3,5 +3,15 @@
   if (client == null) {
     client=endpoint.createClient();
   }
+  Conduit conduit=client.getConduit();
+  if (conduit.getClass().getName().endsWith("JMSConduit")) {
+    java.lang.reflect.Method getJmsConfig=conduit.getClass().getMethod("getJmsConfig");
+    Object jmsConfig=getJmsConfig.invoke(conduit);
+    java.lang.reflect.Method getMessageType=jmsConfig.getClass().getMethod("getMessageType");
+    boolean isTextPayload="text".equals(getMessageType.invoke(jmsConfig));
+    if (isTextPayload && endpoint.getDataFormat().equals(DataFormat.MESSAGE)) {
+      throw new RuntimeException("Text JMS message coundn't be a stream");
+    }
+  }
   endpoint.getChainedCxfEndpointConfigurer().configureClient(client);
 }
