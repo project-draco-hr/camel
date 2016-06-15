@@ -1,0 +1,40 @@
+{
+  final SalesforceHttpClient httpClient=component.getConfig().getHttpClient();
+  Map<String,Object> options=new HashMap<String,Object>();
+  options.put(ClientTransport.MAX_NETWORK_DELAY_OPTION,httpClient.getTimeout());
+  if (session.getAccessToken() == null) {
+    session.login(null);
+  }
+  LongPollingTransport transport=new LongPollingTransport(options,httpClient){
+    @Override protected void customize(    Request request){
+      super.customize(request);
+      request.header(HttpHeader.AUTHORIZATION,"OAuth " + session.getAccessToken());
+    }
+  }
+;
+  BayeuxClient client=new BayeuxClient(getEndpointUrl(),transport);
+  Integer replayId=null;
+  String channelName=getChannelName(topicName);
+  Map<String,Integer> replayIdMap=component.getConfig().getInitialReplayIdMap();
+  if (replayIdMap != null) {
+    replayId=replayIdMap.get(channelName);
+  }
+  if (replayId == null) {
+    replayId=component.getConfig().getDefaultReplayId();
+  }
+  if (replayId != null) {
+    LOG.info("Sending replayId={} for channel {}",replayId,channelName);
+    List<Extension> extensions=client.getExtensions();
+    Extension ext=null;
+    for (Iterator<Extension> iter=extensions.iterator(); iter.hasNext(); ext=iter.next()) {
+      if (ext instanceof CometDReplayExtension) {
+        iter.remove();
+      }
+    }
+    Map<String,Integer> dataMap=new HashMap<>();
+    dataMap.put(channelName,replayId);
+    ClientSession.Extension extension=new CometDReplayExtension<>(dataMap);
+    client.addExtension(extension);
+  }
+  return client;
+}
