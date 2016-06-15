@@ -11,7 +11,7 @@
     return;
   }
   boolean isRestrictedToOptions=consumer.getEndpoint().getHttpMethodRestrict() != null && consumer.getEndpoint().getHttpMethodRestrict().contains("OPTIONS");
-  if ("OPTIONS".equals(request.getMethod().name()) && !isRestrictedToOptions) {
+  if ("OPTIONS".equals(request.method().name()) && !isRestrictedToOptions) {
     String s;
     if (consumer.getEndpoint().getHttpMethodRestrict() != null) {
       s="OPTIONS," + consumer.getEndpoint().getHttpMethodRestrict();
@@ -26,7 +26,7 @@
     ctx.writeAndFlush(response);
     return;
   }
-  if (consumer.getEndpoint().getHttpMethodRestrict() != null && !consumer.getEndpoint().getHttpMethodRestrict().contains(request.getMethod().name())) {
+  if (consumer.getEndpoint().getHttpMethodRestrict() != null && !consumer.getEndpoint().getHttpMethodRestrict().contains(request.method().name())) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
     response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
     response.headers().set(Exchange.CONTENT_LENGTH,0);
@@ -34,7 +34,7 @@
     ctx.channel().close();
     return;
   }
-  if ("TRACE".equals(request.getMethod().name()) && !consumer.getEndpoint().isTraceEnabled()) {
+  if ("TRACE".equals(request.method().name()) && !consumer.getEndpoint().isTraceEnabled()) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,METHOD_NOT_ALLOWED);
     response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
     response.headers().set(Exchange.CONTENT_LENGTH,0);
@@ -42,7 +42,7 @@
     ctx.channel().close();
     return;
   }
-  if (!request.headers().contains(HttpHeaders.Names.HOST)) {
+  if (!request.headers().contains(HttpHeaderNames.HOST.toString())) {
     HttpResponse response=new DefaultHttpResponse(HTTP_1_1,BAD_REQUEST);
     response.headers().set(Exchange.CONTENT_TYPE,"text/plain");
     response.headers().set(Exchange.CONTENT_LENGTH,0);
@@ -52,11 +52,11 @@
   }
   NettyHttpSecurityConfiguration security=consumer.getEndpoint().getSecurityConfiguration();
   if (security != null && security.isAuthenticate() && "Basic".equalsIgnoreCase(security.getConstraint())) {
-    String url=request.getUri();
+    String url=request.uri();
     if (url.contains("?")) {
       url=ObjectHelper.before(url,"?");
     }
-    URI uri=new URI(request.getUri());
+    URI uri=new URI(request.uri());
     String target=uri.getPath();
     String path=consumer.getConfiguration().getPath();
     if (path != null && target.startsWith(path)) {

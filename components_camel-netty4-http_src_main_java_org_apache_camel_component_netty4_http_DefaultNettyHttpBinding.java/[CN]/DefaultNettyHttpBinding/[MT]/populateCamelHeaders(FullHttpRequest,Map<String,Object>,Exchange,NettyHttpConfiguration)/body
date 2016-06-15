@@ -1,7 +1,7 @@
 {
   LOG.trace("populateCamelHeaders: {}",request);
-  headers.put(Exchange.HTTP_METHOD,request.getMethod().name());
-  String s=request.getUri();
+  headers.put(Exchange.HTTP_METHOD,request.method().name());
+  String s=request.uri();
   if (s.contains("?")) {
     s=ObjectHelper.before(s,"?");
   }
@@ -15,7 +15,7 @@
     }
   }
   headers.put(Exchange.HTTP_URL,s);
-  URI uri=new URI(request.getUri());
+  URI uri=new URI(request.uri());
   headers.put(Exchange.HTTP_URI,uri.getPath());
   headers.put(Exchange.HTTP_QUERY,uri.getQuery());
   headers.put(Exchange.HTTP_RAW_QUERY,uri.getRawQuery());
@@ -29,8 +29,8 @@
   }
   headers.put(Exchange.HTTP_PATH,path);
   if (LOG.isTraceEnabled()) {
-    LOG.trace("HTTP-Method {}",request.getMethod().name());
-    LOG.trace("HTTP-Uri {}",request.getUri());
+    LOG.trace("HTTP-Method {}",request.method().name());
+    LOG.trace("HTTP-Uri {}",request.uri());
   }
   for (  String name : request.headers().names()) {
     if (name.toLowerCase(Locale.US).equals("content-type")) {
@@ -53,8 +53,8 @@
       }
     }
   }
-  if (request.getUri().contains("?")) {
-    String query=ObjectHelper.after(request.getUri(),"?");
+  if (request.uri().contains("?")) {
+    String query=ObjectHelper.after(request.uri(),"?");
     Map<String,Object> uriParameters=URISupport.parseQuery(query,false,true);
     for (    Map.Entry<String,Object> entry : uriParameters.entrySet()) {
       String name=entry.getKey();
@@ -70,7 +70,7 @@
       }
     }
   }
-  if (request.getMethod().name().equals("POST") && request.headers().get(Exchange.CONTENT_TYPE) != null && request.headers().get(Exchange.CONTENT_TYPE).startsWith(NettyHttpConstants.CONTENT_TYPE_WWW_FORM_URLENCODED) && !configuration.isBridgeEndpoint()) {
+  if (request.method().name().equals("POST") && request.headers().get(Exchange.CONTENT_TYPE) != null && request.headers().get(Exchange.CONTENT_TYPE).startsWith(NettyHttpConstants.CONTENT_TYPE_WWW_FORM_URLENCODED) && !configuration.isBridgeEndpoint()) {
     String charset="UTF-8";
     String body=null;
     ByteBuf buffer=request.content();
