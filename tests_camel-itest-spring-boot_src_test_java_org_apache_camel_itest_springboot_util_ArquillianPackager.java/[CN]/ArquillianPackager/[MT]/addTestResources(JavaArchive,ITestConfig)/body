@@ -1,0 +1,18 @@
+{
+  File test=new File(config.getModulesPath() + config.getModuleName() + "/target/test-classes/");
+  File[] fs=Optional.ofNullable(test.listFiles()).orElse(new File[]{});
+  LinkedList<File> testFiles=new LinkedList<>(Arrays.asList(fs));
+  while (!testFiles.isEmpty()) {
+    File f=testFiles.pop();
+    String relative=test.getCanonicalFile().toURI().relativize(f.getCanonicalFile().toURI()).getPath();
+    if (f.isFile()) {
+      ark=ark.addAsResource(f,relative);
+    }
+ else {
+      ark=ark.addAsDirectory(relative);
+      File[] files=Optional.ofNullable(f.listFiles()).orElse(new File[]{});
+      testFiles.addAll(Arrays.asList(files));
+    }
+  }
+  return ark;
+}

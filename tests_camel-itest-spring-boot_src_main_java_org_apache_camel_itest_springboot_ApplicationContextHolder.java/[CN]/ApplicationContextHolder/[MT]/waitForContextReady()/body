@@ -1,0 +1,14 @@
+{
+  long maxWait=contextMaxWaitTime;
+  long deadline=System.currentTimeMillis() + maxWait;
+synchronized (ApplicationContextHolder.class) {
+    long time=System.currentTimeMillis();
+    while (time < deadline && context == null) {
+      ApplicationContextHolder.class.wait(deadline - time);
+      time=System.currentTimeMillis();
+    }
+    if (context == null) {
+      throw new IllegalStateException("No spring context available after " + maxWait + " millis");
+    }
+  }
+}

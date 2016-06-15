@@ -1,0 +1,62 @@
+{
+  if (outputStream == null && !outputStreamClosed) {
+    outputStream=createOutputStream(bufferedOutputStream);
+  }
+  int value=bufferInputStream != null ? bufferInputStream.read() : -1;
+  if (value == -1) {
+    if (currentNodeStream != null) {
+      try {
+        doCopy();
+        bufferInputStream=new ByteArrayInputStream(bufferedOutputStream.toByteArray());
+        bufferedOutputStream.reset();
+        return this.read();
+      }
+ catch (      final Throwable t) {
+        throw new ArchiveExportException("Failed to write asset to output: " + currentPath.get(),t);
+      }
+    }
+ else     if (nodesIterator.hasNext()) {
+      final Node currentNode=nodesIterator.next();
+      currentPath=currentNode.getPath();
+      final String pathName=PathUtil.optionallyRemovePrecedingSlash(currentPath.get());
+      final boolean isDirectory=currentNode.getAsset() == null;
+      String resolvedPath=pathName;
+      if (isDirectory) {
+        resolvedPath=PathUtil.optionallyAppendSlash(resolvedPath);
+        startAsset(resolvedPath,0L,0L);
+        endAsset();
+      }
+ else {
+        try {
+          byte[] content=IOUtil.asByteArray(currentNode.getAsset().openStream());
+          long size=content.length;
+          CRC32 crc=new CRC32();
+          crc.update(content);
+          long crc32Value=crc.getValue();
+          startAsset(resolvedPath,size,crc32Value);
+          currentNodeStream=new ByteArrayInputStream(content);
+          doCopy();
+        }
+ catch (        final Throwable t) {
+          throw new ArchiveExportException("Failed to write asset to output: " + currentPath.get(),t);
+        }
+        bufferInputStream=new ByteArrayInputStream(bufferedOutputStream.toByteArray());
+        bufferedOutputStream.reset();
+      }
+    }
+ else {
+      if (!outputStreamClosed) {
+        outputStream.close();
+        outputStreamClosed=true;
+        bufferInputStream=new ByteArrayInputStream(bufferedOutputStream.toByteArray());
+        bufferedOutputStream.close();
+        currentNodeStream=null;
+        outputStream=null;
+        return this.read();
+      }
+      return -1;
+    }
+    return this.read();
+  }
+  return value;
+}
