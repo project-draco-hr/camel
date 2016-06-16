@@ -6,11 +6,37 @@
   if (topic == null) {
     throw new CamelExchangeException("No topic key set",exchange);
   }
-  Object partitionKey=exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
-  boolean hasPartitionKey=partitionKey != null;
-  Object messageKey=exchange.getIn().getHeader(KafkaConstants.KEY);
-  boolean hasMessageKey=messageKey != null;
+  final Object partitionKey=exchange.getIn().getHeader(KafkaConstants.PARTITION_KEY);
+  final boolean hasPartitionKey=partitionKey != null;
+  final Object messageKey=exchange.getIn().getHeader(KafkaConstants.KEY);
+  final boolean hasMessageKey=messageKey != null;
   Object msg=exchange.getIn().getBody();
+  Iterator<Object> iterator=null;
+  if (msg instanceof Iterable) {
+    iterator=((Iterable<Object>)msg).iterator();
+  }
+ else   if (msg instanceof Iterator) {
+    iterator=(Iterator<Object>)msg;
+  }
+  if (iterator != null) {
+    final Iterator<Object> msgList=iterator;
+    final String msgTopic=topic;
+    return new Iterator<ProducerRecord>(){
+      @Override public boolean hasNext(){
+        return msgList.hasNext();
+      }
+      @Override public ProducerRecord next(){
+        if (hasPartitionKey && hasMessageKey) {
+          return new ProducerRecord(msgTopic,new Integer(partitionKey.toString()),messageKey,msgList.next());
+        }
+ else         if (hasMessageKey) {
+          return new ProducerRecord(msgTopic,messageKey,msgList.next());
+        }
+        return new ProducerRecord(msgTopic,msgList.next());
+      }
+    }
+;
+  }
   ProducerRecord record;
   if (hasPartitionKey && hasMessageKey) {
     record=new ProducerRecord(topic,new Integer(partitionKey.toString()),messageKey,msg);
@@ -22,5 +48,5 @@
     log.warn("No message key or partition key set");
     record=new ProducerRecord(topic,msg);
   }
-  return record;
+  return Collections.singletonList(record).iterator();
 }

@@ -1,8 +1,12 @@
 {
   try {
-    ProducerRecord record=createRecorder(exchange);
-    kafkaProducer.send(record,new KafkaProducerCallBack(exchange,callback));
-    return false;
+    Iterator<ProducerRecord> c=createRecorder(exchange);
+    KafkaProducerCallBack cb=new KafkaProducerCallBack(exchange,callback);
+    while (c.hasNext()) {
+      cb.increment();
+      kafkaProducer.send(c.next(),cb);
+    }
+    return cb.allSent();
   }
  catch (  Exception ex) {
     exchange.setException(ex);
