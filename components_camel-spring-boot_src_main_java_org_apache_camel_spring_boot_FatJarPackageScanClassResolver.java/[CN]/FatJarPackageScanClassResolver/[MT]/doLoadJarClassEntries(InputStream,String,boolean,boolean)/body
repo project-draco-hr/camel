@@ -1,0 +1,32 @@
+{
+  List<String> entries=new ArrayList<String>();
+  JarInputStream jarStream=null;
+  try {
+    jarStream=new JarInputStream(stream);
+    JarEntry entry;
+    while ((entry=jarStream.getNextJarEntry()) != null) {
+      String name=entry.getName();
+      if (name != null) {
+        name=name.trim();
+        if (!entry.isDirectory() && name.endsWith(".class")) {
+          entries.add(name);
+        }
+ else         if (inspectNestedJars && !entry.isDirectory() && name.startsWith("lib/")&& name.endsWith(".jar")) {
+          String nestedUrl=urlPath + "!/" + name;
+          log.trace("Inspecting nested jar: {}",nestedUrl);
+          List<String> nestedEntries=doLoadJarClassEntries(jarStream,nestedUrl,false,false);
+          entries.addAll(nestedEntries);
+        }
+      }
+    }
+  }
+ catch (  IOException ioe) {
+    log.warn("Cannot search jar file '" + urlPath + " due to an IOException: "+ ioe.getMessage(),ioe);
+  }
+ finally {
+    if (closeStream) {
+      IOHelper.close(jarStream,urlPath,log);
+    }
+  }
+  return entries;
+}
