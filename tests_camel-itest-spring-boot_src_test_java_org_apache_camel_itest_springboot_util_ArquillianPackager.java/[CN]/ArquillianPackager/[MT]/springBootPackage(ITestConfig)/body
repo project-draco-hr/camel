@@ -1,2 +1,70 @@
 {
+  ExtensionLoader extensionLoader=new ServiceExtensionLoader(Collections.singleton(getExtensionClassloader()));
+  extensionLoader.addOverride(ZipExporter.class,SpringBootZipExporterImpl.class);
+  ConfigurationBuilder builder=new ConfigurationBuilder().extensionLoader(extensionLoader);
+  Configuration conf=builder.build();
+  Domain domain=ShrinkWrap.createDomain(conf);
+  JavaArchive ark=domain.getArchiveFactory().create(JavaArchive.class,"test.jar");
+  ark=ark.addAsManifestResource("BOOT-MANIFEST.MF","MANIFEST.MF");
+  ark=ark.addAsResource("spring-boot-itest.properties");
+  for (  Map.Entry<String,String> res : config.getResources().entrySet()) {
+    ark=ark.addAsResource(res.getKey(),res.getValue());
+  }
+  ark=ark.addAsDirectories("/lib");
+  String version=System.getProperty("itestComponentVersion");
+  if (version == null) {
+    config.getMavenVersion();
+  }
+  if (version == null) {
+    List<MavenResolvedArtifact> resolved=Arrays.asList(Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withTransitivity().asResolvedArtifact());
+    for (    MavenResolvedArtifact dep : resolved) {
+      if (dep.getCoordinate().getGroupId().equals("org.apache.camel")) {
+        version=dep.getCoordinate().getVersion();
+        break;
+      }
+    }
+  }
+  debug("Resolved version: " + version);
+  if (version == null) {
+    throw new IllegalStateException("Cannot determine the current version of the camel component");
+  }
+  MavenDependencyExclusion[] loggingHellExclusions=new MavenDependencyExclusion[]{MavenDependencies.createExclusion("org.slf4j","slf4j-log4j12"),MavenDependencies.createExclusion("log4j","log4j"),MavenDependencies.createExclusion("org.slf4j","slf4j-simple")};
+  List<MavenDependency> moduleDependencies=new LinkedList<>();
+  MavenCoordinate mainJar=MavenCoordinates.createCoordinate(config.getMavenGroup(),config.getModuleName(),version,PackagingType.JAR,null);
+  MavenDependency mainDep=MavenDependencies.createDependency(mainJar,ScopeType.COMPILE,false,loggingHellExclusions);
+  moduleDependencies.add(mainDep);
+  for (  String canonicalForm : config.getAdditionalDependencies()) {
+    MavenCoordinate coord=MavenCoordinates.createCoordinate(canonicalForm);
+    MavenDependency dep=MavenDependencies.createDependency(coord,ScopeType.RUNTIME,false);
+    moduleDependencies.add(dep);
+  }
+  if (config.getIncludeProvidedDependencies() || config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
+    List<ScopeType> scopes=new LinkedList<>();
+    if (config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
+      scopes.add(ScopeType.TEST);
+    }
+    if (config.getIncludeProvidedDependencies()) {
+      scopes.add(ScopeType.PROVIDED);
+    }
+    List<MavenResolvedArtifact> moduleArtifacts=Arrays.asList(Maven.resolver().loadPomFromFile(config.getModulesPath() + config.getModuleName() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
+    for (    MavenResolvedArtifact art : moduleArtifacts) {
+      MavenCoordinate c=art.getCoordinate();
+      if (!validTestDependency(c)) {
+        continue;
+      }
+      MavenDependency dep=MavenDependencies.createDependency(c,ScopeType.RUNTIME,false,loggingHellExclusions);
+      moduleDependencies.add(dep);
+    }
+  }
+  List<File> dependencies=new LinkedList<>();
+  dependencies.addAll(Arrays.asList(Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().addDependencies(moduleDependencies).resolve().withTransitivity().asFile()));
+  excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
+  ark=addDependencies(ark,dependencies);
+  if (config.getUnitTestEnabled()) {
+    ark=addTestResources(ark,config);
+  }
+  ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
+  ark=ark.addPackages(true,"org.springframework.boot.loader");
+  ark=ark.addPackages(true,"org.jboss.shrinkwrap");
+  return ClassPath.builder().add(ark).build();
 }

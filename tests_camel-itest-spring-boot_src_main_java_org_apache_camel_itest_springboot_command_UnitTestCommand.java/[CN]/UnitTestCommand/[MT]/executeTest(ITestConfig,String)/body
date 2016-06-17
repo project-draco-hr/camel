@@ -1,2 +1,51 @@
 {
+  logger.info("Spring-Boot test configuration {}",config);
+  Pattern pattern=Pattern.compile(config.getUnitTestInclusionPattern());
+  logger.info("Scaning the classpath for test classes");
+  ClassPathScanningCandidateComponentProvider scanner=new ClassPathScanningCandidateComponentProvider(false);
+  scanner.addIncludeFilter(new RegexPatternTypeFilter(pattern));
+  Set<BeanDefinition> defs=scanner.findCandidateComponents(config.getUnitTestBasePackage());
+  List<String> testClasses=new LinkedList<>();
+  for (  BeanDefinition bd : defs) {
+    testClasses.add(bd.getBeanClassName());
+  }
+  if (config.getUnitTestExclusionPattern() != null) {
+    Pattern exclusionPattern=Pattern.compile(config.getUnitTestExclusionPattern());
+    for (Iterator<String> it=testClasses.iterator(); it.hasNext(); ) {
+      String cn=it.next();
+      if (exclusionPattern.matcher(cn).matches()) {
+        logger.warn("Excluding Test Class: {}",cn);
+        it.remove();
+      }
+    }
+  }
+  List<Class<?>> classes=new ArrayList<>();
+  for (  String cn : testClasses) {
+    Class<?> clazz=Class.forName(cn);
+    if (isAdmissible(clazz)) {
+      logger.info("Found admissible test class: {}",cn);
+      classes.add(clazz);
+    }
+  }
+  Result result=JUnitCore.runClasses(classes.toArray(new Class[]{}));
+  logger.info("Run JUnit tests on {} test classes",classes.size());
+  logger.info("Success: " + result.wasSuccessful() + " - Test Run: "+ result.getRunCount()+ " - Failures: "+ result.getFailureCount()+ " - Ignored Tests: "+ result.getIgnoreCount());
+  for (  Failure f : result.getFailures()) {
+    logger.warn("Failed test description: {}",f.getDescription());
+    logger.warn("Message: {}",f.getMessage());
+    if (f.getException() != null) {
+      logger.warn("Exception thrown from test",f.getException());
+    }
+  }
+  if (!result.wasSuccessful()) {
+    Assert.fail("Some unit tests failed (" + result.getFailureCount() + "/"+ result.getRunCount()+ "), check the logs for more details");
+  }
+  if (result.getRunCount() == 0 && config.getUnitTestsExpectedNumber() == null) {
+    Assert.fail("No tests have been found");
+  }
+  Integer expectedTests=config.getUnitTestsExpectedNumber();
+  if (expectedTests != null && expectedTests != result.getRunCount()) {
+    Assert.fail("Wrong number of tests: expected " + expectedTests + " found "+ result.getRunCount());
+  }
+  return new UnitTestResult(result);
 }
