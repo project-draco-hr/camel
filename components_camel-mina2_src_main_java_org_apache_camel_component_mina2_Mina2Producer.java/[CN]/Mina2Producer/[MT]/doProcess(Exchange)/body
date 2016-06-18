@@ -17,7 +17,7 @@
     body=getEndpoint().getCamelContext().getTypeConverter().mandatoryConvertTo(String.class,exchange,body);
   }
   if (sync) {
-    latch=new CountDownLatch(1);
+    responseLatch=new CountDownLatch(1);
     handler.reset();
   }
   if (LOG.isDebugEnabled()) {
@@ -30,7 +30,7 @@
   Mina2Helper.writeBody(session,body,exchange);
   if (sync) {
     LOG.debug("Waiting for response using timeout {} millis.",timeout);
-    boolean done=latch.await(timeout,TimeUnit.MILLISECONDS);
+    boolean done=responseLatch.await(timeout,TimeUnit.MILLISECONDS);
     if (!done) {
       throw new ExchangeTimedOutException(exchange,timeout);
     }
