@@ -8,26 +8,20 @@
     if (EtcdHelper.isOutdatedIndexException(exception)) {
       LOGGER.debug("Outdated index, key={}, cause={}",servicePath,exception.etcdCause);
       index.set(exception.index + 1);
-      throwable=null;
     }
   }
  else {
     try {
       EtcdKeysResponse response=promise.get();
       EtcdHelper.setIndex(index,response);
-      if (response.node.value == null) {
-        setLeader(tryTakeLeadership());
-      }
- else       if (!ObjectHelper.equal(serviceName,response.node.value) && leader.get()) {
-        setLeader(false);
-      }
+      serversRef.set(getServers());
     }
  catch (    TimeoutException e) {
-      LOGGER.debug("Timeout watching for {}",servicePath);
+      LOGGER.debug("Timeout watching for {}",getConfiguration().getServicePath());
       throwable=null;
     }
-catch (    Exception e1) {
-      throwable=e1;
+catch (    Exception e) {
+      throwable=e;
     }
   }
   if (throwable == null) {

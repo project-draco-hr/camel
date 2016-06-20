@@ -1,9 +1,15 @@
 {
-  if (isRunAllowed()) {
+  if (!isRunAllowed()) {
+    return;
+  }
+  try {
     if (leader.get()) {
-      setIndex(client.refresh(servicePath,ttl).send().get());
+      EtcdHelper.setIndex(index,client.refresh(servicePath,ttl).send().get());
     }
     LOGGER.debug("Watch (path={}, isLeader={}, index={})",servicePath,leader.get(),index.get());
     client.get(servicePath).waitForChange(index.get()).timeout(ttl / 3,TimeUnit.SECONDS).send().addListener(this);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException(e);
   }
 }
