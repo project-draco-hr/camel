@@ -1,5 +1,5 @@
 {
-  Class<?> result;
+  Class<?> result=null;
   try {
     result=PRIMITIVE_TYPES.get(className);
     if (result == null) {
@@ -10,9 +10,30 @@
     if (className.endsWith("[]")) {
       final int firstDim=className.indexOf('[');
       final int nDimensions=(className.length() - firstDim) / 2;
-      return Array.newInstance(forName(className.substring(0,firstDim),classLoader),new int[nDimensions]).getClass();
+      result=Array.newInstance(forName(className.substring(0,firstDim),classLoader),new int[nDimensions]).getClass();
     }
-    result=Class.forName(JAVA_LANG + className,true,classLoader);
+ else     if (className.indexOf('.') != -1) {
+      String innerClass=className;
+      while (result == null && innerClass.indexOf('.') != -1) {
+        int endIndex=innerClass.lastIndexOf('.');
+        innerClass=innerClass.substring(0,endIndex) + "$" + innerClass.substring(endIndex + 1);
+        try {
+          result=Class.forName(innerClass,true,classLoader);
+        }
+ catch (        ClassNotFoundException ignore) {
+        }
+      }
+    }
+    if (result == null && !className.startsWith(JAVA_LANG)) {
+      try {
+        result=forName(JAVA_LANG + className,classLoader);
+      }
+ catch (      ClassNotFoundException ignore) {
+      }
+    }
+  }
+  if (result == null) {
+    throw new ClassNotFoundException(className);
   }
   return result;
 }
