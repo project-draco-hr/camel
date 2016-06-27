@@ -32,8 +32,8 @@
       resultRow.apply(rowModel);
       byte[] row=result.getRow();
       resultRow.setId(endpoint.getCamelContext().getTypeConverter().convertTo(rowModel.getRowType(),row));
-      List<KeyValue> keyValues=result.list();
-      if (keyValues != null) {
+      List<Cell> cells=result.listCells();
+      if (cells != null) {
         Set<HBaseCell> cellModels=rowModel.getCells();
         if (cellModels.size() > 0) {
           for (          HBaseCell modelCell : cellModels) {
@@ -47,13 +47,13 @@
           }
         }
  else {
-          for (          KeyValue keyValue : keyValues) {
-            String qualifier=new String(keyValue.getQualifier());
-            String family=new String(keyValue.getFamily());
+          for (          Cell cell : cells) {
+            String qualifier=new String(CellUtil.cloneQualifier(cell));
+            String family=new String(CellUtil.cloneFamily(cell));
             HBaseCell resultCell=new HBaseCell();
             resultCell.setFamily(family);
             resultCell.setQualifier(qualifier);
-            resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(String.class,keyValue.getValue()));
+            resultCell.setValue(endpoint.getCamelContext().getTypeConverter().convertTo(String.class,CellUtil.cloneValue(cell)));
             resultRow.getCells().add(resultCell);
           }
         }
