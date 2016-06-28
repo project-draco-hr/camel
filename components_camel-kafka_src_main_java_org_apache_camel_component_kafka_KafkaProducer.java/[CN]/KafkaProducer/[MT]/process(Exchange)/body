@@ -1,10 +1,12 @@
 {
   Iterator<ProducerRecord> c=createRecorder(exchange);
-  List<Future<ProducerRecord>> futures=new LinkedList<Future<ProducerRecord>>();
+  List<Future<RecordMetadata>> futures=new LinkedList<Future<RecordMetadata>>();
+  List<RecordMetadata> recordMetadatas=new ArrayList<RecordMetadata>();
+  exchange.getOut().setHeader(KafkaConstants.KAFKA_RECORDMETA,recordMetadatas);
   while (c.hasNext()) {
     futures.add(kafkaProducer.send(c.next()));
   }
-  for (  Future<ProducerRecord> f : futures) {
-    f.get();
+  for (  Future<RecordMetadata> f : futures) {
+    recordMetadatas.add(f.get());
   }
 }
