@@ -4,5 +4,9 @@
   Mockito.when(exchange.getOut()).thenReturn(out);
   in.setHeader(KafkaConstants.PARTITION_KEY,"4");
   producer.process(exchange,callback);
-  Mockito.verify(producer.getKafkaProducer()).send(Matchers.any(ProducerRecord.class),Matchers.any(Callback.class));
+  ArgumentCaptor<Callback> callBackCaptor=ArgumentCaptor.forClass(Callback.class);
+  Mockito.verify(producer.getKafkaProducer()).send(Matchers.any(ProducerRecord.class),callBackCaptor.capture());
+  Callback kafkaCallback=callBackCaptor.getValue();
+  kafkaCallback.onCompletion(new RecordMetadata(null,1,1),null);
+  assertRecordMetadataExists();
 }
