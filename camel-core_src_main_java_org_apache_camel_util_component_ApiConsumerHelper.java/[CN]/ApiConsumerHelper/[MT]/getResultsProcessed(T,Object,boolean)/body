@@ -1,12 +1,30 @@
 {
   if (result != null && splitResult) {
-    final Object resultArray=consumer.splitResult(result);
-    if (resultArray != result && resultArray.getClass().isArray()) {
-      final int length=Array.getLength(resultArray);
-      for (int i=0; i < length; i++) {
-        processResult(consumer,result,Array.get(resultArray,i));
+    final Object results=consumer.splitResult(result);
+    if (results != null) {
+      if (results instanceof List) {
+        final List<?> list=(List<?>)results;
+        final int size=list.size();
+        for (int i=0; i < size; i++) {
+          processResult(consumer,result,list.get(i));
+        }
+        return size;
       }
-      return length;
+ else       if (results instanceof Iterable) {
+        int size=0;
+        for (        Object singleResult : (Iterable<?>)results) {
+          processResult(consumer,result,singleResult);
+          size++;
+        }
+        return size;
+      }
+ else       if (results.getClass().isArray()) {
+        final int size=Array.getLength(results);
+        for (int i=0; i < size; i++) {
+          processResult(consumer,result,Array.get(results,i));
+        }
+        return size;
+      }
     }
   }
   processResult(consumer,result,result);
