@@ -15,7 +15,7 @@
     final Class<?> resultType=forName(methodMatcher.group(1));
     final String name=methodMatcher.group(3);
     final String argSignature=methodMatcher.group(4);
-    final List<Argument> arguments=new ArrayList<Argument>();
+    final List<ApiMethodArg> arguments=new ArrayList<ApiMethodArg>();
     final List<Class<?>> argTypes=new ArrayList<Class<?>>();
     final Matcher argsMatcher=ARGS_PATTERN.matcher(argSignature);
     while (argsMatcher.find()) {
@@ -23,7 +23,7 @@
       argTypes.add(type);
       final String typeArgsGroup=argsMatcher.group(2);
       final String typeArgs=typeArgsGroup != null ? typeArgsGroup.substring(1,typeArgsGroup.length() - 1).replaceAll(" ","") : null;
-      arguments.add(new Argument(argsMatcher.group(3),type,typeArgs));
+      arguments.add(new ApiMethodArg(argsMatcher.group(3),type,typeArgs));
     }
     Method method;
     try {
@@ -37,7 +37,7 @@
   result=processResults(result);
   Map<String,Class<?>> allArguments=new HashMap<String,Class<?>>();
   for (  ApiMethodModel model : result) {
-    for (    Argument argument : model.getArguments()) {
+    for (    ApiMethodArg argument : model.getArguments()) {
       String name=argument.getName();
       Class<?> argClass=allArguments.get(name);
       Class<?> type=argument.getType();
@@ -66,7 +66,7 @@
         }
  else {
           for (int i=0; i < nArgs1; i++) {
-            final int argCompare=model1.arguments.get(i).name.compareTo(model2.arguments.get(i).name);
+            final int argCompare=model1.arguments.get(i).getName().compareTo(model2.arguments.get(i).getName());
             if (argCompare != 0) {
               return argCompare;
             }
