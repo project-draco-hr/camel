@@ -7,9 +7,9 @@
  else {
     withNullableArgsList=null;
   }
-  final List<ApiMethod> result=new ArrayList<ApiMethod>();
-  final List<ApiMethod> extraArgs=new ArrayList<ApiMethod>();
-  final List<ApiMethod> nullArgs=new ArrayList<ApiMethod>();
+  List<ApiMethod> result=new ArrayList<>();
+  List<ApiMethod> extraArgs=null;
+  List<ApiMethod> nullArgs=null;
   for (  ApiMethod method : methods) {
     final List<String> methodArgs=method.getArgNames();
 switch (matchType) {
@@ -29,17 +29,24 @@ if (argNames.containsAll(methodArgs)) {
 if (methodArgs.containsAll(argNames)) {
   result.add(method);
 }
- else {
+ else if (result.isEmpty()) {
+  if (extraArgs == null) {
+    extraArgs=new ArrayList<>();
+  }
   extraArgs.add(method);
 }
 }
- else if (result.isEmpty() && extraArgs.isEmpty()) {
+ else if (result.isEmpty() && extraArgs != null && extraArgs.isEmpty()) {
 if (withNullableArgsList != null && withNullableArgsList.containsAll(methodArgs)) {
+  if (nullArgs == null) {
+    nullArgs=new ArrayList<>();
+  }
   nullArgs.add(method);
 }
 }
 break;
 }
 }
-return Collections.unmodifiableList(result.isEmpty() ? (extraArgs.isEmpty() ? nullArgs : extraArgs) : result);
+List<ApiMethod> methodList=result.isEmpty() ? (extraArgs != null && extraArgs.isEmpty()) ? nullArgs : extraArgs : result;
+return methodList != null ? Collections.unmodifiableList(methodList) : Collections.emptyList();
 }
