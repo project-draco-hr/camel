@@ -1,0 +1,32 @@
+{
+  super(name);
+  ObjectHelper.notEmpty(directory,"directory");
+  Properties loaded=new Properties();
+  try {
+    Resource[] files=applicationContext.getResources(directory);
+    for (    Resource file : files) {
+      if (file.exists()) {
+        try (FileInputStream fis=new FileInputStream(file.getFile())){
+          LOG.debug("Loading properties from file: {}",file);
+          Properties extra=new Properties();
+          extra.load(fis);
+          if (!extra.isEmpty()) {
+            loaded.putAll(extra);
+          }
+        }
+ catch (        IOException e) {
+        }
+      }
+    }
+  }
+ catch (  IOException e) {
+  }
+  if (loaded.isEmpty()) {
+    properties=null;
+    LOG.warn("No properties found while loading from: {}",directory);
+  }
+ else {
+    properties=loaded;
+    LOG.info("Loaded {} properties from: {}",properties.size(),directory);
+  }
+}
