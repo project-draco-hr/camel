@@ -1,0 +1,116 @@
+{
+  Tracer tracer=getSingleBeanOfType(applicationContext,Tracer.class);
+  if (tracer != null) {
+    TraceFormatter formatter=getSingleBeanOfType(applicationContext,TraceFormatter.class);
+    if (formatter != null) {
+      tracer.setFormatter(formatter);
+    }
+    LOG.info("Using custom Tracer: {}",tracer);
+    camelContext.addInterceptStrategy(tracer);
+  }
+  BacklogTracer backlogTracer=getSingleBeanOfType(applicationContext,BacklogTracer.class);
+  if (backlogTracer != null) {
+    LOG.info("Using custom BacklogTracer: {}",backlogTracer);
+    camelContext.addInterceptStrategy(backlogTracer);
+  }
+  HandleFault handleFault=getSingleBeanOfType(applicationContext,HandleFault.class);
+  if (handleFault != null) {
+    LOG.info("Using custom HandleFault: {}",handleFault);
+    camelContext.addInterceptStrategy(handleFault);
+  }
+  InflightRepository inflightRepository=getSingleBeanOfType(applicationContext,InflightRepository.class);
+  if (inflightRepository != null) {
+    LOG.info("Using custom InflightRepository: {}",inflightRepository);
+    camelContext.setInflightRepository(inflightRepository);
+  }
+  AsyncProcessorAwaitManager asyncProcessorAwaitManager=getSingleBeanOfType(applicationContext,AsyncProcessorAwaitManager.class);
+  if (asyncProcessorAwaitManager != null) {
+    LOG.info("Using custom AsyncProcessorAwaitManager: {}",asyncProcessorAwaitManager);
+    camelContext.setAsyncProcessorAwaitManager(asyncProcessorAwaitManager);
+  }
+  ManagementStrategy managementStrategy=getSingleBeanOfType(applicationContext,ManagementStrategy.class);
+  if (managementStrategy != null) {
+    LOG.info("Using custom ManagementStrategy: {}",managementStrategy);
+    camelContext.setManagementStrategy(managementStrategy);
+  }
+  ManagementNamingStrategy managementNamingStrategy=getSingleBeanOfType(applicationContext,ManagementNamingStrategy.class);
+  if (managementNamingStrategy != null) {
+    LOG.info("Using custom ManagementNamingStrategy: {}",managementNamingStrategy);
+    camelContext.getManagementStrategy().setManagementNamingStrategy(managementNamingStrategy);
+  }
+  EventFactory eventFactory=getSingleBeanOfType(applicationContext,EventFactory.class);
+  if (eventFactory != null) {
+    LOG.info("Using custom EventFactory: {}",eventFactory);
+    camelContext.getManagementStrategy().setEventFactory(eventFactory);
+  }
+  UnitOfWorkFactory unitOfWorkFactory=getSingleBeanOfType(applicationContext,UnitOfWorkFactory.class);
+  if (unitOfWorkFactory != null) {
+    LOG.info("Using custom UnitOfWorkFactory: {}",unitOfWorkFactory);
+    camelContext.setUnitOfWorkFactory(unitOfWorkFactory);
+  }
+  RuntimeEndpointRegistry runtimeEndpointRegistry=getSingleBeanOfType(applicationContext,RuntimeEndpointRegistry.class);
+  if (runtimeEndpointRegistry != null) {
+    LOG.info("Using custom RuntimeEndpointRegistry: {}",runtimeEndpointRegistry);
+    camelContext.setRuntimeEndpointRegistry(runtimeEndpointRegistry);
+  }
+  Map<String,TypeConverters> typeConverters=applicationContext.getBeansOfType(TypeConverters.class);
+  if (typeConverters != null && !typeConverters.isEmpty()) {
+    for (    Map.Entry<String,TypeConverters> entry : typeConverters.entrySet()) {
+      TypeConverters converter=entry.getValue();
+      LOG.info("Adding custom TypeConverters with id: {} and implementation: {}",entry.getKey(),converter);
+      camelContext.getTypeConverterRegistry().addTypeConverters(converter);
+    }
+  }
+  Map<String,EventNotifier> eventNotifiers=applicationContext.getBeansOfType(EventNotifier.class);
+  if (eventNotifiers != null && !eventNotifiers.isEmpty()) {
+    for (    Map.Entry<String,EventNotifier> entry : eventNotifiers.entrySet()) {
+      EventNotifier notifier=entry.getValue();
+      if (!camelContext.getManagementStrategy().getEventNotifiers().contains(notifier)) {
+        LOG.info("Using custom EventNotifier with id: {} and implementation: {}",entry.getKey(),notifier);
+        camelContext.getManagementStrategy().addEventNotifier(notifier);
+      }
+    }
+  }
+  Map<String,EndpointStrategy> endpointStrategies=applicationContext.getBeansOfType(EndpointStrategy.class);
+  if (endpointStrategies != null && !endpointStrategies.isEmpty()) {
+    for (    Map.Entry<String,EndpointStrategy> entry : endpointStrategies.entrySet()) {
+      EndpointStrategy strategy=entry.getValue();
+      LOG.info("Using custom EndpointStrategy with id: {} and implementation: {}",entry.getKey(),strategy);
+      camelContext.addRegisterEndpointCallback(strategy);
+    }
+  }
+  ShutdownStrategy shutdownStrategy=getSingleBeanOfType(applicationContext,ShutdownStrategy.class);
+  if (shutdownStrategy != null) {
+    LOG.info("Using custom ShutdownStrategy: " + shutdownStrategy);
+    camelContext.setShutdownStrategy(shutdownStrategy);
+  }
+  Map<String,InterceptStrategy> interceptStrategies=applicationContext.getBeansOfType(InterceptStrategy.class);
+  if (interceptStrategies != null && !interceptStrategies.isEmpty()) {
+    for (    Map.Entry<String,InterceptStrategy> entry : interceptStrategies.entrySet()) {
+      InterceptStrategy strategy=entry.getValue();
+      if (!camelContext.getInterceptStrategies().contains(strategy)) {
+        LOG.info("Using custom InterceptStrategy with id: {} and implementation: {}",entry.getKey(),strategy);
+        camelContext.addInterceptStrategy(strategy);
+      }
+    }
+  }
+  Map<String,LifecycleStrategy> lifecycleStrategies=applicationContext.getBeansOfType(LifecycleStrategy.class);
+  if (lifecycleStrategies != null && !lifecycleStrategies.isEmpty()) {
+    for (    Map.Entry<String,LifecycleStrategy> entry : lifecycleStrategies.entrySet()) {
+      LifecycleStrategy strategy=entry.getValue();
+      if (!camelContext.getLifecycleStrategies().contains(strategy)) {
+        LOG.info("Using custom LifecycleStrategy with id: {} and implementation: {}",entry.getKey(),strategy);
+        camelContext.addLifecycleStrategy(strategy);
+      }
+    }
+  }
+  Map<String,RoutePolicyFactory> routePolicyFactories=applicationContext.getBeansOfType(RoutePolicyFactory.class);
+  if (routePolicyFactories != null && !routePolicyFactories.isEmpty()) {
+    for (    Map.Entry<String,RoutePolicyFactory> entry : routePolicyFactories.entrySet()) {
+      RoutePolicyFactory factory=entry.getValue();
+      LOG.info("Using custom RoutePolicyFactory with id: {} and implementation: {}",entry.getKey(),factory);
+      camelContext.addRoutePolicyFactory(factory);
+    }
+  }
+  initThreadPoolProfiles(applicationContext,camelContext);
+}

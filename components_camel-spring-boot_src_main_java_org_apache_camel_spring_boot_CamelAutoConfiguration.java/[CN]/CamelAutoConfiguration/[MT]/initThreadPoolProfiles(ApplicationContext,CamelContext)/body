@@ -1,0 +1,20 @@
+{
+  Set<String> defaultIds=new HashSet<String>();
+  Map<String,ThreadPoolProfile> profiles=applicationContext.getBeansOfType(ThreadPoolProfile.class);
+  if (profiles != null && !profiles.isEmpty()) {
+    for (    Map.Entry<String,ThreadPoolProfile> entry : profiles.entrySet()) {
+      ThreadPoolProfile profile=entry.getValue();
+      if (profile.isDefaultProfile()) {
+        LOG.info("Using custom default ThreadPoolProfile with id: {} and implementation: {}",entry.getKey(),profile);
+        camelContext.getExecutorServiceManager().setDefaultThreadPoolProfile(profile);
+        defaultIds.add(entry.getKey());
+      }
+ else {
+        camelContext.getExecutorServiceManager().registerThreadPoolProfile(profile);
+      }
+    }
+  }
+  if (defaultIds.size() > 1) {
+    throw new IllegalArgumentException("Only exactly one default ThreadPoolProfile is allowed, was " + defaultIds.size() + " ids: "+ defaultIds);
+  }
+}
