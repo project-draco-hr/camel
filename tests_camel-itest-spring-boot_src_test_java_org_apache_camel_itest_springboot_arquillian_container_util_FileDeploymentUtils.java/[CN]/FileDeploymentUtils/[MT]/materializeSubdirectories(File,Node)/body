@@ -1,0 +1,22 @@
+{
+  for (  Node child : node.getChildren()) {
+    if (child.getAsset() == null) {
+      materializeSubdirectories(entryDirectory,child);
+    }
+ else {
+      if (ClassPathDirectory.isMarkerFileArchivePath(child.getPath())) {
+        continue;
+      }
+      File resourceFile=new File(entryDirectory,child.getPath().get().replace(DELIMITER_RESOURCE_PATH,File.separatorChar));
+      File resoureDirectory=resourceFile.getParentFile();
+      if (!resoureDirectory.exists() && !resoureDirectory.mkdirs()) {
+        throw new DeploymentException("Could not create class path directory: " + entryDirectory);
+      }
+      resourceFile.createNewFile();
+      try (InputStream in=child.getAsset().openStream();OutputStream out=new FileOutputStream(resourceFile)){
+        copy(in,out);
+      }
+       child.getPath().get();
+    }
+  }
+}

@@ -1,4 +1,5 @@
 {
+  overrideLoggingConfig();
   logger.info("Spring-Boot test configuration {}",config);
   Pattern pattern=Pattern.compile(config.getUnitTestInclusionPattern());
   logger.info("Scaning the classpath for test classes");
@@ -19,7 +20,7 @@
       }
     }
   }
-  List<Class<?>> classes=new ArrayList<>();
+  final List<Class<?>> classes=new ArrayList<>();
   for (  String cn : testClasses) {
     Class<?> clazz=Class.forName(cn);
     if (isAdmissible(clazz)) {
@@ -27,8 +28,15 @@
       classes.add(clazz);
     }
   }
-  Result result=JUnitCore.runClasses(classes.toArray(new Class[]{}));
   logger.info("Run JUnit tests on {} test classes",classes.size());
+  JUnitCore runner=new JUnitCore();
+  runner.addListener(new RunListener(){
+    @Override public void testStarted(    Description description) throws Exception {
+      disableJmx(config.getJmxDisabledNames());
+    }
+  }
+);
+  Result result=runner.run(classes.toArray(new Class[]{}));
   logger.info("Success: " + result.wasSuccessful() + " - Test Run: "+ result.getRunCount()+ " - Failures: "+ result.getFailureCount()+ " - Ignored Tests: "+ result.getIgnoreCount());
   for (  Failure f : result.getFailures()) {
     logger.warn("Failed test description: {}",f.getDescription());

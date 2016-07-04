@@ -1,0 +1,25 @@
+{
+  File sources=new File(config.getModuleBasePath() + "/src/");
+  ark.addAsDirectory("src");
+  File[] fs=sources.listFiles();
+  if (fs == null) {
+    fs=new File[]{};
+  }
+  LinkedList<File> sourceFiles=new LinkedList<>(Arrays.asList(fs));
+  while (!sourceFiles.isEmpty()) {
+    File f=sourceFiles.pop();
+    String relative=sources.getParentFile().getCanonicalFile().toURI().relativize(f.getCanonicalFile().toURI()).getPath();
+    if (f.isFile()) {
+      ark.add(new FileAsset(f),relative);
+    }
+ else {
+      ark=ark.addAsDirectory(relative);
+      File[] files=f.listFiles();
+      if (files == null) {
+        files=new File[]{};
+      }
+      sourceFiles.addAll(Arrays.asList(files));
+    }
+  }
+  return ark;
+}

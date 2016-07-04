@@ -1,0 +1,29 @@
+{
+  if (archive.getContent().isEmpty()) {
+    return;
+  }
+  File entryDirectory=new File(TARGET.concat(File.separator).concat(archive.getName()));
+  try {
+    if (entryDirectory.exists()) {
+      FileDeploymentUtils.deleteContent(entryDirectory.toPath());
+    }
+ else {
+      if (!entryDirectory.mkdirs()) {
+        throw new DeploymentException("Could not create class path directory: " + entryDirectory);
+      }
+    }
+    for (    Node child : archive.get(ClassPath.ROOT_ARCHIVE_PATH).getChildren()) {
+      Asset asset=child.getAsset();
+      if (asset instanceof ClassAsset) {
+        FileDeploymentUtils.materializeClass(entryDirectory,(ClassAsset)asset);
+      }
+ else       if (asset == null) {
+        FileDeploymentUtils.materializeSubdirectories(entryDirectory,child);
+      }
+    }
+  }
+ catch (  IOException e) {
+    throw new DeploymentException("Could not materialize class path directory: " + archive.getName(),e);
+  }
+  materializedFiles.add(entryDirectory);
+}

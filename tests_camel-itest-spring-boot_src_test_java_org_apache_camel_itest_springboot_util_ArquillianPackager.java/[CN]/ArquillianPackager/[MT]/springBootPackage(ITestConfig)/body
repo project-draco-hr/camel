@@ -7,16 +7,19 @@
   JavaArchive ark=domain.getArchiveFactory().create(JavaArchive.class,"test.jar");
   ark=ark.addAsManifestResource("BOOT-MANIFEST.MF","MANIFEST.MF");
   ark=ark.addAsResource("spring-boot-itest.properties");
+  if (config.getUseCustomLog()) {
+    ark=ark.addAsResource("spring-logback.xml");
+  }
   for (  Map.Entry<String,String> res : config.getResources().entrySet()) {
     ark=ark.addAsResource(res.getKey(),res.getValue());
   }
   ark=ark.addAsDirectories("/lib");
-  String version=System.getProperty("itestComponentVersion");
+  String version=System.getProperty("version_org.apache.camel:camel-core");
   if (version == null) {
     config.getMavenVersion();
   }
   if (version == null) {
-    List<MavenResolvedArtifact> resolved=Arrays.asList(Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withTransitivity().asResolvedArtifact());
+    List<MavenResolvedArtifact> resolved=Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withoutTransitivity().asResolvedArtifact());
     for (    MavenResolvedArtifact dep : resolved) {
       if (dep.getCoordinate().getGroupId().equals("org.apache.camel")) {
         version=dep.getCoordinate().getVersion();
@@ -28,10 +31,19 @@
   if (version == null) {
     throw new IllegalStateException("Cannot determine the current version of the camel component");
   }
-  MavenDependencyExclusion[] loggingHellExclusions=new MavenDependencyExclusion[]{MavenDependencies.createExclusion("org.slf4j","slf4j-log4j12"),MavenDependencies.createExclusion("log4j","log4j"),MavenDependencies.createExclusion("org.slf4j","slf4j-simple")};
+  List<MavenDependencyExclusion> commonExclusions=new LinkedList<>();
+  commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-log4j12"));
+  commonExclusions.add(MavenDependencies.createExclusion("log4j","log4j"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-simple"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-simple"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-jdk14"));
+  for (  String ex : config.getMavenExclusions()) {
+    commonExclusions.add(MavenDependencies.createExclusion(ex));
+  }
+  MavenDependencyExclusion[] commonExclutionArray=commonExclusions.toArray(new MavenDependencyExclusion[]{});
   List<MavenDependency> moduleDependencies=new LinkedList<>();
   MavenCoordinate mainJar=MavenCoordinates.createCoordinate(config.getMavenGroup(),config.getModuleName(),version,PackagingType.JAR,null);
-  MavenDependency mainDep=MavenDependencies.createDependency(mainJar,ScopeType.COMPILE,false,loggingHellExclusions);
+  MavenDependency mainDep=MavenDependencies.createDependency(mainJar,ScopeType.COMPILE,false,commonExclutionArray);
   moduleDependencies.add(mainDep);
   for (  String canonicalForm : config.getAdditionalDependencies()) {
     MavenCoordinate coord=MavenCoordinates.createCoordinate(canonicalForm);
@@ -46,25 +58,41 @@
     if (config.getIncludeProvidedDependencies()) {
       scopes.add(ScopeType.PROVIDED);
     }
-    List<MavenResolvedArtifact> moduleArtifacts=Arrays.asList(Maven.resolver().loadPomFromFile(config.getModulesPath() + config.getModuleName() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
+    List<MavenResolvedArtifact> moduleArtifacts=Arrays.asList(resolver(config).loadPomFromFile(config.getModuleBasePath() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
     for (    MavenResolvedArtifact art : moduleArtifacts) {
       MavenCoordinate c=art.getCoordinate();
       if (!validTestDependency(c)) {
         continue;
       }
-      MavenDependency dep=MavenDependencies.createDependency(c,ScopeType.RUNTIME,false,loggingHellExclusions);
+      MavenDependency dep=MavenDependencies.createDependency(c,ScopeType.RUNTIME,false,commonExclutionArray);
       moduleDependencies.add(dep);
     }
   }
   List<File> dependencies=new LinkedList<>();
-  dependencies.addAll(Arrays.asList(Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().addDependencies(moduleDependencies).resolve().withTransitivity().asFile()));
-  excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
-  ark=addDependencies(ark,dependencies);
-  if (config.getUnitTestEnabled()) {
-    ark=addTestResources(ark,config);
+  dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importRuntimeDependencies().addDependencies(moduleDependencies).resolve().withTransitivity().asFile()));
+  boolean needsSpringTest=excludeDependencyRegex(dependencies,"^camel-test-spring3-.*");
+  if (needsSpringTest) {
+    MavenDependency dep=MavenDependencies.createDependency("org.apache.camel:camel-test-spring:" + version,ScopeType.RUNTIME,false);
+    dependencies=new LinkedList<>();
+    dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importRuntimeDependencies().addDependencies(moduleDependencies).addDependencies(dep).resolve().withTransitivity().asFile()));
   }
+  excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
+  excludeDependencyRegex(dependencies,"^camel-test-spring3-.*");
+  ark=addDependencies(ark,dependencies);
   ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
   ark=ark.addPackages(true,"org.springframework.boot.loader");
   ark=ark.addPackages(true,"org.jboss.shrinkwrap");
-  return ClassPath.builder().add(ark).build();
+  ark=ark.addPackages(true,"org.apache.camel.converter.myconverter");
+  ark=ark.addPackages(true,"org.apache.camel.osgi.test");
+  ClassPath.Builder external=ClassPath.builder().add(ark);
+  external.addSystemProperty("javax.xml.accessExternalDTD","all");
+  external.addSystemProperty("javax.xml.accessExternalSchema","all");
+  if (config.getUnitTestEnabled()) {
+    external.addSystemProperty("container.user.dir",new File(config.getModuleBasePath()).getCanonicalPath());
+    external.addSystemProperty("container.test.resources.dir",new File(config.getModuleBasePath()).getCanonicalPath() + "/target/test-classes");
+  }
+  for (  Map.Entry<String,String> e : config.getSystemProperties().entrySet()) {
+    external.addSystemProperty(e.getKey(),e.getValue());
+  }
+  return external.build();
 }

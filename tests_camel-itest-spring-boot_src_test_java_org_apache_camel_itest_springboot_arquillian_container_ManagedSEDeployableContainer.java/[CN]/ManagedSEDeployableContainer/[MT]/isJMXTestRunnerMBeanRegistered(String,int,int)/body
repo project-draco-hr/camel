@@ -1,0 +1,17 @@
+{
+  final String jmxServiceUrl="service:jmx:rmi:///jndi/rmi://" + host + ":"+ port+ "/jmxrmi";
+  try (JMXConnector jmxc=JMXConnectorFactory.connect(new JMXServiceURL(jmxServiceUrl),null)){
+    final MBeanServerConnection mbsc=jmxc.getMBeanServerConnection();
+    return new Await(waitTime,new Callable<Boolean>(){
+      @Override public Boolean call() throws Exception {
+        mbsc.getObjectInstance(new ObjectName(JMXTestRunnerMBean.OBJECT_NAME));
+        LOGGER.fine("JMXTestRunnerMBean registered with the remote MBean server at: " + jmxServiceUrl);
+        return true;
+      }
+    }
+).start();
+  }
+ catch (  IOException e) {
+    throw new DeploymentException("Could not verify JMXTestRunnerMBean registration",e);
+  }
+}

@@ -1,0 +1,52 @@
+{
+  LOGGER.info("Deploying " + archive.getName());
+  materializedFiles.clear();
+  classpathDependencies.clear();
+  if (ClassPath.isRepresentedBy(archive)) {
+    for (    Node child : archive.get(ClassPath.ROOT_ARCHIVE_PATH).getChildren()) {
+      Asset asset=child.getAsset();
+      if (asset instanceof ArchiveAsset) {
+        Archive<?> assetArchive=((ArchiveAsset)asset).getArchive();
+        if (ClassPathDirectory.isRepresentedBy(assetArchive)) {
+          materializeDirectory(assetArchive);
+        }
+ else {
+          materializeArchive(assetArchive);
+        }
+      }
+    }
+  }
+ else {
+    materializeArchive(archive);
+  }
+  Properties systemProperties=getSystemProperties(archive);
+  readJarFilesFromDirectory();
+  addTestResourcesDirectory(systemProperties);
+  List<String> processCommand=buildProcessCommand(systemProperties);
+  logExecutedCommand(processCommand);
+  final ProcessBuilder processBuilder=new ProcessBuilder(processCommand);
+  String path=systemProperties.getProperty("container.user.dir");
+  if (path != null) {
+    processBuilder.directory(new File(path));
+  }
+  processBuilder.environment().put("JAVA_HOME",new File(System.getProperty(SYSPROP_KEY_JAVA_HOME)).getAbsolutePath());
+  processBuilder.redirectErrorStream(true);
+  processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+  processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+  try {
+    process=processBuilder.start();
+  }
+ catch (  final IOException e) {
+    throw new DeploymentException("Could not start process",e);
+  }
+  int finalWaitTime=debugModeEnabled ? (3 * waitTime) : waitTime;
+  if (!isServerStarted(host,port,finalWaitTime)) {
+    throw new DeploymentException("Child JVM process failed to start within " + finalWaitTime + " seconds.");
+  }
+  if (!isJMXTestRunnerMBeanRegistered(host,port,finalWaitTime)) {
+    throw new DeploymentException("JMXTestRunnerMBean not registered within " + finalWaitTime + " seconds.");
+  }
+  ProtocolMetaData protocolMetaData=new ProtocolMetaData();
+  protocolMetaData.addContext(new JMXContext(host,port));
+  return protocolMetaData;
+}

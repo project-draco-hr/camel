@@ -1,0 +1,33 @@
+{
+  final List<String> command=new ArrayList<String>();
+  final File javaHome=new File(System.getProperty(SYSPROP_KEY_JAVA_HOME));
+  command.add(javaHome.getAbsolutePath() + File.separator + "bin"+ File.separator+ "java");
+  command.add("-cp");
+  StringBuilder builder=new StringBuilder();
+  Set<File> classPathEntries=new HashSet<>(materializedFiles);
+  classPathEntries.addAll(classpathDependencies);
+  for (Iterator<File> iterator=classPathEntries.iterator(); iterator.hasNext(); ) {
+    builder.append(iterator.next().getPath());
+    if (iterator.hasNext()) {
+      builder.append(File.pathSeparator);
+    }
+  }
+  command.add(builder.toString());
+  command.add("-Dcom.sun.management.jmxremote");
+  command.add("-Dcom.sun.management.jmxremote.port=" + port);
+  command.add("-Dcom.sun.management.jmxremote.authenticate=false");
+  command.add("-Dcom.sun.management.jmxremote.ssl=false");
+  if (debugModeEnabled) {
+    command.add(DEBUG_AGENT_STRING);
+  }
+  for (  String option : additionalJavaOpts) {
+    command.add(option);
+  }
+  if (properties != null) {
+    for (    Map.Entry<Object,Object> entry : properties.entrySet()) {
+      addSystemProperty(command,entry.getKey().toString(),entry.getValue().toString());
+    }
+  }
+  command.add(SERVER_MAIN_CLASS_FQN);
+  return command;
+}

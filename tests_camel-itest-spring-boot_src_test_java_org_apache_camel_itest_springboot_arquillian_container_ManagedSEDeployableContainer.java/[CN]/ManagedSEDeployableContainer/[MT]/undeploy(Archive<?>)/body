@@ -1,0 +1,28 @@
+{
+  LOGGER.info("Undeploying " + archive.getName());
+  if (!keepDeploymentArchives) {
+    for (    File materializedFile : materializedFiles) {
+      if (materializedFile.isDirectory()) {
+        try {
+          FileDeploymentUtils.deleteRecursively(materializedFile.toPath());
+        }
+ catch (        IOException e) {
+          LOGGER.warning("Could not delete materialized directory: " + materializedFile);
+        }
+      }
+ else {
+        materializedFile.delete();
+      }
+    }
+  }
+  if (process != null) {
+    process.destroy();
+    try {
+      process.waitFor();
+    }
+ catch (    final InterruptedException e) {
+      Thread.interrupted();
+      throw new RuntimeException("Interrupted while awaiting server daemon process termination",e);
+    }
+  }
+}
