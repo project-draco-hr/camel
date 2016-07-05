@@ -1,8 +1,20 @@
 {
-  if (getConfiguration().isMultiPartUpload()) {
-    processMultiPart(exchange);
+  S3Operations operation=determineOperation(exchange);
+  if (ObjectHelper.isEmpty(operation)) {
+    if (getConfiguration().isMultiPartUpload()) {
+      processMultiPart(exchange);
+    }
+ else {
+      processSingleOp(exchange);
+    }
   }
  else {
-    processSingleOp(exchange);
-  }
+switch (operation) {
+case copyObject:
+      copyObject(getEndpoint().getS3Client(),exchange);
+    break;
+default :
+  throw new IllegalArgumentException("Unsupported operation");
+}
+}
 }
