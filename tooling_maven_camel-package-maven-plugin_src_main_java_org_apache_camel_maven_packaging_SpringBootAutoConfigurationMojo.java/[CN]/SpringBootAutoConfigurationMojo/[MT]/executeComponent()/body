@@ -5,13 +5,29 @@
   if (!componentNames.isEmpty()) {
     getLog().debug("Found " + componentNames.size() + " components");
     for (    String componentName : componentNames) {
+      boolean skip=false;
+      for (      String name : SKIP_COMPONENTS) {
+        if (name.equals(componentName)) {
+          skip=true;
+        }
+      }
+      if (skip) {
+        continue;
+      }
+      String overrideComponentName=null;
+      for (      String name : MAIL_COMPONENTS) {
+        if (name.equals(componentName)) {
+          overrideComponentName="mail";
+          break;
+        }
+      }
       String json=loadComponentJson(jsonFiles,componentName);
       if (json != null) {
         ComponentModel model=generateComponentModel(componentName,json);
         if (!model.getComponentOptions().isEmpty()) {
           int pos=model.getJavaType().lastIndexOf(".");
           String pkg=model.getJavaType().substring(0,pos) + ".springboot";
-          createComponentConfigurationSource(pkg,model);
+          createComponentConfigurationSource(pkg,model,overrideComponentName);
           createComponentAutoConfigurationSource(pkg,model);
           createComponentSpringFactorySource(pkg,model);
         }
