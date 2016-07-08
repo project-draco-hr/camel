@@ -1,0 +1,10 @@
+{
+  LOG.info("Starting the LUMBERJACK server (host={}, port={}).",host,port);
+  bossGroup=new NioEventLoopGroup(1);
+  workerGroup=new NioEventLoopGroup(WORKER_THREADS);
+  executorService=new DefaultEventExecutorGroup(WORKER_THREADS,threadFactory);
+  ChannelHandler initializer=new LumberjackChannelInitializer(sslContext,executorService,messageProcessor);
+  ServerBootstrap serverBootstrap=new ServerBootstrap().group(bossGroup,workerGroup).channel(NioServerSocketChannel.class).option(ChannelOption.SO_BACKLOG,100).childHandler(initializer);
+  channel=serverBootstrap.bind(host,port).sync().channel();
+  LOG.info("LUMBERJACK server is started (host={}, port={}).",host,port);
+}

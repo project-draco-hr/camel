@@ -1,0 +1,27 @@
+{
+  if (!in.isReadable(FRAME_COMPRESS_HEADER_LENGTH)) {
+    return false;
+  }
+  int compressedPayloadLength=in.readInt();
+  if (!in.isReadable(compressedPayloadLength)) {
+    return false;
+  }
+  Inflater inflater=new Inflater();
+  if (in.hasArray()) {
+    inflater.setInput(in.array(),in.arrayOffset() + in.readerIndex(),compressedPayloadLength);
+    in.skipBytes(compressedPayloadLength);
+  }
+ else {
+    byte[] array=new byte[compressedPayloadLength];
+    in.readBytes(array);
+    inflater.setInput(array);
+  }
+  while (!inflater.finished()) {
+    ByteBuf decompressed=ctx.alloc().heapBuffer(1024,1024);
+    byte[] outArray=decompressed.array();
+    int count=inflater.inflate(outArray,decompressed.arrayOffset(),decompressed.writableBytes());
+    decompressed.writerIndex(count);
+    out.add(decompressed);
+  }
+  return true;
+}

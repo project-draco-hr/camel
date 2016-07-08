@@ -1,0 +1,21 @@
+{
+  if (!in.isReadable(FRAME_DATA_HEADER_LENGTH)) {
+    return false;
+  }
+  int sequenceNumber=in.readInt();
+  int entriesCount=in.readInt();
+  Map<String,String> dataMessage=new LinkedHashMap<>();
+  while (entriesCount-- > 0) {
+    String key=readLengthPrefixedString(in);
+    if (key == null) {
+      return false;
+    }
+    String value=readLengthPrefixedString(in);
+    if (value == null) {
+      return false;
+    }
+    dataMessage.put(key,value);
+  }
+  out.add(new LumberjackMessage(sequenceNumber,dataMessage));
+  return true;
+}

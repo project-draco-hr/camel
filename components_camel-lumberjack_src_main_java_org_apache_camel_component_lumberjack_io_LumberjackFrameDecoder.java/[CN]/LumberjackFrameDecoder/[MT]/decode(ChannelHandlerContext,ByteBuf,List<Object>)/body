@@ -1,0 +1,35 @@
+{
+  in.markReaderIndex();
+  boolean frameDecoded=false;
+  try {
+    if (!in.isReadable(FRAME_HEADER_LENGTH)) {
+      return;
+    }
+    int frameVersion=in.readUnsignedByte();
+    sessionHandler.versionRead(frameVersion);
+    int frameType=in.readUnsignedByte();
+    LOG.debug("Received a lumberjack frame of type {}",(char)frameType);
+switch (frameType) {
+case TYPE_JSON:
+      frameDecoded=handleJsonFrame(in,out);
+    break;
+case TYPE_DATA:
+  frameDecoded=handleDataFrame(in,out);
+break;
+case TYPE_WINDOW:
+frameDecoded=handleWindowFrame(in);
+break;
+case TYPE_COMPRESS:
+frameDecoded=handleCompressedFrame(ctx,in,out);
+break;
+default :
+throw new RuntimeException("Unsupported frame type=" + frameType);
+}
+}
+  finally {
+if (!frameDecoded) {
+LOG.debug("Not enough data to decode a complete frame, retry when more data is available. Reader index was {}",in.readerIndex());
+in.resetReaderIndex();
+}
+}
+}
