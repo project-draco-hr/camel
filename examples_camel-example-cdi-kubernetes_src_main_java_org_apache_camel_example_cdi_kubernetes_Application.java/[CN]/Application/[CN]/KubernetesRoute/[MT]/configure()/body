@@ -1,0 +1,14 @@
+{
+  from("timer:stream?repeatCount=1").to("kubernetes://{{kubernetes-master-url}}?oauthToken={{kubernetes-oauth-token}}&category=pods&operation=listPods").process(new Processor(){
+    @Override public void process(    Exchange exchange) throws Exception {
+      List<Pod> list=exchange.getIn().getBody(List.class);
+      System.out.println("We currently have " + list.size() + " pods");
+      Iterator<Pod> it=list.iterator();
+      while (it.hasNext()) {
+        Pod pod=it.next();
+        System.out.println("Pod name " + pod.getMetadata().getName() + " with status "+ pod.getStatus().getPhase());
+      }
+    }
+  }
+);
+}
