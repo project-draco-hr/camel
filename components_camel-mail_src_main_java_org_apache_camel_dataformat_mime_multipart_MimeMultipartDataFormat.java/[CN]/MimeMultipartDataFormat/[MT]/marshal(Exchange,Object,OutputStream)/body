@@ -9,17 +9,23 @@
     BodyPart part=new MimeBodyPart();
     writeBodyPart(bodyContent,part,contentType);
     mp.addBodyPart(part);
-    for (    Map.Entry<String,DataHandler> entry : exchange.getIn().getAttachments().entrySet()) {
+    for (    Map.Entry<String,Attachment> entry : exchange.getIn().getAttachmentObjects().entrySet()) {
       String attachmentFilename=entry.getKey();
-      DataHandler handler=entry.getValue();
+      Attachment attachment=entry.getValue();
       part=new MimeBodyPart();
-      part.setDataHandler(handler);
+      part.setDataHandler(attachment.getDataHandler());
       part.setFileName(MimeUtility.encodeText(attachmentFilename,"UTF-8",null));
-      String ct=handler.getContentType();
+      String ct=attachment.getDataHandler().getContentType();
       contentType=new ContentType(ct);
       part.setHeader(CONTENT_TYPE,ct);
       if (!contentType.match("text/*") && binaryContent) {
         part.setHeader(CONTENT_TRANSFER_ENCODING,"binary");
+      }
+      for (      String headerName : attachment.getHeaderNames()) {
+        List<String> values=attachment.getHeaderAsList(headerName);
+        for (        String value : values) {
+          part.setHeader(headerName,value);
+        }
       }
       mp.addBodyPart(part);
       exchange.getOut().removeAttachment(attachmentFilename);

@@ -62,11 +62,16 @@
   }
   Set<Attachment> attachments=null;
   boolean isXop=Boolean.valueOf(camelExchange.getProperty(Message.MTOM_ENABLED,String.class));
-  for (  Map.Entry<String,DataHandler> entry : camelExchange.getOut().getAttachments().entrySet()) {
+  for (  Map.Entry<String,org.apache.camel.Attachment> entry : camelExchange.getOut().getAttachmentObjects().entrySet()) {
     if (attachments == null) {
       attachments=new HashSet<Attachment>();
     }
-    AttachmentImpl attachment=new AttachmentImpl(entry.getKey(),entry.getValue());
+    AttachmentImpl attachment=new AttachmentImpl(entry.getKey());
+    org.apache.camel.Attachment camelAttachment=entry.getValue();
+    attachment.setDataHandler(camelAttachment.getDataHandler());
+    for (    String name : camelAttachment.getHeaderNames()) {
+      attachment.setHeader(name,camelAttachment.getHeader(name));
+    }
     attachment.setXOP(isXop);
     attachments.add(attachment);
   }

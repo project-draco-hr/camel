@@ -11,11 +11,16 @@
   boolean isXop=Boolean.valueOf(camelExchange.getProperty(Message.MTOM_ENABLED,String.class));
   DataFormat dataFormat=camelExchange.getProperty(CxfConstants.DATA_FORMAT_PROPERTY,DataFormat.class);
   if (!DataFormat.CXF_MESSAGE.equals(dataFormat)) {
-    for (    Map.Entry<String,DataHandler> entry : camelExchange.getIn().getAttachments().entrySet()) {
+    for (    Map.Entry<String,org.apache.camel.Attachment> entry : camelExchange.getIn().getAttachmentObjects().entrySet()) {
       if (attachments == null) {
         attachments=new HashSet<Attachment>();
       }
-      AttachmentImpl attachment=new AttachmentImpl(entry.getKey(),entry.getValue());
+      AttachmentImpl attachment=new AttachmentImpl(entry.getKey());
+      org.apache.camel.Attachment camelAttachment=entry.getValue();
+      attachment.setDataHandler(camelAttachment.getDataHandler());
+      for (      String name : camelAttachment.getHeaderNames()) {
+        attachment.setHeader(name,camelAttachment.getHeader(name));
+      }
       attachment.setXOP(isXop);
       attachments.add(attachment);
     }

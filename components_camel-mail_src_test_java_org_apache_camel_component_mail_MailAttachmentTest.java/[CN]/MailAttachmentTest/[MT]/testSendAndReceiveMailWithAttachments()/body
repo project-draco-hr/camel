@@ -4,7 +4,9 @@
   Exchange exchange=endpoint.createExchange();
   Message in=exchange.getIn();
   in.setBody("Hello World");
-  in.addAttachment("logo.jpeg",new DataHandler(new FileDataSource("src/test/data/logo.jpeg")));
+  DefaultAttachment att=new DefaultAttachment(new FileDataSource("src/test/data/logo.jpeg"));
+  att.addHeader("Content-Description","some sample content");
+  in.addAttachmentObject("logo.jpeg",att);
   Producer producer=endpoint.createProducer();
   producer.start();
   producer.process(exchange);
@@ -14,14 +16,16 @@
   Exchange out=mock.assertExchangeReceived(0);
   mock.assertIsSatisfied();
   assertEquals("Hello World",out.getIn().getBody(String.class));
-  Map<String,DataHandler> attachments=out.getIn().getAttachments();
+  Map<String,Attachment> attachments=out.getIn().getAttachmentObjects();
   assertNotNull("Should have attachments",attachments);
   assertEquals(1,attachments.size());
-  DataHandler handler=out.getIn().getAttachment("logo.jpeg");
+  Attachment attachment=out.getIn().getAttachmentObject("logo.jpeg");
+  DataHandler handler=attachment.getDataHandler();
   assertNotNull("The logo should be there",handler);
   boolean match1="image/jpeg; name=logo.jpeg".equals(handler.getContentType());
   boolean match2="application/octet-stream; name=logo.jpeg".equals(handler.getContentType());
   assertTrue("Should match 1 or 2",match1 || match2);
   assertEquals("Handler name should be the file name","logo.jpeg",handler.getName());
+  assertEquals("some sample content",attachment.getHeader("content-description"));
   producer.stop();
 }

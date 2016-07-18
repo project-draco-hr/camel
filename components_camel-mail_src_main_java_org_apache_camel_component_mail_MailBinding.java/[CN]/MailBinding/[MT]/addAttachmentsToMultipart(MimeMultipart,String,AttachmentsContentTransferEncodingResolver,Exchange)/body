@@ -1,18 +1,24 @@
 {
   LOG.trace("Adding attachments +++ start +++");
   int i=0;
-  for (  Map.Entry<String,DataHandler> entry : exchange.getIn().getAttachments().entrySet()) {
+  for (  Map.Entry<String,Attachment> entry : exchange.getIn().getAttachmentObjects().entrySet()) {
     String attachmentFilename=entry.getKey();
-    DataHandler handler=entry.getValue();
+    Attachment attachment=entry.getValue();
     if (LOG.isTraceEnabled()) {
       LOG.trace("Attachment #{}: Disposition: {}",i,partDisposition);
-      LOG.trace("Attachment #{}: DataHandler: {}",i,handler);
+      LOG.trace("Attachment #{}: DataHandler: {}",i,attachment.getDataHandler());
       LOG.trace("Attachment #{}: FileName: {}",i,attachmentFilename);
     }
-    if (handler != null) {
-      if (shouldAddAttachment(exchange,attachmentFilename,handler)) {
+    if (attachment != null) {
+      if (shouldAddAttachment(exchange,attachmentFilename,attachment.getDataHandler())) {
         BodyPart messageBodyPart=new MimeBodyPart();
-        messageBodyPart.setDataHandler(handler);
+        messageBodyPart.setDataHandler(attachment.getDataHandler());
+        for (        String headerName : attachment.getHeaderNames()) {
+          List<String> values=attachment.getHeaderAsList(headerName);
+          for (          String value : values) {
+            messageBodyPart.setHeader(headerName,value);
+          }
+        }
         if (attachmentFilename.toLowerCase().startsWith("cid:")) {
           messageBodyPart.addHeader("Content-ID","<" + attachmentFilename.substring(4) + ">");
           messageBodyPart.setFileName(attachmentFilename.substring(4));

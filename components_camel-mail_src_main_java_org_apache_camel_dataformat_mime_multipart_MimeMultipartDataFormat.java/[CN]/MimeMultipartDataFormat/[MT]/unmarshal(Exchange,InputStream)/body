@@ -58,7 +58,13 @@
     content=mp.getBodyPart(0);
     for (int i=1; i < mp.getCount(); i++) {
       BodyPart bp=mp.getBodyPart(i);
-      camelMessage.addAttachment(getAttachmentKey(bp),bp.getDataHandler());
+      DefaultAttachment camelAttachment=new DefaultAttachment(bp.getDataHandler());
+      @SuppressWarnings("unchecked") Enumeration<Header> headers=bp.getAllHeaders();
+      while (headers.hasMoreElements()) {
+        Header header=headers.nextElement();
+        camelAttachment.addHeader(header.getName(),header.getValue());
+      }
+      camelMessage.addAttachmentObject(getAttachmentKey(bp),camelAttachment);
     }
   }
   if (content instanceof BodyPart) {

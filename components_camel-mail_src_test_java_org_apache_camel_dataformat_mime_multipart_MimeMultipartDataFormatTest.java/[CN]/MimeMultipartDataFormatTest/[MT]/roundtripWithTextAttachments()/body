@@ -5,7 +5,10 @@
   in.setBody("Body text");
   in.setHeader(Exchange.CONTENT_TYPE,"text/plain;charset=iso8859-1;other-parameter=true");
   in.setHeader(Exchange.CONTENT_ENCODING,"UTF8");
-  addAttachment(attContentType,attText,attFileName);
+  Map<String,String> headers=new HashMap<String,String>();
+  headers.put("Content-Description","Sample Attachment Data");
+  headers.put("X-AdditionalData","additional data");
+  addAttachment(attContentType,attText,attFileName,headers);
   Exchange result=template.send("direct:roundtrip",exchange);
   Message out=result.getOut();
   assertEquals("Body text",out.getBody(String.class));
@@ -14,11 +17,14 @@
   assertTrue(out.hasAttachments());
   assertEquals(1,out.getAttachmentNames().size());
   assertThat(out.getAttachmentNames(),hasItem(attFileName));
-  DataHandler dh=out.getAttachment(attFileName);
+  Attachment att=out.getAttachmentObject(attFileName);
+  DataHandler dh=att.getDataHandler();
   assertNotNull(dh);
   assertEquals(attContentType,dh.getContentType());
   InputStream is=dh.getInputStream();
   ByteArrayOutputStream os=new ByteArrayOutputStream();
   IOHelper.copyAndCloseInput(is,os);
   assertEquals(attText,new String(os.toByteArray()));
+  assertEquals("Sample Attachment Data",att.getHeader("content-description"));
+  assertEquals("additional data",att.getHeader("X-AdditionalData"));
 }

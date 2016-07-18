@@ -3,7 +3,13 @@
     Collection<Part> parts=request.getParts();
     for (    Part part : parts) {
       DataSource ds=new PartDataSource(part);
-      message.addAttachment(part.getName(),new DataHandler(ds));
+      Attachment attachment=new DefaultAttachment(ds);
+      for (      String headerName : part.getHeaderNames()) {
+        for (        String headerValue : part.getHeaders(headerName)) {
+          attachment.addHeader(headerName,headerValue);
+        }
+      }
+      message.addAttachmentObject(part.getName(),attachment);
     }
   }
  catch (  Exception e) {
