@@ -30,10 +30,19 @@
       }
     }
   }
-  Series<Header> restletHeaders=(Series)request.getAttributes().get(HeaderConstants.ATTRIBUTE_HEADERS);
+  Series<Header> restletHeaders=exchange.getIn().getHeader(HeaderConstants.ATTRIBUTE_HEADERS,Series.class);
   if (restletHeaders == null) {
     restletHeaders=new Series<>(Header.class);
     request.getAttributes().put(HeaderConstants.ATTRIBUTE_HEADERS,restletHeaders);
+  }
+ else {
+    for (    String name : restletHeaders.getNames()) {
+      if (headerFilterStrategy.applyFilterToCamelHeaders(name,restletHeaders.getValues(name),exchange)) {
+        restletHeaders.removeAll(name);
+      }
+    }
+    request.getAttributes().put(HeaderConstants.ATTRIBUTE_HEADERS,restletHeaders);
+    exchange.getIn().removeHeader(HeaderConstants.ATTRIBUTE_HEADERS);
   }
   String login=exchange.getIn().getHeader(RestletConstants.RESTLET_LOGIN,String.class);
   String password=exchange.getIn().getHeader(RestletConstants.RESTLET_PASSWORD,String.class);
