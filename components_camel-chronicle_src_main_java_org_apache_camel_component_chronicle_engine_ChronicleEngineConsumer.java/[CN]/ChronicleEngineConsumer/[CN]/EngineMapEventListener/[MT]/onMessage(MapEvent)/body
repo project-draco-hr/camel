@@ -1,0 +1,21 @@
+{
+  if (filteredEvents != null && filteredEvents.contains(event.getClass())) {
+    return;
+  }
+  final Exchange exchange=getEndpoint().createExchange();
+  final Message message=exchange.getIn();
+  message.setHeader(ChronicleEngineConstants.PATH,path);
+  message.setHeader(ChronicleEngineConstants.ASSET_NAME,event.assetName());
+  message.setHeader(ChronicleEngineConstants.MAP_EVENT_TYPE,ChronicleEngineMapEventType.fromEvent(event));
+  message.setHeader(ChronicleEngineConstants.KEY,event.getKey());
+  message.setBody(event.getValue());
+  if (event.oldValue() != null) {
+    message.setHeader(ChronicleEngineConstants.OLD_VALUE,event.oldValue());
+  }
+  try {
+    getProcessor().process(exchange);
+  }
+ catch (  Exception e) {
+    throw new RuntimeCamelException(e);
+  }
+}
