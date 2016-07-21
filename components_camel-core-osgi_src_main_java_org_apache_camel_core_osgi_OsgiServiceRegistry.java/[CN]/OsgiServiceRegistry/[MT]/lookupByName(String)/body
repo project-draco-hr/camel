@@ -1,10 +1,21 @@
 {
   Object service=null;
-  if (service == null) {
-    ServiceReference<?> sr=bundleContext.getServiceReference(name);
-    if (sr != null) {
-      serviceReferenceQueue.add(sr);
-      service=bundleContext.getService(sr);
+  ServiceReference<?> sr=bundleContext.getServiceReference(name);
+  if (sr != null) {
+    serviceReferenceQueue.add(sr);
+    service=bundleContext.getService(sr);
+  }
+ else {
+    try {
+      ServiceReference<?>[] refs=bundleContext.getServiceReferences((String)null,"(" + Constants.SERVICE_PID + "="+ name+ ")");
+      if (refs != null && refs.length > 0) {
+        sr=refs[0];
+        serviceReferenceQueue.add(sr);
+        service=bundleContext.getService(sr);
+      }
+    }
+ catch (    InvalidSyntaxException ex) {
+      LOG.error("Invalid filter to lookup bean",ex);
     }
   }
   return service;
