@@ -1,22 +1,23 @@
 {
   Object service=null;
   ServiceReference<?> sr=bundleContext.getServiceReference(name);
-  if (sr != null) {
-    serviceReferenceQueue.add(sr);
-    service=bundleContext.getService(sr);
-  }
- else {
+  if (sr == null) {
+    String filterExpression="(" + Constants.SERVICE_PID + "="+ name+ ")";
     try {
-      ServiceReference<?>[] refs=bundleContext.getServiceReferences((String)null,"(" + Constants.SERVICE_PID + "="+ name+ ")");
+      ServiceReference<?>[] refs=bundleContext.getServiceReferences((String)null,filterExpression);
       if (refs != null && refs.length > 0) {
         sr=refs[0];
-        serviceReferenceQueue.add(sr);
-        service=bundleContext.getService(sr);
       }
     }
  catch (    InvalidSyntaxException ex) {
-      LOG.error("Invalid filter to lookup bean",ex);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Invalid OSGi service reference filter, skipped lookup by service.pid. Filter expression: " + filterExpression,ex);
+      }
     }
+  }
+  if (sr != null) {
+    serviceReferenceQueue.add(sr);
+    service=bundleContext.getService(sr);
   }
   return service;
 }
