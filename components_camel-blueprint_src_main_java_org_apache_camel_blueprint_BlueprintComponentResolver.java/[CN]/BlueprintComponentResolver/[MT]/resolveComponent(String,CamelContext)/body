@@ -1,23 +1,16 @@
 {
-  try {
-    Object bean=context.getRegistry().lookupByName(name);
-    if (bean instanceof Component) {
-      LOG.debug("Found component: {} in registry: {}",name,bean);
-      return (Component)bean;
-    }
+  Component componentReg=ResolverHelper.lookupComponentInRegistryWithFallback(context,name,new ResolverHelper.LookupExceptionHandler(){
+    @Override public void handleException(    Exception e,    Logger log,    String name){
+      if (getException(NoSuchComponentException.class,e) != null) {
+      }
  else {
-      Component component=CamelContextHelper.convertTo(context,Component.class,bean);
-      if (component != null) {
-        return component;
+        LOG.trace("Ignored error looking up bean: " + name + " due: "+ e.getMessage(),e);
       }
     }
   }
- catch (  Exception e) {
-    if (getException(NoSuchComponentException.class,e) != null) {
-    }
- else {
-      LOG.trace("Ignored error looking up bean: " + name + " due: "+ e.getMessage(),e);
-    }
+);
+  if (componentReg != null) {
+    return componentReg;
   }
   try {
     Object bean=context.getRegistry().lookupByName(".camelBlueprint.componentResolver." + name);
