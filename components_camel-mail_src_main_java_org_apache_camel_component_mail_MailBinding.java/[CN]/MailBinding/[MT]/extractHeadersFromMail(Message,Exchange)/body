@@ -1,11 +1,24 @@
 {
-  Map<String,Object> answer=new HashMap<String,Object>();
+  Map<String,Object> answer=new TreeMap<String,Object>(String.CASE_INSENSITIVE_ORDER);
   Enumeration<?> names=mailMessage.getAllHeaders();
   while (names.hasMoreElements()) {
     Header header=(Header)names.nextElement();
     String value=header.getValue();
     if (headerFilterStrategy != null && !headerFilterStrategy.applyFilterToExternalHeaders(header.getName(),value,exchange)) {
       CollectionHelper.appendValue(answer,header.getName(),value);
+    }
+  }
+  if (((MailEndpoint)exchange.getFromEndpoint()).getConfiguration().isMapMailMessage()) {
+    Object content=mailMessage.getContent();
+    if (content instanceof MimeMultipart) {
+      MimeMultipart multipart=(MimeMultipart)content;
+      int size=multipart.getCount();
+      for (int i=0; i < size; i++) {
+        BodyPart part=multipart.getBodyPart(i);
+        if (part.getContentType().toLowerCase().startsWith("text")) {
+          answer.put(Exchange.CONTENT_TYPE,part.getContentType());
+        }
+      }
     }
   }
   return answer;
