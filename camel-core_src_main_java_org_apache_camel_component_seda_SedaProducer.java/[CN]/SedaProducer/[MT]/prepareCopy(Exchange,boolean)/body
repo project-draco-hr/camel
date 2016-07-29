@@ -1,5 +1,18 @@
 {
-  Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,handover,true);
+  Exchange copy=ExchangeHelper.createCorrelatedCopy(exchange,false,true);
+  if (handover) {
+    List<Synchronization> completions=exchange.handoverCompletions();
+    if (completions != null) {
+      for (      Synchronization sync : completions) {
+        if (sync.getClass().getName().contains("RestBindingMarshalOnCompletion")) {
+          exchange.addOnCompletion(sync);
+        }
+ else {
+          copy.addOnCompletion(sync);
+        }
+      }
+    }
+  }
   copy.setFromEndpoint(endpoint);
   return copy;
 }
