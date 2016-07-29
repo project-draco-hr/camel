@@ -3,7 +3,12 @@
   String messageJobName=jobParameters.getString(SpringBatchConstants.JOB_NAME);
   Job job2run=this.job;
   if (messageJobName != null) {
-    job2run=CamelContextHelper.mandatoryLookup(getEndpoint().getCamelContext(),messageJobName,Job.class);
+    if (jobRegistry != null) {
+      job2run=jobRegistry.getJob(messageJobName);
+    }
+ else {
+      job2run=CamelContextHelper.mandatoryLookup(getEndpoint().getCamelContext(),messageJobName,Job.class);
+    }
   }
   if (job2run == null) {
     exchange.setException(new CamelExchangeException("jobName was not specified in the endpoint construction " + " and header " + SpringBatchConstants.JOB_NAME + " could not be found",exchange));
