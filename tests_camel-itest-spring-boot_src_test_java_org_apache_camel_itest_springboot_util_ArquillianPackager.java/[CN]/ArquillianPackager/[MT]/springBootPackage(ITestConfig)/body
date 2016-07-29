@@ -6,13 +6,16 @@
   Domain domain=ShrinkWrap.createDomain(conf);
   JavaArchive ark=domain.getArchiveFactory().create(JavaArchive.class,"test.jar");
   ark=ark.addAsManifestResource("BOOT-MANIFEST.MF","MANIFEST.MF");
+  ark=ark.addAsDirectories(LIB_FOLDER);
+  if (!CLASSES_FOLDER.equals("")) {
+    ark=ark.addAsDirectories(CLASSES_FOLDER);
+  }
   if (config.getUseCustomLog()) {
-    ark=ark.addAsResource("spring-logback.xml");
+    ark=ark.addAsResource("spring-logback.xml",CLASSES_FOLDER + "/spring-logback.xml");
   }
   for (  Map.Entry<String,String> res : config.getResources().entrySet()) {
-    ark=ark.addAsResource(res.getKey(),res.getValue());
+    ark=ark.addAsResource(res.getKey(),CLASSES_FOLDER + "/" + res.getValue());
   }
-  ark=ark.addAsDirectories("/lib");
   String version=System.getProperty("version_org.apache.camel:camel-core");
   if (version == null) {
     config.getMavenVersion();
@@ -93,11 +96,10 @@
   excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
   excludeDependencyRegex(dependencies,"^camel-test-spring3-.*");
   ark=addDependencies(ark,dependencies);
-  ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
-  ark=ark.addPackages(true,"org.springframework.boot.loader");
   ark=ark.addPackages(true,"org.jboss.shrinkwrap");
-  ark=ark.addPackages(true,"org.apache.camel.converter.myconverter");
-  ark=ark.addPackages(true,"org.apache.camel.osgi.test");
+  ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
+  ark=addSpringbootPackage(ark,"org.apache.camel.itest.springboot");
+  ark=ark.addPackages(true,"org.springframework.boot.loader");
   ClassPath.Builder external=ClassPath.builder().add(ark);
   external.addSystemProperty("javax.xml.accessExternalDTD","all");
   external.addSystemProperty("javax.xml.accessExternalSchema","all");

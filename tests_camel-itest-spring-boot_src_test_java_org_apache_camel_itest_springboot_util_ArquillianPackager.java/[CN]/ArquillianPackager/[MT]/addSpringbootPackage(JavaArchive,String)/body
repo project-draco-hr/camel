@@ -1,0 +1,19 @@
+{
+  Iterable<ClassLoader> classLoaders=Collections.singleton(Thread.currentThread().getContextClassLoader());
+  for (  String packageName : packageNames) {
+    for (    final ClassLoader classLoader : classLoaders) {
+      final URLPackageScanner.Callback callback=new URLPackageScanner.Callback(){
+        @Override public void classFound(        String className){
+          ArchivePath classNamePath=AssetUtil.getFullPathForClassResource(className);
+          Asset asset=new ClassLoaderAsset(classNamePath.get().substring(1),classLoader);
+          ArchivePath location=new BasicPath(CLASSES_FOLDER + "/",classNamePath);
+          ark.add(asset,location);
+        }
+      }
+;
+      final URLPackageScanner scanner=URLPackageScanner.newInstance(true,classLoader,callback,packageName);
+      scanner.scanPackage();
+    }
+  }
+  return ark;
+}
