@@ -1,25 +1,12 @@
 {
-  Object json=exchange.getIn().getBody();
-  if (json instanceof GenericFile) {
-    GenericFile<?> genericFile=(GenericFile<?>)json;
-    if (genericFile.getCharset() != null) {
-      InputStream inputStream=new FileInputStream((File)genericFile.getFile());
-      return path.read(inputStream,genericFile.getCharset(),configuration);
-    }
-  }
-  if (json instanceof String) {
-    String str=(String)json;
-    return path.read(str,configuration);
+  if (path == null) {
+    Expression exp=exchange.getContext().resolveLanguage("simple").createExpression(expression);
+    String text=exp.evaluate(exchange,String.class);
+    JsonPath path=JsonPath.compile(text);
+    LOG.debug("Compiled dynamic JsonPath: {}",expression);
+    return doRead(path,exchange);
   }
  else {
-    InputStream is=exchange.getIn().getMandatoryBody(InputStream.class);
-    String jsonEncoding=exchange.getIn().getHeader(JsonPathConstants.HEADER_JSON_ENCODING,String.class);
-    if (jsonEncoding != null) {
-      return path.read(is,jsonEncoding,configuration);
-    }
- else {
-      JsonStream jsonStream=new JsonStream(is);
-      return path.read(jsonStream,jsonStream.getEncoding().name(),configuration);
-    }
+    return doRead(path,exchange);
   }
 }

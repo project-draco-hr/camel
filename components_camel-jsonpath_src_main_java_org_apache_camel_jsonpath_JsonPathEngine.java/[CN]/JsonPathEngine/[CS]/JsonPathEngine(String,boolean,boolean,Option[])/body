@@ -1,4 +1,5 @@
 {
+  this.expression=expression;
   Defaults defaults=DefaultsImpl.INSTANCE;
   if (options != null) {
     Configuration.ConfigurationBuilder builder=Configuration.builder().jsonProvider(defaults.jsonProvider()).options(options);
@@ -14,5 +15,18 @@
     }
     this.configuration=builder.build();
   }
-  this.path=JsonPath.compile(expression);
+  boolean hasSimple=false;
+  if (allowSimple) {
+    Matcher matcher=SIMPLE_PATTERN.matcher(expression);
+    if (matcher.find()) {
+      hasSimple=true;
+    }
+  }
+  if (hasSimple) {
+    this.path=null;
+  }
+ else {
+    this.path=JsonPath.compile(expression);
+    LOG.debug("Compiled static JsonPath: {}",expression);
+  }
 }
