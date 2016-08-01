@@ -2,15 +2,17 @@
   if (!isRunAllowed() || !isStarted()) {
     throw new RejectedExecutionException(this + " is not started, but in state: " + getStatus().name());
   }
-  try {
-    timeout=beforePoll(timeout);
-    return queue.poll(timeout,TimeUnit.MILLISECONDS);
-  }
- catch (  InterruptedException e) {
-    handleInterruptedException(e);
-    return null;
-  }
+synchronized (this) {
+    try {
+      timeout=beforePoll(timeout);
+      return queue.poll(timeout,TimeUnit.MILLISECONDS);
+    }
+ catch (    InterruptedException e) {
+      handleInterruptedException(e);
+      return null;
+    }
  finally {
-    afterPoll();
+      afterPoll();
+    }
   }
 }
