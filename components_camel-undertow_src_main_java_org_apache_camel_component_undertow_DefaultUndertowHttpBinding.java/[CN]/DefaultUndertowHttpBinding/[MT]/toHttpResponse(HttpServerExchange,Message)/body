@@ -16,20 +16,31 @@
       }
     }
   }
+  Object body=message.getBody();
   Exception exception=message.getExchange().getException();
   if (exception != null) {
-    httpExchange.getResponseHeaders().put(Headers.CONTENT_TYPE,MimeMappings.DEFAULT_MIME_MAPPINGS.get("txt"));
-    StringWriter sw=new StringWriter();
-    PrintWriter pw=new PrintWriter(sw);
-    exception.printStackTrace(pw);
-    String exceptionMessage=sw.toString();
+    if (isTransferException()) {
+      ByteArrayOutputStream bos=new ByteArrayOutputStream();
+      ObjectOutputStream oos=new ObjectOutputStream(bos);
+      oos.writeObject(exception.getCause());
+      oos.flush();
+      IOHelper.close(oos,bos);
+      body=ByteBuffer.wrap(bos.toByteArray());
+      message.setHeader(Exchange.CONTENT_TYPE,"application/x-java-serialized-object");
+    }
+ else {
+      StringWriter sw=new StringWriter();
+      PrintWriter pw=new PrintWriter(sw);
+      exception.getCause().printStackTrace(pw);
+      body=ByteBuffer.wrap(sw.toString().getBytes());
+      message.setHeader(Exchange.CONTENT_TYPE,"text/plain");
+    }
     ExchangeHelper.setFailureHandled(message.getExchange());
-    return exceptionMessage;
   }
   String contentType=MessageHelper.getContentType(message);
   if (contentType != null) {
     httpExchange.getResponseHeaders().put(Headers.CONTENT_TYPE,contentType);
     LOG.trace("Content-Type: {}",contentType);
   }
-  return message.getBody();
+  return body;
 }
