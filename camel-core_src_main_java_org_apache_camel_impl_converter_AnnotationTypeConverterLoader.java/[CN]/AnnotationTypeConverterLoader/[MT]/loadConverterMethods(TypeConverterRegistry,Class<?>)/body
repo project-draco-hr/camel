@@ -28,6 +28,17 @@
     }
   }
  catch (  NoClassDefFoundError e) {
-    LOG.warn("Ignoring converter type: " + type.getCanonicalName() + " as a dependent class could not be found: "+ e,e);
+    boolean ignore=false;
+    if (ObjectHelper.hasAnnotation(type,Converter.class,true)) {
+      if (type.getAnnotation(Converter.class) != null) {
+        ignore=type.getAnnotation(Converter.class).ignoreOnLoadError();
+      }
+    }
+    if (ignore) {
+      LOG.debug("Ignoring converter type: " + type.getCanonicalName() + " as a dependent class could not be found: "+ e,e);
+    }
+ else {
+      LOG.warn("Ignoring converter type: " + type.getCanonicalName() + " as a dependent class could not be found: "+ e,e);
+    }
   }
 }
