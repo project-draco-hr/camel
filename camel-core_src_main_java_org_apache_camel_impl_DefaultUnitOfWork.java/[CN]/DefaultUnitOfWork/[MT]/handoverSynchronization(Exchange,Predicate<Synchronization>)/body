@@ -1,0 +1,22 @@
+{
+  if (synchronizations == null || synchronizations.isEmpty()) {
+    return;
+  }
+  Iterator<Synchronization> it=synchronizations.iterator();
+  while (it.hasNext()) {
+    Synchronization synchronization=it.next();
+    boolean handover=true;
+    if (synchronization instanceof SynchronizationVetoable) {
+      SynchronizationVetoable veto=(SynchronizationVetoable)synchronization;
+      handover=veto.allowHandover();
+    }
+    if (handover && (filter == null || filter.test(synchronization))) {
+      log.trace("Handover synchronization {} to: {}",synchronization,target);
+      target.addOnCompletion(synchronization);
+      it.remove();
+    }
+ else {
+      log.trace("Handover not allow for synchronization {}",synchronization);
+    }
+  }
+}
