@@ -1,3 +1,15 @@
 {
-  AsyncProcessorHelper.process(this,exchange);
+  final AsyncProcessorAwaitManager awaitManager=exchange.getContext().getAsyncProcessorAwaitManager();
+  final CountDownLatch latch=new CountDownLatch(1);
+  boolean sync=process(exchange,new AsyncCallback(){
+    public void done(    boolean doneSync){
+      if (!doneSync) {
+        awaitManager.countDown(exchange,latch);
+      }
+    }
+  }
+);
+  if (!sync) {
+    awaitManager.await(exchange,latch);
+  }
 }
