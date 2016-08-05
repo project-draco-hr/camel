@@ -1,9 +1,8 @@
 {
-  int processed=0;
   try {
     LOG.debug("Subscribing {} to topic {}",threadId,topicName);
     consumer.subscribe(Arrays.asList(topicName.split(",")));
-    if (endpoint.isSeekToBeginning()) {
+    if (endpoint.getConfiguration().isSeekToBeginning()) {
       LOG.debug("{} is seeking to the beginning on topic {}",threadId,topicName);
       consumer.poll(100);
       consumer.seekToBeginning(consumer.assignment());
@@ -24,7 +23,7 @@
             getExceptionHandler().handleException("Error during processing",exchange,e);
           }
         }
-        if (endpoint.isAutoCommitEnable() != null && !endpoint.isAutoCommitEnable()) {
+        if (endpoint.getConfiguration().isAutoCommitEnable() != null && !endpoint.getConfiguration().isAutoCommitEnable()) {
           long partitionLastoffset=partitionRecords.get(partitionRecords.size() - 1).offset();
           consumer.commitSync(Collections.singletonMap(partition,new OffsetAndMetadata(partitionLastoffset + 1)));
         }
@@ -32,8 +31,6 @@
     }
     LOG.debug("Unsubscribing {} from topic {}",threadId,topicName);
     consumer.unsubscribe();
-    LOG.debug("Closing {} ",threadId);
-    consumer.close();
   }
  catch (  InterruptException e) {
     getExceptionHandler().handleException("Interrupted while consuming " + threadId + " from kafka topic",e);
@@ -45,6 +42,6 @@ catch (  Exception e) {
   }
  finally {
     LOG.debug("Closing {} ",threadId);
-    consumer.close();
+    IOHelper.close(consumer);
   }
 }
