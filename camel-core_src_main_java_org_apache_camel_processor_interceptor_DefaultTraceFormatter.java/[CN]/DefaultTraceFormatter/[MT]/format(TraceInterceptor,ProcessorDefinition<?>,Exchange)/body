@@ -5,43 +5,82 @@
     out=exchange.getOut();
   }
   StringBuilder sb=new StringBuilder();
+  if (multiline) {
+    sb.append(SEPARATOR);
+  }
   sb.append(extractBreadCrumb(interceptor,node,exchange));
   if (showExchangePattern) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", Pattern:").append(exchange.getPattern());
   }
   if (showProperties && !exchange.getProperties().isEmpty()) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", Properties:").append(exchange.getProperties());
   }
   if (showHeaders && !in.getHeaders().isEmpty()) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", Headers:").append(in.getHeaders());
   }
   if (showBodyType) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", BodyType:").append(MessageHelper.getBodyTypeName(in));
   }
   if (showBody) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", Body:").append(MessageHelper.extractBodyForLogging(in,""));
   }
   if (showOutHeaders && out != null) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", OutHeaders:").append(out.getHeaders());
   }
   if (showOutBodyType && out != null) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", OutBodyType:").append(MessageHelper.getBodyTypeName(out));
   }
   if (showOutBody && out != null) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", OutBody:").append(MessageHelper.extractBodyForLogging(out,""));
   }
   if (showException && exchange.getException() != null) {
+    if (multiline) {
+      sb.append(SEPARATOR);
+    }
     sb.append(", Exception:").append(exchange.getException());
   }
-  String s=sb.toString();
-  s=s.replaceFirst("<<<,","<<<");
+  sb=new StringBuilder(sb.toString().replaceFirst("<<<,","<<<"));
   if (maxChars > 0) {
-    if (s.length() > maxChars) {
-      s=s.substring(0,maxChars) + "...";
-    }
-    return s;
-  }
+    StringBuilder answer=new StringBuilder();
+    for (    String s : sb.toString().split(SEPARATOR)) {
+      if (s != null) {
+        if (s.length() > maxChars) {
+          s=s.substring(0,maxChars);
+          answer.append(s).append("...");
+        }
  else {
-    return s;
+          answer.append(s);
+        }
+        if (multiline) {
+          answer.append(LS);
+        }
+      }
+    }
+    sb=answer;
   }
+  return sb.toString();
 }
