@@ -23,12 +23,14 @@
     if (namespacePrefixMapper != null) {
       marshaller.setProperty(namespacePrefixMapper.getRegistrationKey(),namespacePrefixMapper);
     }
-    CharacterEscapeHandler escapeHandlerObject=exchange.getProperty(JaxbConstants.JAXB_ESCAPE_HANDLER,CharacterEscapeHandler.class);
-    if (escapeHandlerObject == null) {
-      escapeHandlerObject=getEscapeHandler();
+    Map<String,Object> jaxbProviderPropertiesMap=exchange.getProperty(JaxbConstants.JAXB_PROVIDER_PROPERTIES,Map.class);
+    if (jaxbProviderPropertiesMap == null) {
+      jaxbProviderPropertiesMap=getJaxbProviderPropertiesMap();
     }
-    if (escapeHandlerObject != null) {
-      marshaller.setProperty(CharacterEscapeHandler.class.getName(),escapeHandlerObject);
+    if (jaxbProviderPropertiesMap != null) {
+      for (      Entry<String,Object> property : jaxbProviderPropertiesMap.entrySet()) {
+        marshaller.setProperty(property.getKey(),property.getValue());
+      }
     }
     marshal(exchange,graph,stream,marshaller);
   }
