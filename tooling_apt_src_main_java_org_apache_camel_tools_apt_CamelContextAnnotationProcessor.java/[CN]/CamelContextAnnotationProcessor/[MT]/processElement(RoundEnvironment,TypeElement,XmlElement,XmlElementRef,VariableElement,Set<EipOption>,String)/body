@@ -2,9 +2,9 @@
   Elements elementUtils=processingEnv.getElementUtils();
   String fieldName;
   fieldName=fieldElement.getSimpleName().toString();
-  if (element != null) {
+  if (element != null || elementRef != null) {
     String kind="element";
-    String name=element.name();
+    String name=element != null ? element.name() : elementRef.name();
     if (isNullOrEmpty(name) || "##default".equals(name)) {
       name=fieldName;
     }
@@ -14,7 +14,11 @@
     TypeElement fieldTypeElement=findTypeElement(roundEnv,fieldTypeName);
     String defaultValue=findDefaultValue(fieldElement,fieldTypeName);
     String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,name,classElement,true);
-    boolean required=element.required();
+    if (isNullOrEmpty(docComment)) {
+      Metadata metadata=fieldElement.getAnnotation(Metadata.class);
+      docComment=metadata != null ? metadata.description() : null;
+    }
+    boolean required=element != null ? element.required() : elementRef.required();
     required=findRequired(fieldElement,required);
     Set<String> enums=new LinkedHashSet<String>();
     boolean isEnum=fieldTypeElement != null && fieldTypeElement.getKind() == ElementKind.ENUM;
