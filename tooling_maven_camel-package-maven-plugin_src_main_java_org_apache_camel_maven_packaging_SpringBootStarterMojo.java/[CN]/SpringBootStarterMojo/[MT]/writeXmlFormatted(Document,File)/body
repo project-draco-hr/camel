@@ -1,0 +1,27 @@
+{
+  OutputFormat format=new OutputFormat(xml);
+  format.setLineWidth(200);
+  format.setIndenting(true);
+  format.setIndent(4);
+  StringWriter sw=new StringWriter();
+  XMLSerializer serializer=new XMLSerializer(sw,format);
+  serializer.serialize(xml);
+  StringBuilder b=new StringBuilder(sw.toString());
+  int lastTagLoc=b.lastIndexOf("<");
+  int lastCloseHeaderLoc=b.lastIndexOf("-->");
+  if (lastCloseHeaderLoc > lastTagLoc) {
+    int headerLoc=b.lastIndexOf("<!--");
+    String apacheHeader=b.substring(headerLoc,lastCloseHeaderLoc + 3);
+    b.delete(headerLoc,lastCloseHeaderLoc + 3);
+    int pos=b.indexOf("?>");
+    if (pos > 0) {
+      b.insert(pos + 2,"\n" + apacheHeader);
+    }
+ else {
+      b.insert(0,apacheHeader);
+    }
+  }
+  try (Writer out=new FileWriter(destination)){
+    IOUtils.write(b.toString(),out);
+  }
+ }

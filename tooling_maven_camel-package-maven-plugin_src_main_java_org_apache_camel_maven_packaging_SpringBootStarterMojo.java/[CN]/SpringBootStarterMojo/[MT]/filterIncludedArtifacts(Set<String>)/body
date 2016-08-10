@@ -1,0 +1,19 @@
+{
+  Set<String> included=new TreeSet<>();
+  ArtifactFilter artifactFilter=new ScopeArtifactFilter(null);
+  DependencyNode node=treeBuilder.buildDependencyTree(project,localRepository,artifactFactory,artifactMetadataSource,artifactFilter,artifactCollector);
+  CollectingDependencyNodeVisitor visitor=new CollectingDependencyNodeVisitor();
+  node.accept(visitor);
+  List<DependencyNode> nodes=visitor.getNodes();
+  for (  DependencyNode dependencyNode : nodes) {
+    int state=dependencyNode.getState();
+    Artifact artifact=dependencyNode.getArtifact();
+    if (state == DependencyNode.INCLUDED && !Artifact.SCOPE_TEST.equals(artifact.getScope())) {
+      String canonicalName=artifact.getGroupId() + ":" + artifact.getArtifactId();
+      if (artifacts.contains(canonicalName)) {
+        included.add(canonicalName);
+      }
+    }
+  }
+  return included;
+}

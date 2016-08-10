@@ -1,0 +1,23 @@
+{
+  if (!isStarterAllowed()) {
+    getLog().info("Spring-Boot-Starter: starter not allowed for module " + project.getArtifactId() + ": skipping.");
+    return;
+  }
+  try {
+    File starterDir=starterDir();
+    getLog().info("Spring-Boot-Starter: starter dir for the component is: " + starterDir.getAbsolutePath());
+    if (!starterDir.exists()) {
+      starterDir.mkdirs();
+    }
+    Document pom=createBasePom();
+    fixLoggingDependencies(pom);
+    includeAdditionalDependencies(pom);
+    File pomFile=new File(starterDir,"pom.xml");
+    writeXmlFormatted(pom,pomFile);
+    writeSpringProvides();
+    synchronizeParentPom();
+  }
+ catch (  Exception e) {
+    throw new MojoFailureException("Unable to create starter",e);
+  }
+}
