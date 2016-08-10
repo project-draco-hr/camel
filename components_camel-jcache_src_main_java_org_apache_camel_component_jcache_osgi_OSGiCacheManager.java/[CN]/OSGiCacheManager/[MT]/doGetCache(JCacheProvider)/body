@@ -1,0 +1,19 @@
+{
+  final ClassLoader jcl=getClassLoader(provider.className());
+  final ClassLoader tccl=Thread.currentThread().getContextClassLoader();
+  try {
+    if (jcl != null) {
+      Thread.currentThread().setContextClassLoader(jcl);
+    }
+    Cache<K,V> cache=super.doGetCache(provider);
+    if (provider == JCacheProviders.hazelcast && jcl != null) {
+      cache=JCacheHelper.tcclProxy(cache,Cache.class,jcl);
+    }
+    return cache;
+  }
+  finally {
+    if (jcl != null) {
+      Thread.currentThread().setContextClassLoader(tccl);
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  if (cache == null) {
+    String uri=configuration.getConfigurationUri();
+    if (uri != null && camelContext != null) {
+      uri=camelContext.resolvePropertyPlaceholders(uri);
+    }
+    provider=ObjectHelper.isNotEmpty(jcacheProvider.className()) ? Caching.getCachingProvider(jcacheProvider.className()) : Caching.getCachingProvider();
+    manager=provider.getCacheManager(ObjectHelper.isNotEmpty(uri) ? URI.create(uri) : null,null,configuration.getCacheConfigurationProperties());
+    cache=manager.getCache(cacheName);
+    if (cache == null) {
+      if (!configuration.isCreateCacheIfNotExists()) {
+        throw new IllegalStateException("Cache " + cacheName + " does not exist and should not be created (createCacheIfNotExists=false)");
+      }
+      cache=manager.createCache(cacheName,getOrCreateCacheConfiguration());
+    }
+  }
+  return cache;
+}
