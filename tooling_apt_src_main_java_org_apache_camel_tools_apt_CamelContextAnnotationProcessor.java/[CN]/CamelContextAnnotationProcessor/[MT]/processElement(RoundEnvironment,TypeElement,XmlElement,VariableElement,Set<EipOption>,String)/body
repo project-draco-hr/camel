@@ -28,8 +28,35 @@
         }
       }
     }
+    TreeSet oneOfTypes=new TreeSet<String>();
+    if (fieldTypeName.endsWith("Definition") || fieldTypeName.endsWith("FactoryBean")) {
+      TypeElement definitionClass=findTypeElement(roundEnv,fieldTypeElement.asType().toString());
+      if (definitionClass != null) {
+        XmlRootElement rootElement=definitionClass.getAnnotation(XmlRootElement.class);
+        if (rootElement != null) {
+          String childName=rootElement.name();
+          if (childName != null) {
+            oneOfTypes.add(childName);
+          }
+        }
+      }
+    }
+ else     if (fieldTypeName.endsWith("Definition>") || fieldTypeName.endsWith("FactoryBean>")) {
+      String typeName=Strings.between(fieldTypeName,"<",">");
+      TypeElement definitionClass=findTypeElement(roundEnv,typeName);
+      if (definitionClass != null) {
+        XmlRootElement rootElement=definitionClass.getAnnotation(XmlRootElement.class);
+        if (rootElement != null) {
+          String childName=rootElement.name();
+          if (childName != null) {
+            oneOfTypes.add(childName);
+          }
+        }
+      }
+    }
+    boolean oneOf=!oneOfTypes.isEmpty();
     boolean deprecated=fieldElement.getAnnotation(Deprecated.class) != null;
-    EipOption ep=new EipOption(name,kind,fieldTypeName,required,defaultValue,docComment,deprecated,isEnum,enums,false,null);
+    EipOption ep=new EipOption(name,kind,fieldTypeName,required,defaultValue,docComment,deprecated,isEnum,enums,oneOf,oneOfTypes);
     eipOptions.add(ep);
   }
 }
