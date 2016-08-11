@@ -46,9 +46,6 @@
   }
   MavenDependencyExclusion[] commonExclutionArray=commonExclusions.toArray(new MavenDependencyExclusion[]{});
   List<MavenDependency> moduleDependencies=new LinkedList<>();
-  MavenCoordinate mainJar=MavenCoordinates.createCoordinate(config.getMavenGroup(),config.getModuleName(),version,PackagingType.JAR,null);
-  MavenDependency mainDep=MavenDependencies.createDependency(mainJar,ScopeType.COMPILE,false,commonExclutionArray);
-  moduleDependencies.add(mainDep);
   for (  String canonicalForm : config.getAdditionalDependencies()) {
     MavenCoordinate coord=MavenCoordinates.createCoordinate(canonicalForm);
     MavenDependency dep=MavenDependencies.createDependency(coord,ScopeType.RUNTIME,false);
@@ -62,7 +59,18 @@
     if (config.getIncludeProvidedDependencies()) {
       scopes.add(ScopeType.PROVIDED);
     }
-    List<MavenResolvedArtifact> moduleArtifacts=Arrays.asList(resolver(config).loadPomFromFile(config.getModuleBasePath() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
+    boolean failIfNoDependencies=false;
+    List<MavenResolvedArtifact> moduleArtifacts;
+    try {
+      moduleArtifacts=Arrays.asList(resolver(config).loadPomFromFile(config.getModuleBasePath() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
+    }
+ catch (    IllegalArgumentException e) {
+      if (failIfNoDependencies) {
+        throw e;
+      }
+      debug("Error while getting dependencies for scopes: " + scopes + ". Message="+ e.getMessage());
+      moduleArtifacts=new LinkedList<>();
+    }
     for (    MavenResolvedArtifact art : moduleArtifacts) {
       MavenCoordinate c=art.getCoordinate();
       if (!validTestDependency(config,c)) {
@@ -84,16 +92,10 @@
       moduleDependencies.add(dep);
     }
   }
+  File moduleSpringBootPom=createUserPom(config);
   List<File> dependencies=new LinkedList<>();
-  dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importRuntimeDependencies().addDependencies(moduleDependencies).resolve().withTransitivity().asFile()));
-  boolean needsSpringTest=excludeDependencyRegex(dependencies,"^camel-test-spring3-.*");
-  if (needsSpringTest) {
-    MavenDependency dep=MavenDependencies.createDependency("org.apache.camel:camel-test-spring:" + version,ScopeType.RUNTIME,false);
-    dependencies=new LinkedList<>();
-    dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile("pom.xml").importRuntimeDependencies().addDependencies(moduleDependencies).addDependencies(dep).resolve().withTransitivity().asFile()));
-  }
+  dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importRuntimeDependencies().addDependencies(moduleDependencies).resolve().withTransitivity().asFile()));
   excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
-  excludeDependencyRegex(dependencies,"^camel-test-spring3-.*");
   ark=addDependencies(ark,dependencies);
   ark=ark.addPackages(true,"org.jboss.shrinkwrap");
   ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
