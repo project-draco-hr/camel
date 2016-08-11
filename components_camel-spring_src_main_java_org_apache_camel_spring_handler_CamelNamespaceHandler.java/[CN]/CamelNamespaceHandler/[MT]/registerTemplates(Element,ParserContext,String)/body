@@ -1,5 +1,6 @@
 {
   boolean template=false;
+  boolean fluentTemplate=false;
   boolean consumerTemplate=false;
   NodeList list=element.getChildNodes();
   int size=list.getLength();
@@ -10,6 +11,9 @@
       String localName=childElement.getLocalName();
       if ("template".equals(localName)) {
         template=true;
+      }
+ else       if ("fluentTemplate".equals(localName)) {
+        fluentTemplate=true;
       }
  else       if ("consumerTemplate".equals(localName)) {
         consumerTemplate=true;
@@ -30,6 +34,24 @@
       Element templateElement=element.getOwnerDocument().createElement("template");
       templateElement.setAttribute("id",id);
       BeanDefinitionParser parser=parserMap.get("template");
+      BeanDefinition definition=parser.parse(templateElement,parserContext);
+      autoRegisterBeanDefinition(id,definition,parserContext,contextId);
+    }
+  }
+  if (!fluentTemplate) {
+    boolean existing=autoRegisterMap.get("fluentTemplate") != null;
+    boolean inUse=false;
+    try {
+      inUse=parserContext.getRegistry().isBeanNameInUse("fluentTemplate");
+    }
+ catch (    BeanCreationException e) {
+      LOG.debug("Error checking isBeanNameInUse(fluentTemplate). This exception will be ignored",e);
+    }
+    if (!inUse || existing) {
+      String id="fluentTemplate";
+      Element templateElement=element.getOwnerDocument().createElement("fluentTemplate");
+      templateElement.setAttribute("id",id);
+      BeanDefinitionParser parser=parserMap.get("fluentTemplate");
       BeanDefinition definition=parser.parse(templateElement,parserContext);
       autoRegisterBeanDefinition(id,definition,parserContext,contextId);
     }
