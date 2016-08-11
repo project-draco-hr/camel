@@ -5,18 +5,24 @@
   DocumentationEnricher documentationEnricher=new DocumentationEnricher(document);
   File rootDir=new File(camelCoreDir,pathToModelDir);
   Map<String,File> jsonFiles=PackageHelper.findJsonFiles(rootDir);
-  File rootDir2=new File(camelSpringDir,pathToSpringModelDir);
+  File rootDir2=new File(camelCoreXmlDir,pathToCoreXmlModelDir);
   Map<String,File> jsonFiles2=PackageHelper.findJsonFiles(rootDir2);
+  File rootDir3=new File(camelSpringDir,pathToSpringModelDir);
+  Map<String,File> jsonFiles3=PackageHelper.findJsonFiles(rootDir3);
   jsonFiles.putAll(jsonFiles2);
+  jsonFiles.putAll(jsonFiles3);
   NodeList elementsAndTypes=domFinder.findElementsAndTypes();
   documentationEnricher.enrichTopLevelElementsDocumentation(elementsAndTypes,jsonFiles);
   Map<String,String> typeToNameMap=buildTypeToNameMap(elementsAndTypes);
-  Set<String> injectedTypes=new HashSet<String>();
+  Set<String> injectedTypes=new LinkedHashSet<String>();
+  getLog().info("Found " + typeToNameMap.size() + " models to use when enriching the XSD schema");
   for (  Map.Entry<String,String> entry : typeToNameMap.entrySet()) {
     String elementType=entry.getKey();
     String elementName=entry.getValue();
     if (jsonFileExistsForElement(jsonFiles,elementName)) {
-      injectAttributesDocumentation(domFinder,documentationEnricher,jsonFiles.get(elementName),elementType,injectedTypes);
+      getLog().debug("Enriching " + elementName);
+      File file=jsonFiles.get(elementName);
+      injectAttributesDocumentation(domFinder,documentationEnricher,file,elementType,injectedTypes);
     }
   }
   saveToFile(document,outputCamelSchemaFile,XmlHelper.buildTransformer());
