@@ -3,11 +3,21 @@
   Boolean mandatory=camelExchange.getIn().getHeader(RabbitMQConstants.MANDATORY,endpoint.isMandatory(),Boolean.class);
   Boolean immediate=camelExchange.getIn().getHeader(RabbitMQConstants.IMMEDIATE,endpoint.isImmediate(),Boolean.class);
   LOG.debug("Sending message to exchange: {} with CorrelationId = {}",rabbitExchange,properties.getCorrelationId());
-  if (endpoint.isPublisherAcknowledgements()) {
+  if (isPublisherAcknowledgements()) {
     channel.confirmSelect();
   }
-  channel.basicPublish(rabbitExchange,routingKey,mandatory,immediate,properties,body);
-  if (endpoint.isPublisherAcknowledgements()) {
-    waitForConfirmation();
+  if (endpoint.isGuaranteedDeliveries()) {
+    channel.addReturnListener(GUARANTEED_DELIVERY_RETURN_LISTENER);
+  }
+  try {
+    channel.basicPublish(rabbitExchange,routingKey,mandatory,immediate,properties,body);
+    if (isPublisherAcknowledgements()) {
+      waitForConfirmation();
+    }
+  }
+  finally {
+    if (endpoint.isGuaranteedDeliveries()) {
+      channel.removeReturnListener(GUARANTEED_DELIVERY_RETURN_LISTENER);
+    }
   }
 }
