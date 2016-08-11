@@ -1,0 +1,26 @@
+{
+  try {
+    if (roundEnv.processingOver()) {
+      return true;
+    }
+    Set<? extends Element> elements=roundEnv.getElementsAnnotatedWith(XmlRootElement.class);
+    for (    Element element : elements) {
+      if (element instanceof TypeElement) {
+        TypeElement classElement=(TypeElement)element;
+        final String javaTypeName=canonicalClassName(classElement.getQualifiedName().toString());
+        boolean core=javaTypeName.startsWith("org.apache.camel.model");
+        boolean spring=javaTypeName.startsWith("org.apache.camel.spring") || javaTypeName.startsWith("org.apache.camel.core.xml");
+        if (core) {
+          coreProcessor.processModelClass(processingEnv,roundEnv,classElement);
+        }
+ else         if (spring) {
+          springProcessor.processModelClass(processingEnv,roundEnv,classElement);
+        }
+      }
+    }
+  }
+ catch (  Throwable e) {
+    dumpExceptionToErrorFile("camel-apt-error.log","Error processing",e);
+  }
+  return true;
+}

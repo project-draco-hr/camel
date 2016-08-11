@@ -1,0 +1,47 @@
+{
+  while (true) {
+    List<VariableElement> fieldElements=ElementFilter.fieldsIn(classElement.getEnclosedElements());
+    for (    VariableElement fieldElement : fieldElements) {
+      String fieldName=fieldElement.getSimpleName().toString();
+      XmlAttribute attribute=fieldElement.getAnnotation(XmlAttribute.class);
+      if (attribute != null) {
+        boolean skip=processAttribute(processingEnv,roundEnv,originalClassType,classElement,fieldElement,fieldName,attribute,eipOptions,prefix,modelName);
+        if (skip) {
+          continue;
+        }
+      }
+      XmlElements elements=fieldElement.getAnnotation(XmlElements.class);
+      if (elements != null) {
+        processElements(processingEnv,roundEnv,classElement,elements,fieldElement,eipOptions,prefix);
+      }
+      XmlElementRef elementRef=fieldElement.getAnnotation(XmlElementRef.class);
+      if (elementRef != null) {
+        processElement(processingEnv,roundEnv,classElement,null,elementRef,fieldElement,eipOptions,prefix);
+      }
+      XmlElement element=fieldElement.getAnnotation(XmlElement.class);
+      if (element != null) {
+        if ("rests".equals(fieldName)) {
+          processRests(roundEnv,classElement,element,fieldElement,fieldName,eipOptions,prefix);
+        }
+ else         if ("routes".equals(fieldName)) {
+          processRoutes(roundEnv,classElement,element,fieldElement,fieldName,eipOptions,prefix);
+        }
+ else {
+          processElement(processingEnv,roundEnv,classElement,element,null,fieldElement,eipOptions,prefix);
+        }
+      }
+    }
+    TypeElement baseTypeElement=null;
+    TypeMirror superclass=classElement.getSuperclass();
+    if (superclass != null) {
+      String superClassName=canonicalClassName(superclass.toString());
+      baseTypeElement=findTypeElement(processingEnv,roundEnv,superClassName);
+    }
+    if (baseTypeElement != null) {
+      classElement=baseTypeElement;
+    }
+ else {
+      break;
+    }
+  }
+}

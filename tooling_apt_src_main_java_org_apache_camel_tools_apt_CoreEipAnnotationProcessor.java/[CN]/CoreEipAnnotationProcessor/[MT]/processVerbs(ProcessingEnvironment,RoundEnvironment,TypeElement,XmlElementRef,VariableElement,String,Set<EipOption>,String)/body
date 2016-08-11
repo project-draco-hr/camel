@@ -1,0 +1,30 @@
+{
+  Elements elementUtils=processingEnv.getElementUtils();
+  if ("verbs".equals(fieldName) && supportOutputs(originalClassType)) {
+    String kind="element";
+    String name=elementRef.name();
+    if (isNullOrEmpty(name) || "##default".equals(name)) {
+      name=fieldName;
+    }
+    name=prefix + name;
+    TypeMirror fieldType=fieldElement.asType();
+    String fieldTypeName=fieldType.toString();
+    String docComment=findJavaDoc(elementUtils,fieldElement,fieldName,name,originalClassType,true);
+    Set<String> oneOfTypes=new TreeSet<String>();
+    Set<TypeElement> children=new LinkedHashSet<TypeElement>();
+    for (    String superclass : ONE_OF_VERBS) {
+      findTypeElementChildren(processingEnv,roundEnv,children,superclass);
+    }
+    for (    TypeElement child : children) {
+      XmlRootElement rootElement=child.getAnnotation(XmlRootElement.class);
+      if (rootElement != null) {
+        String childName=rootElement.name();
+        if (childName != null) {
+          oneOfTypes.add(childName);
+        }
+      }
+    }
+    EipOption ep=new EipOption(name,kind,fieldTypeName,true,"",docComment,false,false,null,true,oneOfTypes);
+    eipOptions.add(ep);
+  }
+}
