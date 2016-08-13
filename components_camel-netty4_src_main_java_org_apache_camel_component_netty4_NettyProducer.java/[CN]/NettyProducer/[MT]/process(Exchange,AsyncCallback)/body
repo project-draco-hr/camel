@@ -26,16 +26,20 @@
   if (LOG.isTraceEnabled()) {
     LOG.trace("Pool[active={}, idle={}]",pool.getNumActive(),pool.getNumIdle());
   }
-  Channel existing=null;
+  ChannelFuture channelFuture=null;
+  Channel channel=null;
   try {
     if (getConfiguration().isReuseChannel()) {
-      existing=exchange.getProperty(NettyConstants.NETTY_CHANNEL,Channel.class);
+      channel=exchange.getProperty(NettyConstants.NETTY_CHANNEL,Channel.class);
     }
-    if (existing == null) {
-      existing=pool.borrowObject();
-      if (existing != null) {
-        LOG.trace("Got channel from pool {}",existing);
+    if (channel == null) {
+      channelFuture=pool.borrowObject();
+      if (channelFuture != null) {
+        LOG.trace("Got channel request from pool {}",channelFuture);
       }
+    }
+ else {
+      channelFuture=channel.newSucceededFuture();
     }
   }
  catch (  Exception e) {
@@ -43,104 +47,11 @@
     callback.done(true);
     return true;
   }
-  if (existing == null) {
+  if (channelFuture == null) {
     exchange.setException(new CamelExchangeException("Cannot get channel from pool",exchange));
     callback.done(true);
     return true;
   }
-  if (getConfiguration().isReuseChannel() && exchange.getProperty(NettyConstants.NETTY_CHANNEL) == null) {
-    final Channel channel=existing;
-    exchange.setProperty(NettyConstants.NETTY_CHANNEL,existing);
-    exchange.addOnCompletion(new SynchronizationAdapter(){
-      @Override public void onComplete(      Exchange exchange){
-        Boolean close;
-        if (ExchangeHelper.isOutCapable(exchange)) {
-          close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
-        }
- else {
-          close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
-        }
-        boolean disconnect=getConfiguration().isDisconnect();
-        if (close != null) {
-          disconnect=close;
-        }
-        if (disconnect) {
-          LOG.trace("Closing channel {} as routing the Exchange is done",channel);
-          NettyHelper.close(channel);
-        }
-        try {
-          if (channel.isActive()) {
-            LOG.trace("Putting channel back to pool {}",channel);
-            pool.returnObject(channel);
-          }
- else {
-            LOG.trace("Invalidating channel from pool {}",channel);
-            pool.invalidateObject(channel);
-          }
-        }
- catch (        Exception e) {
-          LOG.warn("Error returning channel to pool " + channel + ". This exception will be ignored.",e);
-        }
-      }
-    }
-);
-  }
-  if (exchange.getIn().getHeader(NettyConstants.NETTY_REQUEST_TIMEOUT) != null) {
-    long timeoutInMs=exchange.getIn().getHeader(NettyConstants.NETTY_REQUEST_TIMEOUT,Long.class);
-    ChannelHandler oldHandler=existing.pipeline().get("timeout");
-    ReadTimeoutHandler newHandler=new ReadTimeoutHandler(timeoutInMs,TimeUnit.MILLISECONDS);
-    if (oldHandler == null) {
-      existing.pipeline().addBefore("handler","timeout",newHandler);
-    }
- else {
-      existing.pipeline().replace(oldHandler,"timeout",newHandler);
-    }
-  }
-  final Channel channel=existing;
-  final AsyncCallback producerCallback;
-  if (configuration.isReuseChannel()) {
-    producerCallback=callback;
-  }
- else {
-    producerCallback=new NettyProducerCallback(channel,callback);
-  }
-  putState(channel,new NettyCamelState(producerCallback,exchange));
-  InetSocketAddress remoteAddress=null;
-  if (!isTcp()) {
-    remoteAddress=new InetSocketAddress(configuration.getHost(),configuration.getPort());
-  }
-  NettyHelper.writeBodyAsync(LOG,channel,remoteAddress,body,exchange,new ChannelFutureListener(){
-    public void operationComplete(    ChannelFuture channelFuture) throws Exception {
-      LOG.trace("Operation complete {}",channelFuture);
-      if (!channelFuture.isSuccess()) {
-        return;
-      }
-      if (!configuration.isSync()) {
-        try {
-          Boolean close;
-          if (ExchangeHelper.isOutCapable(exchange)) {
-            close=exchange.getOut().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
-          }
- else {
-            close=exchange.getIn().getHeader(NettyConstants.NETTY_CLOSE_CHANNEL_WHEN_COMPLETE,Boolean.class);
-          }
-          boolean disconnect=getConfiguration().isDisconnect();
-          if (close != null) {
-            disconnect=close;
-          }
-          if (!configuration.isReuseChannel() && disconnect) {
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("Closing channel when complete at address: {}",getEndpoint().getConfiguration().getAddress());
-            }
-            NettyHelper.close(channel);
-          }
-        }
-  finally {
-          producerCallback.done(false);
-        }
-      }
-    }
-  }
-);
+  channelFuture.addListener(new ChannelConnectedListener(exchange,callback,body));
   return false;
 }

@@ -1,0 +1,17 @@
+{
+  Exchange exchange=template.asyncSend(uri,new Processor(){
+    public void process(    Exchange exchange) throws Exception {
+      InputStream is=IOHelper.buffered(new FileInputStream("src/test/resources/test.txt"));
+      byte buffer[]=IOConverter.toBytes(is);
+      is.close();
+      exchange.setProperty(Exchange.CHARSET_NAME,"UTF-8");
+      Message in=exchange.getIn();
+      in.setBody(buffer);
+    }
+  }
+).get();
+  if (exchange.getException() != null) {
+    throw new AssertionError(exchange.getException());
+  }
+  Assert.assertFalse(exchange.isFailed());
+}

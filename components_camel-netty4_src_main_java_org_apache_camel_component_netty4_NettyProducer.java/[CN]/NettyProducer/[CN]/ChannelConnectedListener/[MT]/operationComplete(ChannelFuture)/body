@@ -1,0 +1,17 @@
+{
+  if (!future.isDone() || !future.isSuccess()) {
+    ConnectException cause=new ConnectException("Cannot connect to " + configuration.getAddress());
+    if (future.cause() != null) {
+      cause.initCause(future.cause());
+    }
+    exchange.setException(cause);
+    callback.done(false);
+  }
+  try {
+    processWithConnectedChannel(exchange,callback,future,body);
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(false);
+  }
+}
