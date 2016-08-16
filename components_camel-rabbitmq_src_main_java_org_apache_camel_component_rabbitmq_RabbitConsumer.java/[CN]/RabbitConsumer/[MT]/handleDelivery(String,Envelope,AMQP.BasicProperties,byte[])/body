@@ -3,9 +3,14 @@
     if (!consumer.getEndpoint().isAutoAck()) {
       lock.acquire();
     }
-    doHandleDelivery(consumerTag,envelope,properties,body);
-    if (!consumer.getEndpoint().isAutoAck()) {
-      lock.release();
+    if (!channel.isOpen())     return;
+    try {
+      doHandleDelivery(consumerTag,envelope,properties,body);
+    }
+  finally {
+      if (!consumer.getEndpoint().isAutoAck()) {
+        lock.release();
+      }
     }
   }
  catch (  InterruptedException e) {
