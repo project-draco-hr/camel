@@ -1,0 +1,30 @@
+{
+  List<String> languageNames=findLanguageNames();
+  final Set<File> jsonFiles=new TreeSet<File>();
+  PackageHelper.findJsonFiles(buildDir,jsonFiles,new PackageHelper.CamelComponentsModelFilter());
+  if (!languageNames.isEmpty()) {
+    getLog().debug("Found " + languageNames.size() + " languages");
+    for (    String languageName : languageNames) {
+      String json=loadLanguageJson(jsonFiles,languageName);
+      if (json != null) {
+        File file=new File(docDir,languageName + "-language.adoc");
+        LanguageModel model=generateLanguageModel(languageName,json);
+        boolean exists=file.exists();
+        boolean updated=false;
+        if (model.getLanguageOptions() != null) {
+          String options=templateLanguageOptions(model);
+          updated|=updateLanguageOptions(file,options);
+        }
+        if (updated) {
+          getLog().info("Updated doc file: " + file);
+        }
+ else         if (exists) {
+          getLog().debug("No changes to doc file: " + file);
+        }
+ else {
+          getLog().warn("No language doc file: " + file);
+        }
+      }
+    }
+  }
+}

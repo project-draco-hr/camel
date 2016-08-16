@@ -1,0 +1,33 @@
+{
+  if (!file.exists()) {
+    return false;
+  }
+  try {
+    String text=loadText(new FileInputStream(file));
+    String existing=StringHelper.between(text,"// language options: START","// language options: END");
+    if (existing != null) {
+      existing=existing.trim();
+      changed=changed.trim();
+      if (existing.equals(changed)) {
+        return false;
+      }
+ else {
+        String before=StringHelper.before(text,"// language options: START");
+        String after=StringHelper.after(text,"// language options: END");
+        text=before + "\n// language options: START\n" + changed+ "\n// language options: END\n"+ after;
+        writeText(file,text);
+        return true;
+      }
+    }
+ else {
+      getLog().warn("Cannot find markers in file " + file);
+      getLog().warn("Add the following markers");
+      getLog().warn("\t// language options: START");
+      getLog().warn("\t// language options: END");
+      return false;
+    }
+  }
+ catch (  Exception e) {
+    throw new MojoExecutionException("Error reading file " + file + " Reason: "+ e,e);
+  }
+}
