@@ -13,6 +13,16 @@
     soTimeout=getConfiguration().getSoTimeout();
   }
   dataTimeout=getConfiguration().getTimeout();
+  if (getConfiguration().getActivePortRange() != null) {
+    String[] parts=getConfiguration().getActivePortRange().split("-");
+    if (parts.length != 2) {
+      throw new IllegalArgumentException("The option activePortRange should have syntax: min-max");
+    }
+    int min=getCamelContext().getTypeConverter().mandatoryConvertTo(int.class,parts[0]);
+    int max=getCamelContext().getTypeConverter().mandatoryConvertTo(int.class,parts[1]);
+    log.debug("Using active port range: {}-{}",min,max);
+    client.setActivePortRange(min,max);
+  }
   if (ftpClientParameters != null) {
     Map<String,Object> localParameters=new HashMap<String,Object>(ftpClientParameters);
     Object timeout=localParameters.remove("soTimeout");
