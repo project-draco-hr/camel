@@ -1,0 +1,30 @@
+{
+  List<String> dataFormatNames=findDataFormatNames();
+  final Set<File> jsonFiles=new TreeSet<File>();
+  PackageHelper.findJsonFiles(buildDir,jsonFiles,new PackageHelper.CamelComponentsModelFilter());
+  if (!dataFormatNames.isEmpty()) {
+    getLog().debug("Found " + dataFormatNames.size() + " dataformats");
+    for (    String dataFormatName : dataFormatNames) {
+      String json=loadDataFormatJson(jsonFiles,dataFormatName);
+      if (json != null) {
+        File file=new File(docDir,dataFormatName + "-dataformat.adoc");
+        DataFormatModel model=generateDataFormatModel(dataFormatName,json);
+        boolean exists=file.exists();
+        boolean updated=false;
+        if (model.getDataFormatOptions() != null) {
+          String options=templateDataFormatOptions(model);
+          updated|=updateDataFormatOptions(file,options);
+        }
+        if (updated) {
+          getLog().info("Updated doc file: " + file);
+        }
+ else         if (exists) {
+          getLog().debug("No changes to doc file: " + file);
+        }
+ else {
+          getLog().warn("No dataformat doc file: " + file);
+        }
+      }
+    }
+  }
+}

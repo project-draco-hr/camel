@@ -1,0 +1,34 @@
+{
+  List<String> componentNames=findComponentNames();
+  final Set<File> jsonFiles=new TreeSet<File>();
+  PackageHelper.findJsonFiles(buildDir,jsonFiles,new PackageHelper.CamelComponentsModelFilter());
+  if (!componentNames.isEmpty()) {
+    getLog().debug("Found " + componentNames.size() + " components");
+    for (    String componentName : componentNames) {
+      String json=loadComponentJson(jsonFiles,componentName);
+      if (json != null) {
+        File file=new File(docDir,componentName + "-component.adoc");
+        ComponentModel model=generateComponentModel(componentName,json);
+        boolean exists=file.exists();
+        boolean updated=false;
+        if (model.getComponentOptions() != null) {
+          String options=templateComponentOptions(model);
+          updated|=updateComponentOptions(file,options);
+        }
+        if (model.getEndpointOptions() != null) {
+          String options=templateEndpointOptions(model);
+          updated|=updateEndpointOptions(file,options);
+        }
+        if (updated) {
+          getLog().info("Updated doc file: " + file);
+        }
+ else         if (exists) {
+          getLog().debug("No changes to doc file: " + file);
+        }
+ else {
+          getLog().warn("No component doc file: " + file);
+        }
+      }
+    }
+  }
+}
