@@ -6,11 +6,11 @@ synchronized (continuation) {
       LOG.trace("Suspending continuation of exchangeId: {}",camelExchange.getExchangeId());
       continuation.suspend(endpoint.getContinuationTimeout());
       cxfExchange.put(SUSPENED,Boolean.TRUE);
+      continuation.setObject(camelExchange);
       cxfRsConsumer.getAsyncProcessor().process(camelExchange,new AsyncCallback(){
         public void done(        boolean doneSync){
 synchronized (continuation) {
             LOG.trace("Resuming continuation of exchangeId: {}",camelExchange.getExchangeId());
-            continuation.setObject(camelExchange);
             continuation.resume();
           }
         }
@@ -26,6 +26,19 @@ synchronized (continuation) {
       }
   finally {
         cxfRsConsumer.doneUoW(camelExchange);
+      }
+    }
+ else {
+      if (!continuation.isPending()) {
+        cxfExchange.put(SUSPENED,Boolean.FALSE);
+        org.apache.camel.Exchange camelExchange=(org.apache.camel.Exchange)continuation.getObject();
+        camelExchange.setException(new ExchangeTimedOutException(camelExchange,endpoint.getContinuationTimeout()));
+        try {
+          return returnResponse(cxfExchange,camelExchange);
+        }
+  finally {
+          cxfRsConsumer.doneUoW(camelExchange);
+        }
       }
     }
   }
