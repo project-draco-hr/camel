@@ -1,14 +1,13 @@
 {
-  try {
-    Class.forName("org.osgi.framework.FrameworkUtil");
-    Class<?> type=Class.forName("org.apache.camel.component.jcache.osgi.OSGiCacheManager");
-    Constructor<?> ctor=type.getConstructor(JCacheConfiguration.class);
-    return (JCacheManager<K,V>)ctor.newInstance(configuration);
+  if (isOSGi()) {
+    try {
+      Class<?> type=Class.forName("org.apache.camel.component.jcache.osgi.OSGiCacheManager");
+      Constructor<?> ctor=type.getConstructor(JCacheConfiguration.class);
+      return (JCacheManager<K,V>)ctor.newInstance(configuration);
+    }
+ catch (    Exception e) {
+      throw new RuntimeCamelException(e);
+    }
   }
- catch (  ClassNotFoundException e) {
-    return new JCacheManager<>(configuration);
-  }
-catch (  Exception e) {
-    throw new RuntimeCamelException(e);
-  }
+  return new JCacheManager<>(configuration);
 }
