@@ -4,9 +4,9 @@
   Set<File> missingAdocFiles=new TreeSet<File>();
   Set<File> duplicateAdocFiles=new TreeSet<File>();
   if (componentsDir != null && componentsDir.isDirectory()) {
-    File[] components=componentsDir.listFiles();
-    if (components != null) {
-      for (      File dir : components) {
+    File[] componentFiles=componentsDir.listFiles();
+    if (componentFiles != null) {
+      for (      File dir : componentFiles) {
         if (dir.isDirectory() && !"target".equals(dir.getName()) && !dir.getName().startsWith(".")&& !excludeDocumentDir(dir.getName())) {
           File target=new File(dir,"src/main/docs");
           int before=adocFiles.size();
@@ -38,6 +38,7 @@
       throw new MojoFailureException("Cannot copy file from " + file + " -> "+ to,e);
     }
   }
+  Set<String> docs=new LinkedHashSet<>();
   File all=new File(documentsOutDir,"../docs.properties");
   try {
     FileOutputStream fos=new FileOutputStream(all,false);
@@ -53,6 +54,7 @@
     for (    String name : documents) {
       fos.write(name.getBytes());
       fos.write("\n".getBytes());
+      docs.add(name);
     }
     fos.close();
   }
@@ -60,4 +62,5 @@
     throw new MojoFailureException("Error writing to file " + all);
   }
   printDocumentsReport(adocFiles,duplicateAdocFiles,missingAdocFiles);
+  printMissingDocumentsReport(docs,components,dataformats,languages);
 }
