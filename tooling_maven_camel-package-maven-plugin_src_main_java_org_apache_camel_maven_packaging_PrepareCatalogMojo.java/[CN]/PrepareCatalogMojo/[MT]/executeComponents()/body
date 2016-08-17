@@ -48,6 +48,7 @@
   getLog().info("Found " + componentFiles.size() + " component.properties files");
   getLog().info("Found " + jsonFiles.size() + " component json files");
   componentsOutDir.mkdirs();
+  Set<String> alternativeSchemes=new HashSet<>();
   for (  File file : jsonFiles) {
     File to=new File(componentsOutDir,file.getName());
     if (to.exists()) {
@@ -103,11 +104,22 @@
       if (unused >= UNUSED_LABELS_WARN) {
         unlabeledOptions.add(name);
       }
+      rows=JSonSchemaHelper.parseJsonSchema("component",text,false);
+      for (      Map<String,String> row : rows) {
+        String alternativeScheme=row.get("alternativeSchemes");
+        if (alternativeScheme != null && !alternativeScheme.isEmpty()) {
+          String[] parts=alternativeScheme.split(",");
+          for (int i=1; i < parts.length; i++) {
+            String part=parts[i];
+            alternativeSchemes.add(part);
+          }
+        }
+      }
     }
  catch (    IOException e) {
     }
   }
-  Set<String> answer=new LinkedHashSet<>();
+  Set<String> componentNames=new LinkedHashSet<>();
   File all=new File(componentsOutDir,"../components.properties");
   try {
     FileOutputStream fos=new FileOutputStream(all,false);
@@ -123,7 +135,7 @@
     for (    String name : components) {
       fos.write(name.getBytes());
       fos.write("\n".getBytes());
-      answer.add(name);
+      componentNames.add(name);
     }
     fos.close();
   }
@@ -131,5 +143,11 @@
     throw new MojoFailureException("Error writing to file " + all);
   }
   printComponentsReport(jsonFiles,duplicateJsonFiles,missingComponents,usedComponentLabels,usedOptionLabels,unlabeledOptions);
+  Set<String> answer=new LinkedHashSet<>();
+  for (  String componentName : componentNames) {
+    if (!alternativeSchemes.contains(componentName)) {
+      answer.add(componentName);
+    }
+  }
   return answer;
 }
