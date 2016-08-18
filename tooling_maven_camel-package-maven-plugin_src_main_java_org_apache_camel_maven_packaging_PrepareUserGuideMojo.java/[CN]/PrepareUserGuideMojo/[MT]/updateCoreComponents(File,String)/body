@@ -1,0 +1,33 @@
+{
+  if (!file.exists()) {
+    return false;
+  }
+  try {
+    String text=loadText(new FileInputStream(file));
+    String existing=StringHelper.between(text,"<!-- core components: START -->","<!-- core components: END -->");
+    if (existing != null) {
+      existing=existing.trim();
+      changed=changed.trim();
+      if (existing.equals(changed)) {
+        return false;
+      }
+ else {
+        String before=StringHelper.before(text,"<!-- core components: START -->");
+        String after=StringHelper.after(text,"<!-- core components: END -->");
+        text=before + "\n<!-- core components: START -->\n" + changed+ "\n<!-- core components: END -->\n"+ after;
+        writeText(file,text);
+        return true;
+      }
+    }
+ else {
+      getLog().warn("Cannot find markers in file " + file);
+      getLog().warn("Add the following markers");
+      getLog().warn("\t<!-- core components: START -->");
+      getLog().warn("\t<!-- core components: END -->");
+      return false;
+    }
+  }
+ catch (  Exception e) {
+    throw new MojoExecutionException("Error reading file " + file + " Reason: "+ e,e);
+  }
+}

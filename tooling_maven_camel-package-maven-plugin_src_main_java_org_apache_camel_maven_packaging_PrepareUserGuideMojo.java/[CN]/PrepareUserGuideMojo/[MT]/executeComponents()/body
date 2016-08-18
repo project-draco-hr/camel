@@ -1,0 +1,55 @@
+{
+  Set<File> componentFiles=new TreeSet<File>();
+  if (componentsDir != null && componentsDir.isDirectory()) {
+    File[] files=componentsDir.listFiles();
+    if (files != null) {
+      componentFiles.addAll(Arrays.asList(files));
+    }
+  }
+  try {
+    List<ComponentModel> models=new ArrayList<>();
+    for (    File core : componentFiles) {
+      String json=loadText(new FileInputStream(core));
+      ComponentModel model=generateComponentModel(json);
+      boolean add=true;
+      if (!model.getAlternativeSchemes().isEmpty()) {
+        String first=model.getAlternativeSchemes().split(",")[0];
+        if (!model.getScheme().equals(first)) {
+          add=false;
+        }
+      }
+      if (add) {
+        models.add(model);
+      }
+    }
+    Collections.sort(models,new ComponentComparator());
+    File file=new File(userGuideDir,"SUMMARY.md");
+    StringBuilder core=new StringBuilder();
+    core.append("* Core Components\n");
+    for (    ComponentModel model : models) {
+      if (model.getLabel().contains("core")) {
+        String line="\t* " + link(model) + "\n";
+        core.append(line);
+      }
+    }
+    boolean updated=updateCoreComponents(file,core.toString());
+    StringBuilder regular=new StringBuilder();
+    regular.append("* Components\n");
+    for (    ComponentModel model : models) {
+      if (!model.getLabel().contains("core")) {
+        String line="\t* " + link(model) + "\n";
+        regular.append(line);
+      }
+    }
+    updated|=updateComponents(file,regular.toString());
+    if (updated) {
+      getLog().info("Updated user guide file: " + file);
+    }
+ else {
+      getLog().debug("No changes to user guide file: " + file);
+    }
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error due " + e.getMessage(),e);
+  }
+}
