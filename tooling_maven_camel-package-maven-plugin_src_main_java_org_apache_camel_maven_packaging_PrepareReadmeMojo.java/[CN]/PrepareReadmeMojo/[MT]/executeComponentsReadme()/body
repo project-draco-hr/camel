@@ -1,0 +1,49 @@
+{
+  Set<File> componentFiles=new TreeSet<>();
+  if (componentsDir != null && componentsDir.isDirectory()) {
+    File[] files=componentsDir.listFiles();
+    if (files != null) {
+      componentFiles.addAll(Arrays.asList(files));
+    }
+  }
+  try {
+    List<ComponentModel> models=new ArrayList<>();
+    for (    File file : componentFiles) {
+      String json=loadText(new FileInputStream(file));
+      ComponentModel model=generateComponentModel(json);
+      boolean add=true;
+      if (!model.getAlternativeSchemes().isEmpty()) {
+        String first=model.getAlternativeSchemes().split(",")[0];
+        if (!model.getScheme().equals(first)) {
+          add=false;
+        }
+      }
+      if (add) {
+        models.add(model);
+      }
+    }
+    Collections.sort(models,new ComponentComparator());
+    List<ComponentModel> components=new ArrayList<>();
+    for (    ComponentModel model : models) {
+      if (!"camel-core".equals(model.getArtifactId())) {
+        components.add(model);
+      }
+    }
+    File file=new File(readmeComponentsDir,"readme.adoc");
+    boolean exists=file.exists();
+    String changed=templateComponentOptions(components);
+    boolean updated=updateComponents(file,changed);
+    if (updated) {
+      getLog().info("Updated components/readme.adoc file: " + file);
+    }
+ else     if (exists) {
+      getLog().debug("No changes to components/readme.adoc file: " + file);
+    }
+ else {
+      getLog().warn("No components/readme.adoc file: " + file);
+    }
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error due " + e.getMessage(),e);
+  }
+}
