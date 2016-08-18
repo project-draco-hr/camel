@@ -1,0 +1,35 @@
+{
+  Set<File> languageFiles=new TreeSet<>();
+  if (languagesDir != null && languagesDir.isDirectory()) {
+    File[] files=languagesDir.listFiles();
+    if (files != null) {
+      languageFiles.addAll(Arrays.asList(files));
+    }
+  }
+  try {
+    List<LanguageModel> models=new ArrayList<>();
+    for (    File file : languageFiles) {
+      String json=loadText(new FileInputStream(file));
+      LanguageModel model=generateLanguageModel(json);
+      models.add(model);
+    }
+    Collections.sort(models,new LanguageComparator());
+    File file=new File(userGuideDir,"SUMMARY.md");
+    StringBuilder languages=new StringBuilder();
+    languages.append("* Expression Languages\n");
+    for (    LanguageModel model : models) {
+      String line="\t* " + link(model) + "\n";
+      languages.append(line);
+    }
+    boolean updated=updateLanguages(file,languages.toString());
+    if (updated) {
+      getLog().info("Updated user guide file: " + file);
+    }
+ else {
+      getLog().debug("No changes to user guide file: " + file);
+    }
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error due " + e.getMessage(),e);
+  }
+}

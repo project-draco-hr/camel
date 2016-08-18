@@ -1,0 +1,33 @@
+{
+  if (!file.exists()) {
+    return false;
+  }
+  try {
+    String text=loadText(new FileInputStream(file));
+    String existing=StringHelper.between(text,"<!-- dataformats: START -->","<!-- dataformats: END -->");
+    if (existing != null) {
+      existing=existing.trim();
+      changed=changed.trim();
+      if (existing.equals(changed)) {
+        return false;
+      }
+ else {
+        String before=StringHelper.before(text,"<!-- dataformats: START -->");
+        String after=StringHelper.after(text,"<!-- dataformats: END -->");
+        text=before + "\n<!-- dataformats: START -->\n" + changed+ "\n<!-- dataformats: END -->\n"+ after;
+        writeText(file,text);
+        return true;
+      }
+    }
+ else {
+      getLog().warn("Cannot find markers in file " + file);
+      getLog().warn("Add the following markers");
+      getLog().warn("\t<!-- dataformats: START -->");
+      getLog().warn("\t<!-- dataformats: END -->");
+      return false;
+    }
+  }
+ catch (  Exception e) {
+    throw new MojoExecutionException("Error reading file " + file + " Reason: "+ e,e);
+  }
+}
