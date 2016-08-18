@@ -1,0 +1,40 @@
+{
+  Set<File> languageFiles=new TreeSet<>();
+  if (languagesDir != null && languagesDir.isDirectory()) {
+    File[] files=languagesDir.listFiles();
+    if (files != null) {
+      languageFiles.addAll(Arrays.asList(files));
+    }
+  }
+  try {
+    List<LanguageModel> models=new ArrayList<>();
+    for (    File file : languageFiles) {
+      String json=loadText(new FileInputStream(file));
+      LanguageModel model=generateLanguageModel(json);
+      models.add(model);
+    }
+    Collections.sort(models,new LanguageComparator());
+    List<LanguageModel> languages=new ArrayList<>();
+    for (    LanguageModel model : models) {
+      if (!"camel-core".equals(model.getArtifactId())) {
+        languages.add(model);
+      }
+    }
+    File file=new File(readmeComponentsDir,"readme.adoc");
+    boolean exists=file.exists();
+    String changed=templateLanguages(languages);
+    boolean updated=updateLanguages(file,changed);
+    if (updated) {
+      getLog().info("Updated components/readme.adoc file: " + file);
+    }
+ else     if (exists) {
+      getLog().debug("No changes to components/readme.adoc file: " + file);
+    }
+ else {
+      getLog().warn("No components/readme.adoc file: " + file);
+    }
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error due " + e.getMessage(),e);
+  }
+}
