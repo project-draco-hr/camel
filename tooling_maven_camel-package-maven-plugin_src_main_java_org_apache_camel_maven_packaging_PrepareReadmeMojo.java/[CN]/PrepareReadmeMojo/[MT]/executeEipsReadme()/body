@@ -1,0 +1,36 @@
+{
+  Set<File> eipFiles=new TreeSet<>();
+  if (eipsDir != null && eipsDir.isDirectory()) {
+    File[] files=eipsDir.listFiles();
+    if (files != null) {
+      eipFiles.addAll(Arrays.asList(files));
+    }
+  }
+  try {
+    List<EipModel> models=new ArrayList<>();
+    for (    File file : eipFiles) {
+      String json=loadText(new FileInputStream(file));
+      EipModel model=generateEipModel(json);
+      if (model.getLabel().startsWith("eip")) {
+        models.add(model);
+      }
+    }
+    Collections.sort(models,new EipComparator());
+    File file=new File(readmeCoreDir,"readme-eip.adoc");
+    boolean exists=file.exists();
+    String changed=templateEips(models);
+    boolean updated=updateEips(file,changed);
+    if (updated) {
+      getLog().info("Updated readme-eip.adoc file: " + file);
+    }
+ else     if (exists) {
+      getLog().debug("No changes to readme-eip.adoc file: " + file);
+    }
+ else {
+      getLog().warn("No readme-eip.adoc file: " + file);
+    }
+  }
+ catch (  IOException e) {
+    throw new MojoFailureException("Error due " + e.getMessage(),e);
+  }
+}

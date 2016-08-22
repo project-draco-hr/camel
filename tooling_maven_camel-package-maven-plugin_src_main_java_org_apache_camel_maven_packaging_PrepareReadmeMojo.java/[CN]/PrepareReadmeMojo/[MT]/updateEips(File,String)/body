@@ -1,0 +1,33 @@
+{
+  if (!file.exists()) {
+    return false;
+  }
+  try {
+    String text=loadText(new FileInputStream(file));
+    String existing=StringHelper.between(text,"// eips: START","// eips: END");
+    if (existing != null) {
+      existing=existing.trim();
+      changed=changed.trim();
+      if (existing.equals(changed)) {
+        return false;
+      }
+ else {
+        String before=StringHelper.before(text,"// eips: START");
+        String after=StringHelper.after(text,"// eips: END");
+        text=before + "// eips: START\n" + changed+ "\n// eips: END"+ after;
+        writeText(file,text);
+        return true;
+      }
+    }
+ else {
+      getLog().warn("Cannot find markers in file " + file);
+      getLog().warn("Add the following markers");
+      getLog().warn("\t// eips: START");
+      getLog().warn("\t// eips: END");
+      return false;
+    }
+  }
+ catch (  Exception e) {
+    throw new MojoExecutionException("Error reading file " + file + " Reason: "+ e,e);
+  }
+}
