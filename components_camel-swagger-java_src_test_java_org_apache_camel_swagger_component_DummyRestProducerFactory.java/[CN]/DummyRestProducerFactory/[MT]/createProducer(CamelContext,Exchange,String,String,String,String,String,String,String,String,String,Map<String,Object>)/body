@@ -3,8 +3,13 @@
   return new DefaultProducer(endpoint){
     @Override public void process(    Exchange exchange) throws Exception {
       if (uriTemplate.contains("{name}")) {
-        String name=exchange.getIn().getHeader("name",String.class);
+        int pos=resolvedUriTemplate.lastIndexOf('/');
+        String name=resolvedUriTemplate.substring(pos + 1);
         exchange.getIn().setBody("Hello " + name);
+      }
+ else       if (queryParameters.contains("name=")) {
+        String name=ObjectHelper.after(queryParameters,"name=");
+        exchange.getIn().setBody("Bye " + name);
       }
     }
   }

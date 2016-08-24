@@ -1,0 +1,13 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      SwaggerComponent sc=new SwaggerComponent();
+      sc.setComponentName("jetty");
+      context.addComponent("swagger",sc);
+      String host="localhost:" + getPort();
+      from("direct:start").to("swagger:hello-api.json:get:bye?host=" + host).to("mock:result");
+      from("jetty:http://localhost:{{port}}/api/bye/?matchOnUriPrefix=true").transform().simple("Bye ${header.name}");
+    }
+  }
+;
+}
