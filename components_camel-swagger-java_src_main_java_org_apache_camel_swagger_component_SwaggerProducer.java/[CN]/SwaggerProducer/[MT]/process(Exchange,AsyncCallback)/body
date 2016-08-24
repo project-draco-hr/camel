@@ -8,28 +8,7 @@
     return true;
   }
   try {
-    Map<String,Object> query=new LinkedHashMap<>();
-    for (    Parameter param : operation.getParameters()) {
-      if ("query".equals(param.getIn())) {
-        String name=param.getName();
-        if (name != null) {
-          String value=exchange.getIn().getHeader(name,String.class);
-          if (value != null) {
-            query.put(name,value);
-          }
- else           if (param.getRequired()) {
-            exchange.setException(new NoSuchHeaderException(exchange,name,String.class));
-            callback.done(true);
-            return true;
-          }
-        }
-      }
-    }
-    String options=null;
-    if (!query.isEmpty()) {
-      options=URISupport.createQueryString(query);
-    }
-    Producer producer=createHttpProducer(exchange,operation,verb,path,options);
+    Producer producer=createHttpProducer(exchange,operation,verb,path);
     if (producer != null) {
       ServiceHelper.startService(producer);
       AsyncProcessor async=AsyncProcessorConverterHelper.convert(producer);
