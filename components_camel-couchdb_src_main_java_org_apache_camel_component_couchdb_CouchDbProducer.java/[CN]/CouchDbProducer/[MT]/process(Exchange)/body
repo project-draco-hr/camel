@@ -1,12 +1,28 @@
 {
   JsonElement json=getBodyAsJsonElement(exchange);
-  Response save=saveJsonElement(json);
-  if (save == null) {
-    throw new CouchDbException("Could not save document [unknown reason]",exchange);
+  String operation=exchange.getIn().getHeader(CouchDbConstants.HEADER_METHOD,String.class);
+  if (ObjectHelper.isEmpty(operation)) {
+    Response save=saveJsonElement(json);
+    if (save == null) {
+      throw new CouchDbException("Could not save document [unknown reason]",exchange);
+    }
+    if (log.isTraceEnabled()) {
+      log.trace("Document saved [_id={}, _rev={}]",save.getId(),save.getRev());
+    }
+    exchange.getIn().setHeader(CouchDbConstants.HEADER_DOC_REV,save.getRev());
+    exchange.getIn().setHeader(CouchDbConstants.HEADER_DOC_ID,save.getId());
   }
-  if (log.isTraceEnabled()) {
-    log.trace("Document saved [_id={}, _rev={}]",save.getId(),save.getRev());
+ else {
+    if (operation.equalsIgnoreCase("DELETE")) {
+      Response delete=deleteJsonElement(json);
+      if (delete == null) {
+        throw new CouchDbException("Could not delete document [unknown reason]",exchange);
+      }
+      if (log.isTraceEnabled()) {
+        log.trace("Document saved [_id={}, _rev={}]",delete.getId(),delete.getRev());
+      }
+      exchange.getIn().setHeader(CouchDbConstants.HEADER_DOC_REV,delete.getRev());
+      exchange.getIn().setHeader(CouchDbConstants.HEADER_DOC_ID,delete.getId());
+    }
   }
-  exchange.getIn().setHeader(CouchDbConstants.HEADER_DOC_REV,save.getRev());
-  exchange.getIn().setHeader(CouchDbConstants.HEADER_DOC_ID,save.getId());
 }
