@@ -1,0 +1,71 @@
+{
+  RestProducerFactory factory=null;
+  String cname=null;
+  if (getEndpoint().getComponentName() != null) {
+    Object comp=getEndpoint().getCamelContext().getRegistry().lookupByName(getEndpoint().getComponentName());
+    if (comp != null && comp instanceof RestProducerFactory) {
+      factory=(RestProducerFactory)comp;
+    }
+ else {
+      comp=getEndpoint().getCamelContext().getComponent(getEndpoint().getComponentName());
+      if (comp != null && comp instanceof RestProducerFactory) {
+        factory=(RestProducerFactory)comp;
+      }
+    }
+    if (factory == null) {
+      if (comp != null) {
+        throw new IllegalArgumentException("Component " + getEndpoint().getComponentName() + " is not a RestProducerFactory");
+      }
+ else {
+        throw new NoSuchBeanException(getEndpoint().getComponentName(),RestProducerFactory.class.getName());
+      }
+    }
+    cname=getEndpoint().getComponentName();
+  }
+  if (factory == null) {
+    for (    String name : getEndpoint().getCamelContext().getComponentNames()) {
+      Component comp=getEndpoint().getCamelContext().getComponent(name);
+      if (comp != null && comp instanceof RestProducerFactory) {
+        factory=(RestProducerFactory)comp;
+        cname=name;
+        break;
+      }
+    }
+  }
+  if (factory == null) {
+    Set<RestProducerFactory> factories=getEndpoint().getCamelContext().getRegistry().findByType(RestProducerFactory.class);
+    if (factories != null && factories.size() == 1) {
+      factory=factories.iterator().next();
+    }
+  }
+  if (factory != null) {
+    CollectionStringBuffer produces=new CollectionStringBuffer(",");
+    List<String> list=operation.getProduces();
+    if (list == null) {
+      list=swagger.getProduces();
+    }
+    if (list != null) {
+      for (      String s : list) {
+        produces.append(s);
+      }
+    }
+    CollectionStringBuffer consumes=new CollectionStringBuffer(",");
+    list=operation.getConsumes();
+    if (list == null) {
+      list=swagger.getConsumes();
+    }
+    if (list != null) {
+      for (      String s : list) {
+        consumes.append(s);
+      }
+    }
+    String scheme=swagger.getSchemes() != null && swagger.getSchemes().size() == 1 ? swagger.getSchemes().get(0).toValue() : "http";
+    String host=getEndpoint().getHost() != null ? getEndpoint().getHost() : swagger.getHost();
+    String basePath=swagger.getBasePath();
+    String uriTemplate=path;
+    return factory.createProducer(getEndpoint().getCamelContext(),exchange,scheme,host,verb,basePath,uriTemplate,queryParameters,(consumes.isEmpty() ? "" : consumes.toString()),(produces.isEmpty() ? "" : produces.toString()),null);
+  }
+ else {
+    throw new IllegalStateException("Cannot find RestProducerFactory in Registry or as a Component to use");
+  }
+}

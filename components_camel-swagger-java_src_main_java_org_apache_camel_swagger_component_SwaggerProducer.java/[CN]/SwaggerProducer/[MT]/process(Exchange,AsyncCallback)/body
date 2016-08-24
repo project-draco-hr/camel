@@ -1,48 +1,43 @@
 {
   String verb=getEndpoint().getVerb();
   String path=getEndpoint().getPath();
-  Operation op=getSwaggerOperation(verb,path);
-  if (op == null) {
+  Operation operation=getSwaggerOperation(verb,path);
+  if (operation == null) {
     exchange.setException(new IllegalArgumentException("Swagger schema does not contain operation for " + verb + ":"+ path));
     callback.done(true);
     return true;
   }
   try {
-    String contextPath=path;
     Map<String,Object> query=new LinkedHashMap<>();
-    for (    Parameter param : op.getParameters()) {
-      if ("path".equals(param.getIn())) {
-        String name=param.getName();
-        if (name != null) {
-          String value=exchange.getIn().getHeader(name,String.class);
-          if (value != null) {
-            String key="{" + name + "}";
-            contextPath=StringHelper.replaceAll(contextPath,key,value);
-          }
-        }
-      }
- else       if ("query".equals(param.getIn())) {
+    for (    Parameter param : operation.getParameters()) {
+      if ("query".equals(param.getIn())) {
         String name=param.getName();
         if (name != null) {
           String value=exchange.getIn().getHeader(name,String.class);
           if (value != null) {
             query.put(name,value);
           }
+ else           if (param.getRequired()) {
+            exchange.setException(new NoSuchHeaderException(exchange,name,String.class));
+            callback.done(true);
+            return true;
+          }
         }
       }
     }
+    String options=null;
     if (!query.isEmpty()) {
-      String options=URISupport.createQueryString(query);
-      contextPath=contextPath + "?" + options;
+      options=URISupport.createQueryString(query);
     }
-    LOG.debug("Using context-path: {}",contextPath);
+    Producer producer=createHttpProducer(exchange,operation,verb,path,options);
+    if (producer != null) {
+      AsyncProcessor async=AsyncProcessorConverterHelper.convert(producer);
+      return async.process(exchange,callback);
+    }
   }
  catch (  Throwable e) {
     exchange.setException(e);
-    callback.done(true);
-    return true;
   }
-  exchange.getIn().setBody("Hello Donald Duck");
   callback.done(true);
   return true;
 }
