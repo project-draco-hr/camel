@@ -3,20 +3,30 @@
   if (copy) {
     newRequest=httpClient.copyRequest(request,request.getURI());
     newRequest.method(request.getMethod());
+    HttpFields headers=newRequest.getHeaders();
+    for (    HttpField field : request.getHeaders()) {
+      HttpHeader header=field.getHeader();
+      if (HttpHeader.COOKIE.equals(header) || HttpHeader.HOST.equals(header)) {
+        headers.add(header,field.getValue());
+      }
+    }
   }
  else {
     newRequest=request;
   }
   conversation.setAttribute(AUTHENTICATION_RETRIES_ATTRIBUTE,++retries);
-  LOG.debug("Retry attempt {} on authentication error for {}",retries,request);
-  String currentToken=session.getAccessToken();
-  if (client != null) {
-    client.setAccessToken(currentToken);
-    client.setInstanceUrl(session.getInstanceUrl());
-    client.setAccessToken(newRequest);
-  }
+  Object originalRequest=conversation.getAttribute(AUTHENTICATION_REQUEST_ATTRIBUTE);
+  LOG.debug("Retry attempt {} on authentication error for {}",retries,originalRequest != null ? originalRequest : newRequest);
+  if (originalRequest == null) {
+    String currentToken=session.getAccessToken();
+    if (client != null) {
+      client.setAccessToken(currentToken);
+      client.setInstanceUrl(session.getInstanceUrl());
+      client.setAccessToken(newRequest);
+    }
  else {
-    newRequest.header(HttpHeader.AUTHORIZATION,"OAuth " + currentToken);
+      newRequest.header(HttpHeader.AUTHORIZATION,"OAuth " + currentToken);
+    }
   }
   conversation.updateResponseListeners(null);
   newRequest.onRequestBegin(getRequestAbortListener(request));
