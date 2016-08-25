@@ -28,7 +28,7 @@
   }
  catch (  IOException e) {
     final String msg=String.format("Error parsing message [%s] from Topic %s: %s",message,topicName,e.getMessage());
-    handleException(msg,new RuntimeCamelException(msg,e));
+    handleException(msg,new SalesforceException(msg,e));
   }
   try {
     getAsyncProcessor().process(exchange,new AsyncCallback(){
@@ -41,12 +41,14 @@
 );
   }
  catch (  Exception e) {
-    handleException(String.format("Error processing %s: %s",exchange,e.getMessage()),e);
+    String msg=String.format("Error processing %s: %s",exchange,e);
+    handleException(msg,new SalesforceException(msg,e));
   }
  finally {
     Exception ex=exchange.getException();
     if (ex != null) {
-      handleException(String.format("Unhandled exception: %s",ex.getMessage()),ex);
+      String msg=String.format("Unhandled exception: %s",ex.getMessage());
+      handleException(msg,new SalesforceException(msg,ex));
     }
   }
 }

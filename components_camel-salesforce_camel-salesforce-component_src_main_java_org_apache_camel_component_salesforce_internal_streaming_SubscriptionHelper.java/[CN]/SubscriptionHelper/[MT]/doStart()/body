@@ -1,17 +1,16 @@
 {
+  handshakeError=null;
+  handshakeException=null;
+  connectError=null;
+  connectException=null;
   if (handshakeListener == null) {
     handshakeListener=new ClientSessionChannel.MessageListener(){
       public void onMessage(      ClientSessionChannel channel,      Message message){
         LOG.debug("[CHANNEL:META_HANDSHAKE]: {}",message);
         if (!message.isSuccessful()) {
-          String error=(String)message.get(ERROR_FIELD);
-          if (error != null) {
-            handshakeError=error;
-          }
-          Exception exception=(Exception)message.get(EXCEPTION_FIELD);
-          if (exception != null) {
-            handshakeException=exception;
-          }
+          LOG.warn("Handshake failure: {}",message);
+          handshakeError=(String)message.get(ERROR_FIELD);
+          handshakeException=getFailure(message);
         }
  else         if (!listenerMap.isEmpty()) {
           reconnecting=true;
@@ -26,9 +25,18 @@
       public void onMessage(      ClientSessionChannel channel,      Message message){
         LOG.debug("[CHANNEL:META_CONNECT]: {}",message);
         if (!message.isSuccessful()) {
-          String error=(String)message.get(ERROR_FIELD);
-          if (error != null) {
-            connectError=error;
+          LOG.warn("Connect failure: {}",message);
+          connectError=(String)message.get(ERROR_FIELD);
+          connectException=getFailure(message);
+          if (connectError != null) {
+            if (connectError.startsWith("401::")) {
+              try {
+                session.login(null);
+              }
+ catch (              SalesforceException e) {
+                LOG.error("Error renewing OAuth token on Connect 401: {} ",e.getMessage(),e);
+              }
+            }
           }
         }
  else         if (reconnecting) {
@@ -40,12 +48,7 @@
           for (          Map.Entry<SalesforceConsumer,ClientSessionChannel.MessageListener> entry : map.entrySet()) {
             final SalesforceConsumer consumer=entry.getKey();
             final String topicName=consumer.getTopicName();
-            try {
-              subscribe(topicName,consumer);
-            }
- catch (            CamelException e) {
-              consumer.handleException(String.format("Error refreshing subscription to topic [%s]: %s",topicName,e.getMessage()),e);
-            }
+            subscribe(topicName,consumer);
           }
         }
       }
@@ -53,6 +56,68 @@
 ;
   }
   client.getChannel(META_CONNECT).addListener(connectListener);
+  if (disconnectListener == null) {
+    disconnectListener=new ClientSessionChannel.MessageListener(){
+      @Override public void onMessage(      ClientSessionChannel clientSessionChannel,      Message message){
+        final SalesforceHttpClient httpClient=component.getConfig().getHttpClient();
+        httpClient.getExecutor().execute(new Runnable(){
+          @Override public void run(){
+            boolean abort=false;
+            while (!client.isDisconnected()) {
+              try {
+                Thread.sleep(DISCONNECT_INTERVAL);
+              }
+ catch (              InterruptedException e) {
+                LOG.error("Aborting reconnect on interrupt!");
+                abort=true;
+              }
+            }
+            if (!abort) {
+              LOG.info("Reconnecting on unexpected disconnect from Salesforce...");
+              final long backoffIncrement=client.getBackoffIncrement();
+              final long maxBackoff=client.getMaxBackoff();
+              long backoff=backoffIncrement;
+              String msg=String.format("Failed to reconnect, exceeded maximum backoff %s msecs",maxBackoff);
+              Exception lastError=new SalesforceException(msg,null);
+              while (!abort && !client.isHandshook() && backoff < maxBackoff) {
+                try {
+                  doStop();
+                  doStart();
+                }
+ catch (                Exception e) {
+                  LOG.error("Error reconnecting to Salesforce: {}",e.getMessage(),e);
+                  lastError=e;
+                }
+                if (!client.isHandshook()) {
+                  LOG.debug("Pausing for {} msecs after reconnect failure",backoff);
+                  try {
+                    Thread.sleep(backoff);
+                  }
+ catch (                  InterruptedException e) {
+                    LOG.error("Aborting reconnect on interrupt!");
+                    abort=true;
+                  }
+                  backoff+=backoffIncrement;
+                }
+              }
+              if (client.isHandshook()) {
+                LOG.info("Successfully reconnected to Salesforce!");
+              }
+ else               if (!abort) {
+                String abortMsg="Aborting Salesforce reconnect due to: " + lastError.getMessage();
+                for (                SalesforceConsumer consumer : listenerMap.keySet()) {
+                  consumer.handleException(abortMsg,new SalesforceException(abortMsg,lastError));
+                }
+              }
+            }
+          }
+        }
+);
+      }
+    }
+;
+  }
+  client.getChannel(META_DISCONNECT).addListener(disconnectListener);
   client.handshake();
   final long waitMs=MILLISECONDS.convert(CONNECT_TIMEOUT,SECONDS);
   if (!client.waitFor(waitMs,BayeuxClient.State.CONNECTED)) {
@@ -61,6 +126,9 @@
     }
  else     if (handshakeError != null) {
       throw new CamelException(String.format("Error during HANDSHAKE: %s",handshakeError));
+    }
+ else     if (connectException != null) {
+      throw new CamelException(String.format("Exception during CONNECT: %s",connectException.getMessage()),connectException);
     }
  else     if (connectError != null) {
       throw new CamelException(String.format("Error during CONNECT: %s",connectError));
