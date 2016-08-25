@@ -1,4 +1,5 @@
 {
+  LOG.debug("Using Swagger operation: {} with {} {}",operation,verb,path);
   RestProducerFactory factory=null;
   String cname=null;
   if (getEndpoint().getComponentName() != null) {
@@ -39,6 +40,7 @@
     }
   }
   if (factory != null) {
+    LOG.debug("Using RestProducerFactory: {}",factory);
     CollectionStringBuffer produces=new CollectionStringBuffer(",");
     List<String> list=operation.getProduces();
     if (list == null) {
@@ -63,39 +65,7 @@
     String host=getEndpoint().getHost() != null ? getEndpoint().getHost() : swagger.getHost();
     String basePath=swagger.getBasePath();
     String uriTemplate=path;
-    String resolvedUriTemplate=uriTemplate;
-    Map<String,Object> query=new LinkedHashMap<>();
-    for (    Parameter param : operation.getParameters()) {
-      if ("query".equals(param.getIn())) {
-        String name=param.getName();
-        if (name != null) {
-          String value=exchange.getIn().getHeader(name,String.class);
-          if (value != null) {
-            exchange.getIn().removeHeader(param.getName());
-            query.put(name,value);
-          }
- else           if (param.getRequired()) {
-            throw new NoSuchHeaderException(exchange,name,String.class);
-          }
-        }
-      }
- else       if ("path".equals(param.getIn())) {
-        String value=exchange.getIn().getHeader(param.getName(),String.class);
-        if (value != null) {
-          exchange.getIn().removeHeader(param.getName());
-          String token="{" + param.getName() + "}";
-          resolvedUriTemplate=StringHelper.replaceAll(resolvedUriTemplate,token,value);
-        }
- else         if (param.getRequired()) {
-          throw new NoSuchHeaderException(exchange,param.getName(),String.class);
-        }
-      }
-    }
-    String queryParameters=null;
-    if (!query.isEmpty()) {
-      queryParameters=URISupport.createQueryString(query);
-    }
-    return factory.createProducer(getEndpoint().getCamelContext(),exchange,scheme,host,verb,basePath,uriTemplate,resolvedUriTemplate,queryParameters,(consumes.isEmpty() ? "" : consumes.toString()),(produces.isEmpty() ? "" : produces.toString()),null);
+    return factory.createProducer(getEndpoint().getCamelContext(),scheme,host,verb,basePath,uriTemplate,(consumes.isEmpty() ? "" : consumes.toString()),(produces.isEmpty() ? "" : produces.toString()),null);
   }
  else {
     throw new IllegalStateException("Cannot find RestProducerFactory in Registry or as a Component to use");

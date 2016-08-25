@@ -1,18 +1,8 @@
 {
-  String verb=getEndpoint().getVerb();
-  String path=getEndpoint().getPath();
-  Operation operation=getSwaggerOperation(verb,path);
-  if (operation == null) {
-    exchange.setException(new IllegalArgumentException("Swagger schema does not contain operation for " + verb + ":"+ path));
-    callback.done(true);
-    return true;
-  }
   try {
-    Producer producer=createHttpProducer(exchange,operation,verb,path);
     if (producer != null) {
-      ServiceHelper.startService(producer);
-      AsyncProcessor async=AsyncProcessorConverterHelper.convert(producer);
-      return async.process(exchange,callback);
+      prepareExchange(exchange);
+      return producer.process(exchange,callback);
     }
   }
  catch (  Throwable e) {

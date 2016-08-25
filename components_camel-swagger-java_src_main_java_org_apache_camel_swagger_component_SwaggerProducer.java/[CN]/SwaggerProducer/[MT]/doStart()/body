@@ -1,0 +1,14 @@
+{
+  super.doStart();
+  String verb=getEndpoint().getVerb();
+  String path=getEndpoint().getPath();
+  operation=getSwaggerOperation(verb,path);
+  if (operation == null) {
+    throw new IllegalArgumentException("Swagger schema does not contain operation for " + verb + ":"+ path);
+  }
+  Producer processor=createHttpProducer(operation,verb,path);
+  if (processor != null) {
+    producer=AsyncProcessorConverterHelper.convert(processor);
+  }
+  ServiceHelper.startService(producer);
+}
