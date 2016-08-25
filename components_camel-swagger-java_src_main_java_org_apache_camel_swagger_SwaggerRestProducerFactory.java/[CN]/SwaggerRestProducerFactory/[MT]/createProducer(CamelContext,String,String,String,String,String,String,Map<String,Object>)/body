@@ -1,0 +1,18 @@
+{
+  String apiDoc=(String)parameters.get("apiDoc");
+  if (apiDoc == null) {
+    throw new IllegalArgumentException("Swagger api-doc must be configured using the apiDoc option");
+  }
+  String path=uriTemplate != null ? uriTemplate : basePath;
+  if (!path.startsWith("/")) {
+    path="/" + path;
+  }
+  Swagger swagger=loadSwaggerModel(camelContext,apiDoc);
+  Operation operation=getSwaggerOperation(swagger,verb,path);
+  if (operation == null) {
+    throw new IllegalArgumentException("Swagger api-doc does not contain operation for " + verb + ":"+ path);
+  }
+  String componentName=(String)parameters.get("componentName");
+  Producer producer=createHttpProducer(camelContext,swagger,operation,host,verb,path,produces,consumes,componentName,parameters);
+  return producer;
+}
