@@ -1,7 +1,21 @@
 {
   RestEndpoint answer=new RestEndpoint(uri,this);
+  answer.setComponentName(componentName);
+  answer.setApiDoc(apiDoc);
+  String h=resolveAndRemoveReferenceParameter(parameters,"host",String.class,host);
+  if (h == null && getCamelContext().getRestConfiguration() != null) {
+    h=getCamelContext().getRestConfiguration().getHost();
+  }
+  if (h != null && !(h.startsWith("http://") || h.startsWith("https://"))) {
+    h="http://" + h;
+  }
+  answer.setHost(h);
   setProperties(answer,parameters);
   answer.setParameters(parameters);
+  String query=URISupport.createQueryString(parameters);
+  if (ObjectHelper.isNotEmpty(query)) {
+    answer.setQueryParameters(query);
+  }
   if (!remaining.contains(":")) {
     throw new IllegalArgumentException("Invalid syntax. Must be rest:method:path[:uriTemplate] where uriTemplate is optional");
   }

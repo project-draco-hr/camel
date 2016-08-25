@@ -1,0 +1,67 @@
+{
+  boolean hasPath=false;
+  String resolvedUriTemplate=getEndpoint().getUriTemplate() != null ? getEndpoint().getUriTemplate() : getEndpoint().getPath();
+  if (resolvedUriTemplate.contains("{")) {
+    String[] arr=resolvedUriTemplate.split("\\/");
+    CollectionStringBuffer csb=new CollectionStringBuffer("/");
+    for (    String a : arr) {
+      if (a.startsWith("{") && a.endsWith("}")) {
+        String key=a.substring(1,a.length() - 1);
+        String value=exchange.getIn().getHeader(key,String.class);
+        if (value != null) {
+          hasPath=true;
+          exchange.getIn().removeHeader(key);
+          csb.append(key + "=" + value);
+        }
+ else {
+          csb.append(a);
+        }
+      }
+ else {
+        csb.append(a);
+      }
+    }
+    resolvedUriTemplate=csb.toString();
+  }
+  String query=getEndpoint().getQueryParameters();
+  if (query != null) {
+    Map<String,Object> params=URISupport.parseQuery(query);
+    for (    Map.Entry<String,Object> entry : params.entrySet()) {
+      Object v=entry.getValue();
+      if (v != null) {
+        String a=v.toString();
+        if (a.startsWith("{") && a.endsWith("}")) {
+          String key=a.substring(1,a.length() - 1);
+          String value=exchange.getIn().getHeader(key,String.class);
+          if (value != null) {
+            params.put(entry.getKey(),value);
+          }
+ else {
+            params.put(entry.getKey(),entry.getValue());
+          }
+        }
+ else {
+          params.put(entry.getKey(),entry.getValue());
+        }
+      }
+    }
+    query=URISupport.createQueryString(params);
+  }
+  if (query != null) {
+    exchange.getIn().setHeader(Exchange.HTTP_QUERY,query);
+  }
+  if (hasPath) {
+    String host=getEndpoint().getHost();
+    String basePath=getEndpoint().getUriTemplate() != null ? getEndpoint().getPath() : null;
+    basePath=FileUtil.stripLeadingSeparator(basePath);
+    resolvedUriTemplate=FileUtil.stripLeadingSeparator(resolvedUriTemplate);
+    String overrideUri;
+    if (basePath != null) {
+      overrideUri=String.format("%s/%s/%s",host,basePath,resolvedUriTemplate);
+    }
+ else {
+      overrideUri=String.format("%s/%s",host,resolvedUriTemplate);
+    }
+    exchange.getIn().setHeader(Exchange.HTTP_URI,overrideUri);
+  }
+}

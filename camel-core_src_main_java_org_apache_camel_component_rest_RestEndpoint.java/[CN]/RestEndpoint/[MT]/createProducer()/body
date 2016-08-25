@@ -1,3 +1,49 @@
 {
-  throw new UnsupportedOperationException("Producer not supported");
+  RestProducerFactory factory=null;
+  String cname=null;
+  if (getComponentName() != null) {
+    Object comp=getCamelContext().getRegistry().lookupByName(getComponentName());
+    if (comp != null && comp instanceof RestProducerFactory) {
+      factory=(RestProducerFactory)comp;
+    }
+ else {
+      comp=getCamelContext().getComponent(getComponentName());
+      if (comp != null && comp instanceof RestProducerFactory) {
+        factory=(RestProducerFactory)comp;
+      }
+    }
+    if (factory == null) {
+      if (comp != null) {
+        throw new IllegalArgumentException("Component " + getComponentName() + " is not a RestProducerFactory");
+      }
+ else {
+        throw new NoSuchBeanException(getComponentName(),RestProducerFactory.class.getName());
+      }
+    }
+    cname=getComponentName();
+  }
+  if (factory == null) {
+    for (    String name : getCamelContext().getComponentNames()) {
+      Component comp=getCamelContext().getComponent(name);
+      if (comp != null && comp instanceof RestProducerFactory) {
+        factory=(RestProducerFactory)comp;
+        cname=name;
+        break;
+      }
+    }
+  }
+  if (factory == null) {
+    Set<RestProducerFactory> factories=getCamelContext().getRegistry().findByType(RestProducerFactory.class);
+    if (factories != null && factories.size() == 1) {
+      factory=factories.iterator().next();
+    }
+  }
+  if (factory != null) {
+    String uriTemplate=path;
+    Producer producer=factory.createProducer(getCamelContext(),host,method,path,uriTemplate,consumes,produces,parameters);
+    return new RestProducer(this,producer);
+  }
+ else {
+    throw new IllegalStateException("Cannot find RestProducerFactory in Registry or as a Component to use");
+  }
 }
