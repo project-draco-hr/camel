@@ -1,0 +1,16 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      restConfiguration().component("netty4-http").host("localhost").port(getPort());
+      from("direct:start").to("rest:get:users/{id}/basic");
+      rest("/users/").get("{id}/basic").route().to("mock:input").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("id",String.class);
+          exchange.getOut().setBody(id + ";Donald Duck");
+        }
+      }
+);
+    }
+  }
+;
+}
