@@ -1,4 +1,5 @@
 {
+  RestProducerFactory apiDocFactory=null;
   RestProducerFactory factory=null;
   if (apiDoc != null) {
     LOG.debug("Discovering camel-swagger-java on classpath for using api-doc: {}",apiDoc);
@@ -6,7 +7,7 @@
       FactoryFinder finder=getCamelContext().getFactoryFinder(RESOURCE_PATH);
       Object instance=finder.newInstance(DEFAULT_API_COMPONENT_NAME);
       if (instance instanceof RestProducerFactory) {
-        factory=(RestProducerFactory)instance;
+        apiDocFactory=(RestProducerFactory)instance;
       }
       parameters.put("apiDoc",apiDoc);
     }
@@ -14,8 +15,8 @@
       throw new IllegalStateException("Cannot find camel-swagger-java on classpath to use with api-doc: " + apiDoc);
     }
   }
-  String cname=null;
-  if (factory == null && getComponentName() != null) {
+  String cname=getComponentName();
+  if (cname != null) {
     Object comp=getCamelContext().getRegistry().lookupByName(getComponentName());
     if (comp != null && comp instanceof RestProducerFactory) {
       factory=(RestProducerFactory)comp;
@@ -55,7 +56,14 @@
   }
   if (factory != null) {
     LOG.debug("Using RestProducerFactory: {}",factory);
-    Producer producer=factory.createProducer(getCamelContext(),host,method,path,uriTemplate,queryParameters,consumes,produces,parameters);
+    Producer producer;
+    if (apiDocFactory != null) {
+      parameters.put("restProducerFactory",factory);
+      producer=apiDocFactory.createProducer(getCamelContext(),host,method,path,uriTemplate,queryParameters,consumes,produces,parameters);
+    }
+ else {
+      producer=factory.createProducer(getCamelContext(),host,method,path,uriTemplate,queryParameters,consumes,produces,parameters);
+    }
     return new RestProducer(this,producer);
   }
  else {

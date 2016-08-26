@@ -1,0 +1,48 @@
+{
+  LOG.debug("Using Swagger operation: {} with {} {}",operation,verb,path);
+  RestProducerFactory factory=(RestProducerFactory)parameters.remove("restProducerFactory");
+  if (factory != null) {
+    LOG.debug("Using RestProducerFactory: {}",factory);
+    if (produces == null) {
+      CollectionStringBuffer csb=new CollectionStringBuffer(",");
+      List<String> list=operation.getProduces();
+      if (list == null) {
+        list=swagger.getProduces();
+      }
+      if (list != null) {
+        for (        String s : list) {
+          csb.append(s);
+        }
+      }
+      produces=csb.isEmpty() ? null : csb.toString();
+    }
+    if (consumes == null) {
+      CollectionStringBuffer csb=new CollectionStringBuffer(",");
+      List<String> list=operation.getConsumes();
+      if (list == null) {
+        list=swagger.getConsumes();
+      }
+      if (list != null) {
+        for (        String s : list) {
+          csb.append(s);
+        }
+      }
+      consumes=csb.isEmpty() ? null : csb.toString();
+    }
+    String basePath;
+    String uriTemplate;
+    if (host == null) {
+      host=swagger.getHost();
+      basePath=swagger.getBasePath();
+      uriTemplate=path;
+    }
+ else {
+      basePath=path;
+      uriTemplate=null;
+    }
+    return factory.createProducer(camelContext,host,verb,basePath,uriTemplate,queryParameters,consumes,produces,parameters);
+  }
+ else {
+    throw new IllegalStateException("Cannot find RestProducerFactory in Registry or as a Component to use");
+  }
+}

@@ -12,7 +12,19 @@
   if (operation == null) {
     throw new IllegalArgumentException("Swagger api-doc does not contain operation for " + verb + ":"+ path);
   }
+  if (queryParameters != null) {
+    for (    Parameter param : operation.getParameters()) {
+      if ("query".equals(param.getIn()) && param.getRequired()) {
+        String key=param.getName();
+        String token=key + "=";
+        boolean hasQuery=queryParameters.contains(token);
+        if (!hasQuery) {
+          throw new IllegalArgumentException("Swagger api-doc does not contain query parameter " + key + " for "+ verb+ ":"+ path);
+        }
+      }
+    }
+  }
   String componentName=(String)parameters.get("componentName");
-  Producer producer=createHttpProducer(camelContext,swagger,operation,host,verb,path,produces,consumes,componentName,parameters);
+  Producer producer=createHttpProducer(camelContext,swagger,operation,host,verb,path,queryParameters,produces,consumes,componentName,parameters);
   return producer;
 }
