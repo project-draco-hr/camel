@@ -1,27 +1,28 @@
 {
   boolean hasPath=false;
   String resolvedUriTemplate=getEndpoint().getUriTemplate() != null ? getEndpoint().getUriTemplate() : getEndpoint().getPath();
-  if (resolvedUriTemplate.contains("{")) {
-    String[] arr=resolvedUriTemplate.split("\\/");
-    CollectionStringBuffer csb=new CollectionStringBuffer("/");
-    for (    String a : arr) {
-      if (a.startsWith("{") && a.endsWith("}")) {
-        String key=a.substring(1,a.length() - 1);
-        String value=exchange.getIn().getHeader(key,String.class);
-        if (value != null) {
-          hasPath=true;
-          exchange.getIn().removeHeader(key);
-          csb.append(value);
+  if (preapreUriTemplate) {
+    if (resolvedUriTemplate.contains("{")) {
+      String[] arr=resolvedUriTemplate.split("\\/");
+      CollectionStringBuffer csb=new CollectionStringBuffer("/");
+      for (      String a : arr) {
+        if (a.startsWith("{") && a.endsWith("}")) {
+          String key=a.substring(1,a.length() - 1);
+          String value=exchange.getIn().getHeader(key,String.class);
+          if (value != null) {
+            hasPath=true;
+            csb.append(value);
+          }
+ else {
+            csb.append(a);
+          }
         }
  else {
           csb.append(a);
         }
       }
- else {
-        csb.append(a);
-      }
+      resolvedUriTemplate=csb.toString();
     }
-    resolvedUriTemplate=csb.toString();
   }
   String query=getEndpoint().getQueryParameters();
   if (query != null) {
@@ -35,7 +36,6 @@
           String key=a.substring(1,a.length() - 1);
           String value=exchange.getIn().getHeader(key,String.class);
           if (value != null) {
-            exchange.getIn().removeHeader(key);
             params.put(key,value);
           }
  else {

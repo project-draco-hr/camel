@@ -1,0 +1,17 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      int port=AvailablePortFinder.getNextAvailable(22400);
+      restConfiguration().component("restlet").host("localhost").port(port);
+      from("direct:start").to("rest:get:users/{id}/basic");
+      from("jetty:http://localhost:" + port + "/users/?matchOnUriPrefix=true").process(new Processor(){
+        public void process(        Exchange exchange) throws Exception {
+          String id=exchange.getIn().getHeader("id",String.class);
+          exchange.getOut().setBody(id + ";Donald Duck");
+        }
+      }
+);
+    }
+  }
+;
+}
