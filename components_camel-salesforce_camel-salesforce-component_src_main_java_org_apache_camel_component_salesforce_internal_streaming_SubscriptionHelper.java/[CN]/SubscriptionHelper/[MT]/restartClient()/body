@@ -1,0 +1,62 @@
+{
+  final SalesforceHttpClient httpClient=component.getConfig().getHttpClient();
+  httpClient.getExecutor().execute(new Runnable(){
+    @Override public void run(){
+      LOG.info("Restarting on unexpected disconnect from Salesforce...");
+      boolean abort=false;
+      LOG.debug("Waiting to disconnect...");
+      while (!client.isDisconnected()) {
+        try {
+          Thread.sleep(DISCONNECT_INTERVAL);
+        }
+ catch (        InterruptedException e) {
+          LOG.error("Aborting restart on interrupt!");
+          abort=true;
+        }
+      }
+      if (!abort) {
+        final long backoff=restartBackoff.getAndAdd(backoffIncrement);
+        if (backoff > maxBackoff) {
+          LOG.error("Restart aborted after exceeding {} msecs backoff",maxBackoff);
+          abort=true;
+        }
+ else {
+          LOG.debug("Pausing for {} msecs before restart attempt",backoff);
+          try {
+            Thread.sleep(backoff);
+          }
+ catch (          InterruptedException e) {
+            LOG.error("Aborting restart on interrupt!");
+            abort=true;
+          }
+        }
+        if (!abort) {
+          Exception lastError=new SalesforceException("Unknown error",null);
+          try {
+            doStop();
+            doStart();
+          }
+ catch (          Exception e) {
+            LOG.error("Error restarting: " + e.getMessage(),e);
+            lastError=e;
+          }
+          if (client.isHandshook()) {
+            LOG.info("Successfully restarted!");
+            restartBackoff.set(client.getBackoffIncrement());
+          }
+ else {
+            LOG.error("Failed to restart after pausing for {} msecs",backoff);
+            if ((backoff + backoffIncrement) > maxBackoff) {
+              String abortMsg="Aborting restart attempt due to: " + lastError.getMessage();
+              SalesforceException ex=new SalesforceException(abortMsg,lastError);
+              for (              SalesforceConsumer consumer : listenerMap.keySet()) {
+                consumer.handleException(abortMsg,ex);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+);
+}
