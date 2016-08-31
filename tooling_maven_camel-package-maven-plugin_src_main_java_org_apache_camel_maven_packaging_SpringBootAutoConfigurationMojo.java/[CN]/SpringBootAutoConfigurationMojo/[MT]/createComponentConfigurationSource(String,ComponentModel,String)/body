@@ -12,31 +12,20 @@
   String prefix="camel.component." + (overrideComponentName != null ? overrideComponentName : model.getScheme());
   prefix=prefix.toLowerCase(Locale.US);
   javaClass.addAnnotation("org.springframework.boot.context.properties.ConfigurationProperties").setStringValue("prefix",prefix);
+  Set<JavaClassSource> nestedTypes=new HashSet<>();
   for (  ComponentOptionModel option : model.getComponentOptions()) {
     if (skipComponentOption(model,option)) {
       continue;
     }
     String type=option.getJavaType();
-    type=type.replaceAll("\\<\\?\\>","");
-    if ("boolean".equals(type)) {
-      type="java.lang.Boolean";
-    }
- else     if ("int".equals(type) || "integer".equals(type)) {
-      type="java.lang.Integer";
-    }
- else     if ("byte".equals(type)) {
-      type="java.lang.Byte";
-    }
- else     if ("short".equals(type)) {
-      type="java.lang.Short";
-    }
- else     if ("double".equals(type)) {
-      type="java.lang.Double";
-    }
- else     if ("float".equals(type)) {
-      type="java.lang.Float";
+    type=getSimpleJavaType(type);
+    if (isNestedProperty(type,project,nestedTypes)) {
+      type=option.getShortJavaType() + INNER_TYPE_SUFFIX;
     }
     PropertySource<JavaClassSource> prop=javaClass.addProperty(type,option.getName());
+    if (!type.endsWith(INNER_TYPE_SUFFIX) && !EXCLUDE_CLASSES_PATTERN.matcher(type).matches() && Strings.isBlank(option.getEnumValues())) {
+      prop.getField().addAnnotation(NestedConfigurationProperty.class);
+    }
     if ("true".equals(option.getDeprecated())) {
       prop.getField().addAnnotation(Deprecated.class);
       prop.getAccessor().addAnnotation(Deprecated.class);
@@ -57,6 +46,60 @@
         String enumShortName=type.substring(type.lastIndexOf(".") + 1);
         prop.getField().setLiteralInitializer(enumShortName + "." + option.getDefaultValue());
         javaClass.addImport(model.getJavaType());
+      }
+    }
+  }
+  ClassLoader projectClassLoader=getProjectClassLoader();
+  for (  JavaClassSource nestedType : nestedTypes) {
+    final JavaClassSource innerClass=javaClass.addNestedType("public static class " + nestedType.getName() + INNER_TYPE_SUFFIX);
+    innerClass.addField().setPublic().setStatic(true).setFinal(true).setType(Class.class).setName("CAMEL_NESTED_CLASS").setLiteralInitializer(nestedType.getCanonicalName() + ".class");
+    for (    PropertySource<JavaClassSource> sourceProp : nestedType.getProperties()) {
+      final Type<JavaClassSource> sourcePropType=sourceProp.getType();
+      final MethodSource<JavaClassSource> mutator=sourceProp.getMutator();
+      if (mutator == null) {
+        continue;
+      }
+      final String optionType=getSimpleJavaType(sourcePropType.getQualifiedNameWithGenerics());
+      final FieldSource<JavaClassSource> field=sourceProp.getField();
+      final PropertySource<JavaClassSource> prop=innerClass.addProperty(optionType,sourceProp.getName());
+      if (!EXCLUDE_CLASSES_PATTERN.matcher(optionType).matches() && !isEnum(projectClassLoader,optionType)) {
+        prop.getField().addAnnotation(NestedConfigurationProperty.class);
+      }
+      if (sourceProp.hasAnnotation(Deprecated.class)) {
+        prop.getField().addAnnotation(Deprecated.class);
+        prop.getAccessor().addAnnotation(Deprecated.class);
+        prop.getMutator().addAnnotation(Deprecated.class);
+        prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
+      }
+      String description=null;
+      if (mutator.hasJavaDoc()) {
+        description=mutator.getJavaDoc().getFullText();
+      }
+ else       if (field != null) {
+        description=field.getJavaDoc().getFullText();
+      }
+      if (!Strings.isBlank(description)) {
+        prop.getField().getJavaDoc().setFullText(description);
+      }
+      String defaultValue=null;
+      if (sourceProp.hasAnnotation(UriParam.class)) {
+        defaultValue=sourceProp.getAnnotation(UriParam.class).getStringValue("defaultValue");
+      }
+ else       if (sourceProp.hasAnnotation(UriPath.class)) {
+        defaultValue=sourceProp.getAnnotation(UriPath.class).getStringValue("defaultValue");
+      }
+      if (!Strings.isBlank(defaultValue)) {
+        if ("java.lang.String".equals(optionType)) {
+          prop.getField().setStringInitializer(defaultValue);
+        }
+ else         if ("integer".equals(optionType) || "boolean".equals(optionType)) {
+          prop.getField().setLiteralInitializer(defaultValue);
+        }
+ else         if (isEnum(projectClassLoader,optionType)) {
+          String enumShortName=optionType.substring(optionType.lastIndexOf(".") + 1);
+          prop.getField().setLiteralInitializer(enumShortName + "." + defaultValue);
+          javaClass.addImport(model.getJavaType());
+        }
       }
     }
   }

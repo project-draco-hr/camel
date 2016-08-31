@@ -1,0 +1,23 @@
+{
+  boolean nested=false;
+  if (!type.startsWith("java.lang.")) {
+    final String fileName=type.replaceAll("[\\[\\]]","").replaceAll("\\.","\\/") + ".java";
+    for (    Object sourceRoot : project.getCompileSourceRoots()) {
+      File sourceFile=new File(sourceRoot.toString(),fileName);
+      if (sourceFile.isFile()) {
+        try {
+          JavaType<?> classSource=Roaster.parse(sourceFile);
+          if (classSource instanceof JavaClassSource) {
+            nestedTypes.add((JavaClassSource)classSource);
+            nested=true;
+            break;
+          }
+        }
+ catch (        FileNotFoundException e) {
+          throw new IllegalArgumentException("Missing source file " + type);
+        }
+      }
+    }
+  }
+  return nested;
+}
