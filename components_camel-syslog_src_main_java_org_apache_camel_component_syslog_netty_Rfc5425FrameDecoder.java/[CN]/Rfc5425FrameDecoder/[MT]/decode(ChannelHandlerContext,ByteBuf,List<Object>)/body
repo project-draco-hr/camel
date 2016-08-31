@@ -1,9 +1,12 @@
 {
   if (currentFramelength == null) {
-    int index=indexOf(buffer,ChannelBuffers.wrappedBuffer(new byte[]{' '}));
+    int index=indexOf(in,Unpooled.wrappedBuffer(new byte[]{' '}));
     StringBuffer lengthbuffer=new StringBuffer();
     if (index > -1) {
-      lengthbuffer.append(new String(buffer.readBytes(index).array()));
+      ByteBuf byteBuf=in.readBytes(index);
+      byte[] dest=new byte[byteBuf.readableBytes()];
+      byteBuf.readBytes(dest);
+      lengthbuffer.append(new String(dest));
     }
     int length;
     try {
@@ -13,15 +16,15 @@
       length=-1;
     }
     if (length < 0) {
-      buffer.resetReaderIndex();
-      return null;
+      in.resetReaderIndex();
+      return;
     }
     currentFramelength=length;
   }
-  if (buffer.readableBytes() < currentFramelength) {
-    return null;
+  if (in.readableBytes() < currentFramelength) {
+    return;
   }
   int lengthToRead=currentFramelength;
   currentFramelength=null;
-  return buffer.readBytes(lengthToRead);
+  out.add(in.readBytes(lengthToRead));
 }
