@@ -11,7 +11,7 @@
     ark=ark.addAsDirectories(CLASSES_FOLDER);
   }
   if (config.getUseCustomLog()) {
-    ark=ark.addAsResource("log4j2-spring.xml",CLASSES_FOLDER + "/log4j2.xml");
+    ark=ark.addAsResource("spring-logback.xml",CLASSES_FOLDER + "/spring-logback.xml");
   }
   for (  Map.Entry<String,String> res : config.getResources().entrySet()) {
     ark=ark.addAsResource(res.getKey(),CLASSES_FOLDER + "/" + res.getValue());
@@ -36,6 +36,10 @@
   List<MavenDependencyExclusion> commonExclusions=new LinkedList<>();
   commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-log4j12"));
   commonExclusions.add(MavenDependencies.createExclusion("log4j","log4j"));
+  commonExclusions.add(MavenDependencies.createExclusion("log4j","log4j-slf4j-impl"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.apache.logging.log4j","log4j"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.apache.logging.log4j","log4j-core"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.apache.logging.log4j","log4j-slf4j-impl"));
   commonExclusions.add(MavenDependencies.createExclusion("log4j","apache-log4j-extras"));
   commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-simple"));
   commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-jdk14"));
@@ -52,30 +56,38 @@
     moduleDependencies.add(dep);
   }
   if (config.getIncludeProvidedDependencies() || config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
+    StringBuilder dependencies=new StringBuilder();
     List<ScopeType> scopes=new LinkedList<>();
     if (config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
+      dependencies.append(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.TEST.toString()));
       scopes.add(ScopeType.TEST);
     }
     if (config.getIncludeProvidedDependencies()) {
+      dependencies.append(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.PROVIDED.toString()));
       scopes.add(ScopeType.PROVIDED);
     }
+    File resolverFile=createResolverPom(config,dependencies.toString());
     boolean failIfNoDependencies=false;
     List<MavenResolvedArtifact> moduleArtifacts;
     try {
-      moduleArtifacts=Arrays.asList(resolver(config).loadPomFromFile(config.getModuleBasePath() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
+      moduleArtifacts=Arrays.asList(resolver(config).loadPomFromFile(resolverFile).importDependencies(scopes.toArray(new ScopeType[0])).resolve().withoutTransitivity().asResolvedArtifact());
     }
  catch (    IllegalArgumentException e) {
       if (failIfNoDependencies) {
         throw e;
       }
-      debug("Error while getting dependencies for scopes: " + scopes + ". Message="+ e.getMessage());
+      debug("Error while getting dependencies for test or optional scopes. Message=" + e.getMessage());
       moduleArtifacts=new LinkedList<>();
     }
+    List<MavenCoordinate> coordinates=new LinkedList<>();
     for (    MavenResolvedArtifact art : moduleArtifacts) {
-      MavenCoordinate c=art.getCoordinate();
-      if (!validTestDependency(config,c)) {
+      MavenCoordinate coord=art.getCoordinate();
+      if (!validTestDependency(config,coord)) {
         continue;
       }
+      coordinates.add(coord);
+    }
+    for (    MavenCoordinate c : coordinates) {
       Set<String> pomExclusions=DependencyResolver.getExclusions(config.getModuleBasePath() + "/pom.xml",c.getGroupId(),c.getArtifactId());
       MavenDependencyExclusion[] artExclusions;
       if (pomExclusions.isEmpty()) {
@@ -100,6 +112,7 @@
   ark=ark.addPackages(true,"org.jboss.shrinkwrap");
   ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
   ark=addSpringbootPackage(ark,"org.apache.camel.itest.springboot");
+  ark=ark.addPackages(true,"org.apache.camel.converter.myconverter");
   ark=ark.addPackages(true,"org.springframework.boot.loader");
   ClassPath.Builder external=ClassPath.builder().add(ark);
   external.addSystemProperty("javax.xml.accessExternalDTD","all");
