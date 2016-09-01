@@ -1,6 +1,13 @@
 {
   ObjectHelper.notNull(actualSchema,"schema",this);
-  DatumReader<GenericRecord> reader=new SpecificDatumReader<GenericRecord>(actualSchema);
+  ClassLoader classLoader=null;
+  Class<?> clazz=camelContext.getClassResolver().resolveClass(actualSchema.getFullName());
+  if (clazz != null) {
+    classLoader=clazz.getClassLoader();
+  }
+  SpecificData specificData=new SpecificDataNoCache(classLoader);
+  DatumReader<GenericRecord> reader=new SpecificDatumReader<GenericRecord>(null,null,specificData);
+  reader.setSchema(actualSchema);
   Decoder decoder=DecoderFactory.get().binaryDecoder(inputStream,null);
   Object result=reader.read(null,decoder);
   return result;
