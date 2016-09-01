@@ -23,7 +23,7 @@
       type=option.getShortJavaType() + INNER_TYPE_SUFFIX;
     }
     PropertySource<JavaClassSource> prop=javaClass.addProperty(type,option.getName());
-    if (!type.endsWith(INNER_TYPE_SUFFIX) && !EXCLUDE_CLASSES_PATTERN.matcher(type).matches() && Strings.isBlank(option.getEnumValues())) {
+    if (!(type.endsWith(INNER_TYPE_SUFFIX) || !(type.indexOf('[') == -1) || EXCLUDE_INNER_PATTERN.matcher(type).matches()|| !Strings.isBlank(option.getEnumValues()))) {
       prop.getField().addAnnotation(NestedConfigurationProperty.class);
     }
     if ("true".equals(option.getDeprecated())) {
@@ -54,15 +54,24 @@
     final JavaClassSource innerClass=javaClass.addNestedType("public static class " + nestedType.getName() + INNER_TYPE_SUFFIX);
     innerClass.addField().setPublic().setStatic(true).setFinal(true).setType(Class.class).setName("CAMEL_NESTED_CLASS").setLiteralInitializer(nestedType.getCanonicalName() + ".class");
     for (    PropertySource<JavaClassSource> sourceProp : nestedType.getProperties()) {
-      final Type<JavaClassSource> sourcePropType=sourceProp.getType();
       final MethodSource<JavaClassSource> mutator=sourceProp.getMutator();
       if (mutator == null) {
         continue;
       }
-      final String optionType=getSimpleJavaType(sourcePropType.getQualifiedNameWithGenerics());
-      final FieldSource<JavaClassSource> field=sourceProp.getField();
+      Type<JavaClassSource> propType=sourceProp.getType();
+      final String optionType=getSimpleJavaType(resolveParamType(nestedType,propType.getName()));
       final PropertySource<JavaClassSource> prop=innerClass.addProperty(optionType,sourceProp.getName());
-      if (!EXCLUDE_CLASSES_PATTERN.matcher(optionType).matches() && !isEnum(projectClassLoader,optionType)) {
+      boolean anEnum;
+      Class optionClass;
+      if (!propType.isArray()) {
+        optionClass=loadClass(projectClassLoader,optionType);
+        anEnum=optionClass.isEnum();
+      }
+ else {
+        optionClass=null;
+        anEnum=false;
+      }
+      if (!EXCLUDE_INNER_PATTERN.matcher(optionType).matches() && !propType.isArray() && !anEnum) {
         prop.getField().addAnnotation(NestedConfigurationProperty.class);
       }
       if (sourceProp.hasAnnotation(Deprecated.class)) {
@@ -75,8 +84,8 @@
       if (mutator.hasJavaDoc()) {
         description=mutator.getJavaDoc().getFullText();
       }
- else       if (field != null) {
-        description=field.getJavaDoc().getFullText();
+ else       if (sourceProp.hasField()) {
+        description=sourceProp.getField().getJavaDoc().getFullText();
       }
       if (!Strings.isBlank(description)) {
         prop.getField().getJavaDoc().setFullText(description);
@@ -95,8 +104,8 @@
  else         if ("integer".equals(optionType) || "boolean".equals(optionType)) {
           prop.getField().setLiteralInitializer(defaultValue);
         }
- else         if (isEnum(projectClassLoader,optionType)) {
-          String enumShortName=optionType.substring(optionType.lastIndexOf(".") + 1);
+ else         if (anEnum) {
+          String enumShortName=optionClass.getSimpleName();
           prop.getField().setLiteralInitializer(enumShortName + "." + defaultValue);
           javaClass.addImport(model.getJavaType());
         }
