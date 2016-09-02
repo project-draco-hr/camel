@@ -55,27 +55,41 @@
     MavenDependency dep=MavenDependencies.createDependency(coord,ScopeType.RUNTIME,false);
     additionalDependencies.add(dep);
   }
-  List<String> testProvidedDependencies=new LinkedList<>();
+  List<String> testProvidedDependenciesXml=new LinkedList<>();
   List<ScopeType> scopes=new LinkedList<>();
   if (config.getIncludeProvidedDependencies() || config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
     if (config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
-      testProvidedDependencies.addAll(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.TEST.toString()));
+      testProvidedDependenciesXml.addAll(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.TEST.toString()));
       scopes.add(ScopeType.TEST);
     }
     if (config.getIncludeProvidedDependencies()) {
-      testProvidedDependencies.addAll(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.PROVIDED.toString()));
+      testProvidedDependenciesXml.addAll(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.PROVIDED.toString()));
       scopes.add(ScopeType.PROVIDED);
     }
   }
-  List<String> cleanTestProvidedDependencies=new LinkedList<>();
-  for (  String depXml : testProvidedDependencies) {
+  List<String> cleanTestProvidedDependenciesXml=new LinkedList<>();
+  for (  String depXml : testProvidedDependenciesXml) {
     if (validTestDependency(config,depXml,commonExclusions)) {
       depXml=enforceExclusions(config,depXml,commonExclusions);
-      depXml=addBOMVersionWhereMissing(config,depXml);
-      cleanTestProvidedDependencies.add(depXml);
+      cleanTestProvidedDependenciesXml.add(depXml);
     }
   }
-  File moduleSpringBootPom=createUserPom(config,cleanTestProvidedDependencies);
+  List<String> versionedTestProvidedDependenciesXml=new LinkedList<>();
+  if (!cleanTestProvidedDependenciesXml.isEmpty()) {
+    File testProvidedResolverPom=createResolverPom(config,cleanTestProvidedDependenciesXml);
+    List<MavenResolvedArtifact> artifacts=Arrays.asList(resolver(config).loadPomFromFile(testProvidedResolverPom).importDependencies(scopes.toArray(new ScopeType[0])).resolve().withoutTransitivity().asResolvedArtifact());
+    Map<String,String> resolvedVersions=new HashMap<>();
+    for (    MavenResolvedArtifact art : artifacts) {
+      String key=art.getCoordinate().getGroupId() + ":" + art.getCoordinate().getArtifactId();
+      String val=art.getCoordinate().getVersion();
+      resolvedVersions.put(key,val);
+    }
+    for (    String dep : cleanTestProvidedDependenciesXml) {
+      dep=setResolvedVersion(config,dep,resolvedVersions);
+      versionedTestProvidedDependenciesXml.add(dep);
+    }
+  }
+  File moduleSpringBootPom=createUserPom(config,versionedTestProvidedDependenciesXml);
   List<ScopeType> resolvedScopes=new LinkedList<>();
   resolvedScopes.add(ScopeType.COMPILE);
   resolvedScopes.add(ScopeType.RUNTIME);
