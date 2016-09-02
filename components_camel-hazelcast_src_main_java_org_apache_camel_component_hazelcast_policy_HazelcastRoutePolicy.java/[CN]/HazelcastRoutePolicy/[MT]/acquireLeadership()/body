@@ -1,0 +1,36 @@
+{
+  boolean locked=false;
+  while (isRunAllowed()) {
+    try {
+      locked=locks.tryLock(lockKey,tryLockTimeout,tryLockTimeoutUnit);
+      if (locked) {
+        locks.put(lockKey,lockValue);
+        setLeader(true);
+        Thread.sleep(Long.MAX_VALUE);
+      }
+ else {
+        LOGGER.debug("Failed to acquire lock (map={}, key={}, val={}) after {} {}",lockMapName,lockKey,lockValue,tryLockTimeout,tryLockTimeoutUnit.name());
+      }
+    }
+ catch (    InterruptedException e) {
+      if (isRunAllowed()) {
+        LOGGER.warn("Interrupted Exception caught",e);
+      }
+ else {
+        LOGGER.debug("Interrupted Exception caught",e);
+      }
+    }
+catch (    Exception e) {
+      LOGGER.warn("Exception caught",e);
+    }
+ finally {
+      if (locked) {
+        locks.remove(lockKey);
+        locks.unlock(lockKey);
+        locked=false;
+      }
+      setLeader(false);
+    }
+  }
+  return null;
+}
