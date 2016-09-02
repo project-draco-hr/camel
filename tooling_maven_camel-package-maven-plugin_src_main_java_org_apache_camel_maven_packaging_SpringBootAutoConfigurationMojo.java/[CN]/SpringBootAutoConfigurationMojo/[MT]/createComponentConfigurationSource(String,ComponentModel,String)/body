@@ -19,7 +19,7 @@
     }
     String type=option.getJavaType();
     type=getSimpleJavaType(type);
-    if (isNestedProperty(type,project,nestedTypes)) {
+    if (isNestedProperty(type,nestedTypes)) {
       type=option.getShortJavaType() + INNER_TYPE_SUFFIX;
     }
     PropertySource<JavaClassSource> prop=javaClass.addProperty(type,option.getName());
@@ -53,13 +53,10 @@
   for (  JavaClassSource nestedType : nestedTypes) {
     final JavaClassSource innerClass=javaClass.addNestedType("public static class " + nestedType.getName() + INNER_TYPE_SUFFIX);
     innerClass.addField().setPublic().setStatic(true).setFinal(true).setType(Class.class).setName("CAMEL_NESTED_CLASS").setLiteralInitializer(nestedType.getCanonicalName() + ".class");
-    for (    PropertySource<JavaClassSource> sourceProp : nestedType.getProperties()) {
-      final MethodSource<JavaClassSource> mutator=sourceProp.getMutator();
-      if (mutator == null) {
-        continue;
-      }
+    for (    ResolvedProperty resolvedProperty : getProperties(nestedType)) {
+      String optionType=resolvedProperty.propertyType;
+      PropertySource<JavaClassSource> sourceProp=resolvedProperty.propertySource;
       Type<JavaClassSource> propType=sourceProp.getType();
-      final String optionType=getSimpleJavaType(resolveParamType(nestedType,propType.getName()));
       final PropertySource<JavaClassSource> prop=innerClass.addProperty(optionType,sourceProp.getName());
       boolean anEnum;
       Class optionClass;
@@ -81,6 +78,7 @@
         prop.getAccessor().addAnnotation(DeprecatedConfigurationProperty.class);
       }
       String description=null;
+      final MethodSource<JavaClassSource> mutator=sourceProp.getMutator();
       if (mutator.hasJavaDoc()) {
         description=mutator.getJavaDoc().getFullText();
       }
