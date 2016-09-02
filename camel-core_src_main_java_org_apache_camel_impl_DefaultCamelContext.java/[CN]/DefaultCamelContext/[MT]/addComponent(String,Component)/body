@@ -1,16 +1,9 @@
 {
   ObjectHelper.notNull(component,"component");
-synchronized (components) {
-    if (components.containsKey(componentName)) {
-      throw new IllegalArgumentException("Cannot add component as its already previously added: " + componentName);
-    }
-    component.setCamelContext(this);
-    components.put(componentName,component);
-    for (    LifecycleStrategy strategy : lifecycleStrategies) {
-      strategy.onComponentAdd(componentName,component);
-    }
-    if (component instanceof PropertiesComponent && "properties".equals(componentName)) {
-      propertiesComponent=(PropertiesComponent)component;
-    }
+  component.setCamelContext(this);
+  Component oldValue=components.putIfAbsent(componentName,component);
+  if (oldValue != null) {
+    throw new IllegalArgumentException("Cannot add component as its already previously added: " + componentName);
   }
+  postInitComponent(componentName,component);
 }
