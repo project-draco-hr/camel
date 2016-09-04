@@ -1,0 +1,19 @@
+{
+  MockEndpoint mock=getMockEndpoint("mock:result");
+  mock.reset();
+  mockPreparer.accept(mock);
+  callFuture=new CompletableFuture<>();
+  methodInvoked=new CountDownLatch(1);
+  sendFuture=template.asyncSendBody("direct:entry",sentBody);
+  Assert.assertTrue(methodInvoked.await(5,TimeUnit.SECONDS));
+  Assert.assertEquals(0,mock.getReceivedCounter());
+  Assert.assertFalse(sendFuture.isDone());
+  try {
+    callFuture.complete(processor.apply(receivedBody));
+  }
+ catch (  Exception e) {
+    callFuture.completeExceptionally(e);
+  }
+  sendFuture.get();
+  assertMockEndpointsSatisfied();
+}
