@@ -14,14 +14,15 @@
       log.debug("Sending to connection key {} -> {}",connectionKey,message);
       Future<Void> future=sendMessage(websocket,message);
       if (future != null) {
-        future.get(endpoint.getSendTimeout(),TimeUnit.MILLISECONDS);
-        if (!future.isDone()) {
-          throw new ExchangeTimedOutException(exchange,endpoint.getSendTimeout(),"Failed to send message to the connection");
+        int timeout=endpoint.getSendTimeout();
+        future.get(timeout,TimeUnit.MILLISECONDS);
+        if (!future.isCancelled() && !future.isDone()) {
+          throw new WebsocketSendException("Failed to send message to the connection within " + timeout + " millis.",exchange);
         }
       }
     }
  else {
-      throw new IllegalArgumentException("Failed to send message to single connection; connection key not set.");
+      throw new WebsocketSendException("Failed to send message to single connection; connection key not set.",exchange);
     }
   }
 }
