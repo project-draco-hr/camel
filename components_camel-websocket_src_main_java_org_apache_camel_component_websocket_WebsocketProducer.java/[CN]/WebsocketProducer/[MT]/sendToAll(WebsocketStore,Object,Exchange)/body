@@ -2,15 +2,30 @@
   log.debug("Sending to all {}",message);
   Collection<DefaultWebsocket> websockets=store.getAll();
   Exception exception=null;
+  List<Future> futures=new CopyOnWriteArrayList<>();
   for (  DefaultWebsocket websocket : websockets) {
     try {
-      sendMessage(websocket,message);
+      Future<Void> future=sendMessage(websocket,message);
+      if (future != null) {
+        futures.add(future);
+      }
     }
  catch (    Exception e) {
       if (exception == null) {
         exception=new CamelExchangeException("Failed to deliver message to one or more recipients.",exchange,e);
       }
     }
+  }
+  StopWatch watch=new StopWatch();
+  while (!futures.isEmpty() && watch.taken() < endpoint.getSendTimeout()) {
+    for (    Future future : futures) {
+      if (future.isDone() || future.isCancelled()) {
+        futures.remove(future);
+      }
+    }
+  }
+  if (!futures.isEmpty()) {
+    exception=new CamelExchangeException("Failed to deliver message within " + endpoint.getSendTimeout() + " millis to one or more recipients.",exchange);
   }
   if (exception != null) {
     throw exception;

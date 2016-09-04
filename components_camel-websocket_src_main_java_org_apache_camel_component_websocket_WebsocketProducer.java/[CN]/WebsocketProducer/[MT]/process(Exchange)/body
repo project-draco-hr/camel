@@ -12,10 +12,16 @@
     if (connectionKey != null) {
       DefaultWebsocket websocket=store.get(connectionKey);
       log.debug("Sending to connection key {} -> {}",connectionKey,message);
-      sendMessage(websocket,message);
+      Future<Void> future=sendMessage(websocket,message);
+      if (future != null) {
+        future.get(endpoint.getSendTimeout(),TimeUnit.MILLISECONDS);
+        if (!future.isDone()) {
+          throw new ExchangeTimedOutException(exchange,endpoint.getSendTimeout(),"Failed to send message to the connection");
+        }
+      }
     }
  else {
-      throw new IllegalArgumentException("Failed to send message to single connection; connetion key not set.");
+      throw new IllegalArgumentException("Failed to send message to single connection; connection key not set.");
     }
   }
 }
