@@ -1,0 +1,17 @@
+{
+  Date timestamp=currentTimestampWithoutMillis();
+  to.expectedMessageCount(1);
+  to.expectedHeaderReceived(RabbitMQConstants.TIMESTAMP,timestamp);
+  ConnectionFactory factory=new ConnectionFactory();
+  factory.setHost("localhost");
+  factory.setPort(5672);
+  factory.setUsername("cameltest");
+  factory.setPassword("cameltest");
+  factory.setVirtualHost("/");
+  Connection conn=factory.newConnection();
+  AMQP.BasicProperties.Builder properties=new AMQP.BasicProperties.Builder();
+  properties.timestamp(timestamp);
+  Channel channel=conn.createChannel();
+  channel.basicPublish(EXCHANGE,"",properties.build(),"hello world".getBytes());
+  to.assertIsSatisfied();
+}
