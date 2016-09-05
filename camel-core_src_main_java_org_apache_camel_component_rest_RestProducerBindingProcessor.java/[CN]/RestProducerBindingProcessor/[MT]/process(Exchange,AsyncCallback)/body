@@ -1,0 +1,65 @@
+{
+  boolean isXml=false;
+  boolean isJson=false;
+  Object body=exchange.getIn().getBody();
+  if (ObjectHelper.isEmpty(body)) {
+    return getProcessor().process(exchange,callback);
+  }
+  InputStream is=camelContext.getTypeConverter().tryConvertTo(InputStream.class,exchange,body);
+  if (is != null) {
+    exchange.getIn().setBody(is);
+    exchange.addOnCompletion(new RestProducerBindingUnmarshalOnCompletion(jsonMarshal,xmlMarshal,false));
+    return getProcessor().process(exchange,callback);
+  }
+  String contentType=ExchangeHelper.getContentType(exchange);
+  if (contentType != null) {
+    isXml=contentType.toLowerCase(Locale.ENGLISH).contains("xml");
+    isJson=contentType.toLowerCase(Locale.ENGLISH).contains("json");
+  }
+  isXml&=bindingMode.equals("auto") || bindingMode.contains("xml");
+  isJson&=bindingMode.equals("auto") || bindingMode.contains("json");
+  if (!isJson && !isXml) {
+    isXml=bindingMode.equals("auto") || bindingMode.contains("xml");
+    isJson=bindingMode.equals("auto") || bindingMode.contains("json");
+  }
+  if (isJson && jsonMarshal != null) {
+    try {
+      jsonMarshal.process(exchange);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+    ExchangeHelper.prepareOutToIn(exchange);
+    exchange.addOnCompletion(new RestProducerBindingUnmarshalOnCompletion(jsonMarshal,xmlMarshal,false));
+    return getProcessor().process(exchange,callback);
+  }
+ else   if (isXml && xmlMarshal != null) {
+    try {
+      xmlMarshal.process(exchange);
+    }
+ catch (    Exception e) {
+      exchange.setException(e);
+      callback.done(true);
+      return true;
+    }
+    ExchangeHelper.prepareOutToIn(exchange);
+    exchange.addOnCompletion(new RestProducerBindingUnmarshalOnCompletion(jsonMarshal,xmlMarshal,false));
+    return getProcessor().process(exchange,callback);
+  }
+  if ("off".equals(bindingMode) || bindingMode.equals("auto")) {
+    exchange.addOnCompletion(new RestProducerBindingUnmarshalOnCompletion(jsonMarshal,xmlMarshal,false));
+    return getProcessor().process(exchange,callback);
+  }
+ else {
+    if (bindingMode.contains("xml")) {
+      exchange.setException(new BindingException("Cannot bind to xml as message body is not xml compatible",exchange));
+    }
+ else {
+      exchange.setException(new BindingException("Cannot bind to json as message body is not json compatible",exchange));
+    }
+    callback.done(true);
+    return true;
+  }
+}

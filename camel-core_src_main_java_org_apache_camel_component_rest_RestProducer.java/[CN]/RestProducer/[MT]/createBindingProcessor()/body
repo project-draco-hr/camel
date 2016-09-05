@@ -1,0 +1,52 @@
+{
+  String mode=configuration.getBindingMode().name();
+  if (bindingMode != null) {
+    mode=bindingMode;
+  }
+  boolean skip=configuration.isSkipBindingOnErrorCode();
+  if (skipBindingOnErrorCode != null) {
+    skip=skipBindingOnErrorCode;
+  }
+  if (mode == null || "off".equals(mode)) {
+    return null;
+  }
+  String name=configuration.getJsonDataFormat();
+  if (name != null) {
+    Object instance=camelContext.getRegistry().lookupByName(name);
+    if (instance != null) {
+      throw new IllegalArgumentException("JsonDataFormat name: " + name + " must not be an existing bean instance from the registry");
+    }
+  }
+ else {
+    name="json-jackson";
+  }
+  DataFormat json=camelContext.resolveDataFormat(name);
+  DataFormat outJson=camelContext.resolveDataFormat(name);
+  if (mode.contains("json") && json == null) {
+    throw new IllegalArgumentException("JSon DataFormat " + name + " not found.");
+  }
+  if (json != null) {
+    setAdditionalConfiguration(configuration,camelContext,json,"json.in.");
+    setAdditionalConfiguration(configuration,camelContext,outJson,"json.out.");
+  }
+  name=configuration.getXmlDataFormat();
+  if (name != null) {
+    Object instance=camelContext.getRegistry().lookupByName(name);
+    if (instance != null) {
+      throw new IllegalArgumentException("XmlDataFormat name: " + name + " must not be an existing bean instance from the registry");
+    }
+  }
+ else {
+    name="jaxb";
+  }
+  DataFormat jaxb=camelContext.resolveDataFormat(name);
+  DataFormat outJaxb=camelContext.resolveDataFormat(name);
+  if (mode.contains("xml") && jaxb == null) {
+    throw new IllegalArgumentException("XML DataFormat " + name + " not found.");
+  }
+  if (jaxb != null) {
+    setAdditionalConfiguration(configuration,camelContext,jaxb,"xml.in.");
+    setAdditionalConfiguration(configuration,camelContext,outJaxb,"xml.out.");
+  }
+  return new RestProducerBindingProcessor(producer,camelContext,json,jaxb,outJson,outJaxb,mode,skip);
+}
