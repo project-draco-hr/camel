@@ -8,13 +8,21 @@
     }
     return getProcessor().process(exchange,callback);
   }
-  InputStream is=camelContext.getTypeConverter().tryConvertTo(InputStream.class,exchange,body);
-  if (is != null) {
-    exchange.getIn().setBody(is);
+  if (body instanceof String || body instanceof byte[]) {
     if (outType != null) {
       callback=new RestProducerBindingUnmarshalCallback(exchange,callback,jsonMarshal,xmlMarshal,false);
     }
     return getProcessor().process(exchange,callback);
+  }
+ else {
+    InputStream is=camelContext.getTypeConverter().tryConvertTo(InputStream.class,exchange,body);
+    if (is != null) {
+      exchange.getIn().setBody(is);
+      if (outType != null) {
+        callback=new RestProducerBindingUnmarshalCallback(exchange,callback,jsonMarshal,xmlMarshal,false);
+      }
+      return getProcessor().process(exchange,callback);
+    }
   }
   String contentType=ExchangeHelper.getContentType(exchange);
   if (contentType != null) {
