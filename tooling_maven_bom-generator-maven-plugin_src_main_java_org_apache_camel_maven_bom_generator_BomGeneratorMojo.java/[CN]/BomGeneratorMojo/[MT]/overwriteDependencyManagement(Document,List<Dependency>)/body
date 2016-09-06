@@ -1,0 +1,55 @@
+{
+  XPath xpath=XPathFactory.newInstance().newXPath();
+  XPathExpression expr=xpath.compile("/project/dependencyManagement/dependencies");
+  NodeList nodes=(NodeList)expr.evaluate(pom,XPathConstants.NODESET);
+  if (nodes.getLength() == 0) {
+    throw new IllegalStateException("No dependencies found in the dependencyManagement section of the current pom");
+  }
+  Node dependenciesSection=nodes.item(0);
+  while (dependenciesSection.hasChildNodes()) {
+    Node child=dependenciesSection.getFirstChild();
+    dependenciesSection.removeChild(child);
+  }
+  for (  Dependency dep : dependencies) {
+    Element dependencyEl=pom.createElement("dependency");
+    Element groupIdEl=pom.createElement("groupId");
+    groupIdEl.setTextContent(dep.getGroupId());
+    dependencyEl.appendChild(groupIdEl);
+    Element artifactIdEl=pom.createElement("artifactId");
+    artifactIdEl.setTextContent(dep.getArtifactId());
+    dependencyEl.appendChild(artifactIdEl);
+    Element versionEl=pom.createElement("version");
+    versionEl.setTextContent(dep.getVersion());
+    dependencyEl.appendChild(versionEl);
+    if (!"jar".equals(dep.getType())) {
+      Element typeEl=pom.createElement("type");
+      typeEl.setTextContent(dep.getType());
+      dependencyEl.appendChild(typeEl);
+    }
+    if (dep.getClassifier() != null) {
+      Element classifierEl=pom.createElement("classifier");
+      classifierEl.setTextContent(dep.getClassifier());
+      dependencyEl.appendChild(classifierEl);
+    }
+    if (dep.getScope() != null && !"compile".equals(dep.getScope())) {
+      Element scopeEl=pom.createElement("scope");
+      scopeEl.setTextContent(dep.getScope());
+      dependencyEl.appendChild(scopeEl);
+    }
+    if (dep.getExclusions() != null) {
+      Element exclsEl=pom.createElement("exclusions");
+      for (      Exclusion e : dep.getExclusions()) {
+        Element exclEl=pom.createElement("exclusion");
+        Element groupIdExEl=pom.createElement("groupId");
+        groupIdExEl.setTextContent(e.getGroupId());
+        exclEl.appendChild(groupIdExEl);
+        Element artifactIdExEl=pom.createElement("artifactId");
+        artifactIdExEl.setTextContent(e.getArtifactId());
+        exclEl.appendChild(artifactIdExEl);
+        exclsEl.appendChild(exclEl);
+      }
+      dependencyEl.appendChild(exclsEl);
+    }
+    dependenciesSection.appendChild(dependencyEl);
+  }
+}
