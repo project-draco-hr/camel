@@ -1,4 +1,7 @@
 {
+  if (!new File(".").getCanonicalFile().getName().equals("camel-itest-spring-boot")) {
+    throw new IllegalStateException("In order to run the integration tests, 'camel-itest-spring-boot' must be the working directory. Check your configuration.");
+  }
   ExtensionLoader extensionLoader=new ServiceExtensionLoader(Collections.singleton(getExtensionClassloader()));
   extensionLoader.addOverride(ZipExporter.class,SpringBootZipExporterImpl.class);
   ConfigurationBuilder builder=new ConfigurationBuilder().extensionLoader(extensionLoader);
@@ -71,31 +74,24 @@
   for (  String depXml : testProvidedDependenciesXml) {
     if (validTestDependency(config,depXml,commonExclusions)) {
       depXml=enforceExclusions(config,depXml,commonExclusions);
+      depXml=switchToStarterIfPresent(config,depXml);
       cleanTestProvidedDependenciesXml.add(depXml);
     }
   }
-  List<String> versionedTestProvidedDependenciesXml=new LinkedList<>();
+  List<MavenResolvedArtifact> testDependencies=new LinkedList<>();
   if (!cleanTestProvidedDependenciesXml.isEmpty()) {
     File testProvidedResolverPom=createResolverPom(config,cleanTestProvidedDependenciesXml);
-    List<MavenResolvedArtifact> artifacts=Arrays.asList(resolver(config).loadPomFromFile(testProvidedResolverPom).importDependencies(scopes.toArray(new ScopeType[0])).resolve().withoutTransitivity().asResolvedArtifact());
-    Map<String,String> resolvedVersions=new HashMap<>();
-    for (    MavenResolvedArtifact art : artifacts) {
-      String key=art.getCoordinate().getGroupId() + ":" + art.getCoordinate().getArtifactId();
-      String val=art.getCoordinate().getVersion();
-      resolvedVersions.put(key,val);
-    }
-    for (    String dep : cleanTestProvidedDependenciesXml) {
-      dep=setResolvedVersion(config,dep,resolvedVersions);
-      versionedTestProvidedDependenciesXml.add(dep);
-    }
+    testDependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(testProvidedResolverPom).importDependencies(scopes.toArray(new ScopeType[0])).resolve().withTransitivity().asResolvedArtifact()));
   }
-  File moduleSpringBootPom=createUserPom(config,versionedTestProvidedDependenciesXml);
-  List<ScopeType> resolvedScopes=new LinkedList<>();
-  resolvedScopes.add(ScopeType.COMPILE);
-  resolvedScopes.add(ScopeType.RUNTIME);
-  resolvedScopes.addAll(scopes);
+  File moduleSpringBootPom=createUserPom(config);
+  List<MavenResolvedArtifact> runtimeDependencies=new LinkedList<>();
+  runtimeDependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importRuntimeDependencies().addDependencies(additionalDependencies).resolve().withTransitivity().asResolvedArtifact()));
+  List<MavenResolvedArtifact> dependencyArtifacts=merge(config,runtimeDependencies,testDependencies);
+  lookForVersionMismatch(config,dependencyArtifacts);
   List<File> dependencies=new LinkedList<>();
-  dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importDependencies(resolvedScopes.toArray(new ScopeType[0])).addDependencies(additionalDependencies).resolve().withTransitivity().asFile()));
+  for (  MavenResolvedArtifact a : dependencyArtifacts) {
+    dependencies.add(a.asFile());
+  }
   excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
   ark=addDependencies(ark,dependencies);
   ark=ark.addPackages(true,"org.jboss.shrinkwrap");
