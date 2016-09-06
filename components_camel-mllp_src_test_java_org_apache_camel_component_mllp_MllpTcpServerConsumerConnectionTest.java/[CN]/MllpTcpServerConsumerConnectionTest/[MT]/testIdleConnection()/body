@@ -1,0 +1,20 @@
+{
+  final int maxReceiveTimeouts=3;
+  String testMessage="MSH|^~\\&|ADT|EPIC|JCAPS|CC|20160902123950|RISTECH|ADT^A08|00001|D|2.3|||||||" + '\r' + '\n';
+  result.setExpectedCount(1);
+  result.setAssertPeriod(1000);
+  addTestRoute(maxReceiveTimeouts);
+  mllpClient.connect();
+  mllpClient.sendMessageAndWaitForAcknowledgement(testMessage);
+  Thread.sleep(RECEIVE_TIMEOUT * (maxReceiveTimeouts + 1));
+  try {
+    mllpClient.sendMessageAndWaitForAcknowledgement(testMessage);
+    fail("The MllpClientResource should have thrown an exception when writing to the reset socket");
+  }
+ catch (  MllpJUnitResourceException ex) {
+    Throwable cause=ex.getCause();
+    assertIsInstanceOf(SocketException.class,cause);
+    assertEquals("Broken pipe",cause.getMessage());
+  }
+  assertMockEndpointsSatisfied(15,TimeUnit.SECONDS);
+}

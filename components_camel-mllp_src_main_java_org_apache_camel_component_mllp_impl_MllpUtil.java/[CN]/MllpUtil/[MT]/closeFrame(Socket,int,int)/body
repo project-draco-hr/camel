@@ -3,6 +3,7 @@
     InputStream socketInputStream=MllpUtil.getInputStream(socket);
     ByteArrayOutputStream payload=new ByteArrayOutputStream(4096);
     try {
+      socket.setSoTimeout(readTimeout);
       while (true) {
         int readByte=socketInputStream.read();
 switch (readByte) {
@@ -35,6 +36,7 @@ if (isLogPHIEnabled(LOG)) {
 resetConnection(socket);
 throw new MllpCorruptFrameException("The MLLP frame was partially closed - END_OF_BLOCK was not followed by END_OF_DATA",payload.size() > 0 ? payload.toByteArray() : null);
 }
+socket.setSoTimeout(receiveTimeout);
 return payload.toByteArray();
 default :
 payload.write(readByte);
@@ -71,6 +73,11 @@ LOG.error("Exception encountered looking for the end of the MLLP frame - resetti
 resetConnection(socket);
 throw new MllpException("Exception encountered looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null,ioEx);
 }
+}
+try {
+socket.setSoTimeout(receiveTimeout);
+}
+ catch (SocketException e) {
 }
 return null;
 }
