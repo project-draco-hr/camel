@@ -1,5 +1,15 @@
 {
+  XPathFactory xpathFactory=XPathFactory.newInstance();
+  XPathExpression xpathExp=xpathFactory.newXPath().compile("//text()[normalize-space(.) = '']");
+  NodeList emptyTextNodes=(NodeList)xpathExp.evaluate(pom,XPathConstants.NODESET);
+  for (int i=0; i < emptyTextNodes.getLength(); i++) {
+    Node emptyTextNode=emptyTextNodes.item(i);
+    emptyTextNode.getParentNode().removeChild(emptyTextNode);
+  }
   Transformer transformer=TransformerFactory.newInstance().newTransformer();
+  transformer.setOutputProperty(OutputKeys.INDENT,"yes");
+  transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount","2");
+  transformer.setOutputProperty(OutputKeys.METHOD,"xml");
   DOMSource source=new DOMSource(pom);
   targetPom.getParentFile().mkdirs();
   try (FileWriter out=new FileWriter(targetPom)){
