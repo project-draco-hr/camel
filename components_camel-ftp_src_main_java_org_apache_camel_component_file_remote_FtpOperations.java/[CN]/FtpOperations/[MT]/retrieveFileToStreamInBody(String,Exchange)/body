@@ -1,5 +1,4 @@
 {
-  OutputStream os=null;
   boolean result;
   try {
     GenericFile<FTPFile> target=(GenericFile<FTPFile>)exchange.getProperty(FileComponent.FILE_EXCHANGE_FILE);
@@ -22,9 +21,11 @@
       result=true;
     }
  else {
-      os=new ByteArrayOutputStream();
-      target.setBody(os);
-      result=client.retrieveFile(remoteName,os);
+      ByteArrayOutputStream bos=new ByteArrayOutputStream();
+      result=client.retrieveFile(remoteName,bos);
+      IOHelper.close(bos);
+      InputStream is=new ByteArrayInputStream(bos.toByteArray());
+      target.setBody(is);
     }
     exchange.getIn().setHeader(FtpConstants.FTP_REPLY_CODE,client.getReplyCode());
     exchange.getIn().setHeader(FtpConstants.FTP_REPLY_STRING,client.getReplyString());
@@ -34,9 +35,6 @@
   }
  catch (  IOException e) {
     throw new GenericFileOperationFailedException(client.getReplyCode(),client.getReplyString(),e.getMessage(),e);
-  }
- finally {
-    IOHelper.close(os,"retrieve: " + name,log);
   }
   return result;
 }
