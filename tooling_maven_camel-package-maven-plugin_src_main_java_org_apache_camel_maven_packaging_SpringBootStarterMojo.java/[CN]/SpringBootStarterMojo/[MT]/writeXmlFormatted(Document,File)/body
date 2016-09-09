@@ -1,25 +1,22 @@
 {
-  OutputFormat format=new OutputFormat(xml);
-  format.setLineWidth(200);
-  format.setIndenting(true);
-  format.setIndent(4);
-  StringWriter sw=new StringWriter();
-  XMLSerializer serializer=new XMLSerializer(sw,format);
-  serializer.serialize(xml);
-  StringBuilder b=new StringBuilder(sw.toString());
-  int lastTagLoc=b.lastIndexOf("<");
-  int lastCloseHeaderLoc=b.lastIndexOf("-->");
-  if (lastCloseHeaderLoc > lastTagLoc) {
-    int headerLoc=b.lastIndexOf("<!--");
-    String apacheHeader=b.substring(headerLoc,lastCloseHeaderLoc + 3);
-    b.delete(headerLoc,lastCloseHeaderLoc + 3);
-    int pos=b.indexOf("?>");
-    if (pos > 0) {
-      b.insert(pos + 2,"\n" + apacheHeader);
-    }
- else {
-      b.insert(0,apacheHeader);
-    }
+  XPathExpression xpath=XPathFactory.newInstance().newXPath().compile("//text()[normalize-space(.) = '']");
+  NodeList emptyNodes=(NodeList)xpath.evaluate(pom,XPathConstants.NODESET);
+  for (int i=0; i < emptyNodes.getLength(); i++) {
+    Node emptyNode=emptyNodes.item(i);
+    emptyNode.getParentNode().removeChild(emptyNode);
   }
-  writeIfChanged(b.toString(),destination);
+  pom.setXmlStandalone(true);
+  Transformer transformer=TransformerFactory.newInstance().newTransformer();
+  transformer.setOutputProperty(OutputKeys.INDENT,"yes");
+  transformer.setOutputProperty(OutputKeys.METHOD,"xml");
+  transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount","2");
+  DOMSource source=new DOMSource(pom);
+  String content;
+  try (StringWriter out=new StringWriter()){
+    StreamResult result=new StreamResult(out);
+    transformer.transform(source,result);
+    content=out.toString();
+  }
+   content=content.replaceFirst("-->","-->\n").replaceFirst("\\?><!--","\\?>\n<!--");
+  writeIfChanged(content,destination);
 }
