@@ -14,10 +14,10 @@
     ark=ark.addAsDirectories(CLASSES_FOLDER);
   }
   if (config.getUseCustomLog()) {
-    ark=ark.addAsResource("spring-logback.xml",CLASSES_FOLDER + "/spring-logback.xml");
+    ark=ark.addAsResource("spring-logback.xml","/spring-logback.xml");
   }
   for (  Map.Entry<String,String> res : config.getResources().entrySet()) {
-    ark=ark.addAsResource(res.getKey(),CLASSES_FOLDER + "/" + res.getValue());
+    ark=ark.addAsResource(res.getKey(),"/" + res.getValue());
   }
   String version=System.getProperty("version_org.apache.camel:camel-core");
   if (version == null) {
@@ -73,20 +73,20 @@
   List<String> cleanTestProvidedDependenciesXml=new LinkedList<>();
   for (  String depXml : testProvidedDependenciesXml) {
     if (validTestDependency(config,depXml,commonExclusions)) {
+      depXml=useBOMVersionIfPresent(config,depXml);
       depXml=enforceExclusions(config,depXml,commonExclusions);
       depXml=switchToStarterIfPresent(config,depXml);
       cleanTestProvidedDependenciesXml.add(depXml);
     }
   }
-  List<MavenResolvedArtifact> testDependencies=new LinkedList<>();
-  if (!cleanTestProvidedDependenciesXml.isEmpty()) {
-    File testProvidedResolverPom=createResolverPom(config,cleanTestProvidedDependenciesXml);
-    testDependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(testProvidedResolverPom).importDependencies(scopes.toArray(new ScopeType[0])).resolve().withTransitivity().asResolvedArtifact()));
-  }
-  File moduleSpringBootPom=createUserPom(config);
+  File moduleSpringBootPom=createUserPom(config,cleanTestProvidedDependenciesXml);
+  List<ScopeType> resolvedScopes=new LinkedList<>();
+  resolvedScopes.add(ScopeType.COMPILE);
+  resolvedScopes.add(ScopeType.RUNTIME);
+  resolvedScopes.addAll(scopes);
   List<MavenResolvedArtifact> runtimeDependencies=new LinkedList<>();
-  runtimeDependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importRuntimeDependencies().addDependencies(additionalDependencies).resolve().withTransitivity().asResolvedArtifact()));
-  List<MavenResolvedArtifact> dependencyArtifacts=merge(config,runtimeDependencies,testDependencies);
+  runtimeDependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importDependencies(resolvedScopes.toArray(new ScopeType[0])).addDependencies(additionalDependencies).resolve().withTransitivity().asResolvedArtifact()));
+  List<MavenResolvedArtifact> dependencyArtifacts=runtimeDependencies;
   lookForVersionMismatch(config,dependencyArtifacts);
   List<File> dependencies=new LinkedList<>();
   for (  MavenResolvedArtifact a : dependencyArtifacts) {

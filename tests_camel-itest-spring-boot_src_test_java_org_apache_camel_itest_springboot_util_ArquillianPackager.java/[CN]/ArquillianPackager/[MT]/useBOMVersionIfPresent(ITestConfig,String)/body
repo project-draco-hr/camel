@@ -1,0 +1,21 @@
+{
+  String groupId=textBetween(dependencyXml,"<groupId>","</groupId>");
+  String artifactId=textBetween(dependencyXml,"<artifactId>","</artifactId>");
+  String bomVersion=config.getTestLibraryVersions().get(groupId + ":" + artifactId);
+  if (bomVersion == null) {
+    bomVersion=BOMResolver.getInstance().getBOMVersion(groupId,artifactId);
+  }
+  if (bomVersion != null) {
+    if (dependencyXml.contains("<version>")) {
+      int from=dependencyXml.indexOf("<version>") + 9;
+      int to=dependencyXml.indexOf("</version>");
+      dependencyXml=dependencyXml.substring(0,from) + bomVersion + dependencyXml.substring(to);
+    }
+ else {
+      String kw="</artifactId>";
+      int pos=dependencyXml.indexOf(kw) + kw.length();
+      dependencyXml=dependencyXml.substring(0,pos) + "<version>" + bomVersion+ "</version>"+ dependencyXml.substring(pos);
+    }
+  }
+  return dependencyXml;
+}
