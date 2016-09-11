@@ -1,0 +1,16 @@
+{
+  LOG.debug(">>>> {} {}",endpoint,exchange);
+  exchange.setProperty(Exchange.TO_ENDPOINT,endpoint.getEndpointUri());
+  try {
+    if (eventNotifierEnabled) {
+      callback=new EventNotifierCallback(callback,exchange,endpoint);
+    }
+    CamelInternalProcessor internal=prepareInternalProcessor(producer,resultProcessor);
+    return internal.process(exchange,callback);
+  }
+ catch (  Throwable e) {
+    exchange.setException(e);
+    callback.done(true);
+    return true;
+  }
+}
