@@ -15,7 +15,7 @@ case END_OF_STREAM:
             LOG.error("END_OF_STREAM read while looking for the end of the MLLP frame - resetting connection and eating data");
           }
         resetConnection(socket);
-      throw new MllpCorruptFrameException("END_OF_STREAM read while looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null);
+      throw new MllpFrameException("END_OF_STREAM read while looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null);
 case START_OF_BLOCK:
     if (isLogPHIEnabled(LOG)) {
       LOG.error("A new MLLP frame was opened before the previous frame was closed - resetting connection and eating data: {}",payload.toString().replace('\r','\n'));
@@ -24,7 +24,7 @@ case START_OF_BLOCK:
       LOG.error("A new MLLP frame was opened before the previous frame was closed - resetting connection and eating data");
     }
   resetConnection(socket);
-throw new MllpCorruptFrameException("A new MLLP frame was opened before the previous frame was closed",payload.size() > 0 ? payload.toByteArray() : null);
+throw new MllpFrameException("A new MLLP frame was opened before the previous frame was closed",payload.size() > 0 ? payload.toByteArray() : null);
 case END_OF_BLOCK:
 if (END_OF_DATA != socketInputStream.read()) {
 if (isLogPHIEnabled(LOG)) {
@@ -34,7 +34,7 @@ if (isLogPHIEnabled(LOG)) {
   LOG.error("The MLLP frame was partially closed - END_OF_BLOCK was not followed by END_OF_DATA - resetting connection and eating data");
 }
 resetConnection(socket);
-throw new MllpCorruptFrameException("The MLLP frame was partially closed - END_OF_BLOCK was not followed by END_OF_DATA",payload.size() > 0 ? payload.toByteArray() : null);
+throw new MllpFrameException("The MLLP frame was partially closed - END_OF_BLOCK was not followed by END_OF_DATA",payload.size() > 0 ? payload.toByteArray() : null);
 }
 socket.setSoTimeout(receiveTimeout);
 return payload.toByteArray();
@@ -56,7 +56,7 @@ LOG.error("Timeout looking for the end of the MLLP frame - resetting connection 
 LOG.error("Timeout looking for the end of the MLLP frame - resetting connection");
 }
 resetConnection(socket);
-throw new MllpCorruptFrameException("Timeout looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null,timeoutEx);
+throw new MllpFrameException("Timeout looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null,timeoutEx);
 }
 catch (IOException ioEx) {
 if (0 < payload.size()) {
@@ -71,7 +71,7 @@ LOG.error("Exception encountered looking for the end of the MLLP frame - resetti
 LOG.error("Exception encountered looking for the end of the MLLP frame - resetting connection");
 }
 resetConnection(socket);
-throw new MllpException("Exception encountered looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null,ioEx);
+throw new MllpFrameException("Exception encountered looking for the end of the MLLP frame",payload.size() > 0 ? payload.toByteArray() : null,ioEx);
 }
 }
 try {

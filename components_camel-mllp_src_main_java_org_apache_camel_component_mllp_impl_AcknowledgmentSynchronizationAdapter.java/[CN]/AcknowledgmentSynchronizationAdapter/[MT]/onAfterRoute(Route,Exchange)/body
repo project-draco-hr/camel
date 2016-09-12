@@ -1,0 +1,123 @@
+{
+  log.info("onAfterRoute");
+  if (exchange.getProperty(MLLP_RESET_CONNECTION_BEFORE_SEND,boolean.class)) {
+    MllpUtil.resetConnection(clientSocket);
+    return;
+  }
+ else   if (exchange.getProperty(MLLP_CLOSE_CONNECTION_BEFORE_SEND,boolean.class)) {
+    MllpUtil.closeConnection(clientSocket);
+    return;
+  }
+  byte[] acknowledgementMessageBytes=exchange.getProperty(MLLP_ACKNOWLEDGEMENT,byte[].class);
+  String acknowledgementMessageType=null;
+  if (null == acknowledgementMessageBytes) {
+    boolean autoAck=exchange.getProperty(MLLP_AUTO_ACKNOWLEDGE,true,boolean.class);
+    if (!autoAck) {
+      exchange.setException(new MllpInvalidAcknowledgementException("Automatic Acknowledgement is disabled and the " + MLLP_ACKNOWLEDGEMENT + " exchange property is null or cannot be converted to byte[]",originalHl7MessageBytes,acknowledgementMessageBytes));
+      return;
+    }
+    String acknowledgmentTypeProperty=exchange.getProperty(MLLP_ACKNOWLEDGEMENT_TYPE,String.class);
+    try {
+      if (null == acknowledgmentTypeProperty) {
+        if (null == exchange.getException()) {
+          acknowledgementMessageType="AA";
+          acknowledgementMessageBytes=acknowledgementGenerator.generateApplicationAcceptAcknowledgementMessage(originalHl7MessageBytes);
+        }
+ else {
+          acknowledgementMessageType="AE";
+          acknowledgementMessageBytes=acknowledgementGenerator.generateApplicationErrorAcknowledgementMessage(originalHl7MessageBytes);
+        }
+      }
+ else {
+switch (acknowledgmentTypeProperty) {
+case "AA":
+          acknowledgementMessageType="AA";
+        acknowledgementMessageBytes=acknowledgementGenerator.generateApplicationAcceptAcknowledgementMessage(originalHl7MessageBytes);
+      break;
+case "AE":
+    acknowledgementMessageType="AE";
+  acknowledgementMessageBytes=acknowledgementGenerator.generateApplicationErrorAcknowledgementMessage(originalHl7MessageBytes);
+break;
+case "AR":
+acknowledgementMessageType="AR";
+acknowledgementMessageBytes=acknowledgementGenerator.generateApplicationRejectAcknowledgementMessage(originalHl7MessageBytes);
+break;
+default :
+exchange.setException(new Hl7AcknowledgementGenerationException("Unsupported acknowledgment type: " + acknowledgmentTypeProperty));
+return;
+}
+}
+}
+ catch (Hl7AcknowledgementGenerationException ackGenerationException) {
+exchange.setProperty(MLLP_ACKNOWLEDGEMENT_EXCEPTION,ackGenerationException);
+exchange.setException(ackGenerationException);
+}
+}
+ else {
+final byte bM=77;
+final byte bS=83;
+final byte bA=65;
+final byte bE=69;
+final byte bR=82;
+final byte fieldSeparator=originalHl7MessageBytes[3];
+for (int i=0; i < originalHl7MessageBytes.length; ++i) {
+if (SEGMENT_DELIMITER == i) {
+if (i + 7 < originalHl7MessageBytes.length && bM == originalHl7MessageBytes[i + 1] && bS == originalHl7MessageBytes[i + 2] && bA == originalHl7MessageBytes[i + 3] && fieldSeparator == originalHl7MessageBytes[i + 4]) {
+if (fieldSeparator != originalHl7MessageBytes[i + 7]) {
+log.warn("MSA-1 is longer than 2-bytes - ignoring trailing bytes");
+}
+byte[] acknowledgmentTypeBytes=new byte[2];
+acknowledgmentTypeBytes[0]=originalHl7MessageBytes[i + 5];
+acknowledgmentTypeBytes[1]=originalHl7MessageBytes[i + 6];
+try {
+acknowledgementMessageType=IOConverter.toString(acknowledgmentTypeBytes,exchange);
+}
+ catch (IOException ioEx) {
+throw new RuntimeException("Failed to convert acknowledgement message to string",ioEx);
+}
+if (bA != acknowledgmentTypeBytes[0]) {
+switch (acknowledgementMessageBytes[1]) {
+case bA:
+case bR:
+case bE:
+break;
+default :
+log.warn("Invalid acknowledgement type [" + acknowledgementMessageType + "] found in message - should be AA, AE or AR");
+}
+}
+String acknowledgementTypeProperty=exchange.getProperty(MLLP_ACKNOWLEDGEMENT_TYPE,String.class);
+if (null != acknowledgementTypeProperty && !acknowledgementTypeProperty.equals(acknowledgementMessageType)) {
+log.warn("Acknowledgement type found in message [" + acknowledgementMessageType + "] does not match "+ MLLP_ACKNOWLEDGEMENT_TYPE+ " exchange property value ["+ acknowledgementTypeProperty+ "] - using value found in message");
+}
+}
+}
+}
+}
+Message message;
+if (exchange.hasOut()) {
+message=exchange.getOut();
+}
+ else {
+message=exchange.getIn();
+}
+message.setHeader(MLLP_ACKNOWLEDGEMENT,acknowledgementMessageBytes);
+message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,acknowledgementMessageType);
+log.debug("Sending Acknowledgement");
+try {
+MllpUtil.writeFramedPayload(clientSocket,acknowledgementMessageBytes);
+}
+ catch (MllpException mllpEx) {
+log.error("MLLP Acknowledgement failure: {}",mllpEx);
+MllpAcknowledgementDeliveryException deliveryException=new MllpAcknowledgementDeliveryException(originalHl7MessageBytes,acknowledgementMessageBytes,mllpEx);
+exchange.setProperty(MLLP_ACKNOWLEDGEMENT_EXCEPTION,deliveryException);
+exchange.setException(deliveryException);
+}
+if (exchange.getProperty(MLLP_RESET_CONNECTION_AFTER_SEND,boolean.class)) {
+MllpUtil.resetConnection(clientSocket);
+return;
+}
+ else if (exchange.getProperty(MLLP_CLOSE_CONNECTION_AFTER_SEND,boolean.class)) {
+MllpUtil.closeConnection(clientSocket);
+}
+super.onAfterRoute(route,exchange);
+}

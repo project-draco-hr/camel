@@ -1,0 +1,30 @@
+{
+  final String testMessage="MSH|^~\\&|APP_A|FAC_A|^org^sys||||ADT^A04^ADT_A04|||2.6" + '\r' + "PID|1||1100832^^^^PI||TEST^FIG||98765432|U||R|435 MAIN STREET^^LONGMONT^CO^80503||123-456-7890|||S"+ '\r'+ '\r'+ '\n';
+  final String expectedAcknowledgement="MSH|^~\\&|^org^sys||APP_A|FAC_A|||ACK^A04^ADT_A04|||2.6" + '\r' + "MSA|AA|"+ '\r'+ '\n';
+  result.expectedBodiesReceived(testMessage);
+  result.expectedHeaderReceived(MLLP_SENDING_APPLICATION,"APP_A");
+  result.expectedHeaderReceived(MLLP_SENDING_FACILITY,"FAC_A");
+  result.expectedHeaderReceived(MLLP_RECEIVING_APPLICATION,"^org^sys");
+  result.expectedHeaderReceived(MLLP_EVENT_TYPE,"ADT");
+  result.expectedHeaderReceived(MLLP_TRIGGER_EVENT,"A04");
+  result.expectedHeaderReceived(MLLP_VERSION_ID,"2.6");
+  complete.expectedMessageCount(0);
+  failure.expectedBodiesReceived(testMessage);
+  failure.expectedHeaderReceived(MLLP_SENDING_APPLICATION,"APP_A");
+  failure.expectedHeaderReceived(MLLP_SENDING_FACILITY,"FAC_A");
+  failure.expectedHeaderReceived(MLLP_RECEIVING_APPLICATION,"^org^sys");
+  failure.expectedHeaderReceived(MLLP_EVENT_TYPE,"ADT");
+  failure.expectedHeaderReceived(MLLP_TRIGGER_EVENT,"A04");
+  failure.expectedHeaderReceived(MLLP_VERSION_ID,"2.6");
+  failure.expectedHeaderReceived(MllpConstants.MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
+  failure.expectedHeaderReceived(MLLP_ACKNOWLEDGEMENT,expectedAcknowledgement);
+  boolean disconnectAfterSend=true;
+  mllpClient.setDisconnectMethod(MllpClientResource.DisconnectMethod.RESET);
+  mllpClient.connect();
+  mllpClient.sendFramedData(testMessage,disconnectAfterSend);
+  assertMockEndpointsSatisfied(10,TimeUnit.SECONDS);
+  Exchange failureExchange=failure.getExchanges().get(0);
+  Object failureException=failureExchange.getProperty(MLLP_ACKNOWLEDGEMENT_EXCEPTION);
+  assertNotNull("OnFailureOnly exchange should have a " + MLLP_ACKNOWLEDGEMENT_EXCEPTION + " property",failureException);
+  assertIsInstanceOf(Exception.class,failureException);
+}

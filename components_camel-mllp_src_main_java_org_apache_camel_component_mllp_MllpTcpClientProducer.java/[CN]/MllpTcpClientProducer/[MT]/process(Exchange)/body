@@ -36,7 +36,7 @@
     }
   }
  catch (  SocketTimeoutException timeoutEx) {
-    exchange.setException(new MllpAcknowledgementTimoutException("Acknowledgement timout",timeoutEx));
+    exchange.setException(new MllpAcknowledgementTimoutException("Acknowledgement timout",hl7MessageBytes,timeoutEx));
     return;
   }
 catch (  MllpException mllpEx) {
@@ -62,14 +62,14 @@ catch (  MllpException mllpEx) {
           if (bM == acknowledgementBytes[i + 1] && bS == acknowledgementBytes[i + 2] && bA == acknowledgementBytes[i + 3] && fieldDelim == acknowledgementBytes[i + 4]) {
             msaStartIndex=i + 1;
             if (bA != acknowledgementBytes[i + 5] && bC != acknowledgementBytes[i + 5]) {
-              exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+              exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes,i + 5,2),hl7MessageBytes,acknowledgementBytes));
             }
  else {
               String acknowledgemenTypeString;
 switch (acknowledgementBytes[i + 6]) {
 case bA:
                 if (fieldDelim != acknowledgementBytes[i + 7]) {
-                  exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+                  exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes,i + 5,3),hl7MessageBytes,acknowledgementBytes));
                 }
               if (bA == acknowledgementBytes[i + 5]) {
                 message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
@@ -81,25 +81,25 @@ case bA:
 case bE:
           if (bA == acknowledgementBytes[i + 5]) {
             message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AE");
-            exchange.setException(new MllpApplicationErrorAcknowledgementException(new String(acknowledgementBytes)));
+            exchange.setException(new MllpApplicationErrorAcknowledgementException(hl7MessageBytes,acknowledgementBytes));
           }
  else {
             message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CE");
-            exchange.setException(new MllpCommitErrorAcknowledgementException(new String(acknowledgementBytes)));
+            exchange.setException(new MllpCommitErrorAcknowledgementException(hl7MessageBytes,acknowledgementBytes));
           }
         break;
 case bR:
       if (bA == acknowledgementBytes[i + 5]) {
         message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"AR");
-        exchange.setException(new MllpApplicationRejectAcknowledgementException(new String(acknowledgementBytes)));
+        exchange.setException(new MllpApplicationRejectAcknowledgementException(hl7MessageBytes,acknowledgementBytes));
       }
  else {
         message.setHeader(MLLP_ACKNOWLEDGEMENT_TYPE,"CR");
-        exchange.setException(new MllpCommitRejectAcknowledgementException(new String(acknowledgementBytes)));
+        exchange.setException(new MllpCommitRejectAcknowledgementException(hl7MessageBytes,acknowledgementBytes));
       }
     break;
 default :
-  exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+  exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes,i + 5,2),hl7MessageBytes,acknowledgementBytes));
 }
 }
 break;
@@ -108,7 +108,7 @@ break;
 }
 }
 if (-1 == msaStartIndex) {
-exchange.setException(new MllpInvalidAcknowledgementException(new String(acknowledgementBytes)));
+exchange.setException(new MllpInvalidAcknowledgementException("MSA Not found in acknowledgement",hl7MessageBytes,acknowledgementBytes));
 }
 }
 if (exchange.getProperty(MLLP_RESET_CONNECTION_AFTER_SEND,boolean.class)) {

@@ -1,15 +1,25 @@
 {
   final String testMessage="MSH|^~\\&|APP_A|FAC_A|^org^sys||||ADT^A04^ADT_A04|||2.6" + '\r' + "PID|1||1100832^^^^PI||TEST^FIG||98765432|U||R|435 MAIN STREET^^LONGMONT^CO^80503||123-456-7890|||S"+ '\r'+ '\r'+ '\n';
   final String expectedAcknowledgement="MSH|^~\\&|^org^sys||APP_A|FAC_A|||ACK^A04^ADT_A04|||2.6" + '\r' + "MSA|AA|"+ '\r'+ '\n';
-  result.expectedMessageCount(1);
+  result.expectedBodiesReceived(testMessage);
   result.expectedHeaderReceived(MLLP_SENDING_APPLICATION,"APP_A");
   result.expectedHeaderReceived(MLLP_SENDING_FACILITY,"FAC_A");
   result.expectedHeaderReceived(MLLP_RECEIVING_APPLICATION,"^org^sys");
   result.expectedHeaderReceived(MLLP_EVENT_TYPE,"ADT");
   result.expectedHeaderReceived(MLLP_TRIGGER_EVENT,"A04");
   result.expectedHeaderReceived(MLLP_VERSION_ID,"2.6");
+  complete.expectedBodiesReceived(testMessage);
+  complete.expectedHeaderReceived(MLLP_SENDING_APPLICATION,"APP_A");
+  complete.expectedHeaderReceived(MLLP_SENDING_FACILITY,"FAC_A");
+  complete.expectedHeaderReceived(MLLP_RECEIVING_APPLICATION,"^org^sys");
+  complete.expectedHeaderReceived(MLLP_EVENT_TYPE,"ADT");
+  complete.expectedHeaderReceived(MLLP_TRIGGER_EVENT,"A04");
+  complete.expectedHeaderReceived(MLLP_VERSION_ID,"2.6");
+  complete.expectedHeaderReceived(MllpConstants.MLLP_ACKNOWLEDGEMENT_TYPE,"AA");
+  complete.expectedHeaderReceived(MLLP_ACKNOWLEDGEMENT,expectedAcknowledgement);
+  failure.expectedMessageCount(0);
   mllpClient.connect();
   String acknowledgement=mllpClient.sendMessageAndWaitForAcknowledgement(testMessage,10000);
-  assertEquals("Unexpected Acknowledgement",expectedAcknowledgement,acknowledgement);
   assertMockEndpointsSatisfied(10,TimeUnit.SECONDS);
+  assertEquals("Unexpected Acknowledgement",expectedAcknowledgement,acknowledgement);
 }
