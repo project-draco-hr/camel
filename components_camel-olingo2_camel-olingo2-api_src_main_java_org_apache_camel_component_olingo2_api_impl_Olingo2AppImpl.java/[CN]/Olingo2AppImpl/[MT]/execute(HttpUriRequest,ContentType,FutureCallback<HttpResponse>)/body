@@ -17,5 +17,16 @@
   if (!httpUriRequest.containsHeader(MAX_DATA_SERVICE_VERSION)) {
     httpUriRequest.addHeader(MAX_DATA_SERVICE_VERSION,ODataServiceVersion.V30);
   }
-  client.execute(httpUriRequest,callback);
+  if (client instanceof CloseableHttpAsyncClient) {
+    ((CloseableHttpAsyncClient)client).execute(httpUriRequest,callback);
+  }
+ else {
+    try {
+      CloseableHttpResponse result=((CloseableHttpClient)client).execute(httpUriRequest);
+      callback.completed(result);
+    }
+ catch (    IOException e) {
+      callback.failed(e);
+    }
+  }
 }

@@ -1,7 +1,7 @@
 {
-  HttpAsyncClientBuilder clientBuilder=configuration.getHttpAsyncClientBuilder();
+  Object clientBuilder=configuration.getHttpAsyncClientBuilder();
   if (clientBuilder == null) {
-    clientBuilder=HttpAsyncClientBuilder.create();
+    HttpAsyncClientBuilder asyncClientBuilder=HttpAsyncClientBuilder.create();
     final RequestConfig.Builder requestConfigBuilder=RequestConfig.custom();
     requestConfigBuilder.setConnectTimeout(configuration.getConnectTimeout());
     requestConfigBuilder.setSocketTimeout(configuration.getSocketTimeout());
@@ -9,13 +9,13 @@
     if (proxy != null) {
       requestConfigBuilder.setProxy(proxy);
     }
-    clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
+    asyncClientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
     SSLContextParameters sslContextParameters=configuration.getSslContextParameters();
     if (sslContextParameters == null) {
       sslContextParameters=new SSLContextParameters();
     }
     try {
-      clientBuilder.setSSLContext(sslContextParameters.createSSLContext(getCamelContext()));
+      asyncClientBuilder.setSSLContext(sslContextParameters.createSSLContext(getCamelContext()));
     }
  catch (    GeneralSecurityException e) {
       throw ObjectHelper.wrapRuntimeCamelException(e);
@@ -24,7 +24,14 @@ catch (    IOException e) {
       throw ObjectHelper.wrapRuntimeCamelException(e);
     }
   }
-  apiProxy=new Olingo2AppWrapper(new Olingo2AppImpl(configuration.getServiceUri(),clientBuilder));
+  Olingo2AppImpl olingo2App;
+  if (clientBuilder == null || clientBuilder instanceof HttpAsyncClientBuilder) {
+    olingo2App=new Olingo2AppImpl(configuration.getServiceUri(),(HttpAsyncClientBuilder)clientBuilder);
+  }
+ else {
+    olingo2App=new Olingo2AppImpl(configuration.getServiceUri(),(HttpClientBuilder)clientBuilder);
+  }
+  apiProxy=new Olingo2AppWrapper(olingo2App);
   apiProxy.getOlingo2App().setContentType(configuration.getContentType());
   apiProxy.getOlingo2App().setHttpHeaders(configuration.getHttpHeaders());
   return apiProxy;
