@@ -3,8 +3,6 @@
   TransportMapping<? extends Address> transport=null;
   try {
     LOG.debug("Starting SNMP producer on {}",endpoint.getAddress());
-    Address targetAddress=GenericAddress.parse(endpoint.getAddress());
-    LOG.debug("targetAddress: " + targetAddress);
     if ("tcp".equals(endpoint.getProtocol())) {
       transport=new DefaultTcpTransportMapping();
     }
@@ -12,11 +10,9 @@
       transport=new DefaultUdpTransportMapping();
     }
  else {
-      throw new IllegalArgumentException("Unknown protocol: " + endpoint.getProtocol());
+      throw new IllegalArgumentException("Unknown protocol: {} " + endpoint.getProtocol());
     }
     snmp=new Snmp(transport);
-    USM usm=new USM(SecurityProtocols.getInstance(),new OctetString(MPv3.createLocalEngineID()),0);
-    SecurityModels.getInstance().addSecurityModel(usm);
     CommunityTarget target=new CommunityTarget();
     target.setCommunity(new OctetString(endpoint.getSnmpCommunity()));
     target.setAddress(targetAddress);
@@ -39,7 +35,7 @@
       exchange.getIn().setBody(new SnmpMessage(responseEvent.getResponse()));
     }
  else {
-      throw new Exception("SNMP Producer Timeout");
+      throw new TimeoutException("SNMP Producer Timeout");
     }
   }
   finally {
