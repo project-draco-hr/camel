@@ -38,6 +38,26 @@
       factory=factories.iterator().next();
     }
   }
+  if (factory == null) {
+    RestConsumerFactory found=null;
+    String foundName=null;
+    for (    String name : DEFAULT_REST_CONSUMER_COMPONENTS) {
+      Object comp=getCamelContext().getComponent(name,true);
+      if (comp != null && comp instanceof RestConsumerFactory) {
+        if (found == null) {
+          found=(RestConsumerFactory)comp;
+          foundName=name;
+        }
+ else {
+          throw new IllegalArgumentException("Multiple RestConsumerFactory found on classpath. Configure explicit which component to use");
+        }
+      }
+    }
+    if (found != null) {
+      LOG.debug("Auto discovered {} as RestConsumerFactory",foundName);
+      factory=found;
+    }
+  }
   if (factory != null) {
     String scheme="http";
     String host="";

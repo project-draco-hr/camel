@@ -54,6 +54,26 @@
       factory=factories.iterator().next();
     }
   }
+  if (factory == null) {
+    RestProducerFactory found=null;
+    String foundName=null;
+    for (    String name : DEFAULT_REST_PRODUCER_COMPONENTS) {
+      Object comp=getCamelContext().getComponent(name,true);
+      if (comp != null && comp instanceof RestProducerFactory) {
+        if (found == null) {
+          found=(RestProducerFactory)comp;
+          foundName=name;
+        }
+ else {
+          throw new IllegalArgumentException("Multiple RestProducerFactory found on classpath. Configure explicit which component to use");
+        }
+      }
+    }
+    if (found != null) {
+      LOG.debug("Auto discovered {} as RestProducerFactory",foundName);
+      factory=found;
+    }
+  }
   if (factory != null) {
     LOG.debug("Using RestProducerFactory: {}",factory);
     Producer producer;
