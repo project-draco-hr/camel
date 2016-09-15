@@ -1,0 +1,21 @@
+{
+  super.doStart();
+  this.targetAddress=GenericAddress.parse(this.endpoint.getAddress());
+  LOG.debug("targetAddress: {}",targetAddress);
+  this.usm=new USM(SecurityProtocols.getInstance(),new OctetString(MPv3.createLocalEngineID()),0);
+  SecurityModels.getInstance().addSecurityModel(this.usm);
+  this.target=new CommunityTarget();
+  this.target.setCommunity(new OctetString(endpoint.getSnmpCommunity()));
+  this.target.setAddress(this.targetAddress);
+  this.target.setRetries(this.endpoint.getRetries());
+  this.target.setTimeout(this.endpoint.getTimeout());
+  this.target.setVersion(this.endpoint.getSnmpVersion());
+  this.pdu=new PDU();
+  for (  OID oid : this.endpoint.getOids()) {
+    this.pdu.add(new VariableBinding(oid));
+  }
+  this.pdu.setErrorIndex(0);
+  this.pdu.setErrorStatus(0);
+  this.pdu.setMaxRepetitions(0);
+  this.pdu.setType(PDU.GET);
+}

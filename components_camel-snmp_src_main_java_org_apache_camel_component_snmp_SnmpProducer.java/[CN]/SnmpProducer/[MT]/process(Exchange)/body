@@ -2,34 +2,20 @@
   Snmp snmp=null;
   TransportMapping<? extends Address> transport=null;
   try {
-    LOG.debug("Starting SNMP producer on {}",endpoint.getAddress());
-    if ("tcp".equals(endpoint.getProtocol())) {
+    LOG.debug("Starting SNMP producer on {}",this.endpoint.getAddress());
+    if ("tcp".equals(this.endpoint.getProtocol())) {
       transport=new DefaultTcpTransportMapping();
     }
- else     if ("udp".equals(endpoint.getProtocol())) {
+ else     if ("udp".equals(this.endpoint.getProtocol())) {
       transport=new DefaultUdpTransportMapping();
     }
  else {
-      throw new IllegalArgumentException("Unknown protocol: {} " + endpoint.getProtocol());
+      throw new IllegalArgumentException("Unknown protocol: {} " + this.endpoint.getProtocol());
     }
     snmp=new Snmp(transport);
-    CommunityTarget target=new CommunityTarget();
-    target.setCommunity(new OctetString(endpoint.getSnmpCommunity()));
-    target.setAddress(targetAddress);
-    target.setRetries(this.endpoint.getRetries());
-    target.setTimeout(this.endpoint.getTimeout());
-    target.setVersion(this.endpoint.getSnmpVersion());
-    PDU pdu=new PDU();
-    for (    OID oid : endpoint.getOids()) {
-      pdu.add(new VariableBinding(oid));
-    }
-    pdu.setErrorIndex(0);
-    pdu.setErrorStatus(0);
-    pdu.setMaxRepetitions(0);
-    pdu.setType(PDU.GET);
     LOG.debug("Snmp: i am sending");
     snmp.listen();
-    ResponseEvent responseEvent=snmp.send(pdu,target);
+    ResponseEvent responseEvent=snmp.send(this.pdu,this.target);
     LOG.debug("Snmp: sended");
     if (responseEvent.getResponse() != null) {
       exchange.getIn().setBody(new SnmpMessage(responseEvent.getResponse()));
