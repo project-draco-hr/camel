@@ -1,0 +1,30 @@
+{
+  Collection instanceIds;
+  Collection tags;
+  CreateTagsRequest request=new CreateTagsRequest();
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS))) {
+    instanceIds=exchange.getIn().getHeader(EC2Constants.INSTANCES_IDS,Collection.class);
+    request.withResources(instanceIds);
+  }
+ else {
+    throw new IllegalArgumentException("Instances Ids must be specified");
+  }
+  if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(EC2Constants.INSTANCES_TAGS))) {
+    tags=exchange.getIn().getHeader(EC2Constants.INSTANCES_TAGS,Collection.class);
+    request.withTags(tags);
+  }
+ else {
+    throw new IllegalArgumentException("Tags must be specified");
+  }
+  CreateTagsResult result=new CreateTagsResult();
+  try {
+    result=ec2Client.createTags(request);
+  }
+ catch (  AmazonServiceException ase) {
+    LOG.trace("Create tags command returned the error code {}",ase.getErrorCode());
+    throw ase;
+  }
+  LOG.trace("Created tags [{}] on resources with Ids [{}] ",Arrays.toString(tags.toArray()),Arrays.toString(instanceIds.toArray()));
+  Message message=getMessageForResponse(exchange);
+  message.setBody(result);
+}
