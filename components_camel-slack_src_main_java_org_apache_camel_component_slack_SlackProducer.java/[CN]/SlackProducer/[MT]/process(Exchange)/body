@@ -1,8 +1,15 @@
 {
   HttpClient client=HttpClientBuilder.create().build();
   HttpPost httpPost=new HttpPost(slackEndpoint.getWebhookUrl());
-  SlackMessage slackMessage=new SlackMessage();
-  slackMessage.setText(exchange.getIn().getBody(String.class));
+  SlackMessage slackMessage;
+  Object payload=exchange.getIn().getBody();
+  if (payload instanceof SlackMessage) {
+    slackMessage=(SlackMessage)payload;
+  }
+ else {
+    slackMessage=new SlackMessage();
+    slackMessage.setText(exchange.getIn().getBody(String.class));
+  }
   slackMessage.setChannel(slackEndpoint.getChannel());
   slackMessage.setUsername(slackEndpoint.getUsername());
   slackMessage.setIconUrl(slackEndpoint.getIconUrl());
