@@ -12,25 +12,38 @@ case BUILD_IMAGE:
           super.onNext(item);
         }
       }
-).awaitImageId();
-    break;
-case PULL_IMAGE:
-  result=executePullImageRequest(client,message).exec(new PullImageResultCallback(){
-    @Override public void onNext(    PullResponseItem item){
-      log.trace("pull image callback {}",item);
-      super.onNext(item);
-    }
-  }
 );
+    if (result != null) {
+      String imageId=((BuildImageResultCallback)result).awaitImageId();
+      ((BuildImageResultCallback)result).close();
+      result=imageId;
+    }
+  break;
+case PULL_IMAGE:
+result=executePullImageRequest(client,message).exec(new PullImageResultCallback(){
+  @Override public void onNext(  PullResponseItem item){
+    log.trace("pull image callback {}",item);
+    super.onNext(item);
+  }
+}
+);
+if (result != null) {
+result=((PullImageResultCallback)result).awaitCompletion();
+((PullImageResultCallback)result).close();
+}
 break;
 case PUSH_IMAGE:
 result=executePushImageRequest(client,message).exec(new PushImageResultCallback(){
 @Override public void onNext(PushResponseItem item){
-  log.trace("push image callback {}",item);
-  super.onNext(item);
+log.trace("push image callback {}",item);
+super.onNext(item);
 }
 }
-).awaitCompletion();
+);
+if (result != null) {
+result=((PushImageResultCallback)result).awaitCompletion();
+((PushImageResultCallback)result).close();
+}
 break;
 case ATTACH_CONTAINER:
 result=executeAttachContainerRequest(client,message).exec(new AttachContainerResultCallback(){
@@ -39,7 +52,11 @@ log.trace("attach container callback {}",item);
 super.onNext(item);
 }
 }
-).awaitCompletion();
+);
+if (result != null) {
+result=((AttachContainerResultCallback)result).awaitCompletion();
+((AttachContainerResultCallback)result).close();
+}
 break;
 case LOG_CONTAINER:
 result=executeLogContainerRequest(client,message).exec(new LogContainerResultCallback(){
@@ -48,7 +65,11 @@ log.trace("log container callback {}",item);
 super.onNext(item);
 }
 }
-).awaitCompletion();
+);
+if (result != null) {
+result=((LogContainerResultCallback)result).awaitCompletion();
+((LogContainerResultCallback)result).close();
+}
 break;
 case WAIT_CONTAINER:
 result=executeWaitContainerRequest(client,message).exec(new WaitContainerResultCallback(){
@@ -57,7 +78,12 @@ log.trace("wait contanier callback {}",item);
 super.onNext(item);
 }
 }
-).awaitStatusCode();
+);
+if (result != null) {
+Integer statusCode=((WaitContainerResultCallback)result).awaitStatusCode();
+((WaitContainerResultCallback)result).close();
+result=statusCode;
+}
 break;
 case EXEC_START:
 result=executeExecStartRequest(client,message).exec(new ExecStartResultCallback(){
@@ -66,7 +92,11 @@ log.trace("exec start callback {}",item);
 super.onNext(item);
 }
 }
-).awaitCompletion();
+);
+if (result != null) {
+result=((ExecStartResultCallback)result).awaitCompletion();
+((ExecStartResultCallback)result).close();
+}
 break;
 default :
 throw new DockerException("Invalid operation: " + operation);
@@ -76,7 +106,7 @@ exchange.getIn().setBody(result);
 return true;
 }
 }
- catch (DockerException|InterruptedException e) {
+ catch (DockerException|InterruptedException|IOException e) {
 log.error(e.getMessage(),e);
 return false;
 }
