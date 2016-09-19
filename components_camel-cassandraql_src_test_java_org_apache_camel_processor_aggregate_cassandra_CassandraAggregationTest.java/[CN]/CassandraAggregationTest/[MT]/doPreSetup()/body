@@ -1,12 +1,13 @@
 {
-  assumeTrue("Skipping test running in CI server - Fails sometimes on CI server with address already in use",System.getenv("BUILD_ID") == null);
-  CassandraUnitUtils.startEmbeddedCassandra();
-  cluster=CassandraUnitUtils.cassandraCluster();
-  Session rootSession=cluster.connect();
-  CassandraUnitUtils.loadCQLDataSet(rootSession,"NamedAggregationDataSet.cql");
-  rootSession.close();
-  aggregationRepository=new NamedCassandraAggregationRepository(cluster,CassandraUnitUtils.KEYSPACE,"ID");
-  aggregationRepository.setTable("NAMED_CAMEL_AGGREGATION");
-  aggregationRepository.start();
+  if (canTest()) {
+    CassandraUnitUtils.startEmbeddedCassandra();
+    cluster=CassandraUnitUtils.cassandraCluster();
+    Session rootSession=cluster.connect();
+    CassandraUnitUtils.loadCQLDataSet(rootSession,"NamedAggregationDataSet.cql");
+    rootSession.close();
+    aggregationRepository=new NamedCassandraAggregationRepository(cluster,CassandraUnitUtils.KEYSPACE,"ID");
+    aggregationRepository.setTable("NAMED_CAMEL_AGGREGATION");
+    aggregationRepository.start();
+  }
   super.doPreSetup();
 }

@@ -1,12 +1,12 @@
 {
-  assumeTrue("Skipping test running in CI server - Fails sometimes on CI server with address already in use",System.getenv("BUILD_ID") == null);
-  CassandraUnitUtils.startEmbeddedCassandra();
-  cluster=CassandraUnitUtils.cassandraCluster();
-  Session rootSession=cluster.connect();
-  CassandraUnitUtils.loadCQLDataSet(rootSession,"NamedIdempotentDataSet.cql");
-  rootSession.close();
-  idempotentRepository=new NamedCassandraIdempotentRepository(cluster,CassandraUnitUtils.KEYSPACE,"ID");
-  idempotentRepository.setTable("NAMED_CAMEL_IDEMPOTENT");
-  idempotentRepository.start();
+  if (canTest()) {
+    cluster=CassandraUnitUtils.cassandraCluster();
+    Session rootSession=cluster.connect();
+    CassandraUnitUtils.loadCQLDataSet(rootSession,"NamedIdempotentDataSet.cql");
+    rootSession.close();
+    idempotentRepository=new NamedCassandraIdempotentRepository(cluster,CassandraUnitUtils.KEYSPACE,"ID");
+    idempotentRepository.setTable("NAMED_CAMEL_IDEMPOTENT");
+    idempotentRepository.start();
+  }
   super.doPreSetup();
 }
