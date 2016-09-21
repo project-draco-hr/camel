@@ -1,4 +1,7 @@
 {
+  if (!new File(".").getCanonicalFile().getName().equals("camel-itest-spring-boot")) {
+    throw new IllegalStateException("In order to run the integration tests, 'camel-itest-spring-boot' must be the working directory. Check your configuration.");
+  }
   ExtensionLoader extensionLoader=new ServiceExtensionLoader(Collections.singleton(getExtensionClassloader()));
   extensionLoader.addOverride(ZipExporter.class,SpringBootZipExporterImpl.class);
   ConfigurationBuilder builder=new ConfigurationBuilder().extensionLoader(extensionLoader);
@@ -11,10 +14,10 @@
     ark=ark.addAsDirectories(CLASSES_FOLDER);
   }
   if (config.getUseCustomLog()) {
-    ark=ark.addAsResource("log4j2-spring.xml",CLASSES_FOLDER + "/log4j2.xml");
+    ark=ark.addAsResource("spring-logback.xml","/spring-logback.xml");
   }
   for (  Map.Entry<String,String> res : config.getResources().entrySet()) {
-    ark=ark.addAsResource(res.getKey(),CLASSES_FOLDER + "/" + res.getValue());
+    ark=ark.addAsResource(res.getKey(),"/" + res.getValue());
   }
   String version=System.getProperty("version_org.apache.camel:camel-core");
   if (version == null) {
@@ -34,8 +37,13 @@
     throw new IllegalStateException("Cannot determine the current version of the camel component");
   }
   List<MavenDependencyExclusion> commonExclusions=new LinkedList<>();
+  commonExclusions.add(MavenDependencies.createExclusion("commons-logging","commons-logging"));
   commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-log4j12"));
   commonExclusions.add(MavenDependencies.createExclusion("log4j","log4j"));
+  commonExclusions.add(MavenDependencies.createExclusion("log4j","log4j-slf4j-impl"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.apache.logging.log4j","log4j"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.apache.logging.log4j","log4j-core"));
+  commonExclusions.add(MavenDependencies.createExclusion("org.apache.logging.log4j","log4j-slf4j-impl"));
   commonExclusions.add(MavenDependencies.createExclusion("log4j","apache-log4j-extras"));
   commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-simple"));
   commonExclusions.add(MavenDependencies.createExclusion("org.slf4j","slf4j-jdk14"));
@@ -44,62 +52,52 @@
   for (  String ex : config.getMavenExclusions()) {
     commonExclusions.add(MavenDependencies.createExclusion(ex));
   }
-  MavenDependencyExclusion[] commonExclutionArray=commonExclusions.toArray(new MavenDependencyExclusion[]{});
-  List<MavenDependency> moduleDependencies=new LinkedList<>();
+  List<MavenDependency> additionalDependencies=new LinkedList<>();
   for (  String canonicalForm : config.getAdditionalDependencies()) {
     MavenCoordinate coord=MavenCoordinates.createCoordinate(canonicalForm);
     MavenDependency dep=MavenDependencies.createDependency(coord,ScopeType.RUNTIME,false);
-    moduleDependencies.add(dep);
+    additionalDependencies.add(dep);
   }
+  List<String> testProvidedDependenciesXml=new LinkedList<>();
+  List<ScopeType> scopes=new LinkedList<>();
   if (config.getIncludeProvidedDependencies() || config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
-    List<ScopeType> scopes=new LinkedList<>();
     if (config.getIncludeTestDependencies() || config.getUnitTestEnabled()) {
+      testProvidedDependenciesXml.addAll(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.TEST.toString()));
       scopes.add(ScopeType.TEST);
     }
     if (config.getIncludeProvidedDependencies()) {
+      testProvidedDependenciesXml.addAll(DependencyResolver.getDependencies(config.getModuleBasePath() + "/pom.xml",ScopeType.PROVIDED.toString()));
       scopes.add(ScopeType.PROVIDED);
     }
-    boolean failIfNoDependencies=false;
-    List<MavenResolvedArtifact> moduleArtifacts;
-    try {
-      moduleArtifacts=Arrays.asList(resolver(config).loadPomFromFile(config.getModuleBasePath() + "/pom.xml").importDependencies(scopes.toArray(new ScopeType[]{})).resolve().withoutTransitivity().asResolvedArtifact());
-    }
- catch (    IllegalArgumentException e) {
-      if (failIfNoDependencies) {
-        throw e;
-      }
-      debug("Error while getting dependencies for scopes: " + scopes + ". Message="+ e.getMessage());
-      moduleArtifacts=new LinkedList<>();
-    }
-    for (    MavenResolvedArtifact art : moduleArtifacts) {
-      MavenCoordinate c=art.getCoordinate();
-      if (!validTestDependency(config,c)) {
-        continue;
-      }
-      Set<String> pomExclusions=DependencyResolver.getExclusions(config.getModuleBasePath() + "/pom.xml",c.getGroupId(),c.getArtifactId());
-      MavenDependencyExclusion[] artExclusions;
-      if (pomExclusions.isEmpty()) {
-        artExclusions=commonExclutionArray;
-      }
- else {
-        List<MavenDependencyExclusion> specificExclusions=new LinkedList<>(Arrays.asList(commonExclutionArray));
-        for (        String spEx : pomExclusions) {
-          specificExclusions.add(MavenDependencies.createExclusion(spEx));
-        }
-        artExclusions=specificExclusions.toArray(new MavenDependencyExclusion[]{});
-      }
-      MavenDependency dep=MavenDependencies.createDependency(c,ScopeType.RUNTIME,false,artExclusions);
-      moduleDependencies.add(dep);
+  }
+  List<String> cleanTestProvidedDependenciesXml=new LinkedList<>();
+  for (  String depXml : testProvidedDependenciesXml) {
+    if (validTestDependency(config,depXml,commonExclusions)) {
+      depXml=useBOMVersionIfPresent(config,depXml);
+      depXml=enforceExclusions(config,depXml,commonExclusions);
+      depXml=switchToStarterIfPresent(config,depXml);
+      cleanTestProvidedDependenciesXml.add(depXml);
     }
   }
-  File moduleSpringBootPom=createUserPom(config);
+  File moduleSpringBootPom=createUserPom(config,cleanTestProvidedDependenciesXml);
+  List<ScopeType> resolvedScopes=new LinkedList<>();
+  resolvedScopes.add(ScopeType.COMPILE);
+  resolvedScopes.add(ScopeType.RUNTIME);
+  resolvedScopes.addAll(scopes);
+  List<MavenResolvedArtifact> runtimeDependencies=new LinkedList<>();
+  runtimeDependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importDependencies(resolvedScopes.toArray(new ScopeType[0])).addDependencies(additionalDependencies).resolve().withTransitivity().asResolvedArtifact()));
+  List<MavenResolvedArtifact> dependencyArtifacts=runtimeDependencies;
+  lookForVersionMismatch(config,dependencyArtifacts);
   List<File> dependencies=new LinkedList<>();
-  dependencies.addAll(Arrays.asList(resolver(config).loadPomFromFile(moduleSpringBootPom).importRuntimeDependencies().addDependencies(moduleDependencies).resolve().withTransitivity().asFile()));
+  for (  MavenResolvedArtifact a : dependencyArtifacts) {
+    dependencies.add(a.asFile());
+  }
   excludeDependencyRegex(dependencies,"^spring-boot-loader-[0-9].*");
   ark=addDependencies(ark,dependencies);
   ark=ark.addPackages(true,"org.jboss.shrinkwrap");
   ark=ark.addPackages(true,"org.apache.camel.itest.springboot");
   ark=addSpringbootPackage(ark,"org.apache.camel.itest.springboot");
+  ark=ark.addPackages(true,"org.apache.camel.converter.myconverter");
   ark=ark.addPackages(true,"org.springframework.boot.loader");
   ClassPath.Builder external=ClassPath.builder().add(ark);
   external.addSystemProperty("javax.xml.accessExternalDTD","all");

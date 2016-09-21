@@ -1,0 +1,39 @@
+{
+  Set<String> runtimeArtifacts=new HashSet<>();
+  for (  MavenResolvedArtifact a : runtimeDependencies) {
+    runtimeArtifacts.add(getIdentifier(a));
+  }
+  Map<String,String> testVersions=new HashMap<>();
+  for (  MavenResolvedArtifact a : testDependencies) {
+    testVersions.put(getIdentifier(a),a.getCoordinate().getVersion());
+  }
+  List<MavenResolvedArtifact> result=new LinkedList<>();
+  List<String> problems=new LinkedList<>();
+  for (  MavenResolvedArtifact a : runtimeDependencies) {
+    String version=a.getCoordinate().getVersion();
+    String testVersion=testVersions.get(getIdentifier(a));
+    if (testVersion != null && !sameVersion(testVersion,version)) {
+      problems.add("Versions for artifact " + getIdentifier(a) + " are different between runtime ("+ version+ ") and test ("+ testVersion+ ") scopes");
+    }
+    result.add(a);
+  }
+  for (  MavenResolvedArtifact a : testDependencies) {
+    if (!runtimeArtifacts.contains(getIdentifier(a))) {
+      result.add(a);
+    }
+  }
+  if (!problems.isEmpty()) {
+    StringBuilder message=new StringBuilder();
+    message.append("Some problems found while merging test dependencies:\n");
+    for (    String problem : problems) {
+      message.append(" - " + problem + "\n");
+    }
+    if (FAIL_ON_TEST_LIBRARY_MISMATCH) {
+      throw new RuntimeException(message.toString());
+    }
+ else {
+      debug(message.toString());
+    }
+  }
+  return result;
+}

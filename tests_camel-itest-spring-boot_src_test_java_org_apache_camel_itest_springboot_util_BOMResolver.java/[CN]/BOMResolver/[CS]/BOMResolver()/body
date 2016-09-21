@@ -1,0 +1,20 @@
+{
+  try {
+    cleanupLocalRepo();
+    if (canUseCache()) {
+      try (ObjectInputStream in=new ObjectInputStream(new FileInputStream(CACHE_FILE))){
+        this.versions=(Map<String,String>)in.readObject();
+      }
+     }
+ else {
+      retrieveUpstreamBOMVersions();
+      CACHE_FILE.delete();
+      try (ObjectOutputStream out=new ObjectOutputStream(new FileOutputStream(CACHE_FILE))){
+        out.writeObject(versions);
+      }
+     }
+  }
+ catch (  Exception e) {
+    throw new IllegalStateException("Cannot initialize the version resolver");
+  }
+}

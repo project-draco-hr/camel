@@ -1,0 +1,20 @@
+{
+  String expression="/project/dependencies/dependency[scope='" + scope + "']";
+  DocumentBuilder builder=factory.newDocumentBuilder();
+  Document doc=builder.parse(pom);
+  XPath xpath=xPathfactory.newXPath();
+  XPathExpression expr=xpath.compile(expression);
+  List<String> dependencies=new LinkedList<>();
+  NodeList nodes=(NodeList)expr.evaluate(doc,XPathConstants.NODESET);
+  for (int i=0; i < nodes.getLength(); i++) {
+    Node node=nodes.item(i);
+    try (StringWriter writer=new StringWriter()){
+      Transformer transformer=TransformerFactory.newInstance().newTransformer();
+      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,"yes");
+      transformer.transform(new DOMSource(node),new StreamResult(writer));
+      String xml=writer.toString();
+      dependencies.add(xml);
+    }
+   }
+  return dependencies;
+}
