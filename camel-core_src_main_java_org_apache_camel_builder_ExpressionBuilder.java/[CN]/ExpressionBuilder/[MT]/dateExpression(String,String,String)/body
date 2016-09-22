@@ -1,0 +1,68 @@
+{
+  return new ExpressionAdapter(){
+    public Object evaluate(    Exchange exchange){
+      String command=commandWithOffsets.split("[+-]",2)[0].trim();
+      List<Long> offsets=new ArrayList<>();
+      Matcher offsetMatcher=Pattern.compile("([+-])([^+-]+)").matcher(commandWithOffsets);
+      while (offsetMatcher.find()) {
+        try {
+          long value=exchange.getContext().getTypeConverter().mandatoryConvertTo(long.class,exchange,offsetMatcher.group(2).trim());
+          offsets.add(offsetMatcher.group(1).equals("+") ? value : -value);
+        }
+ catch (        NoTypeConversionAvailableException e) {
+          e.printStackTrace();
+        }
+      }
+      Date date;
+      if ("now".equals(command)) {
+        date=new Date();
+      }
+ else       if (command.startsWith("header.") || command.startsWith("in.header.")) {
+        String key=command.substring(command.lastIndexOf('.') + 1);
+        date=exchange.getIn().getHeader(key,Date.class);
+        if (date == null) {
+          throw new IllegalArgumentException("Cannot find java.util.Date object at command: " + command);
+        }
+      }
+ else       if (command.startsWith("out.header.")) {
+        String key=command.substring(command.lastIndexOf('.') + 1);
+        date=exchange.getOut().getHeader(key,Date.class);
+        if (date == null) {
+          throw new IllegalArgumentException("Cannot find java.util.Date object at command: " + command);
+        }
+      }
+ else       if ("file".equals(command)) {
+        Long num=exchange.getIn().getHeader(Exchange.FILE_LAST_MODIFIED,Long.class);
+        if (num != null && num > 0) {
+          date=new Date(num);
+        }
+ else {
+          date=exchange.getIn().getHeader(Exchange.FILE_LAST_MODIFIED,Date.class);
+          if (date == null) {
+            throw new IllegalArgumentException("Cannot find " + Exchange.FILE_LAST_MODIFIED + " header at command: "+ command);
+          }
+        }
+      }
+ else {
+        throw new IllegalArgumentException("Command not supported for dateExpression: " + command);
+      }
+      long dateAsLong=date.getTime();
+      for (      long offset : offsets) {
+        dateAsLong+=offset;
+      }
+      date=new Date(dateAsLong);
+      if (null != pattern && !pattern.isEmpty()) {
+        SimpleDateFormat df=new SimpleDateFormat(pattern);
+        df.setTimeZone(TimeZone.getTimeZone(timezone));
+        return df.format(date);
+      }
+ else {
+        return date;
+      }
+    }
+    @Override public String toString(){
+      return "date(" + commandWithOffsets + ":"+ pattern+ ":"+ timezone+ ")";
+    }
+  }
+;
+}
