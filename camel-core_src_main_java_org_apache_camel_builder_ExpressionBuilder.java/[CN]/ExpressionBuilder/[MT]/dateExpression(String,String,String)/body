@@ -3,14 +3,14 @@
     public Object evaluate(    Exchange exchange){
       String command=commandWithOffsets.split("[+-]",2)[0].trim();
       List<Long> offsets=new ArrayList<>();
-      Matcher offsetMatcher=Pattern.compile("([+-])([^+-]+)").matcher(commandWithOffsets);
+      Matcher offsetMatcher=OFFSET_PATTERN.matcher(commandWithOffsets);
       while (offsetMatcher.find()) {
         try {
           long value=exchange.getContext().getTypeConverter().mandatoryConvertTo(long.class,exchange,offsetMatcher.group(2).trim());
           offsets.add(offsetMatcher.group(1).equals("+") ? value : -value);
         }
  catch (        NoTypeConversionAvailableException e) {
-          e.printStackTrace();
+          throw ObjectHelper.wrapCamelExecutionException(exchange,e);
         }
       }
       Date date;
@@ -51,9 +51,11 @@
         dateAsLong+=offset;
       }
       date=new Date(dateAsLong);
-      if (null != pattern && !pattern.isEmpty()) {
+      if (pattern != null && !pattern.isEmpty()) {
         SimpleDateFormat df=new SimpleDateFormat(pattern);
-        df.setTimeZone(TimeZone.getTimeZone(timezone));
+        if (timezone != null && !timezone.isEmpty()) {
+          df.setTimeZone(TimeZone.getTimeZone(timezone));
+        }
         return df.format(date);
       }
  else {
