@@ -11,21 +11,22 @@
     incident.setShortDescription("An incident");
     incident.setSeverity(1);
     incident.setImpact(1);
-    template().sendBodyAndHeaders("direct:servicenow",incident,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_CREATE).put(ServiceNowConstants.TABLE,"incident").build());
+    template().sendBodyAndHeaders("direct:servicenow",incident,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_CREATE).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").build());
     mock.assertIsSatisfied();
     incident=mock.getExchanges().get(0).getIn().getBody(Incident.class);
     sysId=incident.getId();
     number=incident.getNumber();
     LOGGER.info("****************************************************");
-    LOGGER.info("* Incident created");
-    LOGGER.info("*  sysid  = {}",sysId);
-    LOGGER.info("*  number = {}",number);
+    LOGGER.info(" Incident created");
+    LOGGER.info("  sysid  = {}",sysId);
+    LOGGER.info("  number = {}",number);
     LOGGER.info("****************************************************");
   }
 {
+    LOGGER.info("Search the record {}",sysId);
     mock.reset();
     mock.expectedMessageCount(1);
-    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowConstants.TABLE,"incident").put(ServiceNowConstants.SYSPARM_QUERY,"number=" + number).build());
+    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").put(ServiceNowParams.SYSPARM_QUERY,"number=" + number).build());
     mock.assertIsSatisfied();
     List<Incident> incidents=mock.getExchanges().get(0).getIn().getBody(List.class);
     assertEquals(1,incidents.size());
@@ -33,6 +34,7 @@
     assertEquals(sysId,incidents.get(0).getId());
   }
 {
+    LOGGER.info("Update the record {}",sysId);
     mock.reset();
     mock.expectedMessageCount(1);
     incident=new Incident();
@@ -40,7 +42,7 @@
     incident.setShortDescription("The incident");
     incident.setSeverity(2);
     incident.setImpact(3);
-    template().sendBodyAndHeaders("direct:servicenow",incident,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_MODIFY).put(ServiceNowConstants.TABLE,"incident").put(ServiceNowConstants.SYSPARM_ID,sysId).build());
+    template().sendBodyAndHeaders("direct:servicenow",incident,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_MODIFY).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").put(ServiceNowParams.PARAM_SYS_ID,sysId).build());
     mock.assertIsSatisfied();
     incident=mock.getExchanges().get(0).getIn().getBody(Incident.class);
     assertEquals(number,incident.getNumber());
@@ -49,9 +51,10 @@
     assertEquals("The incident",incident.getShortDescription());
   }
 {
+    LOGGER.info("Retrieve the record {}",sysId);
     mock.reset();
     mock.expectedMessageCount(1);
-    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowConstants.TABLE,"incident").put(ServiceNowConstants.SYSPARM_QUERY,"number=" + number).build());
+    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").put(ServiceNowParams.SYSPARM_QUERY,"number=" + number).build());
     mock.assertIsSatisfied();
     List<Incident> incidents=mock.getExchanges().get(0).getIn().getBody(List.class);
     assertEquals(1,incidents.size());
@@ -62,9 +65,10 @@
     assertEquals("The incident",incidents.get(0).getShortDescription());
   }
 {
+    LOGGER.info("Search the record {}",sysId);
     mock.reset();
     mock.expectedMessageCount(1);
-    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowConstants.TABLE,"incident").put(ServiceNowConstants.SYSPARM_ID,sysId).build());
+    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").put(ServiceNowParams.PARAM_SYS_ID,sysId).build());
     mock.assertIsSatisfied();
     incident=mock.getExchanges().get(0).getIn().getBody(Incident.class);
     assertEquals(2,incident.getSeverity());
@@ -73,15 +77,17 @@
     assertEquals(number,incident.getNumber());
   }
 {
+    LOGGER.info("Delete the record {}",sysId);
     mock.reset();
     mock.expectedMessageCount(1);
-    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_DELETE).put(ServiceNowConstants.TABLE,"incident").put(ServiceNowConstants.SYSPARM_ID,sysId).build());
+    template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_DELETE).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").put(ServiceNowParams.PARAM_SYS_ID,sysId).build());
     mock.assertIsSatisfied();
   }
 {
+    LOGGER.info("Find the record {}, should fail",sysId);
     try {
-      template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowConstants.SYSPARM_QUERY,"number=" + number).put(ServiceNowConstants.TABLE,"incident").build());
-      fail("Record +" + number + " should have been deleted");
+      template().sendBodyAndHeaders("direct:servicenow",null,new KVBuilder().put(ServiceNowConstants.RESOURCE,"table").put(ServiceNowConstants.ACTION,ServiceNowConstants.ACTION_RETRIEVE).put(ServiceNowParams.PARAM_SYS_ID,sysId).put(ServiceNowParams.PARAM_TABLE_NAME,"incident").build());
+      fail("Record " + number + " should have been deleted");
     }
  catch (    CamelExecutionException e) {
       assertTrue(e.getCause() instanceof ServiceNowException);

@@ -1,7 +1,7 @@
 {
   if (token == null) {
     LOGGER.debug("Generate OAuth token");
-    token=OAuthClientUtils.getAccessToken(WebClient.create(url),new Consumer(configuration.getOauthClientId(),configuration.getOauthClientSecret()),new ResourceOwnerGrant(configuration.getUserName(),configuration.getPassword()),true);
+    token=OAuthClientUtils.getAccessToken(WebClient.create(configuration.getOauthTokenUrl()),new Consumer(configuration.getOauthClientId(),configuration.getOauthClientSecret()),new ResourceOwnerGrant(configuration.getUserName(),configuration.getPassword()),true);
     LOGGER.debug("OAuth token expires in {}s",token.getExpiresIn());
     token.setIssuedAt(System.currentTimeMillis());
     token.setExpiresIn(TimeUnit.MILLISECONDS.convert(token.getExpiresIn(),TimeUnit.SECONDS));
@@ -12,7 +12,7 @@
   }
  else   if (expireAt > 0 && System.currentTimeMillis() >= expireAt) {
     LOGGER.debug("OAuth token is expired, refresh it");
-    token=OAuthClientUtils.refreshAccessToken(WebClient.create(url),new Consumer(configuration.getOauthClientId(),configuration.getOauthClientSecret()),token,null,false);
+    token=OAuthClientUtils.refreshAccessToken(WebClient.create(configuration.getOauthTokenUrl()),new Consumer(configuration.getOauthClientId(),configuration.getOauthClientSecret()),token,null,false);
     LOGGER.debug("Refreshed OAuth token expires in {}s",token.getExpiresIn());
     token.setIssuedAt(System.currentTimeMillis());
     token.setExpiresIn(TimeUnit.MILLISECONDS.convert(token.getExpiresIn(),TimeUnit.SECONDS));

@@ -1,0 +1,43 @@
+{
+  List<String> links=response.getStringHeaders().get(HttpHeaders.LINK);
+  if (links != null) {
+    for (    String link : links) {
+      String[] parts=link.split(";");
+      if (parts.length != 2) {
+        continue;
+      }
+      String uri=ObjectHelper.between(parts[0],"<",">");
+      String rel=StringHelper.removeQuotes(ObjectHelper.after(parts[1],"="));
+      Map<String,Object> query=URISupport.parseQuery(uri);
+      Object offset=query.get(ServiceNowParams.SYSPARM_OFFSET.getId());
+      if (offset != null) {
+switch (rel) {
+case ServiceNowConstants.LINK_FIRST:
+          message.setHeader(ServiceNowConstants.OFFSET_FIRST,offset);
+        break;
+case ServiceNowConstants.LINK_LAST:
+      message.setHeader(ServiceNowConstants.OFFSET_LAST,offset);
+    break;
+case ServiceNowConstants.LINK_NEXT:
+  message.setHeader(ServiceNowConstants.OFFSET_NEXT,offset);
+break;
+case ServiceNowConstants.LINK_PREV:
+message.setHeader(ServiceNowConstants.OFFSET_PREV,offset);
+break;
+default :
+break;
+}
+}
+}
+}
+String attachmentMeta=response.getHeaderString(ServiceNowConstants.ATTACHMENT_META_HEADER);
+if (ObjectHelper.isNotEmpty(attachmentMeta)) {
+message.setHeader(ServiceNowConstants.CONTENT_META,mapper.readValue(attachmentMeta,Map.class));
+}
+copyHeader(response,HttpHeaders.CONTENT_TYPE,message,ServiceNowConstants.CONTENT_TYPE);
+copyHeader(response,HttpHeaders.CONTENT_ENCODING,message,ServiceNowConstants.CONTENT_ENCODING);
+if (model != null) {
+message.getHeaders().putIfAbsent(ServiceNowConstants.MODEL,model.getName());
+}
+return this;
+}

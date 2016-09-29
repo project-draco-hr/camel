@@ -1,12 +1,25 @@
 {
   int code=r.getStatus();
   try {
-    if (code == Response.Status.NOT_FOUND.getStatusCode() || code == Response.Status.BAD_REQUEST.getStatusCode() || code == Response.Status.UNAUTHORIZED.getStatusCode() || code == Response.Status.FORBIDDEN.getStatusCode() || code == Response.Status.METHOD_NOT_ALLOWED.getStatusCode()) {
-      return mapper.readValue((InputStream)r.getEntity(),ServiceNowException.class);
-    }
-  }
- catch (  IOException e) {
-    return new ServiceNowException(e);
-  }
-  return null;
+switch (code) {
+case 200:
+case 201:
+case 204:
+      break;
+case 400:
+case 401:
+case 403:
+case 404:
+case 405:
+case 406:
+case 415:
+    return mapper.readValue(r.readEntity(InputStream.class),ServiceNowException.class);
+default :
+  break;
+}
+}
+ catch (IOException e) {
+return new ServiceNowException(e);
+}
+return null;
 }
