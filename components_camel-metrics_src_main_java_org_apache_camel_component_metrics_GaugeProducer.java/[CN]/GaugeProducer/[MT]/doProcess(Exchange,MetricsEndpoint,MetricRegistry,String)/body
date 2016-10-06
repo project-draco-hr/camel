@@ -1,0 +1,20 @@
+{
+  Gauge<?> gauge=registry.getGauges().get(metricsName);
+  if (gauge instanceof CamelMetricsGauge) {
+    CamelMetricsGauge camelMetricsGauge=(CamelMetricsGauge)gauge;
+    Object subject=exchange.getIn().getHeader(HEADER_GAUGE_SUBJECT,Object.class);
+    if (subject != null) {
+      camelMetricsGauge.setValue(subject);
+    }
+  }
+ else {
+    Object subject=exchange.getIn().getHeader(HEADER_GAUGE_SUBJECT,Object.class);
+    Object finalSubject=subject != null ? subject : endpoint.getSubject();
+    if (finalSubject != null) {
+      registry.register(metricsName,new CamelMetricsGauge(finalSubject));
+    }
+ else {
+      LOG.info("No subject found for Gauge \"{}\". Ignoring...",metricsName);
+    }
+  }
+}

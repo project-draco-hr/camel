@@ -1,0 +1,18 @@
+{
+  super(endpoint);
+  Gauge<?> gauge=endpoint.getRegistry().getGauges().get(endpoint.getMetricsName());
+  if (gauge instanceof CamelMetricsGauge) {
+    CamelMetricsGauge camelMetricsGauge=(CamelMetricsGauge)gauge;
+    if (endpoint.getSubject() != null) {
+      camelMetricsGauge.setValue(endpoint.getSubject());
+    }
+  }
+ else {
+    if (endpoint.getSubject() != null) {
+      endpoint.getRegistry().register(endpoint.getMetricsName(),new CamelMetricsGauge(endpoint.getSubject()));
+    }
+ else {
+      LOG.info("No subject found for Gauge \"{}\". Ignoring...",endpoint.getMetricsName());
+    }
+  }
+}
