@@ -15,10 +15,12 @@
     methods.addAll(extraMethods);
   }
   Set<Method> overrides=new HashSet<Method>();
-  Set<Method> bridges=new HashSet<Method>();
   boolean javaClass=clazz.getName().startsWith("java.") || clazz.getName().startsWith("javax.");
   if (!javaClass) {
     for (    Method source : methods) {
+      if (source.isBridge()) {
+        continue;
+      }
       for (      Method target : methods) {
         if (ObjectHelper.isOverridingMethod(source,target,true)) {
           continue;
@@ -33,10 +35,15 @@
   }
   if (Modifier.isPublic(clazz.getModifiers())) {
     List<Method> extraMethods=getInterfaceMethods(clazz);
-    for (    Method target : extraMethods) {
-      for (      Method source : methods) {
+    for (    Method source : extraMethods) {
+      for (      Method target : methods) {
         if (ObjectHelper.isOverridingMethod(source,target,false)) {
-          overrides.add(target);
+          overrides.add(source);
+        }
+      }
+      for (      Method target : methodMap.keySet()) {
+        if (ObjectHelper.isOverridingMethod(source,target,false)) {
+          overrides.add(source);
         }
       }
     }
