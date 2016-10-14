@@ -3,6 +3,13 @@
   String uri=httpRequest.getURI().toString();
   String statusText=httpResponse.getStatusLine() != null ? httpResponse.getStatusLine().getReasonPhrase() : null;
   Map<String,String> headers=extractResponseHeaders(httpResponse.getAllHeaders());
+  if (getEndpoint().getCookieHandler() != null) {
+    Map<String,List<String>> m=new HashMap<String,List<String>>();
+    for (    Entry<String,String> e : headers.entrySet()) {
+      m.put(e.getKey(),Collections.singletonList(e.getValue()));
+    }
+    getEndpoint().getCookieHandler().storeCookies(exchange,httpRequest.getURI(),m);
+  }
   Object responseBody=extractResponseBody(httpRequest,httpResponse,exchange,getEndpoint().isIgnoreResponseBody());
   if (transferException && responseBody != null && responseBody instanceof Exception) {
     return (Exception)responseBody;

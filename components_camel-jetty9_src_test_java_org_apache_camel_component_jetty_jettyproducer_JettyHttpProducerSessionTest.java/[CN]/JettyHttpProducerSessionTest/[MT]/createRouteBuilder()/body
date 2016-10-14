@@ -1,0 +1,25 @@
+{
+  return new RouteBuilder(){
+    @Override public void configure() throws Exception {
+      from("direct:start").to("jetty://" + getTestServerEndpointSessionUrl()).to("jetty://" + getTestServerEndpointSessionUrl()).to("mock:result");
+      from("direct:instance").to("jetty://" + getTestServerEndpointSessionUrl() + "?cookieHandler=#instanceCookieHandler").to("jetty://" + getTestServerEndpointSessionUrl() + "?cookieHandler=#instanceCookieHandler").to("mock:result");
+      from("direct:exchange").to("jetty://" + getTestServerEndpointSessionUrl() + "?cookieHandler=#exchangeCookieHandler").to("jetty://" + getTestServerEndpointSessionUrl() + "?cookieHandler=#exchangeCookieHandler").to("mock:result");
+      from(getTestServerEndpointSessionUri()).process(new Processor(){
+        @Override public void process(        Exchange exchange) throws Exception {
+          HttpMessage message=exchange.getIn(HttpMessage.class);
+          HttpSession session=message.getRequest().getSession();
+          String body=message.getBody(String.class);
+          if ("bar".equals(session.getAttribute("foo"))) {
+            message.setBody("Old " + body);
+          }
+ else {
+            session.setAttribute("foo","bar");
+            message.setBody("New " + body);
+          }
+        }
+      }
+);
+    }
+  }
+;
+}

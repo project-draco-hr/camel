@@ -15,8 +15,10 @@
   Request request;
   try {
     String resourceUri=buildUri(endpoint,exchange);
+    URI uri=new URI(resourceUri);
     request=new Request(endpoint.getRestletMethod(),resourceUri);
     binding.populateRestletRequestFromExchange(request,exchange);
+    loadCookies(exchange,uri,request);
   }
  catch (  Throwable e) {
     exchange.setException(e);
@@ -29,7 +31,10 @@
       LOG.debug("Received response asynchronously: {} for exchangeId: {}",response,exchange.getExchangeId());
       try {
         if (response != null) {
+          String resourceUri=buildUri(endpoint,exchange);
+          URI uri=new URI(resourceUri);
           Integer respCode=response.getStatus().getCode();
+          storeCookies(exchange,uri,response);
           if (respCode > 207 && throwException) {
             exchange.setException(populateRestletProducerException(exchange,response,respCode));
           }

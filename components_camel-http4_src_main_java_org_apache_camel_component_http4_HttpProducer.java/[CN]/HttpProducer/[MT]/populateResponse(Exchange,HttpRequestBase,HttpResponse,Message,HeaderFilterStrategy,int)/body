@@ -7,9 +7,11 @@
   }
   answer.setBody(response);
   Header[] headers=httpResponse.getAllHeaders();
+  Map<String,List<String>> m=new HashMap<String,List<String>>();
   for (  Header header : headers) {
     String name=header.getName();
     String value=header.getValue();
+    m.put(name,Collections.singletonList(value));
     if (name.toLowerCase().equals("content-type")) {
       name=Exchange.CONTENT_TYPE;
       exchange.setProperty(Exchange.CHARSET_NAME,IOHelper.getCharsetNameFromContentType(value));
@@ -18,6 +20,9 @@
     if (strategy != null && !strategy.applyFilterToExternalHeaders(name,extracted,exchange)) {
       HttpHelper.appendHeader(answer.getHeaders(),name,extracted);
     }
+  }
+  if (getEndpoint().getCookieHandler() != null) {
+    getEndpoint().getCookieHandler().storeCookies(exchange,httpRequest.getURI(),m);
   }
   if (getEndpoint().isCopyHeaders()) {
     MessageHelper.copyHeaders(exchange.getIn(),answer,httpProtocolHeaderFilterStrategy,false);

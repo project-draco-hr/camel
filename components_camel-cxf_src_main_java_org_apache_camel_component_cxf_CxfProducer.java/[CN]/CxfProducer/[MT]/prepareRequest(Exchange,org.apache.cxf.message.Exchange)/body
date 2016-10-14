@@ -13,6 +13,26 @@
     LOG.trace("Set CXF Exchange property: {}={}",Client.KEEP_CONDUIT_ALIVE,true);
   }
   endpoint.getCxfBinding().populateCxfRequestFromExchange(cxfExchange,camelExchange,requestContext);
+  if (endpoint.getCookieHandler() != null) {
+    try {
+      Map<String,List<String>> transportHeaders=CastUtils.cast((Map<?,?>)requestContext.get(Message.PROTOCOL_HEADERS));
+      boolean added;
+      if (transportHeaders == null) {
+        transportHeaders=new TreeMap<String,List<String>>(String.CASE_INSENSITIVE_ORDER);
+        added=true;
+      }
+ else {
+        added=false;
+      }
+      transportHeaders.putAll(endpoint.getCookieHandler().loadCookies(camelExchange,endpoint.getRequestUri(camelExchange)));
+      if (added && transportHeaders.size() > 0) {
+        requestContext.put(Message.PROTOCOL_HEADERS,transportHeaders);
+      }
+    }
+ catch (    IOException e) {
+      LOG.warn("Cannot load cookies",e);
+    }
+  }
   requestContext.getScopes().remove(Message.PROTOCOL_HEADERS);
   return requestContext.getWrappedMap();
 }

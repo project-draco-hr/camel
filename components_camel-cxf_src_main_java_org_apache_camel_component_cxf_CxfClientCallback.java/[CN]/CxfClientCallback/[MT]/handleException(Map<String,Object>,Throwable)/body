@@ -17,8 +17,17 @@
     }
   }
   finally {
+    if (endpoint.getCookieHandler() != null) {
+      try {
+        Map<String,List<String>> cxfHeaders=CastUtils.cast((Map<?,?>)cxfExchange.getInMessage().get(Message.PROTOCOL_HEADERS));
+        endpoint.getCookieHandler().storeCookies(camelExchange,endpoint.getRequestUri(camelExchange),cxfHeaders);
+      }
+ catch (      IOException e) {
+        LOG.error("Cannot store cookies",e);
+      }
+    }
     if (!boi.getOperationInfo().isOneWay()) {
-      binding.populateExchangeFromCxfResponse(camelExchange,cxfExchange,ctx);
+      endpoint.getCxfBinding().populateExchangeFromCxfResponse(camelExchange,cxfExchange,ctx);
       camelAsyncCallback.done(false);
     }
     if (LOG.isDebugEnabled()) {

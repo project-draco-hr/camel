@@ -1,8 +1,20 @@
 {
   List<Entry<String,String>> l=headers.getHeaders().entries();
+  Map<String,List<String>> m=new HashMap<String,List<String>>();
   for (  Entry<String,String> entry : headers.getHeaders().entries()) {
     String key=entry.getKey();
     String value=entry.getValue();
+    m.put(key,Collections.singletonList(value));
     exchange.getOut().getHeaders().put(key,value);
+  }
+  if (endpoint.getCookieHandler() != null) {
+    try {
+      String url=AhcHelper.createURL(exchange,endpoint);
+      URI uri=AhcHelper.createURI(exchange,url,endpoint);
+      endpoint.getCookieHandler().storeCookies(exchange,uri,m);
+    }
+ catch (    Exception e) {
+      throw new CamelExchangeException("Error storing cookies",exchange,e);
+    }
   }
 }

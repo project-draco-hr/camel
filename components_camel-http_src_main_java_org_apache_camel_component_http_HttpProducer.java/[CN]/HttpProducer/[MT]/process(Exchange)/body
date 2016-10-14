@@ -37,6 +37,17 @@
       }
     }
   }
+  if (getEndpoint().getCookieHandler() != null) {
+    method.getParams().setCookiePolicy(CookiePolicy.IGNORE_COOKIES);
+    Map<String,List<String>> cookieHeaders=getEndpoint().getCookieHandler().loadCookies(exchange,new URI(method.getURI().getEscapedURI()));
+    for (    Map.Entry<String,List<String>> entry : cookieHeaders.entrySet()) {
+      String key=entry.getKey();
+      if (entry.getValue().size() > 0) {
+        String s=entry.getValue().size() > 1 ? entry.getValue().toString() : entry.getValue().get(0);
+        method.addRequestHeader(key,s);
+      }
+    }
+  }
   if (getEndpoint().isConnectionClose()) {
     method.addRequestHeader("Connection","close");
   }
