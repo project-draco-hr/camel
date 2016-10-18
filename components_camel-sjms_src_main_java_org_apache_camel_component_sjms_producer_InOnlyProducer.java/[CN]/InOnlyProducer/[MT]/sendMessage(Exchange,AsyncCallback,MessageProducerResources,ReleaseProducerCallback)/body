@@ -25,9 +25,6 @@
       Message message=getEndpoint().getBinding().makeJmsMessage(exchange,producer.getSession());
       messages.add(message);
     }
-    if (isEndpointTransacted()) {
-      exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),producer.getCommitStrategy()));
-    }
     for (    final Message message : messages) {
       producer.getMessageProducer().send(message);
     }
@@ -36,9 +33,7 @@
     exchange.setException(new Exception("Unable to complete sending the message: ",e));
   }
  finally {
-    if (producer != null) {
-      getProducers().returnObject(producer);
-    }
+    releaseProducerCallback.release(producer);
     callback.done(isSynchronous());
   }
 }

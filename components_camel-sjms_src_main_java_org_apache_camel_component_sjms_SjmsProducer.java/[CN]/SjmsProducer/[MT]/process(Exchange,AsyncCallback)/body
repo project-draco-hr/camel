@@ -3,7 +3,28 @@
     log.debug("Processing Exchange.id:{}",exchange.getExchangeId());
   }
   try {
-    final MessageProducerResources producer=getProducers().borrowObject();
+    MessageProducerResources producer=null;
+    ReleaseProducerCallback releaseProducerCallback=null;
+    if (isEndpointTransacted() && isSharedJMSSession()) {
+      Session session=exchange.getIn().getHeader(SjmsConstants.JMS_SESSION,Session.class);
+      if (session != null && session.getTransacted()) {
+        producer=doCreateProducerModel(session);
+        releaseProducerCallback=new NOOPReleaseProducerCallback();
+      }
+ else {
+        producer=getProducers().borrowObject();
+        releaseProducerCallback=new ReturnProducerCallback();
+        exchange.getIn().setHeader(SjmsConstants.JMS_SESSION,producer.getSession());
+        exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),producer.getCommitStrategy()));
+      }
+    }
+ else {
+      producer=getProducers().borrowObject();
+      releaseProducerCallback=new ReturnProducerCallback();
+      if (isEndpointTransacted()) {
+        exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),producer.getCommitStrategy()));
+      }
+    }
     if (producer == null) {
       exchange.setException(new Exception("Unable to send message: connection not available"));
     }
@@ -12,10 +33,12 @@
         if (log.isDebugEnabled()) {
           log.debug("  Sending message asynchronously: {}",exchange.getIn().getBody());
         }
+        final MessageProducerResources finalProducer=producer;
+        final ReleaseProducerCallback finalrpc=releaseProducerCallback;
         getExecutor().execute(new Runnable(){
           @Override public void run(){
             try {
-              sendMessage(exchange,callback,producer);
+              sendMessage(exchange,callback,finalProducer,finalrpc);
             }
  catch (            Exception e) {
               ObjectHelper.wrapRuntimeCamelException(e);
@@ -28,7 +51,7 @@
         if (log.isDebugEnabled()) {
           log.debug("  Sending message synchronously: {}",exchange.getIn().getBody());
         }
-        sendMessage(exchange,callback,producer);
+        sendMessage(exchange,callback,producer,releaseProducerCallback);
       }
     }
   }

@@ -1,7 +1,4 @@
 {
-  if (isEndpointTransacted()) {
-    exchange.getUnitOfWork().addSynchronization(new SessionTransactionSynchronization(producer.getSession(),getCommitStrategy()));
-  }
   Message request=getEndpoint().getBinding().makeJmsMessage(exchange,producer.getSession());
   String correlationId=exchange.getIn().getHeader(JmsConstants.JMS_CORRELATION_ID,String.class);
   if (correlationId == null) {
@@ -16,7 +13,7 @@
   consumers.returnObject(consumer);
   producer.getMessageProducer().send(request);
   try {
-    getProducers().returnObject(producer);
+    releaseProducerCallback.release(producer);
   }
  catch (  Exception exception) {
   }

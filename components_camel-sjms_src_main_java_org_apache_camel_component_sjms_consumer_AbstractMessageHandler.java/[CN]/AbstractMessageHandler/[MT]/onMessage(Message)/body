@@ -3,8 +3,13 @@
   try {
     final Exchange exchange=getEndpoint().createExchange(message,getSession());
     log.debug("Processing Exchange.id:{}",exchange.getExchangeId());
-    if (isTransacted() && synchronization != null) {
-      exchange.addOnCompletion(synchronization);
+    if (isTransacted()) {
+      if (synchronization != null) {
+        exchange.addOnCompletion(synchronization);
+      }
+      if (isSharedJMSSession()) {
+        exchange.getIn().setHeader(SjmsConstants.JMS_SESSION,getSession());
+      }
     }
     try {
       if (isTransacted() || isSynchronous()) {
