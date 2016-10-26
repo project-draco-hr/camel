@@ -1,0 +1,20 @@
+{
+  super();
+  try {
+    char[] pass="changeit".toCharArray();
+    KeyManagerFactory kmf;
+    kmf=KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    TrustManagerFactory tmf=TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    KeyStore ks=KeyStore.getInstance("JKS");
+    try (InputStream ksStream=new FileInputStream(new File("src/test/resources/keystore.jks"))){
+      ks.load(ksStream,pass);
+    }
+     kmf.init(ks,pass);
+    tmf.init(ks);
+    sslContext=SSLContext.getInstance("TLS");
+    sslContext.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
+  }
+ catch (  NoSuchAlgorithmException|KeyStoreException|CertificateException|IOException|UnrecoverableKeyException|KeyManagementException e) {
+    e.printStackTrace();
+  }
+}
