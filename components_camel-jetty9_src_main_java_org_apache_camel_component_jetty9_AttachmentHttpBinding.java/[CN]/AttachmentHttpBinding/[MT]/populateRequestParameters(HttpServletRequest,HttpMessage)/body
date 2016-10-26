@@ -1,0 +1,27 @@
+{
+  Map<String,Object> headers=message.getHeaders();
+  Enumeration<?> names=request.getParameterNames();
+  while (names.hasMoreElements()) {
+    String name=(String)names.nextElement();
+    if (message.getAttachment(name) != null) {
+      DataHandler dh=message.getAttachment(name);
+      Object value=dh;
+      if (dh.getContentType() == null || dh.getContentType().startsWith("text/plain")) {
+        value=request.getParameter(name);
+      }
+      if (getHeaderFilterStrategy() != null && !getHeaderFilterStrategy().applyFilterToExternalHeaders(name,value,message.getExchange())) {
+        HttpHelper.appendHeader(headers,name,value);
+      }
+      continue;
+    }
+    String[] values=request.getParameterValues(name);
+    LOG.trace("HTTP parameter {} = {}",name,values);
+    if (values != null) {
+      for (      String value : values) {
+        if (getHeaderFilterStrategy() != null && !getHeaderFilterStrategy().applyFilterToExternalHeaders(name,value,message.getExchange())) {
+          HttpHelper.appendHeader(headers,name,value);
+        }
+      }
+    }
+  }
+}
