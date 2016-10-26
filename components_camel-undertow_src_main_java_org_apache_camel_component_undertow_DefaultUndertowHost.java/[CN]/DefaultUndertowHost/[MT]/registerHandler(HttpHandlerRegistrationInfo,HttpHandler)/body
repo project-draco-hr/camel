@@ -1,0 +1,18 @@
+{
+  if (undertow == null) {
+    Undertow.Builder builder=Undertow.builder();
+    if (key.getSslContext() != null) {
+      builder.addHttpsListener(key.getPort(),key.getHost(),key.getSslContext());
+    }
+ else {
+      builder.addHttpListener(key.getPort(),key.getHost());
+    }
+    undertow=builder.setHandler(rootHandler).build();
+    LOG.info("Starting Undertow server on {}://{}:{}",key.getSslContext() != null ? "https" : "http",key.getHost(),key.getPort());
+    undertow.start();
+  }
+  String path=registrationInfo.getUri().getPath();
+  String methods=registrationInfo.getMethodRestrict();
+  boolean prefixMatch=registrationInfo.isMatchOnUriPrefix();
+  rootHandler.add(path,methods != null ? methods.split(",") : null,prefixMatch,handler);
+}

@@ -1,0 +1,65 @@
+{
+  String basePath=getBasePath(path);
+  HttpHandler basePathHandler=pathHandler.getHandler(basePath);
+  CamelMethodHandler targetHandler;
+  if (path.contains("{")) {
+    String relativePath=path.substring(basePath.length());
+    if (basePathHandler instanceof CamelPathTemplateHandler) {
+      CamelPathTemplateHandler templateHandler=(CamelPathTemplateHandler)basePathHandler;
+      targetHandler=templateHandler.get(relativePath);
+      if (targetHandler == null) {
+        targetHandler=new CamelMethodHandler();
+        templateHandler.add(relativePath,targetHandler);
+      }
+    }
+ else {
+      CamelPathTemplateHandler templateHandler;
+      if (basePathHandler instanceof CamelMethodHandler) {
+        templateHandler=new CamelPathTemplateHandler((CamelMethodHandler)basePathHandler);
+      }
+ else       if (basePathHandler == null) {
+        templateHandler=new CamelPathTemplateHandler(new CamelMethodHandler());
+      }
+ else {
+        throw new IllegalArgumentException(String.format("Unsupported handler '%s' was found",basePathHandler));
+      }
+      targetHandler=new CamelMethodHandler();
+      templateHandler.add(relativePath,targetHandler);
+      pathHandler.addPrefixPath(basePath,templateHandler);
+    }
+  }
+ else {
+    if (basePathHandler instanceof CamelPathTemplateHandler) {
+      CamelPathTemplateHandler templateHandler=(CamelPathTemplateHandler)basePathHandler;
+      if (prefixMatch) {
+        targetHandler=templateHandler.getDefault();
+      }
+ else {
+        throw new IllegalArgumentException(String.format("Duplicate handlers on a path '%s'",path));
+      }
+    }
+ else {
+      if (basePathHandler instanceof CamelMethodHandler) {
+        targetHandler=(CamelMethodHandler)basePathHandler;
+      }
+ else       if (basePathHandler == null) {
+        targetHandler=new CamelMethodHandler();
+        if (prefixMatch) {
+          pathHandler.addPrefixPath(basePath,targetHandler);
+        }
+ else {
+          pathHandler.addExactPath(basePath,targetHandler);
+        }
+      }
+ else {
+        throw new IllegalArgumentException(String.format("Unsupported handler '%s' was found",basePathHandler));
+      }
+    }
+  }
+  if (methods != null && methods.length != 0) {
+    targetHandler.add(methods,handler);
+  }
+ else {
+    targetHandler.addDefault(handler);
+  }
+}

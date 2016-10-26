@@ -1,0 +1,60 @@
+{
+  String basePath=getBasePath(path);
+  HttpHandler basePathHandler=pathHandler.getHandler(basePath);
+  if (basePathHandler == null) {
+    return;
+  }
+  if (path.contains("{")) {
+    String relativePath=path.substring(basePath.length());
+    CamelPathTemplateHandler templateHandler=(CamelPathTemplateHandler)basePathHandler;
+    CamelMethodHandler targetHandler=templateHandler.get(relativePath);
+    if (methods != null && methods.length != 0) {
+      targetHandler.remove(methods);
+    }
+ else {
+      targetHandler.removeDefault();
+    }
+    if (targetHandler.isEmpty()) {
+      templateHandler.remove(relativePath);
+      if (templateHandler.isEmpty()) {
+        pathHandler.removePrefixPath(basePath);
+      }
+    }
+  }
+ else {
+    if (basePathHandler instanceof CamelPathTemplateHandler) {
+      String relativePath=path.substring(basePath.length());
+      CamelPathTemplateHandler templateHandler=(CamelPathTemplateHandler)basePathHandler;
+      CamelMethodHandler targetHandler=templateHandler.getDefault();
+      if (methods != null && methods.length != 0) {
+        targetHandler.remove(methods);
+      }
+ else {
+        targetHandler.removeDefault();
+      }
+      if (targetHandler.isEmpty()) {
+        templateHandler.remove(relativePath);
+        if (templateHandler.isEmpty()) {
+          pathHandler.removePrefixPath(basePath);
+        }
+      }
+    }
+ else {
+      CamelMethodHandler targetHandler=(CamelMethodHandler)basePathHandler;
+      if (methods != null && methods.length != 0) {
+        targetHandler.remove(methods);
+      }
+ else {
+        targetHandler.removeDefault();
+      }
+      if (targetHandler.isEmpty()) {
+        if (prefixMatch) {
+          pathHandler.removePrefixPath(basePath);
+        }
+ else {
+          pathHandler.removeExactPath(basePath);
+        }
+      }
+    }
+  }
+}

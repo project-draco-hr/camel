@@ -1,10 +1,11 @@
 {
-  int port=consumer.getEndpoint().getHttpURI().getPort();
-  if (serversRegistry.containsKey(port)) {
-    UndertowRegistry undertowRegistry=serversRegistry.get(port);
-    undertowRegistry.registerConsumer(consumer);
+  URI uri=consumer.getEndpoint().getHttpURI();
+  UndertowHostKey key=new UndertowHostKey(uri.getHost(),uri.getPort(),consumer.getEndpoint().getSslContext());
+  UndertowHost host=undertowRegistry.get(key);
+  if (host == null) {
+    host=createUndertowHost(key);
+    undertowRegistry.put(key,host);
   }
- else {
-    serversRegistry.put(port,new UndertowRegistry(consumer,port));
-  }
+  host.validateEndpointURI(uri);
+  host.registerHandler(consumer.getHttpHandlerRegistrationInfo(),consumer);
 }

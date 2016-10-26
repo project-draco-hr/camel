@@ -1,17 +1,6 @@
 {
-  int port=consumer.getEndpoint().getHttpURI().getPort();
-  if (serversRegistry.containsKey(port)) {
-    UndertowRegistry undertowRegistry=serversRegistry.get(port);
-    undertowRegistry.unregisterConsumer(consumer);
-    if (undertowRegistry.isEmpty()) {
-      Undertow server=undertowRegistry.getServer();
-      if (server != null) {
-        server.stop();
-      }
-      serversRegistry.remove(port);
-    }
- else {
-      startServer(consumer);
-    }
-  }
+  URI uri=consumer.getEndpoint().getHttpURI();
+  UndertowHostKey key=new UndertowHostKey(uri.getHost(),uri.getPort(),consumer.getEndpoint().getSslContext());
+  UndertowHost host=undertowRegistry.get(key);
+  host.unregisterHandler(consumer.getHttpHandlerRegistrationInfo());
 }
