@@ -3,14 +3,14 @@
   Map<String,String> labels=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_BUILDS_LABELS,Map.class);
   String namespaceName=exchange.getIn().getHeader(KubernetesConstants.KUBERNETES_NAMESPACE_NAME,String.class);
   if (!ObjectHelper.isEmpty(namespaceName)) {
-    ClientNonNamespaceOperation<Build,BuildList,DoneableBuild,ClientResource<Build,DoneableBuild>> builds=getEndpoint().getKubernetesClient().adapt(OpenShiftClient.class).builds().inNamespace(namespaceName);
+    ClientNonNamespaceOperation<Build,BuildList,DoneableBuild,ClientBuildResource<Build,DoneableBuild,String,LogWatch>> builds=getEndpoint().getKubernetesClient().adapt(OpenShiftClient.class).builds().inNamespace(namespaceName);
     for (    Map.Entry<String,String> entry : labels.entrySet()) {
       builds.withLabel(entry.getKey(),entry.getValue());
     }
     buildList=builds.list();
   }
  else {
-    ClientMixedOperation<Build,BuildList,DoneableBuild,ClientResource<Build,DoneableBuild>> builds=getEndpoint().getKubernetesClient().adapt(OpenShiftClient.class).builds();
+    ClientMixedOperation<Build,BuildList,DoneableBuild,ClientBuildResource<Build,DoneableBuild,String,LogWatch>> builds=getEndpoint().getKubernetesClient().adapt(OpenShiftClient.class).builds();
     for (    Map.Entry<String,String> entry : labels.entrySet()) {
       builds.withLabel(entry.getKey(),entry.getValue());
     }
