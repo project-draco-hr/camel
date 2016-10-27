@@ -1,0 +1,13 @@
+{
+  this.camelContext=camelContext;
+  this.producerTemplate=producerTemplate;
+  this.uri=uri;
+  this.candidateName=createCandidateName();
+  String connectionString=uri.substring(1 + uri.indexOf(':')).split("/")[0];
+  String protocol=uri.substring(0,uri.indexOf(':'));
+  String path=uri.replace(protocol + ":" + connectionString,"");
+  client=CuratorFrameworkFactory.newClient(connectionString,new ExponentialBackoffRetry(1000,3));
+  client.start();
+  leaderSelector=new LeaderSelector(client,path,new CamelLeaderElectionListener());
+  leaderSelector.start();
+}
