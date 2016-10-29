@@ -1,11 +1,25 @@
 {
-  if (exchange.getPattern().isOutCapable()) {
-    LOG.debug("Setting bean invocation result on the OUT message: {}",result);
-    exchange.getOut().setBody(result);
+  LOG.trace("Setting bean invocation result : {}",result);
+  boolean out=ExchangeHelper.isOutCapable(exchange) || exchange.hasOut();
+  Message old;
+  if (out) {
+    old=exchange.getOut();
     exchange.getOut().getHeaders().putAll(exchange.getIn().getHeaders());
+    if (exchange.getIn().hasAttachments()) {
+      exchange.getOut().getAttachments().putAll(exchange.getIn().getAttachments());
+    }
   }
  else {
-    LOG.debug("Setting bean invocation result on the IN message: {}",result);
-    exchange.getIn().setBody(result);
+    old=exchange.getIn();
+  }
+  boolean copyNeeded=!(old.getClass().equals(DefaultMessage.class));
+  if (copyNeeded) {
+    Message msg=new DefaultMessage();
+    msg.copyFrom(old);
+    msg.setBody(result);
+    ExchangeHelper.replaceMessage(exchange,msg,false);
+  }
+ else {
+    old.setBody(result);
   }
 }
